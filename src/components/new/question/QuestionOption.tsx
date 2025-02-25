@@ -30,7 +30,8 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
       return {
         container: "border-slate-200",
         letter: isSelected ? "text-white bg-fuchsia-500 border-fuchsia-500" : "text-fuchsia-500",
-        background: isSelected ? "bg-[#F6F8FA]" : ""
+        background: isSelected ? "bg-[#F6F8FA]" : "",
+        text: ""
       };
     }
 
@@ -38,14 +39,25 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
       return {
         container: "border-[#40CE5A] bg-[#EDFFF0]",
         letter: "text-white bg-[#40CE5A] border-[#40CE5A]",
-        background: ""
+        background: "",
+        text: ""
+      };
+    }
+
+    if (isSelected && !isCorrect) {
+      return {
+        container: "border-[#F4E8F0] bg-[#FBF8FA]",
+        letter: "text-[#BEB5BB] bg-[#FBF8FA] border-[#E5D7E1]",
+        background: "",
+        text: "line-through decoration-[#E5D7E1] decoration-2"
       };
     }
 
     return {
       container: "border-[#F4E8F0] bg-[#FBF8FA]",
       letter: "text-[#BEB5BB] bg-[#FBF8FA] border-[#E5D7E1]",
-      background: ""
+      background: "",
+      text: ""
     };
   };
 
@@ -73,7 +85,7 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
         >
           {String.fromCharCode(65 + index)}
         </span>
-        <span className="flex-1 text-slate-800 text-left">{text}</span>
+        <span className={`flex-1 text-slate-800 text-left ${styles.text}`}>{text}</span>
       </button>
     </div>
   );
