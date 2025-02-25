@@ -48,7 +48,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
 
   const handleSubmitComment = () => {
-    // Add comment submission logic here
     setComment("");
   };
 
@@ -78,8 +77,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           index={index}
           isDisabled={disabledOptions.includes(option.id)}
           isSelected={selectedOption === option.id}
+          isCorrect={index === 3} // Letra 'D' é a resposta correta (índice 3)
           onToggleDisabled={onToggleDisabled}
           onSelect={handleOptionClick}
+          showAnswer={showAnswer}
         />
       ))}
 
@@ -141,3 +142,4 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     </article>
   );
 };
+

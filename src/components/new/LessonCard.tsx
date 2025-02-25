@@ -90,7 +90,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
               className="flex flex-col flex-1 shrink justify-center self-stretch py-1 pr-5 my-auto basis-0 min-w-60 cursor-pointer"
               onClick={toggleVideoSection}
             >
-              <h2 className="text-2xl md:text-3xl font-bold leading-none text-slate-800 hover:text-fuchsia-600 transition-colors">
+              <h2 className="text-2xl md:text-3xl font-bold leading-none text-slate-800 hover:text-[#F11CE3] transition-colors">
                 {lesson.title}
               </h2>
               <p className="mt-3 md:mt-5 text-lg md:text-xl leading-6 text-slate-500">

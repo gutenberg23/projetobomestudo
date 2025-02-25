@@ -8,8 +8,10 @@ interface QuestionOptionProps {
   index: number;
   isDisabled: boolean;
   isSelected: boolean;
+  isCorrect: boolean;
   onToggleDisabled: (optionId: string, event: React.MouseEvent) => void;
   onSelect: (optionId: string) => void;
+  showAnswer: boolean;
 }
 
 export const QuestionOption: React.FC<QuestionOptionProps> = ({
@@ -18,9 +20,37 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
   index,
   isDisabled,
   isSelected,
+  isCorrect,
   onToggleDisabled,
   onSelect,
+  showAnswer,
 }) => {
+  const getOptionStyles = () => {
+    if (!showAnswer) {
+      return {
+        container: "border-slate-200",
+        letter: isSelected ? "text-white bg-fuchsia-500 border-fuchsia-500" : "text-fuchsia-500",
+        background: isSelected ? "bg-[#F6F8FA]" : ""
+      };
+    }
+
+    if (isCorrect) {
+      return {
+        container: "border-[#40CE5A] bg-[#EDFFF0]",
+        letter: "text-white bg-[#40CE5A] border-[#40CE5A]",
+        background: ""
+      };
+    }
+
+    return {
+      container: "border-[#F4E8F0] bg-[#FBF8FA]",
+      letter: "text-[#BEB5BB] bg-[#FBF8FA] border-[#E5D7E1]",
+      background: ""
+    };
+  };
+
+  const styles = getOptionStyles();
+
   return (
     <div className="flex gap-4 items-center px-3 md:px-5 py-1 w-full rounded-none min-h-16">
       <button
@@ -32,15 +62,13 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
       <button
         onClick={() => onSelect(id)}
         className={`flex flex-1 gap-4 items-center self-stretch p-3 text-base whitespace-normal rounded-xl border border-solid ${
-          isSelected ? "bg-[#F6F8FA] border-slate-200" : "border-slate-200"
-        } ${isDisabled ? "opacity-50 line-through" : ""}`}
+          styles.container
+        } ${styles.background} ${isDisabled ? "opacity-50 line-through" : ""}`}
         disabled={isDisabled}
       >
         <span
-          className={`gap-2.5 self-stretch font-bold text-center rounded border border-solid border-slate-200 min-h-[30px] w-[30px] flex items-center justify-center ${
-            isSelected && !isDisabled
-              ? "text-white bg-fuchsia-500 border-fuchsia-500"
-              : "text-fuchsia-500"
+          className={`gap-2.5 self-stretch font-bold text-center rounded border border-solid min-h-[30px] w-[30px] flex items-center justify-center ${
+            styles.letter
           }`}
         >
           {String.fromCharCode(65 + index)}
@@ -50,3 +78,4 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
     </div>
   );
 };
+
