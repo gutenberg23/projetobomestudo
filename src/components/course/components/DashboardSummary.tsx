@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { OverallStats } from "../types/editorialized";
