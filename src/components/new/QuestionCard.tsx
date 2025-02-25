@@ -64,14 +64,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
 
   return (
-    <article className="w-full rounded-xl border border-solid border-slate-200 mb-5">
-      <QuestionHeader
-        year={question.year}
-        institution={question.institution}
-        organization={question.organization}
-        role={question.role}
-        id={question.id}
-      />
+    <article className="w-full rounded-xl border border-solid border-gray-100 mb-5">
+      <header className="overflow-hidden rounded-t-xl rounded-b-none border-b border-gray-100">
+        <QuestionHeader
+          year={question.year}
+          institution={question.institution}
+          organization={question.organization}
+          role={question.role}
+          id={question.id}
+        />
+      </header>
 
       <div className="flex gap-2.5 items-start px-3 md:px-5 py-2.5 w-full text-base text-slate-800">
         <div className="flex flex-1 shrink gap-2.5 items-start px-2.5 py-5 w-full rounded-md basis-0 min-w-60">
@@ -89,7 +91,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           index={index}
           isDisabled={disabledOptions.includes(option.id)}
           isSelected={selectedOption === option.id}
-          isCorrect={index === 3} // Letra 'D' é a resposta correta (índice 3)
+          isCorrect={index === 3}
           onToggleDisabled={handleToggleDisabled}
           onSelect={handleOptionClick}
           showAnswer={showAnswer}
@@ -157,3 +159,4 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     </article>
   );
 };
+
