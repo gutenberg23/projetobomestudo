@@ -1,6 +1,7 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Subject = {
   id: number;
@@ -70,33 +71,55 @@ const subjects: Subject[] = [
   }
 ];
 
-const ImportanceStars = ({ level }: { level: number }) => {
+const ImportanceStars = ({ level, onChange }: { level: number; onChange?: (value: number) => void }) => {
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
-        <span
+        <button
           key={star}
+          type="button"
+          onClick={() => onChange?.(star)}
           className={cn(
-            "text-[#F11CE3]",
-            star <= level ? "opacity-100" : "opacity-20"
+            "text-[#F11CE3] transition-opacity",
+            star <= level ? "opacity-100" : "opacity-20",
+            onChange && "hover:opacity-100"
           )}
         >
           ★
-        </span>
+        </button>
       ))}
     </div>
   );
 };
 
 export const EditorializedView = () => {
+  const [localSubjects, setLocalSubjects] = useState<Subject[]>(subjects);
+
   const handleInputChange = (
     subjectId: number,
     topicId: number,
     field: 'isDone' | 'importance' | 'difficulty' | 'exercisesDone' | 'hits',
     value: any
   ) => {
-    // Aqui você implementaria a lógica para atualizar o estado
-    console.log('Update:', { subjectId, topicId, field, value });
+    setLocalSubjects(prevSubjects => 
+      prevSubjects.map(subject => {
+        if (subject.id === subjectId) {
+          return {
+            ...subject,
+            topics: subject.topics.map(topic => {
+              if (topic.id === topicId) {
+                return {
+                  ...topic,
+                  [field]: value
+                };
+              }
+              return topic;
+            })
+          };
+        }
+        return subject;
+      })
+    );
   };
 
   const calculateErrors = (exercisesDone: number, hits: number) => {
@@ -110,7 +133,7 @@ export const EditorializedView = () => {
 
   return (
     <div className="bg-white rounded-[10px] p-5">
-      {subjects.map((subject) => (
+      {localSubjects.map((subject) => (
         <div key={subject.id} className="mb-8 last:mb-0">
           <div className="flex items-center gap-2 bg-[#9747FF] text-white p-3 rounded-t-lg">
             <div className="w-5 h-5 bg-white/20 rounded" />
@@ -149,19 +172,29 @@ export const EditorializedView = () => {
                       <p className="text-sm text-gray-600">{topic.topic}</p>
                     </td>
                     <td className="py-3 px-4">
-                      <ImportanceStars level={topic.importance} />
+                      <ImportanceStars 
+                        level={topic.importance} 
+                        onChange={(value) => handleInputChange(subject.id, topic.id, 'importance', value)}
+                      />
                     </td>
                     <td className="py-3 px-4">
-                      <span className={cn(
-                        "px-2 py-1 rounded text-sm",
-                        topic.difficulty === "Muito Difícil" && "bg-red-100 text-red-700",
-                        topic.difficulty === "Difícil" && "bg-orange-100 text-orange-700",
-                        topic.difficulty === "Médio" && "bg-yellow-100 text-yellow-700",
-                        topic.difficulty === "Fácil" && "bg-green-100 text-green-700",
-                        topic.difficulty === "Muito Fácil" && "bg-blue-100 text-blue-700"
-                      )}>
-                        {topic.difficulty}
-                      </span>
+                      <Select 
+                        value={topic.difficulty}
+                        onValueChange={(value) => 
+                          handleInputChange(subject.id, topic.id, 'difficulty', value)
+                        }
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Muito Fácil">Muito Fácil</SelectItem>
+                          <SelectItem value="Fácil">Fácil</SelectItem>
+                          <SelectItem value="Médio">Médio</SelectItem>
+                          <SelectItem value="Difícil">Difícil</SelectItem>
+                          <SelectItem value="Muito Difícil">Muito Difícil</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="py-3 px-4 text-center">
                       <input
@@ -194,3 +227,4 @@ export const EditorializedView = () => {
     </div>
   );
 };
+
