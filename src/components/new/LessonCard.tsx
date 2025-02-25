@@ -20,6 +20,21 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
   const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
   const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLDivElement>(null);
+  const [videoHeight, setVideoHeight] = useState<number>(0);
+
+  useEffect(() => {
+    const updateVideoHeight = () => {
+      if (videoRef.current) {
+        setVideoHeight(videoRef.current.offsetHeight);
+      }
+    };
+
+    updateVideoHeight();
+    window.addEventListener('resize', updateVideoHeight);
+
+    return () => window.removeEventListener('resize', updateVideoHeight);
+  }, []);
 
   useEffect(() => {
     const checkScroll = () => {
@@ -121,7 +136,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
         <div className="bg-white pb-5">
           <div className={`flex px-4 md:px-10 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
             <div className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-0 md:pr-5`}>
-              <div className="aspect-video bg-slate-200 rounded-xl mb-5">
+              <div ref={videoRef} className="aspect-video bg-slate-200 rounded-xl mb-5">
                 <div className="w-full h-full flex items-center justify-center text-slate-500">
                   Vídeo da aula: {extendedSections.find(s => s.id === selectedSection)?.title}
                 </div>
@@ -131,8 +146,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
             <div className={`${hasHorizontalScroll ? 'w-full mt-4' : 'w-1/3'}`}>
               <div 
                 ref={sectionsContainerRef}
+                style={{ height: hasHorizontalScroll ? 'auto' : `${videoHeight}px` }}
                 className={`
-                  ${hasHorizontalScroll ? 'overflow-x-auto pb-4' : 'overflow-y-auto h-[400px]'} 
+                  ${hasHorizontalScroll ? 'overflow-x-auto pb-4' : 'overflow-y-auto'} 
                   pr-2
                   [&::-webkit-scrollbar]:w-2
                   [&::-webkit-scrollbar]:h-2
