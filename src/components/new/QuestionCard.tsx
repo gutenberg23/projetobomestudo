@@ -52,6 +52,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     }
   };
 
+  const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
+    if (selectedOption === optionId) {
+      setSelectedOption(null);
+    }
+    onToggleDisabled(optionId, event);
+  };
+
   const handleSubmitComment = () => {
     setComment("");
   };
@@ -83,7 +90,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           isDisabled={disabledOptions.includes(option.id)}
           isSelected={selectedOption === option.id}
           isCorrect={index === 3} // Letra 'D' é a resposta correta (índice 3)
-          onToggleDisabled={onToggleDisabled}
+          onToggleDisabled={handleToggleDisabled}
           onSelect={handleOptionClick}
           showAnswer={showAnswer}
         />
