@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Search, Menu } from "lucide-react";
+import { Search, Menu, HelpCircle, MessageSquare, Bell } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 
 export const Header = () => {
@@ -29,27 +29,15 @@ export const Header = () => {
           </div>
 
           <button className="flex items-center justify-center w-[35px] h-[35px] rounded-lg">
-            <img
-              src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/83b4e830babc2dca2a9483927b6ab4ce39bc01eaf32b5d924ee1f026afed3936"
-              alt="QA Icon"
-              className="w-[30px] h-[30px] transition-all duration-300 hover:opacity-80 [&:hover]:drop-shadow-[0_0_8px_rgba(254,130,110,0.5)] [mask-image:linear-gradient(to_right,#CC20E7,#FF2BA3,#FE826E)] hover:[mask-image:linear-gradient(to_right,#CC20E7,#FF2BA3,#FE826E)]"
-            />
+            <HelpCircle className="w-[30px] h-[30px] transition-all duration-300 hover:fill-current [&:hover]:drop-shadow-[0_0_8px_rgba(254,130,110,0.5)] [background:linear-gradient(to_right,#CC20E7,#FF2BA3,#FE826E)] [-webkit-background-clip:text] [background-clip:text] [color:transparent] hover:opacity-80" />
           </button>
 
           <button className="flex items-center justify-center w-[35px] h-[35px] rounded-lg">
-            <img
-              src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/1e9ecf3a98d24682aa14ae00a0697722fa3434a3239464e204ca85c9429dca88"
-              alt="Messages Icon"
-              className="w-[30px] h-[30px] transition-all duration-300 hover:opacity-80 [&:hover]:drop-shadow-[0_0_8px_rgba(254,130,110,0.5)] [mask-image:linear-gradient(to_right,#CC20E7,#FF2BA3,#FE826E)] hover:[mask-image:linear-gradient(to_right,#CC20E7,#FF2BA3,#FE826E)]"
-            />
+            <MessageSquare className="w-[30px] h-[30px] transition-all duration-300 hover:fill-current [&:hover]:drop-shadow-[0_0_8px_rgba(254,130,110,0.5)] [background:linear-gradient(to_right,#CC20E7,#FF2BA3,#FE826E)] [-webkit-background-clip:text] [background-clip:text] [color:transparent] hover:opacity-80" />
           </button>
 
           <button className="flex items-center justify-center w-[35px] h-[35px] rounded-lg">
-            <img
-              src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/fddbb9e3f9f281ebdcb63ffd377081fb43c5c917176e84cb80871606f5e164af"
-              alt="Alert Icon"
-              className="w-[30px] h-[30px] transition-all duration-300 hover:opacity-80 [&:hover]:drop-shadow-[0_0_8px_rgba(254,130,110,0.5)] [mask-image:linear-gradient(to_right,#CC20E7,#FF2BA3,#FE826E)] hover:[mask-image:linear-gradient(to_right,#CC20E7,#FF2BA3,#FE826E)]"
-            />
+            <Bell className="w-[30px] h-[30px] transition-all duration-300 hover:fill-current [&:hover]:drop-shadow-[0_0_8px_rgba(254,130,110,0.5)] [background:linear-gradient(to_right,#CC20E7,#FF2BA3,#FE826E)] [-webkit-background-clip:text] [background-clip:text] [color:transparent] hover:opacity-80" />
           </button>
 
           <Avatar className="w-[50px] h-[50px] border-2 border-white shadow-[0px_1px_4px_rgba(0,0,0,0.05)]">
@@ -65,4 +53,3 @@ export const Header = () => {
     </header>
   );
 };
-
