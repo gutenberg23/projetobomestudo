@@ -1,20 +1,27 @@
 
+import React from "react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { Hero } from "@/components/landing/Hero";
+import { Stats } from "@/components/landing/Stats";
+import { Features } from "@/components/landing/Features";
+import { Testimonials } from "@/components/landing/Testimonials";
+import { SecondHero } from "@/components/landing/SecondHero";
+import { EmailCollection } from "@/components/landing/EmailCollection";
+
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-      <div 
-        className="text-center p-8 animate-fade-in"
-      >
-        <span className="text-sm font-medium px-3 py-1 rounded-full bg-neutral-100 text-neutral-600 mb-4 inline-block">
-          Welcome
-        </span>
-        <h1 className="text-4xl font-light text-neutral-900 mt-4 mb-2">
-          Start Your Project
-        </h1>
-        <p className="text-neutral-600 max-w-md mx-auto">
-          This is your blank canvas. Begin creating something beautiful.
-        </p>
-      </div>
+    <div className="min-h-screen bg-white">
+      <Header />
+      <main className="pt-[88px]">
+        <Hero />
+        <Stats />
+        <Features />
+        <Testimonials />
+        <SecondHero />
+        <EmailCollection />
+      </main>
+      <Footer />
     </div>
   );
 };
