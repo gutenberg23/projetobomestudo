@@ -16,7 +16,7 @@ export const CourseLayout = () => {
       <Header />
       <main className="pt-[88px]">
         <CourseHeader />
-        <CourseNavigation />
+        <CourseNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
         {activeTab === 'disciplinas' && (
           <div className="bg-[rgba(246,248,250,1)] flex w-full gap-5 px-2.5 py-0 flex-col md:flex-row">
             <div className="flex-1">

@@ -1,11 +1,14 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Book, FileText, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const CourseNavigation = () => {
-  const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados'>('disciplinas');
+type CourseNavigationProps = {
+  activeTab: 'disciplinas' | 'edital' | 'simulados';
+  setActiveTab: (tab: 'disciplinas' | 'edital' | 'simulados') => void;
+};
 
+export const CourseNavigation = ({ activeTab, setActiveTab }: CourseNavigationProps) => {
   return (
     <nav className="bg-[rgba(246,248,250,1)] flex min-h-[92px] w-full items-center gap-5 text-[17px] text-slate-500 px-2.5 overflow-x-auto
       [&::-webkit-scrollbar]:w-2
@@ -51,4 +54,3 @@ export const CourseNavigation = () => {
     </nav>
   );
 };
-
