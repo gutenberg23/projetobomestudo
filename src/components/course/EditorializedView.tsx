@@ -1,9 +1,9 @@
-
 import React, { useState } from "react";
 import { DashboardSummary } from "./components/DashboardSummary";
 import { SubjectTable } from "./components/SubjectTable";
 import { Subject, Topic } from "./types/editorialized";
 import { calculateOverallStats } from "./utils/statsCalculations";
+import { SimuladosTable } from "./components/SimuladosTable";
 
 const subjects: Subject[] = [
   {
@@ -59,7 +59,7 @@ const subjects: Subject[] = [
   }
 ];
 
-export const EditorializedView = () => {
+export const EditorializedView = ({ activeTab }: { activeTab: 'edital' | 'simulados' }) => {
   const [localSubjects, setLocalSubjects] = useState<Subject[]>(subjects);
   const [performanceGoal, setPerformanceGoal] = useState<number>(70);
 
@@ -93,21 +93,27 @@ export const EditorializedView = () => {
   const overallStats = calculateOverallStats(localSubjects);
 
   return (
-    <div className="bg-white rounded-[10px] p-5">
-      <DashboardSummary
-        overallStats={overallStats}
-        performanceGoal={performanceGoal}
-        setPerformanceGoal={setPerformanceGoal}
-      />
+    <div className="p-2.5 md:p-5 overflow-hidden">
+      {activeTab === 'edital' ? (
+        <div className="bg-white rounded-[10px] p-2.5 md:p-5">
+          <DashboardSummary
+            overallStats={overallStats}
+            performanceGoal={performanceGoal}
+            setPerformanceGoal={setPerformanceGoal}
+          />
 
-      {localSubjects.map((subject) => (
-        <SubjectTable
-          key={subject.id}
-          subject={subject}
-          performanceGoal={performanceGoal}
-          onTopicChange={handleTopicChange}
-        />
-      ))}
+          {localSubjects.map((subject) => (
+            <SubjectTable
+              key={subject.id}
+              subject={subject}
+              performanceGoal={performanceGoal}
+              onTopicChange={handleTopicChange}
+            />
+          ))}
+        </div>
+      ) : (
+        <SimuladosTable />
+      )}
     </div>
   );
 };

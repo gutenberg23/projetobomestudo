@@ -1,4 +1,3 @@
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportanceStars } from "./ImportanceStars";
 import { cn } from "@/lib/utils";
@@ -21,20 +20,28 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
       <div className="flex items-center justify-between bg-[#9747FF] text-white p-3 rounded-t-lg">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 bg-white/20 rounded" />
-          <h2 className="text-lg font-semibold">{subject.name}</h2>
+          <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-24 h-2 bg-white/20 rounded-full overflow-hidden">
+          <div className="w-16 md:w-24 h-2 bg-white/20 rounded-full overflow-hidden">
             <div
               className="h-full bg-white transition-all"
               style={{ width: `${subjectProgress}%` }}
             />
           </div>
-          <span className="text-sm">{subjectProgress}%</span>
+          <span className="text-xs md:text-sm">{subjectProgress}%</span>
         </div>
       </div>
-      <div className="border border-gray-200 rounded-b-lg overflow-x-auto">
-        <table className="w-full min-w-[1200px]">
+      <div className="border border-gray-200 rounded-b-lg overflow-x-auto
+        [&::-webkit-scrollbar]:w-2
+        [&::-webkit-scrollbar]:h-2
+        [&::-webkit-scrollbar-track]:bg-slate-100
+        [&::-webkit-scrollbar-track]:rounded-full
+        [&::-webkit-scrollbar-thumb]:bg-slate-300
+        [&::-webkit-scrollbar-thumb]:rounded-full
+        [&::-webkit-scrollbar-thumb]:hover:bg-slate-400
+      ">
+        <table className="w-full min-w-[1000px]">
           <thead className="bg-gray-50">
             <tr className="text-sm text-gray-600">
               <th className="py-3 px-4 text-left font-medium w-8">#</th>
