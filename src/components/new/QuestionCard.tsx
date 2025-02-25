@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from "react";
 import type { Question } from "./types";
@@ -38,7 +39,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   return (
     <article className="w-full rounded-xl border border-solid border-slate-200">
-      <header className="flex overflow-hidden flex-wrap justify-between items-center px-5 py-2.5 w-full rounded-xl border border-gray-100 border-solid bg-slate-50 min-h-[74px] text-slate-800">
+      <header className="flex overflow-hidden flex-wrap justify-between items-center px-3 md:px-5 py-2.5 w-full rounded-xl border border-gray-100 border-solid bg-slate-50 min-h-[74px] text-slate-800">
         <div className="flex overflow-hidden flex-wrap flex-1 shrink gap-2.5 justify-center items-center self-stretch p-2.5 my-auto text-xl font-semibold rounded-md basis-0 min-w-60">
           <img
             src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/5b434683a48dcb3ab1d8aa45e0f2b75f8412fa47646fe3db3a95dfcf02b2ae05"
@@ -67,7 +68,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
       </header>
 
-      <div className="flex gap-2.5 items-start px-5 py-2.5 w-full text-base text-slate-800">
+      <div className="flex gap-2.5 items-start px-3 md:px-5 py-2.5 w-full text-base text-slate-800">
         <div className="flex flex-1 shrink gap-2.5 items-start px-2.5 py-5 w-full rounded-md basis-0 min-w-60">
           <p className="flex-1 shrink gap-2.5 w-full basis-0 min-w-60">
             {question.content}
@@ -78,25 +79,25 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       {question.options.map((option, index) => (
         <div
           key={option.id}
-          className="flex overflow-hidden flex-wrap gap-4 items-center px-5 py-1 w-full rounded-none min-h-16"
+          className="flex gap-4 items-center px-3 md:px-5 py-1 w-full rounded-none min-h-16"
         >
           <button
             onClick={(e) => onToggleDisabled(option.id, e)}
-            className="flex overflow-hidden gap-5 justify-center items-center self-stretch my-auto rounded-xl min-h-[30px] w-[30px] hover:bg-slate-50"
+            className="flex gap-5 justify-center items-center self-stretch rounded-xl min-h-[30px] w-[30px] hover:bg-slate-50"
           >
             <X className={`w-4 h-4 ${disabledOptions.includes(option.id) ? "text-red-500" : "text-slate-400"}`} />
           </button>
           <button
             onClick={() => handleOptionClick(option.id)}
-            className={`flex overflow-hidden flex-wrap flex-1 shrink gap-5 justify-start self-stretch p-3 my-auto text-base whitespace-nowrap rounded-xl border border-solid basis-0 ${
+            className={`flex flex-1 gap-4 items-center self-stretch p-3 text-base whitespace-normal rounded-xl border border-solid ${
               selectedOption === option.id
                 ? "bg-[#F6F8FA] border-slate-200"
                 : "border-slate-200"
-            } min-w-60 ${disabledOptions.includes(option.id) ? "opacity-50 line-through" : ""}`}
+            } ${disabledOptions.includes(option.id) ? "opacity-50 line-through" : ""}`}
             disabled={disabledOptions.includes(option.id)}
           >
             <span
-              className={`gap-2.5 self-stretch my-auto font-bold text-center rounded border border-solid border-slate-200 min-h-[30px] w-[30px] flex items-center justify-center ${
+              className={`gap-2.5 self-stretch font-bold text-center rounded border border-solid border-slate-200 min-h-[30px] w-[30px] flex items-center justify-center ${
                 selectedOption === option.id && !disabledOptions.includes(option.id)
                   ? "text-white bg-fuchsia-500 border-fuchsia-500"
                   : "text-fuchsia-500"
@@ -104,14 +105,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             >
               {String.fromCharCode(65 + index)}
             </span>
-            <span className="flex-1 shrink gap-2.5 self-stretch h-full basis-0 min-w-60 text-slate-800 text-left">
+            <span className="flex-1 text-slate-800 text-left">
               {option.text}
             </span>
           </button>
         </div>
       ))}
 
-      <footer className="flex flex-wrap justify-between items-center py-5 pr-6 pl-5 w-full text-base font-bold text-center max-sm:gap-2.5">
+      <footer className="flex flex-wrap justify-between items-center py-5 px-3 md:px-6 w-full text-base font-bold text-center gap-2">
         <button className="flex gap-2.5 justify-center self-stretch px-1 py-1.5 my-auto text-fuchsia-500 whitespace-nowrap rounded-xl border border-fuchsia-500 border-solid max-w-[200px] min-w-[184px] w-[194px]">
           <span className="flex flex-1 shrink gap-2.5 justify-center items-center py-2.5 pr-8 pl-8 basis-0">
             <img
@@ -160,7 +161,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {question.comments.map((comment) => (
             <article
               key={comment.id}
-              className="flex flex-col justify-center px-12 py-2.5 w-full"
+              className="flex flex-col justify-center px-3 md:px-12 py-2.5 w-full"
             >
               <div className="flex flex-wrap justify-between items-start w-full">
                 <div className="flex flex-wrap flex-1 shrink items-start basis-0 min-w-60">
@@ -202,7 +203,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             </article>
           ))}
 
-          <div className="flex justify-center items-start px-12 py-1.5 mt-2.5 w-full text-base leading-none text-slate-800">
+          <div className="flex justify-center items-start px-3 md:px-12 py-1.5 mt-2.5 w-full text-base leading-none text-slate-800">
             <div className="flex overflow-hidden flex-1 shrink justify-center items-start px-2.5 py-1.5 w-full rounded-3xl basis-0 bg-white bg-opacity-0 min-w-60">
               <input
                 type="text"
@@ -216,3 +217,4 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     </article>
   );
 };
+
