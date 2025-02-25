@@ -1,8 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Book, FileText, Activity } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const CourseNavigation = () => {
+  const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados'>('disciplinas');
+
   return (
     <nav className="bg-[rgba(246,248,250,1)] flex min-h-[92px] w-full items-center gap-5 text-[17px] text-slate-500 px-2.5 overflow-x-auto
       [&::-webkit-scrollbar]:w-2
@@ -13,17 +16,35 @@ export const CourseNavigation = () => {
       [&::-webkit-scrollbar-thumb]:rounded-full
       [&::-webkit-scrollbar-thumb]:hover:bg-slate-400
     ">
-      <button className="flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap">
+      <button 
+        onClick={() => setActiveTab('disciplinas')}
+        className={cn(
+          "flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap",
+          activeTab === 'disciplinas' && "bg-white text-[#F11CE3]"
+        )}
+      >
         <Book className="w-6 h-6" />
         <span>Todas as Disciplinas</span>
       </button>
 
-      <button className="flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap">
+      <button 
+        onClick={() => setActiveTab('edital')}
+        className={cn(
+          "flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap",
+          activeTab === 'edital' && "bg-white text-[#F11CE3]"
+        )}
+      >
         <FileText className="w-6 h-6" />
         <span>Edital Verticalizado</span>
       </button>
 
-      <button className="flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap">
+      <button 
+        onClick={() => setActiveTab('simulados')}
+        className={cn(
+          "flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap",
+          activeTab === 'simulados' && "bg-white text-[#F11CE3]"
+        )}
+      >
         <Activity className="w-6 h-6" />
         <span>Simulados</span>
       </button>
