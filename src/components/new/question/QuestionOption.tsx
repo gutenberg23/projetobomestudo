@@ -90,4 +90,3 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
     </div>
   );
 };
-
