@@ -34,3 +34,4 @@ export type OverallStats = {
   completedTopics: number;
   totalTopics: number;
 };
+
