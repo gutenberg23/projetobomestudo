@@ -28,7 +28,7 @@ export const Header = () => {
             </button>
           </div>
 
-          <button className="flex items-center justify-center w-[35px] h-[35px]">
+          <button className="flex items-center justify-center w-[35px] h-[35px] transition-all duration-300 hover:bg-gradient-to-r from-[#CC20E7] via-[#FF2BA3] to-[#FE826E] hover:rounded-lg">
             <img
               src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/83b4e830babc2dca2a9483927b6ab4ce39bc01eaf32b5d924ee1f026afed3936"
               alt="QA Icon"
@@ -36,7 +36,7 @@ export const Header = () => {
             />
           </button>
 
-          <button className="flex items-center justify-center w-[35px] h-[35px]">
+          <button className="flex items-center justify-center w-[35px] h-[35px] transition-all duration-300 hover:bg-gradient-to-r from-[#CC20E7] via-[#FF2BA3] to-[#FE826E] hover:rounded-lg">
             <img
               src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/1e9ecf3a98d24682aa14ae00a0697722fa3434a3239464e204ca85c9429dca88"
               alt="Messages Icon"
@@ -44,7 +44,7 @@ export const Header = () => {
             />
           </button>
 
-          <button className="flex items-center justify-center w-[35px] h-[35px]">
+          <button className="flex items-center justify-center w-[35px] h-[35px] transition-all duration-300 hover:bg-gradient-to-r from-[#CC20E7] via-[#FF2BA3] to-[#FE826E] hover:rounded-lg">
             <img
               src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/fddbb9e3f9f281ebdcb63ffd377081fb43c5c917176e84cb80871606f5e164af"
               alt="Alert Icon"
