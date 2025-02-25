@@ -72,14 +72,14 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
 
   return (
     <article className="mt-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
-      <header className="flex flex-col justify-center py-8 w-full bg-white rounded-xl border-b border-gray-100">
-        <div className="flex justify-between px-10 w-full min-h-[90px]">
+      <header className="flex flex-col justify-center py-4 md:py-8 w-full bg-white rounded-xl border-b border-gray-100">
+        <div className="flex justify-between px-4 md:px-10 w-full min-h-[90px]">
           <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
             <div className="flex flex-col flex-1 shrink justify-center self-stretch py-1 pr-5 my-auto basis-0 min-w-60">
-              <h2 className="text-3xl font-bold leading-none text-slate-800">
+              <h2 className="text-2xl md:text-3xl font-bold leading-none text-slate-800">
                 {lesson.title}
               </h2>
-              <p className="mt-5 text-xl leading-6 text-slate-500">
+              <p className="mt-3 md:mt-5 text-lg md:text-xl leading-6 text-slate-500">
                 <span>No edital: </span>
                 <em>{lesson.description}</em>
               </p>
@@ -105,8 +105,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
 
       {isVideoSectionVisible && (
         <div className="bg-white pb-5">
-          <div className={`flex px-10 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
-            <div className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-5`}>
+          <div className={`flex px-4 md:px-10 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
+            <div className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-0 md:pr-5`}>
               <div className="aspect-video bg-slate-200 rounded-xl mb-5">
                 <div className="w-full h-full flex items-center justify-center text-slate-500">
                   Vídeo da aula: {extendedSections.find(s => s.id === selectedSection)?.title}
@@ -114,10 +114,20 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
               </div>
             </div>
 
-            <div className={`${hasHorizontalScroll ? 'w-full' : 'w-1/3'}`}>
+            <div className={`${hasHorizontalScroll ? 'w-full mt-4' : 'w-1/3'}`}>
               <div 
                 ref={sectionsContainerRef}
-                className={`${hasHorizontalScroll ? 'overflow-x-auto' : 'overflow-y-auto h-[400px]'} pr-2`}
+                className={`
+                  ${hasHorizontalScroll ? 'overflow-x-auto pb-4' : 'overflow-y-auto h-[400px]'} 
+                  pr-2
+                  [&::-webkit-scrollbar]:w-2
+                  [&::-webkit-scrollbar]:h-2
+                  [&::-webkit-scrollbar-track]:bg-slate-100
+                  [&::-webkit-scrollbar-track]:rounded-full
+                  [&::-webkit-scrollbar-thumb]:bg-slate-300
+                  [&::-webkit-scrollbar-thumb]:rounded-full
+                  [&::-webkit-scrollbar-thumb]:hover:bg-slate-400
+                `}
               >
                 <ul className={`flex gap-2.5 ${hasHorizontalScroll ? 'flex-row' : 'flex-col'}`}>
                   {extendedSections.map((section) => (
@@ -160,18 +170,19 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
               </div>
             </div>
           </div>
-          <ItensDaAula setShowQuestions={setShowQuestions} showQuestions={showQuestions} />
-          {showQuestions && (
-            <div className="px-10">
+          <div className="px-4 md:px-10">
+            <ItensDaAula setShowQuestions={setShowQuestions} showQuestions={showQuestions} />
+            {showQuestions && (
               <QuestionCard 
                 question={question} 
                 disabledOptions={disabledOptions}
                 onToggleDisabled={toggleOptionDisabled}
               />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </article>
   );
 };
+
