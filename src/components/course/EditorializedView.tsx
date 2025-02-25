@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 
 type Subject = {
   id: number;
@@ -12,6 +13,7 @@ type Subject = {
     name: string;
     topic: string;
     isDone: boolean;
+    isReviewed: boolean;
     importance: 1 | 2 | 3 | 4 | 5;
     difficulty: "Muito Difícil" | "Difícil" | "Médio" | "Fácil" | "Muito Fácil";
     exercisesDone: number;
@@ -31,6 +33,7 @@ const subjects: Subject[] = [
         name: "Ortografia.",
         topic: "Conceitos básicos de ortografia e suas aplicações.",
         isDone: true,
+        isReviewed: false,
         importance: 5,
         difficulty: "Muito Difícil",
         exercisesDone: 10,
@@ -43,6 +46,7 @@ const subjects: Subject[] = [
         name: "Morfologia. Classes de palavras: substantivos, adjetivos, artigos, numerais, advérbios e interjeições.",
         topic: "Estudo das classes gramaticais e suas funções na construção do texto.",
         isDone: false,
+        isReviewed: false,
         importance: 3,
         difficulty: "Fácil",
         exercisesDone: 5,
@@ -61,6 +65,7 @@ const subjects: Subject[] = [
         name: "Aplicabilidade das Normas Constitucionais.",
         topic: "Análise dos tipos de normas constitucionais e sua aplicação prática.",
         isDone: true,
+        isReviewed: false,
         importance: 4,
         difficulty: "Médio",
         exercisesDone: 15,
@@ -95,11 +100,12 @@ const ImportanceStars = ({ level, onChange }: { level: number; onChange?: (value
 
 export const EditorializedView = () => {
   const [localSubjects, setLocalSubjects] = useState<Subject[]>(subjects);
+  const [performanceGoal, setPerformanceGoal] = useState<number>(70);
 
   const handleInputChange = (
     subjectId: number,
     topicId: number,
-    field: 'isDone' | 'importance' | 'difficulty' | 'exercisesDone' | 'hits',
+    field: 'isDone' | 'isReviewed' | 'importance' | 'difficulty' | 'exercisesDone' | 'hits',
     value: any
   ) => {
     setLocalSubjects(prevSubjects => 
@@ -174,7 +180,21 @@ export const EditorializedView = () => {
   return (
     <div className="bg-white rounded-[10px] p-5">
       <div className="mb-8 p-5 border rounded-lg bg-gray-50">
-        <h3 className="text-lg font-semibold mb-4">Resumo Geral</h3>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Resumo Geral</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Meta de Aproveitamento:</span>
+            <Input
+              type="number"
+              min="1"
+              max="100"
+              value={performanceGoal}
+              onChange={(e) => setPerformanceGoal(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))}
+              className="w-20 text-center"
+            />
+            <span className="text-sm text-gray-600">%</span>
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="p-4 bg-white rounded-lg shadow">
             <div className="flex justify-between items-center mb-2">
@@ -227,7 +247,7 @@ export const EditorializedView = () => {
                 <h2 className="text-lg font-semibold">{subject.name}</h2>
               </div>
               <div className="flex items-center gap-3">
-                <Progress value={subjectProgress} className="w-24 h-2 bg-white/20" indicatorClassName="bg-white" />
+                <Progress value={subjectProgress} className="w-24 h-2 bg-white/20" />
                 <span className="text-sm">{subjectProgress}%</span>
               </div>
             </div>
@@ -244,6 +264,7 @@ export const EditorializedView = () => {
                     <th className="py-3 px-4 text-center font-medium">Acertos</th>
                     <th className="py-3 px-4 text-center font-medium">Erros</th>
                     <th className="py-3 px-4 text-center font-medium">Aproveitamento</th>
+                    <th className="py-3 px-4 text-center font-medium">Revisão</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -308,7 +329,22 @@ export const EditorializedView = () => {
                         />
                       </td>
                       <td className="py-3 px-4 text-center">{calculateErrors(topic.exercisesDone, topic.hits)}</td>
-                      <td className="py-3 px-4 text-center">{calculatePerformance(topic.hits, topic.exercisesDone)}%</td>
+                      <td className={cn(
+                        "py-3 px-4 text-center",
+                        calculatePerformance(topic.hits, topic.exercisesDone) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
+                      )}>
+                        {calculatePerformance(topic.hits, topic.exercisesDone)}%
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={topic.isReviewed}
+                            onChange={(e) => handleInputChange(subject.id, topic.id, 'isReviewed', e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-[#F11CE3] focus:ring-[#F11CE3]"
+                          />
+                        </div>
+                      </td>
                     </tr>
                   ))}
                   <tr className="border-t border-gray-200 bg-gray-50 font-medium">
@@ -316,7 +352,13 @@ export const EditorializedView = () => {
                     <td className="py-3 px-4 text-center">{subjectTotals.exercisesDone}</td>
                     <td className="py-3 px-4 text-center">{subjectTotals.hits}</td>
                     <td className="py-3 px-4 text-center">{subjectTotals.errors}</td>
-                    <td className="py-3 px-4 text-center">{subjectPerformance}%</td>
+                    <td className={cn(
+                      "py-3 px-4 text-center",
+                      subjectPerformance < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
+                    )}>
+                      {subjectPerformance}%
+                    </td>
+                    <td className="py-3 px-4"></td>
                   </tr>
                 </tbody>
               </table>
@@ -327,3 +369,4 @@ export const EditorializedView = () => {
     </div>
   );
 };
+
