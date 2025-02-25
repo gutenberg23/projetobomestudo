@@ -35,6 +35,17 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
     return () => window.removeEventListener('resize', checkScroll);
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setHasHorizontalScroll(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleSectionClick = (sectionId: string) => {
     setSelectedSection(sectionId);
   };
@@ -71,7 +82,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
   ];
 
   return (
-    <article className="mt-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
+    <article className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <header className="flex flex-col justify-center py-4 md:py-8 w-full bg-white rounded-xl border-b border-gray-100">
         <div className="flex justify-between px-4 md:px-10 w-full min-h-[90px]">
           <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
@@ -174,13 +185,17 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
             </div>
           </div>
           <div className="px-4 md:px-10">
-            <ItensDaAula setShowQuestions={setShowQuestions} showQuestions={showQuestions} />
+            <div className="mt-8">
+              <ItensDaAula setShowQuestions={setShowQuestions} showQuestions={showQuestions} />
+            </div>
             {showQuestions && (
-              <QuestionCard 
-                question={question} 
-                disabledOptions={disabledOptions}
-                onToggleDisabled={toggleOptionDisabled}
-              />
+              <div className="mt-8">
+                <QuestionCard 
+                  question={question} 
+                  disabledOptions={disabledOptions}
+                  onToggleDisabled={toggleOptionDisabled}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -188,3 +203,4 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
     </article>
   );
 };
+
