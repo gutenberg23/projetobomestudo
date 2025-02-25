@@ -4,13 +4,17 @@ import React from "react";
 interface QuestionFooterProps {
   commentsCount: number;
   showComments: boolean;
+  showAnswer: boolean;
   onToggleComments: () => void;
+  onToggleAnswer: () => void;
 }
 
 export const QuestionFooter: React.FC<QuestionFooterProps> = ({
   commentsCount,
   showComments,
+  showAnswer,
   onToggleComments,
+  onToggleAnswer,
 }) => {
   return (
     <footer className="flex flex-wrap justify-between items-center py-5 px-3 md:px-6 w-full text-base font-bold text-center gap-2">
@@ -45,7 +49,14 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
         </span>
       </button>
 
-      <button className="flex flex-1 shrink gap-2.5 justify-center self-stretch px-1 py-1.5 my-auto text-purple-400 rounded-xl border border-purple-400 border-solid basis-0 max-w-[300px] min-w-[250px]">
+      <button 
+        onClick={onToggleAnswer}
+        className={`flex flex-1 shrink gap-2.5 justify-center self-stretch px-1 py-1.5 my-auto rounded-xl border border-purple-400 border-solid basis-0 max-w-[300px] min-w-[250px] ${
+          showAnswer
+            ? "text-gray-700 bg-purple-100"
+            : "text-purple-400 bg-white"
+        }`}
+      >
         <span className="flex flex-1 shrink gap-2.5 justify-center items-center px-3 py-2.5 basis-0 min-w-60">
           <img
             src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/174f9704483f501cce9c4ad9f0dc87d07a661f005489418fe45e6629b528100c"

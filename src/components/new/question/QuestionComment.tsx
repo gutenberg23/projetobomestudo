@@ -39,7 +39,7 @@ export const QuestionComment: React.FC<QuestionCommentProps> = ({
         </div>
         <button
           onClick={() => onToggleLike(comment.id)}
-          className="flex gap-2.5 items-center py-2.5 text-base whitespace-nowrap transition-colors"
+          className="flex gap-2.5 items-center py-2.5 text-base whitespace-nowrap transition-colors ml-auto"
         >
           <span className={isLiked ? "text-fuchsia-500" : "text-slate-500"}>
             {comment.likes + (isLiked ? 1 : 0)}

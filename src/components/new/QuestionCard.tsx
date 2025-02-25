@@ -6,6 +6,7 @@ import { QuestionHeader } from "./question/QuestionHeader";
 import { QuestionOption } from "./question/QuestionOption";
 import { QuestionComment } from "./question/QuestionComment";
 import { QuestionFooter } from "./question/QuestionFooter";
+import { Send } from "lucide-react";
 
 interface QuestionCardProps {
   question: Question;
@@ -19,11 +20,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   onToggleDisabled,
 }) => {
   const [showComments, setShowComments] = useState(false);
+  const [showAnswer, setShowAnswer] = useState(false);
   const [likedComments, setLikedComments] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
 
   const toggleComments = () => {
     setShowComments(!showComments);
+  };
+
+  const toggleAnswer = () => {
+    setShowAnswer(!showAnswer);
   };
 
   const toggleLike = (commentId: string) => {
@@ -40,8 +47,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     }
   };
 
+  const handleSubmitComment = () => {
+    // Add comment submission logic here
+    setComment("");
+  };
+
   return (
-    <article className="w-full rounded-xl border border-solid border-slate-200">
+    <article className="w-full rounded-xl border border-solid border-slate-200 mb-5">
       <QuestionHeader
         year={question.year}
         institution={question.institution}
@@ -74,8 +86,27 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       <QuestionFooter
         commentsCount={question.comments.length}
         showComments={showComments}
+        showAnswer={showAnswer}
         onToggleComments={toggleComments}
+        onToggleAnswer={toggleAnswer}
       />
+
+      {showAnswer && (
+        <section className="py-5 w-full border-t border-gray-100">
+          <QuestionComment
+            comment={{
+              id: "answer",
+              author: "Professor",
+              avatar: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+              content: "Esta é a resposta comentada da questão. Aqui o professor explica detalhadamente a resolução.",
+              timestamp: "Gabarito oficial",
+              likes: 0
+            }}
+            isLiked={likedComments.includes("answer")}
+            onToggleLike={toggleLike}
+          />
+        </section>
+      )}
 
       {showComments && (
         <section className="py-5 w-full border-t border-gray-100">
@@ -88,14 +119,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             />
           ))}
 
-          <div className="flex justify-center items-start px-3 md:px-12 py-1.5 mt-2.5 w-full text-base leading-none text-slate-800">
-            <div className="flex overflow-hidden flex-1 shrink justify-center items-start px-2.5 py-1.5 w-full rounded-3xl basis-0 bg-white bg-opacity-0 min-w-60">
+          <div className="flex justify-center items-center px-3 md:px-12 py-1.5 mt-2.5 w-full text-base leading-none text-slate-800 gap-2">
+            <div className="flex overflow-hidden flex-1 shrink justify-center items-start w-full basis-0 min-w-60">
               <input
                 type="text"
                 placeholder="Escreva uma mensagem"
-                className="overflow-hidden flex-1 shrink p-2.5 w-full bg-white rounded-3xl basis-0 min-w-60"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="overflow-hidden flex-1 shrink p-2.5 w-full rounded-3xl basis-0 min-w-60 border border-purple-300 focus:border-purple-500 focus:outline-none"
               />
             </div>
+            <button 
+              onClick={handleSubmitComment}
+              className="p-2.5 rounded-full hover:bg-purple-50"
+            >
+              <Send className="w-5 h-5 text-purple-500" />
+            </button>
           </div>
         </section>
       )}

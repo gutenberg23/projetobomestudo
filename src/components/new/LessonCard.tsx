@@ -75,8 +75,11 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
       <header className="flex flex-col justify-center py-4 md:py-8 w-full bg-white rounded-xl border-b border-gray-100">
         <div className="flex justify-between px-4 md:px-10 w-full min-h-[90px]">
           <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
-            <div className="flex flex-col flex-1 shrink justify-center self-stretch py-1 pr-5 my-auto basis-0 min-w-60">
-              <h2 className="text-2xl md:text-3xl font-bold leading-none text-slate-800">
+            <div 
+              className="flex flex-col flex-1 shrink justify-center self-stretch py-1 pr-5 my-auto basis-0 min-w-60 cursor-pointer"
+              onClick={toggleVideoSection}
+            >
+              <h2 className="text-2xl md:text-3xl font-bold leading-none text-slate-800 hover:text-fuchsia-600 transition-colors">
                 {lesson.title}
               </h2>
               <p className="mt-3 md:mt-5 text-lg md:text-xl leading-6 text-slate-500">
@@ -185,4 +188,3 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
     </article>
   );
 };
-
