@@ -1,8 +1,8 @@
 
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import type { Lesson } from "./types";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { Question } from "./types";
@@ -18,6 +18,22 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
   const [isVideoSectionVisible, setIsVideoSectionVisible] = useState(true);
   const [showQuestions, setShowQuestions] = useState(false);
   const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
+  const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
+  const sectionsContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const checkScroll = () => {
+      if (sectionsContainerRef.current) {
+        const { scrollWidth, clientWidth } = sectionsContainerRef.current;
+        setHasHorizontalScroll(scrollWidth > clientWidth);
+      }
+    };
+
+    checkScroll();
+    window.addEventListener('resize', checkScroll);
+
+    return () => window.removeEventListener('resize', checkScroll);
+  }, []);
 
   const handleSectionClick = (sectionId: string) => {
     setSelectedSection(sectionId);
@@ -45,7 +61,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
     );
   };
 
-  // Duplicando as seções para simular mais itens
   const extendedSections = [
     ...lesson.sections,
     ...lesson.sections.map(section => ({
@@ -90,21 +105,23 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
 
       {isVideoSectionVisible && (
         <div className="bg-white pb-5">
-          <div className="flex px-10 mt-5">
-            <div className="w-2/3 pr-5">
+          <div className={`flex px-10 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
+            <div className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-5`}>
               <div className="aspect-video bg-slate-200 rounded-xl mb-5">
-                {/* Aqui será inserido o player de vídeo */}
                 <div className="w-full h-full flex items-center justify-center text-slate-500">
                   Vídeo da aula: {extendedSections.find(s => s.id === selectedSection)?.title}
                 </div>
               </div>
             </div>
 
-            <div className="w-1/3">
-              <div className="h-[400px] overflow-y-auto pr-2">
-                <ul className="flex flex-col gap-2.5">
+            <div className={`${hasHorizontalScroll ? 'w-full' : 'w-1/3'}`}>
+              <div 
+                ref={sectionsContainerRef}
+                className={`${hasHorizontalScroll ? 'overflow-x-auto' : 'overflow-y-auto h-[400px]'} pr-2`}
+              >
+                <ul className={`flex gap-2.5 ${hasHorizontalScroll ? 'flex-row' : 'flex-col'}`}>
                   {extendedSections.map((section) => (
-                    <li key={section.id}>
+                    <li key={section.id} className={hasHorizontalScroll ? 'min-w-[300px]' : ''}>
                       <button
                         onClick={() => handleSectionClick(section.id)}
                         className={`flex justify-between items-center p-5 w-full text-base font-medium text-left rounded-xl border border-solid min-h-[60px] ${
