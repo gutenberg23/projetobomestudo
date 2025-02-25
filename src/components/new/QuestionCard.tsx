@@ -21,6 +21,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showOfficialAnswer, setShowOfficialAnswer] = useState(false);
   const [likedComments, setLikedComments] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [comment, setComment] = useState("");
@@ -31,6 +32,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   const toggleAnswer = () => {
     setShowAnswer(!showAnswer);
+  };
+
+  const toggleOfficialAnswer = () => {
+    setShowOfficialAnswer(!showOfficialAnswer);
   };
 
   const toggleLike = (commentId: string) => {
@@ -88,11 +93,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         commentsCount={question.comments.length}
         showComments={showComments}
         showAnswer={showAnswer}
+        showOfficialAnswer={showOfficialAnswer}
         onToggleComments={toggleComments}
         onToggleAnswer={toggleAnswer}
+        onToggleOfficialAnswer={toggleOfficialAnswer}
       />
 
-      {showAnswer && (
+      {showOfficialAnswer && (
         <section className="py-5 w-full border-t border-gray-100">
           <QuestionComment
             comment={{
@@ -142,4 +149,3 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     </article>
   );
 };
-
