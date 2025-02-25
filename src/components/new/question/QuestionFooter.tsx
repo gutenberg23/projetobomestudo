@@ -9,6 +9,7 @@ interface QuestionFooterProps {
   onToggleComments: () => void;
   onToggleAnswer: () => void;
   onToggleOfficialAnswer: () => void;
+  hasSelectedOption?: boolean;
 }
 
 export const QuestionFooter: React.FC<QuestionFooterProps> = ({
@@ -19,12 +20,16 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
   onToggleComments,
   onToggleAnswer,
   onToggleOfficialAnswer,
+  hasSelectedOption = false,
 }) => {
   return (
     <footer className="flex flex-wrap justify-between items-center py-5 px-3 md:px-6 w-full text-base font-bold text-center gap-2">
       <button 
         onClick={onToggleAnswer}
-        className="flex gap-2.5 justify-center self-stretch px-1 py-1.5 my-auto text-fuchsia-500 whitespace-nowrap rounded-xl border border-fuchsia-500 border-solid max-w-[200px] min-w-[184px] w-[194px] hover:bg-fuchsia-50 transition-colors"
+        disabled={!hasSelectedOption}
+        className={`flex gap-2.5 justify-center self-stretch px-1 py-1.5 my-auto text-fuchsia-500 whitespace-nowrap rounded-xl border border-fuchsia-500 border-solid max-w-[200px] min-w-[184px] w-[194px] transition-colors ${
+          hasSelectedOption ? 'hover:bg-fuchsia-50' : 'opacity-50 cursor-not-allowed'
+        }`}
       >
         <span className="flex flex-1 shrink gap-2.5 justify-center items-center py-2.5 pr-8 pl-8 basis-0">
           <img
@@ -76,4 +81,3 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
     </footer>
   );
 };
-

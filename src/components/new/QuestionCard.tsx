@@ -97,6 +97,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         onToggleComments={toggleComments}
         onToggleAnswer={toggleAnswer}
         onToggleOfficialAnswer={toggleOfficialAnswer}
+        hasSelectedOption={selectedOption !== null}
       />
 
       {showOfficialAnswer && (

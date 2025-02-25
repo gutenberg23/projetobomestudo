@@ -75,7 +75,7 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
         onClick={() => onSelect(id)}
         className={`flex flex-1 gap-4 items-center self-stretch p-3 text-base whitespace-normal rounded-xl border border-solid ${
           styles.container
-        } ${styles.background} ${isDisabled ? "opacity-50 line-through" : ""}`}
+        } ${styles.background} ${isDisabled && !isCorrect ? "opacity-50 line-through" : ""}`}
         disabled={isDisabled}
       >
         <span
