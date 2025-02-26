@@ -1,10 +1,13 @@
+
 "use client";
 
 import React from "react";
 import { ProgressSummary } from "./components/ProgressSummary";
 import { SubjectCard } from "./components/SubjectCard";
+
 export const ProgressPanel = () => {
   const [expandedSubject, setExpandedSubject] = React.useState<string | null>(null);
+
   const subjects = [{
     name: "Língua Portuguesa",
     rating: 10,
@@ -77,23 +80,48 @@ export const ProgressPanel = () => {
     questionsWrong: 35
   }];
 
-  // Calculate totals based on the questions data
+  // Calcula totais com base nos dados das questões
   const totalSections = subjects.reduce((total, subject) => total + 1, 0);
-  const totalCompletedSections = subjects.reduce((total, subject) => total + (subject.progress >= 100 ? 1 : 0), 0);
-  const progressPercentage = Math.round(totalCompletedSections / totalSections * 100);
+  const totalCompletedSections = subjects.reduce(
+    (total, subject) => total + (subject.progress >= 100 ? 1 : 0),
+    0
+  );
+  const progressPercentage = Math.round((totalCompletedSections / totalSections) * 100);
 
-  // Calculate total questions and correct answers
-  const totalQuestions = subjects.reduce((total, subject) => total + subject.questionsTotal, 0);
-  const totalCorrectAnswers = subjects.reduce((total, subject) => total + subject.questionsCorrect, 0);
-  return <div className="bg-white rounded-[10px] space-y-4 p-5 ">
+  // Calcula total de questões e respostas corretas
+  const totalQuestions = subjects.reduce(
+    (total, subject) => total + subject.questionsTotal,
+    0
+  );
+  const totalCorrectAnswers = subjects.reduce(
+    (total, subject) => total + subject.questionsCorrect,
+    0
+  );
+
+  return (
+    <div className="bg-white rounded-[10px] space-y-4 p-5">
       <h2 className="text-2xl font-bold text-[rgba(38,47,60,1)]">
         Meu Progresso
       </h2>
 
-      <ProgressSummary totalCompletedSections={totalCompletedSections} totalSections={totalSections} progressPercentage={progressPercentage} totalQuestions={totalQuestions} totalCorrectAnswers={totalCorrectAnswers} />
+      <ProgressSummary
+        totalCompletedSections={totalCompletedSections}
+        totalSections={totalSections}
+        progressPercentage={progressPercentage}
+        totalQuestions={totalQuestions}
+        totalCorrectAnswers={totalCorrectAnswers}
+      />
 
       <div className="space-y-2">
-        {subjects.map(subject => <SubjectCard key={subject.name} subject={subject} isExpanded={expandedSubject === subject.name} onToggle={() => setExpandedSubject(expandedSubject === subject.name ? null : subject.name)} />)}
+        {subjects.map(subject => (
+          <SubjectCard
+            key={subject.name}
+            subject={subject}
+            isExpanded={expandedSubject === subject.name}
+            onToggle={() => setExpandedSubject(expandedSubject === subject.name ? null : subject.name)}
+          />
+        ))}
       </div>
-    </div>;
+    </div>
+  );
 };
