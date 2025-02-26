@@ -10,7 +10,7 @@ interface SubjectLessonsProps {
 export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
   const [progress, setProgress] = useState({
     completedSections: 0,
-    totalSections: 0,
+    totalSections: lessons.reduce((acc, lesson) => acc + lesson.sections.length, 0),
     answeredQuestions: 0,
     correctAnswers: 0
   });
@@ -19,7 +19,6 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
     setProgress(prev => ({
       ...prev,
       completedSections: completed,
-      totalSections: total
     }));
   };
 
@@ -35,7 +34,6 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
     // Registra um identificador único para esta instância de SubjectLessons
     const subjectId = lessons[0]?.id || Math.random().toString();
     
-    // Dispatch event to update ProgressPanel with subject identifier
     const event = new CustomEvent('progressUpdate', {
       detail: {
         subjectId,
@@ -47,14 +45,13 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
     });
     window.dispatchEvent(event);
 
-    // Limpa o progresso quando o componente é desmontado
     return () => {
       const cleanupEvent = new CustomEvent('progressCleanup', {
         detail: { subjectId }
       });
       window.dispatchEvent(cleanupEvent);
     };
-  }, [progress, lessons]);
+  }, [lessons, progress.completedSections, progress.answeredQuestions, progress.correctAnswers]);
 
   return (
     <div className="px-4 pb-8 md:px-[15px] bg-slate-50 py-[30px] border-l-2 border-r-2 border-[#fff] rounded-xl mb-1">

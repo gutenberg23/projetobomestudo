@@ -28,13 +28,18 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
           </span>
         </div>
         <div className="flex-1">
-          <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Aulas assistidas: {totalCompletedSections}/{totalSections}</span>
-          </div>
-          <div className="h-2 rounded-full bg-slate-100">
-            <div className="h-full bg-[rgba(241,28,227,1)] rounded-full" style={{
-              width: `${progressPercentage}%`
-            }} />
+          <div className="flex flex-col space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Aulas assistidas: {totalCompletedSections}/{totalSections}</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Tópicos assistidos: {totalCompletedSections}/{totalSections}</span>
+            </div>
+            <div className="h-2 rounded-full bg-slate-100">
+              <div className="h-full bg-[rgba(241,28,227,1)] rounded-full" style={{
+                width: `${progressPercentage}%`
+              }} />
+            </div>
           </div>
         </div>
       </div>
