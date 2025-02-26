@@ -634,7 +634,7 @@ export const SubjectsList = () => {
     setExpandedSubject(expandedSubject === subjectName ? null : subjectName);
   };
   return <div className="bg-white rounded-[10px] mb-10">
-      {subjects.map(subject => <div key={subject.name} className="border-b border-[rgba(239,239,239,1)]">
+      {subjects.map(subject => <div key={subject.name} className="border-b border-[rgba(246,248,250,1)]">
           <div onClick={() => toggleExpand(subject.name)} className="flex min-h-[90px] w-full items-stretch justify-between px-4 cursor-pointer md:px-[15px] my-0">
             <div className="flex min-w-60 w-full items-center justify-between my-0">
               <h2 className="text-xl md:text-[28px] text-[rgba(38,47,60,1)] leading-none w-full mr-5 py-1 font-bold">
