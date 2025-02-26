@@ -30,7 +30,7 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
           )}
         >
           <Book className="w-6 h-6" />
-          <span>Todas as Disciplinas</span>
+          <span className="hidden md:inline">Todas as Disciplinas</span>
         </button>
 
         <button 
@@ -41,7 +41,7 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
           )}
         >
           <FileText className="w-6 h-6" />
-          <span>Edital Verticalizado</span>
+          <span className="hidden md:inline">Edital Verticalizado</span>
         </button>
 
         <button 
@@ -52,7 +52,7 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
           )}
         >
           <Activity className="w-6 h-6" />
-          <span>Simulados</span>
+          <span className="hidden md:inline">Simulados</span>
         </button>
       </div>
 
@@ -64,7 +64,7 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
         )}
       >
         <LineChart className="w-6 h-6" />
-        <span>Meu Progresso</span>
+        <span className="hidden md:inline">Meu Progresso</span>
       </button>
     </nav>
   );

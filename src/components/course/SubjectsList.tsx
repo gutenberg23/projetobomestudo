@@ -604,7 +604,7 @@ export const SubjectsList = () => {
       {subjects.map((subject) => (
         <div key={subject.name} className="border-b border-[rgba(239,239,239,1)]">
           <div 
-            className="flex min-h-[90px] w-full items-stretch justify-between px-4 md:px-10 cursor-pointer hover:bg-slate-50 transition-colors"
+            className="flex min-h-[90px] w-full items-stretch justify-between px-4 md:px-10 cursor-pointer"
             onClick={() => toggleExpand(subject.name)}
           >
             <div className="flex min-w-60 w-full items-center justify-between my-0">

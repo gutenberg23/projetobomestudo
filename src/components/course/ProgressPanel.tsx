@@ -35,6 +35,48 @@ const subjects = [{
   questionsTotal: 90,
   questionsCorrect: 40,
   questionsWrong: 50
+}, {
+  name: "Direito Tributário",
+  rating: 9,
+  progress: 30,
+  questionsTotal: 70,
+  questionsCorrect: 21,
+  questionsWrong: 49
+}, {
+  name: "Administração Pública",
+  rating: 9,
+  progress: 55,
+  questionsTotal: 85,
+  questionsCorrect: 47,
+  questionsWrong: 38
+}, {
+  name: "Administração Geral",
+  rating: 8,
+  progress: 40,
+  questionsTotal: 75,
+  questionsCorrect: 30,
+  questionsWrong: 45
+}, {
+  name: "Legislação Específica",
+  rating: 8,
+  progress: 25,
+  questionsTotal: 60,
+  questionsCorrect: 15,
+  questionsWrong: 45
+}, {
+  name: "Direito Econômico",
+  rating: 8,
+  progress: 35,
+  questionsTotal: 65,
+  questionsCorrect: 23,
+  questionsWrong: 42
+}, {
+  name: "Raciocínio Lógico",
+  rating: 7,
+  progress: 50,
+  questionsTotal: 70,
+  questionsCorrect: 35,
+  questionsWrong: 35
 }];
 
 export const ProgressPanel = () => {
