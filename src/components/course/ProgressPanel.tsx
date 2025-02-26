@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from "react";
@@ -7,31 +8,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 export const ProgressPanel = () => {
   const [expandedSubject, setExpandedSubject] = React.useState<string | null>(null);
 
-  // Calculate progress based on subjects array from SubjectsList
-  const totalSections = subjects.reduce((total, subject) => 
-    total + subject.lessons.reduce((lessonTotal, lesson) => 
-      lessonTotal + lesson.sections.length, 0), 0);
-  
-  const totalCompletedSections = subjects.reduce((total, subject) => 
-    total + subject.lessons.reduce((lessonTotal, lesson) => {
-      // Note: This needs to be connected to the actual completed sections state
-      // For now, we'll use a placeholder value
-      return lessonTotal + 0;
-    }, 0), 0);
-
-  const progressPercentage = Math.round((totalCompletedSections / totalSections) * 100);
-
-  // Calculate total questions and correct answers from all subjects
-  const totalQuestions = subjects.reduce((total, subject) => 
-    total + subject.lessons.reduce((lessonTotal, lesson) => 
-      lessonTotal + 1, 0), 0); // Change 1 to actual question count when available
-
-  const totalCorrectAnswers = 0; // This needs to be connected to actual correct answers
-
-  const calculatePerformance = (hits: number, total: number) => {
-    return total > 0 ? Math.round((hits / total) * 100) : 0;
-  };
-  
+  // Define subjects first to avoid the "used before declaration" error
   const subjects = [{
     name: "Língua Portuguesa",
     rating: 10,
@@ -104,6 +81,24 @@ export const ProgressPanel = () => {
     questionsWrong: 35
   }];
 
+  // Calculate totals based on the questions data instead of lessons
+  const totalSections = subjects.reduce((total, subject) => total + 1, 0);
+  const totalCompletedSections = subjects.reduce((total, subject) => 
+    total + (subject.progress >= 100 ? 1 : 0), 0);
+
+  const progressPercentage = Math.round((totalCompletedSections / totalSections) * 100);
+
+  // Calculate total questions and correct answers
+  const totalQuestions = subjects.reduce((total, subject) => 
+    total + subject.questionsTotal, 0);
+
+  const totalCorrectAnswers = subjects.reduce((total, subject) => 
+    total + subject.questionsCorrect, 0);
+
+  const calculatePerformance = (hits: number, total: number) => {
+    return total > 0 ? Math.round((hits / total) * 100) : 0;
+  };
+
   const renderDonutChart = (percentage: number, size: number = 42) => {
     const data = [
       { name: 'Progress', value: percentage },
@@ -163,15 +158,15 @@ export const ProgressPanel = () => {
         <div>
           <div className="text-sm text-gray-600 mb-2">Questões respondidas</div>
           <div className="bg-[rgba(246,248,250,1)] p-4 rounded-[10px] text-center">
-            <div className="text-2xl font-bold text-[rgba(38,47,60,1)]">{totalCorrectAnswers}</div>
-            <div className="text-sm text-gray-600">de {totalQuestions} questões</div>
+            <div className="text-2xl font-bold text-[rgba(38,47,60,1)]">{totalQuestions}</div>
+            <div className="text-sm text-gray-600">questões totais</div>
           </div>
         </div>
         <div>
           <div className="text-sm text-gray-600 mb-2">Questões corretas</div>
           <div className="bg-[rgba(246,248,250,1)] p-4 rounded-[10px] text-center">
             <div className="text-2xl font-bold text-[rgba(38,47,60,1)]">{totalCorrectAnswers}</div>
-            <div className="text-sm text-gray-600">de {totalQuestions} questões</div>
+            <div className="text-sm text-gray-600">questões corretas</div>
           </div>
         </div>
       </div>
