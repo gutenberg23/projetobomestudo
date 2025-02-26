@@ -121,16 +121,16 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             <div className="flex items-center gap-4 flex-1">
               <div
                 onClick={toggleLessonCompletion}
-                className={`flex shrink-0 gap-2.5 self-stretch my-auto w-5 h-5 rounded border border-solid cursor-pointer ${
+                className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${
                   isLessonCompleted
-                    ? "bg-fuchsia-500 border-fuchsia-500"
-                    : "bg-white border-gray-100"
+                    ? "bg-[#F11CE3] border-[#F11CE3]"
+                    : "bg-white border border-gray-200"
                 }`}
               >
                 {isLessonCompleted && (
                   <svg
                     viewBox="0 0 14 14"
-                    fill="white"
+                    fill="none"
                     className="w-4 h-4 m-auto"
                   >
                     <path
@@ -144,10 +144,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
                 )}
               </div>
               <div onClick={toggleVideoSection} className="flex flex-col flex-1 shrink justify-center self-stretch pr-5 my-auto basis-0 min-w-60 cursor-pointer py-0">
-                <h2 className="text-2xl font-bold leading-none text-slate-800 hover:text-[#F11CE3] transition-colors md:text-2xl">
+                <h2 className="text-lg md:text-2xl font-bold leading-tight text-slate-800 hover:text-[#F11CE3] transition-colors">
                   {lesson.title}
                 </h2>
-                <p className="mt-0 md:mt-0 text-small leading-none text-slate-500 leading-none md:text-sm my-0">
+                <p className="text-xs md:text-sm leading-none text-slate-500">
                   <span className="font-semibold">No edital: </span>
                   <em>{lesson.description}</em>
                 </p>
@@ -285,3 +285,4 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     </article>
   );
 };
+

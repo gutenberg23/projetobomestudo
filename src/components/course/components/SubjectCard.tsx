@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { renderDonutChart } from '../utils/donutChart';
+
 interface SubjectCardProps {
   subject: {
     name: string;
@@ -12,24 +14,21 @@ interface SubjectCardProps {
   isExpanded: boolean;
   onToggle: () => void;
 }
+
 export const SubjectCard: React.FC<SubjectCardProps> = ({
   subject,
   isExpanded,
   onToggle
 }) => {
-  const calculatePerformance = (hits: number, total: number) => {
-    return total > 0 ? Math.round(hits / total * 100) : 0;
-  };
   return <div className="bg-[rgba(246,248,250,1)] rounded-[10px]">
       <div className="p-4 cursor-pointer" onClick={onToggle}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
-            <div className="relative">
-              {renderDonutChart(subject.progress)}
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-medium">
-                {subject.progress}%
-              </span>
-            </div>
+            <input
+              type="checkbox"
+              className="subject-checkbox w-5 h-5 rounded cursor-pointer border-gray-200 text-[#F11CE3] focus:ring-[#F11CE3]"
+              onChange={() => null} // Será gerenciado pelo ProgressPanel
+            />
             <span className="font-medium text-[rgba(38,47,60,1)]">{subject.name}</span>
           </div>
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -51,7 +50,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               <div className="font-semibold text-red-600">{subject.questionsWrong}</div>
             </div>
           </div>
-          
         </div>}
     </div>;
 };

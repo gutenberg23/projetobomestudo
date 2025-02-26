@@ -1,17 +1,22 @@
+
 import React from 'react';
+
 interface ProgressSummaryProps {
   totalCompletedSections: number;
   totalSections: number;
   progressPercentage: number;
   totalQuestions: number;
   totalCorrectAnswers: number;
+  totalWrongAnswers: number;
 }
+
 export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
   totalCompletedSections,
   totalSections,
   progressPercentage,
   totalQuestions,
-  totalCorrectAnswers
+  totalCorrectAnswers,
+  totalWrongAnswers
 }) => {
   return <>
       <div className="flex items-center gap-4">
@@ -28,8 +33,8 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
           </div>
           <div className="h-2 rounded-full bg-slate-100">
             <div className="h-full bg-[rgba(241,28,227,1)] rounded-full" style={{
-            width: `${progressPercentage}%`
-          }} />
+              width: `${progressPercentage}%`
+            }} />
           </div>
         </div>
       </div>
@@ -43,10 +48,14 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
           </div>
         </div>
         <div>
-          <div className="text-sm text-gray-600 mb-2">Questões corretas</div>
+          <div className="text-sm text-gray-600 mb-2">Aproveitamento</div>
           <div className="bg-[rgba(246,248,250,1)] p-4 rounded-[10px] text-center">
-            <div className="text-2xl font-bold text-[rgba(38,47,60,1)]">{totalCorrectAnswers}</div>
-            <div className="text-sm text-gray-600">questões corretas</div>
+            <div className="flex items-center justify-center gap-1">
+              <span className="text-2xl font-bold text-[rgba(38,47,60,1)]">{totalCorrectAnswers}</span>
+              <span className="text-gray-400">/</span>
+              <span className="text-base text-gray-400">{totalWrongAnswers}</span>
+            </div>
+            <div className="text-sm text-gray-600">questões corretas/erradas</div>
           </div>
         </div>
       </div>

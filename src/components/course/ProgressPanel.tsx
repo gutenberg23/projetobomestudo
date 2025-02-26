@@ -1,12 +1,13 @@
-
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ProgressSummary } from "./components/ProgressSummary";
 import { SubjectCard } from "./components/SubjectCard";
 
 export const ProgressPanel = () => {
   const [expandedSubject, setExpandedSubject] = React.useState<string | null>(null);
+  const [completedLessons, setCompletedLessons] = useState<number>(0);
+  const [totalLessons, setTotalLessons] = useState<number>(0);
 
   const subjects = [{
     name: "Língua Portuguesa",
@@ -80,21 +81,26 @@ export const ProgressPanel = () => {
     questionsWrong: 35
   }];
 
-  // Calcula totais com base nos dados das questões
-  const totalSections = subjects.reduce((total, subject) => total + 1, 0);
-  const totalCompletedSections = subjects.reduce(
-    (total, subject) => total + (subject.progress >= 100 ? 1 : 0),
-    0
-  );
-  const progressPercentage = Math.round((totalCompletedSections / totalSections) * 100);
+  useEffect(() => {
+    const allCheckboxes = document.querySelectorAll('.subject-checkbox:checked');
+    setCompletedLessons(allCheckboxes.length);
+    
+    const totalAvailableLessons = subjects.reduce((acc, subject) => acc + 1, 0);
+    setTotalLessons(totalAvailableLessons);
+  }, [subjects]);
 
-  // Calcula total de questões e respostas corretas
+  const progressPercentage = Math.round((completedLessons / totalLessons) * 100);
+
   const totalQuestions = subjects.reduce(
     (total, subject) => total + subject.questionsTotal,
     0
   );
   const totalCorrectAnswers = subjects.reduce(
     (total, subject) => total + subject.questionsCorrect,
+    0
+  );
+  const totalWrongAnswers = subjects.reduce(
+    (total, subject) => total + subject.questionsWrong,
     0
   );
 
@@ -105,11 +111,12 @@ export const ProgressPanel = () => {
       </h2>
 
       <ProgressSummary
-        totalCompletedSections={totalCompletedSections}
-        totalSections={totalSections}
+        totalCompletedSections={completedLessons}
+        totalSections={totalLessons}
         progressPercentage={progressPercentage}
         totalQuestions={totalQuestions}
         totalCorrectAnswers={totalCorrectAnswers}
+        totalWrongAnswers={totalWrongAnswers}
       />
 
       <div className="space-y-2">
