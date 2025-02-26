@@ -650,7 +650,7 @@ export const SubjectsList = () => {
               </div>
             </div>
           </div>
-          {expandedSubject === subject.name && <div className="px-4 md:px-10 pb-8">
+          {expandedSubject === subject.name && <div className="px-4 pb-8 md:px-[15px]">
               {subject.lessons.map(lesson => <LessonCard key={lesson.id} lesson={{
           id: lesson.id,
           title: lesson.title,
