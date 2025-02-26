@@ -1,4 +1,3 @@
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportanceStars } from "./ImportanceStars";
 import { cn } from "@/lib/utils";
@@ -30,15 +29,7 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
           <span className="text-xs md:text-sm">{subjectProgress}%</span>
         </div>
       </div>
-      <div className="border border-gray-200 rounded-b-lg overflow-x-auto
-        [&::-webkit-scrollbar]:w-2
-        [&::-webkit-scrollbar]:h-2
-        [&::-webkit-scrollbar-track]:bg-slate-100
-        [&::-webkit-scrollbar-track]:rounded-full
-        [&::-webkit-scrollbar-thumb]:bg-slate-300
-        [&::-webkit-scrollbar-thumb]:rounded-full
-        [&::-webkit-scrollbar-thumb]:hover:bg-slate-400
-      ">
+      <div className="border border-gray-200 rounded-b-lg overflow-x-auto">
         <table className="w-full min-w-[1000px]">
           <thead className="bg-gray-50">
             <tr className="text-sm text-gray-600">
@@ -124,7 +115,13 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
                   {calculatePerformance(topic.hits, topic.exercisesDone)}%
                 </td>
                 <td className="py-3 px-4">
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={topic.isReviewed}
+                      onChange={(e) => onTopicChange(subject.id, topic.id, 'isReviewed', e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-[#F11CE3] focus:ring-[#F11CE3]"
+                    />
                     <input
                       type="checkbox"
                       checked={topic.isReviewed}

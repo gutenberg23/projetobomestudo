@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { Subject } from "../types/editorialized";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { ChartBar, ChartPie, ChartBarStacked } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
 
@@ -13,7 +12,7 @@ interface StatisticsCardProps {
 export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
   const [selectedSubject, setSelectedSubject] = React.useState<string>(subjects[0]?.name || "");
 
-  // Dados para o gráfico de radar
+  // Data for radar chart
   const radarData = subjects.map(subject => {
     const totalHits = subject.topics.reduce((acc, topic) => acc + topic.hits, 0);
     const totalExercises = subject.topics.reduce((acc, topic) => acc + topic.exercisesDone, 0);
@@ -25,7 +24,7 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
     };
   });
 
-  // Dados para o gráfico de rosca
+  // Data for donut chart
   const totalTopics = subjects.reduce((acc, subject) => acc + subject.topics.length, 0);
   const completedTopics = subjects.reduce((acc, subject) => 
     acc + subject.topics.filter(topic => topic.isDone).length, 0);
@@ -34,9 +33,9 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
     { name: 'Concluído', value: progressPercentage },
     { name: 'Pendente', value: 100 - progressPercentage }
   ];
-  const COLORS = ['#4CAF50', '#E0E0E0'];
+  const COLORS = ['#54cd5d', '#E0E0E0'];
 
-  // Dados para o gráfico de barras empilhadas
+  // Data for stacked bar chart
   const selectedSubjectData = subjects.find(s => s.name === selectedSubject)?.topics.map(topic => ({
     name: topic.name.substring(0, 20) + "...",
     acertos: topic.hits,
@@ -44,17 +43,17 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
   })) || [];
 
   return (
-    <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
-      <ChartBarStacked className="w-5 h-5" />
-      <HoverCard>
-        <HoverCardTrigger className="cursor-pointer hover:text-gray-900">
-          Minhas Estatísticas
-        </HoverCardTrigger>
-        <HoverCardContent className="w-[800px] p-6 bg-white shadow-lg rounded-xl border">
+    <div className="flex items-center mt-2 text-sm text-gray-600">
+      <Dialog>
+        <DialogTrigger asChild>
+          <button className="hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors">
+            Minhas Estatísticas
+          </button>
+        </DialogTrigger>
+        <DialogContent className="w-[800px] max-w-[90vw] p-6 bg-[#F1F1F1] rounded-[10px]">
           <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <h3 className="font-semibold flex items-center gap-2">
-                <ChartBar className="w-5 h-5" />
+            <div className="bg-white p-4 rounded-[10px]">
+              <h3 className="font-semibold text-center mb-4">
                 Aproveitamento por Disciplina
               </h3>
               <div className="h-[300px]">
@@ -75,9 +74,8 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <h3 className="font-semibold flex items-center gap-2">
-                <ChartPie className="w-5 h-5" />
+            <div className="bg-white p-4 rounded-[10px]">
+              <h3 className="font-semibold text-center mb-4">
                 Progresso Geral
               </h3>
               <div className="h-[300px]">
@@ -101,10 +99,9 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
               </div>
             </div>
 
-            <div className="col-span-2 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <ChartBarStacked className="w-5 h-5" />
+            <div className="col-span-2 bg-white p-4 rounded-[10px]">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-center flex-1">
                   Distribuição de Acertos e Erros por Tópico
                 </h3>
                 <Select value={selectedSubject} onValueChange={setSelectedSubject}>
@@ -127,15 +124,15 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="acertos" stackId="a" fill="#4CAF50" name="Acertos" />
-                    <Bar dataKey="erros" stackId="a" fill="#FF5252" name="Erros" />
+                    <Bar dataKey="acertos" stackId="a" fill="#54cd5d" name="Acertos" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="erros" stackId="a" fill="#e33e4e" name="Erros" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
           </div>
-        </HoverCardContent>
-      </HoverCard>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
