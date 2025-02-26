@@ -24,32 +24,34 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
 
+  // Atualiza a altura do vídeo e verifica o scroll quando o componente é montado
+  // ou quando a seção de vídeo é mostrada/escondida
   useEffect(() => {
-    const updateVideoHeight = () => {
+    const updateLayout = () => {
       if (videoRef.current) {
         setVideoHeight(videoRef.current.offsetHeight);
       }
+      checkScroll();
     };
 
-    updateVideoHeight();
-    window.addEventListener('resize', updateVideoHeight);
+    // Executa imediatamente e após um pequeno delay para garantir que o DOM foi atualizado
+    updateLayout();
+    const timeoutId = setTimeout(updateLayout, 100);
 
-    return () => window.removeEventListener('resize', updateVideoHeight);
-  }, []);
+    window.addEventListener('resize', updateLayout);
 
-  useEffect(() => {
-    const checkScroll = () => {
-      if (sectionsContainerRef.current) {
-        const { scrollWidth, clientWidth } = sectionsContainerRef.current;
-        setHasHorizontalScroll(scrollWidth > clientWidth);
-      }
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      clearTimeout(timeoutId);
     };
+  }, [isVideoSectionVisible]);
 
-    checkScroll();
-    window.addEventListener('resize', checkScroll);
-
-    return () => window.removeEventListener('resize', checkScroll);
-  }, []);
+  const checkScroll = () => {
+    if (sectionsContainerRef.current) {
+      const { scrollWidth, clientWidth } = sectionsContainerRef.current;
+      setHasHorizontalScroll(scrollWidth > clientWidth);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -214,4 +216,3 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
     </article>
   );
 };
-
