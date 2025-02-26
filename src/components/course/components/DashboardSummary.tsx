@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -22,7 +23,7 @@ interface DashboardSummaryProps {
   subjects: Subject[];
 }
 
-const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
+const StatisticsCard = ({ subjects }: { subjects: Subject[] }) => {
   const [selectedSubject, setSelectedSubject] = React.useState<string>(subjects[0]?.name || "");
 
   // Dados para o gráfico de radar
