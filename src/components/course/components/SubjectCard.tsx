@@ -20,10 +20,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   isExpanded,
   onToggle
 }) => {
+  const progressPercentage = Math.round((subject.questionsCorrect / subject.questionsTotal) * 100) || 0;
+
   return <div className="bg-[rgba(246,248,250,1)] rounded-[10px]">
       <div className="p-4 cursor-pointer" onClick={onToggle}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
+            <div className="w-10 h-10">
+              {renderDonutChart(progressPercentage)}
+            </div>
             <span className="font-medium text-[rgba(38,47,60,1)]">{subject.name}</span>
           </div>
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -48,3 +53,4 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         </div>}
     </div>;
 };
+

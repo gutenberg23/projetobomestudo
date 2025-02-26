@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { Question } from "./types";
+import { renderDonutChart } from "../course/utils/donutChart";
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -127,6 +128,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     );
   };
 
+  const progressPercentage = Math.round((disabledOptions.filter(optionId => 
+    question.options.find(opt => opt.id === optionId)?.isCorrect
+  ).length / disabledOptions.length) * 100) || 0;
+
   const renderCheckbox = (isChecked: boolean) => (
     <div
       className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${
@@ -159,8 +164,13 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         <div className="flex justify-between px-5 w-full min-h-[70px]">
           <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
             <div className="flex items-center gap-4 flex-1">
-              <div onClick={toggleLessonCompletion}>
-                {renderCheckbox(isLessonCompleted)}
+              <div className="flex flex-col items-center gap-2">
+                <div onClick={toggleLessonCompletion}>
+                  {renderCheckbox(isLessonCompleted)}
+                </div>
+                <div className="w-8 h-8">
+                  {renderDonutChart(progressPercentage)}
+                </div>
               </div>
               <div onClick={toggleVideoSection} className="flex flex-col flex-1 shrink justify-center self-stretch pr-5 my-auto basis-0 min-w-60 cursor-pointer py-0">
                 <h2 className="text-lg md:text-2xl font-bold leading-tight text-slate-800 hover:text-[#F11CE3] transition-colors">

@@ -66,3 +66,4 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
       </div>
     </>;
 };
+
