@@ -1,6 +1,4 @@
-
 import React from 'react';
-
 interface ProgressSummaryProps {
   totalCompletedSections: number;
   totalSections: number;
@@ -8,16 +6,14 @@ interface ProgressSummaryProps {
   totalQuestions: number;
   totalCorrectAnswers: number;
 }
-
 export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
   totalCompletedSections,
   totalSections,
   progressPercentage,
   totalQuestions,
-  totalCorrectAnswers,
+  totalCorrectAnswers
 }) => {
-  return (
-    <>
+  return <>
       <div className="flex items-center gap-4">
         <div className="bg-[rgba(246,248,250,1)] flex items-center gap-2.5 px-5 py-4 rounded-[10px]">
           <span className="text-xl text-[rgba(241,28,227,1)]">
@@ -30,11 +26,10 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
           <div className="flex justify-between text-sm text-gray-600 mb-2">
             <span>Aulas assistidas: {totalCompletedSections}/{totalSections}</span>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full">
-            <div 
-              className="h-full bg-[rgba(241,28,227,1)] rounded-full" 
-              style={{ width: `${progressPercentage}%` }}
-            />
+          <div className="h-2 rounded-full bg-slate-100">
+            <div className="h-full bg-[rgba(241,28,227,1)] rounded-full" style={{
+            width: `${progressPercentage}%`
+          }} />
           </div>
         </div>
       </div>
@@ -55,6 +50,5 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
           </div>
         </div>
       </div>
-    </>
-  );
+    </>;
 };
