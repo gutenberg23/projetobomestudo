@@ -1,23 +1,21 @@
-
 import React from 'react';
 import { Subject } from "../types/editorialized";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
-
 interface StatisticsCardProps {
   subjects: Subject[];
 }
-
-export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
+export const StatisticsCard = ({
+  subjects
+}: StatisticsCardProps) => {
   const [selectedSubject, setSelectedSubject] = React.useState<string>(subjects[0]?.name || "");
 
   // Data for radar chart
   const radarData = subjects.map(subject => {
     const totalHits = subject.topics.reduce((acc, topic) => acc + topic.hits, 0);
     const totalExercises = subject.topics.reduce((acc, topic) => acc + topic.exercisesDone, 0);
-    const performance = totalExercises > 0 ? Math.round((totalHits / totalExercises) * 100) : 0;
-
+    const performance = totalExercises > 0 ? Math.round(totalHits / totalExercises * 100) : 0;
     return {
       subject: subject.name,
       value: performance
@@ -26,13 +24,15 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
 
   // Data for donut chart
   const totalTopics = subjects.reduce((acc, subject) => acc + subject.topics.length, 0);
-  const completedTopics = subjects.reduce((acc, subject) => 
-    acc + subject.topics.filter(topic => topic.isDone).length, 0);
-  const progressPercentage = Math.round((completedTopics / totalTopics) * 100);
-  const donutData = [
-    { name: 'Concluído', value: progressPercentage },
-    { name: 'Pendente', value: 100 - progressPercentage }
-  ];
+  const completedTopics = subjects.reduce((acc, subject) => acc + subject.topics.filter(topic => topic.isDone).length, 0);
+  const progressPercentage = Math.round(completedTopics / totalTopics * 100);
+  const donutData = [{
+    name: 'Concluído',
+    value: progressPercentage
+  }, {
+    name: 'Pendente',
+    value: 100 - progressPercentage
+  }];
   const COLORS = ['#54cd5d', '#E0E0E0'];
 
   // Data for stacked bar chart
@@ -41,16 +41,14 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
     acertos: topic.hits,
     erros: topic.exercisesDone - topic.hits
   })) || [];
-
-  return (
-    <div className="flex items-center mt-2 text-sm text-gray-600">
+  return <div className="flex items-center mt-2 text-sm text-gray-600">
       <Dialog>
         <DialogTrigger asChild>
           <button className="hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-md transition-colors">
             Minhas Estatísticas
           </button>
         </DialogTrigger>
-        <DialogContent className="w-[800px] max-w-[90vw] p-6 bg-[#F1F1F1] rounded-[10px]">
+        <DialogContent className="w-[800px] max-w-[90vw] p-6 rounded-[10px] bg-[#f6f8fa]">
           <div className="grid grid-cols-2 gap-6">
             <div className="bg-white p-4 rounded-[10px]">
               <h3 className="font-semibold text-center mb-4">
@@ -61,13 +59,7 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
                   <RadarChart data={radarData}>
                     <PolarGrid />
                     <PolarAngleAxis dataKey="subject" />
-                    <Radar
-                      name="Aproveitamento"
-                      dataKey="value"
-                      stroke="#8884d8"
-                      fill="#8884d8"
-                      fillOpacity={0.6}
-                    />
+                    <Radar name="Aproveitamento" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
                     <Tooltip />
                   </RadarChart>
                 </ResponsiveContainer>
@@ -81,16 +73,8 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
-                      data={donutData}
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {donutData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
+                    <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                      {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
                     <Tooltip />
                     <Legend />
@@ -109,11 +93,9 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
                     <SelectValue placeholder="Selecione uma disciplina" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjects.map((subject) => (
-                      <SelectItem key={subject.id} value={subject.name}>
+                    {subjects.map(subject => <SelectItem key={subject.id} value={subject.name}>
                         {subject.name}
-                      </SelectItem>
-                    ))}
+                      </SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -133,7 +115,5 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 };
-
