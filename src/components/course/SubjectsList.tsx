@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { LessonCard } from "../new/LessonCard";
-
 interface Subject {
   name: string;
   rating: number;
@@ -38,7 +37,6 @@ interface Subject {
     };
   }>;
 }
-
 const subjects: Subject[] = [{
   name: "Língua Portuguesa",
   rating: 10,
@@ -630,22 +628,14 @@ const subjects: Subject[] = [{
     }
   }]
 }];
-
 export const SubjectsList = () => {
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
-
   const toggleExpand = (subjectName: string) => {
     setExpandedSubject(expandedSubject === subjectName ? null : subjectName);
   };
-
-  return (
-    <div className="bg-white rounded-[10px]">
-      {subjects.map((subject) => (
-        <div key={subject.name} className="border-b border-[rgba(239,239,239,1)]">
-          <div 
-            className="flex min-h-[90px] w-full items-stretch justify-between px-4 md:px-10 cursor-pointer"
-            onClick={() => toggleExpand(subject.name)}
-          >
+  return <div className="bg-white rounded-[10px]">
+      {subjects.map(subject => <div key={subject.name} className="border-b border-[rgba(239,239,239,1)]">
+          <div onClick={() => toggleExpand(subject.name)} className="flex min-h-[90px] w-full items-stretch justify-between px-4 cursor-pointer md:px-[15px]">
             <div className="flex min-w-60 w-full items-center justify-between my-0">
               <h2 className="text-xl md:text-[28px] text-[rgba(38,47,60,1)] leading-none w-full mr-5 py-1 font-bold">
                 {subject.name}
@@ -656,33 +646,19 @@ export const SubjectsList = () => {
                     {subject.rating}
                   </div>
                 </div>
-                {expandedSubject === subject.name ? (
-                  <ChevronUp className="w-6 h-6 text-slate-400" />
-                ) : (
-                  <ChevronDown className="w-6 h-6 text-slate-400" />
-                )}
+                {expandedSubject === subject.name ? <ChevronUp className="w-6 h-6 text-slate-400" /> : <ChevronDown className="w-6 h-6 text-slate-400" />}
               </div>
             </div>
           </div>
-          {expandedSubject === subject.name && (
-            <div className="px-4 md:px-10 pb-8">
-              {subject.lessons.map((lesson) => (
-                <LessonCard
-                  key={lesson.id}
-                  lesson={{
-                    id: lesson.id,
-                    title: lesson.title,
-                    description: lesson.description,
-                    rating: lesson.rating,
-                    sections: lesson.sections
-                  }}
-                  question={lesson.question}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
+          {expandedSubject === subject.name && <div className="px-4 md:px-10 pb-8">
+              {subject.lessons.map(lesson => <LessonCard key={lesson.id} lesson={{
+          id: lesson.id,
+          title: lesson.title,
+          description: lesson.description,
+          rating: lesson.rating,
+          sections: lesson.sections
+        }} question={lesson.question} />)}
+            </div>}
+        </div>)}
+    </div>;
 };
