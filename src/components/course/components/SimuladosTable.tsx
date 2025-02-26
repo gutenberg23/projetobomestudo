@@ -11,6 +11,10 @@ interface Simulado {
   errors: number;
 }
 
+interface SimuladosTableProps {
+  performanceGoal: number;
+}
+
 const simulados: Simulado[] = [
   {
     id: 1,
@@ -30,7 +34,7 @@ const simulados: Simulado[] = [
   },
 ];
 
-export const SimuladosTable = () => {
+export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
   const calculatePerformance = (hits: number, total: number) => {
     return Math.round((hits / total) * 100);
   };
@@ -72,7 +76,7 @@ export const SimuladosTable = () => {
                 <td className="py-3 px-4 text-center">{simulado.errors}</td>
                 <td className={cn(
                   "py-3 px-4 text-center",
-                  calculatePerformance(simulado.hits, simulado.questionsCount) < 70 ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
+                  calculatePerformance(simulado.hits, simulado.questionsCount) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
                 )}>
                   {calculatePerformance(simulado.hits, simulado.questionsCount)}%
                 </td>
@@ -85,7 +89,7 @@ export const SimuladosTable = () => {
               <td className="py-3 px-4 text-center">{totals.errors}</td>
               <td className={cn(
                 "py-3 px-4 text-center",
-                calculatePerformance(totals.hits, totals.questionsCount) < 70 ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
+                calculatePerformance(totals.hits, totals.questionsCount) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
               )}>
                 {calculatePerformance(totals.hits, totals.questionsCount)}%
               </td>

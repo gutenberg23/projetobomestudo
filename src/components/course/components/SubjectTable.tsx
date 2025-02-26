@@ -18,10 +18,7 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
   return (
     <div className="mb-8 last:mb-0">
       <div className="flex items-center justify-between bg-[#9747FF] text-white p-3 rounded-t-lg">
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-white/20 rounded" />
-          <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
-        </div>
+        <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
         <div className="flex items-center gap-3">
           <div className="w-16 md:w-24 h-2 bg-white/20 rounded-full overflow-hidden">
             <div
