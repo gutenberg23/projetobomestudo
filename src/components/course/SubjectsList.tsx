@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { LessonCard } from "../new/LessonCard";
@@ -60,6 +59,14 @@ const subjects: Subject[] = [{
       id: "3",
       title: "Tema e ideia principal",
       isActive: false
+    }, {
+      id: "4",
+      title: "Distinção de fato e opinião",
+      isActive: false
+    }, {
+      id: "5",
+      title: "Relações de coesão e coerência",
+      isActive: false
     }],
     question: {
       id: "1",
@@ -113,7 +120,15 @@ const subjects: Subject[] = [{
       isActive: false
     }, {
       id: "3",
-      title: "Permutações",
+      title: "Permutações Simples",
+      isActive: false
+    }, {
+      id: "4",
+      title: "Permutações com Repetição",
+      isActive: false
+    }, {
+      id: "5",
+      title: "Combinações Simples",
       isActive: false
     }],
     question: {
@@ -170,6 +185,14 @@ const subjects: Subject[] = [{
       id: "3",
       title: "Aplicabilidade",
       isActive: false
+    }, {
+      id: "4",
+      title: "Direitos Individuais",
+      isActive: false
+    }, {
+      id: "5",
+      title: "Direitos Coletivos",
+      isActive: false
     }],
     question: {
       id: "3",
@@ -219,11 +242,19 @@ const subjects: Subject[] = [{
       isActive: true
     }, {
       id: "2",
-      title: "Atributos",
+      title: "Atributos e Presunção de Legitimidade",
       isActive: false
     }, {
       id: "3",
-      title: "Classificação",
+      title: "Imperatividade",
+      isActive: false
+    }, {
+      id: "4",
+      title: "Autoexecutoriedade",
+      isActive: false
+    }, {
+      id: "5",
+      title: "Classificação dos Atos",
       isActive: false
     }],
     question: {
@@ -274,11 +305,19 @@ const subjects: Subject[] = [{
       isActive: true
     }, {
       id: "2",
-      title: "Limitações",
+      title: "Limitações Constitucionais",
       isActive: false
     }, {
       id: "3",
       title: "Competência Tributária",
+      isActive: false
+    }, {
+      id: "4",
+      title: "Impostos da União",
+      isActive: false
+    }, {
+      id: "5",
+      title: "Impostos Estaduais e Municipais",
       isActive: false
     }],
     question: {
@@ -647,4 +686,3 @@ export const SubjectsList = () => {
     </div>
   );
 };
-

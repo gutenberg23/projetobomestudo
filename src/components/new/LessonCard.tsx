@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import type { Lesson } from "./types";
@@ -90,15 +91,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
     );
   };
 
-  const extendedSections = [
-    ...lesson.sections,
-    ...lesson.sections.map(section => ({
-      ...section,
-      id: section.id + "_extra",
-      title: section.title + " (Extra)",
-    }))
-  ];
-
   return (
     <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <header className="flex flex-col justify-center py-4 md:py-8 w-full bg-white rounded-xl border-b border-gray-100">
@@ -139,9 +131,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
         <div className="bg-white pb-5">
           <div className={`flex px-4 md:px-10 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
             <div className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-0 md:pr-5`}>
-              <div ref={videoRef} className="aspect-video bg-slate-200 rounded-xl mb-5">
+              <div ref={videoRef} className="aspect-video bg-slate-200 rounded-xl">
                 <div className="w-full h-full flex items-center justify-center text-slate-500">
-                  Vídeo da aula: {extendedSections.find(s => s.id === selectedSection)?.title}
+                  Vídeo da aula: {lesson.sections.find(s => s.id === selectedSection)?.title}
                 </div>
               </div>
             </div>
@@ -163,7 +155,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
                 `}
               >
                 <ul className={`flex gap-2.5 ${hasHorizontalScroll ? 'flex-row' : 'flex-col'}`}>
-                  {extendedSections.map((section) => (
+                  {lesson.sections.map((section) => (
                     <li key={section.id} className={hasHorizontalScroll ? 'min-w-[300px]' : ''}>
                       <button
                         onClick={() => handleSectionClick(section.id)}
@@ -222,3 +214,4 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
     </article>
   );
 };
+
