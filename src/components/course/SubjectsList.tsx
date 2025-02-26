@@ -630,7 +630,13 @@ export const SubjectsList = () => {
               {subject.lessons.map((lesson) => (
                 <LessonCard
                   key={lesson.id}
-                  lesson={lesson}
+                  lesson={{
+                    id: lesson.id,
+                    title: lesson.title,
+                    description: lesson.description,
+                    rating: lesson.rating,
+                    sections: lesson.sections
+                  }}
                   question={lesson.question}
                 />
               ))}
@@ -641,3 +647,4 @@ export const SubjectsList = () => {
     </div>
   );
 };
+
