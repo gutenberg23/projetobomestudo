@@ -107,7 +107,7 @@ export const DashboardSummary = ({
               </div>
               <Progress value={100} className="h-2" />
             </div>
-            <div className="p-4 bg-[#F1F1F1] rounded-[10px]">
+            <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Questões Respondidas</span>
