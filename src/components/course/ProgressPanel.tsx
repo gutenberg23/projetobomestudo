@@ -5,17 +5,36 @@ import { ProgressSummary } from "./components/ProgressSummary";
 import { SubjectCard } from "./components/SubjectCard";
 
 export const ProgressPanel = () => {
-  const [expandedSubject, setExpandedSubject] = React.useState<string | null>(null);
+  const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
   const [completedLessons, setCompletedLessons] = useState<number>(0);
   const [totalLessons, setTotalLessons] = useState<number>(0);
+  const [answeredQuestions, setAnsweredQuestions] = useState<number>(0);
+  const [correctAnswers, setCorrectAnswers] = useState<number>(0);
+
+  useEffect(() => {
+    const handleProgressUpdate = (event: CustomEvent) => {
+      const { completedSections, totalSections, answeredQuestions, correctAnswers } = event.detail;
+      setCompletedLessons(completedSections);
+      setTotalLessons(totalSections);
+      setAnsweredQuestions(answeredQuestions);
+      setCorrectAnswers(correctAnswers);
+    };
+
+    window.addEventListener('progressUpdate', handleProgressUpdate as EventListener);
+    return () => {
+      window.removeEventListener('progressUpdate', handleProgressUpdate as EventListener);
+    };
+  }, []);
+
+  const progressPercentage = Math.round((completedLessons / totalLessons) * 100) || 0;
 
   const subjects = [{
     name: "Língua Portuguesa",
     rating: 10,
     progress: 75,
-    questionsTotal: 100,
-    questionsCorrect: 75,
-    questionsWrong: 25
+    questionsTotal: answeredQuestions,
+    questionsCorrect: correctAnswers,
+    questionsWrong: answeredQuestions - correctAnswers
   }, {
     name: "Matemática",
     rating: 10,
@@ -81,29 +100,6 @@ export const ProgressPanel = () => {
     questionsWrong: 35
   }];
 
-  useEffect(() => {
-    const allCheckboxes = document.querySelectorAll('.subject-checkbox:checked');
-    setCompletedLessons(allCheckboxes.length);
-    
-    const totalAvailableLessons = subjects.reduce((acc, subject) => acc + 1, 0);
-    setTotalLessons(totalAvailableLessons);
-  }, [subjects]);
-
-  const progressPercentage = Math.round((completedLessons / totalLessons) * 100);
-
-  const totalQuestions = subjects.reduce(
-    (total, subject) => total + subject.questionsTotal,
-    0
-  );
-  const totalCorrectAnswers = subjects.reduce(
-    (total, subject) => total + subject.questionsCorrect,
-    0
-  );
-  const totalWrongAnswers = subjects.reduce(
-    (total, subject) => total + subject.questionsWrong,
-    0
-  );
-
   return (
     <div className="bg-white rounded-[10px] space-y-4 p-5">
       <h2 className="text-2xl font-bold text-[rgba(38,47,60,1)]">
@@ -114,10 +110,18 @@ export const ProgressPanel = () => {
         totalCompletedSections={completedLessons}
         totalSections={totalLessons}
         progressPercentage={progressPercentage}
-        totalQuestions={totalQuestions}
-        totalCorrectAnswers={totalCorrectAnswers}
-        totalWrongAnswers={totalWrongAnswers}
+        totalQuestions={answeredQuestions}
+        totalCorrectAnswers={correctAnswers}
+        totalWrongAnswers={answeredQuestions - correctAnswers}
       />
+
+      {progressPercentage === 100 && (
+        <button 
+          className="w-full bg-[#F11CE3] text-white py-3 rounded-xl font-medium hover:bg-[#D10AC1] transition-colors"
+        >
+          Imprimir Certificado
+        </button>
+      )}
 
       <div className="space-y-2">
         {subjects.map(subject => (
