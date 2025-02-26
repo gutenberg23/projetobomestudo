@@ -6,12 +6,10 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { Question } from "./types";
-
 interface LessonCardProps {
   lesson: Lesson;
   question: Question;
 }
-
 export const LessonCard: React.FC<LessonCardProps> = ({
   lesson,
   question
@@ -26,7 +24,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const videoRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
-
   useEffect(() => {
     const updateLayout = () => {
       if (videoRef.current) {
@@ -42,7 +39,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       clearTimeout(timeoutId);
     };
   }, [isVideoSectionVisible]);
-
   const checkScroll = () => {
     if (sectionsContainerRef.current) {
       const {
@@ -52,7 +48,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       setHasHorizontalScroll(scrollWidth > clientWidth);
     }
   };
-
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -62,16 +57,13 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
   const handleSectionClick = (sectionId: string) => {
     setSelectedSection(sectionId);
   };
-
   const toggleCompletion = (sectionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setCompletedSections(prev => prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]);
   };
-
   const toggleVideoSection = () => {
     setIsVideoSectionVisible(!isVideoSectionVisible);
     if (!isVideoSectionVisible && cardRef.current) {
@@ -81,12 +73,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       });
     }
   };
-
   const toggleOptionDisabled = (optionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setDisabledOptions(prev => prev.includes(optionId) ? prev.filter(id => id !== optionId) : [...prev, optionId]);
   };
-
   return <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <header className={`flex flex-col justify-center py-3 md:py-6 w-full bg-white ${isVideoSectionVisible ? 'border-b border-gray-100 rounded-t-xl' : 'rounded-xl'}`}>
         <div className="flex justify-between px-5 w-full min-h-[70px]">
@@ -112,7 +102,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         </div>
       </header>
 
-      {isVideoSectionVisible && <div className="bg-white pb-5">
+      {isVideoSectionVisible && <div className="bg-white pb-5 rounded-lg">
           <div className={`flex px-5 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
             <div className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-0 md:pr-5`}>
               <div ref={videoRef} className="aspect-video bg-slate-200 rounded-xl">
