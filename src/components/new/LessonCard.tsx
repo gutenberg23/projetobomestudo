@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import type { Lesson } from "./types";
@@ -15,12 +14,13 @@ interface LessonCardProps {
 export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
   const [selectedSection, setSelectedSection] = useState(lesson.sections[0].id);
   const [completedSections, setCompletedSections] = useState<string[]>([]);
-  const [isVideoSectionVisible, setIsVideoSectionVisible] = useState(true);
+  const [isVideoSectionVisible, setIsVideoSectionVisible] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
   const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
   const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
 
   useEffect(() => {
@@ -76,6 +76,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
 
   const toggleVideoSection = () => {
     setIsVideoSectionVisible(!isVideoSectionVisible);
+    if (!isVideoSectionVisible && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   const toggleOptionDisabled = (optionId: string, event: React.MouseEvent) => {
@@ -97,7 +100,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
   ];
 
   return (
-    <article className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
+    <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <header className="flex flex-col justify-center py-4 md:py-8 w-full bg-white rounded-xl border-b border-gray-100">
         <div className="flex justify-between px-4 md:px-10 w-full min-h-[90px]">
           <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
@@ -219,4 +222,3 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
     </article>
   );
 };
-

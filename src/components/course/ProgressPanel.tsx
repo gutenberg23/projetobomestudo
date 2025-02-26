@@ -76,20 +76,20 @@ export const ProgressPanel = () => {
   return (
     <div className="bg-white rounded-[10px] space-y-4 p-5">
       <h2 className="text-2xl font-bold text-[rgba(38,47,60,1)]">
-        Seu progresso
+        Meu Progresso
       </h2>
 
       <div className="flex items-center gap-4">
         <div className="bg-[rgba(246,248,250,1)] flex items-center gap-2.5 px-5 py-4 rounded-[10px]">
           <span className="text-xl text-[rgba(241,28,227,1)]">
             <div className="bg-white border min-h-[42px] w-14 flex items-center justify-center px-2.5 py-[9px] rounded-[10px] border-[rgba(241,28,227,1)] text-center">
-              {overallProgress}
+              {overallProgress}%
             </div>
           </span>
         </div>
         <div className="flex-1">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Total de questões: {totalQuestions}</span>
+            <span>Aulas assistidas: 69/100</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full">
             <div 
