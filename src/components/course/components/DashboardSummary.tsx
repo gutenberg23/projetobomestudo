@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -14,12 +15,14 @@ interface DashboardSummaryProps {
   overallStats: OverallStats;
   performanceGoal: number;
   setPerformanceGoal: (value: number) => void;
+  activeTab: string;
 }
 
 export const DashboardSummary = ({
   overallStats,
   performanceGoal,
-  setPerformanceGoal
+  setPerformanceGoal,
+  activeTab
 }: DashboardSummaryProps) => {
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
@@ -73,41 +76,87 @@ export const DashboardSummary = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 bg-white rounded-lg shadow">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-gray-600">Evolução Geral</span>
-            <span className="font-semibold">{overallProgress}%</span>
-          </div>
-          <Progress value={overallProgress} className="h-2" />
-        </div>
-        <div className="p-4 bg-white rounded-lg shadow">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Aulas Concluídas</span>
-              <span className="font-semibold">{overallStats.completedTopics}/{overallStats.totalTopics}</span>
+        {activeTab === 'edital' ? (
+          <>
+            <div className="p-4 bg-white rounded-lg shadow">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600">Evolução Geral</span>
+                <span className="font-semibold">{overallProgress}%</span>
+              </div>
+              <Progress value={overallProgress} className="h-2" />
             </div>
-            {daysUntilExam !== null && <div className="flex justify-between">
-                <span className="text-gray-600">Dias até a prova</span>
-                <span className="font-semibold text-blue-600">{daysUntilExam}</span>
-              </div>}
-          </div>
-        </div>
-        <div className="p-4 bg-white rounded-lg shadow">
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Acertos</span>
-              <span className="font-semibold text-green-600">{overallStats.totalHits}</span>
+            <div className="p-4 bg-white rounded-lg shadow">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Aulas Concluídas</span>
+                  <span className="font-semibold">{overallStats.completedTopics}/{overallStats.totalTopics}</span>
+                </div>
+                {daysUntilExam !== null && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Dias até a prova</span>
+                    <span className="font-semibold text-blue-600">{daysUntilExam}</span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Erros</span>
-              <span className="font-semibold text-red-600">{overallStats.totalErrors}</span>
+            <div className="p-4 bg-white rounded-lg shadow">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Acertos</span>
+                  <span className="font-semibold text-green-600">{overallStats.totalHits}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Erros</span>
+                  <span className="font-semibold text-red-600">{overallStats.totalErrors}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Aproveitamento</span>
+                  <span className="font-semibold">{overallPerformance}%</span>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Aproveitamento</span>
-              <span className="font-semibold">{overallPerformance}%</span>
+          </>
+        ) : (
+          <>
+            <div className="p-4 bg-white rounded-lg shadow">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600">Simulados Realizados</span>
+                <span className="font-semibold">2</span>
+              </div>
+              <Progress value={100} className="h-2" />
             </div>
-          </div>
-        </div>
+            <div className="p-4 bg-white rounded-lg shadow">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Questões Respondidas</span>
+                  <span className="font-semibold">150</span>
+                </div>
+                {daysUntilExam !== null && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Dias até a prova</span>
+                    <span className="font-semibold text-blue-600">{daysUntilExam}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="p-4 bg-white rounded-lg shadow">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Acertos</span>
+                  <span className="font-semibold text-green-600">117</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Erros</span>
+                  <span className="font-semibold text-red-600">33</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Aproveitamento</span>
+                  <span className="font-semibold">{Math.round((117 / 150) * 100)}%</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

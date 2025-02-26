@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { DashboardSummary } from "./components/DashboardSummary";
 import { SubjectTable } from "./components/SubjectTable";
@@ -85,6 +86,7 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
         overallStats={overallStats} 
         performanceGoal={performanceGoal} 
         setPerformanceGoal={setPerformanceGoal}
+        activeTab={activeTab}
       />
 
       {activeTab === 'edital' && localSubjects.map(subject => (
