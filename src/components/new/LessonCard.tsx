@@ -6,10 +6,12 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { Question } from "./types";
+
 interface LessonCardProps {
   lesson: Lesson;
   question: Question;
 }
+
 export const LessonCard: React.FC<LessonCardProps> = ({
   lesson,
   question
@@ -24,6 +26,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const videoRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
+
   useEffect(() => {
     const updateLayout = () => {
       if (videoRef.current) {
@@ -39,6 +42,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       clearTimeout(timeoutId);
     };
   }, [isVideoSectionVisible]);
+
   const checkScroll = () => {
     if (sectionsContainerRef.current) {
       const {
@@ -48,6 +52,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       setHasHorizontalScroll(scrollWidth > clientWidth);
     }
   };
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -57,13 +62,16 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
   const handleSectionClick = (sectionId: string) => {
     setSelectedSection(sectionId);
   };
+
   const toggleCompletion = (sectionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setCompletedSections(prev => prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]);
   };
+
   const toggleVideoSection = () => {
     setIsVideoSectionVisible(!isVideoSectionVisible);
     if (!isVideoSectionVisible && cardRef.current) {
@@ -73,19 +81,21 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       });
     }
   };
+
   const toggleOptionDisabled = (optionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setDisabledOptions(prev => prev.includes(optionId) ? prev.filter(id => id !== optionId) : [...prev, optionId]);
   };
+
   return <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
-      <header className={`flex flex-col justify-center py-4 md:py-8 w-full bg-white ${isVideoSectionVisible ? 'border-b border-gray-100 rounded-t-xl' : 'rounded-xl'}`}>
-        <div className="flex justify-between px-5 w-full min-h-[90px]">
+      <header className={`flex flex-col justify-center py-3 md:py-6 w-full bg-white ${isVideoSectionVisible ? 'border-b border-gray-100 rounded-t-xl' : 'rounded-xl'}`}>
+        <div className="flex justify-between px-5 w-full min-h-[70px]">
           <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
             <div onClick={toggleVideoSection} className="flex flex-col flex-1 shrink justify-center self-stretch pr-5 my-auto basis-0 min-w-60 cursor-pointer py-0">
               <h2 className="text-2xl font-bold leading-none text-slate-800 hover:text-[#F11CE3] transition-colors md:text-2xl">
                 {lesson.title}
               </h2>
-              <p className="mt-3 md:mt-5 text-lg leading-1 text-slate-500 my-[10px] md:text-base ">
+              <p className="mt-2 md:mt-3 text-lg leading-1 text-slate-500 my-[8px] md:text-base">
                 <span>No edital: </span>
                 <em>{lesson.description}</em>
               </p>
@@ -126,10 +136,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
                   [&::-webkit-scrollbar-thumb]:rounded-full
                   [&::-webkit-scrollbar-thumb]:hover:bg-slate-400
                 `}>
-                <ul className={`flex gap-2.5 ${hasHorizontalScroll ? 'flex-row' : 'flex-col'}`}>
+                <ul className={`flex gap-2 ${hasHorizontalScroll ? 'flex-row' : 'flex-col'}`}>
                   {lesson.sections.map(section => <li key={section.id} className={hasHorizontalScroll ? 'min-w-[300px]' : ''}>
-                      <button onClick={() => handleSectionClick(section.id)} className={`flex justify-between items-center p-5 w-full text-base font-medium text-left rounded-xl border border-solid min-h-[60px] ${selectedSection === section.id ? "bg-fuchsia-100 border-fuchsia-500 text-fuchsia-500" : "bg-white border-gray-100 text-slate-800"}`}>
-                        <div className="flex flex-1 shrink gap-4 items-center self-stretch my-auto w-full basis-0 min-w-60">
+                      <button onClick={() => handleSectionClick(section.id)} className={`flex justify-between items-center px-4 py-3 w-full text-base font-medium text-left rounded-xl border border-solid min-h-[50px] ${selectedSection === section.id ? "bg-fuchsia-100 border-fuchsia-500 text-fuchsia-500" : "bg-white border-gray-100 text-slate-800"}`}>
+                        <div className="flex flex-1 shrink gap-3 items-center self-stretch my-auto w-full basis-0 min-w-60">
                           <div onClick={e => toggleCompletion(section.id, e)} className={`flex shrink-0 gap-2.5 self-stretch my-auto w-5 h-5 rounded border border-solid cursor-pointer ${completedSections.includes(section.id) ? "bg-fuchsia-500 border-fuchsia-500" : selectedSection === section.id ? "bg-fuchsia-100 border-fuchsia-500" : "bg-white border-gray-100"}`}>
                             {completedSections.includes(section.id) && <svg viewBox="0 0 14 14" fill="white" className="w-4 h-4 m-auto">
                                 <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
