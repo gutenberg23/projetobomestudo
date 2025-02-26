@@ -8,33 +8,41 @@ interface SubjectLessonsProps {
 }
 
 export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
-  const [totalCompletedSections, setTotalCompletedSections] = useState(0);
-  const [totalSections, setTotalSections] = useState(0);
-  const [answeredQuestions, setAnsweredQuestions] = useState(0);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [progress, setProgress] = useState({
+    completedSections: 0,
+    totalSections: 0,
+    answeredQuestions: 0,
+    correctAnswers: 0
+  });
 
   const handleProgressUpdate = (completed: number, total: number) => {
-    setTotalCompletedSections(prev => prev + completed);
-    setTotalSections(prev => prev + total);
+    setProgress(prev => ({
+      ...prev,
+      completedSections: completed,
+      totalSections: total
+    }));
   };
 
   const handleQuestionsUpdate = (answered: number, correct: number) => {
-    setAnsweredQuestions(answered);
-    setCorrectAnswers(correct);
+    setProgress(prev => ({
+      ...prev,
+      answeredQuestions: answered,
+      correctAnswers: correct
+    }));
   };
 
   useEffect(() => {
     // Dispatch event to update ProgressPanel
     const event = new CustomEvent('progressUpdate', {
       detail: {
-        completedSections: totalCompletedSections,
-        totalSections,
-        answeredQuestions,
-        correctAnswers
+        completedSections: progress.completedSections,
+        totalSections: progress.totalSections,
+        answeredQuestions: progress.answeredQuestions,
+        correctAnswers: progress.correctAnswers
       }
     });
     window.dispatchEvent(event);
-  }, [totalCompletedSections, totalSections, answeredQuestions, correctAnswers]);
+  }, [progress]);
 
   return (
     <div className="px-4 pb-8 md:px-[15px] bg-slate-50 py-[30px] border-l-2 border-r-2 border-[#fff] rounded-xl mb-1">
