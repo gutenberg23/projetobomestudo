@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 
 interface Simulado {
   id: number;
-  launchDate: string;
   title: string;
   questionsCount: number;
   hits: number;
@@ -18,7 +17,6 @@ interface SimuladosTableProps {
 const simulados: Simulado[] = [
   {
     id: 1,
-    launchDate: "2024-03-01",
     title: "Simulado Geral #1",
     questionsCount: 100,
     hits: 75,
@@ -26,7 +24,6 @@ const simulados: Simulado[] = [
   },
   {
     id: 2,
-    launchDate: "2024-03-15",
     title: "Simulado Específico - Direito Constitucional",
     questionsCount: 50,
     hits: 42,
@@ -48,17 +45,13 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
     { questionsCount: 0, hits: 0, errors: 0 }
   );
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
-
   return (
     <div className="bg-white rounded-[10px] p-5">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[800px]">
           <thead className="bg-gray-50">
             <tr className="text-sm text-gray-600">
-              <th className="py-3 px-4 text-left font-medium">Data</th>
+              <th className="py-3 px-4 text-left font-medium">#</th>
               <th className="py-3 px-4 text-left font-medium">Título</th>
               <th className="py-3 px-4 text-center font-medium">Questões</th>
               <th className="py-3 px-4 text-center font-medium">Acertos</th>
@@ -67,9 +60,9 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
             </tr>
           </thead>
           <tbody>
-            {simulados.map((simulado) => (
+            {simulados.map((simulado, index) => (
               <tr key={simulado.id} className="border-t border-gray-200">
-                <td className="py-3 px-4">{formatDate(simulado.launchDate)}</td>
+                <td className="py-3 px-4">{index + 1}</td>
                 <td className="py-3 px-4">{simulado.title}</td>
                 <td className="py-3 px-4 text-center">{simulado.questionsCount}</td>
                 <td className="py-3 px-4 text-center">{simulado.hits}</td>

@@ -36,7 +36,7 @@ export const DashboardSummary = ({
   }, [examDate]);
 
   return (
-    <div className="mb-8 p-5 border rounded-lg bg-gray-50 mt-7">
+    <div className="mb-8 p-5 border rounded-lg bg-white">
       <div className="flex flex-col gap-4 mb-4">
         <h3 className="text-lg font-semibold">Resumo Geral</h3>
         <div className="flex flex-col md:flex-row gap-4">
@@ -78,14 +78,14 @@ export const DashboardSummary = ({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {activeTab === 'edital' ? (
           <>
-            <div className="p-4 bg-white rounded-lg shadow">
+            <div className="p-4 bg-white rounded-lg shadow-sm border">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Evolução Geral</span>
                 <span className="font-semibold">{overallProgress}%</span>
               </div>
               <Progress value={overallProgress} className="h-2" />
             </div>
-            <div className="p-4 bg-white rounded-lg shadow">
+            <div className="p-4 bg-white rounded-lg shadow-sm border">
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Aulas Concluídas</span>
@@ -99,7 +99,7 @@ export const DashboardSummary = ({
                 )}
               </div>
             </div>
-            <div className="p-4 bg-white rounded-lg shadow">
+            <div className="p-4 bg-white rounded-lg shadow-sm border">
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Acertos</span>
@@ -118,14 +118,14 @@ export const DashboardSummary = ({
           </>
         ) : (
           <>
-            <div className="p-4 bg-white rounded-lg shadow">
+            <div className="p-4 bg-white rounded-lg shadow-sm border">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Simulados Realizados</span>
                 <span className="font-semibold">2</span>
               </div>
               <Progress value={100} className="h-2" />
             </div>
-            <div className="p-4 bg-white rounded-lg shadow">
+            <div className="p-4 bg-white rounded-lg shadow-sm border">
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Questões Respondidas</span>
@@ -139,7 +139,7 @@ export const DashboardSummary = ({
                 )}
               </div>
             </div>
-            <div className="p-4 bg-white rounded-lg shadow">
+            <div className="p-4 bg-white rounded-lg shadow-sm border">
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Acertos</span>
