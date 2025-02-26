@@ -31,9 +31,9 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
   };
 
   useEffect(() => {
-    // Registra um identificador único para esta instância de SubjectLessons
     const subjectId = lessons[0]?.id || Math.random().toString();
     
+    // Disparamos o evento somente quando houver mudanças reais nos valores
     const event = new CustomEvent('progressUpdate', {
       detail: {
         subjectId,
@@ -45,16 +45,20 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
     });
     window.dispatchEvent(event);
 
+    // Limpeza ao desmontar
     return () => {
-      const cleanupEvent = new CustomEvent('progressCleanup', {
-        detail: { subjectId }
-      });
-      window.dispatchEvent(cleanupEvent);
+      // Só limpamos se o componente realmente for desmontado, não quando esconder
+      if (!document.body.contains(document.querySelector(`[data-subject-id="${subjectId}"]`))) {
+        const cleanupEvent = new CustomEvent('progressCleanup', {
+          detail: { subjectId }
+        });
+        window.dispatchEvent(cleanupEvent);
+      }
     };
   }, [lessons, progress.completedSections, progress.answeredQuestions, progress.correctAnswers]);
 
   return (
-    <div className="px-4 pb-8 md:px-[15px] bg-slate-50 py-[30px] border-l-2 border-r-2 border-[#fff] rounded-xl mb-1">
+    <div data-subject-id={lessons[0]?.id} className="px-4 pb-8 md:px-[15px] bg-slate-50 py-[30px] border-l-2 border-r-2 border-[#fff] rounded-xl mb-1">
       {lessons.map(lesson => (
         <LessonCard 
           key={lesson.id} 
@@ -73,3 +77,4 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
     </div>
   );
 };
+

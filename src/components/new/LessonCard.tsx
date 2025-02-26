@@ -49,17 +49,25 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   }, [isVideoSectionVisible]);
 
   useEffect(() => {
-    // Verifica se todas as seções estão completas
     const allSectionsCompleted = lesson.sections.every(section =>
       completedSections.includes(section.id)
     );
     setIsLessonCompleted(allSectionsCompleted);
 
-    // Atualiza o progresso no componente pai
     if (onProgressUpdate) {
       onProgressUpdate(completedSections.length, lesson.sections.length);
     }
   }, [completedSections, lesson.sections, onProgressUpdate]);
+
+  useEffect(() => {
+    if (onQuestionsUpdate) {
+      const answeredQuestions = disabledOptions.length;
+      const correctAnswers = disabledOptions.filter(optionId => 
+        question.options.find(opt => opt.id === optionId)?.isCorrect
+      ).length;
+      onQuestionsUpdate(answeredQuestions, correctAnswers);
+    }
+  }, [disabledOptions, question.options, onQuestionsUpdate]);
 
   const checkScroll = () => {
     if (sectionsContainerRef.current) {
@@ -94,10 +102,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const toggleLessonCompletion = (event: React.MouseEvent) => {
     event.stopPropagation();
     if (isLessonCompleted) {
-      // Se a aula está completa, remove todas as seções da lista de completadas
       setCompletedSections([]);
     } else {
-      // Se a aula não está completa, adiciona todas as seções à lista de completadas
       setCompletedSections(lesson.sections.map(section => section.id));
     }
   };
@@ -111,16 +117,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       });
     }
   };
-
-  useEffect(() => {
-    if (onQuestionsUpdate) {
-      const answeredQuestions = disabledOptions.length;
-      const correctAnswers = disabledOptions.filter(optionId => 
-        question.options.find(opt => opt.id === optionId)?.isCorrect
-      ).length;
-      onQuestionsUpdate(answeredQuestions, correctAnswers);
-    }
-  }, [disabledOptions, question.options, onQuestionsUpdate]);
 
   const toggleOptionDisabled = (optionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
