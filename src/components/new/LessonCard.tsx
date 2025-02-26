@@ -6,10 +6,12 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { Question } from "./types";
+
 interface LessonCardProps {
   lesson: Lesson;
   question: Question;
 }
+
 export const LessonCard: React.FC<LessonCardProps> = ({
   lesson,
   question
@@ -25,8 +27,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
 
-  // Atualiza a altura do vídeo e verifica o scroll quando o componente é montado
-  // ou quando a seção de vídeo é mostrada/escondida
   useEffect(() => {
     const updateLayout = () => {
       if (videoRef.current) {
@@ -35,7 +35,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       checkScroll();
     };
 
-    // Executa imediatamente e após um pequeno delay para garantir que o DOM foi atualizado
     updateLayout();
     const timeoutId = setTimeout(updateLayout, 100);
     window.addEventListener('resize', updateLayout);
@@ -44,6 +43,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       clearTimeout(timeoutId);
     };
   }, [isVideoSectionVisible]);
+
   const checkScroll = () => {
     if (sectionsContainerRef.current) {
       const {
@@ -53,6 +53,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       setHasHorizontalScroll(scrollWidth > clientWidth);
     }
   };
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -62,13 +63,16 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
   const handleSectionClick = (sectionId: string) => {
     setSelectedSection(sectionId);
   };
+
   const toggleCompletion = (sectionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setCompletedSections(prev => prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]);
   };
+
   const toggleVideoSection = () => {
     setIsVideoSectionVisible(!isVideoSectionVisible);
     if (!isVideoSectionVisible && cardRef.current) {
@@ -78,13 +82,15 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       });
     }
   };
+
   const toggleOptionDisabled = (optionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setDisabledOptions(prev => prev.includes(optionId) ? prev.filter(id => id !== optionId) : [...prev, optionId]);
   };
+
   return <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
-      <header className="flex flex-col justify-center py-4 md:py-8 w-full bg-white rounded-xl border-b border-gray-100">
-        <div className="flex justify-between px-4 w-full min-h-[90px] md:px-[15px]">
+      <header className={`flex flex-col justify-center py-4 md:py-8 w-full bg-white ${isVideoSectionVisible ? 'border-b border-gray-100 rounded-t-xl' : 'rounded-xl'}`}>
+        <div className="flex justify-between px-5 w-full min-h-[90px]">
           <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
             <div className="flex flex-col flex-1 shrink justify-center self-stretch py-1 pr-5 my-auto basis-0 min-w-60 cursor-pointer" onClick={toggleVideoSection}>
               <h2 className="text-2xl md:text-3xl font-bold leading-none text-slate-800 hover:text-[#F11CE3] transition-colors">
@@ -108,7 +114,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       </header>
 
       {isVideoSectionVisible && <div className="bg-white pb-5">
-          <div className={`flex px-4 md:px-10 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
+          <div className={`flex px-5 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
             <div className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-0 md:pr-5`}>
               <div ref={videoRef} className="aspect-video bg-slate-200 rounded-xl">
                 <div className="w-full h-full flex items-center justify-center text-slate-500">
@@ -148,7 +154,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
               </div>
             </div>
           </div>
-          <div className="px-4 md:px-[20px]">
+          <div className="px-5">
             <div className="mt-8">
               <ItensDaAula setShowQuestions={setShowQuestions} showQuestions={showQuestions} />
             </div>

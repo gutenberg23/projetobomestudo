@@ -14,15 +14,15 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
 }) => {
   const actions = [
     {
-      icon: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/cae9c4d3717db96e49b6d5919e8d22c653723a2bdc1bb9f06cec9c80cadcdbca",
-      label: "Aula em PDF",
-    },
-    {
       icon: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/5b9589ed54e185ca7e13dc13f742fa63f18d357808ad50d541771541ea74d405",
       label: "Caderno de Questões",
       variant: "highlight" as const,
       onClick: () => setShowQuestions(!showQuestions),
       isActive: showQuestions,
+    },
+    {
+      icon: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/cae9c4d3717db96e49b6d5919e8d22c653723a2bdc1bb9f06cec9c80cadcdbca",
+      label: "Aula em PDF",
     },
     {
       icon: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/0cbc11d07a84c70a35420fb798828f25137d07530099d2e7d11e2509cbde2562",
