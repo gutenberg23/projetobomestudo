@@ -85,7 +85,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
               <h2 className="text-2xl md:text-3xl font-bold leading-none text-slate-800 hover:text-[#F11CE3] transition-colors">
                 {lesson.title}
               </h2>
-              <p className="mt-3 md:mt-5 text-lg leading-6 text-slate-500 my-[10px] md:text-base">
+              <p className="mt-3 md:mt-5 text-lg leading-1 text-slate-500 my-[10px] md:text-base ">
                 <span>No edital: </span>
                 <em>{lesson.description}</em>
               </p>
