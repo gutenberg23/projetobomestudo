@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { renderDonutChart } from '../utils/donutChart';
-
 interface SubjectCardProps {
   subject: {
     name: string;
@@ -14,22 +12,16 @@ interface SubjectCardProps {
   isExpanded: boolean;
   onToggle: () => void;
 }
-
-export const SubjectCard: React.FC<SubjectCardProps> = ({ 
+export const SubjectCard: React.FC<SubjectCardProps> = ({
   subject,
   isExpanded,
   onToggle
 }) => {
   const calculatePerformance = (hits: number, total: number) => {
-    return total > 0 ? Math.round((hits / total) * 100) : 0;
+    return total > 0 ? Math.round(hits / total * 100) : 0;
   };
-
-  return (
-    <div className="bg-[rgba(246,248,250,1)] rounded-[10px]">
-      <div 
-        className="p-4 cursor-pointer"
-        onClick={onToggle}
-      >
+  return <div className="bg-[rgba(246,248,250,1)] rounded-[10px]">
+      <div className="p-4 cursor-pointer" onClick={onToggle}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
             <div className="relative">
@@ -44,8 +36,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         </div>
       </div>
       
-      {isExpanded && (
-        <div className="px-4 pb-4 space-y-2">
+      {isExpanded && <div className="px-4 pb-4 space-y-2">
           <div className="grid grid-cols-3 gap-2 text-sm">
             <div className="bg-white p-2 rounded">
               <div className="text-gray-600">Total</div>
@@ -60,14 +51,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               <div className="font-semibold text-red-600">{subject.questionsWrong}</div>
             </div>
           </div>
-          <div className="bg-white p-2 rounded text-sm">
-            <div className="text-gray-600">Aproveitamento</div>
-            <div className="font-semibold">
-              {calculatePerformance(subject.questionsCorrect, subject.questionsTotal)}%
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+          
+        </div>}
+    </div>;
 };
