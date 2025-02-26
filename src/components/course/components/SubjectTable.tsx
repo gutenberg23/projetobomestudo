@@ -1,3 +1,4 @@
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportanceStars } from "./ImportanceStars";
 import { cn } from "@/lib/utils";
@@ -54,8 +55,11 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
             </tr>
           </thead>
           <tbody>
-            {subject.topics.map((topic) => (
-              <tr key={topic.id} className="border-t border-gray-200">
+            {subject.topics.map((topic, index) => (
+              <tr key={topic.id} className={cn(
+                "border-t border-gray-200",
+                index % 2 === 0 ? "bg-white" : "bg-gray-50"
+              )}>
                 <td className="py-3 px-4">{topic.id}</td>
                 <td className="py-3 px-4">
                   <div className="flex items-center">

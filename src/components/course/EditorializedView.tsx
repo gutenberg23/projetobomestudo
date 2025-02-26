@@ -81,7 +81,7 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
   const overallStats = calculateOverallStats(localSubjects);
 
   return (
-    <div className="bg-[#f6f8fa] rounded-[10px] p-5">
+    <div className="bg-[#f6f8fa] rounded-[10px] pb-5 px-5">
       <DashboardSummary 
         overallStats={overallStats} 
         performanceGoal={performanceGoal} 
