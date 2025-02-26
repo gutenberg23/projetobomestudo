@@ -148,7 +148,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
               </div>
             </div>
           </div>
-          <div className="px-4 md:px-10">
+          <div className="px-4 md:px-[20px]">
             <div className="mt-8">
               <ItensDaAula setShowQuestions={setShowQuestions} showQuestions={showQuestions} />
             </div>
