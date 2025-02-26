@@ -85,7 +85,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
               <h2 className="text-2xl font-bold leading-none text-slate-800 hover:text-[#F11CE3] transition-colors md:text-2xl">
                 {lesson.title}
               </h2>
-              <p className="mt-2 md:mt-3 text-lg leading-1 text-slate-500 my-[8px] md:text-base leading-tight">
+              <p className="mt-2 md:mt-3 text-lg leading-1 text-slate-500 my-[8px] md:text-base leading-none">
                 <span>No edital: </span>
                 <em>{lesson.description}</em>
               </p>
@@ -135,7 +135,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
                                 <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>}
                           </div>
-                          <span className="self-stretch my-auto leading-tight text-sm">{section.title}</span>
+                          <span className="self-stretch my-auto leading-none text-sm">{section.title}</span>
                         </div>
                       </button>
                     </li>)}
