@@ -32,9 +32,13 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
   };
 
   useEffect(() => {
-    // Dispatch event to update ProgressPanel
+    // Registra um identificador único para esta instância de SubjectLessons
+    const subjectId = lessons[0]?.id || Math.random().toString();
+    
+    // Dispatch event to update ProgressPanel with subject identifier
     const event = new CustomEvent('progressUpdate', {
       detail: {
+        subjectId,
         completedSections: progress.completedSections,
         totalSections: progress.totalSections,
         answeredQuestions: progress.answeredQuestions,
@@ -42,7 +46,15 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
       }
     });
     window.dispatchEvent(event);
-  }, [progress]);
+
+    // Limpa o progresso quando o componente é desmontado
+    return () => {
+      const cleanupEvent = new CustomEvent('progressCleanup', {
+        detail: { subjectId }
+      });
+      window.dispatchEvent(cleanupEvent);
+    };
+  }, [progress, lessons]);
 
   return (
     <div className="px-4 pb-8 md:px-[15px] bg-slate-50 py-[30px] border-l-2 border-r-2 border-[#fff] rounded-xl mb-1">

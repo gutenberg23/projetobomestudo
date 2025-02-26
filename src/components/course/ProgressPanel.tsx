@@ -4,37 +4,71 @@ import React, { useEffect, useState } from "react";
 import { ProgressSummary } from "./components/ProgressSummary";
 import { SubjectCard } from "./components/SubjectCard";
 
+interface SubjectProgress {
+  completedSections: number;
+  totalSections: number;
+  answeredQuestions: number;
+  correctAnswers: number;
+}
+
 export const ProgressPanel = () => {
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
-  const [completedLessons, setCompletedLessons] = useState<number>(0);
-  const [totalLessons, setTotalLessons] = useState<number>(0);
-  const [answeredQuestions, setAnsweredQuestions] = useState<number>(0);
-  const [correctAnswers, setCorrectAnswers] = useState<number>(0);
+  const [subjectsProgress, setSubjectsProgress] = useState<Record<string, SubjectProgress>>({});
 
   useEffect(() => {
     const handleProgressUpdate = (event: CustomEvent) => {
-      const { completedSections, totalSections, answeredQuestions, correctAnswers } = event.detail;
-      setCompletedLessons(completedSections);
-      setTotalLessons(totalSections);
-      setAnsweredQuestions(answeredQuestions);
-      setCorrectAnswers(correctAnswers);
+      const { subjectId, completedSections, totalSections, answeredQuestions, correctAnswers } = event.detail;
+      
+      setSubjectsProgress(prev => ({
+        ...prev,
+        [subjectId]: {
+          completedSections,
+          totalSections,
+          answeredQuestions,
+          correctAnswers
+        }
+      }));
+    };
+
+    const handleProgressCleanup = (event: CustomEvent) => {
+      const { subjectId } = event.detail;
+      setSubjectsProgress(prev => {
+        const newProgress = { ...prev };
+        delete newProgress[subjectId];
+        return newProgress;
+      });
     };
 
     window.addEventListener('progressUpdate', handleProgressUpdate as EventListener);
+    window.addEventListener('progressCleanup', handleProgressCleanup as EventListener);
+    
     return () => {
       window.removeEventListener('progressUpdate', handleProgressUpdate as EventListener);
+      window.removeEventListener('progressCleanup', handleProgressCleanup as EventListener);
     };
   }, []);
 
-  const progressPercentage = Math.round((completedLessons / totalLessons) * 100) || 0;
+  const totalProgress = Object.values(subjectsProgress).reduce((acc, curr) => ({
+    completedSections: acc.completedSections + curr.completedSections,
+    totalSections: acc.totalSections + curr.totalSections,
+    answeredQuestions: acc.answeredQuestions + curr.answeredQuestions,
+    correctAnswers: acc.correctAnswers + curr.correctAnswers
+  }), {
+    completedSections: 0,
+    totalSections: 0,
+    answeredQuestions: 0,
+    correctAnswers: 0
+  });
+
+  const progressPercentage = Math.round((totalProgress.completedSections / totalProgress.totalSections) * 100) || 0;
 
   const subjects = [{
     name: "Língua Portuguesa",
     rating: 10,
     progress: 75,
-    questionsTotal: answeredQuestions,
-    questionsCorrect: correctAnswers,
-    questionsWrong: answeredQuestions - correctAnswers
+    questionsTotal: totalProgress.answeredQuestions,
+    questionsCorrect: totalProgress.correctAnswers,
+    questionsWrong: totalProgress.answeredQuestions - totalProgress.correctAnswers
   }, {
     name: "Matemática",
     rating: 10,
@@ -107,12 +141,12 @@ export const ProgressPanel = () => {
       </h2>
 
       <ProgressSummary
-        totalCompletedSections={completedLessons}
-        totalSections={totalLessons}
+        totalCompletedSections={totalProgress.completedSections}
+        totalSections={totalProgress.totalSections}
         progressPercentage={progressPercentage}
-        totalQuestions={answeredQuestions}
-        totalCorrectAnswers={correctAnswers}
-        totalWrongAnswers={answeredQuestions - correctAnswers}
+        totalQuestions={totalProgress.answeredQuestions}
+        totalCorrectAnswers={totalProgress.correctAnswers}
+        totalWrongAnswers={totalProgress.answeredQuestions - totalProgress.correctAnswers}
       />
 
       {progressPercentage === 100 && (
