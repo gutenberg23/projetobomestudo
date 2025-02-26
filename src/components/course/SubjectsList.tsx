@@ -1,7 +1,9 @@
 import React, { useState } from "react";
+import { Subject as SubjectComponent } from "./components/Subject";
+import { Subject } from "./types/subjects";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { LessonCard } from "../new/LessonCard";
-interface Subject {
+interface SubjectInterface {
   name: string;
   rating: number;
   lessons: Array<{
@@ -37,7 +39,7 @@ interface Subject {
     };
   }>;
 }
-const subjects: Subject[] = [{
+const subjects: SubjectInterface[] = [{
   name: "Língua Portuguesa",
   rating: 10,
   lessons: [{
@@ -628,37 +630,24 @@ const subjects: Subject[] = [{
     }
   }]
 }];
+
 export const SubjectsList = () => {
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+
   const toggleExpand = (subjectName: string) => {
     setExpandedSubject(expandedSubject === subjectName ? null : subjectName);
   };
-  return <div className="bg-white rounded-[10px] mb-10">
-      {subjects.map(subject => <div key={subject.name} className="border-b border-[rgba(246,248,250,1)]">
-          <div onClick={() => toggleExpand(subject.name)} className="flex min-h-[90px] w-full items-stretch justify-between px-4 cursor-pointer md:px-[15px] my-0">
-            <div className="flex min-w-60 w-full items-center justify-between my-0">
-              <h2 className="text-xl md:text-[28px] text-[rgba(38,47,60,1)] leading-none w-full mr-5 py-1 font-bold">
-                {subject.name}
-              </h2>
-              <div className="flex items-center gap-4">
-                <div className="bg-[rgba(246,248,250,1)] flex items-center gap-2.5 text-xl text-[rgba(241,28,227,1)] text-center w-[76px] p-2.5 rounded-[10px]">
-                  <div className="bg-white border min-h-[42px] w-14 px-2.5 py-[9px] rounded-[10px] border-[rgba(241,28,227,1)]">
-                    {subject.rating}
-                  </div>
-                </div>
-                {expandedSubject === subject.name ? <ChevronUp className="w-6 h-6 text-slate-400" /> : <ChevronDown className="w-6 h-6 text-slate-400" />}
-              </div>
-            </div>
-          </div>
-          {expandedSubject === subject.name && <div className="px-4 pb-8 md:px-[15px] bg-slate-50 py-[30px] border-l-2 border-r-2 border-[#fff] rounded-xl mb-1">
-              {subject.lessons.map(lesson => <LessonCard key={lesson.id} lesson={{
-          id: lesson.id,
-          title: lesson.title,
-          description: lesson.description,
-          rating: lesson.rating,
-          sections: lesson.sections
-        }} question={lesson.question} />)}
-            </div>}
-        </div>)}
-    </div>;
+
+  return (
+    <div className="bg-white rounded-[10px] mb-10">
+      {subjects.map(subject => (
+        <SubjectComponent
+          key={subject.name}
+          subject={subject}
+          isExpanded={expandedSubject === subject.name}
+          onToggle={() => toggleExpand(subject.name)}
+        />
+      ))}
+    </div>
+  );
 };
