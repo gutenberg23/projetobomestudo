@@ -24,11 +24,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       <div className="p-4 cursor-pointer" onClick={onToggle}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
-            <input
-              type="checkbox"
-              className="subject-checkbox w-5 h-5 rounded cursor-pointer border-gray-200 text-[#F11CE3] focus:ring-[#F11CE3]"
-              onChange={() => null} // Será gerenciado pelo ProgressPanel
-            />
             <span className="font-medium text-[rgba(38,47,60,1)]">{subject.name}</span>
           </div>
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
