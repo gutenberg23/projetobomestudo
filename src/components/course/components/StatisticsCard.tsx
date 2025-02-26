@@ -1,10 +1,10 @@
 
-import React from "react";
+import React from 'react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { ChartBarStacked, ChartPie, ChartRadar } from "lucide-react";
-import { Subject } from "../types/editorialized";
+import { ChartBar, ChartPie, ChartBarStacked } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
+import { Subject } from "../types/editorialized";
 
 interface StatisticsCardProps {
   subjects: Subject[];
@@ -54,7 +54,7 @@ export const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <h3 className="font-semibold flex items-center gap-2">
-                <ChartRadar className="w-5 h-5" />
+                <ChartBar className="w-5 h-5" />
                 Aproveitamento por Disciplina
               </h3>
               <div className="h-[300px]">

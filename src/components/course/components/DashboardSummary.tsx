@@ -10,7 +10,7 @@ import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { ChartBarStacked, ChartPie, ChartRadar } from "lucide-react";
+import { ChartBar, ChartPie, ChartBarStacked } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
 
@@ -19,9 +19,6 @@ interface DashboardSummaryProps {
   performanceGoal: number;
   setPerformanceGoal: (value: number) => void;
   activeTab: string;
-}
-
-interface StatisticsCardProps {
   subjects: Subject[];
 }
 
@@ -69,7 +66,7 @@ const StatisticsCard = ({ subjects }: StatisticsCardProps) => {
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <h3 className="font-semibold flex items-center gap-2">
-                <ChartRadar className="w-5 h-5" />
+                <ChartBar className="w-5 h-5" />
                 Aproveitamento por Disciplina
               </h3>
               <div className="h-[300px]">
@@ -161,7 +158,7 @@ export const DashboardSummary = ({
   setPerformanceGoal,
   activeTab,
   subjects
-}: DashboardSummaryProps & { subjects: Subject[] }) => {
+}: DashboardSummaryProps) => {
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
   const [examDate, setExamDate] = React.useState<Date>();

@@ -87,6 +87,7 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
         performanceGoal={performanceGoal} 
         setPerformanceGoal={setPerformanceGoal}
         activeTab={activeTab}
+        subjects={localSubjects}
       />
 
       {activeTab === 'edital' && localSubjects.map(subject => (
