@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -18,19 +19,24 @@ const MOCK_QUESTIONS = [{
   role: "Auditor Federal",
   options: [{
     id: "o1",
-    text: "O sistema tributário nacional é regido pelos princípios da legalidade, anterioridade e transparência fiscal."
+    text: "O sistema tributário nacional é regido pelos princípios da legalidade, anterioridade e transparência fiscal.",
+    isCorrect: false
   }, {
     id: "o2",
-    text: "A saúde é direito de todos e dever do Estado, garantido mediante políticas sociais e econômicas."
+    text: "A saúde é direito de todos e dever do Estado, garantido mediante políticas sociais e econômicas.",
+    isCorrect: false
   }, {
     id: "o3",
-    text: "Os cargos, empregos e funções públicas são acessíveis aos brasileiros que preencham os requisitos estabelecidos em lei."
+    text: "Os cargos, empregos e funções públicas são acessíveis aos brasileiros que preencham os requisitos estabelecidos em lei.",
+    isCorrect: false
   }, {
     id: "o4",
-    text: "O ensino fundamental é obrigatório e gratuito, assegurada sua oferta para todos que não tiverem acesso na idade própria."
+    text: "O ensino fundamental é obrigatório e gratuito, assegurada sua oferta para todos que não tiverem acesso na idade própria.",
+    isCorrect: true
   }, {
     id: "o5",
-    text: "A previdência social será organizada sob a forma de regime geral, de caráter contributivo e de filiação obrigatória."
+    text: "A previdência social será organizada sob a forma de regime geral, de caráter contributivo e de filiação obrigatória.",
+    isCorrect: false
   }],
   comments: [{
     id: "c1",
@@ -49,19 +55,24 @@ const MOCK_QUESTIONS = [{
   role: "Procurador Municipal",
   options: [{
     id: "o6",
-    text: "O princípio da legalidade significa que o administrador público está sujeito aos mandamentos da lei em toda sua atividade funcional."
+    text: "O princípio da legalidade significa que o administrador público está sujeito aos mandamentos da lei em toda sua atividade funcional.",
+    isCorrect: true
   }, {
     id: "o7",
-    text: "A administração pública pode revogar seus próprios atos quando eivados de vícios que os tornem ilegais."
+    text: "A administração pública pode revogar seus próprios atos quando eivados de vícios que os tornem ilegais.",
+    isCorrect: false
   }, {
     id: "o8",
-    text: "O princípio da impessoalidade estabelece que a finalidade pública deve nortear toda a atividade administrativa."
+    text: "O princípio da impessoalidade estabelece que a finalidade pública deve nortear toda a atividade administrativa.",
+    isCorrect: false
   }, {
     id: "o9",
-    text: "A presunção de legitimidade dos atos administrativos é absoluta, não admitindo prova em contrário."
+    text: "A presunção de legitimidade dos atos administrativos é absoluta, não admitindo prova em contrário.",
+    isCorrect: false
   }, {
     id: "o10",
-    text: "O poder de polícia é indelegável, não podendo ser exercido por entidades da administração indireta."
+    text: "O poder de polícia é indelegável, não podendo ser exercido por entidades da administração indireta.",
+    isCorrect: false
   }],
   comments: [{
     id: "c2",
