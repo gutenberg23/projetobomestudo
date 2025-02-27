@@ -9,7 +9,7 @@ export const renderDonutChart = (percentage: number, size: number = 42) => {
   const COLORS = ['rgba(241,28,227,1)', '#E0E0E0'];
 
   return (
-    <div style={{ width: size, height: size }}>
+    <div style={{ width: size, height: size }} className="relative">
       <ResponsiveContainer>
         <PieChart>
           <Pie
@@ -25,6 +25,10 @@ export const renderDonutChart = (percentage: number, size: number = 42) => {
           </Pie>
         </PieChart>
       </ResponsiveContainer>
+      <div className="absolute inset-0 flex items-center justify-center text-xs font-medium text-slate-600">
+        {percentage}%
+      </div>
     </div>
   );
 };
+

@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import type { Lesson } from "./types";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { Question } from "./types";
@@ -164,13 +163,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         <div className="flex justify-between px-5 w-full min-h-[70px]">
           <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
             <div className="flex items-center gap-4 flex-1">
-              <div className="flex flex-col items-center gap-2">
-                <div onClick={toggleLessonCompletion}>
-                  {renderCheckbox(isLessonCompleted)}
-                </div>
-                <div className="w-8 h-8">
-                  {renderDonutChart(progressPercentage)}
-                </div>
+              <div onClick={toggleLessonCompletion}>
+                {renderCheckbox(isLessonCompleted)}
               </div>
               <div onClick={toggleVideoSection} className="flex flex-col flex-1 shrink justify-center self-stretch pr-5 my-auto basis-0 min-w-60 cursor-pointer py-0">
                 <h2 className="text-lg md:text-2xl font-bold leading-tight text-slate-800 hover:text-[#F11CE3] transition-colors">
@@ -189,11 +183,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
                   onClick={toggleVideoSection}
                   className="w-full h-full flex items-center justify-center hover:bg-slate-50 rounded-full transition-colors"
                 >
-                  {isVideoSectionVisible ? (
-                    <ChevronUp className="w-6 h-6 text-slate-600" />
-                  ) : (
-                    <ChevronDown className="w-6 h-6 text-slate-600" />
-                  )}
+                  {renderDonutChart(progressPercentage, 32)}
                 </button>
               </div>
             </div>
