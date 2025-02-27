@@ -48,7 +48,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
   );
 
   return (
-    <div className={`flex px-5 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
+    <div className={`flex px-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
       <div className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-0 md:pr-5`}>
         <div className="aspect-video bg-slate-200 rounded-xl">
           <div className="w-full h-full flex items-center justify-center text-slate-500">
