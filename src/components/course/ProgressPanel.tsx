@@ -4,71 +4,18 @@ import React, { useEffect, useState } from "react";
 import { ProgressSummary } from "./components/ProgressSummary";
 import { SubjectCard } from "./components/SubjectCard";
 
-interface SubjectProgress {
-  completedSections: number;
-  totalSections: number;
-  answeredQuestions: number;
-  correctAnswers: number;
-}
-
 export const ProgressPanel = () => {
-  const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
-  const [subjectsProgress, setSubjectsProgress] = useState<Record<string, SubjectProgress>>({});
-
-  useEffect(() => {
-    const handleProgressUpdate = (event: CustomEvent) => {
-      const { subjectId, completedSections, totalSections, answeredQuestions, correctAnswers } = event.detail;
-      
-      setSubjectsProgress(prev => ({
-        ...prev,
-        [subjectId]: {
-          completedSections,
-          totalSections,
-          answeredQuestions,
-          correctAnswers
-        }
-      }));
-    };
-
-    const handleProgressCleanup = (event: CustomEvent) => {
-      const { subjectId } = event.detail;
-      setSubjectsProgress(prev => {
-        const newProgress = { ...prev };
-        delete newProgress[subjectId];
-        return newProgress;
-      });
-    };
-
-    window.addEventListener('progressUpdate', handleProgressUpdate as EventListener);
-    window.addEventListener('progressCleanup', handleProgressCleanup as EventListener);
-    
-    return () => {
-      window.removeEventListener('progressUpdate', handleProgressUpdate as EventListener);
-      window.removeEventListener('progressCleanup', handleProgressCleanup as EventListener);
-    };
-  }, []);
-
-  const totalProgress = Object.values(subjectsProgress).reduce((acc, curr) => ({
-    completedSections: acc.completedSections + curr.completedSections,
-    totalSections: acc.totalSections + curr.totalSections,
-    answeredQuestions: acc.answeredQuestions + curr.answeredQuestions,
-    correctAnswers: acc.correctAnswers + curr.correctAnswers
-  }), {
-    completedSections: 0,
-    totalSections: 0,
-    answeredQuestions: 0,
-    correctAnswers: 0
-  });
-
-  const progressPercentage = Math.round((totalProgress.completedSections / totalProgress.totalSections) * 100) || 0;
+  const [expandedSubject, setExpandedSubject] = React.useState<string | null>(null);
+  const [completedLessons, setCompletedLessons] = useState<number>(0);
+  const [totalLessons, setTotalLessons] = useState<number>(0);
 
   const subjects = [{
     name: "Língua Portuguesa",
     rating: 10,
     progress: 75,
-    questionsTotal: totalProgress.answeredQuestions,
-    questionsCorrect: totalProgress.correctAnswers,
-    questionsWrong: totalProgress.answeredQuestions - totalProgress.correctAnswers
+    questionsTotal: 100,
+    questionsCorrect: 75,
+    questionsWrong: 25
   }, {
     name: "Matemática",
     rating: 10,
@@ -134,6 +81,29 @@ export const ProgressPanel = () => {
     questionsWrong: 35
   }];
 
+  useEffect(() => {
+    const allCheckboxes = document.querySelectorAll('.subject-checkbox:checked');
+    setCompletedLessons(allCheckboxes.length);
+    
+    const totalAvailableLessons = subjects.reduce((acc, subject) => acc + 1, 0);
+    setTotalLessons(totalAvailableLessons);
+  }, [subjects]);
+
+  const progressPercentage = Math.round((completedLessons / totalLessons) * 100);
+
+  const totalQuestions = subjects.reduce(
+    (total, subject) => total + subject.questionsTotal,
+    0
+  );
+  const totalCorrectAnswers = subjects.reduce(
+    (total, subject) => total + subject.questionsCorrect,
+    0
+  );
+  const totalWrongAnswers = subjects.reduce(
+    (total, subject) => total + subject.questionsWrong,
+    0
+  );
+
   return (
     <div className="bg-white rounded-[10px] space-y-4 p-5">
       <h2 className="text-2xl font-bold text-[rgba(38,47,60,1)]">
@@ -141,21 +111,13 @@ export const ProgressPanel = () => {
       </h2>
 
       <ProgressSummary
-        totalCompletedSections={totalProgress.completedSections}
-        totalSections={totalProgress.totalSections}
+        totalCompletedSections={completedLessons}
+        totalSections={totalLessons}
         progressPercentage={progressPercentage}
-        totalQuestions={totalProgress.answeredQuestions}
-        totalCorrectAnswers={totalProgress.correctAnswers}
-        totalWrongAnswers={totalProgress.answeredQuestions - totalProgress.correctAnswers}
+        totalQuestions={totalQuestions}
+        totalCorrectAnswers={totalCorrectAnswers}
+        totalWrongAnswers={totalWrongAnswers}
       />
-
-      {progressPercentage === 100 && (
-        <button 
-          className="w-full bg-[#F11CE3] text-white py-3 rounded-xl font-medium hover:bg-[#D10AC1] transition-colors"
-        >
-          Imprimir Certificado
-        </button>
-      )}
 
       <div className="space-y-2">
         {subjects.map(subject => (

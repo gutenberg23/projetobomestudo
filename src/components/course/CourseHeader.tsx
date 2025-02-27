@@ -6,7 +6,7 @@ export const CourseHeader = () => {
     <div className="bg-white w-full border-b border-[rgba(239,239,239,1)]">
       <div className="flex min-w-60 w-full items-center justify-between flex-wrap px-2.5 py-[50px]">
         <div className="flex min-w-60 flex-col justify-center py-2.5 w-full">
-          <div className="flex w-full max-w-[859px] items-center gap-2.5 text-[35px] md:text-[35px] text-[24px] text-[rgba(38,47,60,1)] font-bold leading-[31px]">
+          <div className="flex w-full max-w-[859px] gap-2.5 text-[35px] md:text-[35px] text-[24px] text-[rgba(38,47,60,1)] font-bold leading-[31px] flex-wrap">
             <h1 className="flex-1">Título do Curso - Loren Ipsun Dolor</h1>
             <img
               src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/f2ee8cd2aefa09163acda192ff9f1de8bc542520273506ca2b91bcc73721d412"
@@ -32,6 +32,19 @@ export const CourseHeader = () => {
             />
             Imprimir Certificado
           </button>
+          <div className="flex items-center gap-0.5 text-[rgba(38,47,60,1)] mt-2">
+            <span>Avalie o conteúdo:</span>
+            <div className="flex">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <img
+                  key={star}
+                  src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/f91c02c767928e3aa54f81147398f3fd277289ffde199055d8218e6c6fb561eb"
+                  alt={`Star ${star}`}
+                  className="w-6"
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>
