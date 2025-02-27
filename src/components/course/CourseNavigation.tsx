@@ -56,18 +56,16 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
         </button>
       </div>
 
-      {activeTab === 'disciplinas' && (
-        <button 
-          onClick={onProgressClick}
-          className={cn(
-            "flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap ml-auto",
-            isProgressVisible && "bg-white text-[#F11CE3]"
-          )}
-        >
-          <LineChart className="w-6 h-6" />
-          <span className="hidden md:inline">Meu Progresso</span>
-        </button>
-      )}
+      <button 
+        onClick={onProgressClick}
+        className={cn(
+          "flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap ml-auto",
+          isProgressVisible && "bg-white text-[#F11CE3]"
+        )}
+      >
+        <LineChart className="w-6 h-6" />
+        <span className="hidden md:inline">Meu Progresso</span>
+      </button>
     </nav>
   );
 };

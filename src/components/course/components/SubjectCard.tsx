@@ -20,17 +20,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   isExpanded,
   onToggle
 }) => {
-  return (
-    <div className="bg-[rgba(246,248,250,1)] rounded-[10px]">
+  return <div className="bg-[rgba(246,248,250,1)] rounded-[10px]">
       <div className="p-4 cursor-pointer" onClick={onToggle}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
-            <div className="w-[42px] h-[42px] relative">
-              {renderDonutChart(subject.progress)}
-              <div className="absolute inset-0 flex items-center justify-center text-xs font-medium">
-                {subject.progress}%
-              </div>
-            </div>
             <span className="font-medium text-[rgba(38,47,60,1)]">{subject.name}</span>
           </div>
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -38,21 +31,20 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       </div>
       
       {isExpanded && <div className="px-4 pb-4 space-y-2">
-        <div className="grid grid-cols-3 gap-2 text-sm">
-          <div className="bg-white p-2 rounded">
-            <div className="text-gray-600">Total</div>
-            <div className="font-semibold">{subject.questionsTotal}</div>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            <div className="bg-white p-2 rounded">
+              <div className="text-gray-600">Total</div>
+              <div className="font-semibold">{subject.questionsTotal}</div>
+            </div>
+            <div className="bg-white p-2 rounded">
+              <div className="text-green-600">Acertos</div>
+              <div className="font-semibold text-green-600">{subject.questionsCorrect}</div>
+            </div>
+            <div className="bg-white p-2 rounded">
+              <div className="text-red-600">Erros</div>
+              <div className="font-semibold text-red-600">{subject.questionsWrong}</div>
+            </div>
           </div>
-          <div className="bg-white p-2 rounded">
-            <div className="text-green-600">Acertos</div>
-            <div className="font-semibold text-green-600">{subject.questionsCorrect}</div>
-          </div>
-          <div className="bg-white p-2 rounded">
-            <div className="text-red-600">Erros</div>
-            <div className="font-semibold text-red-600">{subject.questionsWrong}</div>
-          </div>
-        </div>
-      </div>}
-    </div>
-  );
+        </div>}
+    </div>;
 };
