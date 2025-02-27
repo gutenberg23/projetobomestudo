@@ -1,11 +1,13 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
 import type { Lesson } from "./types";
-import ItensDaAula from "./ItensDaAula";
-import { QuestionCard } from "./QuestionCard";
 import { Question } from "./types";
 import { renderDonutChart } from "../course/utils/donutChart";
+import { LessonHeader } from "./lesson/LessonHeader";
+import { VideoSection } from "./lesson/VideoSection";
+import { ContentSection } from "./lesson/ContentSection";
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -131,151 +133,37 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     question.options.find(opt => opt.id === optionId)?.isCorrect
   ).length / disabledOptions.length) * 100) || 0;
 
-  const renderCheckbox = (isChecked: boolean) => (
-    <div
-      className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${
-        isChecked
-          ? "bg-[#F11CE3] border-[#F11CE3]"
-          : "bg-white border border-gray-200"
-      }`}
-    >
-      {isChecked && (
-        <svg
-          viewBox="0 0 14 14"
-          fill="none"
-          className="w-4 h-4 m-auto"
-        >
-          <path
-            d="M11.083 2.917L4.375 9.625 1.917 7.167"
-            stroke="white"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      )}
-    </div>
-  );
-
   return (
     <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <header className={`flex flex-col justify-center py-3 md:py-6 w-full bg-white ${isVideoSectionVisible ? 'border-b border-gray-100 rounded-t-xl' : 'rounded-xl'}`}>
-        <div className="flex justify-between px-5 w-full min-h-[70px]">
-          <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
-            <div className="flex items-center gap-4 flex-1">
-              <div onClick={toggleLessonCompletion}>
-                {renderCheckbox(isLessonCompleted)}
-              </div>
-              <div onClick={toggleVideoSection} className="flex flex-col flex-1 shrink justify-center self-stretch pr-5 my-auto basis-0 min-w-60 cursor-pointer py-0">
-                <h2 className="text-lg md:text-2xl font-bold leading-tight text-slate-800 hover:text-[#F11CE3] transition-colors">
-                  {lesson.title}
-                </h2>
-                <p className="text-xs md:text-sm leading-none text-slate-500">
-                  <span className="font-semibold">No edital: </span>
-                  <em>{lesson.description}</em>
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-2.5 items-center self-stretch p-2.5 my-auto text-xl font-light text-center text-fuchsia-500 whitespace-nowrap rounded-xl bg-slate-50 w-[76px] max-md:flex max-sm:hidden">
-              <div className="overflow-hidden gap-2.5 self-stretch px-2.5 py-2.5 my-auto w-14 bg-white rounded-xl border border-fuchsia-500 border-solid min-h-[42px] relative flex items-center justify-center">
-                <button
-                  onClick={toggleVideoSection}
-                  className="w-full h-full flex items-center justify-center hover:bg-slate-50 rounded-full transition-colors"
-                >
-                  {renderDonutChart(progressPercentage, 32)}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <LessonHeader
+          title={lesson.title}
+          description={lesson.description}
+          isLessonCompleted={isLessonCompleted}
+          progressPercentage={progressPercentage}
+          toggleLessonCompletion={toggleLessonCompletion}
+          toggleVideoSection={toggleVideoSection}
+        />
       </header>
 
       {isVideoSectionVisible && (
         <div className="bg-white pb-5 rounded-lg">
-          <div
-            className={`flex px-5 mt-5 ${
-              hasHorizontalScroll ? 'flex-col' : 'flex-row'
-            }`}
-          >
-            <div
-              className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-0 md:pr-5`}
-            >
-              <div ref={videoRef} className="aspect-video bg-slate-200 rounded-xl">
-                <div className="w-full h-full flex items-center justify-center text-slate-500">
-                  Vídeo da aula: {lesson.sections.find(s => s.id === selectedSection)?.title}
-                </div>
-              </div>
-            </div>
-
-            <div className={`${hasHorizontalScroll ? 'w-full mt-4' : 'w-1/3'}`}>
-              <div
-                ref={sectionsContainerRef}
-                style={{
-                  height: hasHorizontalScroll ? 'auto' : `${videoHeight}px`,
-                }}
-                className={`
-                  ${hasHorizontalScroll ? 'overflow-x-auto pb-4' : 'overflow-y-auto'} 
-                  pr-2
-                  [&::-webkit-scrollbar]:w-2
-                  [&::-webkit-scrollbar]:h-2
-                  [&::-webkit-scrollbar-track]:bg-slate-100
-                  [&::-webkit-scrollbar-track]:rounded-full
-                  [&::-webkit-scrollbar-thumb]:bg-slate-300
-                  [&::-webkit-scrollbar-thumb]:rounded-full
-                  [&::-webkit-scrollbar-thumb]:hover:bg-slate-400
-                `}
-              >
-                <ul
-                  className={`flex gap-2 ${
-                    hasHorizontalScroll ? 'flex-row' : 'flex-col'
-                  }`}
-                >
-                  {lesson.sections.map(section => (
-                    <li
-                      key={section.id}
-                      className={hasHorizontalScroll ? 'min-w-[300px]' : ''}
-                    >
-                      <button
-                        onClick={() => handleSectionClick(section.id)}
-                        className={`flex justify-between items-center px-4 py-3 w-full text-base font-medium text-left rounded-xl border border-solid min-h-[50px] ${
-                          selectedSection === section.id
-                            ? "bg-fuchsia-100 border-fuchsia-500 text-fuchsia-500"
-                            : "bg-white border-gray-100 text-slate-800"
-                        }`}
-                      >
-                        <div className="flex flex-1 shrink gap-3 items-center self-stretch my-auto w-full basis-0 min-w-60">
-                          <div onClick={e => toggleCompletion(section.id, e)}>
-                            {renderCheckbox(completedSections.includes(section.id))}
-                          </div>
-                          <span className="self-stretch my-auto leading-none text-sm">
-                            {section.title}
-                          </span>
-                        </div>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-          <div className="px-5">
-            <div className="mt-8">
-              <ItensDaAula
-                setShowQuestions={setShowQuestions}
-                showQuestions={showQuestions}
-              />
-            </div>
-            {showQuestions && (
-              <div className="mt-8">
-                <QuestionCard
-                  question={question}
-                  disabledOptions={disabledOptions}
-                  onToggleDisabled={toggleOptionDisabled}
-                />
-              </div>
-            )}
-          </div>
+          <VideoSection
+            selectedSection={selectedSection}
+            sections={lesson.sections}
+            completedSections={completedSections}
+            hasHorizontalScroll={hasHorizontalScroll}
+            videoHeight={videoHeight}
+            handleSectionClick={handleSectionClick}
+            toggleCompletion={toggleCompletion}
+          />
+          <ContentSection
+            showQuestions={showQuestions}
+            setShowQuestions={setShowQuestions}
+            question={question}
+            disabledOptions={disabledOptions}
+            onToggleDisabled={toggleOptionDisabled}
+          />
         </div>
       )}
     </article>
