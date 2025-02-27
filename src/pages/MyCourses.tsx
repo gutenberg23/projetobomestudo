@@ -39,7 +39,7 @@ const FavoriteItem: React.FC<ItemProps> = ({
   description,
   onRemove
 }) => {
-  return <div className="flex justify-between items-center p-4 border-b border-gray-100 hover:bg-gray-50">
+  return <div className="flex justify-between items-center p-4 border-b border-gray-100 hover:bg-gray-80">
       <div className="flex-1">
         <h3 className="text-lg font-medium">{title}</h3>
         <p className="text-sm text-gray-600 mt-1">{description}</p>
