@@ -41,9 +41,11 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       }
       checkScroll();
     };
+
     updateLayout();
     const timeoutId = setTimeout(updateLayout, 100);
     window.addEventListener('resize', updateLayout);
+
     return () => {
       window.removeEventListener('resize', updateLayout);
       clearTimeout(timeoutId);
@@ -77,16 +79,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       setHasHorizontalScroll(scrollWidth > clientWidth);
     }
   };
-
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setHasHorizontalScroll(false);
-      }
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const handleSectionClick = (sectionId: string) => {
     setSelectedSection(sectionId);
@@ -129,10 +121,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     );
   };
 
-  const progressPercentage = Math.round((disabledOptions.filter(optionId => 
-    question.options.find(opt => opt.id === optionId)?.isCorrect
-  ).length / disabledOptions.length) * 100) || 0;
-
   return (
     <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <header className={`flex flex-col justify-center py-3 md:py-6 w-full bg-white ${isVideoSectionVisible ? 'border-b border-gray-100 rounded-t-xl' : 'rounded-xl'}`}>
@@ -140,14 +128,13 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           title={lesson.title}
           description={lesson.description}
           isLessonCompleted={isLessonCompleted}
-          progressPercentage={progressPercentage}
           toggleLessonCompletion={toggleLessonCompletion}
           toggleVideoSection={toggleVideoSection}
         />
       </header>
 
       {isVideoSectionVisible && (
-        <div className="bg-white pb-5 rounded-lg">
+        <div ref={videoRef} className="bg-white pb-5 rounded-lg">
           <VideoSection
             selectedSection={selectedSection}
             sections={lesson.sections}
