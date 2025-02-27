@@ -49,7 +49,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const handleSubmitComment = () => {
     setComment("");
   };
-  return <article className="w-full rounded-xl border border-solid border-gray-100 mb-5">
+  return <article className="w-full rounded-xl border border-solid border-gray-100 mb-5 bg-white">
       <header className="overflow-hidden rounded-t-xl rounded-b-none border-b border-gray-100">
         <QuestionHeader year={question.year} institution={question.institution} organization={question.organization} role={question.role} id={question.id} />
       </header>
