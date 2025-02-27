@@ -121,6 +121,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     );
   };
 
+  // Calculate progress percentage based on completed sections
+  const progressPercentage = Math.round((completedSections.length / lesson.sections.length) * 100);
+
   return (
     <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <header className={`flex flex-col justify-center py-3 md:py-6 w-full bg-white ${isVideoSectionVisible ? 'border-b border-gray-100 rounded-t-xl' : 'rounded-xl'}`}>
@@ -128,6 +131,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           title={lesson.title}
           description={lesson.description}
           isLessonCompleted={isLessonCompleted}
+          progressPercentage={progressPercentage}
           toggleLessonCompletion={toggleLessonCompletion}
           toggleVideoSection={toggleVideoSection}
         />
