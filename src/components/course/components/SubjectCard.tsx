@@ -24,6 +24,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       <div className="p-4 cursor-pointer" onClick={onToggle}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
+            <div className="relative flex items-center justify-center">
+              {renderDonutChart(subject.progress)}
+              <span className="absolute text-xs font-medium">{subject.progress}%</span>
+            </div>
             <span className="font-medium text-[rgba(38,47,60,1)]">{subject.name}</span>
           </div>
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -48,3 +52,4 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         </div>}
     </div>;
 };
+
