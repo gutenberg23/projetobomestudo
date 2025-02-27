@@ -32,19 +32,6 @@ export const CourseHeader = () => {
             />
             Imprimir Certificado
           </button>
-          <div className="flex items-center gap-0.5 text-[rgba(38,47,60,1)] mt-2">
-            <span>Avalie o conteúdo:</span>
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <img
-                  key={star}
-                  src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/f91c02c767928e3aa54f81147398f3fd277289ffde199055d8218e6c6fb561eb"
-                  alt={`Star ${star}`}
-                  className="w-6"
-                />
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>
