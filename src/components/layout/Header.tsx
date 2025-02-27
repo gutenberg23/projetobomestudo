@@ -5,12 +5,12 @@ import { ProfileMenu } from "./ProfileMenu";
 export const Header = () => {
   return (
     <header className="fixed top-0 z-50 w-full h-[88px] bg-white border-b border-[#f8fafc]">
-      <div className="flex min-w-60 w-full items-center justify-between px-2.5">
-        <div className="flex justify-center items-center w-full max-w-[278px] py-[13px]">
+      <div className="flex items-center justify-between h-full px-5">
+        <div className="flex items-center">
           <img
             src="https://app.lovable.dev/assets/logo.png"
             alt="Logo"
-            className="w-[200px]"
+            className="h-16 w-auto"
           />
         </div>
         <div className="flex items-center gap-4">

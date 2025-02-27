@@ -1,5 +1,6 @@
 
 import React from "react";
+import { MessageSquare, CheckSquare, FileText } from "lucide-react";
 
 interface QuestionFooterProps {
   commentsCount: number;
@@ -33,11 +34,7 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
             : "text-gray-400 cursor-not-allowed"
         } ${showAnswer ? "bg-fuchsia-50" : ""}`}
       >
-        <img
-          src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/85c4f963004985c984c218da550aba94152745f3fe4607e8cb2aa5b220fc681e"
-          alt="Answer Icon"
-          className="w-5 h-5"
-        />
+        <CheckSquare className="w-5 h-5" />
         Responder
       </button>
 
@@ -47,11 +44,7 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
           showComments ? "bg-fuchsia-50" : ""
         }`}
       >
-        <img
-          src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/053912c8e6850c9a06c83ffae3f7cc6596370f8329d8c65e7e0b651646e33e59"
-          alt="Comments Icon"
-          className="w-5 h-5"
-        />
+        <MessageSquare className="w-5 h-5" />
         {commentsCount} Mensagens
       </button>
 
@@ -61,11 +54,7 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
           showOfficialAnswer ? "bg-fuchsia-50" : ""
         }`}
       >
-        <img
-          src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/0055fefcc304b1e6fa3d8b6d06eb182bc28c8e8e2e0423ba4a3481bc187780a1"
-          alt="Official Answer Icon"
-          className="w-5 h-5"
-        />
+        <FileText className="w-5 h-5" />
         Gabarito Comentado
       </button>
     </footer>
