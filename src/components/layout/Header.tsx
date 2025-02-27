@@ -1,7 +1,13 @@
 
 import React from "react";
-import { Search, Menu } from "lucide-react";
+import { Search, Menu, User, BookOpen } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 export const Header = () => {
   return (
@@ -52,10 +58,24 @@ export const Header = () => {
             />
           </button>
 
-          <Avatar className="w-[50px] h-[50px] border-2 border-white shadow-[0px_1px_4px_rgba(0,0,0,0.05)]">
-            <AvatarImage src="https://github.com/shadcn.png" />
-            <AvatarFallback>CN</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="w-[50px] h-[50px] border-2 border-white shadow-[0px_1px_4px_rgba(0,0,0,0.05)] cursor-pointer">
+                <AvatarImage src="https://github.com/shadcn.png" />
+                <AvatarFallback>CN</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem>
+                <BookOpen className="mr-2 h-4 w-4" />
+                <span>Meus Cursos</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>Meu Perfil</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

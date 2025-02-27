@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Book, FileText, Activity } from "lucide-react";
+import { Book, FileText, ScrollText } from "lucide-react";
 
 export const CourseNavigation: React.FC = () => {
   return (
@@ -24,10 +24,9 @@ export const CourseNavigation: React.FC = () => {
       </button>
 
       <button className="flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap">
-        <Activity className="w-6 h-6" />
+        <ScrollText className="w-6 h-6" />
         <span>Simulados</span>
       </button>
     </nav>
   );
 };
-
