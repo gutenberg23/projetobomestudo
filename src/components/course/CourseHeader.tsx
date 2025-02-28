@@ -15,9 +15,6 @@ export const CourseHeader = () => {
       <div className="flex min-w-60 w-full items-center justify-between flex-wrap px-2.5 py-[50px] max-w-7xl mx-auto">
         <div className="flex min-w-60 flex-col justify-center py-2.5 w-full md:w-auto">
           <div className="flex w-full items-center gap-2.5 text-[35px] md:text-[35px] text-[24px] text-[rgba(38,47,60,1)] font-bold leading-[31px]">
-            <span className="bg-[#FFDEE2] text-[#272f3c] text-base px-3 py-1 rounded-full">
-              #{courseId}
-            </span>
             <h1 className="flex-1">Título do Curso - Loren Ipsun Dolor</h1>
             <button 
               onClick={toggleFavorite}
@@ -28,6 +25,9 @@ export const CourseHeader = () => {
               />
             </button>
           </div>
+          <span className="bg-[#FFDEE2] text-[#272f3c] text-base px-3 py-1 rounded-full inline-block mt-2">
+            #{courseId}
+          </span>
         </div>
 
         <div className="flex flex-col text-[17px] justify-center w-full md:w-auto md:ml-auto py-[13px] mt-4 md:mt-0">
