@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import type { Section } from "../types";
 import { VideoSection } from "./VideoSection";
 import { SectionsNavigation } from "./SectionsNavigation";
@@ -28,11 +28,26 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
   onToggleCompletion
 }) => {
   const videoRef = useRef<HTMLDivElement>(null);
+  const [currentVideoHeight, setCurrentVideoHeight] = useState(videoHeight);
 
-  React.useEffect(() => {
-    if (videoRef.current) {
-      setVideoHeight(videoRef.current.offsetHeight);
-    }
+  useEffect(() => {
+    const updateVideoHeight = () => {
+      if (videoRef.current) {
+        const height = videoRef.current.offsetHeight;
+        setCurrentVideoHeight(height);
+        setVideoHeight(height);
+      }
+    };
+
+    updateVideoHeight();
+    
+    // Adicionar listener para quando a janela for redimensionada
+    window.addEventListener('resize', updateVideoHeight);
+    
+    // Cleanup function
+    return () => {
+      window.removeEventListener('resize', updateVideoHeight);
+    };
   }, [setVideoHeight]);
 
   return (
@@ -42,7 +57,7 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
           <VideoSection 
             selectedSection={selectedSection} 
             sections={sections}
-            videoHeight={videoHeight}
+            videoHeight={currentVideoHeight}
           />
         </div>
       </div>
@@ -53,7 +68,7 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
           selectedSection={selectedSection}
           completedSections={completedSections}
           hasHorizontalScroll={hasHorizontalScroll}
-          videoHeight={videoHeight}
+          videoHeight={currentVideoHeight}
           onSectionClick={onSectionClick}
           onToggleCompletion={onToggleCompletion}
         />
