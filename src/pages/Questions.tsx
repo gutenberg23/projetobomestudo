@@ -177,7 +177,7 @@ const Questions = () => {
             </div>
           </div>
 
-          <Button onClick={handleApplyFilters} className="w-full text-[#ea2be2]">
+          <Button onClick={handleApplyFilters} className="w-full text-white bg-[#ea2be2]">
             Filtrar Questões
           </Button>
         </div>
