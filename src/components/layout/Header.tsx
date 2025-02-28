@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Search } from "lucide-react";
+import { Search, Menu, User } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -33,12 +33,23 @@ export const Header = () => {
 
         <Popover>
           <PopoverTrigger asChild>
-            <Avatar className="w-[50px] h-[50px] border-2 border-white cursor-pointer">
-              <AvatarImage src="https://github.com/shadcn.png" />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
+            <button className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white cursor-pointer">
+              <Menu className="w-6 h-6 text-gray-700" />
+            </button>
           </PopoverTrigger>
-          <PopoverContent className="w-48 p-0 border border-gray-100">
+          <PopoverContent className="w-64 p-0 border border-gray-100">
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-[50px] h-[50px] border-2 border-white">
+                  <AvatarImage src="https://github.com/shadcn.png" />
+                  <AvatarFallback>CN</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium text-gray-900">Carlos Silva</p>
+                  <p className="text-sm text-gray-500">carlos@exemplo.com</p>
+                </div>
+              </div>
+            </div>
             <nav className="flex flex-col">
               <Link
                 to="/explore"
@@ -63,6 +74,12 @@ export const Header = () => {
                 className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
               >
                 Curso
+              </Link>
+              <Link
+                to="/settings"
+                className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
+              >
+                Configurações
               </Link>
               <div className="border-t border-gray-100">
                 <Link

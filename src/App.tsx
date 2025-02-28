@@ -9,6 +9,7 @@ import { CourseLayout } from "./components/course/CourseLayout";
 import Explore from "./pages/Explore";
 import MyCourses from "./pages/MyCourses";
 import Questions from "./pages/Questions";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/explore" element={<Explore />} />
           <Route path="/my-courses" element={<MyCourses />} />
           <Route path="/questions" element={<Questions />} />
+          <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
