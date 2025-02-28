@@ -34,7 +34,7 @@ export const DashboardSummary = ({
     return days >= 0 ? days : null;
   }, [examDate]);
   return <div className="mb-8 p-5 bg-white rounded-[10px]">
-      <div className="flex flex-col gap-4 mb-4">
+      <div className="flex flex-col gap-4 mb-4 text-[#272f3c]">
         <h3 className="text-2xl font-bold">Resumo Geral</h3>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-wrap items-center gap-2">
