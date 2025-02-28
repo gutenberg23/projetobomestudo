@@ -135,7 +135,7 @@ const Questions = () => {
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 mx-auto w-full">
-        <h1 className="text-2xl md:text-[35px] mb-6 text-[#262f3c] font-extrabold">Questões</h1>
+        <h1 className="text-2xl mb-6 text-[#262f3c] font-extrabold md:text-3xl">Questões</h1>
 
         <div className="bg-white rounded-lg p-6 mb-8">
           <div className="grid grid-cols-1 gap-6 mb-6">
