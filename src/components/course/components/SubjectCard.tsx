@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { renderDonutChart } from '../utils/donutChart';
+import { DonutChart } from '../utils/donutChart';
 
 interface SubjectCardProps {
   subject: {
@@ -25,8 +25,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
             <div className="relative flex items-center justify-center">
-              {renderDonutChart(subject.progress)}
-              <span className="absolute text-xs font-medium">{subject.progress}%</span>
+              <DonutChart percentage={subject.progress} />
             </div>
             <span className="font-medium text-[rgba(38,47,60,1)]">{subject.name}</span>
           </div>
@@ -52,4 +51,3 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         </div>}
     </div>;
 };
-

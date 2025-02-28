@@ -25,11 +25,11 @@ const Questions = () => {
     organization: "Prefeitura de Porto Alegre",
     role: "Administrador",
     options: [
-      { id: "opt1", text: "Refiro-me à questões de ordem pública." },
-      { id: "opt2", text: "Chegou à noite e saiu de manhã." },
-      { id: "opt3", text: "Estava disposto à colaborar com a investigação." },
-      { id: "opt4", text: "Ela foi à farmácia comprar remédios." },
-      { id: "opt5", text: "Voltamos à pé para casa depois da festa." },
+      { id: "opt1", text: "Refiro-me à questões de ordem pública.", isCorrect: false },
+      { id: "opt2", text: "Chegou à noite e saiu de manhã.", isCorrect: false },
+      { id: "opt3", text: "Estava disposto à colaborar com a investigação.", isCorrect: false },
+      { id: "opt4", text: "Ela foi à farmácia comprar remédios.", isCorrect: true },
+      { id: "opt5", text: "Voltamos à pé para casa depois da festa.", isCorrect: false },
     ],
     comments: [
       {
@@ -109,11 +109,11 @@ const Questions = () => {
                 institution: "CESPE",
                 organization: "TRT 4ª Região",
                 options: [
-                  { id: "opt6", text: "O princípio da legalidade significa que o administrador público está sujeito às determinações da lei, não podendo se afastar de suas prescrições, sob pena de praticar ato inválido." },
-                  { id: "opt7", text: "O princípio da moralidade não é aplicável aos concursos públicos, apenas aos processos licitatórios." },
-                  { id: "opt8", text: "O princípio da publicidade pode ser restringido quando o sigilo for imprescindível à segurança da sociedade e do Estado." },
-                  { id: "opt9", text: "O princípio da eficiência foi introduzido pela Emenda Constitucional nº 45/2004." },
-                  { id: "opt10", text: "O princípio da impessoalidade impede que o administrador utilize seu cargo para promoção pessoal, mas não obsta a prática de nepotismo." },
+                  { id: "opt6", text: "O princípio da legalidade significa que o administrador público está sujeito às determinações da lei, não podendo se afastar de suas prescrições, sob pena de praticar ato inválido.", isCorrect: true },
+                  { id: "opt7", text: "O princípio da moralidade não é aplicável aos concursos públicos, apenas aos processos licitatórios.", isCorrect: false },
+                  { id: "opt8", text: "O princípio da publicidade pode ser restringido quando o sigilo for imprescindível à segurança da sociedade e do Estado.", isCorrect: false },
+                  { id: "opt9", text: "O princípio da eficiência foi introduzido pela Emenda Constitucional nº 45/2004.", isCorrect: false },
+                  { id: "opt10", text: "O princípio da impessoalidade impede que o administrador utilize seu cargo para promoção pessoal, mas não obsta a prática de nepotismo.", isCorrect: false },
                 ]
               }} 
               disabledOptions={disabledOptions}

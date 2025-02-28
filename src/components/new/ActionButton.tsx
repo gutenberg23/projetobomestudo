@@ -4,7 +4,8 @@ import * as React from "react";
 
 interface ActionButtonProps {
   icon: string;
-  label: string;
+  text?: string;
+  label?: string;
   variant?: "default" | "highlight";
   isActive?: boolean;
   onClick?: () => void;
@@ -13,10 +14,12 @@ interface ActionButtonProps {
 export const ActionButton: React.FC<ActionButtonProps> = ({
   icon,
   label,
+  text,
   variant = "default",
   isActive = false,
   onClick,
 }) => {
+  const displayText = text || label;
   const baseStyles =
     "flex overflow-hidden gap-2.5 justify-center items-center self-stretch p-2.5 my-auto bg-white rounded-md border";
   const variantStyles =
@@ -34,7 +37,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
         alt=""
         className="object-contain shrink-0 self-stretch my-auto w-6 aspect-square"
       />
-      <span className="self-stretch my-auto whitespace-nowrap">{label}</span>
+      <span className="self-stretch my-auto whitespace-nowrap">{displayText}</span>
     </button>
   );
 };
