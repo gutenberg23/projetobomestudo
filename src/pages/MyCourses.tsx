@@ -94,7 +94,7 @@ const MyCourses = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl mb-4 text-[#262f3c] font-bold">Disciplinas</h2>
+            <h2 className="text-2xl mb-4 text-[#272f3c] font-bold">Disciplinas</h2>
             <div className="bg-white rounded-lg overflow-hidden">
               <div className="divide-y divide-gray-100">
                 {favoriteSubjects.length > 0 ? favoriteSubjects.map(subject => <FavoriteItem key={subject.id} id={subject.id} title={subject.title} description={subject.description} topics={subject.topics} lessons={subject.lessons} onRemove={handleRemoveSubject} />) : <div className="p-8 text-center text-gray-500">
