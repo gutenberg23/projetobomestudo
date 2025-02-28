@@ -107,7 +107,7 @@ const Explore = () => {
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
-        <h1 className="text-3xl mb-6 text-[#262f3c] md:text-3xl font-extrabold">Explorar</h1>
+        <h1 className="text-3xl mb-6 md:text-3xl font-extrabold text-[#272f3c]">Explorar</h1>
         
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="flex items-center flex-1 relative">
