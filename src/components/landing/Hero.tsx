@@ -9,7 +9,7 @@ export const Hero = () => {
           <p className="text-lg text-gray-600 text-center">
             Você pode alcançar o sonho de passar em um concurso público e adquirir a tão sonhada estabilidade financeira.
           </p>
-          <button className="bg-[rgba(241,28,227,1)] text-white px-8 py-4 rounded-lg text-lg font-medium hover:bg-opacity-90 transition-colors text-center">
+          <button className="bg-[rgba(241,28,227,1)] text-white rounded-lg text-lg font-medium hover:bg-opacity-90 transition-colors text-center px-[11px] py-[11px]">
             Quero Começar Agora!
           </button>
         </div>
