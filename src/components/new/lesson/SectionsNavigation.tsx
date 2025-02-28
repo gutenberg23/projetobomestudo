@@ -30,7 +30,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         maxHeight: hasHorizontalScroll ? '80px' : `${videoHeight}px` // Limitando a altura no modo móvel
       }}
       className={`
-        ${hasHorizontalScroll ? 'overflow-x-auto overflow-y-hidden pb-4' : 'overflow-y-auto'} 
+        overflow-y-auto
         pr-2
         [&::-webkit-scrollbar]:w-2
         [&::-webkit-scrollbar]:h-2
@@ -41,9 +41,9 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         [&::-webkit-scrollbar-thumb]:hover:bg-slate-400
       `}
     >
-      <ul className={`flex gap-2 ${hasHorizontalScroll ? 'flex-row' : 'flex-col'}`}>
+      <ul className="flex flex-col gap-2">
         {sections.map(section => (
-          <li key={section.id} className={hasHorizontalScroll ? 'min-w-[300px] flex-shrink-0' : ''}>
+          <li key={section.id}>
             <button
               onClick={() => onSectionClick(section.id)}
               className={`flex justify-between items-center px-4 py-3 w-full text-base font-medium text-left rounded-xl border border-solid min-h-[50px] ${

@@ -18,12 +18,7 @@ export const QuestionComment: React.FC<QuestionCommentProps> = ({
     <article className="flex flex-col justify-center px-3 md:px-12 py-2.5 w-full">
       <div className="flex flex-wrap justify-between items-start w-full">
         <div className="flex flex-wrap flex-1 shrink items-start basis-0 min-w-60">
-          <img
-            src={comment.avatar}
-            alt={`${comment.author}'s avatar`}
-            className="object-contain w-9 aspect-square rounded-[100px]"
-          />
-          <div className="flex flex-col flex-1 shrink pl-3 basis-0 min-w-60">
+          <div className="flex flex-col flex-1 shrink basis-0 min-w-60">
             <div className="flex gap-2.5 items-center self-start text-slate-800">
               <span className="overflow-hidden self-stretch pr-px my-auto text-base font-extrabold leading-none">
                 {comment.author}
