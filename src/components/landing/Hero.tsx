@@ -2,7 +2,7 @@ import React from "react";
 export const Hero = () => {
   return <div className="w-full px-2.5 bg-white md:py-0 pt-[58px] pb-[0px]">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
-        <div className="flex-1 space-y-6">
+        <div className="flex-1 space-y-6 mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold text-[rgba(38,47,60,1)] leading-tight text-center">
             Estude de graça! Qual a desculpa agora?
           </h1>
