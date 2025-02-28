@@ -1,3 +1,4 @@
+
 export interface Comment {
   id: string;
   author: string;
@@ -7,16 +8,18 @@ export interface Comment {
   likes: number;
 }
 
+export interface Section {
+  id: string;
+  title: string;
+  isActive: boolean;
+}
+
 export interface Lesson {
   id: string;
   title: string;
   description: string;
   rating: string;
-  sections: Array<{
-    id: string;
-    title: string;
-    isActive: boolean;
-  }>;
+  sections: Section[];
 }
 
 export interface Question {
