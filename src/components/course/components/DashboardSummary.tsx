@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -36,7 +35,7 @@ export const DashboardSummary = ({
   }, [examDate]);
   return <div className="mb-8 p-5 bg-white rounded-[10px]">
       <div className="flex flex-col gap-4 mb-4">
-        <h3 className="text-lg font-semibold">Resumo Geral</h3>
+        <h3 className="text-2xl font-bold">Resumo Geral</h3>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Meta de Aproveitamento:</span>
@@ -70,7 +69,9 @@ export const DashboardSummary = ({
                 <span className="font-semibold">{overallProgress}%</span>
               </div>
               <Progress value={overallProgress} className="h-2 bg-gray-200">
-                <div className="h-full bg-[#ea2be2]" style={{ width: `${overallProgress}%` }} />
+                <div className="h-full bg-[#ea2be2]" style={{
+              width: `${overallProgress}%`
+            }} />
               </Progress>
               <StatisticsCard subjects={subjects} />
             </div>
@@ -109,7 +110,9 @@ export const DashboardSummary = ({
                 <span className="font-semibold">2</span>
               </div>
               <Progress value={100} className="h-2 bg-gray-200">
-                <div className="h-full bg-[#ea2be2]" style={{ width: `100%` }} />
+                <div className="h-full bg-[#ea2be2]" style={{
+              width: `100%`
+            }} />
               </Progress>
             </div>
             <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
