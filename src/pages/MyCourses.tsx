@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -21,7 +20,6 @@ const MOCK_FAVORITE_COURSES = [{
   topics: 16,
   lessons: 35
 }];
-
 const MOCK_FAVORITE_SUBJECTS = [{
   id: "1",
   title: "Direito Administrativo",
@@ -37,7 +35,6 @@ const MOCK_FAVORITE_SUBJECTS = [{
   topics: 9,
   lessons: 18
 }];
-
 interface ItemProps {
   id: string;
   title: string;
@@ -46,7 +43,6 @@ interface ItemProps {
   lessons: number;
   onRemove: (id: string) => void;
 }
-
 const FavoriteItem: React.FC<ItemProps> = ({
   id,
   title,
@@ -55,70 +51,44 @@ const FavoriteItem: React.FC<ItemProps> = ({
   lessons,
   onRemove
 }) => {
-  return (
-    <div className="flex justify-between items-center p-4 border-b border-gray-100">
+  return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
-        <h3 className="text-xl font-bold text-[#262f3c] mb-0.5">{title}</h3>
-        <p className="text-sm text-gray-600">{description}</p>
+        <h3 className="text-[#262f3c] mb-0 font-bold text-2xl leading-none">{title}</h3>
+        <p className="text-sm leading-none text-[#67748a]">{description}</p>
       </div>
       <div className="flex items-center">
         <div className="text-right mr-4">
           <p className="text-sm font-bold text-[#262f3c]">Tópicos: <span className="text-gray-600 font-normal">{topics}</span></p>
           <p className="text-sm font-bold text-[#262f3c]">Aulas: <span className="text-gray-600 font-normal">{lessons}</span></p>
         </div>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => onRemove(id)} 
-          aria-label="Remover dos favoritos"
-        >
+        <Button variant="ghost" size="icon" onClick={() => onRemove(id)} aria-label="Remover dos favoritos">
           <Star className="h-5 w-5 fill-[#ea2be2] text-[#ea2be2]" />
         </Button>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 const MyCourses = () => {
   const [favoriteCourses, setFavoriteCourses] = useState(MOCK_FAVORITE_COURSES);
   const [favoriteSubjects, setFavoriteSubjects] = useState(MOCK_FAVORITE_SUBJECTS);
-
   const handleRemoveCourse = (id: string) => {
     setFavoriteCourses(favoriteCourses.filter(course => course.id !== id));
   };
-
   const handleRemoveSubject = (id: string) => {
     setFavoriteSubjects(favoriteSubjects.filter(subject => subject.id !== id));
   };
-
-  return (
-    <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+  return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
-        <h1 className="text-3xl md:text-[40px] font-bold mb-6 text-[#262f3c]">Meus Cursos</h1>
+        <h1 className="text-3xl md:text-[40px] mb-6 text-[#262f3c] font-extrabold">Meus Cursos</h1>
 
         <div className="space-y-8">
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-[#262f3c]">Cursos</h2>
+            <h2 className="text-2xl mb-4 text-[#262f3c] font-bold">Cursos</h2>
             <div className="bg-white rounded-lg overflow-hidden">
               <div className="divide-y divide-gray-100">
-                {favoriteCourses.length > 0 ? (
-                  favoriteCourses.map(course => (
-                    <FavoriteItem 
-                      key={course.id} 
-                      id={course.id} 
-                      title={course.title} 
-                      description={course.description} 
-                      topics={course.topics}
-                      lessons={course.lessons}
-                      onRemove={handleRemoveCourse} 
-                    />
-                  ))
-                ) : (
-                  <div className="p-8 text-center text-gray-500">
+                {favoriteCourses.length > 0 ? favoriteCourses.map(course => <FavoriteItem key={course.id} id={course.id} title={course.title} description={course.description} topics={course.topics} lessons={course.lessons} onRemove={handleRemoveCourse} />) : <div className="p-8 text-center text-gray-500">
                     Você ainda não adicionou nenhum curso aos favoritos.
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>
           </section>
@@ -127,31 +97,15 @@ const MyCourses = () => {
             <h2 className="text-2xl font-semibold mb-4 text-[#262f3c]">Disciplinas</h2>
             <div className="bg-white rounded-lg overflow-hidden">
               <div className="divide-y divide-gray-100">
-                {favoriteSubjects.length > 0 ? (
-                  favoriteSubjects.map(subject => (
-                    <FavoriteItem 
-                      key={subject.id} 
-                      id={subject.id} 
-                      title={subject.title} 
-                      description={subject.description} 
-                      topics={subject.topics}
-                      lessons={subject.lessons}
-                      onRemove={handleRemoveSubject} 
-                    />
-                  ))
-                ) : (
-                  <div className="p-8 text-center text-gray-500">
+                {favoriteSubjects.length > 0 ? favoriteSubjects.map(subject => <FavoriteItem key={subject.id} id={subject.id} title={subject.title} description={subject.description} topics={subject.topics} lessons={subject.lessons} onRemove={handleRemoveSubject} />) : <div className="p-8 text-center text-gray-500">
                     Você ainda não adicionou nenhuma disciplina aos favoritos.
-                  </div>
-                )}
+                  </div>}
               </div>
             </div>
           </section>
         </div>
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default MyCourses;
