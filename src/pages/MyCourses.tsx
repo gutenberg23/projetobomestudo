@@ -83,7 +83,7 @@ const MyCourses = () => {
 
         <div className="space-y-8">
           <section>
-            <h2 className="text-2xl mb-4 text-[#262f3c] font-bold">Concursos</h2>
+            <h2 className="text-2xl mb-4 text-[#272f3c] font-bold">Concursos</h2>
             <div className="bg-white rounded-lg overflow-hidden">
               <div className="divide-y divide-gray-100">
                 {favoriteCourses.length > 0 ? favoriteCourses.map(course => <FavoriteItem key={course.id} id={course.id} title={course.title} description={course.description} topics={course.topics} lessons={course.lessons} onRemove={handleRemoveCourse} />) : <div className="p-8 text-center text-gray-500">
