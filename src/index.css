@@ -100,3 +100,8 @@
     @apply bg-background text-foreground;
   }
 }
+
+.max-w-7xl {
+  /* Removendo a propriedade max-width para permitir utilização do espaço horizontal completo */
+  width: 100%;
+}

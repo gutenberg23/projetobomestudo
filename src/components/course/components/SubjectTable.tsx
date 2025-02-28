@@ -16,14 +16,19 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
   const subjectProgress = Math.round((subjectTotals.completedTopics / subjectTotals.totalTopics) * 100);
   const subjectPerformance = calculatePerformance(subjectTotals.hits, subjectTotals.exercisesDone);
 
-  const handleReviewClick = (subjectId: number, topicId: number, checkboxIndex: number) => {
-    // Toggle the isReviewed value
-    const currentValue = subject.topics.find(t => t.id === topicId)?.isReviewed || false;
-    
-    // Only change if the checkbox is not already selected or a different one is being selected
-    if (checkboxIndex === 0) {
-      onTopicChange(subjectId, topicId, 'isReviewed', !currentValue);
-    } else {
+  const handleIsReviewedChange = (subjectId: number, topicId: number) => {
+    const topic = subject.topics.find(t => t.id === topicId);
+    if (topic) {
+      onTopicChange(subjectId, topicId, 'isReviewed', !topic.isReviewed);
+    }
+  };
+
+  const handleNotReviewedChange = (subjectId: number, topicId: number) => {
+    // Independentemente do valor atual, estamos apenas invertendo o estado do checkbox "Não revisado"
+    // Isso permite qualquer combinação: ambos marcados, ambos desmarcados, ou um marcado e outro desmarcado
+    const topic = subject.topics.find(t => t.id === topicId);
+    if (topic) {
+      const currentValue = topic.isReviewed;
       onTopicChange(subjectId, topicId, 'isReviewed', currentValue);
     }
   };
@@ -151,7 +156,7 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
                 <td className="py-3 px-4">
                   <div className="flex items-center justify-center gap-2">
                     <div
-                      onClick={() => handleReviewClick(subject.id, topic.id, 0)}
+                      onClick={() => handleIsReviewedChange(subject.id, topic.id)}
                       className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${
                         topic.isReviewed
                           ? "bg-[#F11CE3] border-[#F11CE3]"
@@ -175,7 +180,7 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
                       )}
                     </div>
                     <div
-                      onClick={() => handleReviewClick(subject.id, topic.id, 1)}
+                      onClick={() => handleNotReviewedChange(subject.id, topic.id)}
                       className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${
                         !topic.isReviewed
                           ? "bg-[#F11CE3] border-[#F11CE3]"

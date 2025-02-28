@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -99,9 +100,19 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
             <div className="flex items-center gap-4 flex-1">
               <div onClick={toggleLessonCompletion} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${isLessonCompleted ? "bg-[#F11CE3] border-[#F11CE3]" : "bg-white border border-gray-200"}`}>
-                {isLessonCompleted && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
-                    <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>}
+                {isLessonCompleted && <svg
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  className="w-4 h-4 m-auto"
+                >
+                  <path
+                    d="M11.083 2.917L4.375 9.625 1.917 7.167"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>}
               </div>
               <div onClick={toggleVideoSection} className="flex flex-col flex-1 shrink justify-center self-stretch pr-5 my-auto basis-0 min-w-60 cursor-pointer py-0">
                 <h2 className="text-lg md:text-2xl font-bold leading-none text-slate-800 hover:text-[#F11CE3] transition-colors mb-2">
@@ -153,10 +164,24 @@ export const LessonCard: React.FC<LessonCardProps> = ({
                   {lesson.sections.map(section => <li key={section.id} className={hasHorizontalScroll ? 'min-w-[300px]' : ''}>
                       <button onClick={() => handleSectionClick(section.id)} className={`flex justify-between items-center px-4 py-3 w-full text-base font-medium text-left rounded-xl border border-solid min-h-[50px] ${selectedSection === section.id ? "bg-fuchsia-100 border-fuchsia-500 text-fuchsia-500" : "bg-white border-gray-100 text-slate-800"}`}>
                         <div className="flex flex-1 shrink gap-3 items-center self-stretch my-auto w-full basis-0 min-w-60">
-                          <div onClick={e => toggleCompletion(section.id, e)} className={`flex shrink-0 gap-2.5 self-stretch my-auto w-5 h-5 rounded border border-solid cursor-pointer ${completedSections.includes(section.id) ? "bg-fuchsia-500 border-fuchsia-500" : selectedSection === section.id ? "bg-fuchsia-100 border-fuchsia-500" : "bg-white border-gray-100"}`}>
-                            {completedSections.includes(section.id) && <svg viewBox="0 0 14 14" fill="white" className="w-4 h-4 m-auto">
-                                <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>}
+                          <div onClick={e => toggleCompletion(section.id, e)} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${
+                            completedSections.includes(section.id) 
+                              ? "bg-[#F11CE3] border-[#F11CE3]" 
+                              : "bg-white border border-gray-200"
+                          }`}>
+                            {completedSections.includes(section.id) && <svg
+                              viewBox="0 0 14 14"
+                              fill="none"
+                              className="w-4 h-4 m-auto"
+                            >
+                              <path
+                                d="M11.083 2.917L4.375 9.625 1.917 7.167"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>}
                           </div>
                           <span className="self-stretch my-auto leading-none text-sm">
                             {section.title}
