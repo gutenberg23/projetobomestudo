@@ -1,9 +1,6 @@
-
 import React from "react";
-
 export const Hero = () => {
-  return (
-    <div className="w-full px-2.5 py-16 md:py-24 bg-white">
+  return <div className="w-full px-2.5 py-16 bg-white md:py-0">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-8">
         <div className="flex-1 space-y-6">
           <h1 className="text-4xl md:text-5xl font-bold text-[rgba(38,47,60,1)] leading-tight">
@@ -17,13 +14,8 @@ export const Hero = () => {
           </button>
         </div>
         <div className="flex-1">
-          <img
-            src="public/lovable-uploads/98b03e84-986d-4ef1-955d-f92b9422fc94.png"
-            alt="Student studying"
-            className="w-full h-auto rounded-lg"
-          />
+          <img alt="Student studying" src="/lovable-uploads/343607f4-044c-4c9f-8cad-1ccc0760d766.jpg" className="w-full h-auto rounded-lg object-scale-down" />
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };

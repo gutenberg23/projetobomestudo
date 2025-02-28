@@ -1,9 +1,6 @@
-
 import React from "react";
-
 export const SecondHero = () => {
-  return (
-    <div className="w-full px-2.5 py-16 bg-white">
+  return <div className="w-full px-2.5 py-16 bg-white">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12">
         <div className="flex-1 space-y-6">
           <h2 className="text-3xl md:text-4xl font-bold text-[rgba(38,47,60,1)]">
@@ -18,13 +15,8 @@ export const SecondHero = () => {
           </a>
         </div>
         <div className="flex-1">
-          <img
-            src="public/lovable-uploads/94836d04-1225-493e-a113-36572286edcd.png"
-            alt="Features showcase"
-            className="w-full h-auto rounded-lg"
-          />
+          <img alt="Features showcase" className="w-full h-auto rounded-lg" src="/lovable-uploads/72f4e3ba-f775-45ec-a63f-d01db14a5b60.jpg" />
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
