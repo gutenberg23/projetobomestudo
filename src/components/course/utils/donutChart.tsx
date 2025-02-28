@@ -1,57 +1,30 @@
 
-import React from "react";
+import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-interface DonutChartProps {
-  percentage: number;
-  size?: number;
-  thickness?: number;
-  color?: string;
-}
-
-export const DonutChart: React.FC<DonutChartProps> = ({
-  percentage,
-  size = 80,
-  thickness = 10,
-  color = "#ea2be2",
-}) => {
-  const radius = size / 2;
-  const innerRadius = radius - thickness;
-  const circumference = 2 * Math.PI * innerRadius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+export const renderDonutChart = (percentage: number, size: number = 42) => {
+  const data = [
+    { name: 'Progress', value: percentage },
+    { name: 'Remaining', value: 100 - percentage }
+  ];
+  const COLORS = ['rgba(241,28,227,1)', '#E0E0E0'];
 
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle
-        cx={radius}
-        cy={radius}
-        r={innerRadius}
-        fill="none"
-        stroke="#E6E6E6"
-        strokeWidth={thickness}
-      />
-      <circle
-        cx={radius}
-        cy={radius}
-        r={innerRadius}
-        fill="none"
-        stroke={color}
-        strokeWidth={thickness}
-        strokeDasharray={circumference}
-        strokeDashoffset={strokeDashoffset}
-        transform={`rotate(-90 ${radius} ${radius})`}
-        strokeLinecap="round"
-      />
-      <text
-        x="50%"
-        y="50%"
-        dominantBaseline="middle"
-        textAnchor="middle"
-        fontSize="16"
-        fontWeight="bold"
-        fill="#333"
-      >
-        {percentage}%
-      </text>
-    </svg>
+    <div style={{ width: size, height: size }}>
+      <ResponsiveContainer>
+        <PieChart>
+          <Pie
+            data={data}
+            innerRadius={size * 0.35}
+            outerRadius={size * 0.45}
+            paddingAngle={2}
+            dataKey="value"
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
   );
 };

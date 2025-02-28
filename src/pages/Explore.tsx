@@ -1,49 +1,177 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Search, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+// Dados fictícios para demonstração
+const MOCK_COURSES = [{
+  id: "1",
+  title: "Direito Constitucional Completo",
+  description: "Curso completo de Direito Constitucional com foco em concursos públicos",
+  isFavorite: false,
+  topics: 15,
+  lessons: 30
+}, {
+  id: "2",
+  title: "Português para Concursos",
+  description: "Aprenda todas as regras de português aplicadas aos concursos públicos",
+  isFavorite: true,
+  topics: 12,
+  lessons: 24
+}, {
+  id: "3",
+  title: "Matemática Financeira",
+  description: "Curso completo de matemática financeira para provas bancárias",
+  isFavorite: false,
+  topics: 8,
+  lessons: 16
+}];
+
+const MOCK_SUBJECTS = [{
+  id: "1",
+  title: "Direito Administrativo",
+  description: "Tópicos essenciais de Direito Administrativo para concursos",
+  isFavorite: true,
+  topics: 10,
+  lessons: 20
+}, {
+  id: "2",
+  title: "Redação Oficial",
+  description: "Regras e modelos para redação oficial em órgãos públicos",
+  isFavorite: false,
+  topics: 6,
+  lessons: 12
+}, {
+  id: "3",
+  title: "Raciocínio Lógico",
+  description: "Aprenda os principais tópicos de raciocínio lógico para concursos",
+  isFavorite: false,
+  topics: 9,
+  lessons: 18
+}];
+
+interface ItemProps {
+  id: string;
+  title: string;
+  description: string;
+  isFavorite: boolean;
+  topics: number;
+  lessons: number;
+  onToggleFavorite: (id: string) => void;
+}
+
+const ResultItem: React.FC<ItemProps> = ({
+  id,
+  title,
+  description,
+  isFavorite,
+  topics,
+  lessons,
+  onToggleFavorite
+}) => {
+  return (
+    <div className="flex justify-between items-center p-4 border-b border-gray-100 hover:bg-[#f6f8fa]">
+      <div className="flex-1">
+        <h3 className="text-lg font-bold text-[#262f3c]">{title}</h3>
+        <p className="text-sm text-gray-600 mt-0.5">{description}</p>
+      </div>
+      <div className="flex items-center">
+        <div className="text-right mr-4">
+          <p className="text-sm font-bold text-[#262f3c]">Tópicos: <span className="text-gray-600 font-normal">{topics}</span></p>
+          <p className="text-sm font-bold text-[#262f3c]">Aulas: <span className="text-gray-600 font-normal">{lessons}</span></p>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => onToggleFavorite(id)} 
+          aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+        >
+          <Star className={`h-5 w-5 ${isFavorite ? "fill-[#ea2be2] text-[#ea2be2]" : "text-gray-400"}`} />
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 const Explore = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showSubjects, setShowSubjects] = useState(false);
+  const [courses, setCourses] = useState(MOCK_COURSES);
+  const [subjects, setSubjects] = useState(MOCK_SUBJECTS);
+
+  const handleToggleFavorite = (id: string) => {
+    if (showSubjects) {
+      setSubjects(subjects.map(subject => 
+        subject.id === id ? { ...subject, isFavorite: !subject.isFavorite } : subject
+      ));
+    } else {
+      setCourses(courses.map(course => 
+        course.id === id ? { ...course, isFavorite: !course.isFavorite } : course
+      ));
+    }
+  };
+
+  const filteredData = showSubjects 
+    ? subjects.filter(subject => subject.title.toLowerCase().includes(searchTerm.toLowerCase())) 
+    : courses.filter(course => course.title.toLowerCase().includes(searchTerm.toLowerCase()));
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
-      <main className="pt-[88px] px-4">
-        <div className="w-full max-w-full mx-auto py-8">
-          <h1 className="text-3xl font-bold text-[#272f3c] mb-6">Explorar Cursos</h1>
+      <main className="flex-grow pt-[120px] px-4 md:px-8 max-w-7xl mx-auto w-full">
+        <h1 className="text-2xl md:text-[35px] font-bold mb-6 text-[#262f3c]">Explorar</h1>
+        
+        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+          <div className="flex items-center flex-1 relative">
+            <Input 
+              type="text" 
+              placeholder="Pesquisar..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)} 
+              className="pr-10 w-full"
+            />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((item) => (
-              <div 
-                key={item}
-                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="relative">
-                  <img 
-                    src={`https://picsum.photos/seed/${item}/600/300`}
-                    alt={`Curso ${item}`}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <button className="text-yellow-400 hover:text-yellow-500">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div className="p-5">
-                  <h3 className="text-xl font-semibold text-[#272f3c] mb-2">Curso de Exemplo {item}</h3>
-                  <div className="flex justify-between text-[#67748a] text-sm mb-4">
-                    <span>Tópicos: 24</span>
-                    <span>Aulas: 42</span>
-                  </div>
-                  <p className="text-[#67748a] mb-4">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</p>
-                  <button className="w-full py-2 bg-[#ea2be2] text-white rounded-md hover:bg-opacity-90 transition-colors">
-                    Começar Agora
-                  </button>
-                </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm ${!showSubjects ? "font-medium" : ""}`}>
+              Cursos
+            </span>
+            <Switch 
+              checked={showSubjects} 
+              onCheckedChange={setShowSubjects} 
+              aria-label="Alternar entre cursos e disciplinas" 
+            />
+            <span className={`text-sm ${showSubjects ? "font-medium" : ""}`}>
+              Disciplinas
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg overflow-hidden">
+          <div className="divide-y divide-gray-100">
+            {filteredData.length > 0 ? (
+              filteredData.map(item => (
+                <ResultItem 
+                  key={item.id} 
+                  id={item.id} 
+                  title={item.title} 
+                  description={item.description} 
+                  isFavorite={item.isFavorite} 
+                  topics={item.topics}
+                  lessons={item.lessons}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              ))
+            ) : (
+              <div className="p-8 text-center text-gray-500">
+                Nenhum resultado encontrado para "{searchTerm}"
               </div>
-            ))}
+            )}
           </div>
         </div>
       </main>
