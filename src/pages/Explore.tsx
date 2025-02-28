@@ -74,10 +74,10 @@ const ResultItem: React.FC<ItemProps> = ({
   onToggleFavorite
 }) => {
   return (
-    <div className="flex justify-between items-center p-4 border-b border-gray-100 hover:bg-[#f6f8fa]">
+    <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
-        <h3 className="text-lg font-bold text-[#262f3c]">{title}</h3>
-        <p className="text-sm text-gray-600 mt-0.5">{description}</p>
+        <h3 className="text-xl font-bold text-[#262f3c] mb-0.5">{title}</h3>
+        <p className="text-sm text-gray-600">{description}</p>
       </div>
       <div className="flex items-center">
         <div className="text-right mr-4">
@@ -122,8 +122,8 @@ const Explore = () => {
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
-      <main className="flex-grow pt-[120px] px-4 md:px-8 max-w-7xl mx-auto w-full">
-        <h1 className="text-2xl md:text-[35px] font-bold mb-6 text-[#262f3c]">Explorar</h1>
+      <main className="flex-grow pt-[120px] px-4 md:px-8 mx-auto w-full">
+        <h1 className="text-3xl md:text-[40px] font-bold mb-6 text-[#262f3c]">Explorar</h1>
         
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="flex items-center flex-1 relative">

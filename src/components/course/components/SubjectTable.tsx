@@ -1,9 +1,9 @@
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React, { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ImportanceStars } from "./ImportanceStars";
-import { cn } from "@/lib/utils";
 import { Subject, Topic } from "../types/editorialized";
-import { calculateErrors, calculatePerformance, calculateSubjectTotals } from "../utils/statsCalculations";
+import { cn } from "@/lib/utils";
 
 interface SubjectTableProps {
   subject: Subject;
@@ -12,164 +12,118 @@ interface SubjectTableProps {
 }
 
 export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: SubjectTableProps) => {
-  const subjectTotals = calculateSubjectTotals(subject.topics);
-  const subjectProgress = Math.round((subjectTotals.completedTopics / subjectTotals.totalTopics) * 100);
-  const subjectPerformance = calculatePerformance(subjectTotals.hits, subjectTotals.exercisesDone);
+  const [isOpen, setIsOpen] = useState(true);
+
+  const handleToggleOpen = () => {
+    setIsOpen(!isOpen);
+  };
+
+  const handleCheck = (subjectId: number, topicId: number, field: 'isDone' | 'isReviewed') => {
+    onTopicChange(subjectId, topicId, field, !subject.topics[topicId][field]);
+  };
+
+  const handleToggleOpen2 = (event: React.MouseEvent) => {
+    if (
+      !(event.target instanceof HTMLInputElement) &&
+      !(event.target instanceof SVGElement) &&
+      !(event.target as HTMLElement).classList.contains('importance-stars')
+    ) {
+      setIsOpen(!isOpen);
+    }
+  };
 
   return (
-    <div className="mb-8 last:mb-0">
-      <div className="flex items-center justify-between bg-[#9747FF] text-white p-3 rounded-t-lg">
-        <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
-        <div className="flex items-center gap-3">
-          <div className="w-16 md:w-24 h-2 bg-white/20 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-white transition-all"
-              style={{ width: `${subjectProgress}%` }}
-            />
-          </div>
-          <span className="text-xs md:text-sm">{subjectProgress}%</span>
-        </div>
+    <div className="bg-white rounded-lg mb-6 overflow-hidden">
+      <div 
+        className="flex justify-between items-center p-4 cursor-pointer bg-[#f6f8fa]"
+        onClick={handleToggleOpen2}
+      >
+        <h3 className="text-lg font-semibold text-[#262f3c]">{subject.name}</h3>
+        <span className="text-[#ea2be2] text-sm font-medium">
+          {isOpen ? "Ocultar" : "Mostrar"} {subject.topics.length} tópicos
+        </span>
       </div>
-      <div className="border border-gray-200 rounded-b-lg overflow-x-auto">
-        <table className="w-full min-w-[1000px]">
-          <thead className="bg-gray-50">
-            <tr className="text-sm text-gray-600">
-              <th className="py-3 px-4 text-left font-medium w-8">#</th>
-              <th className="py-3 px-4 text-left font-medium">Conclusão</th>
-              <th className="py-3 px-4 text-left font-medium">Tópicos</th>
-              <th className="py-3 px-4 text-left font-medium">Importância do Assunto</th>
-              <th className="py-3 px-4 text-left font-medium">Dificuldade</th>
-              <th className="py-3 px-4 text-center font-medium">Total Exercícios feitos</th>
-              <th className="py-3 px-4 text-center font-medium">Acertos</th>
-              <th className="py-3 px-4 text-center font-medium">Erros</th>
-              <th className="py-3 px-4 text-center font-medium">Aproveitamento</th>
-              <th className="py-3 px-4 text-center font-medium">Revisão</th>
-            </tr>
-          </thead>
-          <tbody>
-            {subject.topics.map((topic, index) => (
-              <tr key={topic.id} className={cn(
-                "border-t border-gray-200",
-                index % 2 === 0 ? "bg-white" : "bg-gray-50"
-              )}>
-                <td className="py-3 px-4">{topic.id}</td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center">
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onTopicChange(subject.id, topic.id, 'isDone', !topic.isDone);
-                      }}
-                      className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${
-                        topic.isDone
-                          ? "bg-[#F11CE3] border-[#F11CE3]"
-                          : "bg-white border border-gray-200"
-                      }`}
-                    >
-                      {topic.isDone && (
-                        <svg
-                          viewBox="0 0 14 14"
-                          fill="none"
-                          className="w-4 h-4 m-auto"
-                        >
-                          <path
-                            d="M11.083 2.917L4.375 9.625 1.917 7.167"
-                            stroke="white"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3 px-4 max-w-xs">
-                  <p className="text-sm text-gray-600">{topic.topic}</p>
-                </td>
-                <td className="py-3 px-4">
-                  <ImportanceStars 
-                    level={topic.importance} 
-                    onChange={(value) => onTopicChange(subject.id, topic.id, 'importance', value)}
-                  />
-                </td>
-                <td className="py-3 px-4">
-                  <Select 
-                    value={topic.difficulty}
-                    onValueChange={(value) => onTopicChange(subject.id, topic.id, 'difficulty', value)}
-                  >
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Muito Fácil">Muito Fácil</SelectItem>
-                      <SelectItem value="Fácil">Fácil</SelectItem>
-                      <SelectItem value="Médio">Médio</SelectItem>
-                      <SelectItem value="Difícil">Difícil</SelectItem>
-                      <SelectItem value="Muito Difícil">Muito Difícil</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <input
-                    type="number"
-                    min="0"
-                    value={topic.exercisesDone}
-                    onChange={(e) => onTopicChange(subject.id, topic.id, 'exercisesDone', parseInt(e.target.value))}
-                    className="w-20 text-center border rounded p-1"
-                  />
-                </td>
-                <td className="py-3 px-4 text-center">
-                  <input
-                    type="number"
-                    min="0"
-                    max={topic.exercisesDone}
-                    value={topic.hits}
-                    onChange={(e) => onTopicChange(subject.id, topic.id, 'hits', parseInt(e.target.value))}
-                    className="w-20 text-center border rounded p-1"
-                  />
-                </td>
-                <td className="py-3 px-4 text-center">{calculateErrors(topic.exercisesDone, topic.hits)}</td>
-                <td className={cn(
-                  "py-3 px-4 text-center",
-                  calculatePerformance(topic.hits, topic.exercisesDone) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
-                )}>
-                  {calculatePerformance(topic.hits, topic.exercisesDone)}%
-                </td>
-                <td className="py-3 px-4">
-                  <div className="flex items-center justify-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={topic.isReviewed}
-                      onChange={(e) => onTopicChange(subject.id, topic.id, 'isReviewed', e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-[#F11CE3] focus:ring-[#F11CE3]"
-                    />
-                    <input
-                      type="checkbox"
-                      checked={topic.isReviewed}
-                      onChange={(e) => onTopicChange(subject.id, topic.id, 'isReviewed', e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-[#F11CE3] focus:ring-[#F11CE3]"
-                    />
-                  </div>
-                </td>
+
+      {isOpen && (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[800px]">
+            <thead className="bg-gray-50">
+              <tr className="text-sm text-gray-600">
+                <th className="py-3 px-4 text-left font-medium">Tópico</th>
+                <th className="py-3 px-4 text-center font-medium">Importância</th>
+                <th className="py-3 px-4 text-center font-medium">Dificuldade</th>
+                <th className="py-3 px-4 text-center font-medium">Conteúdo</th>
+                <th className="py-3 px-4 text-center font-medium">Revisão</th>
+                <th className="py-3 px-4 text-center font-medium">Exercícios</th>
+                <th className="py-3 px-4 text-center font-medium">Aproveitamento</th>
               </tr>
-            ))}
-            <tr className="border-t border-gray-200 bg-gray-50 font-medium">
-              <td colSpan={5} className="py-3 px-4 text-right">Totais:</td>
-              <td className="py-3 px-4 text-center">{subjectTotals.exercisesDone}</td>
-              <td className="py-3 px-4 text-center">{subjectTotals.hits}</td>
-              <td className="py-3 px-4 text-center">{subjectTotals.errors}</td>
-              <td className={cn(
-                "py-3 px-4 text-center",
-                subjectPerformance < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
-              )}>
-                {subjectPerformance}%
-              </td>
-              <td className="py-3 px-4"></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {subject.topics.map((topic, topicIndex) => (
+                <tr key={topicIndex} className="border-t border-gray-200">
+                  <td className="py-3 px-4">
+                    <div>
+                      <div className="font-medium text-[#262f3c]">
+                        {topic.name}
+                      </div>
+                      <div className="text-sm text-gray-500 mt-1">
+                        {topic.topic}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex justify-center importance-stars">
+                      <ImportanceStars 
+                        importance={topic.importance} 
+                        onChange={(value) => onTopicChange(subject.id, topicIndex, 'importance', value)}
+                      />
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <span 
+                      className={cn(
+                        "text-sm py-1 px-2 rounded-full",
+                        {
+                          "bg-green-100 text-green-800": topic.difficulty === "Fácil",
+                          "bg-yellow-100 text-yellow-800": topic.difficulty === "Médio",
+                          "bg-red-100 text-red-800": topic.difficulty === "Difícil" || topic.difficulty === "Muito Difícil",
+                        }
+                      )}
+                    >
+                      {topic.difficulty}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex justify-center">
+                      <Checkbox 
+                        checked={topic.isDone} 
+                        className={`${topic.isDone ? 'border-[#ea2be2] bg-[#ea2be2] text-white' : 'border-gray-300'}`}
+                        onCheckedChange={() => handleCheck(subject.id, topicIndex, 'isDone')}
+                      />
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <div className="flex justify-center">
+                      <Checkbox 
+                        checked={topic.isReviewed} 
+                        className={`${topic.isReviewed ? 'border-[#ea2be2] bg-[#ea2be2] text-white' : 'border-gray-300'}`}
+                        onCheckedChange={() => handleCheck(subject.id, topicIndex, 'isReviewed')}
+                      />
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-center">{topic.exercisesDone}</td>
+                  <td className={cn(
+                    "py-3 px-4 text-center",
+                    topic.performance < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
+                  )}>
+                    {topic.performance}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
