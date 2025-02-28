@@ -30,22 +30,6 @@ export const Header = () => {
         {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
 
-      {/* Navigation Links - Desktop */}
-      <nav className="hidden md:flex items-center gap-6 mx-8">
-        <Link to="/explore" className="text-gray-700 hover:text-[#ea2be2] font-medium">
-          Explorar
-        </Link>
-        <Link to="/my-courses" className="text-gray-700 hover:text-[#ea2be2] font-medium">
-          Meus Cursos
-        </Link>
-        <Link to="/questions" className="text-gray-700 hover:text-[#ea2be2] font-medium">
-          Questões
-        </Link>
-        <Link to="/course" className="text-gray-700 hover:text-[#ea2be2] font-medium">
-          Curso
-        </Link>
-      </nav>
-
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden w-full py-4 bg-white border-t border-gray-100">
@@ -82,64 +66,62 @@ export const Header = () => {
         </div>
       )}
 
-      <div className="hidden md:flex min-w-60 min-h-[88px] items-center gap-2.5 py-[19px]">
-        <div className="flex min-w-60 min-h-[50px] items-center gap-[26px] flex-wrap">
-          <div className="bg-slate-50 border flex min-w-60 min-h-[50px] max-w-[400px] items-center w-[350px] px-5 py-[11px] rounded-[5px] border-[rgba(237,240,245,1)]">
-            <input
-              type="text"
-              placeholder="Pesquisar"
-              className="flex-1 bg-transparent text-[15px] text-[#262f3c] outline-none"
-            />
-            <button className="bg-white border flex items-center justify-center w-7 h-7 rounded-[3px] border-[rgba(238,241,246,1)]">
-              <Search className="w-4 h-4" />
-            </button>
-          </div>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Avatar className="w-[50px] h-[50px] border-2 border-white cursor-pointer">
-                <AvatarImage src="https://github.com/shadcn.png" />
-                <AvatarFallback>CN</AvatarFallback>
-              </Avatar>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-0 border border-gray-100">
-              <nav className="flex flex-col">
-                <Link
-                  to="/explore"
-                  className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
-                >
-                  Explorar
-                </Link>
-                <Link
-                  to="/my-courses"
-                  className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
-                >
-                  Meus Cursos
-                </Link>
-                <Link
-                  to="/questions"
-                  className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
-                >
-                  Questões
-                </Link>
-                <Link
-                  to="/course"
-                  className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
-                >
-                  Curso
-                </Link>
-                <div className="border-t border-gray-100">
-                  <Link
-                    to="/"
-                    className="px-4 py-3 text-sm font-medium text-red-600 hover:bg-slate-50 block"
-                  >
-                    Sair
-                  </Link>
-                </div>
-              </nav>
-            </PopoverContent>
-          </Popover>
+      <div className="flex items-center gap-2.5">
+        <div className="bg-slate-50 border flex items-center gap-2 max-w-[400px] w-auto px-5 py-[11px] rounded-[5px] border-[rgba(237,240,245,1)] mr-4 hidden md:flex">
+          <input
+            type="text"
+            placeholder="Pesquisar"
+            className="flex-1 bg-transparent text-[15px] text-[#262f3c] outline-none min-w-[200px]"
+          />
+          <button className="bg-white border flex items-center justify-center w-7 h-7 rounded-[3px] border-[rgba(238,241,246,1)]">
+            <Search className="w-4 h-4" />
+          </button>
         </div>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Avatar className="w-[50px] h-[50px] border-2 border-white cursor-pointer">
+              <AvatarImage src="https://github.com/shadcn.png" />
+              <AvatarFallback>CN</AvatarFallback>
+            </Avatar>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-0 border border-gray-100">
+            <nav className="flex flex-col">
+              <Link
+                to="/explore"
+                className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
+              >
+                Explorar
+              </Link>
+              <Link
+                to="/my-courses"
+                className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
+              >
+                Meus Cursos
+              </Link>
+              <Link
+                to="/questions"
+                className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
+              >
+                Questões
+              </Link>
+              <Link
+                to="/course"
+                className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
+              >
+                Curso
+              </Link>
+              <div className="border-t border-gray-100">
+                <Link
+                  to="/"
+                  className="px-4 py-3 text-sm font-medium text-red-600 hover:bg-slate-50 block"
+                >
+                  Sair
+                </Link>
+              </div>
+            </nav>
+          </PopoverContent>
+        </Popover>
       </div>
     </header>
   );

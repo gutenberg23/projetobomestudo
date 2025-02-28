@@ -12,34 +12,46 @@ const MOCK_COURSES = [{
   id: "1",
   title: "Direito Constitucional Completo",
   description: "Curso completo de Direito Constitucional com foco em concursos públicos",
-  isFavorite: false
+  isFavorite: false,
+  topics: 15,
+  lessons: 30
 }, {
   id: "2",
   title: "Português para Concursos",
   description: "Aprenda todas as regras de português aplicadas aos concursos públicos",
-  isFavorite: true
+  isFavorite: true,
+  topics: 12,
+  lessons: 24
 }, {
   id: "3",
   title: "Matemática Financeira",
   description: "Curso completo de matemática financeira para provas bancárias",
-  isFavorite: false
+  isFavorite: false,
+  topics: 8,
+  lessons: 16
 }];
 
 const MOCK_SUBJECTS = [{
   id: "1",
   title: "Direito Administrativo",
   description: "Tópicos essenciais de Direito Administrativo para concursos",
-  isFavorite: true
+  isFavorite: true,
+  topics: 10,
+  lessons: 20
 }, {
   id: "2",
   title: "Redação Oficial",
   description: "Regras e modelos para redação oficial em órgãos públicos",
-  isFavorite: false
+  isFavorite: false,
+  topics: 6,
+  lessons: 12
 }, {
   id: "3",
   title: "Raciocínio Lógico",
   description: "Aprenda os principais tópicos de raciocínio lógico para concursos",
-  isFavorite: false
+  isFavorite: false,
+  topics: 9,
+  lessons: 18
 }];
 
 interface ItemProps {
@@ -47,6 +59,8 @@ interface ItemProps {
   title: string;
   description: string;
   isFavorite: boolean;
+  topics: number;
+  lessons: number;
   onToggleFavorite: (id: string) => void;
 }
 
@@ -55,23 +69,30 @@ const ResultItem: React.FC<ItemProps> = ({
   title,
   description,
   isFavorite,
+  topics,
+  lessons,
   onToggleFavorite
 }) => {
   return (
     <div className="flex justify-between items-center p-4 border-b border-gray-100 hover:bg-[#f6f8fa]">
       <div className="flex-1">
-        <h3 className="text-lg font-medium text-[#262f3c]">{title}</h3>
-        <p className="text-sm text-gray-600 mt-1">{description}</p>
+        <h3 className="text-lg font-bold text-[#262f3c]">{title}</h3>
+        <p className="text-sm text-gray-600 mt-0.5">{description}</p>
       </div>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => onToggleFavorite(id)} 
-        className="ml-4" 
-        aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-      >
-        <Star className={`h-5 w-5 ${isFavorite ? "fill-[#ea2be2] text-[#ea2be2]" : "text-gray-400"}`} />
-      </Button>
+      <div className="flex items-center">
+        <div className="text-right mr-4">
+          <p className="text-sm font-bold text-[#262f3c]">Tópicos: <span className="text-gray-600 font-normal">{topics}</span></p>
+          <p className="text-sm font-bold text-[#262f3c]">Aulas: <span className="text-gray-600 font-normal">{lessons}</span></p>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => onToggleFavorite(id)} 
+          aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+        >
+          <Star className={`h-5 w-5 ${isFavorite ? "fill-[#ea2be2] text-[#ea2be2]" : "text-gray-400"}`} />
+        </Button>
+      </div>
     </div>
   );
 };
@@ -141,6 +162,8 @@ const Explore = () => {
                   title={item.title} 
                   description={item.description} 
                   isFavorite={item.isFavorite} 
+                  topics={item.topics}
+                  lessons={item.lessons}
                   onToggleFavorite={handleToggleFavorite}
                 />
               ))
