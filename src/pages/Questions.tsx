@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -94,7 +93,6 @@ const FILTER_OPTIONS = {
   years: ["2023", "2022", "2021", "2020", "2019"],
   educationLevels: ["Médio", "Superior", "Pós-graduação"]
 };
-
 const Questions = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState({
@@ -109,119 +107,62 @@ const Questions = () => {
   const [questionsPerPage, setQuestionsPerPage] = useState("10");
   const [currentPage, setCurrentPage] = useState(1);
   const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
-
   const totalQuestions = MOCK_QUESTIONS.length;
-
   const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
     event.preventDefault();
-    setDisabledOptions(prev => 
-      prev.includes(optionId) 
-        ? prev.filter(id => id !== optionId) 
-        : [...prev, optionId]
-    );
+    setDisabledOptions(prev => prev.includes(optionId) ? prev.filter(id => id !== optionId) : [...prev, optionId]);
   };
-
   const handleFilterChange = (category: keyof typeof selectedFilters, value: string) => {
     setSelectedFilters(prev => {
       const currentValues = prev[category];
       return {
         ...prev,
-        [category]: currentValues.includes(value) 
-          ? currentValues.filter(item => item !== value) 
-          : [...currentValues, value]
+        [category]: currentValues.includes(value) ? currentValues.filter(item => item !== value) : [...currentValues, value]
       };
     });
   };
-
   const handleApplyFilters = () => {
     // Em uma implementação real, aqui seria feita uma chamada à API
     // para buscar as questões com os filtros aplicados
     setCurrentPage(1);
   };
-
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
 
   // Cálculo para paginação
   const totalPages = Math.ceil(totalQuestions / parseInt(questionsPerPage));
-
-  return (
-    <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+  return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
-      <main className="flex-grow pt-[120px] px-4 md:px-8 max-w-7xl mx-auto w-full">
+      <main className="flex-grow pt-[120px] px-4 md:px-8 mx-auto w-full">
         <h1 className="text-2xl md:text-[35px] font-bold mb-6 text-[#262f3c]">Questões</h1>
 
         <div className="bg-white rounded-lg p-6 mb-8">
           <div className="grid grid-cols-1 gap-6 mb-6">
             <div className="relative w-full">
-              <Input 
-                type="text" 
-                placeholder="Pesquisar palavras-chave..." 
-                value={searchQuery} 
-                onChange={e => setSearchQuery(e.target.value)} 
-                className="pr-10 w-full"
-              />
+              <Input type="text" placeholder="Pesquisar palavras-chave..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pr-10 w-full" />
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-            <CheckboxGroup 
-              title="Disciplina" 
-              options={FILTER_OPTIONS.disciplines} 
-              selectedValues={selectedFilters.disciplines} 
-              onChange={value => handleFilterChange("disciplines", value)} 
-            />
+            <CheckboxGroup title="Disciplina" options={FILTER_OPTIONS.disciplines} selectedValues={selectedFilters.disciplines} onChange={value => handleFilterChange("disciplines", value)} />
             
-            <CheckboxGroup 
-              title="Tópico" 
-              options={FILTER_OPTIONS.topics} 
-              selectedValues={selectedFilters.topics} 
-              onChange={value => handleFilterChange("topics", value)} 
-            />
+            <CheckboxGroup title="Tópico" options={FILTER_OPTIONS.topics} selectedValues={selectedFilters.topics} onChange={value => handleFilterChange("topics", value)} />
             
-            <CheckboxGroup 
-              title="Banca" 
-              options={FILTER_OPTIONS.institutions} 
-              selectedValues={selectedFilters.institutions} 
-              onChange={value => handleFilterChange("institutions", value)} 
-            />
+            <CheckboxGroup title="Banca" options={FILTER_OPTIONS.institutions} selectedValues={selectedFilters.institutions} onChange={value => handleFilterChange("institutions", value)} />
             
-            <CheckboxGroup 
-              title="Instituição" 
-              options={FILTER_OPTIONS.organizations} 
-              selectedValues={selectedFilters.organizations} 
-              onChange={value => handleFilterChange("organizations", value)} 
-            />
+            <CheckboxGroup title="Instituição" options={FILTER_OPTIONS.organizations} selectedValues={selectedFilters.organizations} onChange={value => handleFilterChange("organizations", value)} />
             
-            <CheckboxGroup 
-              title="Cargo" 
-              options={FILTER_OPTIONS.roles} 
-              selectedValues={selectedFilters.roles} 
-              onChange={value => handleFilterChange("roles", value)} 
-            />
+            <CheckboxGroup title="Cargo" options={FILTER_OPTIONS.roles} selectedValues={selectedFilters.roles} onChange={value => handleFilterChange("roles", value)} />
             
-            <CheckboxGroup 
-              title="Ano" 
-              options={FILTER_OPTIONS.years} 
-              selectedValues={selectedFilters.years} 
-              onChange={value => handleFilterChange("years", value)} 
-            />
+            <CheckboxGroup title="Ano" options={FILTER_OPTIONS.years} selectedValues={selectedFilters.years} onChange={value => handleFilterChange("years", value)} />
             
-            <CheckboxGroup 
-              title="Escolaridade" 
-              options={FILTER_OPTIONS.educationLevels} 
-              selectedValues={selectedFilters.educationLevels} 
-              onChange={value => handleFilterChange("educationLevels", value)} 
-            />
+            <CheckboxGroup title="Escolaridade" options={FILTER_OPTIONS.educationLevels} selectedValues={selectedFilters.educationLevels} onChange={value => handleFilterChange("educationLevels", value)} />
             
             <div className="flex items-center gap-4">
               <span className="text-sm whitespace-nowrap">Questões por página:</span>
-              <Select 
-                value={questionsPerPage} 
-                onValueChange={value => setQuestionsPerPage(value)}
-              >
+              <Select value={questionsPerPage} onValueChange={value => setQuestionsPerPage(value)}>
                 <SelectTrigger className="w-[100px]">
                   <SelectValue placeholder="10" />
                 </SelectTrigger>
@@ -251,24 +192,11 @@ const Questions = () => {
         <hr className="border-t border-gray-200 w-full mb-6" />
 
         <div className="space-y-6 mb-8">
-          {MOCK_QUESTIONS.map(question => (
-            <QuestionCard 
-              key={question.id} 
-              question={question} 
-              disabledOptions={disabledOptions} 
-              onToggleDisabled={handleToggleDisabled} 
-            />
-          ))}
+          {MOCK_QUESTIONS.map(question => <QuestionCard key={question.id} question={question} disabledOptions={disabledOptions} onToggleDisabled={handleToggleDisabled} />)}
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-8">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => handlePageChange(currentPage - 1)} 
-              disabled={currentPage === 1}
-            >
+        {totalPages > 1 && <div className="flex items-center justify-center gap-2 mt-8">
+            <Button variant="outline" size="icon" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
@@ -276,20 +204,12 @@ const Questions = () => {
               Página {currentPage} de {totalPages}
             </span>
             
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => handlePageChange(currentPage + 1)} 
-              disabled={currentPage === totalPages}
-            >
+            <Button variant="outline" size="icon" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
               <ChevronRight className="h-4 w-4" />
             </Button>
-          </div>
-        )}
+          </div>}
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Questions;
