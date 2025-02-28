@@ -2,12 +2,12 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
-import { Index } from './pages/Index';
+import Index from './pages/Index';
 import MyCourses from './pages/MyCourses';
-import { Explore } from './pages/Explore';
-import { Questions } from './pages/Questions';
-import { NotFound } from './pages/NotFound';
-import { Settings } from './pages/Settings';
+import Explore from './pages/Explore';
+import Questions from './pages/Questions';
+import NotFound from './pages/NotFound';
+import Settings from './pages/Settings';
 import { Blog } from './pages/Blog';
 import { CourseLayout } from './components/course/CourseLayout';
 
