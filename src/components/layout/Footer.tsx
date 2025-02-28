@@ -1,15 +1,20 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 
 export const Footer = () => {
   return (
-    <footer className="bg-[rgba(66,48,65,1)] w-full pt-[30px] pb-[30px] px-2.5">
-      <div className="flex w-full items-center justify-center">
-        <img 
-          src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/d4f7b31dd1bc48e16547963f6b0cd0adc76ffe16e180c12ccfce3d8a912308a0" 
-          alt="BomEstudo Logo" 
-          className="w-[194px]" 
-        />
+    <footer className="bg-[#f6f8fa] py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex justify-center">
+          <Link to="/">
+            <img
+              src="/lovable-uploads/ee47f81d3df30406eedeb997df60ffc12cce0b3965827fc005f4c7a2da4ca470.png"
+              alt="BomEstudo Logo"
+              className="h-10"
+            />
+          </Link>
+        </div>
       </div>
     </footer>
   );

@@ -13,7 +13,7 @@ export const Header = () => {
           <img
             loading="lazy"
             src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/ee47f81d3df30406eedeb997df60ffc12cce0b3965827fc005f4c7a2da4ca470"
-            alt="Company Logo"
+            alt="Logo da Empresa"
             className="aspect-[8.06] object-contain w-[194px] md:w-[194px] w-[120px]"
           />
         </Link>
