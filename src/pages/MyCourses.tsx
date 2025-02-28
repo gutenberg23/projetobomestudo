@@ -53,7 +53,7 @@ const FavoriteItem: React.FC<ItemProps> = ({
 }) => {
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
-        <h3 className="text-[#262f3c] mb-0 leading-none text-xl font-bold">{title}</h3>
+        <h3 className="text-[#272f3c] mb-0 leading-none text-xl font-bold">{title}</h3>
         <p className="leading-none text-[#67748a] text-xs">{description}</p>
       </div>
       <div className="flex items-center">
@@ -79,7 +79,7 @@ const MyCourses = () => {
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
-        <h1 className="text-3xl mb-6 text-[#262f3c] font-extrabold md:text-3xl">Minhas Matrículas</h1>
+        <h1 className="text-3xl mb-6 text-[#272f3c] font-extrabold md:text-3xl">Minhas Matrículas</h1>
 
         <div className="space-y-8">
           <section>
