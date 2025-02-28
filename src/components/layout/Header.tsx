@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Search, Menu, User } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -68,12 +68,6 @@ export const Header = () => {
                 className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
               >
                 Questões
-              </Link>
-              <Link
-                to="/course"
-                className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]"
-              >
-                Curso
               </Link>
               <Link
                 to="/settings"
