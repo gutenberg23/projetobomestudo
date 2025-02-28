@@ -79,7 +79,7 @@ const MyCourses = () => {
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
-        <h1 className="text-3xl md:text-[40px] mb-6 text-[#262f3c] font-extrabold">Meus Cursos</h1>
+        <h1 className="text-3xl mb-6 text-[#262f3c] font-extrabold md:text-3xl">Meus Cursos</h1>
 
         <div className="space-y-8">
           <section>
