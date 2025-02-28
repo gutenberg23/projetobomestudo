@@ -44,7 +44,7 @@ export const StatisticsCard = ({
   return <div className="flex items-center mt-2 text-sm text-gray-600">
       <Dialog>
         <DialogTrigger asChild>
-          <button className="px-3 py-1.5 transition-colors bg-slate-500 hover:bg-slate-400 text-slate-50 rounded-lg font-semibold bg-[#ea2be2]">
+          <button className="px-3 py-1.5 transition-colors text-slate-50 rounded-lg font-semibold bg-[#ea2be2]">
             Minhas Estatísticas
           </button>
         </DialogTrigger>
