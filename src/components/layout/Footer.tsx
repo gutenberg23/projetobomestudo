@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 
 export const Footer = () => {
   return (
-    <footer className="bg-[rgba(66,48,65,1)] w-full pt-[60px] pb-[30px] px-4 text-white mt-10">
+    <footer className="bg-[rgba(66,48,65,1)] w-full pt-[50px] pb-[30px] px-4 text-white">
       <div className="max-w-7xl mx-auto">
         {/* Footer Top Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
@@ -61,12 +61,6 @@ export const Footer = () => {
                 <Link to="/questions" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
                   <ChevronRight size={16} className="mr-1" />
                   <span>Questões</span>
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
-                  <ChevronRight size={16} className="mr-1" />
-                  <span>Blog</span>
                 </Link>
               </li>
             </ul>

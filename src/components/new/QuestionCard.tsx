@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from "react";
@@ -82,12 +81,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {question.comments.map(comment => <QuestionComment key={comment.id} comment={comment} isLiked={likedComments.includes(comment.id)} onToggleLike={toggleLike} />)}
 
           <div className="flex justify-center items-center px-3 md:px-12 py-1.5 mt-2.5 w-full text-base leading-none text-slate-800 gap-2">
-            <div className="flex overflow-hidden w-full">
-              <input type="text" placeholder="Escreva uma mensagem" value={comment} onChange={e => setComment(e.target.value)} className="flex-1 p-2.5 w-full rounded-3xl border border-purple-300 focus:border-purple-500 focus:outline-none" />
-              <button onClick={handleSubmitComment} className="p-2.5 rounded-full hover:bg-purple-50 flex-shrink-0">
-                <Send className="w-5 h-5 text-purple-500" />
-              </button>
+            <div className="flex overflow-hidden flex-1 shrink justify-center items-start w-full basis-0 min-w-60">
+              <input type="text" placeholder="Escreva uma mensagem" value={comment} onChange={e => setComment(e.target.value)} className="overflow-hidden flex-1 shrink p-2.5 w-full rounded-3xl basis-0 min-w-60 border border-purple-300 focus:border-purple-500 focus:outline-none" />
             </div>
+            <button onClick={handleSubmitComment} className="p-2.5 rounded-full hover:bg-purple-50">
+              <Send className="w-5 h-5 text-purple-500" />
+            </button>
           </div>
         </section>}
     </article>;

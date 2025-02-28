@@ -60,7 +60,7 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
         <button 
           onClick={onProgressClick}
           className={cn(
-            "hidden md:flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap ml-auto",
+            "flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap ml-auto",
             isProgressVisible && "bg-white text-[#F11CE3]"
           )}
         >
@@ -71,3 +71,4 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
     </nav>
   );
 };
+
