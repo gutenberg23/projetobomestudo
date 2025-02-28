@@ -54,7 +54,7 @@ const FavoriteItem: React.FC<ItemProps> = ({
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
         <h3 className="text-[#262f3c] mb-0 font-bold text-2xl leading-none">{title}</h3>
-        <p className="text-sm leading-none text-[#67748a]">{description}</p>
+        <p className="leading-none text-[#67748a] text-xs">{description}</p>
       </div>
       <div className="flex items-center">
         <div className="text-right mr-4">
