@@ -21,7 +21,7 @@ export const CourseLayout = () => {
       }, 100);
     }
   };
-  return <div className="min-h-screen bg-white">
+  return <div className="min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="pt-[88px]">
         <CourseHeader />
