@@ -16,6 +16,18 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
   const subjectProgress = Math.round((subjectTotals.completedTopics / subjectTotals.totalTopics) * 100);
   const subjectPerformance = calculatePerformance(subjectTotals.hits, subjectTotals.exercisesDone);
 
+  const handleReviewClick = (subjectId: number, topicId: number, checkboxIndex: number) => {
+    // Toggle the isReviewed value
+    const currentValue = subject.topics.find(t => t.id === topicId)?.isReviewed || false;
+    
+    // Only change if the checkbox is not already selected or a different one is being selected
+    if (checkboxIndex === 0) {
+      onTopicChange(subjectId, topicId, 'isReviewed', !currentValue);
+    } else {
+      onTopicChange(subjectId, topicId, 'isReviewed', currentValue);
+    }
+  };
+
   return (
     <div className="mb-8 last:mb-0">
       <div className="flex items-center justify-between bg-[#9747FF] text-white p-3 rounded-t-lg">
@@ -138,18 +150,54 @@ export const SubjectTable = ({ subject, performanceGoal, onTopicChange }: Subjec
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center justify-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={topic.isReviewed}
-                      onChange={(e) => onTopicChange(subject.id, topic.id, 'isReviewed', e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-[#F11CE3] focus:ring-[#F11CE3]"
-                    />
-                    <input
-                      type="checkbox"
-                      checked={topic.isReviewed}
-                      onChange={(e) => onTopicChange(subject.id, topic.id, 'isReviewed', e.target.checked)}
-                      className="w-4 h-4 rounded border-gray-300 text-[#F11CE3] focus:ring-[#F11CE3]"
-                    />
+                    <div
+                      onClick={() => handleReviewClick(subject.id, topic.id, 0)}
+                      className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${
+                        topic.isReviewed
+                          ? "bg-[#F11CE3] border-[#F11CE3]"
+                          : "bg-white border border-gray-200"
+                      }`}
+                    >
+                      {topic.isReviewed && (
+                        <svg
+                          viewBox="0 0 14 14"
+                          fill="none"
+                          className="w-4 h-4 m-auto"
+                        >
+                          <path
+                            d="M11.083 2.917L4.375 9.625 1.917 7.167"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <div
+                      onClick={() => handleReviewClick(subject.id, topic.id, 1)}
+                      className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${
+                        !topic.isReviewed
+                          ? "bg-[#F11CE3] border-[#F11CE3]"
+                          : "bg-white border border-gray-200"
+                      }`}
+                    >
+                      {!topic.isReviewed && (
+                        <svg
+                          viewBox="0 0 14 14"
+                          fill="none"
+                          className="w-4 h-4 m-auto"
+                        >
+                          <path
+                            d="M11.083 2.917L4.375 9.625 1.917 7.167"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
                   </div>
                 </td>
               </tr>

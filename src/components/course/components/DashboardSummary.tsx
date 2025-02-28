@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -68,7 +69,9 @@ export const DashboardSummary = ({
                 <span className="text-gray-600">Evolução Geral</span>
                 <span className="font-semibold">{overallProgress}%</span>
               </div>
-              <Progress value={overallProgress} className="h-2" />
+              <Progress value={overallProgress} className="h-2 bg-gray-200">
+                <div className="h-full bg-[#ea2be2]" style={{ width: `${overallProgress}%` }} />
+              </Progress>
               <StatisticsCard subjects={subjects} />
             </div>
             <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
@@ -105,7 +108,9 @@ export const DashboardSummary = ({
                 <span className="text-gray-600">Simulados Realizados</span>
                 <span className="font-semibold">2</span>
               </div>
-              <Progress value={100} className="h-2" />
+              <Progress value={100} className="h-2 bg-gray-200">
+                <div className="h-full bg-[#ea2be2]" style={{ width: `100%` }} />
+              </Progress>
             </div>
             <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
               <div className="space-y-2">

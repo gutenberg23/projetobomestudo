@@ -6,7 +6,7 @@ export const renderDonutChart = (percentage: number, size: number = 42) => {
     { name: 'Progress', value: percentage },
     { name: 'Remaining', value: 100 - percentage }
   ];
-  const COLORS = ['rgba(241,28,227,1)', '#E0E0E0'];
+  const COLORS = ['#ea2be2', '#E0E0E0'];
 
   return (
     <div style={{ width: size, height: size }}>

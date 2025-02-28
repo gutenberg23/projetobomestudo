@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Subject } from "../types/editorialized";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -33,7 +34,7 @@ export const StatisticsCard = ({
     name: 'Pendente',
     value: 100 - progressPercentage
   }];
-  const COLORS = ['#54cd5d', '#E0E0E0'];
+  const COLORS = ['#ea2be2', '#E0E0E0'];
 
   // Data for stacked bar chart
   const selectedSubjectData = subjects.find(s => s.name === selectedSubject)?.topics.map(topic => ({
@@ -59,7 +60,7 @@ export const StatisticsCard = ({
                   <RadarChart data={radarData}>
                     <PolarGrid />
                     <PolarAngleAxis dataKey="subject" />
-                    <Radar name="Aproveitamento" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.6} />
+                    <Radar name="Aproveitamento" dataKey="value" stroke="#ea2be2" fill="#ea2be2" fillOpacity={0.6} />
                     <Tooltip />
                   </RadarChart>
                 </ResponsiveContainer>
