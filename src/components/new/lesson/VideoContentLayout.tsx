@@ -36,8 +36,8 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
   }, [setVideoHeight]);
 
   return (
-    <div className={`flex px-5 mt-5 ${hasHorizontalScroll ? 'flex-col' : 'flex-row'}`}>
-      <div className={`${hasHorizontalScroll ? 'w-full' : 'w-2/3'} pr-0 md:pr-5`}>
+    <div className={`flex flex-col md:flex-row px-5 mt-5`}>
+      <div className={`w-full md:w-2/3 md:pr-5`}>
         <div ref={videoRef}>
           <VideoSection 
             selectedSection={selectedSection} 
@@ -47,7 +47,7 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
         </div>
       </div>
 
-      <div className={`${hasHorizontalScroll ? 'w-full mt-4' : 'w-1/3'}`}>
+      <div className={`w-full md:w-1/3 mt-4 md:mt-0`}>
         <SectionsNavigation
           sections={sections}
           selectedSection={selectedSection}
