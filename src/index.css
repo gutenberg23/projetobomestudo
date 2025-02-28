@@ -102,6 +102,11 @@
 }
 
 .max-w-7xl {
-  /* Removendo a propriedade max-width para permitir utilização do espaço horizontal completo */
+  max-width: 1400px;
   width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
+
