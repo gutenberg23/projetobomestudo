@@ -53,7 +53,7 @@ const FavoriteItem: React.FC<ItemProps> = ({
 }) => {
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
-        <h3 className="text-[#262f3c] mb-0 leading-0.5 text-xl font-bold">{title}</h3>
+        <h3 className="text-[#262f3c] mb-0 leading-none text-xl font-extrabold">{title}</h3>
         <p className="leading-none text-[#67748a] text-xs">{description}</p>
       </div>
       <div className="flex items-center">
@@ -79,11 +79,11 @@ const MyCourses = () => {
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
-        <h1 className="text-3xl mb-6 text-[#262f3c] font-extrabold md:text-3xl">Meus Cursos</h1>
+        <h1 className="text-3xl mb-6 text-[#262f3c] font-extrabold md:text-3xl">Minhas Matrículas</h1>
 
         <div className="space-y-8">
           <section>
-            <h2 className="text-2xl mb-4 text-[#262f3c] font-bold">Cursos</h2>
+            <h2 className="text-2xl mb-4 text-[#262f3c] font-bold">Concursos</h2>
             <div className="bg-white rounded-lg overflow-hidden">
               <div className="divide-y divide-gray-100">
                 {favoriteCourses.length > 0 ? favoriteCourses.map(course => <FavoriteItem key={course.id} id={course.id} title={course.title} description={course.description} topics={course.topics} lessons={course.lessons} onRemove={handleRemoveCourse} />) : <div className="p-8 text-center text-gray-500">
@@ -94,7 +94,7 @@ const MyCourses = () => {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold mb-4 text-[#262f3c]">Disciplinas</h2>
+            <h2 className="text-2xl mb-4 text-[#262f3c] font-bold">Disciplinas</h2>
             <div className="bg-white rounded-lg overflow-hidden">
               <div className="divide-y divide-gray-100">
                 {favoriteSubjects.length > 0 ? favoriteSubjects.map(subject => <FavoriteItem key={subject.id} id={subject.id} title={subject.title} description={subject.description} topics={subject.topics} lessons={subject.lessons} onRemove={handleRemoveSubject} />) : <div className="p-8 text-center text-gray-500">
