@@ -45,7 +45,7 @@ export const StatisticsCard = ({
     acertos: topic.hits,
     erros: topic.exercisesDone - topic.hits
   })) || [];
-  return <div className="mt-4 mb-4 p-4 bg-white rounded-[10px] shadow-sm">
+  return <div className="mt-4 mb-4 p-4 bg-white rounded-[10px] shadow-sm my-[15px] py-[17px]">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-left text-2xl font-bold text-[#282f3c]">
           Minhas Estatísticas
@@ -55,8 +55,8 @@ export const StatisticsCard = ({
         </button>
       </div>
 
-      {isExpanded && <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-[#f6f8fa] p-4 rounded-[10px]">
+      {isExpanded && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-[#f6f8fa] p-4 rounded-[10px] py-[15px]">
             <h3 className="font-semibold text-center mb-4">
               Aproveitamento por Disciplina
             </h3>
