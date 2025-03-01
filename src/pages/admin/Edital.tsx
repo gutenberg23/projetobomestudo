@@ -8,7 +8,7 @@ import { FormLayout } from "@/components/admin/FormLayout";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LayoutList, Search, PlusCircle, ChevronDown, ChevronUp, Plus, DragDropIcon, GripVertical } from "lucide-react";
+import { LayoutList, Search, PlusCircle, ChevronDown, ChevronUp, Plus, GripVertical } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 // Dados fictícios
