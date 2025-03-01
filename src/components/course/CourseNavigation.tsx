@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Book, FileText, Activity, LineChart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,8 +18,8 @@ export const CourseNavigation = ({
         <button onClick={() => setActiveTab('disciplinas')} className={cn("flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap", activeTab === 'disciplinas' && "bg-white text-[#f11ce3]")}>
           <Book className="w-6 h-6" />
           <span className={cn("md:inline text-xs md:text-base", activeTab === 'disciplinas' ? "inline flex flex-col sm:flex-row" : "hidden")}>
-            <span className="sm:hidden">Todas as</span>
-            <span className="sm:hidden">Disciplinas</span>
+            <span className="sm:hidden text-left">Todas as</span>
+            <span className="sm:hidden text-left">Disciplinas</span>
             <span className="hidden sm:inline">Todas as Disciplinas</span>
           </span>
         </button>
