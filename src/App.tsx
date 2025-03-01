@@ -15,6 +15,20 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import NotFound from "./pages/NotFound";
 
+// Admin imports
+import AdminLayout from "./components/admin/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import Posts from "./pages/admin/Posts";
+import Anuncios from "./pages/admin/Anuncios";
+import Usuarios from "./pages/admin/Usuarios";
+import Questoes from "./pages/admin/Questoes";
+import Simulados from "./pages/admin/Simulados";
+import Edital from "./pages/admin/Edital";
+import Topicos from "./pages/admin/Topicos";
+import Aulas from "./pages/admin/Aulas";
+import Disciplinas from "./pages/admin/Disciplinas";
+import Cursos from "./pages/admin/Cursos";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -33,6 +47,22 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="posts" element={<Posts />} />
+            <Route path="anuncios" element={<Anuncios />} />
+            <Route path="usuarios" element={<Usuarios />} />
+            <Route path="questoes" element={<Questoes />} />
+            <Route path="simulados" element={<Simulados />} />
+            <Route path="edital" element={<Edital />} />
+            <Route path="topicos" element={<Topicos />} />
+            <Route path="aulas" element={<Aulas />} />
+            <Route path="disciplinas" element={<Disciplinas />} />
+            <Route path="cursos" element={<Cursos />} />
+          </Route>
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
