@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Star } from "lucide-react";
 export const CourseHeader = () => {
@@ -13,7 +12,7 @@ export const CourseHeader = () => {
       <div className="mx-auto flex min-w-60 w-full items-start justify-between flex-wrap py-[50px] px-[10px] md:px-[32px]">
         <div className="flex min-w-60 flex-col justify-center py-2.5 w-full md:w-auto md:flex-1">
           <div className="flex w-full max-w-[859px] gap-2.5 text-[35px] md:text-[35px] text-[24px] text-[rgba(38,47,60,1)] font-bold leading-[31px] items-center">
-            <h1 className="flex-1">Título do Curso - Loren Ipsun Dolor</h1>
+            <h1 className="flex-1 inline-block">Título do Curso - Loren Ipsun Dolor</h1>
             <button onClick={toggleFavorite} className="flex items-center justify-center shrink-0">
               <Star className={`w-[30px] h-[30px] cursor-pointer ${isFavorite ? "fill-[#f11ce3] text-[#f11ce3]" : "text-gray-400"}`} />
             </button>
