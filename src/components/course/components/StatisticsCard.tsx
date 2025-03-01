@@ -13,7 +13,7 @@ export const StatisticsCard = ({
   subjects
 }: StatisticsCardProps) => {
   const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.name || "");
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
