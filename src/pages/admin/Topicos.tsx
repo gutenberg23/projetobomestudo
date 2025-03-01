@@ -20,6 +20,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import { Pencil, Trash, Plus, X, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,6 +36,7 @@ interface Topico {
   titulo: string;
   thumbnail: string;
   patrocinador: string;
+  disciplina: string;
   videoUrl: string;
   pdfUrl: string;
   mapaUrl: string;
@@ -45,6 +53,7 @@ const Topicos = () => {
       titulo: "Introdução ao Direito Administrativo",
       thumbnail: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
       patrocinador: "JurisConsult",
+      disciplina: "Direito Administrativo",
       videoUrl: "https://www.youtube.com/watch?v=example1",
       pdfUrl: "https://example.com/pdf/direito-admin.pdf",
       mapaUrl: "https://example.com/mapa/direito-admin.pdf",
@@ -56,12 +65,24 @@ const Topicos = () => {
       titulo: "Princípios Constitucionais",
       thumbnail: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d",
       patrocinador: "LegisPro",
+      disciplina: "Direito Constitucional",
       videoUrl: "https://www.youtube.com/watch?v=example2",
       pdfUrl: "https://example.com/pdf/principios.pdf",
       mapaUrl: "https://example.com/mapa/principios.pdf",
       resumoUrl: "https://example.com/resumo/principios.pdf",
       questoesIds: ["201", "202"]
     }
+  ]);
+
+  // Lista de disciplinas disponíveis
+  const [disciplinas, setDisciplinas] = useState([
+    "Direito Administrativo",
+    "Direito Constitucional",
+    "Direito Civil",
+    "Direito Penal",
+    "Direito Tributário",
+    "Português",
+    "Matemática"
   ]);
 
   // Estados para diálogos
@@ -77,6 +98,7 @@ const Topicos = () => {
     titulo: "",
     thumbnail: "",
     patrocinador: "",
+    disciplina: "",
     videoUrl: "",
     pdfUrl: "",
     mapaUrl: "",
@@ -147,6 +169,7 @@ const Topicos = () => {
       titulo: "",
       thumbnail: "",
       patrocinador: "",
+      disciplina: "",
       videoUrl: "",
       pdfUrl: "",
       mapaUrl: "",
@@ -258,6 +281,7 @@ const Topicos = () => {
             <TableRow>
               <TableHead className="w-[50px]">ID</TableHead>
               <TableHead className="w-[200px]">Título</TableHead>
+              <TableHead className="w-[150px]">Disciplina</TableHead>
               <TableHead className="w-[150px]">Patrocinador</TableHead>
               <TableHead className="w-[150px]">Questões</TableHead>
               <TableHead className="w-[150px]">Ações</TableHead>
@@ -268,6 +292,7 @@ const Topicos = () => {
               <TableRow key={topico.id}>
                 <TableCell className="font-medium">{topico.id}</TableCell>
                 <TableCell>{topico.titulo}</TableCell>
+                <TableCell>{topico.disciplina}</TableCell>
                 <TableCell>{topico.patrocinador}</TableCell>
                 <TableCell>{topico.questoesIds.length} questões</TableCell>
                 <TableCell>
@@ -311,6 +336,25 @@ const Topicos = () => {
                   onChange={(e) => setNewTopico({ ...newTopico, titulo: e.target.value })}
                   placeholder="Digite o título do tópico"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="disciplina">Disciplina</Label>
+                <Select
+                  value={newTopico.disciplina}
+                  onValueChange={(value) => setNewTopico({ ...newTopico, disciplina: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione uma disciplina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {disciplinas.map((disciplina) => (
+                      <SelectItem key={disciplina} value={disciplina}>
+                        {disciplina}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -464,6 +508,25 @@ const Topicos = () => {
                     onChange={(e) => setCurrentTopico({ ...currentTopico, titulo: e.target.value })}
                     placeholder="Digite o título do tópico"
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-disciplina">Disciplina</Label>
+                  <Select
+                    value={currentTopico.disciplina}
+                    onValueChange={(value) => setCurrentTopico({ ...currentTopico, disciplina: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione uma disciplina" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {disciplinas.map((disciplina) => (
+                        <SelectItem key={disciplina} value={disciplina}>
+                          {disciplina}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
