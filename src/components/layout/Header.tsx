@@ -1,10 +1,13 @@
+
 import React from "react";
 import { Search, Menu, User } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+
 export const Header = () => {
-  return <header className="bg-white min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-[32px]">
+  return (
+    <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-[32px]">
       <div className="flex min-h-[88px] flex-col items-stretch justify-center w-[194px] py-8">
         <Link to="/">
           <img loading="lazy" src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/ee47f81d3df30406eedeb997df60ffc12cce0b3965827fc005f4c7a2da4ca470" alt="Company Logo" className="aspect-[8.06] object-contain w-[194px] md:w-[194px] w-[120px]" />
@@ -39,19 +42,19 @@ export const Header = () => {
               </div>
             </div>
             <nav className="flex flex-col">
-              <Link to="/explore" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]">
+              <Link to="/explore" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
                 Explorar
               </Link>
-              <Link to="/my-courses" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]">
+              <Link to="/my-courses" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
                 Meus Cursos
               </Link>
-              <Link to="/questions" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]">
+              <Link to="/questions" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
                 Questões
               </Link>
-              <Link to="/course" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]">
+              <Link to="/course" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
                 Curso
               </Link>
-              <Link to="/settings" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#ea2be2]">
+              <Link to="/settings" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
                 Configurações
               </Link>
               <div className="border-t border-gray-100">
@@ -63,5 +66,6 @@ export const Header = () => {
           </PopoverContent>
         </Popover>
       </div>
-    </header>;
+    </header>
+  );
 };

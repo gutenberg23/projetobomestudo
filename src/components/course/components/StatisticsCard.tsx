@@ -1,15 +1,19 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Subject } from "../types/editorialized";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
 interface StatisticsCardProps {
   subjects: Subject[];
 }
+
 export const StatisticsCard = ({
   subjects
 }: StatisticsCardProps) => {
-  const [selectedSubject, setSelectedSubject] = React.useState<string>(subjects[0]?.name || "");
+  const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.name || "");
+  const [isStatisticsVisible, setIsStatisticsVisible] = useState(false);
 
   // Data for radar chart
   const radarData = subjects.map(subject => {
@@ -33,7 +37,7 @@ export const StatisticsCard = ({
     name: 'Pendente',
     value: 100 - progressPercentage
   }];
-  const COLORS = ['#ea2be2', '#E0E0E0'];
+  const COLORS = ['#f11ce3', '#E0E0E0'];
 
   // Data for stacked bar chart
   const selectedSubjectData = subjects.find(s => s.name === selectedSubject)?.topics.map(topic => ({
@@ -41,16 +45,25 @@ export const StatisticsCard = ({
     acertos: topic.hits,
     erros: topic.exercisesDone - topic.hits
   })) || [];
-  return <div className="flex items-center mt-2 text-sm text-gray-600">
-      <Dialog>
-        <DialogTrigger asChild>
-          <button className="px-3 py-1.5 transition-colors text-slate-50 rounded-lg font-semibold bg-[#ea2be2]">
-            Minhas Estatísticas
-          </button>
-        </DialogTrigger>
-        <DialogContent className="w-[800px] max-w-[90vw] p-6 rounded-[10px] bg-[#f6f8fa]">
+
+  const toggleStatistics = () => {
+    setIsStatisticsVisible(!isStatisticsVisible);
+  };
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={toggleStatistics}
+        className="flex items-center gap-2 px-3 py-1.5 transition-colors text-slate-50 rounded-lg font-semibold bg-[#f11ce3]"
+      >
+        Minhas Estatísticas
+        {isStatisticsVisible ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </button>
+      
+      {isStatisticsVisible && (
+        <div className="mt-4 p-4 bg-white rounded-[10px] shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-4 rounded-[10px]">
+            <div className="bg-[#f6f8fa] p-4 rounded-[10px]">
               <h3 className="font-semibold text-center mb-4">
                 Aproveitamento por Disciplina
               </h3>
@@ -59,14 +72,14 @@ export const StatisticsCard = ({
                   <RadarChart data={radarData}>
                     <PolarGrid />
                     <PolarAngleAxis dataKey="subject" />
-                    <Radar name="Aproveitamento" dataKey="value" stroke="#ea2be2" fill="#ea2be2" fillOpacity={0.6} />
+                    <Radar name="Aproveitamento" dataKey="value" stroke="#f11ce3" fill="#f11ce3" fillOpacity={0.6} />
                     <Tooltip />
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
             </div>
             
-            <div className="bg-white p-4 rounded-[10px]">
+            <div className="bg-[#f6f8fa] p-4 rounded-[10px]">
               <h3 className="font-semibold text-center mb-4">
                 Progresso Geral
               </h3>
@@ -74,7 +87,9 @@ export const StatisticsCard = ({
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                      {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                      {donutData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
                     </Pie>
                     <Tooltip />
                     <Legend />
@@ -83,7 +98,7 @@ export const StatisticsCard = ({
               </div>
             </div>
 
-            <div className="col-span-1 md:col-span-2 bg-white p-4 rounded-[10px]">
+            <div className="col-span-1 md:col-span-2 bg-[#f6f8fa] p-4 rounded-[10px]">
               <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
                 <h3 className="font-semibold text-center">
                   Distribuição de Acertos e Erros por Tópico
@@ -93,9 +108,11 @@ export const StatisticsCard = ({
                     <SelectValue placeholder="Selecione uma disciplina" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjects.map(subject => <SelectItem key={subject.id} value={subject.name}>
+                    {subjects.map(subject => (
+                      <SelectItem key={subject.id} value={subject.name}>
                         {subject.name}
-                      </SelectItem>)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -113,7 +130,8 @@ export const StatisticsCard = ({
               </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 };

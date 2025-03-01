@@ -26,33 +26,42 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
           onClick={() => setActiveTab('disciplinas')}
           className={cn(
             "flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap",
-            activeTab === 'disciplinas' && "bg-white text-[#F11CE3]"
+            activeTab === 'disciplinas' && "bg-white text-[#f11ce3]"
           )}
         >
           <Book className="w-6 h-6" />
-          <span className="hidden md:inline">Todas as Disciplinas</span>
+          <span className={cn(
+            "md:inline",
+            activeTab === 'disciplinas' ? "inline" : "hidden"
+          )}>Todas as Disciplinas</span>
         </button>
 
         <button 
           onClick={() => setActiveTab('edital')}
           className={cn(
             "flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap",
-            activeTab === 'edital' && "bg-white text-[#F11CE3]"
+            activeTab === 'edital' && "bg-white text-[#f11ce3]"
           )}
         >
           <FileText className="w-6 h-6" />
-          <span className="hidden md:inline">Edital Verticalizado</span>
+          <span className={cn(
+            "md:inline",
+            activeTab === 'edital' ? "inline" : "hidden"
+          )}>Edital Verticalizado</span>
         </button>
 
         <button 
           onClick={() => setActiveTab('simulados')}
           className={cn(
             "flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap",
-            activeTab === 'simulados' && "bg-white text-[#F11CE3]"
+            activeTab === 'simulados' && "bg-white text-[#f11ce3]"
           )}
         >
           <Activity className="w-6 h-6" />
-          <span className="hidden md:inline">Simulados</span>
+          <span className={cn(
+            "md:inline",
+            activeTab === 'simulados' ? "inline" : "hidden"
+          )}>Simulados</span>
         </button>
       </div>
 
@@ -61,7 +70,7 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
           onClick={onProgressClick}
           className={cn(
             "hidden md:flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap ml-auto",
-            isProgressVisible && "bg-white text-[#F11CE3]"
+            isProgressVisible && "bg-white text-[#f11ce3]"
           )}
         >
           <LineChart className="w-6 h-6" />
