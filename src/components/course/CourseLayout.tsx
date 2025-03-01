@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Header } from "../layout/Header";
 import { Footer } from "../layout/Footer";
@@ -26,7 +27,7 @@ export const CourseLayout = () => {
       <main className="pt-[88px]">
         <CourseHeader />
         <CourseNavigation activeTab={activeTab} setActiveTab={setActiveTab} onProgressClick={handleProgressClick} isProgressVisible={isProgressVisible} />
-        {activeTab === 'disciplinas' && <div className="bg-[rgba(246,248,250,1)] flex w-full gap-5 py-0 flex-col md:flex-row px-[32px]">
+        {activeTab === 'disciplinas' && <div className="bg-[rgba(246,248,250,1)] flex w-full gap-5 py-0 flex-col md:flex-row px-[10px] md:px-[32px]">
             <div className="flex-1">
               <SubjectsList />
             </div>
