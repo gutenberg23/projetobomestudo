@@ -43,6 +43,7 @@ interface Topico {
   resumoUrl: string;
   questoesIds: string[];
   selecionado?: boolean;
+  abrirVideoEm?: "site" | "destino";
 }
 
 const Topicos = () => {
@@ -60,7 +61,8 @@ const Topicos = () => {
       mapaUrl: "https://example.com/mapa/direito-admin.pdf",
       resumoUrl: "https://example.com/resumo/direito-admin.pdf",
       questoesIds: ["101", "102", "103"],
-      selecionado: false
+      selecionado: false,
+      abrirVideoEm: "site"
     },
     {
       id: "2",
@@ -73,7 +75,8 @@ const Topicos = () => {
       mapaUrl: "https://example.com/mapa/principios.pdf",
       resumoUrl: "https://example.com/resumo/principios.pdf",
       questoesIds: ["201", "202"],
-      selecionado: false
+      selecionado: false,
+      abrirVideoEm: "destino"
     }
   ]);
 
@@ -117,7 +120,8 @@ const Topicos = () => {
     pdfUrl: "",
     mapaUrl: "",
     resumoUrl: "",
-    questoesIds: []
+    questoesIds: [],
+    abrirVideoEm: "site"
   });
   
   // Estado para novo ID de questão
@@ -188,7 +192,8 @@ const Topicos = () => {
       pdfUrl: "",
       mapaUrl: "",
       resumoUrl: "",
-      questoesIds: []
+      questoesIds: [],
+      abrirVideoEm: "site"
     });
     
     setIsOpenCreate(false);
@@ -598,6 +603,22 @@ const Topicos = () => {
               </div>
 
               <div>
+                <Label htmlFor="abrirVideoEm">Abrir Vídeo</Label>
+                <Select
+                  value={newTopico.abrirVideoEm}
+                  onValueChange={(value: "site" | "destino") => setNewTopico({ ...newTopico, abrirVideoEm: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione onde abrir o vídeo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="site">No site</SelectItem>
+                    <SelectItem value="destino">No destino</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="pdfUrl">Link do PDF</Label>
                 <Input
                   id="pdfUrl"
@@ -767,6 +788,22 @@ const Topicos = () => {
                     onChange={(e) => setCurrentTopico({ ...currentTopico, videoUrl: e.target.value })}
                     placeholder="URL do vídeo (YouTube, Vimeo, etc.)"
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-abrirVideoEm">Abrir Vídeo</Label>
+                  <Select
+                    value={currentTopico.abrirVideoEm || "site"}
+                    onValueChange={(value: "site" | "destino") => setCurrentTopico({ ...currentTopico, abrirVideoEm: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione onde abrir o vídeo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="site">No site</SelectItem>
+                      <SelectItem value="destino">No destino</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
