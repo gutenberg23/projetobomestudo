@@ -1,20 +1,16 @@
-
 import React, { useState } from 'react';
 import { Subject } from "../types/editorialized";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-
 interface StatisticsCardProps {
   subjects: Subject[];
 }
-
 export const StatisticsCard = ({
   subjects
 }: StatisticsCardProps) => {
   const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.name || "");
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
-
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
   };
@@ -49,23 +45,17 @@ export const StatisticsCard = ({
     acertos: topic.hits,
     erros: topic.exercisesDone - topic.hits
   })) || [];
-
-  return (
-    <div className="mt-4 mb-4 p-4 bg-white rounded-[10px] shadow-sm">
+  return <div className="mt-4 mb-4 p-4 bg-white rounded-[10px] shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-xl text-left">
+        <h3 className="text-left text-2xl font-bold text-[#282f3c]">
           Minhas Estatísticas
         </h3>
-        <button 
-          onClick={toggleExpanded} 
-          className="text-[#f11ce3] hover:bg-[#fce7fc] p-2 rounded-full"
-        >
+        <button onClick={toggleExpanded} className="text-[#f11ce3] hover:bg-[#fce7fc] p-2 rounded-full">
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
       </div>
 
-      {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {isExpanded && <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-[#f6f8fa] p-4 rounded-[10px]">
             <h3 className="font-semibold text-center mb-4">
               Aproveitamento por Disciplina
@@ -74,9 +64,13 @@ export const StatisticsCard = ({
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData}>
                   <PolarGrid />
-                  <PolarAngleAxis dataKey="subject" tick={{fontSize: window.innerWidth < 768 ? 10 : 12}} />
+                  <PolarAngleAxis dataKey="subject" tick={{
+                fontSize: window.innerWidth < 768 ? 10 : 12
+              }} />
                   <Radar name="Aproveitamento" dataKey="value" stroke="#f11ce3" fill="#f11ce3" fillOpacity={0.6} />
-                  <Tooltip contentStyle={{fontSize: window.innerWidth < 768 ? 10 : 12}} />
+                  <Tooltip contentStyle={{
+                fontSize: window.innerWidth < 768 ? 10 : 12
+              }} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -90,12 +84,14 @@ export const StatisticsCard = ({
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                    {donutData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
+                    {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                   </Pie>
-                  <Tooltip contentStyle={{fontSize: window.innerWidth < 768 ? 10 : 12}} />
-                  <Legend wrapperStyle={{fontSize: window.innerWidth < 768 ? 10 : 12}} />
+                  <Tooltip contentStyle={{
+                fontSize: window.innerWidth < 768 ? 10 : 12
+              }} />
+                  <Legend wrapperStyle={{
+                fontSize: window.innerWidth < 768 ? 10 : 12
+              }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -111,29 +107,33 @@ export const StatisticsCard = ({
                   <SelectValue placeholder="Selecione uma disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {subjects.map(subject => (
-                    <SelectItem key={subject.id} value={subject.name}>
+                  {subjects.map(subject => <SelectItem key={subject.id} value={subject.name}>
                       {subject.name}
-                    </SelectItem>
-                  ))}
+                    </SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={selectedSubjectData}>
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{fontSize: window.innerWidth < 768 ? 10 : 12}} />
-                  <YAxis tick={{fontSize: window.innerWidth < 768 ? 10 : 12}} />
-                  <Tooltip contentStyle={{fontSize: window.innerWidth < 768 ? 10 : 12}} />
-                  <Legend wrapperStyle={{fontSize: window.innerWidth < 768 ? 10 : 12}} />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{
+                fontSize: window.innerWidth < 768 ? 10 : 12
+              }} />
+                  <YAxis tick={{
+                fontSize: window.innerWidth < 768 ? 10 : 12
+              }} />
+                  <Tooltip contentStyle={{
+                fontSize: window.innerWidth < 768 ? 10 : 12
+              }} />
+                  <Legend wrapperStyle={{
+                fontSize: window.innerWidth < 768 ? 10 : 12
+              }} />
                   <Bar dataKey="acertos" stackId="a" fill="#54cd5d" name="Acertos" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="erros" stackId="a" fill="#e33e4e" name="Erros" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
