@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Select,
   SelectContent,
@@ -27,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { Pencil, Trash, Plus, X, Upload } from "lucide-react";
+import { Pencil, Trash, Plus, X, Upload, Search, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Tipo para os tópicos
@@ -42,6 +43,7 @@ interface Topico {
   mapaUrl: string;
   resumoUrl: string;
   questoesIds: string[];
+  selecionado?: boolean;
 }
 
 const Topicos = () => {
@@ -58,7 +60,8 @@ const Topicos = () => {
       pdfUrl: "https://example.com/pdf/direito-admin.pdf",
       mapaUrl: "https://example.com/mapa/direito-admin.pdf",
       resumoUrl: "https://example.com/resumo/direito-admin.pdf",
-      questoesIds: ["101", "102", "103"]
+      questoesIds: ["101", "102", "103"],
+      selecionado: false
     },
     {
       id: "2",
@@ -70,7 +73,8 @@ const Topicos = () => {
       pdfUrl: "https://example.com/pdf/principios.pdf",
       mapaUrl: "https://example.com/mapa/principios.pdf",
       resumoUrl: "https://example.com/resumo/principios.pdf",
-      questoesIds: ["201", "202"]
+      questoesIds: ["201", "202"],
+      selecionado: false
     }
   ]);
 
@@ -84,6 +88,14 @@ const Topicos = () => {
     "Português",
     "Matemática"
   ]);
+
+  // Estados para filtros
+  const [searchTerm, setSearchTerm] = useState("");
+  const [disciplinaFiltro, setDisciplinaFiltro] = useState("");
+  const [patrocinadorFiltro, setPatrocinadorFiltro] = useState("");
+  
+  // Estado para indicar se todos os tópicos estão selecionados
+  const [todosSelecionados, setTodosSelecionados] = useState(false);
 
   // Estados para diálogos
   const [isOpenCreate, setIsOpenCreate] = useState(false);
@@ -162,7 +174,7 @@ const Topicos = () => {
     }
 
     const id = (topicos.length + 1).toString();
-    setTopicos([...topicos, { ...newTopico, id }]);
+    setTopicos([...topicos, { ...newTopico, id, selecionado: false }]);
     
     // Resetar formulário
     setNewTopico({
@@ -259,6 +271,72 @@ const Topicos = () => {
     }
   };
 
+  // Função para selecionar/deselecionar um tópico
+  const handleSelecaoTopico = (id: string) => {
+    const topicoAtualizado = topicos.map(topico => {
+      if (topico.id === id) {
+        return { ...topico, selecionado: !topico.selecionado };
+      }
+      return topico;
+    });
+    
+    setTopicos(topicoAtualizado);
+    
+    // Verifica se todos os tópicos estão selecionados
+    const todosMarcados = topicoAtualizado.every(topico => topico.selecionado);
+    setTodosSelecionados(todosMarcados);
+  };
+
+  // Função para selecionar/deselecionar todos os tópicos
+  const handleSelecaoTodos = () => {
+    const novoEstado = !todosSelecionados;
+    setTodosSelecionados(novoEstado);
+    
+    setTopicos(topicos.map(topico => ({
+      ...topico,
+      selecionado: novoEstado
+    })));
+  };
+
+  // Função para iniciar a criação de uma aula com os tópicos selecionados
+  const handleCriarAula = () => {
+    const topicosSelecionados = topicos.filter(topico => topico.selecionado);
+    
+    if (topicosSelecionados.length === 0) {
+      toast({
+        title: "Atenção",
+        description: "Selecione pelo menos um tópico para adicionar à aula.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Aqui você implementaria a lógica para criar uma aula com os tópicos selecionados
+    toast({
+      title: "Aula criada",
+      description: `Aula criada com ${topicosSelecionados.length} tópicos selecionados.`,
+    });
+    
+    // Limpa a seleção após criar a aula
+    setTopicos(topicos.map(topico => ({
+      ...topico,
+      selecionado: false
+    })));
+    setTodosSelecionados(false);
+  };
+
+  // Filtragem dos tópicos
+  const topicosFiltrados = topicos.filter(topico => {
+    const matchTitulo = topico.titulo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchDisciplina = disciplinaFiltro ? topico.disciplina === disciplinaFiltro : true;
+    const matchPatrocinador = patrocinadorFiltro ? topico.patrocinador.toLowerCase().includes(patrocinadorFiltro.toLowerCase()) : true;
+    
+    return matchTitulo && matchDisciplina && matchPatrocinador;
+  });
+
+  // Lista de patrocinadores únicos para o filtro
+  const patrocinadores = Array.from(new Set(topicos.map(topico => topico.patrocinador))).filter(Boolean);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -274,11 +352,73 @@ const Topicos = () => {
         </Button>
       </div>
 
+      {/* Filtros */}
+      <div className="bg-white p-4 rounded-lg shadow">
+        <div className="text-lg font-medium mb-3 text-[#272f3c]">Filtros</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="search" className="text-[#67748a]">Buscar por título</Label>
+            <div className="relative">
+              <Input
+                id="search"
+                placeholder="Digite para buscar..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10"
+              />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="disciplina-filtro" className="text-[#67748a]">Disciplina</Label>
+            <Select value={disciplinaFiltro} onValueChange={setDisciplinaFiltro}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Todas as disciplinas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todas as disciplinas</SelectItem>
+                {disciplinas.map((disciplina, index) => (
+                  <SelectItem key={index} value={disciplina}>
+                    {disciplina}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div>
+            <Label htmlFor="patrocinador-filtro" className="text-[#67748a]">Patrocinador</Label>
+            <Select value={patrocinadorFiltro} onValueChange={setPatrocinadorFiltro}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Todos os patrocinadores" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos os patrocinadores</SelectItem>
+                {patrocinadores.map((patrocinador, index) => (
+                  <SelectItem key={index} value={patrocinador}>
+                    {patrocinador}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
       {/* Tabela de Tópicos */}
       <div className="rounded-md border bg-white">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-[50px]">
+                <div className="flex items-center">
+                  <Checkbox 
+                    checked={todosSelecionados} 
+                    onCheckedChange={handleSelecaoTodos}
+                  />
+                </div>
+              </TableHead>
               <TableHead className="w-[50px]">ID</TableHead>
               <TableHead className="w-[200px]">Título</TableHead>
               <TableHead className="w-[150px]">Disciplina</TableHead>
@@ -288,36 +428,60 @@ const Topicos = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {topicos.map((topico) => (
-              <TableRow key={topico.id}>
-                <TableCell className="font-medium">{topico.id}</TableCell>
-                <TableCell>{topico.titulo}</TableCell>
-                <TableCell>{topico.disciplina}</TableCell>
-                <TableCell>{topico.patrocinador}</TableCell>
-                <TableCell>{topico.questoesIds.length} questões</TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button 
-                      onClick={() => openEditModal(topico)} 
-                      variant="outline" 
-                      size="sm"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      onClick={() => openDeleteModal(topico)} 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
+            {topicosFiltrados.length > 0 ? (
+              topicosFiltrados.map((topico) => (
+                <TableRow key={topico.id}>
+                  <TableCell>
+                    <Checkbox 
+                      checked={topico.selecionado} 
+                      onCheckedChange={() => handleSelecaoTopico(topico.id)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{topico.id}</TableCell>
+                  <TableCell>{topico.titulo}</TableCell>
+                  <TableCell>{topico.disciplina}</TableCell>
+                  <TableCell>{topico.patrocinador}</TableCell>
+                  <TableCell>{topico.questoesIds.length} questões</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button 
+                        onClick={() => openEditModal(topico)} 
+                        variant="outline" 
+                        size="sm"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        onClick={() => openDeleteModal(topico)} 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-4 text-[#67748a]">
+                  Nenhum tópico encontrado com os filtros aplicados.
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Botão de Adicionar Aula */}
+      <div className="flex justify-end mt-4">
+        <Button 
+          onClick={handleCriarAula}
+          className="bg-[#9b87f5] hover:bg-[#9b87f5]/90"
+        >
+          Adicionar Aula
+        </Button>
       </div>
 
       {/* Modal de Criação */}
