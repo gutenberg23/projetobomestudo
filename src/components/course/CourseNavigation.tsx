@@ -27,8 +27,8 @@ export const CourseNavigation = ({
         <button onClick={() => setActiveTab('edital')} className={cn("flex items-center gap-2.5 px-5 py-4 rounded-[10px] hover:bg-white transition-colors whitespace-nowrap", activeTab === 'edital' && "bg-white text-[#f11ce3]")}>
           <FileText className="w-6 h-6" />
           <span className={cn("md:inline text-xs md:text-base", activeTab === 'edital' ? "inline flex flex-col sm:flex-row" : "hidden")}>
-            <span className="sm:hidden">Edital</span>
-            <span className="sm:hidden">Verticalizado</span>
+            <span className="sm:hidden text-left">Edital</span>
+            <span className="sm:hidden text-left">Verticalizado</span>
             <span className="hidden sm:inline">Edital Verticalizado</span>
           </span>
         </button>
