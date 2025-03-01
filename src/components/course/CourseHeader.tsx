@@ -9,7 +9,7 @@ export const CourseHeader = () => {
   // Exemplo de ID do curso (em produção viria de uma API)
   const courseId = "12345";
   return <div className="bg-white w-full border-b border-[rgba(239,239,239,1)]">
-      <div className="mx-auto flex min-w-60 w-full items-start justify-between flex-wrap px-2.5 py-[50px]">
+      <div className="mx-auto flex min-w-60 w-full items-start justify-between flex-wrap py-[50px] px-[32px]">
         <div className="flex min-w-60 flex-col justify-center py-2.5 w-full md:w-auto md:flex-1">
           <div className="flex w-full max-w-[859px] gap-2.5 text-[35px] md:text-[35px] text-[24px] text-[rgba(38,47,60,1)] font-bold leading-[31px] items-center">
             <h1 className="flex-1">Título do Curso - Loren Ipsun Dolor</h1>
