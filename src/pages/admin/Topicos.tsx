@@ -96,6 +96,9 @@ const Topicos = () => {
   // Estado para indicar se todos os tópicos estão selecionados
   const [todosSelecionados, setTodosSelecionados] = useState(false);
 
+  // Estado para título da aula
+  const [tituloAula, setTituloAula] = useState("");
+
   // Estados para diálogos
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [isOpenEdit, setIsOpenEdit] = useState(false);
@@ -310,10 +313,19 @@ const Topicos = () => {
       return;
     }
     
+    if (!tituloAula.trim()) {
+      toast({
+        title: "Atenção",
+        description: "Informe o título da aula.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Aqui você implementaria a lógica para criar uma aula com os tópicos selecionados
     toast({
       title: "Aula criada",
-      description: `Aula criada com ${topicosSelecionados.length} tópicos selecionados.`,
+      description: `Aula "${tituloAula}" criada com ${topicosSelecionados.length} tópicos selecionados.`,
     });
     
     // Limpa a seleção após criar a aula
@@ -322,7 +334,11 @@ const Topicos = () => {
       selecionado: false
     })));
     setTodosSelecionados(false);
+    setTituloAula("");
   };
+
+  // Verificar se há algum tópico selecionado
+  const temTopicosSelecionados = topicos.some(topico => topico.selecionado);
 
   // Filtragem dos tópicos
   const topicosFiltrados = topicos.filter(topico => {
@@ -474,10 +490,23 @@ const Topicos = () => {
       </div>
 
       {/* Botão de Adicionar Aula */}
-      <div className="flex justify-end mt-4">
+      <div className="flex justify-end mt-4 items-center gap-3">
+        {temTopicosSelecionados && (
+          <div className="flex-1 max-w-md">
+            <Label htmlFor="titulo-aula" className="sr-only">Título da Aula</Label>
+            <Input
+              id="titulo-aula"
+              placeholder="Digite o título da aula"
+              value={tituloAula}
+              onChange={(e) => setTituloAula(e.target.value)}
+              className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+            />
+          </div>
+        )}
         <Button 
           onClick={handleCriarAula}
           className="bg-[#9b87f5] hover:bg-[#9b87f5]/90"
+          disabled={!temTopicosSelecionados}
         >
           Adicionar Aula
         </Button>
