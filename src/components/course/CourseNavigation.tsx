@@ -31,9 +31,13 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
         >
           <Book className="w-6 h-6" />
           <span className={cn(
-            "md:inline",
-            activeTab === 'disciplinas' ? "inline" : "hidden"
-          )}>Todas as Disciplinas</span>
+            "md:inline text-xs md:text-base",
+            activeTab === 'disciplinas' ? "inline flex flex-col sm:flex-row" : "hidden"
+          )}>
+            <span className="sm:hidden">Todas as</span>
+            <span className="sm:hidden">Disciplinas</span>
+            <span className="hidden sm:inline">Todas as Disciplinas</span>
+          </span>
         </button>
 
         <button 
@@ -45,9 +49,13 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
         >
           <FileText className="w-6 h-6" />
           <span className={cn(
-            "md:inline",
-            activeTab === 'edital' ? "inline" : "hidden"
-          )}>Edital Verticalizado</span>
+            "md:inline text-xs md:text-base",
+            activeTab === 'edital' ? "inline flex flex-col sm:flex-row" : "hidden"
+          )}>
+            <span className="sm:hidden">Edital</span>
+            <span className="sm:hidden">Verticalizado</span>
+            <span className="hidden sm:inline">Edital Verticalizado</span>
+          </span>
         </button>
 
         <button 
@@ -59,7 +67,7 @@ export const CourseNavigation = ({ activeTab, setActiveTab, onProgressClick, isP
         >
           <Activity className="w-6 h-6" />
           <span className={cn(
-            "md:inline",
+            "md:inline text-xs md:text-base",
             activeTab === 'simulados' ? "inline" : "hidden"
           )}>Simulados</span>
         </button>

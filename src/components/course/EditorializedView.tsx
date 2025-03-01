@@ -5,6 +5,7 @@ import { SubjectTable } from "./components/SubjectTable";
 import { SimuladosTable } from "./components/SimuladosTable";
 import { Subject, Topic } from "./types/editorialized";
 import { calculateOverallStats } from "./utils/statsCalculations";
+import { StatisticsCard } from "./components/StatisticsCard";
 
 const subjects: Subject[] = [
   {
@@ -90,14 +91,20 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
         subjects={localSubjects}
       />
 
-      {activeTab === 'edital' && localSubjects.map(subject => (
-        <SubjectTable
-          key={subject.id}
-          subject={subject}
-          performanceGoal={performanceGoal}
-          onTopicChange={handleTopicChange}
-        />
-      ))}
+      {activeTab === 'edital' && (
+        <>
+          <StatisticsCard subjects={localSubjects} />
+          
+          {localSubjects.map(subject => (
+            <SubjectTable
+              key={subject.id}
+              subject={subject}
+              performanceGoal={performanceGoal}
+              onTopicChange={handleTopicChange}
+            />
+          ))}
+        </>
+      )}
 
       {activeTab === 'simulados' && (
         <SimuladosTable performanceGoal={performanceGoal} />

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -9,7 +10,7 @@ import { CalendarIcon } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { StatisticsCard } from "./StatisticsCard";
+
 interface DashboardSummaryProps {
   overallStats: OverallStats;
   performanceGoal: number;
@@ -17,6 +18,7 @@ interface DashboardSummaryProps {
   activeTab: string;
   subjects: Subject[];
 }
+
 export const DashboardSummary = ({
   overallStats,
   performanceGoal,
@@ -27,12 +29,14 @@ export const DashboardSummary = ({
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
   const [examDate, setExamDate] = React.useState<Date>();
+  
   const daysUntilExam = React.useMemo(() => {
     if (!examDate) return null;
     const today = new Date();
     const days = differenceInDays(examDate, today);
     return days >= 0 ? days : null;
   }, [examDate]);
+  
   return <div className="mb-8 p-5 bg-white rounded-[10px]">
       <div className="flex flex-col gap-4 mb-4 text-[#272f3c]">
         <h3 className="text-2xl font-bold">Resumo Geral</h3>
@@ -73,7 +77,6 @@ export const DashboardSummary = ({
               width: `${overallProgress}%`
             }} />
               </Progress>
-              <StatisticsCard subjects={subjects} />
             </div>
             <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
               <div className="space-y-2">
