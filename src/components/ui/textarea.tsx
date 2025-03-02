@@ -1,7 +1,7 @@
+
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Bold, Italic, Underline, Strikethrough, List, ListOrdered, Link2, Image, Palette } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "./dropdown-menu";
 
 export interface TextareaProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -12,6 +12,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, richText = false, ...props }, ref) => {
     const [value, setValue] = React.useState(props.value as string || "");
     const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+    const editorRef = React.useRef<HTMLDivElement>(null);
     const mergedRef = React.useMemo(() => {
       return (node: HTMLTextAreaElement) => {
         textareaRef.current = node;
@@ -32,88 +33,43 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       props.onChange?.(e);
     };
 
-    const applyFormat = (format: string) => {
-      if (!textareaRef.current) return;
-
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const selectedText = textarea.value.substring(start, end);
-
-      let formattedText = "";
-      let cursorPosition = 0;
-
-      switch (format) {
-        case "bold":
-          formattedText = `**${selectedText}**`;
-          cursorPosition = 2;
-          break;
-        case "italic":
-          formattedText = `*${selectedText}*`;
-          cursorPosition = 1;
-          break;
-        case "underline":
-          formattedText = `__${selectedText}__`;
-          cursorPosition = 2;
-          break;
-        case "strikethrough":
-          formattedText = `~~${selectedText}~~`;
-          cursorPosition = 2;
-          break;
-        case "ul":
-          formattedText = selectedText
-            .split("\n")
-            .map(line => `- ${line}`)
-            .join("\n");
-          cursorPosition = 2;
-          break;
-        case "ol":
-          formattedText = selectedText
-            .split("\n")
-            .map((line, i) => `${i + 1}. ${line}`)
-            .join("\n");
-          cursorPosition = 3;
-          break;
-        case "link":
-          formattedText = `[${selectedText}](url)`;
-          cursorPosition = selectedText.length + 3;
-          break;
-        case "image":
-          formattedText = `![${selectedText}](url)`;
-          cursorPosition = selectedText.length + 4;
-          break;
-        case "color":
-          const colors = ["red", "blue", "green", "yellow", "purple"];
-          const randomColor = colors[Math.floor(Math.random() * colors.length)];
-          formattedText = `<span style="color:${randomColor}">${selectedText}</span>`;
-          cursorPosition = formattedText.length - 7 - selectedText.length;
-          break;
-      }
-
-      const newValue = 
-        textarea.value.substring(0, start) + 
-        formattedText + 
-        textarea.value.substring(end);
+    const handleEditorChange = (e: React.FormEvent<HTMLDivElement>) => {
+      if (!editorRef.current) return;
       
-      // Create a synthetic event
+      const content = editorRef.current.innerHTML;
+      
+      // Criar um evento sintético para simular a mudança do textarea
       const syntheticEvent = {
         target: { 
-          ...textarea,
-          value: newValue 
+          value: content 
         }
       } as React.ChangeEvent<HTMLTextAreaElement>;
       
-      // Update the value
-      setValue(newValue);
+      setValue(content);
       props.onChange?.(syntheticEvent);
+    };
+
+    const execCommand = (command: string, value: string = "") => {
+      document.execCommand(command, false, value);
       
-      // Set focus back to textarea
+      if (editorRef.current) {
+        // Atualizar o valor quando um comando é executado
+        const content = editorRef.current.innerHTML;
+        
+        // Criar um evento sintético
+        const syntheticEvent = {
+          target: { 
+            value: content 
+          }
+        } as React.ChangeEvent<HTMLTextAreaElement>;
+        
+        setValue(content);
+        props.onChange?.(syntheticEvent);
+      }
+      
+      // Focar de volta no editor
       setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(
-          start + formattedText.length - (selectedText ? 0 : cursorPosition),
-          start + formattedText.length - (selectedText ? 0 : cursorPosition)
-        );
+        editorRef.current?.focus();
       }, 0);
     };
 
@@ -135,7 +91,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         <div className="flex flex-wrap gap-1 p-1 bg-[#f6f8fa] rounded-t-md border border-input">
           <button
             type="button"
-            onClick={() => applyFormat("bold")}
+            onClick={() => execCommand('bold')}
             className="p-1 hover:bg-gray-200 rounded"
             title="Negrito"
           >
@@ -143,7 +99,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </button>
           <button
             type="button"
-            onClick={() => applyFormat("italic")}
+            onClick={() => execCommand('italic')}
             className="p-1 hover:bg-gray-200 rounded"
             title="Itálico"
           >
@@ -151,7 +107,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </button>
           <button
             type="button"
-            onClick={() => applyFormat("underline")}
+            onClick={() => execCommand('underline')}
             className="p-1 hover:bg-gray-200 rounded"
             title="Sublinhado"
           >
@@ -159,7 +115,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </button>
           <button
             type="button"
-            onClick={() => applyFormat("strikethrough")}
+            onClick={() => execCommand('strikeThrough')}
             className="p-1 hover:bg-gray-200 rounded"
             title="Tachado"
           >
@@ -167,7 +123,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </button>
           <button
             type="button"
-            onClick={() => applyFormat("ul")}
+            onClick={() => execCommand('insertUnorderedList')}
             className="p-1 hover:bg-gray-200 rounded"
             title="Lista com marcadores"
           >
@@ -175,7 +131,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </button>
           <button
             type="button"
-            onClick={() => applyFormat("ol")}
+            onClick={() => execCommand('insertOrderedList')}
             className="p-1 hover:bg-gray-200 rounded"
             title="Lista numerada"
           >
@@ -183,7 +139,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </button>
           <button
             type="button"
-            onClick={() => applyFormat("link")}
+            onClick={() => {
+              const url = prompt('Insira o URL do link:');
+              if (url) execCommand('createLink', url);
+            }}
             className="p-1 hover:bg-gray-200 rounded"
             title="Link"
           >
@@ -191,7 +150,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </button>
           <button
             type="button"
-            onClick={() => applyFormat("image")}
+            onClick={() => {
+              const url = prompt('Insira o URL da imagem:');
+              if (url) execCommand('insertImage', url);
+            }}
             className="p-1 hover:bg-gray-200 rounded"
             title="Imagem"
           >
@@ -199,18 +161,34 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </button>
           <button
             type="button"
-            onClick={() => applyFormat("color")}
+            onClick={() => {
+              const colors = ["red", "blue", "green", "yellow", "purple"];
+              const randomColor = colors[Math.floor(Math.random() * colors.length)];
+              execCommand('foreColor', randomColor);
+            }}
             className="p-1 hover:bg-gray-200 rounded"
             title="Cor do texto"
           >
             <Palette size={16} />
           </button>
         </div>
-        <textarea
+        
+        {/* Editor de conteúdo rico */}
+        <div
+          ref={editorRef}
+          contentEditable
           className={cn(
-            "flex min-h-[80px] w-full rounded-b-md border-x border-b border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            "flex min-h-[80px] w-full rounded-b-md border-x border-b border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm overflow-auto",
             className
           )}
+          onInput={handleEditorChange}
+          onBlur={handleEditorChange}
+          dangerouslySetInnerHTML={{ __html: value }}
+        ></div>
+        
+        {/* Textarea oculto para manter compatibilidade com o formulário */}
+        <textarea
+          className="hidden"
           ref={mergedRef}
           value={value}
           onChange={handleChange}
