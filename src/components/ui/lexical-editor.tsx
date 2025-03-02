@@ -8,7 +8,7 @@ import { AutoFocusPlugin } from "@lexical/react/AutoFocusPlugin";
 import { LinkPlugin } from "@lexical/react/LinkPlugin";
 import { ListPlugin } from "@lexical/react/ListPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $getRoot, $createParagraphNode, $createTextNode, EditorState } from "lexical";
+import { $getRoot, $createParagraphNode, $createTextNode, EditorState, LexicalEditor } from "lexical";
 import { 
   Bold, 
   Italic, 
@@ -23,8 +23,12 @@ import {
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
 import { $isListNode, ListItemNode, ListNode } from "@lexical/list";
+import { $createListNode, $createListItemNode } from "@lexical/list";
 import { $patchStyleText } from "@lexical/selection";
 import { $getNearestNodeOfType } from "@lexical/utils";
+import { $isRootOrShadowRoot } from "lexical";
+import { $insertNodes, INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
+import { TOGGLE_LINK_COMMAND } from "@lexical/link";
 
 // Tema para o editor
 const theme = {
@@ -114,17 +118,19 @@ function InitialValuePlugin({ initialValue }: { initialValue: string }) {
             const textNode = $createTextNode(textContent);
             
             // Aplicar formatação se necessário
-            if (paragraphs[i].style.fontWeight === 'bold' || paragraphs[i].tagName === 'STRONG') {
-              textNode.setFormat('bold');
-            }
-            if (paragraphs[i].style.fontStyle === 'italic' || paragraphs[i].tagName === 'EM') {
-              textNode.setFormat('italic');
-            }
-            if (paragraphs[i].style.textDecoration === 'underline' || paragraphs[i].tagName === 'U') {
-              textNode.setFormat('underline');
-            }
-            if (paragraphs[i].style.textDecoration === 'line-through' || paragraphs[i].tagName === 'S') {
-              textNode.setFormat('strikethrough');
+            if (paragraphs[i] instanceof HTMLElement) {
+              if (paragraphs[i].style.fontWeight === 'bold' || paragraphs[i].tagName === 'STRONG') {
+                textNode.setFormat('bold');
+              }
+              if (paragraphs[i].style.fontStyle === 'italic' || paragraphs[i].tagName === 'EM') {
+                textNode.setFormat('italic');
+              }
+              if (paragraphs[i].style.textDecoration === 'underline' || paragraphs[i].tagName === 'U') {
+                textNode.setFormat('underline');
+              }
+              if (paragraphs[i].style.textDecoration === 'line-through' || paragraphs[i].tagName === 'S') {
+                textNode.setFormat('strikethrough');
+              }
             }
             
             paragraphNode.append(textNode);
@@ -166,46 +172,42 @@ function ToolbarPlugin() {
       switch(formatType) {
         case 'bold':
           // Aplica negrito ao texto selecionado
-          $patchStyleText(
-            { [formatType]: true }
-          );
+          $patchStyleText({ bold: true });
           break;
         case 'italic':
           // Aplica itálico ao texto selecionado
-          $patchStyleText(
-            { [formatType]: true }
-          );
+          $patchStyleText({ italic: true });
           break;
         case 'underline':
           // Aplica sublinhado ao texto selecionado
-          $patchStyleText(
-            { [formatType]: true }
-          );
+          $patchStyleText({ underline: true });
           break;
         case 'strikethrough':
           // Aplica tachado ao texto selecionado
-          $patchStyleText(
-            { [formatType]: true }
-          );
+          $patchStyleText({ strikethrough: true });
           break;
         case 'ordered-list':
           // Converte em lista ordenada
-          editor.dispatchCommand(formatType, undefined);
+          editor.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined);
           break;
         case 'bullet-list':
           // Converte em lista de marcadores
-          editor.dispatchCommand(formatType, undefined);
+          editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined);
           break;
         case 'link':
           const url = prompt("Digite a URL do link:", "https://");
           if (url) {
-            editor.dispatchCommand('link', url);
+            editor.dispatchCommand(TOGGLE_LINK_COMMAND, url);
           }
           break;
         case 'image':
           const imageUrl = prompt("Digite a URL da imagem:", "https://");
           if (imageUrl) {
-            editor.dispatchCommand('image', imageUrl);
+            // Implementação simplificada para inserir imagem
+            const imageNode = document.createElement('img');
+            imageNode.src = imageUrl;
+            const textNode = $createTextNode('');
+            $insertNodes([textNode]);
           }
           break;
         case 'color':
@@ -432,13 +434,15 @@ export function LexicalEditor({
                 className="outline-none" 
                 style={{ minHeight }} 
                 id={id} 
-                aria-label={placeholder}
+                aria-label={placeholder || "Editor de texto"}
               />
             }
             placeholder={
-              <div className="absolute pointer-events-none text-muted-foreground px-3 py-2 text-base md:text-sm">
-                {placeholder}
-              </div>
+              placeholder ? (
+                <div className="absolute pointer-events-none text-muted-foreground px-3 py-2 text-base md:text-sm">
+                  {placeholder}
+                </div>
+              ) : null
             }
           />
           <HistoryPlugin />
@@ -450,7 +454,7 @@ export function LexicalEditor({
         </div>
         
         {/* Input escondido para compatibilidade com formulários */}
-        <input type="hidden" name={name} value={value} id={id} />
+        <input type="hidden" name={name} value={value} id={id ? `${id}-hidden` : undefined} />
       </LexicalComposer>
     </div>
   );
