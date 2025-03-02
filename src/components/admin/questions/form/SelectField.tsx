@@ -50,6 +50,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
           onClick={() => value ? handleEditOption(value) : null}
           disabled={!value}
           title="Editar"
+          type="button"
         >
           <Edit className="h-4 w-4" />
         </Button>
@@ -59,6 +60,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
           onClick={() => value ? handleDeleteOption(value) : null}
           disabled={!value}
           title="Excluir"
+          type="button"
         >
           <Trash className="h-4 w-4" />
         </Button>

@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { 
   Bold, 
@@ -26,171 +27,84 @@ const TextEditor = React.forwardRef<
   }
 >(({ value, onChange, placeholder, className }, ref) => {
   const editorRef = React.useRef<HTMLDivElement>(null);
-  const [htmlContent, setHtmlContent] = React.useState("");
   const [showColorPicker, setShowColorPicker] = React.useState(false);
   const [selectedColor, setSelectedColor] = React.useState("#ea2be2");
   const colorPickerRef = React.useRef<HTMLDivElement>(null);
+  const [showPlaceholder, setShowPlaceholder] = React.useState(!value);
   
-  // Forward the reference to our contentEditable div for external access
-  const setRefs = React.useCallback((element: HTMLDivElement | null) => {
-    editorRef.current = element;
-    
-    // Update forwarded ref if needed (we'll need to handle that differently)
-    // This is a bit complex since we're using a div instead of textarea now
-  }, []);
-
-  // Convert markdown to HTML when value changes
+  // Quando o valor muda externamente, atualizamos o HTML
   React.useEffect(() => {
-    // Simple markdown-like to HTML conversion
-    let html = value || "";
-    
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // Italic
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
-    // Underline
-    html = html.replace(/__(.*?)__/g, '<u>$1</u>');
-    
-    // Strikethrough
-    html = html.replace(/~~(.*?)~~/g, '<s>$1</s>');
-    
-    // Ordered lists
-    html = html.replace(/(\d+\.\s.*?)(?=\n\d+\.|$)/gs, '<ol><li>$1</li></ol>');
-    
-    // Unordered lists
-    html = html.replace(/•\s(.*?)(?=\n•|$)/gs, '<ul><li>$1</li></ul>');
-    
-    // Links
-    html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-    
-    // Images
-    html = html.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width: 100%;" />');
-    
-    // Colored text
-    html = html.replace(/<span style="color:(.*?)">(.*?)<\/span>/g, '<span style="color:$1">$2</span>');
-    
-    setHtmlContent(html);
+    if (editorRef.current && value !== editorRef.current.innerHTML && !editorRef.current.matches(":focus")) {
+      editorRef.current.innerHTML = value;
+      setShowPlaceholder(!value);
+    }
   }, [value]);
 
-  const handleFormatting = (format: string) => {
+  // Manipular a formatação do texto
+  const handleFormatting = (format: string, e: React.MouseEvent) => {
+    e.preventDefault(); // Prevenir comportamento padrão
+    
+    if (!editorRef.current) return;
+    
+    // Salva a seleção atual
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
+    const range = selection?.getRangeAt(0);
     
-    const range = selection.getRangeAt(0);
-    const selectedText = range.toString();
+    if (!selection || !range || range.collapsed) return;
     
-    let formattedText = "";
-    
+    // Aplica o comando de formatação diretamente no documento
     switch(format) {
       case 'bold':
-        formattedText = `**${selectedText}**`;
+        document.execCommand('bold', false);
         break;
       case 'italic':
-        formattedText = `*${selectedText}*`;
+        document.execCommand('italic', false);
         break;
       case 'underline':
-        formattedText = `__${selectedText}__`;
+        document.execCommand('underline', false);
         break;
       case 'strikethrough':
-        formattedText = `~~${selectedText}~~`;
+        document.execCommand('strikeThrough', false);
         break;
       case 'ordered-list':
-        if (selectedText) {
-          const lines = selectedText.split('\n');
-          formattedText = lines.map((line, i) => `${i + 1}. ${line}`).join('\n');
-        } else {
-          formattedText = "1. ";
-        }
+        document.execCommand('insertOrderedList', false);
         break;
       case 'bullet-list':
-        if (selectedText) {
-          const lines = selectedText.split('\n');
-          formattedText = lines.map(line => `• ${line}`).join('\n');
-        } else {
-          formattedText = "• ";
-        }
+        document.execCommand('insertUnorderedList', false);
         break;
       case 'link':
         const url = prompt("Digite a URL do link:", "https://");
         if (url) {
-          formattedText = `[${selectedText || "Link"}](${url})`;
-        } else {
-          return;
+          document.execCommand('createLink', false, url);
         }
         break;
       case 'image':
         const imageUrl = prompt("Digite a URL da imagem:", "https://");
         if (imageUrl) {
-          formattedText = `![${selectedText || "Imagem"}](${imageUrl})`;
-        } else {
-          return;
+          document.execCommand('insertImage', false, imageUrl);
         }
         break;
       case 'color':
-        // Instead of prompting, we'll use our color picker
         setShowColorPicker(!showColorPicker);
-        return;
+        break;
     }
     
-    if (!formattedText) return;
-    
-    // Get the current textarea value
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = value;
-    const currentValue = textarea.value;
-    
-    // Find where in the string our selection is
-    const fullText = editorRef.current?.innerText || "";
-    const startPos = fullText.indexOf(selectedText);
-    const endPos = startPos + selectedText.length;
-    
-    if (startPos === -1) return;
-    
-    // Replace the selected text with formatted text in the original value string
-    const newValue = 
-      currentValue.substring(0, startPos) + 
-      formattedText + 
-      currentValue.substring(endPos);
-    
-    onChange(newValue);
+    // Atualiza o valor depois da formatação
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
   };
 
   const applyColor = (color: string) => {
     setSelectedColor(color);
     setShowColorPicker(false);
     
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
+    if (!editorRef.current) return;
     
-    const range = selection.getRangeAt(0);
-    const selectedText = range.toString();
+    document.execCommand('foreColor', false, color);
     
-    if (!selectedText) return;
-    
-    // Get the current textarea value
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = value;
-    const currentValue = textarea.value;
-    
-    // Find where in the string our selection is
-    const fullText = editorRef.current?.innerText || "";
-    const startPos = fullText.indexOf(selectedText);
-    const endPos = startPos + selectedText.length;
-    
-    if (startPos === -1) return;
-    
-    // Create the colored text span
-    const coloredText = `<span style="color:${color}">${selectedText}</span>`;
-    
-    // Replace the selected text with the colored text
-    const newValue = 
-      currentValue.substring(0, startPos) + 
-      coloredText + 
-      currentValue.substring(endPos);
-    
-    onChange(newValue);
+    // Atualiza o valor depois da formatação
+    onChange(editorRef.current.innerHTML);
   };
 
   // Handle clicks outside of color picker to close it
@@ -207,22 +121,23 @@ const TextEditor = React.forwardRef<
     };
   }, []);
 
-  // Handle paste to strip HTML and keep only text
-  const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData('text/plain');
-    document.execCommand('insertText', false, text);
-  };
-
   // Handle input to track changes and update the value
   const handleInput = () => {
     if (editorRef.current) {
-      const newText = editorRef.current.innerText;
-      onChange(newText);
+      onChange(editorRef.current.innerHTML);
+      setShowPlaceholder(!editorRef.current.textContent);
     }
   };
 
-  // Convert a textarea value to a contentEditable div
+  // Quando colar texto, limpar a formatação
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    
+    // Inserir como texto plano
+    document.execCommand('insertText', false, text);
+  };
+
   return (
     <div className="flex flex-col">
       <div className="flex flex-wrap items-center gap-1 p-2 bg-white border border-b-0 rounded-t-md">
@@ -230,7 +145,7 @@ const TextEditor = React.forwardRef<
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => handleFormatting('bold')}
+          onMouseDown={(e) => handleFormatting('bold', e)}
           className="h-8 w-8 p-0"
           title="Negrito"
         >
@@ -240,7 +155,7 @@ const TextEditor = React.forwardRef<
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => handleFormatting('italic')}
+          onMouseDown={(e) => handleFormatting('italic', e)}
           className="h-8 w-8 p-0"
           title="Itálico"
         >
@@ -250,7 +165,7 @@ const TextEditor = React.forwardRef<
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => handleFormatting('underline')}
+          onMouseDown={(e) => handleFormatting('underline', e)}
           className="h-8 w-8 p-0"
           title="Sublinhado"
         >
@@ -260,7 +175,7 @@ const TextEditor = React.forwardRef<
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => handleFormatting('strikethrough')}
+          onMouseDown={(e) => handleFormatting('strikethrough', e)}
           className="h-8 w-8 p-0"
           title="Tachado"
         >
@@ -270,7 +185,7 @@ const TextEditor = React.forwardRef<
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => handleFormatting('ordered-list')}
+          onMouseDown={(e) => handleFormatting('ordered-list', e)}
           className="h-8 w-8 p-0"
           title="Lista Ordenada"
         >
@@ -280,7 +195,7 @@ const TextEditor = React.forwardRef<
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => handleFormatting('bullet-list')}
+          onMouseDown={(e) => handleFormatting('bullet-list', e)}
           className="h-8 w-8 p-0"
           title="Lista com Marcadores"
         >
@@ -290,7 +205,7 @@ const TextEditor = React.forwardRef<
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => handleFormatting('link')}
+          onMouseDown={(e) => handleFormatting('link', e)}
           className="h-8 w-8 p-0"
           title="Inserir Link"
         >
@@ -300,7 +215,7 @@ const TextEditor = React.forwardRef<
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => handleFormatting('image')}
+          onMouseDown={(e) => handleFormatting('image', e)}
           className="h-8 w-8 p-0"
           title="Inserir Imagem"
         >
@@ -311,7 +226,7 @@ const TextEditor = React.forwardRef<
             type="button"
             variant="outline"
             size="sm"
-            onClick={() => handleFormatting('color')}
+            onMouseDown={(e) => handleFormatting('color', e)}
             className="h-8 w-8 p-0"
             title="Cor do Texto"
             style={{ 
@@ -366,17 +281,28 @@ const TextEditor = React.forwardRef<
 
       <div 
         className={cn(
-          "min-h-[200px] w-full rounded-b-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "min-h-[200px] w-full rounded-b-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm relative",
           className
         )}
         contentEditable
         ref={editorRef}
         onInput={handleInput}
         onPaste={handlePaste}
-        dangerouslySetInnerHTML={{ __html: htmlContent }}
-        placeholder={placeholder}
         style={{ overflowY: 'auto' }}
       />
+      
+      {/* Placeholder element */}
+      {showPlaceholder && placeholder && (
+        <div 
+          className="absolute pointer-events-none text-muted-foreground px-3 py-2 text-base md:text-sm" 
+          style={{
+            top: 'calc(2.25rem + 2px)', // Height of the toolbar + border
+            left: 0
+          }}
+        >
+          {placeholder}
+        </div>
+      )}
 
       {/* Hidden textarea for form compatibility */}
       <textarea
@@ -384,7 +310,6 @@ const TextEditor = React.forwardRef<
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{ display: 'none' }}
-        {...{} /* Forward any other props */}
       />
     </div>
   );
