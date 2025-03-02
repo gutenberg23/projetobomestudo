@@ -17,34 +17,32 @@ const TextEditor = ({
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const applyFormatting = (format: string) => {
-    // Encontrar o textarea correspondente
-    const textarea = document.getElementById(textareaRef.current?.id || "") as HTMLTextAreaElement;
-    if (!textarea) return;
+    if (!textareaRef.current) return;
     
+    const textarea = textareaRef.current;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const currentValue = textarea.value;
-    const selectedText = currentValue.substring(start, end);
+    const selectedText = textarea.value.substring(start, end);
     
     let formattedText = "";
-    let cursorOffset = 0;
+    let newCursorPos = 0;
     
     switch(format) {
       case 'bold':
         formattedText = `**${selectedText}**`;
-        cursorOffset = 2;
+        newCursorPos = start + formattedText.length;
         break;
       case 'italic':
         formattedText = `*${selectedText}*`;
-        cursorOffset = 1;
+        newCursorPos = start + formattedText.length;
         break;
       case 'underline':
         formattedText = `__${selectedText}__`;
-        cursorOffset = 2;
+        newCursorPos = start + formattedText.length;
         break;
       case 'strikethrough':
         formattedText = `~~${selectedText}~~`;
-        cursorOffset = 2;
+        newCursorPos = start + formattedText.length;
         break;
       case 'ordered-list':
         if (selectedText) {
@@ -53,6 +51,7 @@ const TextEditor = ({
         } else {
           formattedText = "1. ";
         }
+        newCursorPos = start + formattedText.length;
         break;
       case 'bullet-list':
         if (selectedText) {
@@ -61,11 +60,13 @@ const TextEditor = ({
         } else {
           formattedText = "• ";
         }
+        newCursorPos = start + formattedText.length;
         break;
       case 'link':
         const url = prompt("Digite a URL do link:", "https://");
         if (url) {
           formattedText = `[${selectedText || "Link"}](${url})`;
+          newCursorPos = start + formattedText.length;
         } else {
           return;
         }
@@ -74,6 +75,7 @@ const TextEditor = ({
         const imageUrl = prompt("Digite a URL da imagem:", "https://");
         if (imageUrl) {
           formattedText = `![${selectedText || "Imagem"}](${imageUrl})`;
+          newCursorPos = start + formattedText.length;
         } else {
           return;
         }
@@ -82,6 +84,7 @@ const TextEditor = ({
         const color = prompt("Digite a cor (ex: #FF0000, red, etc.):", "#ea2be2");
         if (color) {
           formattedText = `<span style="color:${color}">${selectedText}</span>`;
+          newCursorPos = start + formattedText.length;
         } else {
           return;
         }
@@ -89,9 +92,9 @@ const TextEditor = ({
     }
     
     const newValue = 
-      currentValue.substring(0, start) + 
+      textarea.value.substring(0, start) + 
       formattedText + 
-      currentValue.substring(end);
+      textarea.value.substring(end);
     
     // Atualizar o valor
     onChange(newValue);
@@ -99,13 +102,19 @@ const TextEditor = ({
     // Definir a posição do cursor
     setTimeout(() => {
       textarea.focus();
-      const newCursorPos = start + formattedText.length;
       textarea.setSelectionRange(newCursorPos, newCursorPos);
     }, 10);
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" ref={el => {
+      if (el) {
+        const textareaElement = el.querySelector('textarea');
+        if (textareaElement) {
+          textareaRef.current = textareaElement as HTMLTextAreaElement;
+        }
+      }
+    }}>
       <div className="border rounded-md p-2 mb-2 bg-white">
         <div className="flex flex-wrap gap-2 mb-2">
           <Button
