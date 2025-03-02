@@ -1,4 +1,3 @@
-
 export interface Comment {
   id: string;
   author: string;
@@ -35,4 +34,15 @@ export interface Question {
     isCorrect: boolean;
   }>;
   comments: Comment[];
+}
+
+export interface Anuncio {
+  id: string;
+  imagem: string;
+  pagina: string;
+  posicao: string;
+  dataInicio?: Date;
+  dataTermino?: Date;
+  status: "ativo" | "pausado" | "expirado";
+  url: string;
 }
