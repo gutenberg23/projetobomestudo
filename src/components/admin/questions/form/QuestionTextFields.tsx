@@ -26,6 +26,7 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
           onChange={(e) => setQuestionText(e.target.value)} 
           placeholder="Digite o texto da questão" 
           className="min-h-[200px]"
+          richText={true}
         />
       </div>
 
@@ -37,6 +38,7 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
           onChange={(e) => setTeacherExplanation(e.target.value)} 
           placeholder="Digite a explicação do professor" 
           className="min-h-[150px]"
+          richText={true}
         />
       </div>
     </>
