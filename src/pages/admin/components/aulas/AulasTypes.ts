@@ -30,6 +30,8 @@ export interface AulasPageProps {
   descricaoNovaDisciplina: string;
   setDescricaoNovaDisciplina: (descricao: string) => void;
   handleAdicionarDisciplina: () => void;
+  todasSelecionadas: boolean;
+  aulas: Aula[];
 }
 
 export interface EditAulaModalProps {

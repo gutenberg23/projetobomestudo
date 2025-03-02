@@ -105,18 +105,24 @@ const Aulas = () => {
 
   // Função para adicionar disciplina
   const handleAdicionarDisciplina = () => {
-    if (tituloNovaDisciplina.trim() && descricaoNovaDisciplina.trim()) {
-      // Lógica para adicionar disciplina
+    if (tituloNovaDisciplina.trim()) {
+      // Lógica para adicionar disciplina com os tópicos selecionados
+      const topicosIds = aulas
+        .filter(aula => aula.selecionada)
+        .flatMap(aula => aula.topicosIds);
+      
       console.log("Adicionando disciplina:", {
         titulo: tituloNovaDisciplina,
-        descricao: descricaoNovaDisciplina
+        descricao: descricaoNovaDisciplina,
+        topicosIds: topicosIds
       });
       
       // Resetar campos após adicionar
       setTituloNovaDisciplina("");
       setDescricaoNovaDisciplina("");
       
-      // Aqui você adicionaria a lógica real para salvar a disciplina
+      // Desmarcar todas as aulas após adicionar
+      setAulas(aulas.map(aula => ({...aula, selecionada: false})));
     }
   };
 
@@ -150,6 +156,8 @@ const Aulas = () => {
         descricaoNovaDisciplina={descricaoNovaDisciplina}
         setDescricaoNovaDisciplina={setDescricaoNovaDisciplina}
         handleAdicionarDisciplina={handleAdicionarDisciplina}
+        todasSelecionadas={todasSelecionadas}
+        aulas={aulas}
       />
       
       {/* Modais de edição e exclusão */}
