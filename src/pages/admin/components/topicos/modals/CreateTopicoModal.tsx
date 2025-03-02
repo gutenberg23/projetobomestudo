@@ -1,4 +1,3 @@
-
 import React from "react";
 import { 
   Dialog,
@@ -67,22 +66,13 @@ export const CreateTopicoModal: React.FC<CreateTopicoModalProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="disciplina">Disciplina</Label>
-              <Select
+              <Label htmlFor="disciplina">Descrição / Disciplina</Label>
+              <Input
+                id="disciplina"
                 value={newTopico.disciplina}
-                onValueChange={(value) => setNewTopico({ ...newTopico, disciplina: value })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecione uma disciplina" />
-                </SelectTrigger>
-                <SelectContent>
-                  {disciplinas.map((disciplina) => (
-                    <SelectItem key={disciplina} value={disciplina}>
-                      {disciplina}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(e) => setNewTopico({ ...newTopico, disciplina: e.target.value })}
+                placeholder="Digite a descrição ou disciplina"
+              />
             </div>
 
             <div>
