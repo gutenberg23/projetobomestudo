@@ -11,7 +11,6 @@ import { Topico } from "./components/topicos/TopicosTypes";
 const Topicos = () => {
   const { toast } = useToast();
   
-  // Estado para armazenar tópicos
   const [topicos, setTopicos] = useState<Topico[]>([
     {
       id: "1",
@@ -43,7 +42,6 @@ const Topicos = () => {
     }
   ]);
 
-  // Lista de disciplinas disponíveis
   const [disciplinas, setDisciplinas] = useState([
     "Direito Administrativo",
     "Direito Constitucional",
@@ -54,26 +52,20 @@ const Topicos = () => {
     "Matemática"
   ]);
 
-  // Estados para filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [disciplinaFiltro, setDisciplinaFiltro] = useState("todas");
   const [patrocinadorFiltro, setPatrocinadorFiltro] = useState("todos");
   
-  // Estado para indicar se todos os tópicos estão selecionados
   const [todosSelecionados, setTodosSelecionados] = useState(false);
 
-  // Estado para título da aula
   const [tituloAula, setTituloAula] = useState("");
 
-  // Estados para diálogos
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [isOpenEdit, setIsOpenEdit] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   
-  // Estado para o tópico atual (edição/exclusão)
   const [currentTopico, setCurrentTopico] = useState<Topico | null>(null);
   
-  // Estado para novo tópico
   const [newTopico, setNewTopico] = useState<Omit<Topico, 'id'>>({
     titulo: "",
     thumbnail: "",
@@ -87,11 +79,9 @@ const Topicos = () => {
     abrirVideoEm: "site"
   });
   
-  // Estado para novo ID de questão
   const [newQuestaoId, setNewQuestaoId] = useState("");
   const [editQuestaoId, setEditQuestaoId] = useState("");
 
-  // Função para adicionar ID de questão
   const addQuestaoId = () => {
     if (newQuestaoId.trim() !== "") {
       setNewTopico({
@@ -102,7 +92,6 @@ const Topicos = () => {
     }
   };
 
-  // Função para adicionar ID de questão durante edição
   const addQuestaoIdToEdit = () => {
     if (editQuestaoId.trim() !== "" && currentTopico) {
       setCurrentTopico({
@@ -113,7 +102,6 @@ const Topicos = () => {
     }
   };
 
-  // Função para remover ID de questão
   const removeQuestaoId = (index: number) => {
     setNewTopico({
       ...newTopico,
@@ -121,7 +109,6 @@ const Topicos = () => {
     });
   };
 
-  // Função para remover ID de questão durante edição
   const removeQuestaoIdFromEdit = (index: number) => {
     if (currentTopico) {
       setCurrentTopico({
@@ -131,7 +118,6 @@ const Topicos = () => {
     }
   };
 
-  // Função para criar tópico
   const handleCreateTopico = () => {
     if (!newTopico.titulo) {
       toast({
@@ -145,7 +131,6 @@ const Topicos = () => {
     const id = (topicos.length + 1).toString();
     setTopicos([...topicos, { ...newTopico, id, selecionado: false }]);
     
-    // Resetar formulário
     setNewTopico({
       titulo: "",
       thumbnail: "",
@@ -167,7 +152,6 @@ const Topicos = () => {
     });
   };
 
-  // Função para editar tópico
   const handleEditTopico = () => {
     if (currentTopico && !currentTopico.titulo) {
       toast({
@@ -189,7 +173,6 @@ const Topicos = () => {
     }
   };
 
-  // Função para deletar tópico
   const handleDeleteTopico = () => {
     if (currentTopico) {
       setTopicos(topicos.filter(t => t.id !== currentTopico.id));
@@ -202,24 +185,19 @@ const Topicos = () => {
     }
   };
 
-  // Função para abrir modal de edição
   const openEditModal = (topico: Topico) => {
     setCurrentTopico(topico);
     setIsOpenEdit(true);
   };
 
-  // Função para abrir modal de exclusão
   const openDeleteModal = (topico: Topico) => {
     setCurrentTopico(topico);
     setIsOpenDelete(true);
   };
 
-  // Função para simular o upload de thumbnail
   const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Em um ambiente real, você enviaria o arquivo para um servidor
-      // Aqui, vamos apenas simular com uma URL fictícia
       const fakeThumbnailUrl = `https://images.unsplash.com/photo-1581091226825-a6a2a5aee158`;
       
       if (isEdit && currentTopico) {
@@ -241,7 +219,6 @@ const Topicos = () => {
     }
   };
 
-  // Função para selecionar/deselecionar um tópico
   const handleSelecaoTopico = (id: string) => {
     const topicoAtualizado = topicos.map(topico => {
       if (topico.id === id) {
@@ -252,12 +229,10 @@ const Topicos = () => {
     
     setTopicos(topicoAtualizado);
     
-    // Verifica se todos os tópicos estão selecionados
     const todosMarcados = topicoAtualizado.every(topico => topico.selecionado);
     setTodosSelecionados(todosMarcados);
   };
 
-  // Função para selecionar/deselecionar todos os tópicos
   const handleSelecaoTodos = () => {
     const novoEstado = !todosSelecionados;
     setTodosSelecionados(novoEstado);
@@ -268,7 +243,6 @@ const Topicos = () => {
     })));
   };
 
-  // Função para iniciar a criação de uma aula com os tópicos selecionados
   const handleCriarAula = () => {
     const topicosSelecionados = topicos.filter(topico => topico.selecionado);
     
@@ -290,13 +264,11 @@ const Topicos = () => {
       return;
     }
     
-    // Aqui você implementaria a lógica para criar uma aula com os tópicos selecionados
     toast({
       title: "Aula criada",
       description: `Aula "${tituloAula}" criada com ${topicosSelecionados.length} tópicos selecionados.`,
     });
     
-    // Limpa a seleção após criar a aula
     setTopicos(topicos.map(topico => ({
       ...topico,
       selecionado: false
@@ -305,10 +277,8 @@ const Topicos = () => {
     setTituloAula("");
   };
 
-  // Verificar se há algum tópico selecionado
   const temTopicosSelecionados = topicos.some(topico => topico.selecionado);
 
-  // Filtragem dos tópicos
   const topicosFiltrados = topicos.filter(topico => {
     const matchTitulo = topico.titulo.toLowerCase().includes(searchTerm.toLowerCase());
     const matchDisciplina = disciplinaFiltro === "todas" ? true : topico.disciplina === disciplinaFiltro;
@@ -317,7 +287,6 @@ const Topicos = () => {
     return matchTitulo && matchDisciplina && matchPatrocinador;
   });
 
-  // Lista de patrocinadores únicos para o filtro
   const patrocinadores = Array.from(new Set(topicos.map(topico => topico.patrocinador))).filter(Boolean);
 
   return (
@@ -335,7 +304,6 @@ const Topicos = () => {
         </Button>
       </div>
 
-      {/* Componente de Filtros */}
       <TopicosFilter
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -347,7 +315,6 @@ const Topicos = () => {
         patrocinadores={patrocinadores}
       />
 
-      {/* Componente de Tabela */}
       <TopicosTable
         topicos={topicosFiltrados}
         todosSelecionados={todosSelecionados}
@@ -357,7 +324,6 @@ const Topicos = () => {
         openDeleteModal={openDeleteModal}
       />
 
-      {/* Componente de Botão Adicionar Aula */}
       <AddAulaButton
         tituloAula={tituloAula}
         setTituloAula={setTituloAula}
@@ -365,7 +331,6 @@ const Topicos = () => {
         handleCriarAula={handleCriarAula}
       />
 
-      {/* Componente de Modais */}
       <TopicosModals
         isOpenCreate={isOpenCreate}
         setIsOpenCreate={setIsOpenCreate}
@@ -374,6 +339,7 @@ const Topicos = () => {
         isOpenDelete={isOpenDelete}
         setIsOpenDelete={setIsOpenDelete}
         currentTopico={currentTopico}
+        setCurrentTopico={setCurrentTopico}
         newTopico={newTopico}
         setNewTopico={setNewTopico}
         newQuestaoId={newQuestaoId}

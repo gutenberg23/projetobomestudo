@@ -29,6 +29,7 @@ export const TopicosModals: React.FC<TopicosModalsProps> = ({
   isOpenDelete,
   setIsOpenDelete,
   currentTopico,
+  setCurrentTopico,
   newTopico,
   setNewTopico,
   newQuestaoId,
