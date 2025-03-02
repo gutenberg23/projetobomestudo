@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -29,7 +28,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 import { 
   Dialog, 
   DialogContent, 
@@ -64,8 +62,9 @@ interface UserData {
   dataCadastro: string;
   ultimoLogin: string;
   fotoPerfil: string;
-  progressoQuestoes: number;
-  progressoSimulados: number;
+  assinante: boolean;
+  inicioAssinatura: string;
+  terminoAssinatura: string;
 }
 
 // Dados de exemplo para exibição
@@ -79,8 +78,9 @@ const usuariosExemplo: UserData[] = [
     dataCadastro: "2023-01-15",
     ultimoLogin: "2023-05-10 14:30",
     fotoPerfil: "",
-    progressoQuestoes: 75,
-    progressoSimulados: 60
+    assinante: true,
+    inicioAssinatura: "2023-01-15",
+    terminoAssinatura: "2024-01-15"
   },
   {
     id: "2",
@@ -91,8 +91,9 @@ const usuariosExemplo: UserData[] = [
     dataCadastro: "2022-11-05",
     ultimoLogin: "2023-05-12 09:15",
     fotoPerfil: "",
-    progressoQuestoes: 95,
-    progressoSimulados: 90
+    assinante: true,
+    inicioAssinatura: "2022-11-05",
+    terminoAssinatura: "2023-11-05"
   },
   {
     id: "3",
@@ -103,8 +104,9 @@ const usuariosExemplo: UserData[] = [
     dataCadastro: "2022-08-20",
     ultimoLogin: "2023-05-11 16:45",
     fotoPerfil: "",
-    progressoQuestoes: 100,
-    progressoSimulados: 100
+    assinante: false,
+    inicioAssinatura: "",
+    terminoAssinatura: ""
   },
   {
     id: "4",
@@ -115,8 +117,9 @@ const usuariosExemplo: UserData[] = [
     dataCadastro: "2023-02-10",
     ultimoLogin: "2023-04-25 11:20",
     fotoPerfil: "",
-    progressoQuestoes: 30,
-    progressoSimulados: 25
+    assinante: false,
+    inicioAssinatura: "",
+    terminoAssinatura: ""
   },
   {
     id: "5",
@@ -127,8 +130,9 @@ const usuariosExemplo: UserData[] = [
     dataCadastro: "2023-03-05",
     ultimoLogin: "2023-05-11 10:30",
     fotoPerfil: "",
-    progressoQuestoes: 45,
-    progressoSimulados: 35
+    assinante: true,
+    inicioAssinatura: "2023-03-05",
+    terminoAssinatura: "2024-03-05"
   }
 ];
 
@@ -158,7 +162,10 @@ const Usuarios = () => {
     nome: "",
     email: "",
     tipo: "aluno",
-    status: "ativo"
+    status: "ativo",
+    assinante: false,
+    inicioAssinatura: "",
+    terminoAssinatura: ""
   });
 
   // Estado para estatísticas
@@ -258,8 +265,9 @@ const Usuarios = () => {
       dataCadastro: new Date().toISOString().split('T')[0],
       ultimoLogin: "-",
       fotoPerfil: "",
-      progressoQuestoes: 0,
-      progressoSimulados: 0
+      assinante: novoUsuario.assinante || false,
+      inicioAssinatura: novoUsuario.inicioAssinatura || "",
+      terminoAssinatura: novoUsuario.terminoAssinatura || ""
     };
     
     setUsuarios([...usuarios, usuarioCriado]);
@@ -270,7 +278,10 @@ const Usuarios = () => {
       nome: "",
       email: "",
       tipo: "aluno",
-      status: "ativo"
+      status: "ativo",
+      assinante: false,
+      inicioAssinatura: "",
+      terminoAssinatura: ""
     });
     
     setDialogNovoUsuario(false);
@@ -424,7 +435,9 @@ const Usuarios = () => {
               <TableHead>Status</TableHead>
               <TableHead>Data de Cadastro</TableHead>
               <TableHead>Último Login</TableHead>
-              <TableHead>Progresso</TableHead>
+              <TableHead>Assinante</TableHead>
+              <TableHead>Início da Assinatura</TableHead>
+              <TableHead>Término da Assinatura</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -467,19 +480,15 @@ const Usuarios = () => {
                   <TableCell>{usuario.dataCadastro}</TableCell>
                   <TableCell>{usuario.ultimoLogin}</TableCell>
                   <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span>Questões</span>
-                        <span>{usuario.progressoQuestoes}%</span>
-                      </div>
-                      <Progress value={usuario.progressoQuestoes} className="h-2" />
-                      <div className="flex justify-between text-xs">
-                        <span>Simulados</span>
-                        <span>{usuario.progressoSimulados}%</span>
-                      </div>
-                      <Progress value={usuario.progressoSimulados} className="h-2" />
-                    </div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      usuario.assinante ? 'bg-green-100 text-green-800' : 
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {usuario.assinante ? 'Sim' : 'Não'}
+                    </span>
                   </TableCell>
+                  <TableCell>{usuario.assinante ? usuario.inicioAssinatura : '-'}</TableCell>
+                  <TableCell>{usuario.assinante ? usuario.terminoAssinatura : '-'}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
                       <Button 
@@ -546,7 +555,7 @@ const Usuarios = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <div className="text-center">
                     <User className="mx-auto h-12 w-12 text-gray-300" />
                     <h3 className="mt-2 text-lg font-medium text-[#272f3c]">Nenhum usuário encontrado</h3>
@@ -655,6 +664,41 @@ const Usuarios = () => {
                   {usuarioSelecionado.status === 'ativo' ? 'Ativo' : 'Inativo'}
                 </span>
               </div>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="assinante">Assinante</Label>
+                <Switch 
+                  id="assinante" 
+                  checked={usuarioSelecionado.assinante} 
+                  onCheckedChange={(checked) => 
+                    setUsuarioSelecionado({...usuarioSelecionado, assinante: checked})
+                  }
+                />
+                <span className="text-sm text-[#67748a]">
+                  {usuarioSelecionado.assinante ? 'Sim' : 'Não'}
+                </span>
+              </div>
+              {usuarioSelecionado.assinante && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="inicioAssinatura">Início da Assinatura</Label>
+                    <Input 
+                      id="inicioAssinatura" 
+                      type="date"
+                      value={usuarioSelecionado.inicioAssinatura} 
+                      onChange={(e) => setUsuarioSelecionado({...usuarioSelecionado, inicioAssinatura: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="terminoAssinatura">Término da Assinatura</Label>
+                    <Input 
+                      id="terminoAssinatura" 
+                      type="date"
+                      value={usuarioSelecionado.terminoAssinatura} 
+                      onChange={(e) => setUsuarioSelecionado({...usuarioSelecionado, terminoAssinatura: e.target.value})}
+                    />
+                  </div>
+                </>
+              )}
               <div className="space-y-2">
                 <Label>Permissões</Label>
                 <div className="space-y-2">
@@ -662,18 +706,6 @@ const Usuarios = () => {
                     <Checkbox id="conteudoPremium" />
                     <label htmlFor="conteudoPremium" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       Acesso a conteúdo premium
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="simuladosAvancados" />
-                    <label htmlFor="simuladosAvancados" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Simulados avançados
-                    </label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="materialExclusivo" />
-                    <label htmlFor="materialExclusivo" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Material exclusivo
                     </label>
                   </div>
                 </div>
@@ -745,6 +777,41 @@ const Usuarios = () => {
                 {novoUsuario.status === 'ativo' ? 'Ativo' : 'Inativo'}
               </span>
             </div>
+            <div className="flex items-center space-x-2">
+              <Label htmlFor="novoAssinante">Assinante</Label>
+              <Switch 
+                id="novoAssinante" 
+                checked={novoUsuario.assinante} 
+                onCheckedChange={(checked) => 
+                  setNovoUsuario({...novoUsuario, assinante: checked})
+                }
+              />
+              <span className="text-sm text-[#67748a]">
+                {novoUsuario.assinante ? 'Sim' : 'Não'}
+              </span>
+            </div>
+            {novoUsuario.assinante && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="novoInicioAssinatura">Início da Assinatura</Label>
+                  <Input 
+                    id="novoInicioAssinatura" 
+                    type="date"
+                    value={novoUsuario.inicioAssinatura || ''} 
+                    onChange={(e) => setNovoUsuario({...novoUsuario, inicioAssinatura: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="novoTerminoAssinatura">Término da Assinatura</Label>
+                  <Input 
+                    id="novoTerminoAssinatura" 
+                    type="date"
+                    value={novoUsuario.terminoAssinatura || ''} 
+                    onChange={(e) => setNovoUsuario({...novoUsuario, terminoAssinatura: e.target.value})}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogNovoUsuario(false)}>Cancelar</Button>
@@ -784,168 +851,3 @@ const Usuarios = () => {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogExcluirUsuario(false)}>Cancelar</Button>
-            <Button variant="destructive" onClick={excluirUsuario}>Excluir Permanentemente</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo: Alterar senha */}
-      <Dialog open={dialogAlterarSenha} onOpenChange={setDialogAlterarSenha}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Alterar Senha</DialogTitle>
-            <DialogDescription>
-              Defina uma nova senha para o usuário
-            </DialogDescription>
-          </DialogHeader>
-          {usuarioSelecionado && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Usuário</p>
-                <p className="text-sm text-[#67748a]">{usuarioSelecionado.nome} ({usuarioSelecionado.email})</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="novaSenha">Nova Senha</Label>
-                <Input id="novaSenha" type="password" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmarSenha">Confirmar Senha</Label>
-                <Input id="confirmarSenha" type="password" />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="enviarEmail" />
-                <label htmlFor="enviarEmail" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Enviar email com nova senha para o usuário
-                </label>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogAlterarSenha(false)}>Cancelar</Button>
-            <Button onClick={alterarSenha}>Salvar Nova Senha</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo: Enviar mensagem */}
-      <Dialog open={dialogEnviarMensagem} onOpenChange={setDialogEnviarMensagem}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Enviar Mensagem</DialogTitle>
-            <DialogDescription>
-              Envie uma notificação ou mensagem para o usuário
-            </DialogDescription>
-          </DialogHeader>
-          {usuarioSelecionado && (
-            <div className="space-y-4 py-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Para</p>
-                <p className="text-sm text-[#67748a]">{usuarioSelecionado.nome} ({usuarioSelecionado.email})</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="assunto">Assunto</Label>
-                <Input id="assunto" placeholder="Digite o assunto da mensagem" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mensagem">Mensagem</Label>
-                <Textarea 
-                  id="mensagem" 
-                  placeholder="Digite sua mensagem..." 
-                  className="min-h-[120px]"
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="enviarCopia" />
-                <label htmlFor="enviarCopia" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  Enviar cópia por email
-                </label>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogEnviarMensagem(false)}>Cancelar</Button>
-            <Button onClick={enviarMensagem}><MailCheck className="mr-2 h-4 w-4" /> Enviar Mensagem</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Diálogo: Ver histórico */}
-      <Dialog open={dialogVerHistorico} onOpenChange={setDialogVerHistorico}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Histórico de Atividades</DialogTitle>
-            <DialogDescription>
-              Atividades recentes do usuário no sistema
-            </DialogDescription>
-          </DialogHeader>
-          {usuarioSelecionado && (
-            <div className="py-4">
-              <div className="flex items-center space-x-3 mb-4">
-                <Avatar>
-                  <AvatarFallback className="bg-[#ea2be2] text-white">
-                    {usuarioSelecionado.nome.substring(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">{usuarioSelecionado.nome}</div>
-                  <div className="text-sm text-[#67748a]">{usuarioSelecionado.email}</div>
-                </div>
-              </div>
-              
-              <div className="border rounded-md">
-                <div className="p-4 border-b">
-                  <div className="flex justify-between">
-                    <div className="font-medium">Login no sistema</div>
-                    <div className="text-sm text-[#67748a]">Hoje, 10:30</div>
-                  </div>
-                  <div className="text-sm text-[#67748a] mt-1">Acesso pelo navegador Chrome no Windows</div>
-                </div>
-                <div className="p-4 border-b">
-                  <div className="flex justify-between">
-                    <div className="font-medium">Realizou um simulado</div>
-                    <div className="text-sm text-[#67748a]">Ontem, 15:45</div>
-                  </div>
-                  <div className="text-sm text-[#67748a] mt-1">Simulado de Direito Constitucional, 80% de acertos</div>
-                </div>
-                <div className="p-4 border-b">
-                  <div className="flex justify-between">
-                    <div className="font-medium">Assistiu aula</div>
-                    <div className="text-sm text-[#67748a]">Ontem, 14:20</div>
-                  </div>
-                  <div className="text-sm text-[#67748a] mt-1">Aula de Direito Administrativo: Licitações</div>
-                </div>
-                <div className="p-4 border-b">
-                  <div className="flex justify-between">
-                    <div className="font-medium">Atualizou perfil</div>
-                    <div className="text-sm text-[#67748a]">2 dias atrás</div>
-                  </div>
-                  <div className="text-sm text-[#67748a] mt-1">Alterou informações de contato</div>
-                </div>
-                <div className="p-4">
-                  <div className="flex justify-between">
-                    <div className="font-medium">Respondeu questões</div>
-                    <div className="text-sm text-[#67748a]">3 dias atrás</div>
-                  </div>
-                  <div className="text-sm text-[#67748a] mt-1">40 questões de Direito Civil, 75% de acertos</div>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              className="w-full" 
-              onClick={() => setDialogVerHistorico(false)}
-            >
-              Fechar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-export default Usuarios;
-
