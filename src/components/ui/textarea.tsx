@@ -26,10 +26,26 @@ const TextEditor = React.forwardRef<
     className?: string;
   }
 >(({ value, onChange, placeholder, className }, ref) => {
-  const handleFormatting = (format: string) => {
-    if (!ref || typeof ref === 'function' || !ref.current) return;
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  
+  // Use a ref callback to store both the passed ref and our local ref
+  const setRefs = React.useCallback((element: HTMLTextAreaElement | null) => {
+    // Update internal ref
+    textareaRef.current = element;
     
-    const textarea = ref.current;
+    // Update forwarded ref
+    if (typeof ref === 'function') {
+      ref(element);
+    } else if (ref) {
+      ref.current = element;
+    }
+  }, [ref]);
+  
+  const handleFormatting = (format: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    // Get selection
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const selectedText = value.substring(start, end);
@@ -101,6 +117,7 @@ const TextEditor = React.forwardRef<
         break;
     }
     
+    // Update textarea value
     const newValue = 
       value.substring(0, start) + 
       formattedText + 
@@ -108,11 +125,11 @@ const TextEditor = React.forwardRef<
     
     onChange(newValue);
     
-    // Restaurar o foco e posicionar o cursor após a operação
+    // Focus and set cursor position after state update
     setTimeout(() => {
-      if (ref && 'current' in ref && ref.current) {
-        ref.current.focus();
-        ref.current.setSelectionRange(newCursorPos, newCursorPos);
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
       }
     }, 0);
   };
@@ -212,7 +229,7 @@ const TextEditor = React.forwardRef<
         </Button>
       </div>
       <textarea
-        ref={ref}
+        ref={setRefs}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

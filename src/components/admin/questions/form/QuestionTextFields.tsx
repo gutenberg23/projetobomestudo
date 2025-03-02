@@ -29,7 +29,7 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
         />
       </div>
 
-      <div>
+      <div className="mt-4">
         <Label htmlFor="teacher-explanation">Explicação do Professor</Label>
         <Textarea 
           id="teacher-explanation" 

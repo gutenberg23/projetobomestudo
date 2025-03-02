@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AddValueDialog from "./AddValueDialog";
 
 interface SelectFieldProps {
   id: string;
@@ -67,6 +68,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
           size="icon" 
           onClick={openAddDialog}
           title="Adicionar"
+          type="button"
         >
           <Plus className="h-4 w-4" />
         </Button>
