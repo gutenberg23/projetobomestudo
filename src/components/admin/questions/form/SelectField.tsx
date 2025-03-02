@@ -33,7 +33,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
       <Label htmlFor={id}>{label}</Label>
       <div className="flex items-center gap-2">
         <Select value={value} onValueChange={onChange}>
-          <SelectTrigger>
+          <SelectTrigger id={id}>
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent>
@@ -49,6 +49,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
           size="icon"
           onClick={() => value ? handleEditOption(value) : null}
           disabled={!value}
+          title="Editar"
         >
           <Edit className="h-4 w-4" />
         </Button>
@@ -57,10 +58,16 @@ const SelectField: React.FC<SelectFieldProps> = ({
           size="icon"
           onClick={() => value ? handleDeleteOption(value) : null}
           disabled={!value}
+          title="Excluir"
         >
           <Trash className="h-4 w-4" />
         </Button>
-        <Button variant="outline" size="icon" onClick={openAddDialog}>
+        <Button 
+          variant="outline" 
+          size="icon" 
+          onClick={openAddDialog}
+          title="Adicionar"
+        >
           <Plus className="h-4 w-4" />
         </Button>
       </div>
