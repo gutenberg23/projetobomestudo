@@ -15,7 +15,7 @@ const Login = () => {
           </Link>
         </div>
         <div className="w-full h-full flex items-center justify-center p-10">
-          <img alt="Estudante sorrindo" className="object-cover w-full h-full" src="/lovable-uploads/a19bb9dc-c459-47ab-89f0-7addc6bbed15.jpg" />
+          <img alt="Estudante sorrindo" className="object-cover w-full h-full" src="/lovable-uploads/bb003461-c7e3-466c-8bbd-73478baae87b.jpg" />
         </div>
         <div className="absolute bottom-10 left-10 text-white">
           <div className="text-2xl font-bold mb-1">
