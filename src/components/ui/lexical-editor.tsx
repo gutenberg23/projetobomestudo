@@ -8,7 +8,7 @@ import { AutoFocusPlugin } from "@lexical/react/AutoFocusPlugin";
 import { LinkPlugin } from "@lexical/react/LinkPlugin";
 import { ListPlugin } from "@lexical/react/ListPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $getRoot, $createParagraphNode, $createTextNode, EditorState, LexicalEditor } from "lexical";
+import { $getRoot, $createParagraphNode, $createTextNode, EditorState } from "lexical";
 import { 
   Bold, 
   Italic, 
@@ -27,7 +27,7 @@ import { $createListNode, $createListItemNode } from "@lexical/list";
 import { $patchStyleText } from "@lexical/selection";
 import { $getNearestNodeOfType } from "@lexical/utils";
 import { $isRootOrShadowRoot } from "lexical";
-import { $insertNodes, INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
+import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
 import { TOGGLE_LINK_COMMAND } from "@lexical/link";
 
 // Tema para o editor
@@ -119,16 +119,17 @@ function InitialValuePlugin({ initialValue }: { initialValue: string }) {
             
             // Aplicar formatação se necessário
             if (paragraphs[i] instanceof HTMLElement) {
-              if (paragraphs[i].style.fontWeight === 'bold' || paragraphs[i].tagName === 'STRONG') {
+              const element = paragraphs[i] as HTMLElement;
+              if (element.style.fontWeight === 'bold' || element.tagName === 'STRONG') {
                 textNode.setFormat('bold');
               }
-              if (paragraphs[i].style.fontStyle === 'italic' || paragraphs[i].tagName === 'EM') {
+              if (element.style.fontStyle === 'italic' || element.tagName === 'EM') {
                 textNode.setFormat('italic');
               }
-              if (paragraphs[i].style.textDecoration === 'underline' || paragraphs[i].tagName === 'U') {
+              if (element.style.textDecoration === 'underline' || element.tagName === 'U') {
                 textNode.setFormat('underline');
               }
-              if (paragraphs[i].style.textDecoration === 'line-through' || paragraphs[i].tagName === 'S') {
+              if (element.style.textDecoration === 'line-through' || element.tagName === 'S') {
                 textNode.setFormat('strikethrough');
               }
             }
@@ -172,19 +173,19 @@ function ToolbarPlugin() {
       switch(formatType) {
         case 'bold':
           // Aplica negrito ao texto selecionado
-          $patchStyleText({ bold: true });
+          $patchStyleText(editor, { bold: true });
           break;
         case 'italic':
           // Aplica itálico ao texto selecionado
-          $patchStyleText({ italic: true });
+          $patchStyleText(editor, { italic: true });
           break;
         case 'underline':
           // Aplica sublinhado ao texto selecionado
-          $patchStyleText({ underline: true });
+          $patchStyleText(editor, { underline: true });
           break;
         case 'strikethrough':
           // Aplica tachado ao texto selecionado
-          $patchStyleText({ strikethrough: true });
+          $patchStyleText(editor, { strikethrough: true });
           break;
         case 'ordered-list':
           // Converte em lista ordenada
@@ -204,10 +205,12 @@ function ToolbarPlugin() {
           const imageUrl = prompt("Digite a URL da imagem:", "https://");
           if (imageUrl) {
             // Implementação simplificada para inserir imagem
-            const imageNode = document.createElement('img');
-            imageNode.src = imageUrl;
-            const textNode = $createTextNode('');
-            $insertNodes([textNode]);
+            editor.update(() => {
+              const paragraph = $createParagraphNode();
+              const imgText = $createTextNode("🖼️ " + imageUrl);
+              paragraph.append(imgText);
+              $getRoot().append(paragraph);
+            });
           }
           break;
         case 'color':
@@ -222,7 +225,7 @@ function ToolbarPlugin() {
     setShowColorPicker(false);
     
     editor.update(() => {
-      $patchStyleText({
+      $patchStyleText(editor, {
         color: color
       });
     });

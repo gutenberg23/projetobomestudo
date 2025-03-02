@@ -52,7 +52,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
     "input-otp": "^1.2.4",
-    "lexical": "^0.26.0",
+    "lexical": "file:latest @lexical/react@latest @lexical/list@latest @lexical/link@latest @lexical/utils@latest @lexical/selection@latest @lexical/rich-text@latest",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
