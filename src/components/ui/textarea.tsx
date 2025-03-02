@@ -6,6 +6,7 @@ import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Image from '@tiptap/extension-image';
+import TextAlign from '@tiptap/extension-text-align';
 import { 
   Bold, Italic, Underline, Strikethrough, 
   List, ListOrdered, Link2, Image as ImageIcon, 
@@ -48,6 +49,11 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         Image.configure({
           inline: true,
           allowBase64: true,
+        }),
+        TextAlign.configure({
+          types: ['heading', 'paragraph'],
+          alignments: ['left', 'center', 'right'],
+          defaultAlignment: 'left',
         }),
       ],
       content: value,
