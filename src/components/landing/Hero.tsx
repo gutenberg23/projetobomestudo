@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,8 @@ export const Hero = () => {
             </Link>
           </div>
         </div>
-        <div className="flex-1 hidden md:block">
-          <img alt="Student studying" src="/lovable-uploads/343607f4-044c-4c9f-8cad-1ccc0760d766.jpg" className="w-full h-auto rounded-lg object-scale-down" />
+        <div className="flex-1 hidden md:block h-full overflow-hidden">
+          <img alt="Student studying" src="/lovable-uploads/343607f4-044c-4c9f-8cad-1ccc0760d766.jpg" className="w-full h-auto max-h-full object-contain" />
         </div>
       </div>
     </div>;
