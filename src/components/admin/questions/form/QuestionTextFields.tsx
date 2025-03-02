@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 interface QuestionTextFieldsProps {
@@ -17,31 +16,35 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
   setTeacherExplanation,
 }) => {
   return (
-    <>
+    <div className="space-y-4">
       <div>
-        <Label htmlFor="question-text">Texto da Questão</Label>
-        <Textarea 
-          id="question-text" 
-          value={questionText} 
-          onChange={(e) => setQuestionText(e.target.value)} 
-          placeholder="Digite o texto da questão" 
+        <label htmlFor="question-text" className="block text-sm font-medium text-[#272f3c] mb-1">
+          Texto da Questão
+        </label>
+        <Textarea
+          id="question-text"
+          placeholder="Digite o texto da questão..."
+          value={questionText}
+          onChange={(e) => setQuestionText(e.target.value)}
           className="min-h-[200px]"
           richText={true}
         />
       </div>
-
-      <div className="mt-4">
-        <Label htmlFor="teacher-explanation">Explicação do Professor</Label>
-        <Textarea 
-          id="teacher-explanation" 
-          value={teacherExplanation} 
-          onChange={(e) => setTeacherExplanation(e.target.value)} 
-          placeholder="Digite a explicação do professor" 
-          className="min-h-[150px]"
+      
+      <div>
+        <label htmlFor="teacher-explanation" className="block text-sm font-medium text-[#272f3c] mb-1">
+          Explicação do Professor
+        </label>
+        <Textarea
+          id="teacher-explanation"
+          placeholder="Digite a explicação do professor..."
+          value={teacherExplanation}
+          onChange={(e) => setTeacherExplanation(e.target.value)}
+          className="min-h-[200px]"
           richText={true}
         />
       </div>
-    </>
+    </div>
   );
 };
 
