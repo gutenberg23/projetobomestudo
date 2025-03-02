@@ -48,7 +48,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     onToggleDisabled(optionId, event);
   };
   const handleSubmitComment = () => {
-    setComment("");
+    if (comment.trim() !== "") {
+      // Em uma implementação real, aqui seria o código para enviar o comentário ao backend
+      console.log("Enviando comentário:", comment);
+      setComment("");
+    }
   };
   return <article className="w-full rounded-xl border border-solid border-gray-100 mb-5 bg-white">
       <header className="overflow-hidden rounded-t-xl rounded-b-none border-b border-gray-100">

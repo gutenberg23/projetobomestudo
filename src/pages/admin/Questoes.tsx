@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,7 +74,6 @@ interface QuestionItemType {
 }
 
 const Questoes: React.FC = () => {
-  // Estados para formulário de nova questão
   const [questionId, setQuestionId] = useState<string>("");
   const [year, setYear] = useState<string>("");
   const [institution, setInstitution] = useState<string>("");
@@ -88,131 +86,40 @@ const Questoes: React.FC = () => {
   const [questionText, setQuestionText] = useState<string>("");
   const [teacherExplanation, setTeacherExplanation] = useState<string>("");
   
-  // Estados para busca de questões
   const [searchId, setSearchId] = useState<string>("");
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   
-  // Estados para listagem/gerenciamento de questões
   const [questions, setQuestions] = useState<QuestionItemType[]>([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   
-  // Estados para gerenciamento de opções de dropdown
   const [isNewInstitutionModalOpen, setIsNewInstitutionModalOpen] = useState<boolean>(false);
   const [isNewRoleModalOpen, setIsNewRoleModalOpen] = useState<boolean>(false);
   const [isNewLevelModalOpen, setIsNewLevelModalOpen] = useState<boolean>(false);
   const [isNewDifficultyModalOpen, setIsNewDifficultyModalOpen] = useState<boolean>(false);
   const [isNewDisciplineModalOpen, setIsNewDisciplineModalOpen] = useState<boolean>(false);
   const [isNewQuestionTypeModalOpen, setIsNewQuestionTypeModalOpen] = useState<boolean>(false);
+  const [isNewYearModalOpen, setIsNewYearModalOpen] = useState<boolean>(false);
+  const [isNewOrganizationModalOpen, setIsNewOrganizationModalOpen] = useState<boolean>(false);
   
-  // Opções para os dropdowns
   const [institutions, setInstitutions] = useState<string[]>(["IDECAN", "CESPE", "FGV", "VUNESP"]);
   const [roles, setRoles] = useState<string[]>(["Analista", "Técnico", "Auditor", "Escrivão"]);
   const [levels, setLevels] = useState<string[]>(["Básico", "Intermediário", "Avançado"]);
   const [difficulties, setDifficulties] = useState<string[]>(["Fácil", "Médio", "Difícil"]);
   const [disciplines, setDisciplines] = useState<string[]>(["Português", "Matemática", "Direito Constitucional", "Informática"]);
   const [questionTypes, setQuestionTypes] = useState<string[]>(["Múltipla Escolha", "Verdadeiro/Falso", "Discursiva"]);
+  const [years, setYears] = useState<string[]>(["2024", "2023", "2022", "2021", "2020", "2019", "2018"]);
+  const [organizations, setOrganizations] = useState<string[]>(["Tribunal de Justiça", "Ministério Público", "Polícia Federal", "Receita Federal"]);
   
-  // Estados para novos itens de dropdown
   const [newInstitution, setNewInstitution] = useState<string>("");
   const [newRole, setNewRole] = useState<string>("");
   const [newLevel, setNewLevel] = useState<string>("");
   const [newDifficulty, setNewDifficulty] = useState<string>("");
   const [newDiscipline, setNewDiscipline] = useState<string>("");
   const [newQuestionType, setNewQuestionType] = useState<string>("");
-
-  // Estados para filtragem
-  const [filters, setFilters] = useState({
-    id: "",
-    year: "",
-    institution: "",
-    organization: "",
-    role: "",
-    discipline: "",
-    level: "",
-    difficulty: "",
-    questionType: ""
-  });
+  const [newYear, setNewYear] = useState<string>("");
+  const [newOrganization, setNewOrganization] = useState<string>("");
   
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Função para gerar ID único para novas questões
-  const generateQuestionId = () => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `${year}${month}${day}${random}`;
-  };
-
-  // Inicializa um ID quando o componente é montado
-  React.useEffect(() => {
-    setQuestionId(generateQuestionId());
-  }, []);
-
-  // Função para salvar uma nova questão
-  const handleSaveQuestion = () => {
-    const newQuestion: QuestionItemType = {
-      id: questionId,
-      year,
-      institution,
-      organization,
-      role,
-      discipline,
-      level,
-      difficulty,
-      questionType,
-      content: questionText,
-      teacherExplanation,
-      options: []
-    };
-    
-    setQuestions([...questions, newQuestion]);
-    
-    // Limpar formulário
-    setQuestionId(generateQuestionId());
-    setYear("");
-    setInstitution("");
-    setOrganization("");
-    setRole("");
-    setDiscipline("");
-    setLevel("");
-    setDifficulty("");
-    setQuestionType("");
-    setQuestionText("");
-    setTeacherExplanation("");
-  };
-
-  // Função para buscar questão por ID
-  const handleSearchQuestion = () => {
-    const found = questions.find(q => q.id === searchId);
-    if (found) {
-      // Preencher formulário com os dados da questão encontrada
-      setQuestionId(found.id);
-      setYear(found.year);
-      setInstitution(found.institution);
-      setOrganization(found.organization);
-      setRole(found.role);
-      setDiscipline(found.discipline);
-      setLevel(found.level);
-      setDifficulty(found.difficulty);
-      setQuestionType(found.questionType);
-      setQuestionText(found.content);
-      setTeacherExplanation(found.teacherExplanation);
-      setIsEditModalOpen(true);
-    } else {
-      alert("Questão não encontrada!");
-    }
-  };
-
-  // Função para copiar ID para a área de transferência
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert("ID copiado para a área de transferência!");
-  };
-
-  // Funções para gerenciar as opções de dropdown
   const handleAddInstitution = () => {
     if (newInstitution.trim() !== "") {
       setInstitutions([...institutions, newInstitution]);
@@ -261,7 +168,22 @@ const Questoes: React.FC = () => {
     }
   };
 
-  // Funções para editar itens de dropdown
+  const handleAddYear = () => {
+    if (newYear.trim() !== "") {
+      setYears([...years, newYear]);
+      setNewYear("");
+      setIsNewYearModalOpen(false);
+    }
+  };
+
+  const handleAddOrganization = () => {
+    if (newOrganization.trim() !== "") {
+      setOrganizations([...organizations, newOrganization]);
+      setNewOrganization("");
+      setIsNewOrganizationModalOpen(false);
+    }
+  };
+
   const handleEditInstitution = (oldValue: string) => {
     const newValue = prompt("Editar instituição", oldValue);
     if (newValue && newValue.trim() !== "") {
@@ -310,7 +232,22 @@ const Questoes: React.FC = () => {
     }
   };
 
-  // Funções para remover itens de dropdown
+  const handleEditYear = (oldValue: string) => {
+    const newValue = prompt("Editar ano", oldValue);
+    if (newValue && newValue.trim() !== "") {
+      setYears(years.map(y => y === oldValue ? newValue : y));
+      if (year === oldValue) setYear(newValue);
+    }
+  };
+
+  const handleEditOrganization = (oldValue: string) => {
+    const newValue = prompt("Editar instituição", oldValue);
+    if (newValue && newValue.trim() !== "") {
+      setOrganizations(organizations.map(o => o === oldValue ? newValue : o));
+      if (organization === oldValue) setOrganization(newValue);
+    }
+  };
+
   const handleDeleteInstitution = (value: string) => {
     if (confirm(`Deseja remover a instituição "${value}"?`)) {
       setInstitutions(institutions.filter(i => i !== value));
@@ -353,7 +290,20 @@ const Questoes: React.FC = () => {
     }
   };
 
-  // Função para remover uma questão
+  const handleDeleteYear = (value: string) => {
+    if (confirm(`Deseja remover o ano "${value}"?`)) {
+      setYears(years.filter(y => y !== value));
+      if (year === value) setYear("");
+    }
+  };
+
+  const handleDeleteOrganization = (value: string) => {
+    if (confirm(`Deseja remover a instituição "${value}"?`)) {
+      setOrganizations(organizations.filter(o => o !== value));
+      if (organization === value) setOrganization("");
+    }
+  };
+
   const handleRemoveQuestion = (id: string) => {
     if (window.confirm("Tem certeza que deseja remover esta questão?")) {
       setQuestions(questions.filter(q => q.id !== id));
@@ -361,7 +311,6 @@ const Questoes: React.FC = () => {
     }
   };
 
-  // Função para atualizar a questão
   const handleUpdateQuestion = () => {
     const updatedQuestions = questions.map(q => q.id === questionId ? {
       ...q,
@@ -381,7 +330,6 @@ const Questoes: React.FC = () => {
     setIsEditModalOpen(false);
   };
 
-  // Função para alternar a seleção de uma questão
   const toggleQuestionSelection = (id: string) => {
     if (selectedQuestions.includes(id)) {
       setSelectedQuestions(selectedQuestions.filter(qId => qId !== id));
@@ -390,7 +338,6 @@ const Questoes: React.FC = () => {
     }
   };
 
-  // Função para criar um simulado com as questões selecionadas
   const handleCreateSimulado = () => {
     if (selectedQuestions.length === 0) {
       alert("Selecione pelo menos uma questão para criar o simulado.");
@@ -398,11 +345,9 @@ const Questoes: React.FC = () => {
     }
     
     alert(`Simulado criado com ${selectedQuestions.length} questões!`);
-    // Aqui seria implementada a lógica para salvar o simulado no banco de dados
     setSelectedQuestions([]);
   };
 
-  // Função para aplicar filtros
   const getFilteredQuestions = () => {
     return questions.filter(question => {
       return (
@@ -421,7 +366,6 @@ const Questoes: React.FC = () => {
 
   const filteredQuestions = getFilteredQuestions();
 
-  // Função para resetar filtros
   const resetFilters = () => {
     setFilters({
       id: "",
@@ -443,7 +387,6 @@ const Questoes: React.FC = () => {
         <p className="text-[#67748a]">Gerenciamento de questões</p>
       </div>
 
-      {/* Seção de listagem de questões */}
       <Card title="Questões Cadastradas" description="Visualize e gerencie as questões cadastradas" defaultOpen={false}>
         <div className="mb-4 flex justify-between">
           <div className="flex items-center">
@@ -641,10 +584,8 @@ const Questoes: React.FC = () => {
         </div>
       </Card>
 
-      {/* Nova Questão */}
       <Card title="Nova Questão" description="Crie uma nova questão para suas listas" defaultOpen={false}>
         <div className="space-y-6">
-          {/* ID da Questão */}
           <div>
             <Label htmlFor="question-id">ID da Questão</Label>
             <div className="flex items-center gap-2">
@@ -662,9 +603,7 @@ const Questoes: React.FC = () => {
             </div>
           </div>
 
-          {/* Primeira linha: Banca, Instituição, Ano */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Banca */}
             <div>
               <Label htmlFor="institution">Banca</Label>
               <div className="flex items-center gap-2">
@@ -703,34 +642,84 @@ const Questoes: React.FC = () => {
               </div>
             </div>
 
-            {/* Instituição */}
             <div>
               <Label htmlFor="organization">Instituição</Label>
               <div className="flex items-center gap-2">
-                <Input 
-                  id="organization" 
-                  value={organization} 
-                  onChange={(e) => setOrganization(e.target.value)} 
-                  placeholder="Digite a instituição" 
-                />
+                <Select value={organization} onValueChange={setOrganization}>
+                  <SelectTrigger showActions={organization !== ""} onEdit={() => handleEditOrganization(organization)} onDelete={() => handleDeleteOrganization(organization)}>
+                    <SelectValue placeholder="Selecione a instituição" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {organizations.map((org) => (
+                      <SelectItem key={org} value={org}>
+                        {org}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Dialog open={isNewOrganizationModalOpen} onOpenChange={setIsNewOrganizationModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Nova Instituição</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <Input 
+                        placeholder="Nome da instituição" 
+                        value={newOrganization} 
+                        onChange={(e) => setNewOrganization(e.target.value)} 
+                      />
+                      <Button onClick={handleAddOrganization}>Adicionar</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
             </div>
 
-            {/* Ano */}
             <div>
               <Label htmlFor="year">Ano</Label>
-              <Input 
-                id="year" 
-                value={year} 
-                onChange={(e) => setYear(e.target.value)} 
-                placeholder="Digite o ano" 
-              />
+              <div className="flex items-center gap-2">
+                <Select value={year} onValueChange={setYear}>
+                  <SelectTrigger showActions={year !== ""} onEdit={() => handleEditYear(year)} onDelete={() => handleDeleteYear(year)}>
+                    <SelectValue placeholder="Selecione o ano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((y) => (
+                      <SelectItem key={y} value={y}>
+                        {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Dialog open={isNewYearModalOpen} onOpenChange={setIsNewYearModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Novo Ano</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <Input 
+                        placeholder="Ano" 
+                        value={newYear} 
+                        onChange={(e) => setNewYear(e.target.value)} 
+                      />
+                      <Button onClick={handleAddYear}>Adicionar</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
 
-          {/* Segunda linha: Cargo, Nível, Dificuldade */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Cargo */}
             <div>
               <Label htmlFor="role">Cargo</Label>
               <div className="flex items-center gap-2">
@@ -769,7 +758,6 @@ const Questoes: React.FC = () => {
               </div>
             </div>
 
-            {/* Nível */}
             <div>
               <Label htmlFor="level">Nível</Label>
               <div className="flex items-center gap-2">
@@ -808,7 +796,6 @@ const Questoes: React.FC = () => {
               </div>
             </div>
 
-            {/* Dificuldade */}
             <div>
               <Label htmlFor="difficulty">Dificuldade</Label>
               <div className="flex items-center gap-2">
@@ -848,7 +835,6 @@ const Questoes: React.FC = () => {
             </div>
           </div>
 
-          {/* Terceira linha: Disciplina */}
           <div>
             <Label htmlFor="discipline">Disciplina</Label>
             <div className="flex items-center gap-2">
@@ -887,7 +873,6 @@ const Questoes: React.FC = () => {
             </div>
           </div>
 
-          {/* Quarta linha: Tipo de Questão */}
           <div>
             <Label htmlFor="question-type">Tipo de Questão</Label>
             <div className="flex items-center gap-2">
@@ -926,7 +911,6 @@ const Questoes: React.FC = () => {
             </div>
           </div>
 
-          {/* Texto da Questão */}
           <div>
             <Label htmlFor="question-text">Texto da Questão</Label>
             <Textarea 
@@ -938,7 +922,6 @@ const Questoes: React.FC = () => {
             />
           </div>
 
-          {/* Explicação do Professor */}
           <div>
             <Label htmlFor="teacher-explanation">Explicação do Professor</Label>
             <Textarea 
@@ -950,7 +933,6 @@ const Questoes: React.FC = () => {
             />
           </div>
 
-          {/* Botão de Salvar */}
           <div className="flex justify-end">
             <Button 
               onClick={handleSaveQuestion}
@@ -962,7 +944,6 @@ const Questoes: React.FC = () => {
         </div>
       </Card>
 
-      {/* Editar Questão Existente */}
       <Card title="Editar Questão Existente" description="Modifique uma questão existente usando seu ID" defaultOpen={false}>
         <div className="flex items-end gap-2">
           <div className="flex-1">
@@ -984,7 +965,6 @@ const Questoes: React.FC = () => {
         </div>
       </Card>
 
-      {/* Dialog para edição de questão */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
@@ -992,7 +972,6 @@ const Questoes: React.FC = () => {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-4">
-              {/* Campos de edição idênticos ao formulário de nova questão */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="edit-institution">Banca</Label>
@@ -1019,11 +998,18 @@ const Questoes: React.FC = () => {
                 </div>
                 <div>
                   <Label htmlFor="edit-year">Ano</Label>
-                  <Input 
-                    id="edit-year" 
-                    value={year} 
-                    onChange={(e) => setYear(e.target.value)}
-                  />
+                  <Select value={year} onValueChange={setYear}>
+                    <SelectTrigger showActions={year !== ""} onEdit={() => handleEditYear(year)} onDelete={() => handleDeleteYear(year)}>
+                      <SelectValue placeholder="Selecione o ano" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map((y) => (
+                        <SelectItem key={y} value={y}>
+                          {y}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               
@@ -1149,4 +1135,3 @@ const Questoes: React.FC = () => {
 };
 
 export default Questoes;
-

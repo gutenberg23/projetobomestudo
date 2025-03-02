@@ -17,32 +17,34 @@ const TextEditor = ({
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const applyFormatting = (format: string) => {
-    if (!textareaRef.current) return;
+    // Encontrar o textarea correspondente
+    const textarea = document.getElementById(textareaRef.current?.id || "") as HTMLTextAreaElement;
+    if (!textarea) return;
     
-    const textarea = textareaRef.current;
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const selectedText = value.substring(start, end);
+    const currentValue = textarea.value;
+    const selectedText = currentValue.substring(start, end);
     
     let formattedText = "";
-    let cursorAdjustment = 0;
+    let cursorOffset = 0;
     
     switch(format) {
       case 'bold':
         formattedText = `**${selectedText}**`;
-        cursorAdjustment = 4;
+        cursorOffset = 2;
         break;
       case 'italic':
         formattedText = `*${selectedText}*`;
-        cursorAdjustment = 2;
+        cursorOffset = 1;
         break;
       case 'underline':
         formattedText = `__${selectedText}__`;
-        cursorAdjustment = 4;
+        cursorOffset = 2;
         break;
       case 'strikethrough':
         formattedText = `~~${selectedText}~~`;
-        cursorAdjustment = 4;
+        cursorOffset = 2;
         break;
       case 'ordered-list':
         if (selectedText) {
@@ -87,24 +89,19 @@ const TextEditor = ({
     }
     
     const newValue = 
-      value.substring(0, start) + 
+      currentValue.substring(0, start) + 
       formattedText + 
-      value.substring(end);
+      currentValue.substring(end);
     
+    // Atualizar o valor
     onChange(newValue);
     
-    // Ajusta a posição do cursor após a formatação
+    // Definir a posição do cursor
     setTimeout(() => {
-      if (textarea) {
-        textarea.focus();
-        if (format !== 'link' && format !== 'image' && format !== 'color') {
-          textarea.setSelectionRange(
-            start + formattedText.length,
-            start + formattedText.length
-          );
-        }
-      }
-    }, 0);
+      textarea.focus();
+      const newCursorPos = start + formattedText.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 10);
   };
 
   return (
