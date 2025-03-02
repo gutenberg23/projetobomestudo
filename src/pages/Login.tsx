@@ -15,7 +15,7 @@ const Login = () => {
           </Link>
         </div>
         <div className="w-full h-full flex items-center justify-center p-10 px-0 py-0">
-          <img alt="Estudante sorrindo" className="object-cover w-full h-full" src="/lovable-uploads/bb003461-c7e3-466c-8bbd-73478baae87b.jpg" />
+          <img alt="Estudante sorrindo" className="object-cover w-full h-full" src="/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg" />
         </div>
         <div className="absolute bottom-10 left-10 text-white">
           <div className="text-2xl font-bold mb-1">
@@ -24,10 +24,8 @@ const Login = () => {
           <div className="text-2xl font-bold mb-6">
             preciso para ser aprovado."
           </div>
-          <div className="text-lg">Maria Silva</div>
-          <div className="text-sm text-gray-300">
-            Aprovada no concurso do INSS
-          </div>
+          <div className="text-lg">João Silva</div>
+          <div className="text-sm text-gray-300">Aprovado no concurso do INSS</div>
         </div>
       </div>
 
