@@ -1,10 +1,8 @@
-
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
-
 interface AddValueDialogProps {
   title: string;
   placeholder: string;
@@ -14,7 +12,6 @@ interface AddValueDialogProps {
   setValue: (value: string) => void;
   onAdd: () => void;
 }
-
 const AddValueDialog: React.FC<AddValueDialogProps> = ({
   title,
   placeholder,
@@ -24,12 +21,9 @@ const AddValueDialog: React.FC<AddValueDialogProps> = ({
   setValue,
   onAdd
 }) => {
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+  return <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Plus className="h-4 w-4" />
-        </Button>
+        
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -40,8 +34,6 @@ const AddValueDialog: React.FC<AddValueDialogProps> = ({
           <Button onClick={onAdd}>Adicionar</Button>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>;
 };
-
 export default AddValueDialog;
