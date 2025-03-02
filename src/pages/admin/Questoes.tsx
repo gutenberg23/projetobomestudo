@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -769,13 +770,7 @@ const Questoes: React.FC = () => {
                         value={newInstitution} 
                         onChange={(e) => setNewInstitution(e.target.value)} 
                       />
-                      <Button onClick={() => {
-                        if (newInstitution.trim() !== "") {
-                          setInstitutions([...institutions, newInstitution]);
-                          setNewInstitution("");
-                          setIsNewInstitutionModalOpen(false);
-                        }
-                      }}>Adicionar</Button>
+                      <Button onClick={handleAddInstitution}>Adicionar</Button>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -829,13 +824,7 @@ const Questoes: React.FC = () => {
                         value={newOrganization} 
                         onChange={(e) => setNewOrganization(e.target.value)} 
                       />
-                      <Button onClick={() => {
-                        if (newOrganization.trim() !== "") {
-                          setOrganizations([...organizations, newOrganization]);
-                          setNewOrganization("");
-                          setIsNewOrganizationModalOpen(false);
-                        }
-                      }}>Adicionar</Button>
+                      <Button onClick={handleAddOrganization}>Adicionar</Button>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -889,13 +878,7 @@ const Questoes: React.FC = () => {
                         value={newYear} 
                         onChange={(e) => setNewYear(e.target.value)} 
                       />
-                      <Button onClick={() => {
-                        if (newYear.trim() !== "") {
-                          setYears([...years, newYear]);
-                          setNewYear("");
-                          setIsNewYearModalOpen(false);
-                        }
-                      }}>Adicionar</Button>
+                      <Button onClick={handleAddYear}>Adicionar</Button>
                     </div>
                   </DialogContent>
                 </Dialog>
@@ -913,4 +896,482 @@ const Questoes: React.FC = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {roles.map((r) => (
-                      <SelectItem key={r} value
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => role ? handleEditRole(role) : null}
+                  disabled={!role}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => role ? handleDeleteRole(role) : null}
+                  disabled={!role}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+                <Dialog open={isNewRoleModalOpen} onOpenChange={setIsNewRoleModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Novo Cargo</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <Input 
+                        placeholder="Nome do cargo" 
+                        value={newRole} 
+                        onChange={(e) => setNewRole(e.target.value)} 
+                      />
+                      <Button onClick={handleAddRole}>Adicionar</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="discipline">Disciplina</Label>
+              <div className="flex items-center gap-2">
+                <Select value={discipline} onValueChange={setDiscipline}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a disciplina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {disciplines.map((disc) => (
+                      <SelectItem key={disc} value={disc}>
+                        {disc}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => discipline ? handleEditDiscipline(discipline) : null}
+                  disabled={!discipline}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => discipline ? handleDeleteDiscipline(discipline) : null}
+                  disabled={!discipline}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+                <Dialog open={isNewDisciplineModalOpen} onOpenChange={setIsNewDisciplineModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Nova Disciplina</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <Input 
+                        placeholder="Nome da disciplina" 
+                        value={newDiscipline} 
+                        onChange={(e) => setNewDiscipline(e.target.value)} 
+                      />
+                      <Button onClick={handleAddDiscipline}>Adicionar</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="level">Nível</Label>
+              <div className="flex items-center gap-2">
+                <Select value={level} onValueChange={setLevel}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o nível" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {levels.map((lvl) => (
+                      <SelectItem key={lvl} value={lvl}>
+                        {lvl}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => level ? handleEditLevel(level) : null}
+                  disabled={!level}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => level ? handleDeleteLevel(level) : null}
+                  disabled={!level}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+                <Dialog open={isNewLevelModalOpen} onOpenChange={setIsNewLevelModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Novo Nível</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <Input 
+                        placeholder="Nome do nível" 
+                        value={newLevel} 
+                        onChange={(e) => setNewLevel(e.target.value)} 
+                      />
+                      <Button onClick={handleAddLevel}>Adicionar</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="difficulty">Dificuldade</Label>
+              <div className="flex items-center gap-2">
+                <Select value={difficulty} onValueChange={setDifficulty}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a dificuldade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {difficulties.map((diff) => (
+                      <SelectItem key={diff} value={diff}>
+                        {diff}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => difficulty ? handleEditDifficulty(difficulty) : null}
+                  disabled={!difficulty}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => difficulty ? handleDeleteDifficulty(difficulty) : null}
+                  disabled={!difficulty}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+                <Dialog open={isNewDifficultyModalOpen} onOpenChange={setIsNewDifficultyModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Nova Dificuldade</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <Input 
+                        placeholder="Nome da dificuldade" 
+                        value={newDifficulty} 
+                        onChange={(e) => setNewDifficulty(e.target.value)} 
+                      />
+                      <Button onClick={handleAddDifficulty}>Adicionar</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="question-type">Tipo de Questão</Label>
+              <div className="flex items-center gap-2">
+                <Select value={questionType} onValueChange={setQuestionType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {questionTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => questionType ? handleEditQuestionType(questionType) : null}
+                  disabled={!questionType}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => questionType ? handleDeleteQuestionType(questionType) : null}
+                  disabled={!questionType}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+                <Dialog open={isNewQuestionTypeModalOpen} onOpenChange={setIsNewQuestionTypeModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Adicionar Novo Tipo de Questão</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                      <Input 
+                        placeholder="Nome do tipo" 
+                        value={newQuestionType} 
+                        onChange={(e) => setNewQuestionType(e.target.value)} 
+                      />
+                      <Button onClick={handleAddQuestionType}>Adicionar</Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="question-text">Texto da Questão</Label>
+            <Textarea 
+              id="question-text" 
+              value={questionText} 
+              onChange={(e) => setQuestionText(e.target.value)} 
+              placeholder="Digite o texto da questão" 
+              className="min-h-[200px]"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="teacher-explanation">Explicação do Professor</Label>
+            <Textarea 
+              id="teacher-explanation" 
+              value={teacherExplanation} 
+              onChange={(e) => setTeacherExplanation(e.target.value)} 
+              placeholder="Digite a explicação do professor" 
+              className="min-h-[150px]"
+            />
+          </div>
+
+          <div>
+            <Button onClick={handleSaveQuestion} className="bg-[#ea2be2] hover:bg-[#d01ec7] text-white">
+              Salvar Questão
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Editar Questão</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-question-id">ID da Questão</Label>
+              <Input 
+                id="edit-question-id" 
+                value={questionId} 
+                readOnly 
+                className="bg-gray-50"
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="edit-institution">Banca</Label>
+                <Select value={institution} onValueChange={setInstitution}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a instituição" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {institutions.map((inst) => (
+                      <SelectItem key={inst} value={inst}>
+                        {inst}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-organization">Instituição</Label>
+                <Select value={organization} onValueChange={setOrganization}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a instituição" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {organizations.map((org) => (
+                      <SelectItem key={org} value={org}>
+                        {org}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-year">Ano</Label>
+                <Select value={year} onValueChange={setYear}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o ano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((y) => (
+                      <SelectItem key={y} value={y}>
+                        {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="edit-role">Cargo</Label>
+                <Select value={role} onValueChange={setRole}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o cargo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {r}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-discipline">Disciplina</Label>
+                <Select value={discipline} onValueChange={setDiscipline}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a disciplina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {disciplines.map((disc) => (
+                      <SelectItem key={disc} value={disc}>
+                        {disc}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-level">Nível</Label>
+                <Select value={level} onValueChange={setLevel}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o nível" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {levels.map((lvl) => (
+                      <SelectItem key={lvl} value={lvl}>
+                        {lvl}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-difficulty">Dificuldade</Label>
+                <Select value={difficulty} onValueChange={setDifficulty}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a dificuldade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {difficulties.map((diff) => (
+                      <SelectItem key={diff} value={diff}>
+                        {diff}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-question-type">Tipo de Questão</Label>
+                <Select value={questionType} onValueChange={setQuestionType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {questionTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="edit-question-text">Texto da Questão</Label>
+              <Textarea 
+                id="edit-question-text" 
+                value={questionText} 
+                onChange={(e) => setQuestionText(e.target.value)} 
+                className="min-h-[200px]"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="edit-teacher-explanation">Explicação do Professor</Label>
+              <Textarea 
+                id="edit-teacher-explanation" 
+                value={teacherExplanation} 
+                onChange={(e) => setTeacherExplanation(e.target.value)} 
+                className="min-h-[150px]"
+              />
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
+              <Button onClick={handleUpdateQuestion} className="bg-[#ea2be2] hover:bg-[#d01ec7] text-white">
+                Atualizar Questão
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Questoes;
+
