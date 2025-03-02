@@ -4,6 +4,9 @@ export interface Curso {
   titulo: string;
   descricao: string;
   disciplinasIds: string[];
+  aulasIds?: string[];
+  topicosIds?: string[];
+  questoesIds?: string[];
   selecionada?: boolean;
 }
 

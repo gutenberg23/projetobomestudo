@@ -30,6 +30,9 @@ const Cursos = () => {
       titulo: "Concurso Receita Federal",
       descricao: "Preparatório completo para o concurso da Receita Federal",
       disciplinasIds: ["1", "2", "3"],
+      aulasIds: ["1", "2", "3", "4"],
+      topicosIds: ["101", "102", "103"],
+      questoesIds: ["201", "202", "203", "204"],
       selecionada: false
     },
     {
@@ -37,6 +40,9 @@ const Cursos = () => {
       titulo: "Concurso INSS",
       descricao: "Preparatório para Técnico do Seguro Social",
       disciplinasIds: ["2", "5"],
+      aulasIds: ["2", "5", "7"],
+      topicosIds: ["104", "105"],
+      questoesIds: ["205", "206"],
       selecionada: false
     },
     {
@@ -44,6 +50,9 @@ const Cursos = () => {
       titulo: "Concurso Banco do Brasil",
       descricao: "Preparatório para Escriturário",
       disciplinasIds: ["3", "5", "7", "9"],
+      aulasIds: ["5", "8", "9", "10", "11"],
+      topicosIds: ["106", "107", "108", "109", "110"],
+      questoesIds: ["207", "208", "209", "210"],
       selecionada: false
     }
   ]);

@@ -38,6 +38,9 @@ export const CursosTable: React.FC<CursosTableProps> = ({
             <TableHead className="w-[200px]">Título</TableHead>
             <TableHead className="w-[200px]">Descrição</TableHead>
             <TableHead className="w-[120px]">Nº de Disciplinas</TableHead>
+            <TableHead className="w-[120px]">Nº de Aulas</TableHead>
+            <TableHead className="w-[120px]">Nº de Tópicos</TableHead>
+            <TableHead className="w-[120px]">Nº de Questões</TableHead>
             <TableHead className="w-[150px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -55,6 +58,9 @@ export const CursosTable: React.FC<CursosTableProps> = ({
                 <TableCell>{curso.titulo}</TableCell>
                 <TableCell>{curso.descricao}</TableCell>
                 <TableCell>{curso.disciplinasIds.length} disciplinas</TableCell>
+                <TableCell>{curso.aulasIds?.length || 0} aulas</TableCell>
+                <TableCell>{curso.topicosIds?.length || 0} tópicos</TableCell>
+                <TableCell>{curso.questoesIds?.length || 0} questões</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button 
@@ -78,7 +84,7 @@ export const CursosTable: React.FC<CursosTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={9} className="text-center py-4 text-[#67748a]">
                 Nenhum curso encontrado com os filtros aplicados.
               </TableCell>
             </TableRow>
