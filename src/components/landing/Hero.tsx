@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export const Hero = () => {
   return (
-    <div className="w-full bg-white min-h-screen relative overflow-hidden">
+    <div className="w-full min-h-screen relative overflow-hidden">
       {/* Fundo decorativo */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#f6f8fa]/80 to-transparent z-10"></div>
       
@@ -32,7 +32,7 @@ export const Hero = () => {
           
           <div className="pt-4">
             <Link to="/login">
-              <Button className="text-white rounded-lg text-lg font-medium hover:bg-opacity-90 transition-all px-8 py-6 bg-primary-DEFAULT shadow-lg hover:shadow-xl hover:translate-y-[-2px]">
+              <Button className="text-white rounded-lg text-lg font-medium hover:bg-opacity-90 transition-all px-8 py-6 bg-[#ea2be2] hover:translate-y-[-2px]">
                 Quero Começar Agora!
               </Button>
             </Link>
