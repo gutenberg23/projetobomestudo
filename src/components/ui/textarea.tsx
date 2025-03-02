@@ -1,7 +1,6 @@
-
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { Bold, Italic, Underline, StrikeThrough, List, ListOrdered, Link2, Image, Palette } from "lucide-react";
+import { Bold, Italic, Underline, Strikethrough, List, ListOrdered, Link2, Image, Palette } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "./dropdown-menu";
 
 export interface TextareaProps
@@ -164,7 +163,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             className="p-1 hover:bg-gray-200 rounded"
             title="Tachado"
           >
-            <StrikeThrough size={16} />
+            <Strikethrough size={16} />
           </button>
           <button
             type="button"
