@@ -33,6 +33,29 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       props.onChange?.(e);
     };
 
+    // Função para inicializar o editor com o conteúdo atual e colocar o cursor no final
+    React.useEffect(() => {
+      if (editorRef.current && richText) {
+        // Inicializar o editor com o valor atual
+        editorRef.current.innerHTML = value;
+      }
+    }, [richText, value]);
+
+    // Função para manter o cursor na posição correta após alterações
+    const setEndOfContentEditable = (contentEditableElement: HTMLElement) => {
+      // Cria uma range e uma seleção
+      const range = document.createRange();
+      const selection = window.getSelection();
+      
+      // Define a range no final do elemento
+      range.selectNodeContents(contentEditableElement);
+      range.collapse(false); // false significa colapsar para o final
+      
+      // Remove qualquer seleção existente e adiciona a nova
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    };
+
     const handleEditorChange = () => {
       if (!editorRef.current) return;
       
@@ -51,11 +74,26 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
 
     const execCommand = (command: string, value: string = "") => {
       // Garantir que o editor tem foco antes de executar o comando
-      editorRef.current?.focus();
-      
-      document.execCommand(command, false, value);
-      
       if (editorRef.current) {
+        editorRef.current.focus();
+        
+        // Salvar a seleção atual
+        const selection = window.getSelection();
+        const savedRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+        
+        // Executar o comando
+        document.execCommand(command, false, value);
+        
+        // Restaurar a seleção após o comando, se necessário
+        if (savedRange && ["insertUnorderedList", "insertOrderedList"].includes(command)) {
+          // Para listas, garantimos que o cursor permanece visível
+          setTimeout(() => {
+            if (editorRef.current) {
+              editorRef.current.focus();
+            }
+          }, 10);
+        }
+        
         // Atualizar o valor quando um comando é executado
         const content = editorRef.current.innerHTML;
         
@@ -113,7 +151,22 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         colorButton.style.border = "1px solid #ddd";
         
         colorButton.onclick = () => {
-          execCommand("foreColor", color);
+          // Salvar a seleção antes de executar o comando
+          const selection = window.getSelection();
+          const savedRange = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+          
+          if (savedRange && editorRef.current) {
+            // Restaurar a seleção
+            selection?.removeAllRanges();
+            selection?.addRange(savedRange);
+            
+            // Executar o comando na seleção restaurada
+            execCommand("foreColor", color);
+          } else {
+            execCommand("foreColor", color);
+          }
+          
+          // Remover o seletor de cores
           document.body.removeChild(colorPickerContainer);
         };
         
@@ -233,13 +286,18 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         <div
           ref={editorRef}
           contentEditable
-          dangerouslySetInnerHTML={{ __html: value }}
-          onInput={handleEditorChange}
-          onBlur={handleEditorChange}
           className={cn(
             "flex min-h-[80px] w-full rounded-b-md border-x border-b border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm overflow-auto",
             className
           )}
+          onInput={handleEditorChange}
+          onBlur={handleEditorChange}
+          onFocus={() => {
+            // Se estiver vazio, colocar o cursor no início
+            if (editorRef.current && (!editorRef.current.textContent || editorRef.current.textContent.trim() === '')) {
+              setEndOfContentEditable(editorRef.current);
+            }
+          }}
         ></div>
         
         {/* Textarea oculto para manter compatibilidade com o formulário */}
