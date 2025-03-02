@@ -173,19 +173,27 @@ function ToolbarPlugin() {
       switch(formatType) {
         case 'bold':
           // Aplica negrito ao texto selecionado
-          $patchStyleText(editor, { bold: true });
+          $patchStyleText(editor, {
+            "bold": true
+          });
           break;
         case 'italic':
           // Aplica itálico ao texto selecionado
-          $patchStyleText(editor, { italic: true });
+          $patchStyleText(editor, {
+            "italic": true
+          });
           break;
         case 'underline':
           // Aplica sublinhado ao texto selecionado
-          $patchStyleText(editor, { underline: true });
+          $patchStyleText(editor, {
+            "underline": true
+          });
           break;
         case 'strikethrough':
           // Aplica tachado ao texto selecionado
-          $patchStyleText(editor, { strikethrough: true });
+          $patchStyleText(editor, {
+            "strikethrough": true
+          });
           break;
         case 'ordered-list':
           // Converte em lista ordenada
@@ -226,7 +234,7 @@ function ToolbarPlugin() {
     
     editor.update(() => {
       $patchStyleText(editor, {
-        color: color
+        color
       });
     });
   };
