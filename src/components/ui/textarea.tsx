@@ -1,3 +1,4 @@
+
 import * as React from "react";
 import { 
   Bold, 
@@ -30,6 +31,7 @@ const TextEditor = React.forwardRef<
   const [showColorPicker, setShowColorPicker] = React.useState(false);
   const [selectedColor, setSelectedColor] = React.useState("#ea2be2");
   const colorPickerRef = React.useRef<HTMLDivElement>(null);
+  const [showPlaceholder, setShowPlaceholder] = React.useState(!value);
   
   // Forward the reference to our contentEditable div for external access
   const setRefs = React.useCallback((element: HTMLDivElement | null) => {
@@ -72,6 +74,7 @@ const TextEditor = React.forwardRef<
     html = html.replace(/<span style="color:(.*?)">(.*?)<\/span>/g, '<span style="color:$1">$2</span>');
     
     setHtmlContent(html);
+    setShowPlaceholder(!html);
   }, [value]);
 
   const handleFormatting = (format: string) => {
@@ -219,6 +222,7 @@ const TextEditor = React.forwardRef<
     if (editorRef.current) {
       const newText = editorRef.current.innerText;
       onChange(newText);
+      setShowPlaceholder(!newText);
     }
   };
 
@@ -366,7 +370,7 @@ const TextEditor = React.forwardRef<
 
       <div 
         className={cn(
-          "min-h-[200px] w-full rounded-b-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          "min-h-[200px] w-full rounded-b-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm relative",
           className
         )}
         contentEditable
@@ -374,9 +378,21 @@ const TextEditor = React.forwardRef<
         onInput={handleInput}
         onPaste={handlePaste}
         dangerouslySetInnerHTML={{ __html: htmlContent }}
-        placeholder={placeholder}
         style={{ overflowY: 'auto' }}
       />
+      
+      {/* Placeholder element */}
+      {showPlaceholder && placeholder && (
+        <div 
+          className="absolute pointer-events-none text-muted-foreground px-3 py-2 text-base md:text-sm" 
+          style={{
+            top: 'calc(2.25rem + 2px)', // Height of the toolbar + border
+            left: 0
+          }}
+        >
+          {placeholder}
+        </div>
+      )}
 
       {/* Hidden textarea for form compatibility */}
       <textarea
