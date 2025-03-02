@@ -1,33 +1,46 @@
 
 import React, { useEffect, useState } from "react";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
-import { RichTextPlugin } from "@lexical/react/RichTextPlugin";
+import { RichTextPlugin } from "@lexical/react";
 import { ContentEditable } from "@lexical/react/ContentEditable";
 import { HistoryPlugin } from "@lexical/react/HistoryPlugin";
 import { AutoFocusPlugin } from "@lexical/react/AutoFocusPlugin";
 import { LinkPlugin } from "@lexical/react/LinkPlugin";
 import { ListPlugin } from "@lexical/react/ListPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { $getRoot, $createParagraphNode, $createTextNode, EditorState } from "lexical";
+import { 
+  $getRoot, 
+  $createParagraphNode, 
+  $createTextNode, 
+  EditorState, 
+  LexicalEditor 
+} from "lexical";
 import { 
   Bold, 
   Italic, 
   Underline, 
   ListOrdered, 
   List, 
-  Link, 
+  Link as LinkIcon, 
   Image, 
   Type, 
   Strikethrough 
 } from "lucide-react";
 import { Button } from "./button";
 import { cn } from "@/lib/utils";
-import { $isListNode, ListItemNode, ListNode } from "@lexical/list";
-import { $createListNode, $createListItemNode } from "@lexical/list";
-import { $patchStyleText } from "@lexical/selection";
-import { $getNearestNodeOfType } from "@lexical/utils";
-import { $isRootOrShadowRoot } from "lexical";
-import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from "@lexical/list";
+import { 
+  $isListNode, 
+  ListItemNode, 
+  ListNode 
+} from "@lexical/list";
+import { 
+  $patchStyleText, 
+  $getSelection 
+} from "@lexical/selection";
+import { 
+  INSERT_ORDERED_LIST_COMMAND, 
+  INSERT_UNORDERED_LIST_COMMAND 
+} from "@lexical/list";
 import { TOGGLE_LINK_COMMAND } from "@lexical/link";
 
 // Tema para o editor
@@ -170,29 +183,35 @@ function ToolbarPlugin() {
     e.preventDefault();
     
     editor.update(() => {
+      const selection = $getSelection();
+      
+      if (!selection) {
+        return;
+      }
+      
       switch(formatType) {
         case 'bold':
           // Aplica negrito ao texto selecionado
-          $patchStyleText(editor, {
-            "bold": true
+          $patchStyleText(selection, {
+            bold: true
           });
           break;
         case 'italic':
           // Aplica itálico ao texto selecionado
-          $patchStyleText(editor, {
-            "italic": true
+          $patchStyleText(selection, {
+            italic: true
           });
           break;
         case 'underline':
           // Aplica sublinhado ao texto selecionado
-          $patchStyleText(editor, {
-            "underline": true
+          $patchStyleText(selection, {
+            underline: true
           });
           break;
         case 'strikethrough':
           // Aplica tachado ao texto selecionado
-          $patchStyleText(editor, {
-            "strikethrough": true
+          $patchStyleText(selection, {
+            strikethrough: true
           });
           break;
         case 'ordered-list':
@@ -233,7 +252,10 @@ function ToolbarPlugin() {
     setShowColorPicker(false);
     
     editor.update(() => {
-      $patchStyleText(editor, {
+      const selection = $getSelection();
+      if (!selection) return;
+      
+      $patchStyleText(selection, {
         color
       });
     });
@@ -316,7 +338,7 @@ function ToolbarPlugin() {
         title="Inserir Link"
         aria-label="Inserir Link"
       >
-        <Link className="h-4 w-4" />
+        <LinkIcon className="h-4 w-4" />
       </Button>
       <Button
         type="button"
