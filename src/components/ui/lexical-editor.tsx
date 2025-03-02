@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
-import { RichTextPlugin } from "@lexical/react/RichTextPlugin";
+import { RichTextPlugin } from "@lexical/react";
 import { ContentEditable } from "@lexical/react/ContentEditable";
 import { HistoryPlugin } from "@lexical/react/HistoryPlugin";
 import { AutoFocusPlugin } from "@lexical/react/AutoFocusPlugin";
@@ -12,7 +12,8 @@ import {
   $getRoot, 
   $createParagraphNode, 
   $createTextNode, 
-  EditorState
+  EditorState,
+  LexicalEditor as LexicalEditorType
 } from "lexical";
 import { 
   Bold, 
@@ -32,7 +33,11 @@ import {
   ListItemNode, 
   ListNode 
 } from "@lexical/list";
-import { $patchStyleText } from "@lexical/selection";
+import { 
+  $patchStyleText, 
+  $getSelection,
+  $isRangeSelection
+} from "@lexical/selection";
 import { 
   INSERT_ORDERED_LIST_COMMAND, 
   INSERT_UNORDERED_LIST_COMMAND 
@@ -179,12 +184,9 @@ function ToolbarPlugin() {
     e.preventDefault();
     
     editor.update(() => {
-      // Usamos o editor.getEditorState().read para garantir que estamos dentro do contexto de leitura
-      const selection = editor.getEditorState().read(() => {
-        return window.getSelection();
-      });
+      const selection = $getSelection();
       
-      if (!selection || selection.rangeCount === 0) {
+      if (!selection || !$isRangeSelection(selection)) {
         return;
       }
       
@@ -192,25 +194,25 @@ function ToolbarPlugin() {
         case 'bold':
           // Aplica negrito ao texto selecionado
           $patchStyleText(selection, {
-            "font-weight": "bold"
+            bold: true
           });
           break;
         case 'italic':
           // Aplica itálico ao texto selecionado
           $patchStyleText(selection, {
-            "font-style": "italic"
+            italic: true
           });
           break;
         case 'underline':
           // Aplica sublinhado ao texto selecionado
           $patchStyleText(selection, {
-            "text-decoration": "underline"
+            underline: true
           });
           break;
         case 'strikethrough':
           // Aplica tachado ao texto selecionado
           $patchStyleText(selection, {
-            "text-decoration": "line-through"
+            strikethrough: true
           });
           break;
         case 'ordered-list':
@@ -251,11 +253,11 @@ function ToolbarPlugin() {
     setShowColorPicker(false);
     
     editor.update(() => {
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) return;
+      const selection = $getSelection();
+      if (!selection || !$isRangeSelection(selection)) return;
       
       $patchStyleText(selection, {
-        "color": color
+        color
       });
     });
   };
@@ -423,7 +425,7 @@ function ToolbarPlugin() {
   );
 }
 
-export interface LexicalEditorProps {
+export interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -441,7 +443,7 @@ export function RichTextEditor({
   id,
   name,
   minHeight = "200px",
-}: LexicalEditorProps) {
+}: RichTextEditorProps) {
   // Configuração inicial para o editor
   const initialConfig = {
     namespace: id || "editor",
@@ -491,5 +493,3 @@ export function RichTextEditor({
     </div>
   );
 }
-
-export { RichTextEditor as LexicalEditor };
