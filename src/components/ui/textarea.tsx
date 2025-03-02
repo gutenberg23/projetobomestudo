@@ -46,12 +46,6 @@ const TextEditor = React.forwardRef<
     
     if (!editorRef.current) return;
     
-    // Salva a seleção atual
-    const selection = window.getSelection();
-    const range = selection?.getRangeAt(0);
-    
-    if (!selection || !range || range.collapsed) return;
-    
     // Aplica o comando de formatação diretamente no documento
     switch(format) {
       case 'bold':
@@ -86,7 +80,7 @@ const TextEditor = React.forwardRef<
         break;
       case 'color':
         setShowColorPicker(!showColorPicker);
-        break;
+        return; // Retorna sem atualizar o valor, já que o color picker será aberto
     }
     
     // Atualiza o valor depois da formatação
@@ -101,10 +95,19 @@ const TextEditor = React.forwardRef<
     
     if (!editorRef.current) return;
     
-    document.execCommand('foreColor', false, color);
+    // Salva a seleção atual
+    const selection = window.getSelection();
+    const range = selection?.getRangeAt(0);
+    
+    if (selection && range) {
+      // Se tem uma seleção, aplica a cor nela
+      document.execCommand('foreColor', false, color);
+    }
     
     // Atualiza o valor depois da formatação
-    onChange(editorRef.current.innerHTML);
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
   };
 
   // Handle clicks outside of color picker to close it
@@ -139,7 +142,7 @@ const TextEditor = React.forwardRef<
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col relative">
       <div className="flex flex-wrap items-center gap-1 p-2 bg-white border border-b-0 rounded-t-md">
         <Button
           type="button"
@@ -248,7 +251,10 @@ const TextEditor = React.forwardRef<
                     key={color}
                     className="w-8 h-8 rounded border"
                     style={{ backgroundColor: color }}
-                    onClick={() => applyColor(color)}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyColor(color);
+                    }}
                     title={color}
                   />
                 ))}
@@ -267,9 +273,13 @@ const TextEditor = React.forwardRef<
                   className="ml-2 p-1 border rounded flex-1 text-xs"
                 />
                 <Button 
+                  type="button"
                   size="sm" 
                   className="ml-2"
-                  onClick={() => applyColor(selectedColor)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    applyColor(selectedColor);
+                  }}
                 >
                   Aplicar
                 </Button>
@@ -281,14 +291,17 @@ const TextEditor = React.forwardRef<
 
       <div 
         className={cn(
-          "min-h-[200px] w-full rounded-b-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm relative",
+          "min-h-[200px] w-full rounded-b-md border border-input bg-background px-3 py-2 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
           className
         )}
-        contentEditable
+        contentEditable={true}
         ref={editorRef}
         onInput={handleInput}
         onPaste={handlePaste}
         style={{ overflowY: 'auto' }}
+        dangerouslySetInnerHTML={{ __html: value }}
+        aria-placeholder={placeholder}
+        data-placeholder={placeholder}
       />
       
       {/* Placeholder element */}
