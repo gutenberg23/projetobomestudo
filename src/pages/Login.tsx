@@ -14,7 +14,7 @@ const Login = () => {
             <img loading="lazy" src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/ee47f81d3df30406eedeb997df60ffc12cce0b3965827fc005f4c7a2da4ca470" alt="BomEstudo Logo" className="w-[150px] h-auto" />
           </Link>
         </div>
-        <div className="w-full h-full flex items-center justify-center p-10">
+        <div className="w-full h-full flex items-center justify-center p-10 px-0 py-0">
           <img alt="Estudante sorrindo" className="object-cover w-full h-full" src="/lovable-uploads/bb003461-c7e3-466c-8bbd-73478baae87b.jpg" />
         </div>
         <div className="absolute bottom-10 left-10 text-white">
