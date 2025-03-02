@@ -31,3 +31,17 @@ export interface AulasPageProps {
   setDescricaoNovaDisciplina: (descricao: string) => void;
   handleAdicionarDisciplina: () => void;
 }
+
+export interface EditAulaModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  aula: Aula | null;
+  onSave: (aula: Aula) => void;
+}
+
+export interface DeleteAulaModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  aula: Aula | null;
+  onDelete: (id: string) => void;
+}

@@ -1,6 +1,12 @@
 
 import React, { useState } from "react";
-import { AulasFilter, AulasTable, AdicionarDisciplina } from "./components/aulas";
+import { 
+  AulasFilter, 
+  AulasTable, 
+  AdicionarDisciplina,
+  EditAulaModal,
+  DeleteAulaModal
+} from "./components/aulas";
 import { Aula } from "./components/aulas/AulasTypes";
 
 const Aulas = () => {
@@ -83,6 +89,20 @@ const Aulas = () => {
     setIsOpenDelete(true);
   };
 
+  // Função para salvar aula editada
+  const handleSaveAula = (updatedAula: Aula) => {
+    setAulas(aulas.map(aula => 
+      aula.id === updatedAula.id ? updatedAula : aula
+    ));
+    setIsOpenEdit(false);
+  };
+
+  // Função para excluir aula
+  const handleDeleteAula = (id: string) => {
+    setAulas(aulas.filter(aula => aula.id !== id));
+    setIsOpenDelete(false);
+  };
+
   // Função para adicionar disciplina
   const handleAdicionarDisciplina = () => {
     if (tituloNovaDisciplina.trim() && descricaoNovaDisciplina.trim()) {
@@ -132,7 +152,20 @@ const Aulas = () => {
         handleAdicionarDisciplina={handleAdicionarDisciplina}
       />
       
-      {/* Aqui você adicionaria os modais de edição e exclusão */}
+      {/* Modais de edição e exclusão */}
+      <EditAulaModal 
+        isOpen={isOpenEdit}
+        onClose={() => setIsOpenEdit(false)}
+        aula={currentAula}
+        onSave={handleSaveAula}
+      />
+      
+      <DeleteAulaModal 
+        isOpen={isOpenDelete}
+        onClose={() => setIsOpenDelete(false)}
+        aula={currentAula}
+        onDelete={handleDeleteAula}
+      />
     </div>
   );
 };
