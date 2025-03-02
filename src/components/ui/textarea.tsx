@@ -24,13 +24,16 @@ const TextEditor = React.forwardRef<
     onChange: (value: string) => void;
     placeholder?: string;
     className?: string;
+    id?: string;
+    name?: string;
   }
->(({ value, onChange, placeholder, className }, ref) => {
+>(({ value, onChange, placeholder, className, id, name }, ref) => {
   const editorRef = React.useRef<HTMLDivElement>(null);
   const [showColorPicker, setShowColorPicker] = React.useState(false);
   const [selectedColor, setSelectedColor] = React.useState("#ea2be2");
   const colorPickerRef = React.useRef<HTMLDivElement>(null);
   const [showPlaceholder, setShowPlaceholder] = React.useState(!value);
+  const editorId = id || `editor-${Math.random().toString(36).substr(2, 9)}`;
   
   // Quando o valor muda externamente, atualizamos o HTML
   React.useEffect(() => {
@@ -151,6 +154,7 @@ const TextEditor = React.forwardRef<
           onMouseDown={(e) => handleFormatting('bold', e)}
           className="h-8 w-8 p-0"
           title="Negrito"
+          aria-label="Negrito"
         >
           <Bold className="h-4 w-4" />
         </Button>
@@ -161,6 +165,7 @@ const TextEditor = React.forwardRef<
           onMouseDown={(e) => handleFormatting('italic', e)}
           className="h-8 w-8 p-0"
           title="Itálico"
+          aria-label="Itálico"
         >
           <Italic className="h-4 w-4" />
         </Button>
@@ -171,6 +176,7 @@ const TextEditor = React.forwardRef<
           onMouseDown={(e) => handleFormatting('underline', e)}
           className="h-8 w-8 p-0"
           title="Sublinhado"
+          aria-label="Sublinhado"
         >
           <Underline className="h-4 w-4" />
         </Button>
@@ -181,6 +187,7 @@ const TextEditor = React.forwardRef<
           onMouseDown={(e) => handleFormatting('strikethrough', e)}
           className="h-8 w-8 p-0"
           title="Tachado"
+          aria-label="Tachado"
         >
           <Strikethrough className="h-4 w-4" />
         </Button>
@@ -191,6 +198,7 @@ const TextEditor = React.forwardRef<
           onMouseDown={(e) => handleFormatting('ordered-list', e)}
           className="h-8 w-8 p-0"
           title="Lista Ordenada"
+          aria-label="Lista Ordenada"
         >
           <ListOrdered className="h-4 w-4" />
         </Button>
@@ -201,6 +209,7 @@ const TextEditor = React.forwardRef<
           onMouseDown={(e) => handleFormatting('bullet-list', e)}
           className="h-8 w-8 p-0"
           title="Lista com Marcadores"
+          aria-label="Lista com Marcadores"
         >
           <List className="h-4 w-4" />
         </Button>
@@ -211,6 +220,7 @@ const TextEditor = React.forwardRef<
           onMouseDown={(e) => handleFormatting('link', e)}
           className="h-8 w-8 p-0"
           title="Inserir Link"
+          aria-label="Inserir Link"
         >
           <Link className="h-4 w-4" />
         </Button>
@@ -221,6 +231,7 @@ const TextEditor = React.forwardRef<
           onMouseDown={(e) => handleFormatting('image', e)}
           className="h-8 w-8 p-0"
           title="Inserir Imagem"
+          aria-label="Inserir Imagem"
         >
           <Image className="h-4 w-4" />
         </Button>
@@ -232,6 +243,7 @@ const TextEditor = React.forwardRef<
             onMouseDown={(e) => handleFormatting('color', e)}
             className="h-8 w-8 p-0"
             title="Cor do Texto"
+            aria-label="Cor do Texto"
             style={{ 
               borderBottom: `3px solid ${selectedColor}`,
               borderBottomLeftRadius: 0,
@@ -256,6 +268,8 @@ const TextEditor = React.forwardRef<
                       applyColor(color);
                     }}
                     title={color}
+                    type="button"
+                    aria-label={`Selecionar cor ${color}`}
                   />
                 ))}
               </div>
@@ -265,12 +279,18 @@ const TextEditor = React.forwardRef<
                   value={selectedColor}
                   onChange={(e) => setSelectedColor(e.target.value)}
                   className="w-8 h-8"
+                  id={`${editorId}-color-picker`}
+                  name={`${editorId}-color-picker`}
+                  aria-label="Selecionar cor personalizada"
                 />
                 <input
                   type="text"
                   value={selectedColor}
                   onChange={(e) => setSelectedColor(e.target.value)}
                   className="ml-2 p-1 border rounded flex-1 text-xs"
+                  id={`${editorId}-color-input`}
+                  name={`${editorId}-color-input`}
+                  aria-label="Código da cor"
                 />
                 <Button 
                   type="button"
@@ -280,6 +300,7 @@ const TextEditor = React.forwardRef<
                     e.preventDefault();
                     applyColor(selectedColor);
                   }}
+                  aria-label="Aplicar cor selecionada"
                 >
                   Aplicar
                 </Button>
@@ -302,6 +323,9 @@ const TextEditor = React.forwardRef<
         dangerouslySetInnerHTML={{ __html: value }}
         aria-placeholder={placeholder}
         data-placeholder={placeholder}
+        id={editorId}
+        role="textbox"
+        aria-multiline="true"
       />
       
       {/* Placeholder element */}
@@ -312,6 +336,7 @@ const TextEditor = React.forwardRef<
             top: 'calc(2.25rem + 2px)', // Height of the toolbar + border
             left: 0
           }}
+          aria-hidden="true"
         >
           {placeholder}
         </div>
@@ -323,6 +348,9 @@ const TextEditor = React.forwardRef<
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{ display: 'none' }}
+        id={id}
+        name={name}
+        aria-hidden="true"
       />
     </div>
   );
@@ -331,7 +359,7 @@ const TextEditor = React.forwardRef<
 TextEditor.displayName = "TextEditor";
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, value, onChange, placeholder, ...props }, ref) => {
+  ({ className, value, onChange, placeholder, id, name, ...props }, ref) => {
     // Se o componente tiver um onChange, renderizamos o editor de texto
     if (onChange && value !== undefined) {
       return (
@@ -348,6 +376,8 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           }}
           placeholder={placeholder}
           className={className}
+          id={id}
+          name={name}
         />
       )
     }
@@ -360,6 +390,8 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className
         )}
         ref={ref}
+        id={id}
+        name={name}
         {...props}
       />
     )

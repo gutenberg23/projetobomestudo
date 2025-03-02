@@ -22,6 +22,7 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
         <Label htmlFor="question-text">Texto da Questão</Label>
         <Textarea 
           id="question-text" 
+          name="question-text"
           value={questionText} 
           onChange={(e) => setQuestionText(e.target.value)} 
           placeholder="Digite o texto da questão" 
@@ -33,6 +34,7 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
         <Label htmlFor="teacher-explanation">Explicação do Professor</Label>
         <Textarea 
           id="teacher-explanation" 
+          name="teacher-explanation"
           value={teacherExplanation} 
           onChange={(e) => setTeacherExplanation(e.target.value)} 
           placeholder="Digite a explicação do professor" 
