@@ -851,3 +851,13 @@ const Usuarios = () => {
             </div>
           )}
           <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogExcluirUsuario(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={excluirUsuario}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Usuarios;
