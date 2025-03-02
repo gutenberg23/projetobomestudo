@@ -33,7 +33,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       props.onChange?.(e);
     };
 
-    const handleEditorChange = (e: React.FormEvent<HTMLDivElement>) => {
+    const handleEditorChange = () => {
       if (!editorRef.current) return;
       
       const content = editorRef.current.innerHTML;
@@ -50,6 +50,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     };
 
     const execCommand = (command: string, value: string = "") => {
+      // Garantir que o editor tem foco antes de executar o comando
+      editorRef.current?.focus();
+      
       document.execCommand(command, false, value);
       
       if (editorRef.current) {
@@ -66,11 +69,68 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         setValue(content);
         props.onChange?.(syntheticEvent);
       }
+    };
+
+    const handleColorSelection = () => {
+      // Array de cores predefinidas para escolha
+      const colors = [
+        "#FF0000", // Vermelho
+        "#0000FF", // Azul
+        "#008000", // Verde
+        "#FFA500", // Laranja
+        "#800080", // Roxo
+        "#000000"  // Preto
+      ];
       
-      // Focar de volta no editor
-      setTimeout(() => {
-        editorRef.current?.focus();
-      }, 0);
+      // Criar e mostrar um elemento de seleção de cores
+      const colorPickerContainer = document.createElement("div");
+      colorPickerContainer.style.position = "absolute";
+      colorPickerContainer.style.display = "flex";
+      colorPickerContainer.style.flexWrap = "wrap";
+      colorPickerContainer.style.width = "150px";
+      colorPickerContainer.style.padding = "5px";
+      colorPickerContainer.style.background = "#fff";
+      colorPickerContainer.style.border = "1px solid #ccc";
+      colorPickerContainer.style.borderRadius = "4px";
+      colorPickerContainer.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+      colorPickerContainer.style.zIndex = "1000";
+      
+      // Posicionar próximo ao botão de cores
+      if (editorRef.current) {
+        const editorRect = editorRef.current.getBoundingClientRect();
+        colorPickerContainer.style.top = `${editorRect.top}px`;
+        colorPickerContainer.style.left = `${editorRect.left + 50}px`;
+      }
+      
+      // Adicionar botões de cores
+      colors.forEach(color => {
+        const colorButton = document.createElement("div");
+        colorButton.style.width = "20px";
+        colorButton.style.height = "20px";
+        colorButton.style.margin = "5px";
+        colorButton.style.backgroundColor = color;
+        colorButton.style.cursor = "pointer";
+        colorButton.style.border = "1px solid #ddd";
+        
+        colorButton.onclick = () => {
+          execCommand("foreColor", color);
+          document.body.removeChild(colorPickerContainer);
+        };
+        
+        colorPickerContainer.appendChild(colorButton);
+      });
+      
+      // Fechar o seletor quando clicar fora dele
+      document.addEventListener("click", function closeColorPicker(e) {
+        if (!colorPickerContainer.contains(e.target as Node)) {
+          if (document.body.contains(colorPickerContainer)) {
+            document.body.removeChild(colorPickerContainer);
+          }
+          document.removeEventListener("click", closeColorPicker);
+        }
+      });
+      
+      document.body.appendChild(colorPickerContainer);
     };
 
     if (!richText) {
@@ -161,11 +221,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           </button>
           <button
             type="button"
-            onClick={() => {
-              const colors = ["red", "blue", "green", "yellow", "purple"];
-              const randomColor = colors[Math.floor(Math.random() * colors.length)];
-              execCommand('foreColor', randomColor);
-            }}
+            onClick={handleColorSelection}
             className="p-1 hover:bg-gray-200 rounded"
             title="Cor do texto"
           >
@@ -177,13 +233,13 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         <div
           ref={editorRef}
           contentEditable
+          dangerouslySetInnerHTML={{ __html: value }}
+          onInput={handleEditorChange}
+          onBlur={handleEditorChange}
           className={cn(
             "flex min-h-[80px] w-full rounded-b-md border-x border-b border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm overflow-auto",
             className
           )}
-          onInput={handleEditorChange}
-          onBlur={handleEditorChange}
-          dangerouslySetInnerHTML={{ __html: value }}
         ></div>
         
         {/* Textarea oculto para manter compatibilidade com o formulário */}
