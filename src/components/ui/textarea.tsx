@@ -25,7 +25,7 @@ const TextEditor = ({
     const selectedText = textarea.value.substring(start, end);
     
     let formattedText = "";
-    let newCursorPos = 0;
+    let newCursorPos = end;
     
     switch(format) {
       case 'bold':
@@ -99,101 +99,96 @@ const TextEditor = ({
     // Atualizar o valor
     onChange(newValue);
     
-    // Definir a posição do cursor
+    // Definir a posição do cursor após a atualização do valor
     setTimeout(() => {
-      textarea.focus();
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 10);
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
   };
 
   return (
-    <div className="space-y-2" ref={el => {
-      if (el) {
-        const textareaElement = el.querySelector('textarea');
-        if (textareaElement) {
-          textareaRef.current = textareaElement as HTMLTextAreaElement;
-        }
-      }
-    }}>
+    <div className="space-y-2">
       <div className="border rounded-md p-2 mb-2 bg-white">
         <div className="flex flex-wrap gap-2 mb-2">
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => applyFormatting('bold')}
-            type="button"
             className="h-8 w-8 p-0"
           >
             <Bold className="h-4 w-4" />
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => applyFormatting('italic')}
-            type="button"
             className="h-8 w-8 p-0"
           >
             <Italic className="h-4 w-4" />
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => applyFormatting('underline')}
-            type="button"
             className="h-8 w-8 p-0"
           >
             <Underline className="h-4 w-4" />
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => applyFormatting('strikethrough')}
-            type="button"
             className="h-8 w-8 p-0"
           >
             <Strikethrough className="h-4 w-4" />
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => applyFormatting('ordered-list')}
-            type="button"
             className="h-8 w-8 p-0"
           >
             <ListOrdered className="h-4 w-4" />
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => applyFormatting('bullet-list')}
-            type="button"
             className="h-8 w-8 p-0"
           >
             <List className="h-4 w-4" />
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => applyFormatting('link')}
-            type="button"
             className="h-8 w-8 p-0"
           >
             <Link className="h-4 w-4" />
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => applyFormatting('image')}
-            type="button"
             className="h-8 w-8 p-0"
           >
             <Image className="h-4 w-4" />
           </Button>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => applyFormatting('color')}
-            type="button"
             className="h-8 w-8 p-0"
           >
             <Type className="h-4 w-4" />
@@ -229,13 +224,34 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
             className
           )}
-          ref={ref}
+          ref={(textareaElement) => {
+            // Assign to ref from props
+            if (typeof ref === 'function') {
+              ref(textareaElement);
+            } else if (ref) {
+              ref.current = textareaElement;
+            }
+            
+            // Find the parent component that has the TextEditor
+            const parent = textareaElement?.closest('div');
+            if (parent) {
+              const editor = parent.querySelector('div > div.space-y-2');
+              if (editor && editor.parentElement) {
+                // Store the textarea reference in the TextEditor's ref
+                const editorInstance = editor as any;
+                if (editorInstance && editorInstance.props) {
+                  editorInstance.props.textareaRef = textareaElement;
+                }
+              }
+            }
+          }}
           {...props}
         />
       </div>
-    )
+    );
   }
-)
-Textarea.displayName = "Textarea"
+);
 
-export { Textarea }
+Textarea.displayName = "Textarea";
+
+export { Textarea };
