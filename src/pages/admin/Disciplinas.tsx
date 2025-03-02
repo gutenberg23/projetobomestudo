@@ -30,6 +30,8 @@ const Disciplinas = () => {
       titulo: "Direito Constitucional",
       descricao: "Fundamentos e princípios da Constituição Federal",
       aulasIds: ["1", "2", "3"],
+      topicosIds: ["101", "102", "103", "104"],
+      questoesIds: ["201", "202", "203", "204", "205"],
       selecionada: false
     },
     {
@@ -37,6 +39,8 @@ const Disciplinas = () => {
       titulo: "Direito Penal",
       descricao: "Conceitos básicos e tipos de crimes",
       aulasIds: ["4", "5"],
+      topicosIds: ["105", "106"],
+      questoesIds: ["206", "207", "208"],
       selecionada: false
     },
     {
@@ -44,6 +48,8 @@ const Disciplinas = () => {
       titulo: "Matemática Financeira",
       descricao: "Juros simples e compostos",
       aulasIds: ["6", "7", "8", "9"],
+      topicosIds: ["107", "108", "109", "110", "111", "112"],
+      questoesIds: ["209", "210", "211", "212", "213", "214", "215"],
       selecionada: false
     }
   ]);

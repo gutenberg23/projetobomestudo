@@ -4,6 +4,8 @@ export interface Disciplina {
   titulo: string;
   descricao: string;
   aulasIds: string[];
+  topicosIds?: string[];
+  questoesIds?: string[];
   selecionada?: boolean;
 }
 

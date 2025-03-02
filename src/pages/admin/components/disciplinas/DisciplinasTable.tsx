@@ -38,6 +38,8 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
             <TableHead className="w-[200px]">Título</TableHead>
             <TableHead className="w-[200px]">Descrição</TableHead>
             <TableHead className="w-[120px]">Nº de Aulas</TableHead>
+            <TableHead className="w-[120px]">Nº de Tópicos</TableHead>
+            <TableHead className="w-[120px]">Nº de Questões</TableHead>
             <TableHead className="w-[150px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -55,6 +57,8 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                 <TableCell>{disciplina.titulo}</TableCell>
                 <TableCell>{disciplina.descricao}</TableCell>
                 <TableCell>{disciplina.aulasIds.length} aulas</TableCell>
+                <TableCell>{disciplina.topicosIds?.length || 0} tópicos</TableCell>
+                <TableCell>{disciplina.questoesIds?.length || 0} questões</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button 
@@ -78,7 +82,7 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={8} className="text-center py-4 text-[#67748a]">
                 Nenhuma disciplina encontrada com os filtros aplicados.
               </TableCell>
             </TableRow>
