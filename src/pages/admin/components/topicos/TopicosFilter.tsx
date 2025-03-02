@@ -47,7 +47,7 @@ export const TopicosFilter: React.FC<TopicosFilterProps> = ({
               <SelectValue placeholder="Todas as disciplinas" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas as disciplinas</SelectItem>
+              <SelectItem value="todas">Todas as disciplinas</SelectItem>
               {disciplinas.map((disciplina, index) => (
                 <SelectItem key={index} value={disciplina}>
                   {disciplina}
@@ -64,7 +64,7 @@ export const TopicosFilter: React.FC<TopicosFilterProps> = ({
               <SelectValue placeholder="Todos os patrocinadores" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os patrocinadores</SelectItem>
+              <SelectItem value="todos">Todos os patrocinadores</SelectItem>
               {patrocinadores.map((patrocinador, index) => (
                 <SelectItem key={index} value={patrocinador}>
                   {patrocinador}

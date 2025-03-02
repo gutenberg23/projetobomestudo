@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -57,8 +56,8 @@ const Topicos = () => {
 
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState("");
-  const [disciplinaFiltro, setDisciplinaFiltro] = useState("");
-  const [patrocinadorFiltro, setPatrocinadorFiltro] = useState("");
+  const [disciplinaFiltro, setDisciplinaFiltro] = useState("todas");
+  const [patrocinadorFiltro, setPatrocinadorFiltro] = useState("todos");
   
   // Estado para indicar se todos os tópicos estão selecionados
   const [todosSelecionados, setTodosSelecionados] = useState(false);
@@ -312,8 +311,8 @@ const Topicos = () => {
   // Filtragem dos tópicos
   const topicosFiltrados = topicos.filter(topico => {
     const matchTitulo = topico.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchDisciplina = disciplinaFiltro ? topico.disciplina === disciplinaFiltro : true;
-    const matchPatrocinador = patrocinadorFiltro ? topico.patrocinador.toLowerCase().includes(patrocinadorFiltro.toLowerCase()) : true;
+    const matchDisciplina = disciplinaFiltro === "todas" ? true : topico.disciplina === disciplinaFiltro;
+    const matchPatrocinador = patrocinadorFiltro === "todos" ? true : topico.patrocinador.toLowerCase().includes(patrocinadorFiltro.toLowerCase());
     
     return matchTitulo && matchDisciplina && matchPatrocinador;
   });

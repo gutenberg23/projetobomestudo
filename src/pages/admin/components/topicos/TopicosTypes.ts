@@ -42,6 +42,7 @@ export interface TopicosModalsProps {
   isOpenDelete: boolean;
   setIsOpenDelete: (open: boolean) => void;
   currentTopico: Topico | null;
+  setCurrentTopico: React.Dispatch<React.SetStateAction<Topico | null>>;
   newTopico: Omit<Topico, 'id'>;
   setNewTopico: React.Dispatch<React.SetStateAction<Omit<Topico, 'id'>>>;
   newQuestaoId: string;
