@@ -51,7 +51,7 @@ export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
           className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
           disabled={!tituloNovaDisciplina.trim()}
         >
-          Adicionar Disciplina
+          Adicionar Curso
         </Button>
       )}
     </div>
