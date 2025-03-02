@@ -41,20 +41,13 @@ export const TopicosFilter: React.FC<TopicosFilterProps> = ({
         </div>
         
         <div>
-          <Label htmlFor="disciplina-filtro" className="text-[#67748a]">Disciplina</Label>
-          <Select value={disciplinaFiltro} onValueChange={setDisciplinaFiltro}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Todas as disciplinas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Todas as disciplinas</SelectItem>
-              {disciplinas.map((disciplina, index) => (
-                <SelectItem key={index} value={disciplina}>
-                  {disciplina}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor="disciplina-filtro" className="text-[#67748a]">Descrição / Disciplina</Label>
+          <Input
+            id="disciplina-filtro"
+            placeholder="Digite para filtrar..."
+            value={disciplinaFiltro}
+            onChange={(e) => setDisciplinaFiltro(e.target.value)}
+          />
         </div>
         
         <div>
