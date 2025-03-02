@@ -9,15 +9,11 @@ import {
   TableCell
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Pencil, Trash } from "lucide-react";
 import { CursosTableProps } from "./CursosTypes";
 
 export const CursosTable: React.FC<CursosTableProps> = ({
   cursos,
-  todasSelecionadas,
-  handleSelecaoTodas,
-  handleSelecaoCurso,
   openEditModal,
   openDeleteModal
 }) => {
@@ -26,14 +22,6 @@ export const CursosTable: React.FC<CursosTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[50px]">
-              <div className="flex items-center">
-                <Checkbox 
-                  checked={todasSelecionadas} 
-                  onCheckedChange={handleSelecaoTodas}
-                />
-              </div>
-            </TableHead>
             <TableHead className="w-[50px]">ID</TableHead>
             <TableHead className="w-[200px]">Título</TableHead>
             <TableHead className="w-[200px]">Descrição</TableHead>
@@ -48,12 +36,6 @@ export const CursosTable: React.FC<CursosTableProps> = ({
           {cursos.length > 0 ? (
             cursos.map((curso) => (
               <TableRow key={curso.id}>
-                <TableCell>
-                  <Checkbox 
-                    checked={curso.selecionada} 
-                    onCheckedChange={() => handleSelecaoCurso(curso.id)}
-                  />
-                </TableCell>
                 <TableCell className="font-medium">{curso.id}</TableCell>
                 <TableCell>{curso.titulo}</TableCell>
                 <TableCell>{curso.descricao}</TableCell>
@@ -84,7 +66,7 @@ export const CursosTable: React.FC<CursosTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={8} className="text-center py-4 text-[#67748a]">
                 Nenhum curso encontrado com os filtros aplicados.
               </TableCell>
             </TableRow>

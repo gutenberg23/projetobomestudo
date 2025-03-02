@@ -68,22 +68,6 @@ const Cursos = () => {
   // Função para verificar se todos os cursos estão selecionados
   const todasSelecionadas = cursosFiltrados.length > 0 && cursosFiltrados.every(curso => curso.selecionada);
 
-  // Funções para manipulação de seleção
-  const handleSelecaoTodas = () => {
-    setCursos(cursos.map(curso => {
-      if (cursosFiltrados.some(cursoFiltrado => cursoFiltrado.id === curso.id)) {
-        return { ...curso, selecionada: !todasSelecionadas };
-      }
-      return curso;
-    }));
-  };
-
-  const handleSelecaoCurso = (id: string) => {
-    setCursos(cursos.map(curso => 
-      curso.id === id ? { ...curso, selecionada: !curso.selecionada } : curso
-    ));
-  };
-
   // Funções para abrir modais
   const openEditModal = (curso: Curso) => {
     setCurrentCurso(curso);
@@ -148,9 +132,6 @@ const Cursos = () => {
       {/* Tabela de cursos */}
       <CursosTable 
         cursos={cursosFiltrados}
-        todasSelecionadas={todasSelecionadas}
-        handleSelecaoTodas={handleSelecaoTodas}
-        handleSelecaoCurso={handleSelecaoCurso}
         openEditModal={openEditModal}
         openDeleteModal={openDeleteModal}
       />

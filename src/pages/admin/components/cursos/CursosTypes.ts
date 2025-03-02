@@ -19,9 +19,6 @@ export interface CursosFilterProps {
 
 export interface CursosTableProps {
   cursos: Curso[];
-  todasSelecionadas: boolean;
-  handleSelecaoTodas: () => void;
-  handleSelecaoCurso: (id: string) => void;
   openEditModal: (curso: Curso) => void;
   openDeleteModal: (curso: Curso) => void;
 }
