@@ -59,6 +59,7 @@ const Topicos = () => {
   const [todosSelecionados, setTodosSelecionados] = useState(false);
 
   const [tituloAula, setTituloAula] = useState("");
+  const [descricaoAula, setDescricaoAula] = useState("");
 
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [isOpenEdit, setIsOpenEdit] = useState(false);
@@ -266,7 +267,7 @@ const Topicos = () => {
     
     toast({
       title: "Aula criada",
-      description: `Aula "${tituloAula}" criada com ${topicosSelecionados.length} tópicos selecionados.`,
+      description: `Aula "${tituloAula}" ${descricaoAula ? `(${descricaoAula})` : ""} criada com ${topicosSelecionados.length} tópicos selecionados.`,
     });
     
     setTopicos(topicos.map(topico => ({
@@ -275,6 +276,7 @@ const Topicos = () => {
     })));
     setTodosSelecionados(false);
     setTituloAula("");
+    setDescricaoAula("");
   };
 
   const temTopicosSelecionados = topicos.some(topico => topico.selecionado);
@@ -327,6 +329,8 @@ const Topicos = () => {
       <AddAulaButton
         tituloAula={tituloAula}
         setTituloAula={setTituloAula}
+        descricaoAula={descricaoAula}
+        setDescricaoAula={setDescricaoAula}
         temTopicosSelecionados={temTopicosSelecionados}
         handleCriarAula={handleCriarAula}
       />

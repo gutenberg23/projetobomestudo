@@ -8,6 +8,8 @@ import { TopicosPageProps } from "./TopicosTypes";
 export const AddAulaButton: React.FC<TopicosPageProps> = ({
   tituloAula,
   setTituloAula,
+  descricaoAula,
+  setDescricaoAula,
   temTopicosSelecionados,
   handleCriarAula
 }) => {
@@ -31,6 +33,8 @@ export const AddAulaButton: React.FC<TopicosPageProps> = ({
               <Input
                 id="descricao-aula"
                 placeholder="Digite a descrição"
+                value={descricaoAula}
+                onChange={(e) => setDescricaoAula(e.target.value)}
                 className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
               />
             </div>
@@ -47,4 +51,3 @@ export const AddAulaButton: React.FC<TopicosPageProps> = ({
     </div>
   );
 };
-

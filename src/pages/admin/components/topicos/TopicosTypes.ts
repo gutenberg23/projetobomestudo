@@ -63,6 +63,8 @@ export interface TopicosModalsProps {
 export interface TopicosPageProps {
   tituloAula: string;
   setTituloAula: (titulo: string) => void;
+  descricaoAula: string;
+  setDescricaoAula: (descricao: string) => void;
   temTopicosSelecionados: boolean;
   handleCriarAula: () => void;
 }
