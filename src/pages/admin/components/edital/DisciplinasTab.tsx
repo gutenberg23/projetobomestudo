@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import DisciplinaForm from "./DisciplinaForm";
 import DisciplinasTable from "./DisciplinasTable";
@@ -21,12 +21,35 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
 }) => {
   const { toast } = useToast();
   const [showCriarEditalCard, setShowCriarEditalCard] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredDisciplinas, setFilteredDisciplinas] = useState<Disciplina[]>(disciplinas);
+  
+  // Efeito para filtrar disciplinas quando a busca ou a lista de disciplinas mudar
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredDisciplinas(disciplinas);
+    } else {
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      setFilteredDisciplinas(
+        disciplinas.filter(
+          (disciplina) => 
+            disciplina.titulo.toLowerCase().includes(lowerCaseSearch) || 
+            disciplina.topicos.some(topico => topico.toLowerCase().includes(lowerCaseSearch))
+        )
+      );
+    }
+  }, [searchTerm, disciplinas]);
   
   // Funções para gerenciar disciplinas
-  const todasDisciplinasSelecionadas = disciplinas.length > 0 && disciplinas.every(d => d.selecionada);
+  const todasDisciplinasSelecionadas = filteredDisciplinas.length > 0 && filteredDisciplinas.every(d => d.selecionada);
   
   const handleToggleSelecaoTodas = () => {
-    setDisciplinas(disciplinas.map(d => ({...d, selecionada: !todasDisciplinasSelecionadas})));
+    setDisciplinas(disciplinas.map(d => {
+      if (filteredDisciplinas.some(fd => fd.id === d.id)) {
+        return {...d, selecionada: !todasDisciplinasSelecionadas};
+      }
+      return d;
+    }));
   };
   
   const handleToggleSelecaoDisciplina = (id: string) => {
@@ -112,6 +135,9 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
       
       <DisciplinasTable 
         disciplinas={disciplinas}
+        filteredDisciplinas={filteredDisciplinas}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
         todasSelecionadas={todasDisciplinasSelecionadas}
         onToggleSelecaoTodas={handleToggleSelecaoTodas}
         onToggleSelecao={handleToggleSelecaoDisciplina}

@@ -3,11 +3,15 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Trash } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Trash, Search } from "lucide-react";
 import { Disciplina } from "./types";
 
 interface DisciplinasTableProps {
   disciplinas: Disciplina[];
+  filteredDisciplinas: Disciplina[];
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
   todasSelecionadas: boolean;
   onToggleSelecaoTodas: () => void;
   onToggleSelecao: (id: string) => void;
@@ -17,6 +21,9 @@ interface DisciplinasTableProps {
 
 const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
   disciplinas,
+  filteredDisciplinas,
+  searchTerm,
+  onSearchChange,
   todasSelecionadas,
   onToggleSelecaoTodas,
   onToggleSelecao,
@@ -31,6 +38,15 @@ const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
         <CardTitle>Disciplinas Cadastradas</CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 relative">
+          <Input
+            placeholder="Pesquisar por título ou tópico..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pr-10"
+          />
+          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        </div>
         <div className="rounded-md border bg-white">
           <Table>
             <TableHeader>
@@ -51,8 +67,8 @@ const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {disciplinas.length > 0 ? (
-                disciplinas.map((disciplina) => (
+              {filteredDisciplinas.length > 0 ? (
+                filteredDisciplinas.map((disciplina) => (
                   <TableRow key={disciplina.id}>
                     <TableCell>
                       <input 
@@ -92,7 +108,7 @@ const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-4 text-[#67748a]">
-                    Nenhuma disciplina cadastrada.
+                    {searchTerm ? "Nenhuma disciplina encontrada com os critérios de busca." : "Nenhuma disciplina cadastrada."}
                   </TableCell>
                 </TableRow>
               )}
