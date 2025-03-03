@@ -9,41 +9,20 @@ import {
   TableCell
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Link, Trash, Power } from "lucide-react";
 import { SimuladosTableProps } from "./SimuladosTypes";
 
 export const SimuladosTable: React.FC<SimuladosTableProps> = ({
   simulados,
-  handleToggleSelection,
   handleVincularCurso,
   handleToggleAtivo,
-  handleExcluir,
-  selectedSimulados
+  handleExcluir
 }) => {
   return (
     <div className="rounded-md border bg-white">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[50px]">
-              <div className="flex items-center">
-                <Checkbox 
-                  checked={simulados.length > 0 && simulados.every(simulado => selectedSimulados.includes(simulado.id))}
-                  onCheckedChange={() => {
-                    if (simulados.every(simulado => selectedSimulados.includes(simulado.id))) {
-                      simulados.forEach(simulado => handleToggleSelection(simulado.id));
-                    } else {
-                      simulados.forEach(simulado => {
-                        if (!selectedSimulados.includes(simulado.id)) {
-                          handleToggleSelection(simulado.id);
-                        }
-                      });
-                    }
-                  }}
-                />
-              </div>
-            </TableHead>
             <TableHead className="w-[200px]">Título</TableHead>
             <TableHead className="w-[300px]">Descrição</TableHead>
             <TableHead className="w-[100px]">Nº de Questões</TableHead>
@@ -56,12 +35,6 @@ export const SimuladosTable: React.FC<SimuladosTableProps> = ({
           {simulados.length > 0 ? (
             simulados.map((simulado) => (
               <TableRow key={simulado.id}>
-                <TableCell>
-                  <Checkbox 
-                    checked={selectedSimulados.includes(simulado.id)} 
-                    onCheckedChange={() => handleToggleSelection(simulado.id)}
-                  />
-                </TableCell>
                 <TableCell className="font-medium">{simulado.titulo}</TableCell>
                 <TableCell>{simulado.descricao}</TableCell>
                 <TableCell>{simulado.questoesIds.length} questões</TableCell>
@@ -104,7 +77,7 @@ export const SimuladosTable: React.FC<SimuladosTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={6} className="text-center py-4 text-[#67748a]">
                 Nenhum simulado encontrado.
               </TableCell>
             </TableRow>

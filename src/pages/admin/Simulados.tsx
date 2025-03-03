@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { SimuladosTable, VincularCursoModal } from "./components/simulados";
 import { Simulado } from "./components/simulados/SimuladosTypes";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { useQuestionSelectionActions } from "@/components/admin/questions/hooks/actions/useQuestionSelectionActions";
 import { useQuestionsState } from "@/components/admin/questions/hooks/useQuestionsState";
 
@@ -13,7 +12,6 @@ const Simulados = () => {
   
   // Estado para os simulados
   const [simulados, setSimulados] = useState<Simulado[]>([]);
-  const [selectedSimulados, setSelectedSimulados] = useState<string[]>([]);
   
   // Estado para o modal de vincular curso
   const [isVincularModalOpen, setIsVincularModalOpen] = useState(false);
@@ -64,17 +62,6 @@ const Simulados = () => {
     };
   }, [simulados.length, questionsState, handleCreateSimulado]);
 
-  // Toggle seleção de simulado
-  const handleToggleSelection = (id: string) => {
-    setSelectedSimulados(prev => {
-      if (prev.includes(id)) {
-        return prev.filter(simId => simId !== id);
-      } else {
-        return [...prev, id];
-      }
-    });
-  };
-
   // Vincular simulado a um curso
   const handleVincularCurso = (simuladoId: string) => {
     setCurrentSimuladoId(simuladoId);
@@ -121,34 +108,7 @@ const Simulados = () => {
     setSimulados(prevSimulados => 
       prevSimulados.filter(simulado => simulado.id !== simuladoId)
     );
-    setSelectedSimulados(prev => prev.filter(id => id !== simuladoId));
     toast.success('Simulado excluído com sucesso!');
-  };
-
-  // Excluir simulados selecionados
-  const handleExcluirSelecionados = () => {
-    if (selectedSimulados.length === 0) {
-      toast.error('Selecione pelo menos um simulado para excluir.');
-      return;
-    }
-    
-    setSimulados(prevSimulados => 
-      prevSimulados.filter(simulado => !selectedSimulados.includes(simulado.id))
-    );
-    setSelectedSimulados([]);
-    toast.success(`${selectedSimulados.length} simulado(s) excluído(s) com sucesso!`);
-  };
-
-  // Função para criar simulado com as questões selecionadas
-  const createSimulado = () => {
-    // Usar a função temporária se disponível, ou a original
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).tempCreateSimulado) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).tempCreateSimulado();
-    } else {
-      handleCreateSimulado();
-    }
   };
 
   return (
@@ -156,24 +116,11 @@ const Simulados = () => {
       <h1 className="text-2xl font-bold text-[#272f3c]">Simulados</h1>
       <p className="text-[#67748a]">Gerenciamento de simulados</p>
       
-      {selectedSimulados.length > 0 && (
-        <div className="flex justify-end">
-          <Button 
-            variant="destructive" 
-            onClick={handleExcluirSelecionados}
-          >
-            Excluir Selecionados ({selectedSimulados.length})
-          </Button>
-        </div>
-      )}
-      
       <SimuladosTable 
         simulados={simulados}
-        handleToggleSelection={handleToggleSelection}
         handleVincularCurso={handleVincularCurso}
         handleToggleAtivo={handleToggleAtivo}
         handleExcluir={handleExcluir}
-        selectedSimulados={selectedSimulados}
       />
       
       <VincularCursoModal 
@@ -182,15 +129,6 @@ const Simulados = () => {
         simuladoId={currentSimuladoId}
         onVincular={onVincular}
       />
-
-      <div className="mt-4">
-        <Button 
-          onClick={createSimulado}
-          className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-white"
-        >
-          Criar Simulado com Questões Selecionadas ({questionsState.selectedQuestions.length})
-        </Button>
-      </div>
     </div>
   );
 };

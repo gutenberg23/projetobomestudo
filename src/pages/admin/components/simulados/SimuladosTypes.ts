@@ -10,11 +10,9 @@ export interface Simulado {
 
 export interface SimuladosTableProps {
   simulados: Simulado[];
-  handleToggleSelection: (id: string) => void;
-  handleVincularCurso: (simuladoId: string) => void;
-  handleToggleAtivo: (simuladoId: string) => void;
-  handleExcluir: (simuladoId: string) => void;
-  selectedSimulados: string[];
+  handleVincularCurso: (id: string) => void;
+  handleToggleAtivo: (id: string) => void;
+  handleExcluir: (id: string) => void;
 }
 
 export interface VincularCursoModalProps {
