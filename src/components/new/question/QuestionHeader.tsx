@@ -1,4 +1,10 @@
+
 import React from "react";
+import { BarChart } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { QuestionStats } from "./QuestionStats";
+
 interface QuestionHeaderProps {
   year: string;
   institution: string;
@@ -28,9 +34,27 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
         </p>
       </div>
 
-      <div className="flex overflow-hidden gap-5 justify-center items-center self-stretch p-2.5 my-auto text-xs text-center whitespace-nowrap rounded-md max-sm:mx-auto">
+      <div className="flex overflow-hidden gap-2 justify-center items-center self-stretch p-2.5 my-auto text-xs text-center whitespace-nowrap rounded-md max-sm:mx-auto">
         <span className="text-slate-500">{id}</span>
-        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors">
+                    <BarChart className="h-4 w-4 text-white" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[700px] p-0">
+                  <QuestionStats />
+                </PopoverContent>
+              </Popover>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Estatísticas da Questão</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </header>;
 };

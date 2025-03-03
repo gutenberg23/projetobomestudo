@@ -3,7 +3,10 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Copy, Edit, Trash } from "lucide-react";
+import { Copy, Edit, Trash, BarChart } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { QuestionStats } from "@/components/new/question/QuestionStats";
 
 interface QuestionItemType {
   id: string;
@@ -88,7 +91,30 @@ const QuestionList: React.FC<QuestionListProps> = ({
                       onCheckedChange={() => toggleQuestionSelection(question.id)} 
                     />
                   </TableCell>
-                  <TableCell className="font-medium">{question.id}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {question.id}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <BarChart className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[700px] p-0">
+                                <QuestionStats />
+                              </PopoverContent>
+                            </Popover>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Estatísticas da Questão</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  </TableCell>
                   <TableCell>{question.year}</TableCell>
                   <TableCell>{question.institution}</TableCell>
                   <TableCell>{question.discipline}</TableCell>
