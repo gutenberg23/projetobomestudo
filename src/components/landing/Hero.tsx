@@ -1,21 +1,14 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-
 export const Hero = () => {
-  return (
-    <div className="w-full min-h-screen relative overflow-hidden">
+  return <div className="w-full min-h-screen relative overflow-hidden bg-white">
       {/* Fundo decorativo */}
       <div className="absolute inset-0 bg-gradient-to-r from-[#f6f8fa]/80 to-transparent z-10"></div>
       
       {/* Imagem de fundo em tamanho completo */}
       <div className="absolute right-0 top-0 h-full w-1/2 hidden md:block">
-        <img 
-          alt="Student studying" 
-          src="/lovable-uploads/343607f4-044c-4c9f-8cad-1ccc0760d766.jpg" 
-          className="h-full w-full object-cover object-center"
-        />
+        <img alt="Student studying" src="/lovable-uploads/343607f4-044c-4c9f-8cad-1ccc0760d766.jpg" className="h-full w-full object-cover object-center" />
       </div>
       
       {/* Conteúdo */}
@@ -42,12 +35,7 @@ export const Hero = () => {
       
       {/* Imagem para mobile */}
       <div className="md:hidden w-full h-64 mt-8">
-        <img 
-          alt="Student studying" 
-          src="/lovable-uploads/343607f4-044c-4c9f-8cad-1ccc0760d766.jpg" 
-          className="h-full w-full object-cover object-center"
-        />
+        <img alt="Student studying" src="/lovable-uploads/343607f4-044c-4c9f-8cad-1ccc0760d766.jpg" className="h-full w-full object-cover object-center" />
       </div>
-    </div>
-  );
+    </div>;
 };
