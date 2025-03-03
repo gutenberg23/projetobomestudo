@@ -29,6 +29,10 @@ export interface Section {
   id: string;
   title: string;
   isActive: boolean;
+  contentType?: "video" | "text" | "quiz";
+  duration?: number;
+  videoUrl?: string;
+  textContent?: string;
 }
 
 export interface Lesson {

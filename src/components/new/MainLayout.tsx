@@ -1,4 +1,3 @@
-
 "use client";
 import React from "react";
 import { Header } from "../layout/Header";
@@ -11,14 +10,13 @@ const sampleLesson = {
   title: "Aula 01 - Lei das Licitações - 14.133/2021",
   description:
     "5 Licitação. 5.1 Princípios. 5.2 Contratação direta: dispensa e inexigibilidade. 5.3 Modalidades. 5.4 Tipos. 5.5 Procedimento",
-  rating: "V",
   sections: [
-    { id: "1", title: "Contratação Direta", isActive: true },
-    { id: "2", title: "Inexigibilidade", isActive: false },
-    { id: "3", title: "Licitação Dispensável", isActive: false },
-    { id: "4", title: "Licitação Dispensada", isActive: false },
-    { id: "5", title: "Fases da Licitação", isActive: false },
-    { id: "6", title: "Modos de Disputa", isActive: false },
+    { id: "1", title: "Contratação Direta", contentType: "video" as const, videoUrl: "https://example.com/video1" },
+    { id: "2", title: "Inexigibilidade", contentType: "video" as const, videoUrl: "https://example.com/video2" },
+    { id: "3", title: "Licitação Dispensável", contentType: "video" as const, videoUrl: "https://example.com/video3" },
+    { id: "4", title: "Licitação Dispensada", contentType: "video" as const, videoUrl: "https://example.com/video4" },
+    { id: "5", title: "Fases da Licitação", contentType: "video" as const, videoUrl: "https://example.com/video5" },
+    { id: "6", title: "Modos de Disputa", contentType: "video" as const, videoUrl: "https://example.com/video6" },
   ],
 };
 

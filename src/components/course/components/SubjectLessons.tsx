@@ -17,8 +17,14 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
             id: lesson.id,
             title: lesson.title,
             description: lesson.description,
-            rating: lesson.rating,
-            sections: lesson.sections
+            sections: lesson.sections.map(section => ({
+              id: section.id,
+              title: section.title,
+              contentType: section.contentType || "video",
+              duration: section.duration,
+              videoUrl: section.videoUrl,
+              textContent: section.textContent
+            }))
           }} 
           question={lesson.question} 
         />
