@@ -1,8 +1,16 @@
 
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface TableDialogProps {
   isOpen: boolean;
@@ -13,68 +21,66 @@ interface TableDialogProps {
 const TableDialog: React.FC<TableDialogProps> = ({
   isOpen,
   setIsOpen,
-  onConfirm
+  onConfirm,
 }) => {
-  const [rows, setRows] = useState("3");
-  const [cols, setCols] = useState("3");
+  const [rows, setRows] = useState(3);
+  const [cols, setCols] = useState(3);
 
-  const handleConfirm = () => {
-    const numRows = parseInt(rows, 10);
-    const numCols = parseInt(cols, 10);
-    
-    if (!isNaN(numRows) && !isNaN(numCols) && numRows > 0 && numCols > 0) {
-      onConfirm(numRows, numCols);
-      setIsOpen(false);
-      // Reset form
-      setRows("3");
-      setCols("3");
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onConfirm(rows, cols);
+    setIsOpen(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Inserir Tabela</DialogTitle>
+          <DialogDescription>
+            Defina o número de linhas e colunas para a tabela.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label htmlFor="rows" className="text-sm font-medium text-[#272f3c]">
-              Número de Linhas
-            </label>
-            <Input
-              id="rows"
-              type="number"
-              min="1"
-              max="10"
-              placeholder="Linhas"
-              value={rows}
-              onChange={(e) => setRows(e.target.value)}
-            />
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rows" className="col-span-1">
+                Linhas
+              </Label>
+              <Input
+                id="rows"
+                type="number"
+                min={1}
+                max={20}
+                className="col-span-3"
+                value={rows}
+                onChange={(e) => setRows(parseInt(e.target.value, 10) || 2)}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="cols" className="col-span-1">
+                Colunas
+              </Label>
+              <Input
+                id="cols"
+                type="number"
+                min={1}
+                max={10}
+                className="col-span-3"
+                value={cols}
+                onChange={(e) => setCols(parseInt(e.target.value, 10) || 2)}
+                required
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="cols" className="text-sm font-medium text-[#272f3c]">
-              Número de Colunas
-            </label>
-            <Input
-              id="cols"
-              type="number"
-              min="1"
-              max="10"
-              placeholder="Colunas"
-              value={cols}
-              onChange={(e) => setCols(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleConfirm} className="bg-[#ea2be2] hover:bg-[#d01ec7] text-white">
-            Inserir
-          </Button>
-        </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">Inserir Tabela</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -1,12 +1,14 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BlogPost } from "@/components/blog/types";
+import { BlogPost, Region, StateFilter } from "@/components/blog/types";
 import { Edit, Plus, Search, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { Textarea } from "@/components/ui/textarea";
 
 // Mock de posts para a listagem
 const MOCK_POSTS: BlogPost[] = [
@@ -56,7 +58,52 @@ const CATEGORIAS = [
   "Informática",
   "Raciocínio Lógico",
   "Atualidades",
-  "Legislação"
+  "Legislação",
+  "Concursos",
+  "Dicas de Estudo",
+  "Notícias"
+];
+
+// Regiões disponíveis
+const REGIOES: Region[] = [
+  "Norte",
+  "Nordeste", 
+  "Centro-Oeste", 
+  "Sudeste", 
+  "Sul", 
+  "Federal", 
+  "Nacional"
+];
+
+// Estados disponíveis
+const ESTADOS: StateFilter[] = [
+  { id: "ac", name: "Acre", value: "AC", region: "Norte" },
+  { id: "al", name: "Alagoas", value: "AL", region: "Nordeste" },
+  { id: "ap", name: "Amapá", value: "AP", region: "Norte" },
+  { id: "am", name: "Amazonas", value: "AM", region: "Norte" },
+  { id: "ba", name: "Bahia", value: "BA", region: "Nordeste" },
+  { id: "ce", name: "Ceará", value: "CE", region: "Nordeste" },
+  { id: "df", name: "Distrito Federal", value: "DF", region: "Centro-Oeste" },
+  { id: "es", name: "Espírito Santo", value: "ES", region: "Sudeste" },
+  { id: "go", name: "Goiás", value: "GO", region: "Centro-Oeste" },
+  { id: "ma", name: "Maranhão", value: "MA", region: "Nordeste" },
+  { id: "mt", name: "Mato Grosso", value: "MT", region: "Centro-Oeste" },
+  { id: "ms", name: "Mato Grosso do Sul", value: "MS", region: "Centro-Oeste" },
+  { id: "mg", name: "Minas Gerais", value: "MG", region: "Sudeste" },
+  { id: "pa", name: "Pará", value: "PA", region: "Norte" },
+  { id: "pb", name: "Paraíba", value: "PB", region: "Nordeste" },
+  { id: "pr", name: "Paraná", value: "PR", region: "Sul" },
+  { id: "pe", name: "Pernambuco", value: "PE", region: "Nordeste" },
+  { id: "pi", name: "Piauí", value: "PI", region: "Nordeste" },
+  { id: "rj", name: "Rio de Janeiro", value: "RJ", region: "Sudeste" },
+  { id: "rn", name: "Rio Grande do Norte", value: "RN", region: "Nordeste" },
+  { id: "rs", name: "Rio Grande do Sul", value: "RS", region: "Sul" },
+  { id: "ro", name: "Rondônia", value: "RO", region: "Norte" },
+  { id: "rr", name: "Roraima", value: "RR", region: "Norte" },
+  { id: "sc", name: "Santa Catarina", value: "SC", region: "Sul" },
+  { id: "sp", name: "São Paulo", value: "SP", region: "Sudeste" },
+  { id: "se", name: "Sergipe", value: "SE", region: "Nordeste" },
+  { id: "to", name: "Tocantins", value: "TO", region: "Norte" }
 ];
 
 // Enum para controlar o modo da interface
@@ -77,12 +124,17 @@ const Posts = () => {
   const [resumo, setResumo] = useState("");
   const [conteudo, setConteudo] = useState("");
   const [autor, setAutor] = useState("");
+  const [autorAvatar, setAutorAvatar] = useState("");
   const [categoria, setCategoria] = useState(CATEGORIAS[0]);
   const [destacado, setDestacado] = useState(false);
   const [tags, setTags] = useState("");
   const [metaDescricao, setMetaDescricao] = useState("");
   const [metaKeywords, setMetaKeywords] = useState("");
   const [tempoLeitura, setTempoLeitura] = useState("");
+  const [imagemDestaque, setImagemDestaque] = useState("");
+  const [regiao, setRegiao] = useState<Region | "">("");
+  const [estado, setEstado] = useState("");
+  const [postsRelacionados, setPostsRelacionados] = useState("");
   
   // Filtragem dos posts baseado na busca
   const postsFiltrados = posts.filter(post => 
@@ -97,8 +149,17 @@ const Posts = () => {
     setResumo("");
     setConteudo("");
     setAutor("");
+    setAutorAvatar("");
     setCategoria(CATEGORIAS[0]);
     setDestacado(false);
+    setTags("");
+    setMetaDescricao("");
+    setMetaKeywords("");
+    setTempoLeitura("");
+    setImagemDestaque("");
+    setRegiao("");
+    setEstado("");
+    setPostsRelacionados("");
     setPostEditando(null);
     setModo(ModoInterface.CRIAR);
   };
@@ -109,8 +170,17 @@ const Posts = () => {
     setResumo(post.summary);
     setConteudo(post.content);
     setAutor(post.author);
+    setAutorAvatar(post.authorAvatar || "");
     setCategoria(post.category);
-    setDestacado(false);
+    setDestacado(post.featured || false);
+    setTags(post.tags ? post.tags.join(", ") : "");
+    setMetaDescricao(post.metaDescription || "");
+    setMetaKeywords(post.metaKeywords ? post.metaKeywords.join(", ") : "");
+    setTempoLeitura(post.readingTime ? post.readingTime.toString() : "");
+    setImagemDestaque(post.featuredImage || "");
+    setRegiao(post.region || "");
+    setEstado(post.state || "");
+    setPostsRelacionados(post.relatedPosts ? post.relatedPosts.join(", ") : "");
     setPostEditando(post);
     setModo(ModoInterface.EDITAR);
   };
@@ -131,21 +201,37 @@ const Posts = () => {
     const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
       Math.ceil(conteudo.split(' ').length / 200);
     
+    // Convert related posts to array
+    const relatedPostsArray = postsRelacionados.split(',')
+      .map(id => id.trim())
+      .filter(id => id.length > 0);
+    
+    // Convert meta keywords to array
+    const metaKeywordsArray = metaKeywords.split(',')
+      .map(k => k.trim())
+      .filter(k => k.length > 0);
+    
     const novoPost: BlogPost = {
       id: postEditando ? postEditando.id : `${Date.now()}`,
       title: titulo,
       summary: resumo,
       content: conteudo,
       author: autor,
+      authorAvatar: autorAvatar || undefined,
       commentCount: postEditando ? postEditando.commentCount : 0,
       likesCount: postEditando ? postEditando.likesCount : 0,
       createdAt: postEditando ? postEditando.createdAt : new Date().toISOString(),
       slug: slug,
       category: categoria,
+      region: regiao as Region || undefined,
+      state: estado || undefined,
       tags: tagsArray.length > 0 ? tagsArray : undefined,
       metaDescription: metaDescricao || resumo,
-      metaKeywords: metaKeywords.split(',').map(k => k.trim()),
-      readingTime: readingTimeNumber
+      metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
+      featuredImage: imagemDestaque || undefined,
+      readingTime: readingTimeNumber,
+      relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
+      featured: destacado
     };
 
     if (modo === ModoInterface.EDITAR && postEditando) {
@@ -166,6 +252,11 @@ const Posts = () => {
       setPosts(posts.filter(post => post.id !== id));
     }
   };
+
+  // Filtrar estados por região selecionada
+  const estadosFiltrados = regiao 
+    ? ESTADOS.filter(estado => estado.region === regiao) 
+    : ESTADOS;
 
   // Componente para listagem de posts
   const ListagemPosts = () => (
@@ -196,9 +287,11 @@ const Posts = () => {
                 <th className="px-4 py-3">Título</th>
                 <th className="px-4 py-3">Autor</th>
                 <th className="px-4 py-3">Categoria</th>
+                <th className="px-4 py-3">Região</th>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Comentários</th>
                 <th className="px-4 py-3">Curtidas</th>
+                <th className="px-4 py-3">Destaque</th>
                 <th className="px-4 py-3">Ações</th>
               </tr>
             </thead>
@@ -208,9 +301,17 @@ const Posts = () => {
                   <td className="px-4 py-3 font-medium">{post.title}</td>
                   <td className="px-4 py-3">{post.author}</td>
                   <td className="px-4 py-3">{post.category}</td>
+                  <td className="px-4 py-3">{post.region || '—'}</td>
                   <td className="px-4 py-3">{format(new Date(post.createdAt), "dd/MM/yyyy")}</td>
                   <td className="px-4 py-3">{post.commentCount}</td>
                   <td className="px-4 py-3">{post.likesCount}</td>
+                  <td className="px-4 py-3">
+                    {post.featured ? (
+                      <span className="bg-[#fce7fc] text-[#ea2be2] text-xs px-2 py-1 rounded-full">
+                        Destaque
+                      </span>
+                    ) : '—'}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex space-x-2">
                       <Button 
@@ -236,7 +337,7 @@ const Posts = () => {
               
               {postsFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-[#67748a]">
+                  <td colSpan={9} className="px-4 py-8 text-center text-[#67748a]">
                     Nenhum post encontrado.
                   </td>
                 </tr>
@@ -268,116 +369,234 @@ const Posts = () => {
           e.preventDefault();
           salvarPost();
         }}>
-          <div className="space-y-2">
-            <Label htmlFor="titulo">Título</Label>
-            <Input 
-              id="titulo" 
-              value={titulo} 
-              onChange={(e) => setTitulo(e.target.value)} 
-              placeholder="Título do post"
-              required
-            />
+          {/* Informações Básicas */}
+          <div className="p-4 border rounded-md bg-gray-50">
+            <h3 className="text-lg font-semibold text-[#272f3c] mb-4">Informações Básicas</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="titulo">Título</Label>
+                <Input 
+                  id="titulo" 
+                  value={titulo} 
+                  onChange={(e) => setTitulo(e.target.value)} 
+                  placeholder="Título do post"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="resumo">Resumo</Label>
+                <Input 
+                  id="resumo" 
+                  value={resumo} 
+                  onChange={(e) => setResumo(e.target.value)} 
+                  placeholder="Breve resumo do post"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="autor">Autor</Label>
+                <Input 
+                  id="autor" 
+                  value={autor} 
+                  onChange={(e) => setAutor(e.target.value)} 
+                  placeholder="Nome do autor"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="autorAvatar">Avatar do Autor (URL)</Label>
+                <Input 
+                  id="autorAvatar" 
+                  value={autorAvatar} 
+                  onChange={(e) => setAutorAvatar(e.target.value)} 
+                  placeholder="URL da imagem do avatar do autor"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="categoria">Categoria</Label>
+                  <Select value={categoria} onValueChange={setCategoria}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIAS.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="tempoLeitura">Tempo de leitura (minutos)</Label>
+                  <Input 
+                    id="tempoLeitura" 
+                    type="number" 
+                    value={tempoLeitura} 
+                    onChange={(e) => setTempoLeitura(e.target.value)} 
+                    placeholder="Estimativa do tempo de leitura em minutos"
+                  />
+                  <p className="text-xs text-[#67748a]">Deixe vazio para calcular automaticamente.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Conteúdo */}
+          <div className="p-4 border rounded-md bg-gray-50">
+            <h3 className="text-lg font-semibold text-[#272f3c] mb-4">Conteúdo</h3>
+            <div className="space-y-2">
+              <Label htmlFor="conteudo">Conteúdo Completo</Label>
+              <Textarea 
+                id="conteudo" 
+                value={conteudo} 
+                onChange={(e) => setConteudo(e.target.value)} 
+                placeholder="Conteúdo completo do post"
+                required
+                className="h-48"
+                richText
+              />
+            </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="autor">Autor</Label>
-            <Input 
-              id="autor" 
-              value={autor} 
-              onChange={(e) => setAutor(e.target.value)} 
-              placeholder="Nome do autor"
-              required
-            />
+          {/* Regionalização */}
+          <div className="p-4 border rounded-md bg-gray-50">
+            <h3 className="text-lg font-semibold text-[#272f3c] mb-4">Regionalização</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="regiao">Região</Label>
+                <Select value={regiao} onValueChange={value => {
+                  setRegiao(value as Region);
+                  setEstado("");
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma região" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhuma</SelectItem>
+                    {REGIOES.map(reg => (
+                      <SelectItem key={reg} value={reg}>{reg}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="estado">Estado</Label>
+                <Select 
+                  value={estado} 
+                  onValueChange={setEstado}
+                  disabled={!regiao || regiao === "Federal" || regiao === "Nacional"}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Nenhum</SelectItem>
+                    {estadosFiltrados.map(estado => (
+                      <SelectItem key={estado.id} value={estado.value}>{estado.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="categoria">Categoria</Label>
-            <Select value={categoria} onValueChange={setCategoria}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIAS.map(cat => (
-                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Metadados e SEO */}
+          <div className="p-4 border rounded-md bg-gray-50">
+            <h3 className="text-lg font-semibold text-[#272f3c] mb-4">Metadados e SEO</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+                <Input 
+                  id="tags" 
+                  value={tags} 
+                  onChange={(e) => setTags(e.target.value)} 
+                  placeholder="Ex: gramática, redação, concursos"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="metaDescricao">Meta Descrição (para SEO)</Label>
+                <Input 
+                  id="metaDescricao" 
+                  value={metaDescricao} 
+                  onChange={(e) => setMetaDescricao(e.target.value)} 
+                  placeholder="Descrição para motores de busca (se vazio, será usado o resumo)"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="metaKeywords">Palavras-chave (separadas por vírgula)</Label>
+                <Input 
+                  id="metaKeywords" 
+                  value={metaKeywords} 
+                  onChange={(e) => setMetaKeywords(e.target.value)} 
+                  placeholder="Ex: concursos, português, estudos"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="postsRelacionados">IDs dos Posts Relacionados (separados por vírgula)</Label>
+                <Input 
+                  id="postsRelacionados" 
+                  value={postsRelacionados} 
+                  onChange={(e) => setPostsRelacionados(e.target.value)} 
+                  placeholder="Ex: 1, 5, 12"
+                />
+              </div>
+            </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
-            <Input 
-              id="tags" 
-              value={tags} 
-              onChange={(e) => setTags(e.target.value)} 
-              placeholder="Ex: gramática, redação, concursos"
-            />
+          {/* Mídia */}
+          <div className="p-4 border rounded-md bg-gray-50">
+            <h3 className="text-lg font-semibold text-[#272f3c] mb-4">Mídia</h3>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="imagemDestaque">URL da Imagem Destaque</Label>
+                <Input 
+                  id="imagemDestaque" 
+                  value={imagemDestaque} 
+                  onChange={(e) => setImagemDestaque(e.target.value)} 
+                  placeholder="URL da imagem destaque do post"
+                />
+              </div>
+              
+              {imagemDestaque && (
+                <div className="border rounded-md overflow-hidden h-40 w-full md:w-1/2 bg-gray-100">
+                  <img 
+                    src={imagemDestaque} 
+                    alt="Imagem Destaque" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/placeholder.svg";
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="resumo">Resumo</Label>
-            <Input 
-              id="resumo" 
-              value={resumo} 
-              onChange={(e) => setResumo(e.target.value)} 
-              placeholder="Breve resumo do post"
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="metaDescricao">Meta Descrição (para SEO)</Label>
-            <Input 
-              id="metaDescricao" 
-              value={metaDescricao} 
-              onChange={(e) => setMetaDescricao(e.target.value)} 
-              placeholder="Descrição para motores de busca (se vazio, será usado o resumo)"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="metaKeywords">Palavras-chave (separadas por vírgula)</Label>
-            <Input 
-              id="metaKeywords" 
-              value={metaKeywords} 
-              onChange={(e) => setMetaKeywords(e.target.value)} 
-              placeholder="Ex: concursos, português, estudos"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="tempoLeitura">Tempo de leitura (minutos)</Label>
-            <Input 
-              id="tempoLeitura" 
-              type="number" 
-              value={tempoLeitura} 
-              onChange={(e) => setTempoLeitura(e.target.value)} 
-              placeholder="Estimativa do tempo de leitura em minutos"
-            />
-            <p className="text-xs text-[#67748a]">Deixe vazio para calcular automaticamente.</p>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="conteudo">Conteúdo</Label>
-            <textarea 
-              id="conteudo" 
-              value={conteudo} 
-              onChange={(e) => setConteudo(e.target.value)} 
-              placeholder="Conteúdo completo do post"
-              required
-              className="flex h-48 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="destacado" 
-              checked={destacado} 
-              onCheckedChange={(checked) => setDestacado(!!checked)} 
-            />
-            <Label htmlFor="destacado" className="font-normal">
-              Destacar post na página inicial
-            </Label>
+          {/* Opções de Destaque */}
+          <div className="p-4 border rounded-md bg-gray-50">
+            <h3 className="text-lg font-semibold text-[#272f3c] mb-4">Opções de Destaque</h3>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="destacado" 
+                checked={destacado} 
+                onCheckedChange={(checked) => setDestacado(!!checked)} 
+              />
+              <Label htmlFor="destacado" className="font-normal">
+                Destacar post na página inicial
+              </Label>
+            </div>
+            <p className="text-xs text-[#67748a] mt-2">
+              Posts destacados aparecem com destaque visual na página principal do blog e no topo da listagem.
+            </p>
           </div>
           
           <div className="pt-4 flex justify-end space-x-2">
@@ -413,3 +632,4 @@ const Posts = () => {
 };
 
 export default Posts;
+

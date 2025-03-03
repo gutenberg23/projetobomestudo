@@ -1,8 +1,16 @@
 
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface LinkDialogProps {
   isOpen: boolean;
@@ -17,59 +25,68 @@ const LinkDialog: React.FC<LinkDialogProps> = ({
   setIsOpen,
   onConfirm,
   initialUrl = "",
-  initialText = ""
+  initialText = "",
 }) => {
   const [url, setUrl] = useState(initialUrl);
   const [text, setText] = useState(initialText);
 
-  const handleConfirm = () => {
-    if (url.trim()) {
-      onConfirm(url, text);
-      setIsOpen(false);
-      // Reset form
-      setUrl("");
-      setText("");
+  useEffect(() => {
+    if (isOpen) {
+      setUrl(initialUrl);
+      setText(initialText);
     }
+  }, [isOpen, initialUrl, initialText]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onConfirm(url, text);
+    setIsOpen(false);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Link</DialogTitle>
+          <DialogTitle>Inserir Link</DialogTitle>
+          <DialogDescription>
+            Adicione um link ao seu conteúdo com a URL e o texto para exibição.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <label htmlFor="text" className="text-sm font-medium text-[#272f3c]">
-              Texto do Link
-            </label>
-            <Input
-              id="text"
-              placeholder="Texto para exibir"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="url" className="col-span-1">
+                URL
+              </Label>
+              <Input
+                id="url"
+                placeholder="https://exemplo.com.br"
+                className="col-span-3"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="text" className="col-span-1">
+                Texto
+              </Label>
+              <Input
+                id="text"
+                placeholder="Texto do link"
+                className="col-span-3"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <label htmlFor="url" className="text-sm font-medium text-[#272f3c]">
-              URL
-            </label>
-            <Input
-              id="url"
-              placeholder="https://exemplo.com"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleConfirm} className="bg-[#ea2be2] hover:bg-[#d01ec7] text-white">
-            Confirmar
-          </Button>
-        </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit">Inserir Link</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
