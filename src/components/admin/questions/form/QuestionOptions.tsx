@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { QuestionOption } from "../types";
-import { Radio } from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface QuestionOptionsProps {
   questionType: string;
@@ -68,19 +68,21 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
     return (
       <div className="space-y-4">
         <Label>Opção Correta</Label>
-        <div className="space-y-2">
+        <RadioGroup
+          value={options.find(o => o.isCorrect)?.id || ""}
+          onValueChange={handleCorrectOptionChange}
+          className="space-y-2"
+        >
           {options.map((option) => (
             <div key={option.id} className="flex items-center gap-2">
-              <Radio
+              <RadioGroupItem
                 id={option.id}
                 value={option.id}
-                checked={option.isCorrect}
-                onClick={() => handleCorrectOptionChange(option.id)}
               />
               <Label htmlFor={option.id}>{option.text}</Label>
             </div>
           ))}
-        </div>
+        </RadioGroup>
       </div>
     );
   }
@@ -88,15 +90,17 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
   return (
     <div className="space-y-4">
       <Label>Alternativas</Label>
-      <div className="space-y-2">
+      <RadioGroup
+        value={options.find(o => o.isCorrect)?.id || ""}
+        onValueChange={handleCorrectOptionChange}
+        className="space-y-2"
+      >
         {options.map((option, index) => (
           <div key={option.id} className="flex items-start gap-2">
             <div className="pt-2">
-              <Radio
+              <RadioGroupItem
                 id={option.id}
                 value={option.id}
-                checked={option.isCorrect}
-                onClick={() => handleCorrectOptionChange(option.id)}
               />
             </div>
             <div className="flex-1">
@@ -112,7 +116,7 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
             </div>
           </div>
         ))}
-      </div>
+      </RadioGroup>
     </div>
   );
 };
