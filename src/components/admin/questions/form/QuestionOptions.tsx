@@ -74,7 +74,7 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
               <Radio
                 id={option.id}
                 checked={option.isCorrect}
-                onCheckedChange={() => handleCorrectOptionChange(option.id)}
+                onClick={() => handleCorrectOptionChange(option.id)}
               />
               <Label htmlFor={option.id}>{option.text}</Label>
             </div>
@@ -94,7 +94,7 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
               <Radio
                 id={option.id}
                 checked={option.isCorrect}
-                onCheckedChange={() => handleCorrectOptionChange(option.id)}
+                onClick={() => handleCorrectOptionChange(option.id)}
               />
             </div>
             <div className="flex-1">
