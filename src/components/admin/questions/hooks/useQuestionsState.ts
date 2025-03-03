@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { QuestionItemType, QuestionOption } from "../types";
 
@@ -14,6 +15,7 @@ export const useQuestionsState = () => {
   const [questionType, setQuestionType] = useState<string>("");
   const [questionText, setQuestionText] = useState<string>("");
   const [teacherExplanation, setTeacherExplanation] = useState<string>("");
+  const [expandableContent, setExpandableContent] = useState<string>("");
   const [options, setOptions] = useState<QuestionOption[]>([]);
   
   // Estado para busca e edição
@@ -85,6 +87,7 @@ export const useQuestionsState = () => {
     questionType, setQuestionType,
     questionText, setQuestionText,
     teacherExplanation, setTeacherExplanation,
+    expandableContent, setExpandableContent,
     options, setOptions,
     
     // Search and edit state
