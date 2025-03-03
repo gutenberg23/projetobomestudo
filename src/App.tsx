@@ -18,7 +18,7 @@ import NotFound from "./pages/NotFound";
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
-import Posts from "./pages/admin/Posts";
+import Posts from "./pages/admin/posts";
 import Anuncios from "./pages/admin/Anuncios";
 import Usuarios from "./pages/admin/Usuarios";
 import Questoes from "./pages/admin/Questoes";
