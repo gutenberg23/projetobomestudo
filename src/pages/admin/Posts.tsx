@@ -1,11 +1,10 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BlogPost, Region, StateFilter } from "@/components/blog/types";
+import { BlogPost, Region, RegionOrEmpty, StateFilter } from "@/components/blog/types";
 import { Edit, Plus, Search, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { Textarea } from "@/components/ui/textarea";
@@ -132,7 +131,7 @@ const Posts = () => {
   const [metaKeywords, setMetaKeywords] = useState("");
   const [tempoLeitura, setTempoLeitura] = useState("");
   const [imagemDestaque, setImagemDestaque] = useState("");
-  const [regiao, setRegiao] = useState<Region | "">("");
+  const [regiao, setRegiao] = useState<RegionOrEmpty>("");
   const [estado, setEstado] = useState("");
   const [postsRelacionados, setPostsRelacionados] = useState("");
   
@@ -632,4 +631,3 @@ const Posts = () => {
 };
 
 export default Posts;
-

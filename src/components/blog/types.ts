@@ -11,7 +11,7 @@ export interface BlogPost {
   createdAt: string;
   slug: string;
   category: string;
-  region?: string;
+  region?: Region;
   state?: string;
   tags?: string[];
   metaDescription?: string;
@@ -23,6 +23,8 @@ export interface BlogPost {
 }
 
 export type Region = "Norte" | "Nordeste" | "Centro-Oeste" | "Sudeste" | "Sul" | "Federal" | "Nacional";
+
+export type RegionOrEmpty = Region | "";
 
 export interface RegionFilter {
   id: string;
