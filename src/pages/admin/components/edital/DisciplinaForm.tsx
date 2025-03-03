@@ -18,9 +18,11 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
   const [disciplinaTitulo, setDisciplinaTitulo] = useState("");
   const [disciplinaDescricao, setDisciplinaDescricao] = useState("");
   const [topicos, setTopicos] = useState<string[]>([""]);
+  const [importancias, setImportancias] = useState<number[]>([50]); // Valor padrão 50
 
   const adicionarTopico = () => {
     setTopicos([...topicos, ""]);
+    setImportancias([...importancias, 50]); // Adiciona valor padrão de importância
   };
   
   const atualizarTopico = (index: number, valor: string) => {
@@ -29,11 +31,31 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
     setTopicos(novosTopicos);
   };
   
+  const atualizarImportancia = (index: number, valor: string) => {
+    // Converter valor para número e garantir que esteja entre 1 e 100
+    let numeroValor = parseInt(valor, 10);
+    
+    if (isNaN(numeroValor)) {
+      numeroValor = 1;
+    } else if (numeroValor < 1) {
+      numeroValor = 1;
+    } else if (numeroValor > 100) {
+      numeroValor = 100;
+    }
+    
+    const novasImportancias = [...importancias];
+    novasImportancias[index] = numeroValor;
+    setImportancias(novasImportancias);
+  };
+  
   const removerTopico = (index: number) => {
     if (topicos.length > 1) {
       const novosTopicos = [...topicos];
+      const novasImportancias = [...importancias];
       novosTopicos.splice(index, 1);
+      novasImportancias.splice(index, 1);
       setTopicos(novosTopicos);
+      setImportancias(novasImportancias);
     }
   };
   
@@ -42,6 +64,7 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
     setDisciplinaTitulo("");
     setDisciplinaDescricao("");
     setTopicos([""]);
+    setImportancias([50]); // Resetar para o valor padrão
   };
 
   const adicionarDisciplina = () => {
@@ -54,14 +77,23 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
       return;
     }
     
-    // Filtrar tópicos vazios
-    const topicosFiltrados = topicos.filter(t => t.trim() !== "");
+    // Filtrar tópicos vazios e suas respectivas importâncias
+    const topicosFiltrados: string[] = [];
+    const importanciasFiltradas: number[] = [];
+    
+    topicos.forEach((topico, index) => {
+      if (topico.trim() !== "") {
+        topicosFiltrados.push(topico);
+        importanciasFiltradas.push(importancias[index]);
+      }
+    });
     
     const novaDisciplina: Disciplina = {
       id: disciplinaId,
       titulo: disciplinaTitulo,
       descricao: disciplinaDescricao,
       topicos: topicosFiltrados,
+      importancia: importanciasFiltradas,
       selecionada: false
     };
     
@@ -111,13 +143,25 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
         </div>
         
         <div>
-          <Label>Tópicos</Label>
+          <div className="flex justify-between">
+            <Label>Tópicos</Label>
+            <Label>Importância (1-100)</Label>
+          </div>
           {topicos.map((topico, index) => (
             <div key={index} className="flex items-center mt-2 gap-2">
               <Input 
                 value={topico} 
                 onChange={(e) => atualizarTopico(index, e.target.value)}
                 placeholder={`Tópico ${index + 1}`}
+                className="flex-1"
+              />
+              <Input 
+                type="number" 
+                min="1" 
+                max="100" 
+                value={importancias[index]} 
+                onChange={(e) => atualizarImportancia(index, e.target.value)}
+                className="w-24"
               />
               <Button 
                 type="button" 

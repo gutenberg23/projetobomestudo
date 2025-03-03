@@ -4,6 +4,7 @@ export interface Disciplina {
   titulo: string;
   descricao: string;
   topicos: string[];
+  importancia: number[]; // Array para armazenar o valor de importância para cada tópico
   selecionada: boolean;
 }
 
