@@ -2,7 +2,6 @@
 import React, { useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { QuestionOption } from "../types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -19,7 +18,7 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
 }) => {
   // Inicializa as opções com base no tipo de questão
   useEffect(() => {
-    if (questionType === "Múltipla Escolha" && options.length === 0) {
+    if (questionType === "Múltipla Escolha" && (options.length === 0 || options.length < 5)) {
       // Cria 5 opções vazias para múltipla escolha
       const newOptions = Array(5)
         .fill(null)
