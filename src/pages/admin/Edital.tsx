@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Plus, Edit, Trash, Power } from "lucide-react";
+import { Plus, Trash, Power } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Tipos para os dados das disciplinas e editais
@@ -122,6 +122,16 @@ const Edital = () => {
     toast({
       title: "Sucesso",
       description: "Disciplina adicionada com sucesso!",
+    });
+  };
+  
+  // Função para excluir disciplina
+  const excluirDisciplina = (id: string) => {
+    setDisciplinas(disciplinas.filter(d => d.id !== id));
+    
+    toast({
+      title: "Sucesso",
+      description: "Disciplina excluída com sucesso!",
     });
   };
   
@@ -312,6 +322,7 @@ const Edital = () => {
                       <TableHead>Disciplina</TableHead>
                       <TableHead>Descrição</TableHead>
                       <TableHead>Tópicos</TableHead>
+                      <TableHead>Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -340,11 +351,22 @@ const Edital = () => {
                               <span className="text-gray-400">Nenhum tópico</span>
                             )}
                           </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => excluirDisciplina(disciplina.id)}
+                              title="Excluir"
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4 text-[#67748a]">
+                        <TableCell colSpan={6} className="text-center py-4 text-[#67748a]">
                           Nenhuma disciplina cadastrada.
                         </TableCell>
                       </TableRow>
@@ -452,14 +474,6 @@ const Edital = () => {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="icon"
-                                onClick={() => {}} // Função para editar edital
-                                title="Editar"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
                               <Button 
                                 variant="outline" 
                                 size="icon"
