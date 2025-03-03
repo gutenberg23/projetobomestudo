@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -476,7 +477,7 @@ const Posts = () => {
                     <SelectValue placeholder="Selecione uma região" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhuma</SelectItem>
+                    <SelectItem value="_none">Nenhuma</SelectItem>
                     {REGIOES.map(reg => (
                       <SelectItem key={reg} value={reg}>{reg}</SelectItem>
                     ))}
@@ -495,7 +496,7 @@ const Posts = () => {
                     <SelectValue placeholder="Selecione um estado" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Nenhum</SelectItem>
+                    <SelectItem value="_none">Nenhum</SelectItem>
                     {estadosFiltrados.map(estado => (
                       <SelectItem key={estado.id} value={estado.value}>{estado.name}</SelectItem>
                     ))}
