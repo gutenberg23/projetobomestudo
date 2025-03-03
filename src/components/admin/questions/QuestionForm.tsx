@@ -1,3 +1,4 @@
+
 import React from "react";
 import QuestionIdField from "./form/QuestionIdField";
 import QuestionMetadataFields from "./form/QuestionMetadataFields";
@@ -28,6 +29,8 @@ interface QuestionFormProps {
   setQuestionText: (value: string) => void;
   teacherExplanation: string;
   setTeacherExplanation: (value: string) => void;
+  expandableContent: string;
+  setExpandableContent: (value: string) => void;
   options: QuestionOption[];
   setOptions: (options: QuestionOption[]) => void;
   institutions: string[];
@@ -72,6 +75,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   setQuestionText,
   teacherExplanation,
   setTeacherExplanation,
+  expandableContent,
+  setExpandableContent,
   options,
   setOptions,
   institutions,
@@ -106,12 +111,34 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         <QuestionMetadataFields institution={institution} setInstitution={setInstitution} institutions={institutions} setInstitutions={setInstitutions} organization={organization} setOrganization={setOrganization} organizations={organizations} setOrganizations={setOrganizations} year={year} setYear={setYear} years={years} setYears={setYears} role={role} setRole={setRole} roles={roles} setRoles={setRoles} discipline={discipline} setDiscipline={setDiscipline} disciplines={disciplines} setDisciplines={setDisciplines} level={level} setLevel={setLevel} levels={levels} setLevels={setLevels} difficulty={difficulty} setDifficulty={setDifficulty} difficulties={difficulties} setDifficulties={setDifficulties} questionType={questionType} setQuestionType={setQuestionType} questionTypes={questionTypes} setQuestionTypes={setQuestionTypes} />
       </FormSection>
 
+      {/* Expandable Content */}
+      <div>
+        <label htmlFor="expandable-content" className="block text-sm font-medium text-[#272f3c] mb-1">
+          Texto/Imagem Expansível
+        </label>
+        <QuestionTextFields 
+          questionText={null} 
+          setQuestionText={null} 
+          teacherExplanation={null} 
+          setTeacherExplanation={null}
+          expandableContent={expandableContent}
+          setExpandableContent={setExpandableContent}
+        />
+      </div>
+
       {/* Question Text */}
-      <div className="Acima de 'Texto da quest\xE3o', adicione mais um rich text input editor. O t\xEDtulo ser\xE1 'Conte\xFAdo expans\xEDvel'">
+      <div>
         <label htmlFor="question-text" className="block text-sm font-medium text-[#272f3c] mb-1">
           Texto da Questão
         </label>
-        <QuestionTextFields questionText={questionText} setQuestionText={setQuestionText} teacherExplanation={null} setTeacherExplanation={null} />
+        <QuestionTextFields 
+          questionText={questionText} 
+          setQuestionText={setQuestionText} 
+          teacherExplanation={null} 
+          setTeacherExplanation={null}
+          expandableContent={null}
+          setExpandableContent={null}
+        />
       </div>
 
       {/* Question Options */}
@@ -122,7 +149,14 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         <label htmlFor="teacher-explanation" className="block text-sm font-medium text-[#272f3c] mb-1">
           Explicação do Professor
         </label>
-        <QuestionTextFields questionText={null} setQuestionText={null} teacherExplanation={teacherExplanation} setTeacherExplanation={setTeacherExplanation} />
+        <QuestionTextFields 
+          questionText={null} 
+          setQuestionText={null} 
+          teacherExplanation={teacherExplanation} 
+          setTeacherExplanation={setTeacherExplanation}
+          expandableContent={null}
+          setExpandableContent={null}
+        />
       </div>
 
       {/* Submit Button */}
