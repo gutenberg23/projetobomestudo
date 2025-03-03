@@ -7,7 +7,8 @@ import { QuestionHeader } from "./question/QuestionHeader";
 import { QuestionOption } from "./question/QuestionOption";
 import { QuestionComment } from "./question/QuestionComment";
 import { QuestionFooter } from "./question/QuestionFooter";
-import { Send } from "lucide-react";
+import { Send, ChevronDown, ChevronUp } from "lucide-react";
+
 interface QuestionCardProps {
   question: Question;
   disabledOptions: string[];
@@ -24,29 +25,44 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [likedComments, setLikedComments] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [comment, setComment] = useState("");
+  const [showExpandedContent, setShowExpandedContent] = useState(false);
+  
+  // Verificar se há conteúdo adicional para mostrar (imagens, textos longos, etc.)
+  const hasExpandableContent = question.additionalContent || question.images?.length > 0;
+  
   const toggleComments = () => {
     setShowComments(!showComments);
   };
+  
   const toggleAnswer = () => {
     setShowAnswer(!showAnswer);
   };
+  
   const toggleOfficialAnswer = () => {
     setShowOfficialAnswer(!showOfficialAnswer);
   };
+  
+  const toggleExpandedContent = () => {
+    setShowExpandedContent(!showExpandedContent);
+  };
+  
   const toggleLike = (commentId: string) => {
     setLikedComments(prev => prev.includes(commentId) ? prev.filter(id => id !== commentId) : [...prev, commentId]);
   };
+  
   const handleOptionClick = (optionId: string) => {
     if (!disabledOptions.includes(optionId)) {
       setSelectedOption(optionId);
     }
   };
+  
   const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
     if (selectedOption === optionId) {
       setSelectedOption(null);
     }
     onToggleDisabled(optionId, event);
   };
+  
   const handleSubmitComment = () => {
     if (comment.trim() !== "") {
       // Em uma implementação real, aqui seria o código para enviar o comentário ao backend
@@ -54,6 +70,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       setComment("");
     }
   };
+  
   return <article className="w-full rounded-xl border border-solid border-gray-100 mb-5 bg-white">
       <header className="overflow-hidden rounded-t-xl rounded-b-none border-b border-gray-100">
         <QuestionHeader year={question.year} institution={question.institution} organization={question.organization} role={question.role} id={question.id} />
@@ -61,9 +78,48 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       <div className="flex gap-2.5 items-start px-3 md:px-5 py-2.5 w-full text-base text-slate-800">
         <div className="flex flex-1 shrink gap-2.5 items-start px-2.5 py-5 w-full rounded-md basis-0 min-w-60 ">
-          <p className="flex-1 shrink gap-2.5 w-full basis-0 min-w-60 text-left">
-            {question.content}
-          </p>
+          {hasExpandableContent && (
+            <button 
+              onClick={toggleExpandedContent} 
+              className="flex items-center justify-center p-1 text-[#67748a] hover:text-[#ea2be2] transition-colors focus:outline-none"
+              aria-label={showExpandedContent ? "Recolher conteúdo adicional" : "Expandir conteúdo adicional"}
+            >
+              {showExpandedContent ? (
+                <ChevronUp className="h-5 w-5" />
+              ) : (
+                <ChevronDown className="h-5 w-5" />
+              )}
+            </button>
+          )}
+          
+          <div className="flex-1">
+            {hasExpandableContent && showExpandedContent && (
+              <div className="mb-4 border-b border-gray-100 pb-4">
+                {question.images && question.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {question.images.map((image, index) => (
+                      <img 
+                        key={index} 
+                        src={image} 
+                        alt={`Imagem ${index + 1} da questão ${question.id}`} 
+                        className="max-w-full h-auto rounded-md"
+                      />
+                    ))}
+                  </div>
+                )}
+                
+                {question.additionalContent && (
+                  <div className="text-[#67748a]">
+                    {question.additionalContent}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <p className="text-left">
+              {question.content}
+            </p>
+          </div>
         </div>
       </div>
 
