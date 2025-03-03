@@ -7,6 +7,7 @@ export interface Disciplina {
   topicosIds?: string[];
   questoesIds?: string[];
   selecionada?: boolean;
+  informacoesCurso?: string;
 }
 
 export interface DisciplinasFilterProps {
@@ -30,6 +31,8 @@ export interface DisciplinasPageProps {
   setTituloNovaDisciplina: (titulo: string) => void;
   descricaoNovaDisciplina: string;
   setDescricaoNovaDisciplina: (descricao: string) => void;
+  informacoesCurso: string;
+  setInformacoesCurso: (informacoes: string) => void;
   handleAdicionarDisciplina: () => void;
   todasSelecionadas: boolean;
   disciplinas: Disciplina[];

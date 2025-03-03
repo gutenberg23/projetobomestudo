@@ -17,6 +17,7 @@ const Disciplinas = () => {
   // Estados para a adição de disciplina
   const [tituloNovaDisciplina, setTituloNovaDisciplina] = useState("");
   const [descricaoNovaDisciplina, setDescricaoNovaDisciplina] = useState("");
+  const [informacoesCurso, setInformacoesCurso] = useState("");
 
   // Estados para modais de edição/exclusão
   const [isOpenEdit, setIsOpenEdit] = useState(false);
@@ -117,12 +118,14 @@ const Disciplinas = () => {
       console.log("Adicionando disciplina:", {
         titulo: tituloNovaDisciplina,
         descricao: descricaoNovaDisciplina,
+        informacoesCurso: informacoesCurso,
         aulasIds: aulasIds
       });
       
       // Resetar campos após adicionar
       setTituloNovaDisciplina("");
       setDescricaoNovaDisciplina("");
+      setInformacoesCurso("");
       
       // Desmarcar todas as disciplinas após adicionar
       setDisciplinas(disciplinas.map(disciplina => ({...disciplina, selecionada: false})));
@@ -158,6 +161,8 @@ const Disciplinas = () => {
         setTituloNovaDisciplina={setTituloNovaDisciplina}
         descricaoNovaDisciplina={descricaoNovaDisciplina}
         setDescricaoNovaDisciplina={setDescricaoNovaDisciplina}
+        informacoesCurso={informacoesCurso}
+        setInformacoesCurso={setInformacoesCurso}
         handleAdicionarDisciplina={handleAdicionarDisciplina}
         todasSelecionadas={todasSelecionadas}
         disciplinas={disciplinas}

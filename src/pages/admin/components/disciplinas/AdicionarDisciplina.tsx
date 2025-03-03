@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { DisciplinasPageProps } from "./DisciplinasTypes";
 
 export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
@@ -10,6 +11,8 @@ export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
   setTituloNovaDisciplina,
   descricaoNovaDisciplina,
   setDescricaoNovaDisciplina,
+  informacoesCurso,
+  setInformacoesCurso,
   handleAdicionarDisciplina,
   todasSelecionadas,
   disciplinas
@@ -39,6 +42,16 @@ export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
                 placeholder="Digite a descrição"
                 value={descricaoNovaDisciplina}
                 onChange={(e) => setDescricaoNovaDisciplina(e.target.value)}
+                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+              />
+            </div>
+            <div className="col-span-2 mt-2">
+              <Label htmlFor="informacoes-curso" className="mb-1 block">Informações do curso</Label>
+              <Textarea
+                id="informacoes-curso"
+                placeholder="Digite as informações do curso"
+                value={informacoesCurso}
+                onChange={(e) => setInformacoesCurso(e.target.value)}
                 className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
               />
             </div>
