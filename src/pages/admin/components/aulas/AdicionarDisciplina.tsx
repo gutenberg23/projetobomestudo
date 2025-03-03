@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { AulasPageProps } from "./AulasTypes";
 
 export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
@@ -21,7 +22,7 @@ export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
     <div className="flex justify-end mt-4 items-center gap-3">
       {algumaSelecionada && (
         <div className="flex-1 max-w-md">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
               <Label htmlFor="titulo-disciplina" className="mb-1 block">Título</Label>
               <Input
@@ -42,6 +43,14 @@ export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
                 className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
               />
             </div>
+          </div>
+          <div>
+            <Label htmlFor="info-curso" className="mb-1 block">Informações do Curso</Label>
+            <Textarea
+              id="info-curso"
+              placeholder="Digite as informações do curso"
+              className="border-[#ea2be2] focus-visible:ring-[#ea2be2] min-h-[100px]"
+            />
           </div>
         </div>
       )}

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   AulasFilter, 
@@ -17,6 +16,7 @@ const Aulas = () => {
   // Estados para a adição de disciplina
   const [tituloNovaDisciplina, setTituloNovaDisciplina] = useState("");
   const [descricaoNovaDisciplina, setDescricaoNovaDisciplina] = useState("");
+  const [infoCurso, setInfoCurso] = useState("");
 
   // Estados para modais de edição/exclusão
   const [isOpenEdit, setIsOpenEdit] = useState(false);
@@ -114,12 +114,14 @@ const Aulas = () => {
       console.log("Adicionando disciplina:", {
         titulo: tituloNovaDisciplina,
         descricao: descricaoNovaDisciplina,
-        topicosIds: topicosIds
+        topicosIds: topicosIds,
+        infoCurso: infoCurso
       });
       
       // Resetar campos após adicionar
       setTituloNovaDisciplina("");
       setDescricaoNovaDisciplina("");
+      setInfoCurso("");
       
       // Desmarcar todas as aulas após adicionar
       setAulas(aulas.map(aula => ({...aula, selecionada: false})));
@@ -158,6 +160,8 @@ const Aulas = () => {
         handleAdicionarDisciplina={handleAdicionarDisciplina}
         todasSelecionadas={todasSelecionadas}
         aulas={aulas}
+        infoCurso={infoCurso}
+        setInfoCurso={setInfoCurso}
       />
       
       {/* Modais de edição e exclusão */}
