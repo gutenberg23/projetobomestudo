@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useClipboard } from "./form/useClipboard";
@@ -101,7 +100,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 }) => {
   const { copyToClipboard } = useClipboard();
 
-  // Estados para os selects
   const institutionState = useSelectFieldState(institution, setInstitution, institutions, setInstitutions, "instituição");
   const organizationState = useSelectFieldState(organization, setOrganization, organizations, setOrganizations, "instituição");
   const yearState = useSelectFieldState(year, setYear, years, setYears, "ano");
@@ -119,7 +117,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Instituição */}
         <div>
           <SelectField
             id="institution"
@@ -143,7 +140,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           />
         </div>
 
-        {/* Organização */}
         <div>
           <SelectField
             id="organization"
@@ -167,7 +163,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           />
         </div>
 
-        {/* Ano */}
         <div>
           <SelectField
             id="year"
@@ -193,7 +188,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Cargo */}
         <div>
           <SelectField
             id="role"
@@ -217,7 +211,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           />
         </div>
 
-        {/* Disciplina */}
         <div>
           <SelectField
             id="discipline"
@@ -241,7 +234,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           />
         </div>
 
-        {/* Nível */}
         <div>
           <SelectField
             id="level"
@@ -267,7 +259,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Dificuldade */}
         <div>
           <SelectField
             id="difficulty"
@@ -291,7 +282,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           />
         </div>
 
-        {/* Tipo de Questão */}
         <div>
           <SelectField
             id="question-type"
@@ -316,15 +306,18 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         </div>
       </div>
 
-      {/* Campos de texto */}
-      <QuestionTextFields
-        questionText={questionText}
-        setQuestionText={setQuestionText}
-        teacherExplanation={teacherExplanation}
-        setTeacherExplanation={setTeacherExplanation}
-      />
+      <div>
+        <label htmlFor="question-text" className="block text-sm font-medium text-[#272f3c] mb-1">
+          Texto da Questão
+        </label>
+        <QuestionTextFields
+          questionText={questionText}
+          setQuestionText={setQuestionText}
+          teacherExplanation={null}
+          setTeacherExplanation={null}
+        />
+      </div>
 
-      {/* Alternativas da questão baseadas no tipo de questão */}
       {questionType && (
         <QuestionOptions
           questionType={questionType}
@@ -332,6 +325,18 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           setOptions={setOptions}
         />
       )}
+
+      <div>
+        <label htmlFor="teacher-explanation" className="block text-sm font-medium text-[#272f3c] mb-1">
+          Explicação do Professor
+        </label>
+        <QuestionTextFields
+          questionText={null}
+          setQuestionText={null}
+          teacherExplanation={teacherExplanation}
+          setTeacherExplanation={setTeacherExplanation}
+        />
+      </div>
 
       <div>
         <Button onClick={onSubmit} className="bg-[#ea2be2] hover:bg-[#d01ec7] text-white">
