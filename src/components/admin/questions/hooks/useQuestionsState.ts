@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { QuestionItemType } from "../types";
+import { QuestionItemType, QuestionOption } from "../types";
 import { toast } from "sonner";
 
 export const useQuestionsState = () => {
@@ -16,6 +16,7 @@ export const useQuestionsState = () => {
   const [questionType, setQuestionType] = useState<string>("");
   const [questionText, setQuestionText] = useState<string>("");
   const [teacherExplanation, setTeacherExplanation] = useState<string>("");
+  const [options, setOptions] = useState<QuestionOption[]>([]);
   
   // Estado para busca e edição
   const [searchId, setSearchId] = useState<string>("");
@@ -43,9 +44,16 @@ export const useQuestionsState = () => {
   const [levels, setLevels] = useState<string[]>(["Básico", "Intermediário", "Avançado"]);
   const [difficulties, setDifficulties] = useState<string[]>(["Fácil", "Médio", "Difícil"]);
   const [disciplines, setDisciplines] = useState<string[]>(["Português", "Matemática", "Direito Constitucional", "Informática"]);
-  const [questionTypes, setQuestionTypes] = useState<string[]>(["Múltipla Escolha", "Verdadeiro/Falso", "Discursiva"]);
+  const [questionTypes, setQuestionTypes] = useState<string[]>(["Múltipla Escolha", "Certo ou Errado"]);
   const [years, setYears] = useState<string[]>(["2024", "2023", "2022", "2021", "2020", "2019", "2018"]);
   const [organizations, setOrganizations] = useState<string[]>(["Tribunal de Justiça", "Ministério Público", "Polícia Federal", "Receita Federal"]);
+  
+  // Limpar as opções quando o tipo de questão mudar
+  useEffect(() => {
+    if (!questionType) {
+      setOptions([]);
+    }
+  }, [questionType]);
   
   // Gerar ID automático para a questão
   useEffect(() => {
@@ -79,6 +87,7 @@ export const useQuestionsState = () => {
     questionType, setQuestionType,
     questionText, setQuestionText,
     teacherExplanation, setTeacherExplanation,
+    options, setOptions,
     
     // Search and edit state
     searchId, setSearchId,

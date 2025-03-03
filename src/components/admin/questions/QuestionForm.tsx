@@ -6,26 +6,9 @@ import { useSelectFieldState } from "./form/useSelectFieldState";
 import QuestionIdField from "./form/QuestionIdField";
 import SelectField from "./form/SelectField";
 import QuestionTextFields from "./form/QuestionTextFields";
+import QuestionOptions from "./form/QuestionOptions";
 import AddValueDialog from "./form/AddValueDialog";
-
-interface QuestionItemType {
-  id: string;
-  year: string;
-  institution: string;
-  organization: string;
-  role: string;
-  discipline: string;
-  level: string;
-  difficulty: string;
-  questionType: string;
-  content: string;
-  teacherExplanation: string;
-  options: Array<{
-    id: string;
-    text: string;
-    isCorrect: boolean;
-  }>;
-}
+import { QuestionOption } from "./types";
 
 interface QuestionFormProps {
   questionId: string;
@@ -49,6 +32,8 @@ interface QuestionFormProps {
   setQuestionText: (value: string) => void;
   teacherExplanation: string;
   setTeacherExplanation: (value: string) => void;
+  options: QuestionOption[];
+  setOptions: (options: QuestionOption[]) => void;
   institutions: string[];
   setInstitutions: (value: string[]) => void;
   organizations: string[];
@@ -92,6 +77,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   setQuestionText,
   teacherExplanation,
   setTeacherExplanation,
+  options,
+  setOptions,
   institutions,
   setInstitutions,
   organizations,
@@ -336,6 +323,15 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         teacherExplanation={teacherExplanation}
         setTeacherExplanation={setTeacherExplanation}
       />
+
+      {/* Alternativas da questão baseadas no tipo de questão */}
+      {questionType && (
+        <QuestionOptions
+          questionType={questionType}
+          options={options}
+          setOptions={setOptions}
+        />
+      )}
 
       <div>
         <Button onClick={onSubmit} className="bg-[#ea2be2] hover:bg-[#d01ec7] text-white">

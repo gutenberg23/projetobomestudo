@@ -29,3 +29,9 @@ export interface FiltersType {
   difficulty: string;
   questionType: string;
 }
+
+export interface QuestionOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}

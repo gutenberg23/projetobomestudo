@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { toast } from "sonner";
 import { QuestionItemType, FiltersType } from "../types";
@@ -21,9 +20,9 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     const {
       questionId, year, institution, organization, role, discipline,
       level, difficulty, questionType, questionText, teacherExplanation,
-      questions, setQuestions, setQuestionId, setYear, setInstitution,
+      options, questions, setQuestions, setQuestionId, setYear, setInstitution,
       setOrganization, setRole, setDiscipline, setLevel, setDifficulty,
-      setQuestionType, setQuestionText, setTeacherExplanation
+      setQuestionType, setQuestionText, setTeacherExplanation, setOptions
     } = state;
 
     if (
@@ -41,6 +40,29 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
       return;
     }
 
+    // Verificar se as opções estão preenchidas para tipos de questão que precisam delas
+    if (["Múltipla Escolha", "Certo ou Errado"].includes(questionType)) {
+      if (options.length === 0) {
+        toast.error("Adicione as alternativas para a questão!");
+        return;
+      }
+
+      if (questionType === "Múltipla Escolha") {
+        // Verificar se todas as alternativas têm texto para múltipla escolha
+        const emptyOptions = options.filter(o => !o.text.trim());
+        if (emptyOptions.length > 0) {
+          toast.error("Todas as alternativas devem ter um texto!");
+          return;
+        }
+      }
+
+      // Verificar se tem pelo menos uma alternativa correta
+      if (!options.some(o => o.isCorrect)) {
+        toast.error("Selecione a alternativa correta!");
+        return;
+      }
+    }
+
     const newQuestion: QuestionItemType = {
       id: questionId,
       year,
@@ -53,7 +75,7 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
       questionType,
       content: questionText,
       teacherExplanation,
-      options: []
+      options: options
     };
 
     setQuestions([...questions, newQuestion]);
@@ -74,6 +96,7 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     setQuestionType("");
     setQuestionText("");
     setTeacherExplanation("");
+    setOptions([]);
 
     toast.success("Questão salva com sucesso!");
   };
@@ -83,7 +106,8 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     const {
       searchId, questions, setQuestionId, setYear, setInstitution,
       setOrganization, setRole, setDiscipline, setLevel, setDifficulty,
-      setQuestionType, setQuestionText, setTeacherExplanation, setIsEditQuestionCardOpen
+      setQuestionType, setQuestionText, setTeacherExplanation, setOptions,
+      setIsEditQuestionCardOpen
     } = state;
 
     if (!searchId.trim()) {
@@ -104,6 +128,7 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
       setQuestionType(question.questionType);
       setQuestionText(question.content);
       setTeacherExplanation(question.teacherExplanation);
+      setOptions(question.options || []);
       setIsEditQuestionCardOpen(true);
       toast.success("Questão encontrada!");
     } else {
@@ -115,10 +140,50 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     const {
       questionId, year, institution, organization, role, discipline,
       level, difficulty, questionType, questionText, teacherExplanation,
-      questions, setQuestions, setIsEditQuestionCardOpen, setQuestionId, 
+      options, questions, setQuestions, setIsEditQuestionCardOpen, setQuestionId, 
       setYear, setInstitution, setOrganization, setRole, setDiscipline,
-      setLevel, setDifficulty, setQuestionType, setQuestionText, setTeacherExplanation
+      setLevel, setDifficulty, setQuestionType, setQuestionText, setTeacherExplanation,
+      setOptions
     } = state;
+
+    // Verificações de preenchimento (igual ao salvamento)
+    if (
+      !year || 
+      !institution || 
+      !organization || 
+      !role || 
+      !discipline || 
+      !level || 
+      !difficulty || 
+      !questionType || 
+      !questionText
+    ) {
+      toast.error("Preencha todos os campos obrigatórios!");
+      return;
+    }
+
+    // Verificar se as opções estão preenchidas para tipos de questão que precisam delas
+    if (["Múltipla Escolha", "Certo ou Errado"].includes(questionType)) {
+      if (options.length === 0) {
+        toast.error("Adicione as alternativas para a questão!");
+        return;
+      }
+
+      if (questionType === "Múltipla Escolha") {
+        // Verificar se todas as alternativas têm texto para múltipla escolha
+        const emptyOptions = options.filter(o => !o.text.trim());
+        if (emptyOptions.length > 0) {
+          toast.error("Todas as alternativas devem ter um texto!");
+          return;
+        }
+      }
+
+      // Verificar se tem pelo menos uma alternativa correta
+      if (!options.some(o => o.isCorrect)) {
+        toast.error("Selecione a alternativa correta!");
+        return;
+      }
+    }
 
     const updatedQuestions = questions.map(q => q.id === questionId ? {
       ...q,
@@ -131,7 +196,8 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
       difficulty,
       questionType,
       content: questionText,
-      teacherExplanation
+      teacherExplanation,
+      options
     } : q);
     
     setQuestions(updatedQuestions);
@@ -152,6 +218,7 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     setQuestionType("");
     setQuestionText("");
     setTeacherExplanation("");
+    setOptions([]);
   };
 
   const toggleQuestionSelection = (id: string) => {
@@ -202,7 +269,7 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     const {
       setQuestionId, setYear, setInstitution, setOrganization, setRole,
       setDiscipline, setLevel, setDifficulty, setQuestionType,
-      setQuestionText, setTeacherExplanation, setIsEditQuestionCardOpen
+      setQuestionText, setTeacherExplanation, setOptions, setIsEditQuestionCardOpen
     } = state;
     
     setQuestionId(question.id);
@@ -216,6 +283,7 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     setQuestionType(question.questionType);
     setQuestionText(question.content);
     setTeacherExplanation(question.teacherExplanation);
+    setOptions(question.options || []);
     setIsEditQuestionCardOpen(true);
   };
 
