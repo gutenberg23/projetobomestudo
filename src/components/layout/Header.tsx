@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Search, Menu, User } from "lucide-react";
+import { Search, Menu, User, FileText } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -51,8 +51,9 @@ export const Header = () => {
               <Link to="/questions" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
                 Questões
               </Link>
-              <Link to="/course" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
-                Curso
+              <Link to="/blog" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Blog
               </Link>
               <Link to="/settings" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
                 Configurações
