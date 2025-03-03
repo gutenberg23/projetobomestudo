@@ -1,12 +1,11 @@
+
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { useClipboard } from "./form/useClipboard";
-import { useSelectFieldState } from "./form/useSelectFieldState";
 import QuestionIdField from "./form/QuestionIdField";
-import SelectField from "./form/SelectField";
+import QuestionMetadataFields from "./form/QuestionMetadataFields";
 import QuestionTextFields from "./form/QuestionTextFields";
 import QuestionOptions from "./form/QuestionOptions";
-import AddValueDialog from "./form/AddValueDialog";
+import FormSection from "./form/FormSection";
+import SubmitButton from "./form/SubmitButton";
 import { QuestionOption } from "./types";
 
 interface QuestionFormProps {
@@ -100,212 +99,53 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 }) => {
   const { copyToClipboard } = useClipboard();
 
-  const institutionState = useSelectFieldState(institution, setInstitution, institutions, setInstitutions, "instituição");
-  const organizationState = useSelectFieldState(organization, setOrganization, organizations, setOrganizations, "instituição");
-  const yearState = useSelectFieldState(year, setYear, years, setYears, "ano");
-  const roleState = useSelectFieldState(role, setRole, roles, setRoles, "cargo");
-  const disciplineState = useSelectFieldState(discipline, setDiscipline, disciplines, setDisciplines, "disciplina");
-  const levelState = useSelectFieldState(level, setLevel, levels, setLevels, "nível");
-  const difficultyState = useSelectFieldState(difficulty, setDifficulty, difficulties, setDifficulties, "dificuldade");
-  const questionTypeState = useSelectFieldState(questionType, setQuestionType, questionTypes, setQuestionTypes, "tipo de questão");
-
   return (
     <div className="space-y-6">
+      {/* Question ID Field */}
       <QuestionIdField 
         questionId={questionId} 
         copyToClipboard={copyToClipboard} 
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <SelectField
-            id="institution"
-            label="Banca"
-            value={institutionState.value}
-            onChange={setInstitution}
-            options={institutions}
-            handleEditOption={institutionState.handleEdit}
-            handleDeleteOption={institutionState.handleDelete}
-            openAddDialog={() => institutionState.setIsDialogOpen(true)}
-            placeholder="Selecione a instituição"
-          />
-          <AddValueDialog
-            title="Adicionar Nova Instituição"
-            placeholder="Nome da instituição"
-            isOpen={institutionState.isDialogOpen}
-            setIsOpen={institutionState.setIsDialogOpen}
-            value={institutionState.newValue}
-            setValue={institutionState.setNewValue}
-            onAdd={institutionState.handleAdd}
-          />
-        </div>
+      {/* Question Metadata - First Row */}
+      <FormSection cols={3}>
+        <QuestionMetadataFields
+          institution={institution}
+          setInstitution={setInstitution}
+          institutions={institutions}
+          setInstitutions={setInstitutions}
+          organization={organization}
+          setOrganization={setOrganization}
+          organizations={organizations}
+          setOrganizations={setOrganizations}
+          year={year}
+          setYear={setYear}
+          years={years}
+          setYears={setYears}
+          role={role}
+          setRole={setRole}
+          roles={roles}
+          setRoles={setRoles}
+          discipline={discipline}
+          setDiscipline={setDiscipline}
+          disciplines={disciplines}
+          setDisciplines={setDisciplines}
+          level={level}
+          setLevel={setLevel}
+          levels={levels}
+          setLevels={setLevels}
+          difficulty={difficulty}
+          setDifficulty={setDifficulty}
+          difficulties={difficulties}
+          setDifficulties={setDifficulties}
+          questionType={questionType}
+          setQuestionType={setQuestionType}
+          questionTypes={questionTypes}
+          setQuestionTypes={setQuestionTypes}
+        />
+      </FormSection>
 
-        <div>
-          <SelectField
-            id="organization"
-            label="Instituição"
-            value={organizationState.value}
-            onChange={setOrganization}
-            options={organizations}
-            handleEditOption={organizationState.handleEdit}
-            handleDeleteOption={organizationState.handleDelete}
-            openAddDialog={() => organizationState.setIsDialogOpen(true)}
-            placeholder="Selecione a instituição"
-          />
-          <AddValueDialog
-            title="Adicionar Nova Instituição"
-            placeholder="Nome da instituição"
-            isOpen={organizationState.isDialogOpen}
-            setIsOpen={organizationState.setIsDialogOpen}
-            value={organizationState.newValue}
-            setValue={organizationState.setNewValue}
-            onAdd={organizationState.handleAdd}
-          />
-        </div>
-
-        <div>
-          <SelectField
-            id="year"
-            label="Ano"
-            value={yearState.value}
-            onChange={setYear}
-            options={years}
-            handleEditOption={yearState.handleEdit}
-            handleDeleteOption={yearState.handleDelete}
-            openAddDialog={() => yearState.setIsDialogOpen(true)}
-            placeholder="Selecione o ano"
-          />
-          <AddValueDialog
-            title="Adicionar Novo Ano"
-            placeholder="Ano"
-            isOpen={yearState.isDialogOpen}
-            setIsOpen={yearState.setIsDialogOpen}
-            value={yearState.newValue}
-            setValue={yearState.setNewValue}
-            onAdd={yearState.handleAdd}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <SelectField
-            id="role"
-            label="Cargo"
-            value={roleState.value}
-            onChange={setRole}
-            options={roles}
-            handleEditOption={roleState.handleEdit}
-            handleDeleteOption={roleState.handleDelete}
-            openAddDialog={() => roleState.setIsDialogOpen(true)}
-            placeholder="Selecione o cargo"
-          />
-          <AddValueDialog
-            title="Adicionar Novo Cargo"
-            placeholder="Nome do cargo"
-            isOpen={roleState.isDialogOpen}
-            setIsOpen={roleState.setIsDialogOpen}
-            value={roleState.newValue}
-            setValue={roleState.setNewValue}
-            onAdd={roleState.handleAdd}
-          />
-        </div>
-
-        <div>
-          <SelectField
-            id="discipline"
-            label="Disciplina"
-            value={disciplineState.value}
-            onChange={setDiscipline}
-            options={disciplines}
-            handleEditOption={disciplineState.handleEdit}
-            handleDeleteOption={disciplineState.handleDelete}
-            openAddDialog={() => disciplineState.setIsDialogOpen(true)}
-            placeholder="Selecione a disciplina"
-          />
-          <AddValueDialog
-            title="Adicionar Nova Disciplina"
-            placeholder="Nome da disciplina"
-            isOpen={disciplineState.isDialogOpen}
-            setIsOpen={disciplineState.setIsDialogOpen}
-            value={disciplineState.newValue}
-            setValue={disciplineState.setNewValue}
-            onAdd={disciplineState.handleAdd}
-          />
-        </div>
-
-        <div>
-          <SelectField
-            id="level"
-            label="Nível"
-            value={levelState.value}
-            onChange={setLevel}
-            options={levels}
-            handleEditOption={levelState.handleEdit}
-            handleDeleteOption={levelState.handleDelete}
-            openAddDialog={() => levelState.setIsDialogOpen(true)}
-            placeholder="Selecione o nível"
-          />
-          <AddValueDialog
-            title="Adicionar Novo Nível"
-            placeholder="Nome do nível"
-            isOpen={levelState.isDialogOpen}
-            setIsOpen={levelState.setIsDialogOpen}
-            value={levelState.newValue}
-            setValue={levelState.setNewValue}
-            onAdd={levelState.handleAdd}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <SelectField
-            id="difficulty"
-            label="Dificuldade"
-            value={difficultyState.value}
-            onChange={setDifficulty}
-            options={difficulties}
-            handleEditOption={difficultyState.handleEdit}
-            handleDeleteOption={difficultyState.handleDelete}
-            openAddDialog={() => difficultyState.setIsDialogOpen(true)}
-            placeholder="Selecione a dificuldade"
-          />
-          <AddValueDialog
-            title="Adicionar Nova Dificuldade"
-            placeholder="Nome da dificuldade"
-            isOpen={difficultyState.isDialogOpen}
-            setIsOpen={difficultyState.setIsDialogOpen}
-            value={difficultyState.newValue}
-            setValue={difficultyState.setNewValue}
-            onAdd={difficultyState.handleAdd}
-          />
-        </div>
-
-        <div>
-          <SelectField
-            id="question-type"
-            label="Tipo de Questão"
-            value={questionTypeState.value}
-            onChange={setQuestionType}
-            options={questionTypes}
-            handleEditOption={questionTypeState.handleEdit}
-            handleDeleteOption={questionTypeState.handleDelete}
-            openAddDialog={() => questionTypeState.setIsDialogOpen(true)}
-            placeholder="Selecione o tipo"
-          />
-          <AddValueDialog
-            title="Adicionar Novo Tipo de Questão"
-            placeholder="Nome do tipo"
-            isOpen={questionTypeState.isDialogOpen}
-            setIsOpen={questionTypeState.setIsDialogOpen}
-            value={questionTypeState.newValue}
-            setValue={questionTypeState.setNewValue}
-            onAdd={questionTypeState.handleAdd}
-          />
-        </div>
-      </div>
-
+      {/* Question Text */}
       <div>
         <label htmlFor="question-text" className="block text-sm font-medium text-[#272f3c] mb-1">
           Texto da Questão
@@ -318,6 +158,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         />
       </div>
 
+      {/* Question Options */}
       {questionType && (
         <QuestionOptions
           questionType={questionType}
@@ -326,6 +167,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         />
       )}
 
+      {/* Teacher Explanation */}
       <div>
         <label htmlFor="teacher-explanation" className="block text-sm font-medium text-[#272f3c] mb-1">
           Explicação do Professor
@@ -338,13 +180,13 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         />
       </div>
 
-      <div>
-        <Button onClick={onSubmit} className="bg-[#ea2be2] hover:bg-[#d01ec7] text-white">
-          {submitButtonText}
-        </Button>
-      </div>
+      {/* Submit Button */}
+      <SubmitButton onClick={onSubmit} text={submitButtonText} />
     </div>
   );
 };
+
+// Add missing import
+import { useClipboard } from "./form/useClipboard";
 
 export default QuestionForm;
