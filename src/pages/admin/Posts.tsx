@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,6 +79,10 @@ const Posts = () => {
   const [autor, setAutor] = useState("");
   const [categoria, setCategoria] = useState(CATEGORIAS[0]);
   const [destacado, setDestacado] = useState(false);
+  const [tags, setTags] = useState("");
+  const [metaDescricao, setMetaDescricao] = useState("");
+  const [metaKeywords, setMetaKeywords] = useState("");
+  const [tempoLeitura, setTempoLeitura] = useState("");
   
   // Filtragem dos posts baseado na busca
   const postsFiltrados = posts.filter(post => 
@@ -119,6 +122,15 @@ const Posts = () => {
       .replace(/[^\w\s]/gi, '')
       .replace(/\s+/g, '-');
     
+    // Convert the comma-separated tags into an array
+    const tagsArray = tags.split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+    
+    // Parse reading time as number
+    const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
+      Math.ceil(conteudo.split(' ').length / 200);
+    
     const novoPost: BlogPost = {
       id: postEditando ? postEditando.id : `${Date.now()}`,
       title: titulo,
@@ -129,7 +141,11 @@ const Posts = () => {
       likesCount: postEditando ? postEditando.likesCount : 0,
       createdAt: postEditando ? postEditando.createdAt : new Date().toISOString(),
       slug: slug,
-      category: categoria
+      category: categoria,
+      tags: tagsArray.length > 0 ? tagsArray : undefined,
+      metaDescription: metaDescricao || resumo,
+      metaKeywords: metaKeywords.split(',').map(k => k.trim()),
+      readingTime: readingTimeNumber
     };
 
     if (modo === ModoInterface.EDITAR && postEditando) {
@@ -289,6 +305,16 @@ const Posts = () => {
           </div>
           
           <div className="space-y-2">
+            <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
+            <Input 
+              id="tags" 
+              value={tags} 
+              onChange={(e) => setTags(e.target.value)} 
+              placeholder="Ex: gramática, redação, concursos"
+            />
+          </div>
+          
+          <div className="space-y-2">
             <Label htmlFor="resumo">Resumo</Label>
             <Input 
               id="resumo" 
@@ -297,6 +323,38 @@ const Posts = () => {
               placeholder="Breve resumo do post"
               required
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="metaDescricao">Meta Descrição (para SEO)</Label>
+            <Input 
+              id="metaDescricao" 
+              value={metaDescricao} 
+              onChange={(e) => setMetaDescricao(e.target.value)} 
+              placeholder="Descrição para motores de busca (se vazio, será usado o resumo)"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="metaKeywords">Palavras-chave (separadas por vírgula)</Label>
+            <Input 
+              id="metaKeywords" 
+              value={metaKeywords} 
+              onChange={(e) => setMetaKeywords(e.target.value)} 
+              placeholder="Ex: concursos, português, estudos"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="tempoLeitura">Tempo de leitura (minutos)</Label>
+            <Input 
+              id="tempoLeitura" 
+              type="number" 
+              value={tempoLeitura} 
+              onChange={(e) => setTempoLeitura(e.target.value)} 
+              placeholder="Estimativa do tempo de leitura em minutos"
+            />
+            <p className="text-xs text-[#67748a]">Deixe vazio para calcular automaticamente.</p>
           </div>
           
           <div className="space-y-2">

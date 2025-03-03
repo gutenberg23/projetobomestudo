@@ -12,7 +12,11 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     likesCount: 32,
     createdAt: "2023-10-15T14:30:00Z",
     slug: "dicas-para-provas-de-portugues",
-    category: "blog"
+    category: "Português",
+    tags: ["gramática", "interpretação de texto", "redação", "concursos"],
+    metaDescription: "Aprenda dicas essenciais para se destacar nas provas de língua portuguesa em concursos públicos. Melhore sua gramática, interpretação e redação.",
+    metaKeywords: ["português para concursos", "gramática", "interpretação de texto", "redação oficial"],
+    readingTime: 6
   },
   {
     id: "2",
@@ -24,7 +28,11 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     likesCount: 24,
     createdAt: "2023-10-10T09:45:00Z",
     slug: "como-estudar-para-concursos-juridicos",
-    category: "blog"
+    category: "Direito",
+    tags: ["estudos", "concursos jurídicos", "planejamento", "direito constitucional"],
+    metaDescription: "Conheça métodos eficientes para estudar direito e ser aprovado em concursos jurídicos. Dicas de planejamento e técnicas de estudo.",
+    metaKeywords: ["concursos jurídicos", "direito", "estudo eficiente", "planejamento"],
+    readingTime: 8
   },
   {
     id: "3",

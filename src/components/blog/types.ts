@@ -10,4 +10,10 @@ export interface BlogPost {
   createdAt: string;
   slug: string;
   category: string;
+  tags?: string[];
+  metaDescription?: string;
+  metaKeywords?: string[];
+  featuredImage?: string;
+  readingTime?: number;
+  relatedPosts?: string[];
 }

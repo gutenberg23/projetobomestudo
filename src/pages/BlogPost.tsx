@@ -1,42 +1,13 @@
 
-import React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { MessageSquare, Heart, Clock, ArrowLeft } from "lucide-react";
+import { MessageSquare, Heart, Clock, ArrowLeft, Tag, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { BlogPost } from "@/components/blog/types";
-
-// Usando os mesmos dados fictícios da página Blog
-// Na implementação real, você buscaria os dados de uma API
-const MOCK_BLOG_POSTS: BlogPost[] = [
-  {
-    id: "1",
-    title: "Dicas para provas de Português em concursos públicos",
-    summary: "Confira nossas dicas essenciais para se destacar nas provas de língua portuguesa em concursos públicos e aumentar suas chances de aprovação.",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    author: "Maria Silva",
-    commentCount: 15,
-    likesCount: 32,
-    createdAt: "2023-10-15T14:30:00Z",
-    slug: "dicas-para-provas-de-portugues",
-    category: "blog"
-  },
-  {
-    id: "2",
-    title: "Como estudar para concursos jurídicos",
-    summary: "Aprenda métodos eficientes para estudar direito e conquistar sua aprovação em concursos jurídicos, com planejamento e técnicas de estudo.",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-    author: "Carlos Mendes",
-    commentCount: 8,
-    likesCount: 24,
-    createdAt: "2023-10-10T09:45:00Z",
-    slug: "como-estudar-para-concursos-juridicos",
-    category: "blog"
-  },
-  // ... outros posts
-];
+import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -44,6 +15,86 @@ const BlogPostPage = () => {
   
   // Encontrar o post com base no slug
   const post = MOCK_BLOG_POSTS.find(post => post.slug === slug);
+  
+  // Encontrar posts relacionados - na mesma categoria ou com tags em comum
+  const relatedPosts = post 
+    ? MOCK_BLOG_POSTS.filter(p => 
+        p.id !== post.id && 
+        (p.category === post.category || 
+          (p.tags && post.tags && p.tags.some(tag => post.tags?.includes(tag))))
+      ).slice(0, 3) 
+    : [];
+  
+  // Atualizar o título da página e adicionar meta tags dinâmicas para SEO
+  useEffect(() => {
+    if (post) {
+      // Atualizar título da página
+      document.title = `${post.title} | BomEstudo`;
+      
+      // Atualizar meta description
+      let metaDescription = document.querySelector('meta[name="description"]');
+      if (!metaDescription) {
+        metaDescription = document.createElement('meta');
+        metaDescription.setAttribute('name', 'description');
+        document.head.appendChild(metaDescription);
+      }
+      metaDescription.setAttribute('content', post.metaDescription || post.summary);
+      
+      // Adicionar meta keywords
+      let metaKeywords = document.querySelector('meta[name="keywords"]');
+      if (!metaKeywords) {
+        metaKeywords = document.createElement('meta');
+        metaKeywords.setAttribute('name', 'keywords');
+        document.head.appendChild(metaKeywords);
+      }
+      const keywords = [
+        post.category,
+        ...(post.tags || []),
+        'concurso público', 
+        'estudos', 
+        'BomEstudo'
+      ].join(', ');
+      metaKeywords.setAttribute('content', keywords);
+      
+      // Adicionar Open Graph para compartilhamento em redes sociais
+      let ogTitle = document.querySelector('meta[property="og:title"]');
+      if (!ogTitle) {
+        ogTitle = document.createElement('meta');
+        ogTitle.setAttribute('property', 'og:title');
+        document.head.appendChild(ogTitle);
+      }
+      ogTitle.setAttribute('content', post.title);
+      
+      let ogDescription = document.querySelector('meta[property="og:description"]');
+      if (!ogDescription) {
+        ogDescription = document.createElement('meta');
+        ogDescription.setAttribute('property', 'og:description');
+        document.head.appendChild(ogDescription);
+      }
+      ogDescription.setAttribute('content', post.metaDescription || post.summary);
+      
+      let ogUrl = document.querySelector('meta[property="og:url"]');
+      if (!ogUrl) {
+        ogUrl = document.createElement('meta');
+        ogUrl.setAttribute('property', 'og:url');
+        document.head.appendChild(ogUrl);
+      }
+      ogUrl.setAttribute('content', `https://bomestudo.com.br/blog/${post.slug}`);
+      
+      let ogType = document.querySelector('meta[property="og:type"]');
+      if (!ogType) {
+        ogType = document.createElement('meta');
+        ogType.setAttribute('property', 'og:type');
+        document.head.appendChild(ogType);
+      }
+      ogType.setAttribute('content', 'article');
+      
+      // Limpar as meta tags quando o componente for desmontado
+      return () => {
+        document.title = 'BomEstudo';
+      };
+    }
+  }, [post]);
   
   if (!post) {
     return (
@@ -66,6 +117,9 @@ const BlogPostPage = () => {
   
   // Dividir o conteúdo em parágrafos para melhor formatação
   const paragraphs = post.content.split('\n\n');
+  
+  // Calcular tempo de leitura estimado se não estiver definido
+  const readingTime = post.readingTime || Math.ceil(post.content.split(' ').length / 200);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
@@ -81,18 +135,42 @@ const BlogPostPage = () => {
             Voltar para o Blog
           </Button>
           
-          <article className="bg-white p-8 rounded-lg shadow-sm">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-[#272f3c] mb-4">{post.title}</h1>
+          <article className="bg-white p-8 rounded-lg shadow-sm" itemScope itemType="https://schema.org/BlogPosting">
+            {/* Elementos de Schema.org para SEO */}
+            <meta itemProp="datePublished" content={post.createdAt} />
+            <meta itemProp="author" content={post.author} />
+            <div itemProp="publisher" itemScope itemType="https://schema.org/Organization">
+              <meta itemProp="name" content="BomEstudo" />
+              <meta itemProp="url" content="https://bomestudo.com.br" />
+            </div>
+            
+            {/* Categorias e tags */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Link to={`/blog/categoria/${post.category.toLowerCase()}`} className="text-xs font-medium bg-[#fce7fc] text-[#ea2be2] px-2.5 py-1 rounded-full hover:bg-[#f9d0f9]">
+                {post.category}
+              </Link>
+              {post.tags && post.tags.map(tag => (
+                <Link key={tag} to={`/blog/tag/${tag.toLowerCase()}`} className="text-xs font-medium bg-gray-100 text-[#67748a] px-2.5 py-1 rounded-full hover:bg-gray-200">
+                  #{tag}
+                </Link>
+              ))}
+            </div>
+            
+            <h1 className="text-3xl md:text-4xl font-extrabold text-[#272f3c] mb-4" itemProp="headline">{post.title}</h1>
             
             <div className="flex flex-wrap items-center text-sm text-[#67748a] mb-6">
-              <span className="mr-4">Por {post.author}</span>
+              <span className="mr-4">Por <span itemProp="author">{post.author}</span></span>
               <span className="flex items-center mr-4">
                 <Clock className="h-4 w-4 mr-1" />
                 {formattedDate}
               </span>
+              <span className="flex items-center">
+                <BookOpen className="h-4 w-4 mr-1.5" />
+                {readingTime} min de leitura
+              </span>
             </div>
             
-            <div className="prose max-w-none text-[#67748a]">
+            <div className="prose max-w-none text-[#67748a]" itemProp="articleBody">
               {paragraphs.map((paragraph, index) => (
                 <p key={index} className="mb-4">{paragraph}</p>
               ))}
@@ -111,6 +189,25 @@ const BlogPostPage = () => {
               </div>
             </div>
           </article>
+          
+          {/* Posts relacionados */}
+          {relatedPosts.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-xl font-bold text-[#272f3c] mb-4">Posts relacionados</h2>
+              <div className="grid gap-4 md:grid-cols-3">
+                {relatedPosts.map(relatedPost => (
+                  <Link 
+                    key={relatedPost.id} 
+                    to={`/blog/${relatedPost.slug}`}
+                    className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <h3 className="font-bold text-[#272f3c] hover:text-[#ea2be2] line-clamp-2">{relatedPost.title}</h3>
+                    <p className="text-sm text-[#67748a] mt-2 line-clamp-2">{relatedPost.summary}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
       <Footer />
