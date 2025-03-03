@@ -1,6 +1,9 @@
 
-export * from './TopicosPage';
-export * from './TopicosFilter';
-export * from './TopicosTable';
-export * from './TopicosModals';
-export * from './TopicosTypes';
+export { TopicosFilter } from './TopicosFilter';
+export { TopicosTable } from './TopicosTable';
+export { TopicosModals } from './TopicosModals';
+export { AddAulaButton } from './TopicosPage';
+export { TopicosHeader } from './TopicosHeader';
+export { useTopicosState } from './hooks/useTopicosState';
+export { useTopicosActions } from './hooks/useTopicosActions';
+export { useTopicosFiltrados } from './hooks/useTopicosFiltrados';
