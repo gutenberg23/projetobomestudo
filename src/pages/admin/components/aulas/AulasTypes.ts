@@ -1,3 +1,4 @@
+
 export interface Aula {
   id: string;
   titulo: string;
@@ -5,7 +6,6 @@ export interface Aula {
   topicosIds: string[];
   questoesIds: string[];
   selecionada?: boolean;
-  infoCurso?: string;
 }
 
 export interface AulasFilterProps {
@@ -32,8 +32,6 @@ export interface AulasPageProps {
   handleAdicionarDisciplina: () => void;
   todasSelecionadas: boolean;
   aulas: Aula[];
-  infoCurso?: string;
-  setInfoCurso?: (info: string) => void;
 }
 
 export interface EditAulaModalProps {
