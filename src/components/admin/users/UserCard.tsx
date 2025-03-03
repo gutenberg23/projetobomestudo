@@ -61,9 +61,7 @@ const UserCard: React.FC<UserCardProps> = ({
           <Button variant="outline" size="sm" onClick={() => onEdit(usuario)}>
             <Edit size={16} />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => onChangePassword(usuario)}>
-            <Key size={16} />
-          </Button>
+          
           
           <Button variant="outline" size="sm" onClick={() => onViewHistory(usuario)}>
             <History size={16} />
