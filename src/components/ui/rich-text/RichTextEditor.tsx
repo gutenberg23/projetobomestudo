@@ -4,8 +4,13 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
+import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import TextAlign from '@tiptap/extension-text-align';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
 import { cn } from "@/lib/utils";
 import RichTextToolbar from "./RichTextToolbar";
 
@@ -42,6 +47,34 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         types: ['heading', 'paragraph'],
         alignments: ['left', 'center', 'right'],
         defaultAlignment: 'left',
+      }),
+      Link.configure({
+        openOnClick: false,
+        linkOnPaste: true,
+        HTMLAttributes: {
+          class: 'text-[#ea2be2] underline',
+        },
+      }),
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: 'border-collapse table-auto w-full',
+        },
+      }),
+      TableRow.configure({
+        HTMLAttributes: {
+          class: 'border-b border-gray-200',
+        },
+      }),
+      TableHeader.configure({
+        HTMLAttributes: {
+          class: 'border border-gray-300 px-4 py-2 bg-gray-100 font-medium text-[#272f3c]',
+        },
+      }),
+      TableCell.configure({
+        HTMLAttributes: {
+          class: 'border border-gray-300 px-4 py-2 text-[#67748a]',
+        },
       }),
     ],
     content: value,
