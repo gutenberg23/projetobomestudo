@@ -73,6 +73,7 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
             <div key={option.id} className="flex items-center gap-2">
               <Radio
                 id={option.id}
+                value={option.id}
                 checked={option.isCorrect}
                 onClick={() => handleCorrectOptionChange(option.id)}
               />
@@ -93,6 +94,7 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
             <div className="pt-2">
               <Radio
                 id={option.id}
+                value={option.id}
                 checked={option.isCorrect}
                 onClick={() => handleCorrectOptionChange(option.id)}
               />
