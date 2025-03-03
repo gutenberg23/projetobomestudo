@@ -30,7 +30,7 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
 
       <div className="flex overflow-hidden gap-5 justify-center items-center self-stretch p-2.5 my-auto text-xs text-center whitespace-nowrap rounded-md max-sm:mx-auto">
         <span className="text-slate-500">{id}</span>
-        <img src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/504db5e9b44d4cf7733907a139351e9347df79d27f76a8de1ed62803c89e3f4e" alt="Add Question" className="object-contain shrink-0 self-stretch my-auto aspect-square w-[30px]" />
+        
       </div>
     </header>;
 };
