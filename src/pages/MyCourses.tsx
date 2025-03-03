@@ -35,6 +35,7 @@ const MOCK_FAVORITE_SUBJECTS = [{
   topics: 9,
   lessons: 18
 }];
+
 interface ItemProps {
   id: string;
   title: string;
@@ -43,6 +44,7 @@ interface ItemProps {
   lessons: number;
   onRemove: (id: string) => void;
 }
+
 const FavoriteItem: React.FC<ItemProps> = ({
   id,
   title,
@@ -67,19 +69,24 @@ const FavoriteItem: React.FC<ItemProps> = ({
       </div>
     </div>;
 };
+
 const MyCourses = () => {
   const [favoriteCourses, setFavoriteCourses] = useState(MOCK_FAVORITE_COURSES);
   const [favoriteSubjects, setFavoriteSubjects] = useState(MOCK_FAVORITE_SUBJECTS);
+
   const handleRemoveCourse = (id: string) => {
     setFavoriteCourses(favoriteCourses.filter(course => course.id !== id));
   };
+
   const handleRemoveSubject = (id: string) => {
     setFavoriteSubjects(favoriteSubjects.filter(subject => subject.id !== id));
   };
+
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
-        <h1 className="text-3xl mb-6 text-[#272f3c] font-extrabold md:text-3xl">Minhas Matrículas</h1>
+        <h1 className="text-3xl mb-2 text-[#272f3c] font-extrabold md:text-3xl">Minhas Matrículas</h1>
+        <p className="text-[#67748a] mb-6">Aqui você encontra as suas disciplinas e seus concursos favoritos.</p>
 
         <div className="space-y-8">
           <section>
@@ -108,4 +115,5 @@ const MyCourses = () => {
       <Footer />
     </div>;
 };
+
 export default MyCourses;
