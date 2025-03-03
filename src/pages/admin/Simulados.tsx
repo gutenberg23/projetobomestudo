@@ -21,9 +21,11 @@ const Simulados = () => {
 
   // Monitorar quando um simulado é criado (questões selecionadas)
   useEffect(() => {
-    // Sobrescrever a função handleCreateSimulado para adicionar o simulado à lista
+    // Criar uma cópia da função original de criar simulado
     const originalHandleCreateSimulado = handleCreateSimulado;
-    questionsState.handleCreateSimulado = () => {
+    
+    // Definir uma nova função para criar simulado
+    const createSimuladoWithState = () => {
       if (questionsState.selectedQuestions.length === 0) {
         toast.error("Selecione pelo menos uma questão para criar o simulado.");
         return;
@@ -51,11 +53,16 @@ const Simulados = () => {
       toast.success(`Simulado criado com ${questionsState.selectedQuestions.length} questões!`);
     };
 
+    // Substituir temporariamente a função de criar simulado original
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).tempCreateSimulado = createSimuladoWithState;
+
     return () => {
-      // Restaurar a função original ao desmontar
-      questionsState.handleCreateSimulado = originalHandleCreateSimulado;
+      // Remover a função temporária ao desmontar
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).tempCreateSimulado;
     };
-  }, [simulados.length, questionsState]);
+  }, [simulados.length, questionsState, handleCreateSimulado]);
 
   // Toggle seleção de simulado
   const handleToggleSelection = (id: string) => {
@@ -132,6 +139,18 @@ const Simulados = () => {
     toast.success(`${selectedSimulados.length} simulado(s) excluído(s) com sucesso!`);
   };
 
+  // Função para criar simulado com as questões selecionadas
+  const createSimulado = () => {
+    // Usar a função temporária se disponível, ou a original
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).tempCreateSimulado) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).tempCreateSimulado();
+    } else {
+      handleCreateSimulado();
+    }
+  };
+
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold text-[#272f3c]">Simulados</h1>
@@ -163,6 +182,15 @@ const Simulados = () => {
         simuladoId={currentSimuladoId}
         onVincular={onVincular}
       />
+
+      <div className="mt-4">
+        <Button 
+          onClick={createSimulado}
+          className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-white"
+        >
+          Criar Simulado com Questões Selecionadas ({questionsState.selectedQuestions.length})
+        </Button>
+      </div>
     </div>
   );
 };

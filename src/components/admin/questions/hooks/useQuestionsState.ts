@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import { QuestionItemType, QuestionOption } from "../types";
-import { toast } from "sonner";
 
 export const useQuestionsState = () => {
   // Estado para informações da questão
