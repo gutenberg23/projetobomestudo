@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -37,46 +38,46 @@ export const Hero = () => {
       
       {/* Conteúdo centralizado */}
       <div className="max-w-7xl mx-auto px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16">
-        <div className="text-center space-y-6 max-w-3xl">
-          <h1 className="text-4xl text-[#272f3c] leading-none font-extrabold md:text-7xl">
+        <div className="text-center space-y-6 max-w-3xl px-4">
+          <h1 className="text-3xl sm:text-4xl md:text-7xl text-[#272f3c] leading-tight font-extrabold">
             Conectando <span className="text-[#ea2be2]">Alunos</span> e <span className="text-[#ea2be2]">Professores</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-[#67748a] max-w-2xl mx-auto leading-none">
+          <p className="text-base sm:text-lg md:text-xl text-[#67748a] max-w-2xl mx-auto leading-relaxed">
             Estude de graça com os melhores professores do YouTube e utilize ferramentas avançadas para potencializar seus estudos para concursos públicos.
           </p>
           
           {/* Feature Icons */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-6 max-w-2xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-4 sm:py-6 max-w-2xl mx-auto">
             {[{
-            icon: <BookOpen className="h-6 w-6 text-[#ea2be2]" />,
+            icon: <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-[#ea2be2]" />,
             label: "Cursos Gratuitos"
           }, {
-            icon: <Youtube className="h-6 w-6 text-[#ea2be2]" />,
+            icon: <Youtube className="h-5 w-5 sm:h-6 sm:w-6 text-[#ea2be2]" />,
             label: "Professores YouTubers"
           }, {
-            icon: <BarChart className="h-6 w-6 text-[#ea2be2]" />,
+            icon: <BarChart className="h-5 w-5 sm:h-6 sm:w-6 text-[#ea2be2]" />,
             label: "Estatísticas Detalhadas"
           }, {
-            icon: <Award className="h-6 w-6 text-[#ea2be2]" />,
+            icon: <Award className="h-5 w-5 sm:h-6 sm:w-6 text-[#ea2be2]" />,
             label: "Acompanhamento Completo"
-          }].map((item, index) => <div key={index} className="flex flex-col items-center gap-2 p-4">
+          }].map((item, index) => <div key={index} className="flex flex-col items-center gap-2 p-2 sm:p-4">
                 <div className="p-2 bg-white rounded-full shadow-md">
                   {item.icon}
                 </div>
-                <span className="text-sm font-medium text-[#67748a]">{item.label}</span>
+                <span className="text-xs sm:text-sm font-medium text-[#67748a]">{item.label}</span>
               </div>)}
           </div>
           
           {/* Botões */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-            <Link to="/login">
-              <Button className="text-white rounded-lg text-lg font-medium hover:bg-opacity-90 transition-all px-8 py-6 bg-[#ea2be2] hover:translate-y-[-2px] w-full sm:w-auto">
+            <Link to="/login" className="w-full sm:w-auto">
+              <Button className="text-white rounded-lg text-sm sm:text-lg font-medium hover:bg-opacity-90 transition-all px-4 sm:px-8 py-5 sm:py-6 bg-[#ea2be2] hover:translate-y-[-2px] w-full">
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
-            <Link to="/teacher-signup">
-              <Button className="rounded-lg text-lg font-medium transition-all px-8 py-6 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:translate-y-[-2px] w-full sm:w-auto">
+            <Link to="/teacher-signup" className="w-full sm:w-auto">
+              <Button className="rounded-lg text-sm sm:text-lg font-medium transition-all px-4 sm:px-8 py-5 sm:py-6 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:translate-y-[-2px] w-full">
                 QUERO SER PROFESSOR
               </Button>
             </Link>
