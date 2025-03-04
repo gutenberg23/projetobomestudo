@@ -1,37 +1,66 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Youtube, Award, BarChart } from "lucide-react";
+
 export const Hero = () => {
-  return <div className="w-full min-h-screen relative overflow-hidden bg-[#f8f9fc]">
-      {/* Background Effect */}
-      <div className="absolute inset-0 w-full h-full">
-        <div className="absolute w-[500px] h-[500px] bg-[#ea2be2]/10 rounded-full -top-[250px] -left-[250px]"></div>
-        <div className="absolute w-[300px] h-[300px] bg-[#ea2be2]/10 rounded-full top-[50%] -right-[150px]"></div>
-        <div className="absolute w-[200px] h-[200px] bg-[#ea2be2]/5 rounded-full bottom-[10%] left-[10%]"></div>
+  return (
+    <div className="w-full min-h-screen relative overflow-hidden bg-white">
+      {/* Background Effect - Degradê Radial Moderno */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
+        {/* Primeiro círculo de degradê - maior, mais suave */}
+        <div className="absolute w-[800px] h-[800px] rounded-full 
+          bg-gradient-to-r from-[#ea2be2]/40 via-[#ea2be2]/20 to-transparent 
+          -top-[200px] -left-[200px] blur-[60px]">
+        </div>
         
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-transparent to-white/70 pointer-events-none"></div>
+        {/* Segundo círculo de degradê - médio */}
+        <div className="absolute w-[600px] h-[600px] rounded-full 
+          bg-gradient-to-r from-[#ea2be2]/30 via-[#ea2be2]/15 to-transparent 
+          top-[40%] -right-[200px] blur-[50px]">
+        </div>
         
-        {/* Animated dots background */}
+        {/* Terceiro círculo de degradê - menor, mais intenso */}
+        <div className="absolute w-[400px] h-[400px] rounded-full 
+          bg-gradient-to-r from-[#ea2be2]/25 via-[#ea2be2]/10 to-transparent 
+          bottom-[10%] left-[20%] blur-[40px]">
+        </div>
+        
+        {/* Overlay para suavizar a transição */}
+        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-white/20 to-white/90 pointer-events-none"></div>
+        
+        {/* Pontos decorativos com animação */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[20%] left-[30%] animate-pulse" style={{
-          animationDelay: "0.5s"
-        }}></div>
+            animationDelay: "0.5s"
+          }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[50%] left-[70%] animate-pulse" style={{
-          animationDelay: "0.7s"
-        }}></div>
+            animationDelay: "0.7s"
+          }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[70%] left-[20%] animate-pulse" style={{
-          animationDelay: "1s"
-        }}></div>
+            animationDelay: "1s"
+          }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[30%] left-[80%] animate-pulse" style={{
-          animationDelay: "1.2s"
-        }}></div>
+            animationDelay: "1.2s"
+          }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[80%] left-[50%] animate-pulse" style={{
-          animationDelay: "0.8s"
-        }}></div>
+            animationDelay: "0.8s"
+          }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[40%] left-[40%] animate-pulse" style={{
-          animationDelay: "1.5s"
-        }}></div>
+            animationDelay: "1.5s"
+          }}></div>
+          
+          {/* Adicionando mais pontos para melhorar o efeito visual */}
+          <div className="absolute w-1 h-1 bg-[#ea2be2] rounded-full top-[25%] left-[55%] animate-pulse" style={{
+            animationDelay: "1.8s"
+          }}></div>
+          <div className="absolute w-1 h-1 bg-[#ea2be2] rounded-full top-[65%] left-[35%] animate-pulse" style={{
+            animationDelay: "2s"
+          }}></div>
+          <div className="absolute w-1 h-1 bg-[#ea2be2] rounded-full top-[45%] left-[85%] animate-pulse" style={{
+            animationDelay: "1.3s"
+          }}></div>
         </div>
       </div>
       
@@ -83,5 +112,6 @@ export const Hero = () => {
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
