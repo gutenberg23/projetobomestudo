@@ -24,7 +24,7 @@ export const FormularioConteudo: React.FC<FormularioConteudoProps> = ({
           placeholder="Conteúdo completo do post"
           required
           className="h-48"
-          richText
+          richText={true}
         />
       </div>
     </div>
