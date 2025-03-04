@@ -141,9 +141,10 @@ const TeacherList: React.FC<TeacherListProps> = ({
                 </TableCell>
                 <TableCell>
                   <Switch 
-                    checked={teacher.ativo} 
+                    checked={teacher.ativo}
                     onCheckedChange={() => onToggleActive(teacher)}
                     className="data-[state=checked]:bg-[#ea2be2]"
+                    aria-label={`Ativar ou desativar professor ${teacher.nomeCompleto}`}
                   />
                 </TableCell>
                 <TableCell className="text-right">
