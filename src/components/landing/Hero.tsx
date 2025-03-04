@@ -1,9 +1,13 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Youtube, Award, BarChart } from "lucide-react";
+import { TeacherSignupDialog } from "./TeacherSignupDialog";
+
 export const Hero = () => {
+  const [teacherDialogOpen, setTeacherDialogOpen] = useState(false);
+  
   return <div className="w-full min-h-screen relative overflow-hidden bg-white">
       {/* Background Effect - Degradê Radial Moderno */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -102,13 +106,20 @@ export const Hero = () => {
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
-            <Link to="/teacher-signup" className="w-full sm:w-auto">
-              <Button className="rounded-lg text-sm sm:text-lg font-extrabold tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:shadow-lg hover:shadow-[#ea2be2]/20 hover:-translate-y-1 w-full">
-                QUERO SER PROFESSOR
-              </Button>
-            </Link>
+            <Button 
+              onClick={() => setTeacherDialogOpen(true)}
+              className="rounded-lg text-sm sm:text-lg font-extrabold tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:shadow-lg hover:shadow-[#ea2be2]/20 hover:-translate-y-1 w-full sm:w-auto"
+            >
+              QUERO SER PROFESSOR
+            </Button>
           </div>
         </div>
       </div>
+      
+      {/* Diálogo de cadastro de professor */}
+      <TeacherSignupDialog
+        open={teacherDialogOpen}
+        onOpenChange={setTeacherDialogOpen}
+      />
     </div>;
 };
