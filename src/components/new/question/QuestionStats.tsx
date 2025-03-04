@@ -18,9 +18,9 @@ const alternativesData = [
 
 export const QuestionStats: React.FC = () => {
   return (
-    <div className="bg-white rounded-md p-3 md:p-4 w-full">
-      <div className="grid grid-cols-1 gap-4">
-        <div className="p-3 md:p-4 border rounded-md">
+    <div className="bg-white rounded-md p-3 md:p-4 w-full max-w-full">
+      <div className="flex flex-col gap-4">
+        <div className="p-3 md:p-4 border rounded-md w-full">
           <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-4 text-sm md:text-base">Percentual de Rendimento</h3>
           <div className="h-[200px] md:h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -45,7 +45,7 @@ export const QuestionStats: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-3 md:p-4 border rounded-md">
+        <div className="p-3 md:p-4 border rounded-md w-full">
           <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-4 text-sm md:text-base">Alternativas mais respondidas</h3>
           <div className="h-[200px] md:h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
