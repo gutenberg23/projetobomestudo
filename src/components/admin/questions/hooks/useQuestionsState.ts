@@ -16,6 +16,7 @@ export const useQuestionsState = () => {
   const [questionText, setQuestionText] = useState<string>("");
   const [teacherExplanation, setTeacherExplanation] = useState<string>("");
   const [expandableContent, setExpandableContent] = useState<string>("");
+  const [aiExplanation, setAIExplanation] = useState<string>("");
   const [options, setOptions] = useState<QuestionOption[]>([]);
   
   // Estado para busca e edição
@@ -88,6 +89,7 @@ export const useQuestionsState = () => {
     questionText, setQuestionText,
     teacherExplanation, setTeacherExplanation,
     expandableContent, setExpandableContent,
+    aiExplanation, setAIExplanation,
     options, setOptions,
     
     // Search and edit state

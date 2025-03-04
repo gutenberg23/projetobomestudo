@@ -9,6 +9,8 @@ interface QuestionTextFieldsProps {
   setTeacherExplanation: ((value: string) => void) | null;
   expandableContent?: string | null;
   setExpandableContent?: ((value: string) => void) | null;
+  aiExplanation?: string | null;
+  setAIExplanation?: ((value: string) => void) | null;
 }
 
 const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
@@ -18,6 +20,8 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
   setTeacherExplanation,
   expandableContent,
   setExpandableContent,
+  aiExplanation,
+  setAIExplanation
 }) => {
   return (
     <div className="space-y-4">
@@ -54,6 +58,19 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
             placeholder="Digite a explicação do professor..."
             value={teacherExplanation}
             onChange={(e) => setTeacherExplanation(e.target.value)}
+            className="min-h-[200px]"
+            richText={true}
+          />
+        </div>
+      )}
+      
+      {aiExplanation !== null && setAIExplanation !== null && (
+        <div>
+          <Textarea
+            id="ai-explanation"
+            placeholder="Digite a resposta da IA..."
+            value={aiExplanation}
+            onChange={(e) => setAIExplanation(e.target.value)}
             className="min-h-[200px]"
             richText={true}
           />

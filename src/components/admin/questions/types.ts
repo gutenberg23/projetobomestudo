@@ -11,6 +11,7 @@ export interface QuestionItemType {
   questionType: string;
   content: string;
   teacherExplanation: string;
+  aiExplanation?: string;
   options: Array<{
     id: string;
     text: string;

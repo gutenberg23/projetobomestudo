@@ -6,10 +6,10 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
     const {
       questionId, year, institution, organization, role, discipline,
       level, difficulty, questionType, questionText, teacherExplanation,
-      options, questions, setQuestions, setIsEditQuestionCardOpen, setQuestionId, 
+      aiExplanation, options, questions, setQuestions, setIsEditQuestionCardOpen, setQuestionId, 
       setYear, setInstitution, setOrganization, setRole, setDiscipline,
       setLevel, setDifficulty, setQuestionType, setQuestionText, setTeacherExplanation,
-      setOptions
+      setAIExplanation, setOptions
     } = state;
 
     // Verificações de preenchimento (igual ao salvamento)
@@ -63,6 +63,7 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
       questionType,
       content: questionText,
       teacherExplanation,
+      aiExplanation,
       options
     } : q);
     
@@ -84,6 +85,7 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
     setQuestionType("");
     setQuestionText("");
     setTeacherExplanation("");
+    setAIExplanation("");
     setOptions([]);
   };
 

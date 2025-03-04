@@ -55,6 +55,8 @@ const Questoes: React.FC = () => {
             setTeacherExplanation={state.setTeacherExplanation}
             expandableContent={state.expandableContent}
             setExpandableContent={state.setExpandableContent}
+            aiExplanation={state.aiExplanation}
+            setAIExplanation={state.setAIExplanation}
             options={state.options}
             setOptions={state.setOptions}
             institutions={state.institutions}
@@ -125,6 +127,8 @@ const Questoes: React.FC = () => {
           setTeacherExplanation={state.setTeacherExplanation}
           expandableContent={state.expandableContent}
           setExpandableContent={state.setExpandableContent}
+          aiExplanation={state.aiExplanation}
+          setAIExplanation={state.setAIExplanation}
           options={state.options}
           setOptions={state.setOptions}
           institutions={state.institutions}

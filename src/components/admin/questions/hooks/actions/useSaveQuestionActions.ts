@@ -8,9 +8,9 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
     const {
       questionId, year, institution, organization, role, discipline,
       level, difficulty, questionType, questionText, teacherExplanation,
-      options, questions, setQuestions, setQuestionId, setYear, setInstitution,
+      aiExplanation, options, questions, setQuestions, setQuestionId, setYear, setInstitution,
       setOrganization, setRole, setDiscipline, setLevel, setDifficulty,
-      setQuestionType, setQuestionText, setTeacherExplanation, setOptions
+      setQuestionType, setQuestionText, setTeacherExplanation, setAIExplanation, setOptions
     } = state;
 
     if (
@@ -63,6 +63,7 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
       questionType,
       content: questionText,
       teacherExplanation,
+      aiExplanation,
       options: options
     };
 
@@ -84,6 +85,7 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
     setQuestionType("");
     setQuestionText("");
     setTeacherExplanation("");
+    setAIExplanation("");
     setOptions([]);
 
     toast.success("Questão salva com sucesso!");

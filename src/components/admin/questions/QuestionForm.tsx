@@ -31,6 +31,8 @@ interface QuestionFormProps {
   setTeacherExplanation: (value: string) => void;
   expandableContent: string;
   setExpandableContent: (value: string) => void;
+  aiExplanation: string;
+  setAIExplanation: (value: string) => void;
   options: QuestionOption[];
   setOptions: (options: QuestionOption[]) => void;
   institutions: string[];
@@ -77,6 +79,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   setTeacherExplanation,
   expandableContent,
   setExpandableContent,
+  aiExplanation,
+  setAIExplanation,
   options,
   setOptions,
   institutions,
@@ -123,6 +127,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           setTeacherExplanation={null}
           expandableContent={expandableContent}
           setExpandableContent={setExpandableContent}
+          aiExplanation={null}
+          setAIExplanation={null}
         />
       </div>
 
@@ -138,6 +144,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           setTeacherExplanation={null}
           expandableContent={null}
           setExpandableContent={null}
+          aiExplanation={null}
+          setAIExplanation={null}
         />
       </div>
 
@@ -156,6 +164,25 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           setTeacherExplanation={setTeacherExplanation}
           expandableContent={null}
           setExpandableContent={null}
+          aiExplanation={null}
+          setAIExplanation={null}
+        />
+      </div>
+
+      {/* AI Explanation */}
+      <div>
+        <label htmlFor="ai-explanation" className="block text-sm font-medium text-[#272f3c] mb-1">
+          Resposta da IA
+        </label>
+        <QuestionTextFields 
+          questionText={null} 
+          setQuestionText={null} 
+          teacherExplanation={null} 
+          setTeacherExplanation={null}
+          expandableContent={null}
+          setExpandableContent={null}
+          aiExplanation={aiExplanation}
+          setAIExplanation={setAIExplanation}
         />
       </div>
 

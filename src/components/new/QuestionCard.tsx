@@ -22,6 +22,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [showComments, setShowComments] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showOfficialAnswer, setShowOfficialAnswer] = useState(false);
+  const [showAIAnswer, setShowAIAnswer] = useState(false);
   const [likedComments, setLikedComments] = useState<string[]>([]);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [comment, setComment] = useState("");
@@ -40,6 +41,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   
   const toggleOfficialAnswer = () => {
     setShowOfficialAnswer(!showOfficialAnswer);
+  };
+  
+  const toggleAIAnswer = () => {
+    setShowAIAnswer(!showAIAnswer);
   };
   
   const toggleExpandedContent = () => {
@@ -125,7 +130,18 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       {question.options.map((option, index) => <QuestionOption key={option.id} id={option.id} text={option.text} index={index} isDisabled={disabledOptions.includes(option.id)} isSelected={selectedOption === option.id} isCorrect={index === 3} onToggleDisabled={handleToggleDisabled} onSelect={handleOptionClick} showAnswer={showAnswer} />)}
 
-      <QuestionFooter commentsCount={question.comments.length} showComments={showComments} showAnswer={showAnswer} showOfficialAnswer={showOfficialAnswer} onToggleComments={toggleComments} onToggleAnswer={toggleAnswer} onToggleOfficialAnswer={toggleOfficialAnswer} hasSelectedOption={selectedOption !== null} />
+      <QuestionFooter 
+        commentsCount={question.comments.length} 
+        showComments={showComments} 
+        showAnswer={showAnswer} 
+        showOfficialAnswer={showOfficialAnswer}
+        showAIAnswer={showAIAnswer}
+        onToggleComments={toggleComments} 
+        onToggleAnswer={toggleAnswer} 
+        onToggleOfficialAnswer={toggleOfficialAnswer}
+        onToggleAIAnswer={toggleAIAnswer}
+        hasSelectedOption={selectedOption !== null} 
+      />
 
       {showOfficialAnswer && <section className="py-5 w-full border-t border-gray-100">
           <QuestionComment comment={{
@@ -136,6 +152,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         timestamp: "Gabarito oficial",
         likes: 0
       }} isLiked={likedComments.includes("answer")} onToggleLike={toggleLike} />
+        </section>}
+
+      {showAIAnswer && <section className="py-5 w-full border-t border-gray-100">
+          <QuestionComment comment={{
+        id: "ai-answer",
+        author: "BIA (BomEstudo IA)",
+        avatar: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+        content: question.aiExplanation || "Essa questão ainda não possui resposta da BIA.",
+        timestamp: "Resposta da IA",
+        likes: 0
+      }} isLiked={likedComments.includes("ai-answer")} onToggleLike={toggleLike} />
         </section>}
 
       {showComments && <section className="py-5 w-full border-t border-gray-100">

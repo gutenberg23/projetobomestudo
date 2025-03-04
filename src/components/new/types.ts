@@ -1,19 +1,15 @@
-
 export interface Question {
   id: string;
   content: string;
+  additionalContent?: string;
   year: string;
   institution: string;
   organization: string;
   role: string;
-  options: Array<{
-    id: string;
-    text: string;
-    isCorrect?: boolean;
-  }>;
-  comments: Array<Comment>;
-  additionalContent?: string;
+  options: QuestionOption[];
+  comments: Comment[];
   images?: string[];
+  aiExplanation?: string;
 }
 
 export interface QuestionOption {

@@ -1,13 +1,17 @@
 
 import React from "react";
+import { Brain } from "lucide-react";
+
 interface QuestionFooterProps {
   commentsCount: number;
   showComments: boolean;
   showAnswer: boolean;
   showOfficialAnswer: boolean;
+  showAIAnswer: boolean;
   onToggleComments: () => void;
   onToggleAnswer: () => void;
   onToggleOfficialAnswer: () => void;
+  onToggleAIAnswer: () => void;
   hasSelectedOption?: boolean;
 }
 export const QuestionFooter: React.FC<QuestionFooterProps> = ({
@@ -15,9 +19,11 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
   showComments,
   showAnswer,
   showOfficialAnswer,
+  showAIAnswer,
   onToggleComments,
   onToggleAnswer,
   onToggleOfficialAnswer,
+  onToggleAIAnswer,
   hasSelectedOption = false
 }) => {
   return <footer className="flex flex-wrap justify-between items-center py-5 px-2 md:px-6 w-full text-sm md:text-base font-bold text-center gap-2">
@@ -42,6 +48,10 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
           <img src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/174f9704483f501cce9c4ad9f0dc87d07a661f005489418fe45e6629b528100c" alt="Answer Key Icon" className="object-contain shrink-0 self-stretch my-auto w-3 md:w-4 aspect-square" />
           <span className="text-xs md:text-base">GABARITO COMENTADO</span>
         </span>
+      </button>
+
+      <button onClick={onToggleAIAnswer} className={`flex shrink-0 justify-center items-center px-4 py-3 md:py-4 rounded-xl border border-purple-400 hover:bg-purple-50 transition-colors ${showAIAnswer ? "text-gray-700 bg-purple-100" : "text-purple-400 bg-white"}`}>
+        <Brain className="w-5 h-5 md:w-6 md:h-6" />
       </button>
     </footer>;
 };
