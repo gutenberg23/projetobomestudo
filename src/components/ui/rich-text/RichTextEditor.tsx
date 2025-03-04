@@ -85,7 +85,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   });
 
   return (
-    <div className="flex flex-col gap-2 w-full font-inter overflow-hidden">
+    <div className="flex flex-col gap-2 w-full font-inter">
       {editor && <RichTextToolbar editor={editor} />}
       
       {/* Editor Tiptap */}
@@ -94,7 +94,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         "min-h-[80px] w-full",
         className
       )}>
-        {editor && <EditorContent editor={editor} className="overflow-x-auto" />}
+        {editor && <EditorContent editor={editor} />}
       </div>
     </div>
   );

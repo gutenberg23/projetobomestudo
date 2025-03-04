@@ -44,7 +44,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   filterOptions
 }) => {
   return (
-    <div className="bg-white rounded-lg p-4 sm:p-6 mb-8 overflow-hidden">
+    <div className="bg-white rounded-lg p-6 mb-8">
       <div className="grid grid-cols-1 gap-6 mb-6">
         <div className="relative w-full">
           <Input 
@@ -58,7 +58,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 mb-6 overflow-x-visible">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
         <CheckboxGroup 
           title="Disciplina" 
           options={filterOptions.disciplines} 
@@ -108,10 +108,10 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           onChange={value => handleFilterChange("educationLevels", value)} 
         />
         
-        <div className="flex items-center gap-2 sm:gap-4">
-          <span className="text-xs sm:text-sm whitespace-nowrap">Questões por página:</span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm whitespace-nowrap">Questões por página:</span>
           <Select value={questionsPerPage} onValueChange={value => setQuestionsPerPage(value)}>
-            <SelectTrigger className="w-[90px] sm:w-[100px]">
+            <SelectTrigger className="w-[100px]">
               <SelectValue placeholder="10" />
             </SelectTrigger>
             <SelectContent>
