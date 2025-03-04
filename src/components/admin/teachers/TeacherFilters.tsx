@@ -51,12 +51,12 @@ const TeacherFilters: React.FC<TeacherFiltersProps> = ({
             placeholder="Buscar professor..."
             value={searchValue}
             onChange={handleSearchChange}
-            className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+            className="border-[#ea2be2]/30 focus-visible:ring-[#ea2be2]"
           />
           <Button 
             type="submit" 
             size="icon" 
-            className="bg-[#2a8e9e] hover:bg-[#2a8e9e]/90"
+            className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
           >
             <Search className="h-4 w-4" />
           </Button>
@@ -69,7 +69,7 @@ const TeacherFilters: React.FC<TeacherFiltersProps> = ({
             value={filtros.filtroStatus}
             onValueChange={onChangeStatusFilter}
           >
-            <SelectTrigger className="min-w-[180px] border-[#2a8e9e]/30 focus:ring-[#2a8e9e]">
+            <SelectTrigger className="min-w-[180px] border-[#ea2be2]/30 focus:ring-[#ea2be2]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -86,7 +86,7 @@ const TeacherFilters: React.FC<TeacherFiltersProps> = ({
             value={filtros.filtroDisciplina}
             onValueChange={onChangeDisciplinaFilter}
           >
-            <SelectTrigger className="min-w-[180px] border-[#2a8e9e]/30 focus:ring-[#2a8e9e]">
+            <SelectTrigger className="min-w-[180px] border-[#ea2be2]/30 focus:ring-[#ea2be2]">
               <SelectValue placeholder="Disciplina" />
             </SelectTrigger>
             <SelectContent>
@@ -104,14 +104,14 @@ const TeacherFilters: React.FC<TeacherFiltersProps> = ({
           variant="outline" 
           size="icon"
           onClick={onFilterSubmit}
-          className="border-[#2a8e9e] text-[#2a8e9e] hover:bg-[#e8f1f3]"
+          className="border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa]"
         >
           <Filter className="h-4 w-4" />
         </Button>
         
         <Button 
           onClick={onAddNewTeacher}
-          className="bg-[#2a8e9e] hover:bg-[#2a8e9e]/90"
+          className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
         >
           <Plus className="h-4 w-4 mr-2" />
           Novo Professor

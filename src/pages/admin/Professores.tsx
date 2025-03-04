@@ -39,7 +39,8 @@ const Professores = () => {
     selectTeacher,
     filterTeachers,
     deleteTeacher,
-    updateTeacher
+    updateTeacher,
+    toggleTeacherActive
   } = useTeacherActions(state);
 
   return (
@@ -82,6 +83,7 @@ const Professores = () => {
           selectTeacher(teacher);
           setDetailsDialogOpen(true);
         }}
+        onToggleActive={toggleTeacherActive}
       />
       
       {/* Paginação */}

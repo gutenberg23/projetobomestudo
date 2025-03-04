@@ -15,7 +15,9 @@ const mockTeachers: TeacherData[] = [
     facebook: "https://facebook.com/anasilva",
     fotoPerfil: "https://i.pravatar.cc/150?img=1",
     status: "aprovado",
-    dataCadastro: "12/05/2023"
+    dataCadastro: "12/05/2023",
+    ativo: true,
+    rating: 4.5
   },
   {
     id: "2",
@@ -26,7 +28,9 @@ const mockTeachers: TeacherData[] = [
     instagram: "https://instagram.com/carlosoliveira",
     fotoPerfil: "https://i.pravatar.cc/150?img=2",
     status: "pendente",
-    dataCadastro: "03/07/2023"
+    dataCadastro: "03/07/2023",
+    ativo: false,
+    rating: 3.8
   },
   {
     id: "3",
@@ -38,7 +42,9 @@ const mockTeachers: TeacherData[] = [
     facebook: "https://facebook.com/julianamendes",
     fotoPerfil: "https://i.pravatar.cc/150?img=3",
     status: "rejeitado",
-    dataCadastro: "28/09/2023"
+    dataCadastro: "28/09/2023",
+    ativo: false,
+    rating: 2.5
   },
   {
     id: "4",
@@ -50,7 +56,9 @@ const mockTeachers: TeacherData[] = [
     twitter: "https://twitter.com/robertoalmeida",
     fotoPerfil: "https://i.pravatar.cc/150?img=4",
     status: "aprovado",
-    dataCadastro: "15/01/2023"
+    dataCadastro: "15/01/2023",
+    ativo: true,
+    rating: 5.0
   },
   {
     id: "5",
@@ -61,7 +69,9 @@ const mockTeachers: TeacherData[] = [
     facebook: "https://facebook.com/fernandacosta",
     fotoPerfil: "https://i.pravatar.cc/150?img=5",
     status: "pendente",
-    dataCadastro: "07/04/2023"
+    dataCadastro: "07/04/2023",
+    ativo: true,
+    rating: 4.2
   }
 ];
 

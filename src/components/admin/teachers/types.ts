@@ -13,6 +13,8 @@ export interface TeacherData {
   fotoPerfil: string;
   status: TeacherStatus;
   dataCadastro: string;
+  ativo: boolean;
+  rating: number;
 }
 
 export interface TeacherFiltersState {

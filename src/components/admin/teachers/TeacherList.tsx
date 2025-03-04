@@ -11,22 +11,47 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Edit, Trash2, ExternalLink, Youtube, Facebook, Twitter, Instagram } from "lucide-react";
+import { Edit, Trash2, ExternalLink, Youtube, Facebook, Twitter, Instagram, Power, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 interface TeacherListProps {
   teachers: TeacherData[];
   onEdit: (teacher: TeacherData) => void;
   onDelete: (teacher: TeacherData) => void;
   onViewDetails: (teacher: TeacherData) => void;
+  onToggleActive: (teacher: TeacherData) => void;
 }
 
 const TeacherList: React.FC<TeacherListProps> = ({
   teachers,
   onEdit,
   onDelete,
-  onViewDetails
+  onViewDetails,
+  onToggleActive
 }) => {
+  const renderRatingStars = (rating: number) => {
+    const stars = [];
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<Star key={i} className="h-4 w-4 fill-[#ea2be2] text-[#ea2be2]" />);
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(<Star key={i} className="h-4 w-4 fill-[#ea2be2]/50 text-[#ea2be2]" />);
+      } else {
+        stars.push(<Star key={i} className="h-4 w-4 text-[#ea2be2]/30" />);
+      }
+    }
+    return (
+      <div className="flex">
+        {stars}
+        <span className="ml-2 text-[#67748a]">{rating.toFixed(1)}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <Table>
@@ -36,8 +61,10 @@ const TeacherList: React.FC<TeacherListProps> = ({
             <TableHead>Disciplina</TableHead>
             <TableHead>Canal no YouTube</TableHead>
             <TableHead>Redes Sociais</TableHead>
+            <TableHead>Rating</TableHead>
             <TableHead>Data de Cadastro</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Ativo</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -49,7 +76,7 @@ const TeacherList: React.FC<TeacherListProps> = ({
                   <div className="flex items-center space-x-3">
                     <Avatar>
                       <AvatarImage src={teacher.fotoPerfil} />
-                      <AvatarFallback className="bg-[#2a8e9e] text-white">
+                      <AvatarFallback className="bg-[#ea2be2] text-white">
                         {teacher.nomeCompleto.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -60,7 +87,7 @@ const TeacherList: React.FC<TeacherListProps> = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="bg-[#e8f1f3] text-[#2a8e9e] border-[#2a8e9e]">
+                  <Badge variant="outline" className="bg-[#f6f8fa] text-[#ea2be2] border-[#ea2be2]">
                     {teacher.disciplina}
                   </Badge>
                 </TableCell>
@@ -69,7 +96,7 @@ const TeacherList: React.FC<TeacherListProps> = ({
                     href={teacher.linkYoutube} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="inline-flex items-center text-[#2a8e9e] hover:underline"
+                    className="inline-flex items-center text-[#ea2be2] hover:underline"
                   >
                     <Youtube className="h-4 w-4 mr-1" />
                     Canal
@@ -78,21 +105,24 @@ const TeacherList: React.FC<TeacherListProps> = ({
                 <TableCell>
                   <div className="flex space-x-2">
                     {teacher.instagram && (
-                      <a href={teacher.instagram} target="_blank" rel="noopener noreferrer" className="text-[#2a8e9e]">
+                      <a href={teacher.instagram} target="_blank" rel="noopener noreferrer" className="text-[#ea2be2]">
                         <Instagram className="h-4 w-4" />
                       </a>
                     )}
                     {teacher.twitter && (
-                      <a href={teacher.twitter} target="_blank" rel="noopener noreferrer" className="text-[#2a8e9e]">
+                      <a href={teacher.twitter} target="_blank" rel="noopener noreferrer" className="text-[#ea2be2]">
                         <Twitter className="h-4 w-4" />
                       </a>
                     )}
                     {teacher.facebook && (
-                      <a href={teacher.facebook} target="_blank" rel="noopener noreferrer" className="text-[#2a8e9e]">
+                      <a href={teacher.facebook} target="_blank" rel="noopener noreferrer" className="text-[#ea2be2]">
                         <Facebook className="h-4 w-4" />
                       </a>
                     )}
                   </div>
+                </TableCell>
+                <TableCell>
+                  {renderRatingStars(teacher.rating)}
                 </TableCell>
                 <TableCell>{teacher.dataCadastro}</TableCell>
                 <TableCell>
@@ -109,13 +139,20 @@ const TeacherList: React.FC<TeacherListProps> = ({
                      teacher.status === 'pendente' ? 'Pendente' : 'Rejeitado'}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  <Switch 
+                    checked={teacher.ativo} 
+                    onCheckedChange={() => onToggleActive(teacher)}
+                    className="data-[state=checked]:bg-[#ea2be2]"
+                  />
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => onViewDetails(teacher)}
-                      className="border-[#2a8e9e] text-[#2a8e9e] hover:bg-[#e8f1f3]"
+                      className="border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa]"
                     >
                       <ExternalLink size={16} />
                     </Button>
@@ -123,7 +160,7 @@ const TeacherList: React.FC<TeacherListProps> = ({
                       variant="outline" 
                       size="sm" 
                       onClick={() => onEdit(teacher)}
-                      className="border-[#2a8e9e] text-[#2a8e9e] hover:bg-[#e8f1f3]"
+                      className="border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa]"
                     >
                       <Edit size={16} />
                     </Button>
@@ -141,7 +178,7 @@ const TeacherList: React.FC<TeacherListProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8">
+              <TableCell colSpan={9} className="text-center py-8">
                 <div className="text-center">
                   <Youtube className="mx-auto h-12 w-12 text-gray-300" />
                   <h3 className="mt-2 text-lg font-medium text-[#272f3c]">Nenhum professor encontrado</h3>

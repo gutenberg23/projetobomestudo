@@ -36,12 +36,12 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     }
     
     // Filtrar por status
-    if (filtros.filtroStatus) {
+    if (filtros.filtroStatus && filtros.filtroStatus !== "todos") {
       filtered = filtered.filter(teacher => teacher.status === filtros.filtroStatus);
     }
     
     // Filtrar por disciplina
-    if (filtros.filtroDisciplina) {
+    if (filtros.filtroDisciplina && filtros.filtroDisciplina !== "todas") {
       filtered = filtered.filter(teacher => teacher.disciplina === filtros.filtroDisciplina);
     }
     
@@ -59,6 +59,20 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     toast({
       title: "Status atualizado",
       description: `O professor foi ${status === 'aprovado' ? 'aprovado' : status === 'rejeitado' ? 'rejeitado' : 'marcado como pendente'} com sucesso.`,
+    });
+  };
+  
+  // Ativar/Desativar professor
+  const toggleTeacherActive = (teacher: TeacherData) => {
+    const updatedTeachers = teachers.map(t => 
+      t.id === teacher.id ? { ...t, ativo: !t.ativo } : t
+    );
+    
+    setTeachers(updatedTeachers);
+    
+    toast({
+      title: teacher.ativo ? "Professor desativado" : "Professor ativado",
+      description: `O professor ${teacher.nomeCompleto} foi ${teacher.ativo ? 'desativado' : 'ativado'} com sucesso.`,
     });
   };
   
@@ -93,6 +107,7 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     selectTeacher,
     filterTeachers,
     updateTeacherStatus,
+    toggleTeacherActive,
     deleteTeacher,
     updateTeacher
   };
