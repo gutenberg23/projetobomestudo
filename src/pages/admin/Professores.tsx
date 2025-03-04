@@ -1,17 +1,14 @@
 
 import React, { useState } from "react";
 import {
-  TeacherList,
-  TeacherFilters,
   TeacherStats,
-  TeacherPagination,
-  EditTeacherDialog,
-  DeleteTeacherDialog,
-  ViewTeacherDialog
+  TeacherFilters,
+  TeacherPageHeader,
+  TeacherListSection,
+  TeacherDialogs
 } from "@/components/admin/teachers";
 import { useTeachersState } from "@/components/admin/teachers/hooks/useTeachersState";
 import { useTeacherActions } from "@/components/admin/teachers/hooks/useTeacherActions";
-import NewTeacherDialog from "@/components/admin/teachers/dialogs/NewTeacherDialog";
 
 const Professores = () => {
   const state = useTeachersState();
@@ -47,18 +44,31 @@ const Professores = () => {
   
   const [newTeacherDialogOpen, setNewTeacherDialogOpen] = useState(false);
 
+  // Funções auxiliares para ações de professor
+  const handleEditTeacher = (teacher: any) => {
+    selectTeacher(teacher);
+    setEditDialogOpen(true);
+  };
+
+  const handleDeleteTeacher = (teacher: any) => {
+    selectTeacher(teacher);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleViewTeacherDetails = (teacher: any) => {
+    selectTeacher(teacher);
+    setDetailsDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Cabeçalho */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-[#272f3c]">Professores</h1>
-        <p className="text-[#67748a]">Gerenciamento de professores da plataforma</p>
-      </div>
+      {/* Cabeçalho da página */}
+      <TeacherPageHeader />
       
-      {/* Estatísticas */}
+      {/* Estatísticas de professores */}
       <TeacherStats teachers={teachers} />
       
-      {/* Barra de ferramentas */}
+      {/* Filtros e ações */}
       <TeacherFilters 
         filtros={filtros}
         onChangeSearchTerm={(termo) => setFiltros({...filtros, termoPesquisa: termo})}
@@ -69,64 +79,36 @@ const Professores = () => {
         disciplinas={disciplinas}
       />
       
-      {/* Tabela de professores */}
-      <TeacherList 
-        teachers={paginatedTeachers}
-        onEdit={(teacher) => {
-          selectTeacher(teacher);
-          setEditDialogOpen(true);
-        }}
-        onDelete={(teacher) => {
-          selectTeacher(teacher);
-          setDeleteDialogOpen(true);
-        }}
-        onViewDetails={(teacher) => {
-          selectTeacher(teacher);
-          setDetailsDialogOpen(true);
-        }}
+      {/* Seção de listagem e paginação */}
+      <TeacherListSection 
+        paginatedTeachers={paginatedTeachers}
+        filteredTeachers={filteredTeachers}
+        paginaAtual={paginaAtual}
+        totalPaginas={totalPaginas}
+        indiceInicial={indiceInicial}
+        indiceFinal={indiceFinal}
+        onEdit={handleEditTeacher}
+        onDelete={handleDeleteTeacher}
+        onViewDetails={handleViewTeacherDetails}
         onToggleActive={toggleTeacherActive}
+        onPageChange={setPaginaAtual}
       />
       
-      {/* Paginação */}
-      {filteredTeachers.length > 0 && (
-        <TeacherPagination
-          paginaAtual={paginaAtual}
-          totalPaginas={totalPaginas}
-          indiceInicial={indiceInicial}
-          indiceFinal={indiceFinal}
-          totalItens={filteredTeachers.length}
-          onPageChange={setPaginaAtual}
-        />
-      )}
-      
-      {/* Diálogos */}
-      <EditTeacherDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        teacher={selectedTeacher}
-        onUpdateTeacher={updateTeacher}
+      {/* Diálogos de gerenciamento de professores */}
+      <TeacherDialogs 
+        editDialogOpen={editDialogOpen}
+        deleteDialogOpen={deleteDialogOpen}
+        detailsDialogOpen={detailsDialogOpen}
+        newTeacherDialogOpen={newTeacherDialogOpen}
+        selectedTeacher={selectedTeacher}
         disciplinas={disciplinas}
-      />
-      
-      <DeleteTeacherDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        teacher={selectedTeacher}
-        onDelete={deleteTeacher}
-      />
-      
-      <ViewTeacherDialog
-        open={detailsDialogOpen}
-        onOpenChange={setDetailsDialogOpen}
-        teacher={selectedTeacher}
-      />
-      
-      {/* Novo diálogo para adicionar professor */}
-      <NewTeacherDialog
-        open={newTeacherDialogOpen}
-        onOpenChange={setNewTeacherDialogOpen}
-        onAddTeacher={addTeacher}
-        disciplinas={disciplinas}
+        setEditDialogOpen={setEditDialogOpen}
+        setDeleteDialogOpen={setDeleteDialogOpen}
+        setDetailsDialogOpen={setDetailsDialogOpen}
+        setNewTeacherDialogOpen={setNewTeacherDialogOpen}
+        updateTeacher={updateTeacher}
+        deleteTeacher={deleteTeacher}
+        addTeacher={addTeacher}
       />
     </div>
   );
