@@ -2,49 +2,26 @@
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Camera, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { TeacherBasicInfo } from "./teacher-signup/TeacherBasicInfo";
+import { TeacherPhotoUpload } from "./teacher-signup/TeacherPhotoUpload";
+import { TeacherDisciplineSelect } from "./teacher-signup/TeacherDisciplineSelect";
+import { TeacherTopicsList } from "./teacher-signup/TeacherTopicsList";
+import { TeacherSocialMedia } from "./teacher-signup/TeacherSocialMedia";
+import { TeacherTermsAgreement } from "./teacher-signup/TeacherTermsAgreement";
+import { disciplinas, topicosPorDisciplina, TeacherFormData } from "./teacher-signup/types";
 
 interface TeacherSignupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-// Lista de disciplinas para o dropdown
-const disciplinas = [
-  "Português",
-  "Matemática",
-  "Direito Constitucional",
-  "Direito Administrativo",
-  "Raciocínio Lógico",
-  "Contabilidade",
-  "Informática",
-  "Administração"
-];
-
-// Mock dos tópicos por disciplina
-const topicosPorDisciplina: Record<string, string[]> = {
-  "Português": ["Gramática", "Interpretação de Texto", "Redação", "Literatura"],
-  "Matemática": ["Álgebra", "Geometria", "Estatística", "Probabilidade"],
-  "Direito Constitucional": ["Princípios Fundamentais", "Direitos e Garantias", "Organização do Estado"],
-  "Direito Administrativo": ["Atos Administrativos", "Licitação", "Contratos Administrativos"],
-  "Raciocínio Lógico": ["Lógica de Argumentação", "Estruturas Lógicas", "Diagramas Lógicos"],
-  "Contabilidade": ["Contabilidade Básica", "Demonstrações Financeiras", "Análise de Balanços"],
-  "Informática": ["Sistemas Operacionais", "Excel", "Word", "Segurança da Informação"],
-  "Administração": ["Gestão de Pessoas", "Processos Organizacionais", "Planejamento Estratégico"]
-};
-
 export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({ 
   open, 
   onOpenChange 
 }) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<TeacherFormData>({
     nomeCompleto: "",
     email: "",
     linkYoutube: "",
@@ -52,7 +29,7 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
     instagram: "",
     twitter: "",
     facebook: "",
-    fotoPerfil: null as File | null,
+    fotoPerfil: null,
     aceitouTermos: false
   });
   
@@ -177,215 +154,39 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-5 py-4">
-          {/* Dados básicos */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="nomeCompleto" className="text-[#022731]">Nome Completo*</Label>
-              <Input 
-                id="nomeCompleto" 
-                name="nomeCompleto"
-                value={formData.nomeCompleto}
-                onChange={handleInputChange}
-                placeholder="Digite seu nome completo"
-                className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-[#022731]">E-mail*</Label>
-              <Input 
-                id="email" 
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="seu.email@exemplo.com"
-                className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="linkYoutube" className="text-[#022731]">Link do Canal no YouTube*</Label>
-              <Input 
-                id="linkYoutube" 
-                name="linkYoutube"
-                value={formData.linkYoutube}
-                onChange={handleInputChange}
-                placeholder="https://youtube.com/c/seucanal"
-                className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
-                required
-              />
-            </div>
-          </div>
+          <TeacherBasicInfo 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
           
-          {/* Foto de Perfil */}
-          <div className="space-y-2">
-            <Label className="text-[#022731]">Foto de Perfil</Label>
-            <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 w-24 h-24 bg-[#e8f1f3] rounded-full flex items-center justify-center overflow-hidden border-2 border-[#2a8e9e]/30">
-                {fotoPreview ? (
-                  <img src={fotoPreview} alt="Preview" className="w-full h-full object-cover" />
-                ) : (
-                  <Camera className="w-8 h-8 text-[#2a8e9e]" />
-                )}
-              </div>
-              
-              <div className="flex-1">
-                <Button 
-                  type="button"
-                  variant="outline" 
-                  className="w-full border-[#2a8e9e]/30 text-[#022731] hover:bg-[#2a8e9e]/10"
-                  onClick={() => document.getElementById('fotoPerfil')?.click()}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Enviar foto
-                </Button>
-                <input
-                  id="fotoPerfil"
-                  name="fotoPerfil"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-                <p className="text-xs text-[#022731]/60 mt-1">
-                  Formatos suportados: JPG, PNG. Tamanho máximo: 2MB
-                </p>
-              </div>
-            </div>
-          </div>
+          <TeacherPhotoUpload 
+            fotoPreview={fotoPreview} 
+            handleFileChange={handleFileChange} 
+          />
           
-          {/* Disciplina */}
-          <div className="space-y-2">
-            <Label htmlFor="disciplina" className="text-[#022731]">Disciplina*</Label>
-            <Select
-              value={formData.disciplina}
-              onValueChange={handleDisciplinaChange}
-            >
-              <SelectTrigger className="border-[#2a8e9e]/30 focus:ring-[#2a8e9e]">
-                <SelectValue placeholder="Selecione sua disciplina principal" />
-              </SelectTrigger>
-              <SelectContent className="bg-white">
-                {disciplinas.map((disciplina) => (
-                  <SelectItem key={disciplina} value={disciplina}>
-                    {disciplina}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <TeacherDisciplineSelect 
+            disciplina={formData.disciplina} 
+            handleDisciplinaChange={handleDisciplinaChange} 
+            disciplinas={disciplinas} 
+          />
           
-          {/* Tópicos da disciplina selecionada */}
-          {topicosDisponiveis.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="topicos" className="text-[#022731]">Tópicos da Disciplina</Label>
-              <div className="border rounded-md border-[#2a8e9e]/30 p-4 max-h-[250px] overflow-y-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th className="text-left pb-2 text-[#022731] w-1/2">Tópico</th>
-                      <th className="text-left pb-2 text-[#022731] w-1/2">Link do Vídeo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topicosDisponiveis.map((topico) => (
-                      <tr key={topico} className="border-t border-[#2a8e9e]/10">
-                        <td className="py-2">
-                          <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`topico-${topico}`}
-                              checked={topicosSelecionados.includes(topico)}
-                              onCheckedChange={() => handleTopicoToggle(topico)}
-                              className="data-[state=checked]:bg-[#2a8e9e] data-[state=checked]:border-[#2a8e9e]"
-                            />
-                            <Label 
-                              htmlFor={`topico-${topico}`}
-                              className="text-sm text-[#022731] cursor-pointer"
-                            >
-                              {topico}
-                            </Label>
-                          </div>
-                        </td>
-                        <td className="py-2">
-                          <Input
-                            type="url"
-                            placeholder="https://youtu.be/exemplo"
-                            disabled={!topicosSelecionados.includes(topico)}
-                            value={linksVideos[topico] || ''}
-                            onChange={(e) => handleLinkVideoChange(topico, e.target.value)}
-                            className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p className="text-xs text-[#022731]/60">
-                Selecione os tópicos que você leciona e adicione links para seus vídeos sobre cada um.
-              </p>
-            </div>
-          )}
+          <TeacherTopicsList 
+            topicosDisponiveis={topicosDisponiveis}
+            topicosSelecionados={topicosSelecionados}
+            linksVideos={linksVideos}
+            handleTopicoToggle={handleTopicoToggle}
+            handleLinkVideoChange={handleLinkVideoChange}
+          />
           
-          {/* Redes Sociais */}
-          <div className="space-y-2">
-            <Label className="text-[#022731]">Redes Sociais</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <Input 
-                  id="instagram" 
-                  name="instagram"
-                  value={formData.instagram}
-                  onChange={handleInputChange}
-                  placeholder="Instagram (opcional)"
-                  className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
-                />
-              </div>
-              <div>
-                <Input 
-                  id="twitter" 
-                  name="twitter"
-                  value={formData.twitter}
-                  onChange={handleInputChange}
-                  placeholder="Twitter (opcional)"
-                  className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
-                />
-              </div>
-              <div>
-                <Input 
-                  id="facebook" 
-                  name="facebook"
-                  value={formData.facebook}
-                  onChange={handleInputChange}
-                  placeholder="Facebook (opcional)"
-                  className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
-                />
-              </div>
-            </div>
-          </div>
+          <TeacherSocialMedia 
+            formData={formData} 
+            handleInputChange={handleInputChange} 
+          />
           
-          {/* Termos e condições */}
-          <div className="flex items-start space-x-2 pt-2">
-            <Checkbox 
-              id="termos" 
-              checked={formData.aceitouTermos}
-              onCheckedChange={handleCheckboxChange}
-              className="data-[state=checked]:bg-[#2a8e9e] data-[state=checked]:border-[#2a8e9e] mt-1"
-            />
-            <div className="grid gap-1.5 leading-none">
-              <label
-                htmlFor="termos"
-                className="text-sm font-medium leading-none text-[#022731] peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Aceito os termos e condições
-              </label>
-              <p className="text-xs text-[#022731]/70">
-                Ao clicar, você concorda com nossos <Link to="/termos-e-politicas" className="text-[#2a8e9e] hover:underline">Termos de Serviço e Política de Privacidade</Link>, e autoriza o uso de seus dados para o processo de cadastro.
-              </p>
-            </div>
-          </div>
+          <TeacherTermsAgreement 
+            aceitouTermos={formData.aceitouTermos} 
+            handleCheckboxChange={handleCheckboxChange} 
+          />
           
           <DialogFooter>
             <Button 
