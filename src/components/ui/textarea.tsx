@@ -13,7 +13,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     if (richText) {
       return (
         <RichTextEditor
-          content={props.value as string || ""}
+          value={props.value as string || ""}
           onChange={(value) => {
             // Create a synthetic event to mimic the textarea onChange
             const syntheticEvent = {
