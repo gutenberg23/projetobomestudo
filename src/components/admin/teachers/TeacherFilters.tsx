@@ -73,7 +73,7 @@ const TeacherFilters: React.FC<TeacherFiltersProps> = ({
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
+              <SelectItem value="todos">Todos</SelectItem>
               <SelectItem value="aprovado">Aprovados</SelectItem>
               <SelectItem value="pendente">Pendentes</SelectItem>
               <SelectItem value="rejeitado">Rejeitados</SelectItem>
@@ -90,7 +90,7 @@ const TeacherFilters: React.FC<TeacherFiltersProps> = ({
               <SelectValue placeholder="Disciplina" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todas</SelectItem>
+              <SelectItem value="todas">Todas</SelectItem>
               {disciplinas.map((disciplina) => (
                 <SelectItem key={disciplina} value={disciplina}>
                   {disciplina}
