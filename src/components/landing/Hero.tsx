@@ -64,11 +64,11 @@ export const Hero = () => {
       {/* Conteúdo centralizado */}
       <div className="mx-auto px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16">
         <div className="text-center space-y-6 max-w-3xl px-4">
-          <h1 className="text-3xl sm:text-4xl md:text-7xl text-[#272f3c] leading-none font-extrabold">
+          <h1 className="text-3xl sm:text-4xl md:text-7xl text-[#272f3c] leading-tight font-extrabold">
             Conectando <span className="text-[#ea2be2]">Alunos</span> e <span className="text-[#ea2be2]">Professores</span>
           </h1>
           
-          <p className="text-base sm:text-lg md:text-xl text-[#67748a] max-w-2xl mx-auto leading-none">
+          <p className="text-base sm:text-lg md:text-xl text-[#67748a] max-w-2xl mx-auto leading-relaxed">
             Estude de graça com os melhores professores do YouTube e utilize ferramentas avançadas para potencializar seus estudos para concursos públicos.
           </p>
           
@@ -90,7 +90,7 @@ export const Hero = () => {
                 <div className="p-2 bg-white rounded-full shadow-none">
                   {item.icon}
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-[#67748a] leading-none">{item.label}</span>
+                <span className="text-xs sm:text-sm font-medium text-[#67748a]">{item.label}</span>
               </div>)}
           </div>
           
