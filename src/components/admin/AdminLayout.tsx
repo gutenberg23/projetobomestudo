@@ -16,6 +16,7 @@ import {
   Folders,
   ChevronLeft,
   ChevronRight,
+  Youtube,
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -42,6 +43,11 @@ const AdminLayout = () => {
       path: "/admin/usuarios", 
       label: "Usuários", 
       icon: <Users className="w-5 h-5" /> 
+    },
+    { 
+      path: "/admin/professores", 
+      label: "Professores", 
+      icon: <Youtube className="w-5 h-5" /> 
     },
     { 
       path: "/admin/questoes", 
@@ -112,7 +118,7 @@ const AdminLayout = () => {
                   className={cn(
                     "flex items-center px-3 py-3 rounded-md transition-colors",
                     location.pathname === item.path 
-                      ? "bg-[#fce7fc] text-[#f11ce3]"
+                      ? "bg-[#e8f1f3] text-[#2a8e9e]"
                       : "text-[#67748a] hover:bg-gray-100",
                     collapsed ? "justify-center" : "justify-start"
                   )}
@@ -129,7 +135,7 @@ const AdminLayout = () => {
           <Link 
             to="/" 
             className={cn(
-              "flex items-center text-[#67748a] hover:text-[#f11ce3] transition-colors",
+              "flex items-center text-[#67748a] hover:text-[#2a8e9e] transition-colors",
               collapsed ? "justify-center" : "justify-start"
             )}
           >

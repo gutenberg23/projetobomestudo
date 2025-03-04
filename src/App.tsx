@@ -28,6 +28,7 @@ import Topicos from "./pages/admin/Topicos";
 import Aulas from "./pages/admin/Aulas";
 import Disciplinas from "./pages/admin/Disciplinas";
 import Cursos from "./pages/admin/Cursos";
+import Professores from "./pages/admin/Professores";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="aulas" element={<Aulas />} />
             <Route path="disciplinas" element={<Disciplinas />} />
             <Route path="cursos" element={<Cursos />} />
+            <Route path="professores" element={<Professores />} />
           </Route>
           
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
