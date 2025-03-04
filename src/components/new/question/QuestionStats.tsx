@@ -18,19 +18,19 @@ const alternativesData = [
 
 export const QuestionStats: React.FC = () => {
   return (
-    <div className="bg-white rounded-md p-4 w-full">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-4 border rounded-md">
-          <h3 className="text-center text-[#272f3c] font-medium mb-4">Percentual de Rendimento</h3>
-          <div className="h-[280px]">
+    <div className="bg-white rounded-md p-3 md:p-4 w-full">
+      <div className="grid grid-cols-1 gap-4">
+        <div className="p-3 md:p-4 border rounded-md">
+          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-4 text-sm md:text-base">Percentual de Rendimento</h3>
+          <div className="h-[200px] md:h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={performanceData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius={40}
+                  outerRadius={60}
                   paddingAngle={2}
                   dataKey="value"
                 >
@@ -38,28 +38,28 @@ export const QuestionStats: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Legend />
+                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '12px' }} />
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="p-4 border rounded-md">
-          <h3 className="text-center text-[#272f3c] font-medium mb-4">Alternativas mais respondidas</h3>
-          <div className="h-[280px]">
+        <div className="p-3 md:p-4 border rounded-md">
+          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-4 text-sm md:text-base">Alternativas mais respondidas</h3>
+          <div className="h-[200px] md:h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={alternativesData}
                 margin={{
                   top: 5,
-                  right: 30,
+                  right: 20,
                   left: 0,
                   bottom: 5,
                 }}
               >
-                <XAxis dataKey="name" />
-                <YAxis />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
                 <Bar dataKey="value">
                   {alternativesData.map((entry, index) => (

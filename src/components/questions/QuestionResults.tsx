@@ -28,9 +28,9 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
     <>
       <QuestionListSummary count={questions.length} hasFilters={hasFilters} />
       
-      <hr className="border-t border-gray-200 w-full mb-6" />
+      <hr className="border-t border-gray-200 w-full mb-4 md:mb-6" />
       
-      <div className="space-y-6 mb-8">
+      <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
         {questions.map(question => (
           <QuestionCard 
             key={question.id} 

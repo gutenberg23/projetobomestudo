@@ -90,9 +90,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               aria-label={showExpandedContent ? "Recolher conteúdo adicional" : "Expandir conteúdo adicional"}
             >
               {showExpandedContent ? (
-                <ChevronUp className="h-5 w-5" />
+                <ChevronUp className="h-4 w-4 md:h-5 md:w-5" />
               ) : (
-                <ChevronDown className="h-5 w-5" />
+                <ChevronDown className="h-4 w-4 md:h-5 md:w-5" />
               )}
             </button>
           )}
@@ -114,14 +114,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 )}
                 
                 {question.additionalContent && (
-                  <div className="text-[#67748a]">
+                  <div className="text-[#67748a] text-sm md:text-base">
                     {question.additionalContent}
                   </div>
                 )}
               </div>
             )}
             
-            <p className="text-left">
+            <p className="text-left text-sm md:text-base">
               {question.content}
             </p>
           </div>
@@ -143,7 +143,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         hasSelectedOption={selectedOption !== null} 
       />
 
-      {showOfficialAnswer && <section className="py-5 w-full border-t border-gray-100">
+      {showOfficialAnswer && <section className="py-3 md:py-5 w-full border-t border-gray-100">
           <QuestionComment comment={{
         id: "answer",
         author: "Professor",
@@ -154,7 +154,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       }} isLiked={likedComments.includes("answer")} onToggleLike={toggleLike} />
         </section>}
 
-      {showAIAnswer && <section className="py-5 w-full border-t border-gray-100">
+      {showAIAnswer && <section className="py-3 md:py-5 w-full border-t border-gray-100">
           <QuestionComment comment={{
         id: "ai-answer",
         author: "BIA (BomEstudo IA)",
@@ -165,15 +165,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       }} isLiked={likedComments.includes("ai-answer")} onToggleLike={toggleLike} />
         </section>}
 
-      {showComments && <section className="py-5 w-full border-t border-gray-100">
+      {showComments && <section className="py-3 md:py-5 w-full border-t border-gray-100">
           {question.comments.map(comment => <QuestionComment key={comment.id} comment={comment} isLiked={likedComments.includes(comment.id)} onToggleLike={toggleLike} />)}
 
-          <div className="flex justify-center items-center px-3 md:px-12 py-1.5 mt-2.5 w-full text-base leading-none text-slate-800 gap-2">
+          <div className="flex justify-center items-center px-2 md:px-12 py-1.5 mt-2.5 w-full text-sm md:text-base leading-none text-slate-800 gap-2">
             <div className="flex overflow-hidden flex-1 shrink justify-center items-start w-full basis-0 min-w-0">
-              <input type="text" placeholder="Escreva uma mensagem" value={comment} onChange={e => setComment(e.target.value)} className="overflow-hidden flex-1 shrink p-2.5 w-full rounded-3xl basis-0 min-w-0 border border-purple-300 focus:border-purple-500 focus:outline-none" />
+              <input type="text" placeholder="Escreva uma mensagem" value={comment} onChange={e => setComment(e.target.value)} className="overflow-hidden flex-1 shrink p-2 md:p-2.5 w-full rounded-3xl basis-0 min-w-0 border border-purple-300 focus:border-purple-500 focus:outline-none text-sm md:text-base" />
             </div>
-            <button onClick={handleSubmitComment} className="p-2.5 rounded-full hover:bg-purple-50 flex-shrink-0">
-              <Send className="w-5 h-5 text-purple-500" />
+            <button onClick={handleSubmitComment} className="p-2 md:p-2.5 rounded-full hover:bg-purple-50 flex-shrink-0">
+              <Send className="w-4 h-4 md:w-5 md:h-5 text-purple-500" />
             </button>
           </div>
         </section>}
