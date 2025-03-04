@@ -8,6 +8,7 @@ export interface Curso {
   questoesIds?: string[];
   selecionada?: boolean;
   favoritos?: number;
+  informacoesCurso?: string;
 }
 
 export interface CursosFilterProps {

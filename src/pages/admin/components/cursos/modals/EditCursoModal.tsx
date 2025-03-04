@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -10,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { EditCursoModalProps } from "../CursosTypes";
 import { X } from "lucide-react";
 
@@ -21,6 +21,7 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
 }) => {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [informacoesCurso, setInformacoesCurso] = useState("");
   const [disciplinaId, setDisciplinaId] = useState("");
   const [disciplinasIds, setDisciplinasIds] = useState<string[]>([]);
 
@@ -28,6 +29,7 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
     if (curso) {
       setTitulo(curso.titulo);
       setDescricao(curso.descricao);
+      setInformacoesCurso(curso.informacoesCurso || "");
       setDisciplinasIds([...curso.disciplinasIds]);
     }
   }, [curso]);
@@ -51,6 +53,7 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
         ...curso,
         titulo,
         descricao,
+        informacoesCurso,
         disciplinasIds,
       });
       onClose();
@@ -84,6 +87,18 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="informacoesCurso" className="text-right">
+              Informações do curso
+            </Label>
+            <Textarea
+              id="informacoesCurso"
+              value={informacoesCurso}
+              onChange={(e) => setInformacoesCurso(e.target.value)}
+              className="col-span-3 min-h-[100px] border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+              richText={true}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
