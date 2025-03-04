@@ -1,47 +1,38 @@
-
 import React from "react";
 import { TrendingUp, Users, Youtube, DollarSign, Zap, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-
 export const TeacherBenefits = () => {
-  return (
-    <div className="w-full px-2.5 py-20 bg-gray-50">
+  return <div className="w-full px-2.5 py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row gap-12 items-center">
           {/* Lado Esquerdo - Texto e CTA */}
           <div className="md:w-1/2 space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#272f3c]">
+            <h2 className="text-3xl md:text-4xl text-[#272f3c] font-extrabold leading-none">
               Professores, <span className="text-[#ea2be2]">multiplique</span> seu alcance e sua receita
             </h2>
-            <p className="text-[#67748a]">
+            <p className="text-[#67748a] leading-none">
               Ao se tornar um professor parceiro do BomEstudo, você aumenta sua visibilidade, ganha mais inscritos em seu canal e potencializa sua receita com anúncios, sem cobrar nada dos alunos.
             </p>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4">
-              {[
-                {
-                  icon: <TrendingUp className="h-5 w-5 text-[#ea2be2]" />,
-                  title: "Mais visualizações",
-                  description: "Aumente o alcance dos seus vídeos e ganhe mais views"
-                },
-                {
-                  icon: <Users className="h-5 w-5 text-[#ea2be2]" />,
-                  title: "Novos inscritos",
-                  description: "Conquiste mais inscritos para seu canal do YouTube"
-                },
-                {
-                  icon: <DollarSign className="h-5 w-5 text-[#ea2be2]" />,
-                  title: "Maior receita",
-                  description: "Aumente sua receita com monetização dos vídeos"
-                },
-                {
-                  icon: <Globe className="h-5 w-5 text-[#ea2be2]" />,
-                  title: "Reconhecimento",
-                  description: "Torne-se uma referência no ensino para concursos"
-                }
-              ].map((benefit, index) => (
-                <div key={index} className="flex items-start">
+              {[{
+              icon: <TrendingUp className="h-5 w-5 text-[#ea2be2]" />,
+              title: "Mais visualizações",
+              description: "Aumente o alcance dos seus vídeos e ganhe mais views"
+            }, {
+              icon: <Users className="h-5 w-5 text-[#ea2be2]" />,
+              title: "Novos inscritos",
+              description: "Conquiste mais inscritos para seu canal do YouTube"
+            }, {
+              icon: <DollarSign className="h-5 w-5 text-[#ea2be2]" />,
+              title: "Maior receita",
+              description: "Aumente sua receita com monetização dos vídeos"
+            }, {
+              icon: <Globe className="h-5 w-5 text-[#ea2be2]" />,
+              title: "Reconhecimento",
+              description: "Torne-se uma referência no ensino para concursos"
+            }].map((benefit, index) => <div key={index} className="flex items-start">
                   <div className="mr-3 p-2 bg-white rounded-full shadow-sm">
                     {benefit.icon}
                   </div>
@@ -49,8 +40,7 @@ export const TeacherBenefits = () => {
                     <h3 className="font-medium text-[#272f3c]">{benefit.title}</h3>
                     <p className="text-sm text-[#67748a]">{benefit.description}</p>
                   </div>
-                </div>
-              ))}
+                </div>)}
             </div>
             
             <div className="pt-6">
@@ -112,6 +102,5 @@ export const TeacherBenefits = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };

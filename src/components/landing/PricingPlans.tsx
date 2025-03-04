@@ -1,24 +1,19 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, ChevronsRight, Crown, BadgeCheck, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
-
 export const PricingPlans = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
-  
   const toggleBillingCycle = () => {
     setBillingCycle(billingCycle === 'monthly' ? 'annually' : 'monthly');
   };
-  
-  return (
-    <div className="w-full px-2.5 py-20 bg-white">
+  return <div className="w-full px-2.5 py-20 bg-white">
       <div className="max-w-7xl mx-auto text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-bold text-[#272f3c] mb-4">
+        <h2 className="text-3xl md:text-4xl text-[#272f3c] mb-4 font-extrabold">
           Potencialize seus estudos com ferramentas avançadas
         </h2>
-        <p className="text-[#67748a] max-w-2xl mx-auto">
+        <p className="text-[#67748a] max-w-2xl mx-auto leading-none">
           Escolha o plano que melhor se adapta às suas necessidades e aumente suas chances de aprovação
         </p>
         
@@ -26,16 +21,9 @@ export const PricingPlans = () => {
           <span className={`text-sm mr-3 font-medium ${billingCycle === 'monthly' ? 'text-[#272f3c]' : 'text-[#67748a]'}`}>
             Mensal
           </span>
-          <button 
-            onClick={toggleBillingCycle}
-            className="relative inline-flex h-6 w-12 items-center rounded-full bg-gray-200"
-          >
+          <button onClick={toggleBillingCycle} className="relative inline-flex h-6 w-12 items-center rounded-full bg-gray-200">
             <span className="sr-only">Alternar ciclo de cobrança</span>
-            <span 
-              className={`inline-block h-4 w-4 transform rounded-full bg-[#ea2be2] transition-transform ${
-                billingCycle === 'annually' ? 'translate-x-7' : 'translate-x-1'
-              }`}
-            />
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-[#ea2be2] transition-transform ${billingCycle === 'annually' ? 'translate-x-7' : 'translate-x-1'}`} />
           </button>
           <span className={`text-sm ml-3 font-medium ${billingCycle === 'annually' ? 'text-[#272f3c]' : 'text-[#67748a]'}`}>
             Anual <span className="bg-[#ea2be2]/10 text-[#ea2be2] text-xs px-2 py-1 rounded-full">Economize 25%</span>
@@ -58,19 +46,20 @@ export const PricingPlans = () => {
             </div>
             
             <div className="space-y-4 mb-8">
-              {[
-                { text: "Acesso a todas as videoaulas" },
-                { text: "Banco de questões básico" },
-                { text: "Progresso de estudos limitado" },
-                { text: "Comunidade de alunos" }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center">
+              {[{
+              text: "Acesso a todas as videoaulas"
+            }, {
+              text: "Banco de questões básico"
+            }, {
+              text: "Progresso de estudos limitado"
+            }, {
+              text: "Comunidade de alunos"
+            }].map((item, index) => <div key={index} className="flex items-center">
                   <div className="mr-2 flex-shrink-0">
                     <Check className="h-5 w-5 text-[#67748a]" />
                   </div>
                   <p className="text-[#67748a]">{item.text}</p>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
           
@@ -98,38 +87,38 @@ export const PricingPlans = () => {
           
           <CardContent className="pt-6">
             <div className="flex justify-center items-center mb-8">
-              {billingCycle === 'monthly' ? (
-                <>
+              {billingCycle === 'monthly' ? <>
                   <span className="text-[#67748a] text-base line-through mr-2">R$ 29,99</span>
                   <span className="text-4xl font-bold text-[#272f3c]">R$ 18,99</span>
                   <span className="text-[#67748a] ml-1">/mês</span>
-                </>
-              ) : (
-                <>
+                </> : <>
                   <span className="text-[#67748a] text-base line-through mr-2">R$ 359,88</span>
                   <span className="text-4xl font-bold text-[#272f3c]">R$ 189,90</span>
                   <span className="text-[#67748a] ml-1">/ano</span>
-                </>
-              )}
+                </>}
             </div>
             
             <div className="space-y-4 mb-8">
-              {[
-                { text: "Acesso a todas as videoaulas" },
-                { text: "1,3 milhão de questões comentadas" },
-                { text: "Estatísticas detalhadas de desempenho" },
-                { text: "Simulados personalizados ilimitados" },
-                { text: "Edital verticalizado e organizado" },
-                { text: "Sistema de revisão espaçada" },
-                { text: "Suporte prioritário" }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center">
+              {[{
+              text: "Acesso a todas as videoaulas"
+            }, {
+              text: "1,3 milhão de questões comentadas"
+            }, {
+              text: "Estatísticas detalhadas de desempenho"
+            }, {
+              text: "Simulados personalizados ilimitados"
+            }, {
+              text: "Edital verticalizado e organizado"
+            }, {
+              text: "Sistema de revisão espaçada"
+            }, {
+              text: "Suporte prioritário"
+            }].map((item, index) => <div key={index} className="flex items-center">
                   <div className="mr-2 flex-shrink-0">
                     <Check className="h-5 w-5 text-[#ea2be2]" />
                   </div>
                   <p className="text-[#67748a]">{item.text}</p>
-                </div>
-              ))}
+                </div>)}
             </div>
           </CardContent>
           
@@ -149,6 +138,5 @@ export const PricingPlans = () => {
           </div>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
