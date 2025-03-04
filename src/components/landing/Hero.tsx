@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -94,15 +95,15 @@ export const Hero = () => {
               </div>)}
           </div>
           
-          {/* Botões */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+          {/* Botões com design melhorado */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <Link to="/login" className="w-full sm:w-auto">
-              <Button className="text-white rounded-lg text-sm sm:text-lg font-medium hover:bg-opacity-90 transition-all px-4 sm:px-8 py-5 sm:py-6 bg-[#ea2be2] hover:translate-y-[-2px] w-full">
+              <Button className="text-white rounded-lg text-sm sm:text-lg font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#ea2be2] to-[#f952ec] hover:shadow-lg hover:shadow-[#ea2be2]/30 hover:-translate-y-1 w-full border-b-4 border-[#c71dc0]">
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
             <Link to="/teacher-signup" className="w-full sm:w-auto">
-              <Button className="rounded-lg text-sm sm:text-lg font-medium transition-all px-4 sm:px-8 py-5 sm:py-6 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:translate-y-[-2px] w-full">
+              <Button className="rounded-lg text-sm sm:text-lg font-extrabold tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:shadow-lg hover:shadow-[#ea2be2]/20 hover:-translate-y-1 w-full">
                 QUERO SER PROFESSOR
               </Button>
             </Link>
