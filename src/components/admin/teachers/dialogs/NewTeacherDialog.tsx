@@ -38,6 +38,7 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
   
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [topicVideos, setTopicVideos] = useState<Record<string, string>>({});
   
   // Lista de tópicos simulada - em um caso real seria carregada do backend
   const topicsByDisciplina: Record<string, string[]> = {
@@ -58,6 +59,7 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
     }
     // Limpar tópicos selecionados quando a disciplina mudar
     setSelectedTopics([]);
+    setTopicVideos({});
   }, [formData.disciplina]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,6 +84,13 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
         ? prev.filter(t => t !== topic)
         : [...prev, topic]
     );
+  };
+
+  const handleVideoLinkChange = (topic: string, value: string) => {
+    setTopicVideos(prev => ({
+      ...prev,
+      [topic]: value
+    }));
   };
   
   const handleSubmit = (e: React.FormEvent) => {
@@ -114,6 +123,7 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
     });
     setFotoPreview(null);
     setSelectedTopics([]);
+    setTopicVideos({});
     
     onOpenChange(false);
   };
@@ -225,21 +235,34 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
             <div className="space-y-2">
               <Label className="text-[#272f3c]">Tópicos</Label>
               <div className="border rounded-md p-3 border-[#ea2be2]/30 max-h-[150px] overflow-y-auto">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2">
                   {availableTopics.map((topic) => (
-                    <div key={topic} className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`topic-${topic}`}
-                        checked={selectedTopics.includes(topic)}
-                        onCheckedChange={() => handleTopicToggle(topic)}
-                        className="data-[state=checked]:bg-[#ea2be2] data-[state=checked]:border-[#ea2be2]"
-                      />
-                      <label
-                        htmlFor={`topic-${topic}`}
-                        className="text-sm font-medium leading-none text-[#272f3c]"
-                      >
-                        {topic}
-                      </label>
+                    <div key={topic} className="flex items-start space-x-3">
+                      <div className="flex items-center space-x-2 pt-2 min-w-[200px]">
+                        <Checkbox 
+                          id={`topic-${topic}`}
+                          checked={selectedTopics.includes(topic)}
+                          onCheckedChange={() => handleTopicToggle(topic)}
+                          className="data-[state=checked]:bg-[#ea2be2] data-[state=checked]:border-[#ea2be2]"
+                        />
+                        <label
+                          htmlFor={`topic-${topic}`}
+                          className="text-sm font-medium leading-none text-[#272f3c]"
+                        >
+                          {topic}
+                        </label>
+                      </div>
+                      
+                      <div className="flex-1">
+                        <Input
+                          type="text"
+                          placeholder="Link do vídeo"
+                          disabled={!selectedTopics.includes(topic)}
+                          value={topicVideos[topic] || ''}
+                          onChange={(e) => handleVideoLinkChange(topic, e.target.value)}
+                          className="border-[#ea2be2]/30 focus-visible:ring-[#ea2be2] text-sm"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>

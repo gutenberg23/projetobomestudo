@@ -62,14 +62,16 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     });
   };
   
-  // Ativar/Desativar professor - Correção para funcionar adequadamente
+  // Ativar/Desativar professor - Corrigido para funcionar adequadamente
   const toggleTeacherActive = (teacher: TeacherData) => {
+    // Criar um novo array com o professor atualizado
     const updatedTeachers = teachers.map(t => 
       t.id === teacher.id ? { ...t, ativo: !t.ativo } : t
     );
     
     setTeachers(updatedTeachers);
     
+    // Mostrar toast com o novo status (invertido do valor atual)
     toast({
       title: teacher.ativo ? "Professor desativado" : "Professor ativado",
       description: `O professor ${teacher.nomeCompleto} foi ${teacher.ativo ? 'desativado' : 'ativado'} com sucesso.`,
