@@ -1,11 +1,9 @@
 
 import React from "react";
-import { 
-  EditTeacherDialog, 
-  DeleteTeacherDialog, 
-  ViewTeacherDialog,
-  NewTeacherDialog 
-} from "./dialogs";
+import EditTeacherDialog from "./dialogs/EditTeacherDialog";
+import DeleteTeacherDialog from "./dialogs/DeleteTeacherDialog";
+import ViewTeacherDialog from "./dialogs/ViewTeacherDialog";
+import NewTeacherDialog from "./dialogs/NewTeacherDialog";
 import { TeacherData } from "./types";
 
 interface TeacherDialogsProps {
