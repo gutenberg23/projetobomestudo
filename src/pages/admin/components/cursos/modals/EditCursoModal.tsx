@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -98,7 +99,6 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
               value={informacoesCurso}
               onChange={(e) => setInformacoesCurso(e.target.value)}
               className="col-span-3 min-h-[100px] border-[#ea2be2] focus-visible:ring-[#ea2be2]"
-              richText={true}
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
