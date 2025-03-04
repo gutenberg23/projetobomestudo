@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pencil, Trash } from "lucide-react";
+import { Pencil, Trash, Heart } from "lucide-react";
 import { DisciplinasTableProps } from "./DisciplinasTypes";
 
 export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
@@ -40,6 +40,12 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
             <TableHead className="w-[120px]">Nº de Aulas</TableHead>
             <TableHead className="w-[120px]">Nº de Tópicos</TableHead>
             <TableHead className="w-[120px]">Nº de Questões</TableHead>
+            <TableHead className="w-[120px]">
+              <div className="flex items-center gap-1">
+                <Heart className="h-4 w-4 text-[#ea2be2]" />
+                Favoritos
+              </div>
+            </TableHead>
             <TableHead className="w-[150px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -59,6 +65,7 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                 <TableCell>{disciplina.aulasIds.length} aulas</TableCell>
                 <TableCell>{disciplina.topicosIds?.length || 0} tópicos</TableCell>
                 <TableCell>{disciplina.questoesIds?.length || 0} questões</TableCell>
+                <TableCell>{disciplina.favoritos || 0}</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button 
@@ -82,7 +89,7 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={9} className="text-center py-4 text-[#67748a]">
                 Nenhuma disciplina encontrada com os filtros aplicados.
               </TableCell>
             </TableRow>

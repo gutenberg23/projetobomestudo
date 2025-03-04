@@ -9,7 +9,7 @@ import {
   TableCell
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash } from "lucide-react";
+import { Pencil, Trash, Heart } from "lucide-react";
 import { CursosTableProps } from "./CursosTypes";
 
 export const CursosTable: React.FC<CursosTableProps> = ({
@@ -29,6 +29,12 @@ export const CursosTable: React.FC<CursosTableProps> = ({
             <TableHead className="w-[120px]">Nº de Aulas</TableHead>
             <TableHead className="w-[120px]">Nº de Tópicos</TableHead>
             <TableHead className="w-[120px]">Nº de Questões</TableHead>
+            <TableHead className="w-[120px]">
+              <div className="flex items-center gap-1">
+                <Heart className="h-4 w-4 text-[#ea2be2]" />
+                Favoritos
+              </div>
+            </TableHead>
             <TableHead className="w-[150px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -43,6 +49,7 @@ export const CursosTable: React.FC<CursosTableProps> = ({
                 <TableCell>{curso.aulasIds?.length || 0} aulas</TableCell>
                 <TableCell>{curso.topicosIds?.length || 0} tópicos</TableCell>
                 <TableCell>{curso.questoesIds?.length || 0} questões</TableCell>
+                <TableCell>{curso.favoritos || 0}</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button 
@@ -66,7 +73,7 @@ export const CursosTable: React.FC<CursosTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={9} className="text-center py-4 text-[#67748a]">
                 Nenhum curso encontrado com os filtros aplicados.
               </TableCell>
             </TableRow>

@@ -33,7 +33,8 @@ const Cursos = () => {
       aulasIds: ["1", "2", "3", "4"],
       topicosIds: ["101", "102", "103"],
       questoesIds: ["201", "202", "203", "204"],
-      selecionada: false
+      selecionada: false,
+      favoritos: 128
     },
     {
       id: "2",
@@ -43,7 +44,8 @@ const Cursos = () => {
       aulasIds: ["2", "5", "7"],
       topicosIds: ["104", "105"],
       questoesIds: ["205", "206"],
-      selecionada: false
+      selecionada: false,
+      favoritos: 89
     },
     {
       id: "3",
@@ -53,7 +55,8 @@ const Cursos = () => {
       aulasIds: ["5", "8", "9", "10", "11"],
       topicosIds: ["106", "107", "108", "109", "110"],
       questoesIds: ["207", "208", "209", "210"],
-      selecionada: false
+      selecionada: false,
+      favoritos: 212
     }
   ]);
 

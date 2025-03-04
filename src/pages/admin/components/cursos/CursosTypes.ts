@@ -1,4 +1,3 @@
-
 export interface Curso {
   id: string;
   titulo: string;
@@ -8,6 +7,7 @@ export interface Curso {
   topicosIds?: string[];
   questoesIds?: string[];
   selecionada?: boolean;
+  favoritos?: number;
 }
 
 export interface CursosFilterProps {

@@ -1,4 +1,3 @@
-
 export interface Disciplina {
   id: string;
   titulo: string;
@@ -8,6 +7,7 @@ export interface Disciplina {
   questoesIds?: string[];
   selecionada?: boolean;
   informacoesCurso?: string;
+  favoritos?: number;
 }
 
 export interface DisciplinasFilterProps {

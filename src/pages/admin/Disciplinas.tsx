@@ -33,7 +33,8 @@ const Disciplinas = () => {
       aulasIds: ["1", "2", "3"],
       topicosIds: ["101", "102", "103", "104"],
       questoesIds: ["201", "202", "203", "204", "205"],
-      selecionada: false
+      selecionada: false,
+      favoritos: 76
     },
     {
       id: "2",
@@ -42,7 +43,8 @@ const Disciplinas = () => {
       aulasIds: ["4", "5"],
       topicosIds: ["105", "106"],
       questoesIds: ["206", "207", "208"],
-      selecionada: false
+      selecionada: false,
+      favoritos: 45
     },
     {
       id: "3",
@@ -51,7 +53,8 @@ const Disciplinas = () => {
       aulasIds: ["6", "7", "8", "9"],
       topicosIds: ["107", "108", "109", "110", "111", "112"],
       questoesIds: ["209", "210", "211", "212", "213", "214", "215"],
-      selecionada: false
+      selecionada: false,
+      favoritos: 132
     }
   ]);
 
