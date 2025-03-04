@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Youtube,
+  Settings,
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -83,6 +84,11 @@ const AdminLayout = () => {
       path: "/admin/cursos", 
       label: "Cursos", 
       icon: <Folders className="w-5 h-5" /> 
+    },
+    { 
+      path: "/admin/configuracoes", 
+      label: "Configurações", 
+      icon: <Settings className="w-5 h-5" /> 
     },
   ];
 
