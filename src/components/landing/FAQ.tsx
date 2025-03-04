@@ -14,9 +14,9 @@ const FAQItem: React.FC<FAQItemProps> = ({
   onClick
 }) => {
   return <div className="border border-gray-200 rounded-lg">
-      <button className={`flex justify-between items-center w-full p-5 text-left ${isOpen ? "bg-gray-50" : "bg-white"}`} onClick={onClick}>
-        <h3 className="font-medium text-[#272f3c]">{question}</h3>
-        {isOpen ? <ChevronUp className="h-5 w-5 text-[#43a889]" /> : <ChevronDown className="h-5 w-5 text-[#67748a]" />}
+      <button className={`flex justify-between items-center w-full p-5 text-left ${isOpen ? "bg-[#e8f1f3]" : "bg-white"}`} onClick={onClick}>
+        <h3 className="font-medium text-[#022731]">{question}</h3>
+        {isOpen ? <ChevronUp className="h-5 w-5 text-[#2a8e9e]" /> : <ChevronDown className="h-5 w-5 text-[#67748a]" />}
       </button>
       {isOpen && <div className="p-5 pt-0 border-t border-gray-200">
           <p className="text-[#67748a] py-[18px]">{answer}</p>
@@ -50,7 +50,7 @@ export const FAQ = () => {
   return <div className="w-full px-2.5 py-20 bg-white">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#272f3c] mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#022731] mb-4">
             Perguntas Frequentes
           </h2>
           <p className="text-[#67748a]">
