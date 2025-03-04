@@ -1,12 +1,9 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Youtube, Award, BarChart } from "lucide-react";
-
 export const Hero = () => {
-  return (
-    <div className="w-full min-h-screen relative overflow-hidden bg-white">
+  return <div className="w-full min-h-screen relative overflow-hidden bg-white">
       {/* Background Effect - Degradê Radial Moderno */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
         {/* Primeiro círculo de degradê - maior, mais suave */}
@@ -33,34 +30,34 @@ export const Hero = () => {
         {/* Pontos decorativos com animação */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[20%] left-[30%] animate-pulse" style={{
-            animationDelay: "0.5s"
-          }}></div>
+          animationDelay: "0.5s"
+        }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[50%] left-[70%] animate-pulse" style={{
-            animationDelay: "0.7s"
-          }}></div>
+          animationDelay: "0.7s"
+        }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[70%] left-[20%] animate-pulse" style={{
-            animationDelay: "1s"
-          }}></div>
+          animationDelay: "1s"
+        }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[30%] left-[80%] animate-pulse" style={{
-            animationDelay: "1.2s"
-          }}></div>
+          animationDelay: "1.2s"
+        }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[80%] left-[50%] animate-pulse" style={{
-            animationDelay: "0.8s"
-          }}></div>
+          animationDelay: "0.8s"
+        }}></div>
           <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[40%] left-[40%] animate-pulse" style={{
-            animationDelay: "1.5s"
-          }}></div>
+          animationDelay: "1.5s"
+        }}></div>
           
           {/* Adicionando mais pontos para melhorar o efeito visual */}
           <div className="absolute w-1 h-1 bg-[#ea2be2] rounded-full top-[25%] left-[55%] animate-pulse" style={{
-            animationDelay: "1.8s"
-          }}></div>
+          animationDelay: "1.8s"
+        }}></div>
           <div className="absolute w-1 h-1 bg-[#ea2be2] rounded-full top-[65%] left-[35%] animate-pulse" style={{
-            animationDelay: "2s"
-          }}></div>
+          animationDelay: "2s"
+        }}></div>
           <div className="absolute w-1 h-1 bg-[#ea2be2] rounded-full top-[45%] left-[85%] animate-pulse" style={{
-            animationDelay: "1.3s"
-          }}></div>
+          animationDelay: "1.3s"
+        }}></div>
         </div>
       </div>
       
@@ -90,7 +87,7 @@ export const Hero = () => {
             icon: <Award className="h-5 w-5 sm:h-6 sm:w-6 text-[#ea2be2]" />,
             label: "Acompanhamento Completo"
           }].map((item, index) => <div key={index} className="flex flex-col items-center gap-2 p-2 sm:p-4">
-                <div className="p-2 bg-white rounded-full shadow-md">
+                <div className="p-2 bg-white rounded-full shadow-none">
                   {item.icon}
                 </div>
                 <span className="text-xs sm:text-sm font-medium text-[#67748a]">{item.label}</span>
@@ -112,6 +109,5 @@ export const Hero = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
