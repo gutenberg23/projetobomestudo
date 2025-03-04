@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Search, Menu, User, FileText } from "lucide-react";
+import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -42,24 +42,29 @@ export const Header = () => {
               </div>
             </div>
             <nav className="flex flex-col">
-              <Link to="/explore" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
+              <Link to="/explore" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
+                <Compass className="w-4 h-4" />
                 Explorar
               </Link>
-              <Link to="/my-courses" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
+              <Link to="/my-courses" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
                 Meus Cursos
               </Link>
-              <Link to="/questions" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
+              <Link to="/questions" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
+                <User className="w-4 h-4" />
                 Questões
               </Link>
               <Link to="/blog" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
                 <FileText className="w-4 h-4" />
                 Blog
               </Link>
-              <Link to="/settings" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3]">
+              <Link to="/settings" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
+                <Settings className="w-4 h-4" />
                 Configurações
               </Link>
               <div className="border-t border-gray-100">
-                <Link to="/" className="px-4 py-3 text-sm font-medium text-red-600 hover:bg-slate-50 block">
+                <Link to="/" className="px-4 py-3 text-sm font-medium text-red-600 hover:bg-slate-50 block flex items-center gap-2">
+                  <LogOut className="w-4 h-4" />
                   Sair
                 </Link>
               </div>
