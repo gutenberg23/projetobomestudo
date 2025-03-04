@@ -65,7 +65,7 @@ export const PricingPlans = () => {
           
           <CardFooter className="flex justify-center pb-8">
             <Link to="/login" className="w-full">
-              <Button className="w-full bg-white text-[#67748a] border border-gray-200 hover:bg-gray-50 text-lg py-6">
+              <Button className="w-full rounded-lg text-sm sm:text-lg font-extrabold tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white text-[#67748a] border-2 border-gray-200 hover:bg-gray-50 hover:shadow-lg hover:shadow-gray-200/20 hover:-translate-y-1">
                 Começar Grátis
               </Button>
             </Link>
@@ -124,7 +124,7 @@ export const PricingPlans = () => {
           
           <CardFooter className="flex justify-center pb-8">
             <Link to="/login" className="w-full">
-              <Button className="w-full bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-lg py-6">
+              <Button className="w-full text-white rounded-lg text-sm sm:text-lg font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#ea2be2] to-[#f952ec] hover:shadow-lg hover:shadow-[#ea2be2]/30 hover:-translate-y-1 border-b-4 border-[#c71dc0]">
                 Assinar agora
               </Button>
             </Link>

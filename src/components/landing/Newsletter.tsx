@@ -38,7 +38,7 @@ export const Newsletter = () => {
                 </div>
                 <Button 
                   type="submit" 
-                  className="bg-[#ea2be2] text-white hover:bg-[#ea2be2]/90 flex items-center gap-2 px-6 py-3"
+                  className="text-white rounded-lg text-sm sm:text-base font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-6 py-3 bg-gradient-to-r from-[#ea2be2] to-[#f952ec] hover:shadow-lg hover:shadow-[#ea2be2]/30 hover:-translate-y-1 border-b-4 border-[#c71dc0] flex items-center gap-2"
                 >
                   <span>Inscrever-se</span>
                   <Send className="h-4 w-4" />

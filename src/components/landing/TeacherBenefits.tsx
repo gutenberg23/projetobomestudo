@@ -46,7 +46,7 @@ export const TeacherBenefits = () => {
             
             <div className="pt-4 sm:pt-6">
               <Link to="/teacher-signup">
-                <Button className="bg-[#ea2be2] text-white px-6 sm:px-8 py-5 sm:py-6 rounded-lg text-sm sm:text-lg font-medium hover:bg-opacity-90 transition-all hover:translate-y-[-2px] w-full sm:w-auto">
+                <Button className="text-white rounded-lg text-sm sm:text-lg font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#ea2be2] to-[#f952ec] hover:shadow-lg hover:shadow-[#ea2be2]/30 hover:-translate-y-1 w-full sm:w-auto border-b-4 border-[#c71dc0]">
                   QUERO SER PROFESSOR
                 </Button>
               </Link>
