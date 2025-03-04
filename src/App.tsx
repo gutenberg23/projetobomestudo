@@ -14,6 +14,7 @@ import Settings from "./pages/Settings";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import NotFound from "./pages/NotFound";
+import TermosEPoliticas from "./pages/TermosEPoliticas";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/settings" element={<Settings />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLayout />}>

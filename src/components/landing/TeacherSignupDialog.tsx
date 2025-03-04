@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Camera, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
 
 interface TeacherSignupDialogProps {
   open: boolean;
@@ -25,6 +26,18 @@ const disciplinas = [
   "Informática",
   "Administração"
 ];
+
+// Mock dos tópicos por disciplina
+const topicosPorDisciplina: Record<string, string[]> = {
+  "Português": ["Gramática", "Interpretação de Texto", "Redação", "Literatura"],
+  "Matemática": ["Álgebra", "Geometria", "Estatística", "Probabilidade"],
+  "Direito Constitucional": ["Princípios Fundamentais", "Direitos e Garantias", "Organização do Estado"],
+  "Direito Administrativo": ["Atos Administrativos", "Licitação", "Contratos Administrativos"],
+  "Raciocínio Lógico": ["Lógica de Argumentação", "Estruturas Lógicas", "Diagramas Lógicos"],
+  "Contabilidade": ["Contabilidade Básica", "Demonstrações Financeiras", "Análise de Balanços"],
+  "Informática": ["Sistemas Operacionais", "Excel", "Word", "Segurança da Informação"],
+  "Administração": ["Gestão de Pessoas", "Processos Organizacionais", "Planejamento Estratégico"]
+};
 
 export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({ 
   open, 
@@ -45,6 +58,20 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
   
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [topicosSelecionados, setTopicosSelecionados] = useState<string[]>([]);
+  const [topicosDisponiveis, setTopicosDisponiveis] = useState<string[]>([]);
+  const [linksVideos, setLinksVideos] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (formData.disciplina && topicosPorDisciplina[formData.disciplina]) {
+      setTopicosDisponiveis(topicosPorDisciplina[formData.disciplina]);
+    } else {
+      setTopicosDisponiveis([]);
+    }
+    // Limpar tópicos selecionados ao mudar de disciplina
+    setTopicosSelecionados([]);
+    setLinksVideos({});
+  }, [formData.disciplina]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -57,6 +84,21 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
 
   const handleDisciplinaChange = (value: string) => {
     setFormData(prev => ({ ...prev, disciplina: value }));
+  };
+
+  const handleTopicoToggle = (topico: string) => {
+    setTopicosSelecionados(prev => 
+      prev.includes(topico) 
+        ? prev.filter(t => t !== topico) 
+        : [...prev, topico]
+    );
+  };
+
+  const handleLinkVideoChange = (topico: string, valor: string) => {
+    setLinksVideos(prev => ({
+      ...prev,
+      [topico]: valor
+    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,6 +162,8 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
         aceitouTermos: false
       });
       setFotoPreview(null);
+      setTopicosSelecionados([]);
+      setLinksVideos({});
       setIsSubmitting(false);
       onOpenChange(false);
     }, 1500);
@@ -233,6 +277,58 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
             </Select>
           </div>
           
+          {/* Tópicos da disciplina selecionada */}
+          {topicosDisponiveis.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="topicos" className="text-[#022731]">Tópicos da Disciplina</Label>
+              <div className="border rounded-md border-[#2a8e9e]/30 p-4 max-h-[250px] overflow-y-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left pb-2 text-[#022731] w-1/2">Tópico</th>
+                      <th className="text-left pb-2 text-[#022731] w-1/2">Link do Vídeo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topicosDisponiveis.map((topico) => (
+                      <tr key={topico} className="border-t border-[#2a8e9e]/10">
+                        <td className="py-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox 
+                              id={`topico-${topico}`}
+                              checked={topicosSelecionados.includes(topico)}
+                              onCheckedChange={() => handleTopicoToggle(topico)}
+                              className="data-[state=checked]:bg-[#2a8e9e] data-[state=checked]:border-[#2a8e9e]"
+                            />
+                            <Label 
+                              htmlFor={`topico-${topico}`}
+                              className="text-sm text-[#022731] cursor-pointer"
+                            >
+                              {topico}
+                            </Label>
+                          </div>
+                        </td>
+                        <td className="py-2">
+                          <Input
+                            type="url"
+                            placeholder="https://youtu.be/exemplo"
+                            disabled={!topicosSelecionados.includes(topico)}
+                            value={linksVideos[topico] || ''}
+                            onChange={(e) => handleLinkVideoChange(topico, e.target.value)}
+                            className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-[#022731]/60">
+                Selecione os tópicos que você leciona e adicione links para seus vídeos sobre cada um.
+              </p>
+            </div>
+          )}
+          
           {/* Redes Sociais */}
           <div className="space-y-2">
             <Label className="text-[#022731]">Redes Sociais</Label>
@@ -286,7 +382,7 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
                 Aceito os termos e condições
               </label>
               <p className="text-xs text-[#022731]/70">
-                Ao clicar, você concorda com nossos Termos de Serviço e Política de Privacidade, e autoriza o uso de seus dados para o processo de cadastro.
+                Ao clicar, você concorda com nossos <Link to="/termos-e-politicas" className="text-[#2a8e9e] hover:underline">Termos de Serviço e Política de Privacidade</Link>, e autoriza o uso de seus dados para o processo de cadastro.
               </p>
             </div>
           </div>
