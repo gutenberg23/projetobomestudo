@@ -9,19 +9,19 @@ export const Hero = () => {
       <div className="absolute inset-0 w-full h-full overflow-hidden">
         {/* Primeiro círculo de degradê - maior, mais suave */}
         <div className="absolute w-[800px] h-[800px] rounded-full 
-          bg-gradient-to-r from-[#CC20E7]/40 via-[#FF4C8D]/20 to-transparent 
+          bg-gradient-to-r from-[#f9c54e]/40 via-[#91be6f]/20 to-transparent 
           -top-[200px] -left-[200px] blur-[60px]">
         </div>
         
         {/* Segundo círculo de degradê - médio */}
         <div className="absolute w-[600px] h-[600px] rounded-full 
-          bg-gradient-to-r from-[#E825BE]/30 via-[#FF2BA3]/15 to-transparent 
+          bg-gradient-to-r from-[#43a889]/30 via-[#5677bf]/15 to-transparent 
           top-[40%] -right-[200px] blur-[50px]">
         </div>
         
         {/* Terceiro círculo de degradê - menor, mais intenso */}
         <div className="absolute w-[400px] h-[400px] rounded-full 
-          bg-gradient-to-r from-[#FF6F78]/25 via-[#FE826E]/10 to-transparent 
+          bg-gradient-to-r from-[#277ca0]/25 via-[#5677bf]/10 to-transparent 
           bottom-[10%] left-[20%] blur-[40px]">
         </div>
         
@@ -30,33 +30,33 @@ export const Hero = () => {
         
         {/* Pontos decorativos com animação */}
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute w-2 h-2 bg-[#D421D5] rounded-full top-[20%] left-[30%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#f9c54e] rounded-full top-[20%] left-[30%] animate-pulse" style={{
           animationDelay: "0.5s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#FF2BA3] rounded-full top-[50%] left-[70%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#91be6f] rounded-full top-[50%] left-[70%] animate-pulse" style={{
           animationDelay: "0.7s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#FF4C8D] rounded-full top-[70%] left-[20%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#43a889] rounded-full top-[70%] left-[20%] animate-pulse" style={{
           animationDelay: "1s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#FB5E8C] rounded-full top-[30%] left-[80%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#5677bf] rounded-full top-[30%] left-[80%] animate-pulse" style={{
           animationDelay: "1.2s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#FF6F78] rounded-full top-[80%] left-[50%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#277ca0] rounded-full top-[80%] left-[50%] animate-pulse" style={{
           animationDelay: "0.8s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#FE826E] rounded-full top-[40%] left-[40%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#91be6f] rounded-full top-[40%] left-[40%] animate-pulse" style={{
           animationDelay: "1.5s"
         }}></div>
           
           {/* Adicionando mais pontos para melhorar o efeito visual */}
-          <div className="absolute w-1 h-1 bg-[#CC20E7] rounded-full top-[25%] left-[55%] animate-pulse" style={{
+          <div className="absolute w-1 h-1 bg-[#f9c54e] rounded-full top-[25%] left-[55%] animate-pulse" style={{
           animationDelay: "1.8s"
         }}></div>
-          <div className="absolute w-1 h-1 bg-[#E825BE] rounded-full top-[65%] left-[35%] animate-pulse" style={{
+          <div className="absolute w-1 h-1 bg-[#43a889] rounded-full top-[65%] left-[35%] animate-pulse" style={{
           animationDelay: "2s"
         }}></div>
-          <div className="absolute w-1 h-1 bg-[#FF2BA3] rounded-full top-[45%] left-[85%] animate-pulse" style={{
+          <div className="absolute w-1 h-1 bg-[#277ca0] rounded-full top-[45%] left-[85%] animate-pulse" style={{
           animationDelay: "1.3s"
         }}></div>
         </div>
@@ -66,7 +66,7 @@ export const Hero = () => {
       <div className="px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16">
         <div className="text-center space-y-6 max-w-3xl px-4">
           <h1 className="text-3xl sm:text-4xl md:text-7xl text-[#272f3c] leading-tight font-extrabold">
-            Conectando <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#CC20E7] via-[#FF4C8D] to-[#FE826E]">Alunos</span> e <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#CC20E7] via-[#FF4C8D] to-[#FE826E]">Professores</span>
+            Conectando <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#f9c54e] via-[#91be6f] to-[#43a889]">Alunos</span> e <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#43a889] via-[#5677bf] to-[#277ca0]">Professores</span>
           </h1>
           
           <p className="text-base sm:text-lg md:text-xl text-[#67748a] max-w-2xl mx-auto leading-relaxed">
@@ -76,16 +76,16 @@ export const Hero = () => {
           {/* Feature Icons */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-4 sm:py-6 max-w-2xl mx-auto">
             {[{
-            icon: <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-[#FF2BA3]" />,
+            icon: <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-[#f9c54e]" />,
             label: "Cursos Gratuitos"
           }, {
-            icon: <Youtube className="h-5 w-5 sm:h-6 sm:w-6 text-[#FF4C8D]" />,
+            icon: <Youtube className="h-5 w-5 sm:h-6 sm:w-6 text-[#91be6f]" />,
             label: "Professores YouTubers"
           }, {
-            icon: <BarChart className="h-5 w-5 sm:h-6 sm:w-6 text-[#FB5E8C]" />,
+            icon: <BarChart className="h-5 w-5 sm:h-6 sm:w-6 text-[#43a889]" />,
             label: "Estatísticas Detalhadas"
           }, {
-            icon: <Award className="h-5 w-5 sm:h-6 sm:w-6 text-[#FF6F78]" />,
+            icon: <Award className="h-5 w-5 sm:h-6 sm:w-6 text-[#5677bf]" />,
             label: "Acompanhamento Completo"
           }].map((item, index) => <div key={index} className="flex flex-col items-center gap-2 p-2 sm:p-4">
                 <div className="p-2 bg-white rounded-full shadow-none">
@@ -98,12 +98,12 @@ export const Hero = () => {
           {/* Botões com design melhorado */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <Link to="/login" className="w-full sm:w-auto">
-              <Button className="text-white rounded-lg text-sm sm:text-lg font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#CC20E7] via-[#FF4C8D] to-[#FE826E] hover:shadow-lg hover:shadow-[#FF4C8D]/30 hover:-translate-y-1 w-full border-b-4 border-[#CC20E7]">
+              <Button className="text-white rounded-lg text-sm sm:text-lg font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#f9c54e] via-[#91be6f] to-[#43a889] hover:shadow-lg hover:shadow-[#91be6f]/30 hover:-translate-y-1 w-full border-b-4 border-[#f9c54e]">
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
             <Link to="/teacher-signup" className="w-full sm:w-auto">
-              <Button className="rounded-lg text-sm sm:text-lg font-extrabold tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#FF4C8D] text-[#FF4C8D] hover:bg-[#FF4C8D]/5 hover:shadow-lg hover:shadow-[#FF4C8D]/20 hover:-translate-y-1 w-full">
+              <Button className="rounded-lg text-sm sm:text-lg font-extrabold tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#43a889] text-[#43a889] hover:bg-[#43a889]/5 hover:shadow-lg hover:shadow-[#43a889]/20 hover:-translate-y-1 w-full">
                 QUERO SER PROFESSOR
               </Button>
             </Link>

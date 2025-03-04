@@ -12,10 +12,10 @@ export const Testimonials = () => {
           </h2>
           
           <div className="hidden md:flex gap-2">
-            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#43a889] hover:text-white hover:border-[#43a889] transition-colors">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#43a889] hover:text-white hover:border-[#43a889] transition-colors">
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
@@ -45,7 +45,7 @@ export const Testimonials = () => {
             <div key={index} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
               <div className="flex gap-1 mb-4">
                 {[1, 2, 3, 4, 5].map((star) => (
-                  <Star key={star} className="w-4 h-4 fill-[#ea2be2] text-[#ea2be2]" />
+                  <Star key={star} className="w-4 h-4 fill-[#f9c54e] text-[#f9c54e]" />
                 ))}
               </div>
               <p className="text-[#67748a] mb-6">{testimonial.text}</p>
@@ -55,7 +55,7 @@ export const Testimonials = () => {
                   <div className="font-bold text-[#272f3c]">
                     {testimonial.name}
                   </div>
-                  <div className="text-[#ea2be2] text-sm">{testimonial.role}</div>
+                  <div className="text-[#43a889] text-sm">{testimonial.role}</div>
                 </div>
               </div>
             </div>
@@ -63,10 +63,10 @@ export const Testimonials = () => {
         </div>
         
         <div className="flex justify-center mt-8 md:hidden gap-2">
-          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#43a889] hover:text-white hover:border-[#43a889] transition-colors">
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#43a889] hover:text-white hover:border-[#43a889] transition-colors">
             <ChevronRight className="h-5 w-5" />
           </button>
         </div>

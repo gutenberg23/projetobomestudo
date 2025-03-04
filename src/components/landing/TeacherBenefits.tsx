@@ -10,7 +10,7 @@ export const TeacherBenefits = () => {
           {/* Lado Esquerdo - Texto e CTA */}
           <div className="md:w-1/2 space-y-4 sm:space-y-6">
             <h2 className="text-2xl sm:text-3xl md:text-4xl text-[#272f3c] font-extrabold leading-tight">
-              Professores, <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#CC20E7] via-[#FF4C8D] to-[#FE826E]">multiplique</span> seu alcance e sua receita
+              Professores, <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#f9c54e] via-[#91be6f] to-[#43a889]">multiplique</span> seu alcance e sua receita
             </h2>
             <p className="text-sm sm:text-base text-[#67748a] leading-relaxed">
               Ao se tornar um professor parceiro do BomEstudo, você aumenta sua visibilidade, ganha mais inscritos em seu canal e potencializa sua receita com anúncios, sem cobrar nada dos alunos.
@@ -18,19 +18,19 @@ export const TeacherBenefits = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 pt-2 sm:pt-4">
               {[{
-              icon: <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-[#FF2BA3]" />,
+              icon: <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-[#f9c54e]" />,
               title: "Mais visualizações",
               description: "Aumente o alcance dos seus vídeos e ganhe mais views"
             }, {
-              icon: <Users className="h-4 w-4 sm:h-5 sm:w-5 text-[#FF4C8D]" />,
+              icon: <Users className="h-4 w-4 sm:h-5 sm:w-5 text-[#91be6f]" />,
               title: "Novos inscritos",
               description: "Conquiste mais inscritos para seu canal do YouTube"
             }, {
-              icon: <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-[#FB5E8C]" />,
+              icon: <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-[#43a889]" />,
               title: "Maior receita",
               description: "Aumente sua receita com monetização dos vídeos"
             }, {
-              icon: <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-[#FF6F78]" />,
+              icon: <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-[#5677bf]" />,
               title: "Reconhecimento",
               description: "Torne-se uma referência no ensino para concursos"
             }].map((benefit, index) => <div key={index} className="flex items-start">
@@ -46,7 +46,7 @@ export const TeacherBenefits = () => {
             
             <div className="pt-4 sm:pt-6">
               <Link to="/teacher-signup">
-                <Button className="text-white rounded-lg text-sm sm:text-lg font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#CC20E7] via-[#FF4C8D] to-[#FE826E] hover:shadow-lg hover:shadow-[#FF4C8D]/30 hover:-translate-y-1 w-full sm:w-auto border-b-4 border-[#CC20E7]">
+                <Button className="text-white rounded-lg text-sm sm:text-lg font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#f9c54e] via-[#91be6f] to-[#43a889] hover:shadow-lg hover:shadow-[#91be6f]/30 hover:-translate-y-1 w-full sm:w-auto border-b-4 border-[#f9c54e]">
                   QUERO SER PROFESSOR
                 </Button>
               </Link>
@@ -57,14 +57,14 @@ export const TeacherBenefits = () => {
           <div className="md:w-1/2 relative mt-8 md:mt-0">
             <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md relative z-10">
               <div className="rounded-lg overflow-hidden mb-4 bg-gray-100 relative">
-                <Youtube className="h-16 w-16 sm:h-20 sm:w-20 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#FF4C8D]" />
+                <Youtube className="h-16 w-16 sm:h-20 sm:w-20 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[#91be6f]" />
                 <img src="/lovable-uploads/7f20742a-1d1f-424b-9f56-3cece0204c7b.jpg" alt="Aula no YouTube" className="w-full h-auto opacity-75" />
               </div>
               
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-1.5 sm:p-2 bg-gradient-to-r from-[#CC20E7]/10 via-[#FF4C8D]/10 to-[#FE826E]/10 rounded-full">
-                    <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-[#FF4C8D]" />
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-r from-[#f9c54e]/10 via-[#91be6f]/10 to-[#43a889]/10 rounded-full">
+                    <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-[#43a889]" />
                   </div>
                   <div>
                     <h3 className="text-sm sm:text-base font-medium text-[#272f3c]">Integração simples</h3>
@@ -79,19 +79,19 @@ export const TeacherBenefits = () => {
                   <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     <div className="p-2 sm:p-3 bg-white rounded-md">
                       <span className="text-xs text-[#67748a]">Visualizações</span>
-                      <p className="text-base sm:text-lg font-bold text-[#FF2BA3]">+247%</p>
+                      <p className="text-base sm:text-lg font-bold text-[#f9c54e]">+247%</p>
                     </div>
                     <div className="p-2 sm:p-3 bg-white rounded-md">
                       <span className="text-xs text-[#67748a]">Inscritos</span>
-                      <p className="text-base sm:text-lg font-bold text-[#FF4C8D]">+153%</p>
+                      <p className="text-base sm:text-lg font-bold text-[#91be6f]">+153%</p>
                     </div>
                     <div className="p-2 sm:p-3 bg-white rounded-md">
                       <span className="text-xs text-[#67748a]">Receita</span>
-                      <p className="text-base sm:text-lg font-bold text-[#FB5E8C]">+182%</p>
+                      <p className="text-base sm:text-lg font-bold text-[#43a889]">+182%</p>
                     </div>
                     <div className="p-2 sm:p-3 bg-white rounded-md">
                       <span className="text-xs text-[#67748a]">Alunos</span>
-                      <p className="text-base sm:text-lg font-bold text-[#FF6F78]">+5.347</p>
+                      <p className="text-base sm:text-lg font-bold text-[#5677bf]">+5.347</p>
                     </div>
                   </div>
                 </div>
@@ -99,7 +99,7 @@ export const TeacherBenefits = () => {
             </div>
             
             {/* Elementos decorativos */}
-            <div className="absolute w-full h-full top-3 sm:top-5 left-3 sm:left-5 bg-gradient-to-r from-[#CC20E7]/10 via-[#FF4C8D]/10 to-[#FE826E]/10 rounded-xl -z-10"></div>
+            <div className="absolute w-full h-full top-3 sm:top-5 left-3 sm:left-5 bg-gradient-to-r from-[#f9c54e]/10 via-[#91be6f]/10 to-[#43a889]/10 rounded-xl -z-10"></div>
           </div>
         </div>
       </div>

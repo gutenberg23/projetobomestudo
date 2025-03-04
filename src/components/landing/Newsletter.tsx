@@ -7,15 +7,15 @@ export const Newsletter = () => {
   return (
     <div className="w-full px-2.5 py-20 bg-gray-50 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute right-0 top-0 w-64 h-64 bg-gradient-to-r from-[#CC20E7]/5 via-[#FF4C8D]/5 to-[#FE826E]/5 rounded-full -mr-32 -mt-32"></div>
-      <div className="absolute left-0 bottom-0 w-80 h-80 bg-gradient-to-r from-[#CC20E7]/5 via-[#FF4C8D]/5 to-[#FE826E]/5 rounded-full -ml-40 -mb-40"></div>
+      <div className="absolute right-0 top-0 w-64 h-64 bg-gradient-to-r from-[#f9c54e]/5 via-[#91be6f]/5 to-[#43a889]/5 rounded-full -mr-32 -mt-32"></div>
+      <div className="absolute left-0 bottom-0 w-80 h-80 bg-gradient-to-r from-[#43a889]/5 via-[#5677bf]/5 to-[#277ca0]/5 rounded-full -ml-40 -mb-40"></div>
       
       <div className="max-w-4xl mx-auto relative z-10">
         <div className="bg-white p-8 md:p-12 rounded-xl shadow-sm">
           <div className="flex flex-col md:flex-row gap-8 items-center">
             <div className="md:w-2/3 space-y-4">
-              <div className="p-3 bg-gradient-to-r from-[#CC20E7]/10 via-[#FF4C8D]/10 to-[#FE826E]/10 w-fit rounded-full mb-2">
-                <Bell className="h-6 w-6 text-[#FF4C8D]" />
+              <div className="p-3 bg-gradient-to-r from-[#f9c54e]/10 via-[#91be6f]/10 to-[#43a889]/10 w-fit rounded-full mb-2">
+                <Bell className="h-6 w-6 text-[#43a889]" />
               </div>
               
               <h2 className="text-2xl md:text-3xl font-bold text-[#272f3c]">
@@ -32,13 +32,13 @@ export const Newsletter = () => {
                   <input
                     type="email"
                     placeholder="Digite seu e-mail"
-                    className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#FF4C8D]/50 focus:border-[#FF4C8D]"
+                    className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#43a889]/50 focus:border-[#43a889]"
                     required
                   />
                 </div>
                 <Button 
                   type="submit" 
-                  className="text-white rounded-lg text-sm sm:text-base font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-6 py-3 bg-gradient-to-r from-[#CC20E7] via-[#FF4C8D] to-[#FE826E] hover:shadow-lg hover:shadow-[#FF4C8D]/30 hover:-translate-y-1 border-b-4 border-[#CC20E7] flex items-center gap-2"
+                  className="text-white rounded-lg text-sm sm:text-base font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-6 py-3 bg-gradient-to-r from-[#f9c54e] via-[#91be6f] to-[#43a889] hover:shadow-lg hover:shadow-[#91be6f]/30 hover:-translate-y-1 border-b-4 border-[#f9c54e] flex items-center gap-2"
                 >
                   <span>Inscrever-se</span>
                   <Send className="h-4 w-4" />
