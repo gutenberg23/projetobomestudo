@@ -46,49 +46,51 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
   );
 
   return (
-    <div className="bg-white rounded-[10px] p-5">
+    <div className="bg-white rounded-[10px] p-3 sm:p-5">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px]">
-          <thead className="bg-gray-50">
-            <tr className="text-sm text-gray-600">
-              <th className="py-3 px-4 text-left font-medium">#</th>
-              <th className="py-3 px-4 text-left font-medium">Título</th>
-              <th className="py-3 px-4 text-center font-medium">Questões</th>
-              <th className="py-3 px-4 text-center font-medium">Acertos</th>
-              <th className="py-3 px-4 text-center font-medium">Erros</th>
-              <th className="py-3 px-4 text-center font-medium">Aproveitamento</th>
-            </tr>
-          </thead>
-          <tbody>
-            {simulados.map((simulado, index) => (
-              <tr key={simulado.id} className="border-t border-gray-200">
-                <td className="py-3 px-4">{index + 1}</td>
-                <td className="py-3 px-4">{simulado.title}</td>
-                <td className="py-3 px-4 text-center">{simulado.questionsCount}</td>
-                <td className="py-3 px-4 text-center">{simulado.hits}</td>
-                <td className="py-3 px-4 text-center">{simulado.errors}</td>
+        <div className="min-w-[700px]">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr className="text-xs sm:text-sm text-gray-600">
+                <th className="py-2 sm:py-3 px-2 sm:px-4 text-left font-medium">#</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 text-left font-medium">Título</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 text-center font-medium">Questões</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 text-center font-medium">Acertos</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 text-center font-medium">Erros</th>
+                <th className="py-2 sm:py-3 px-2 sm:px-4 text-center font-medium">Aproveitamento</th>
+              </tr>
+            </thead>
+            <tbody>
+              {simulados.map((simulado, index) => (
+                <tr key={simulado.id} className="border-t border-gray-200">
+                  <td className="py-2 sm:py-3 px-2 sm:px-4">{index + 1}</td>
+                  <td className="py-2 sm:py-3 px-2 sm:px-4">{simulado.title}</td>
+                  <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">{simulado.questionsCount}</td>
+                  <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">{simulado.hits}</td>
+                  <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">{simulado.errors}</td>
+                  <td className={cn(
+                    "py-2 sm:py-3 px-2 sm:px-4 text-center",
+                    calculatePerformance(simulado.hits, simulado.questionsCount) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
+                  )}>
+                    {calculatePerformance(simulado.hits, simulado.questionsCount)}%
+                  </td>
+                </tr>
+              ))}
+              <tr className="border-t border-gray-200 bg-gray-50 font-medium">
+                <td colSpan={2} className="py-2 sm:py-3 px-2 sm:px-4 text-right">Totais:</td>
+                <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">{totals.questionsCount}</td>
+                <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">{totals.hits}</td>
+                <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">{totals.errors}</td>
                 <td className={cn(
-                  "py-3 px-4 text-center",
-                  calculatePerformance(simulado.hits, simulado.questionsCount) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
+                  "py-2 sm:py-3 px-2 sm:px-4 text-center",
+                  calculatePerformance(totals.hits, totals.questionsCount) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
                 )}>
-                  {calculatePerformance(simulado.hits, simulado.questionsCount)}%
+                  {calculatePerformance(totals.hits, totals.questionsCount)}%
                 </td>
               </tr>
-            ))}
-            <tr className="border-t border-gray-200 bg-gray-50 font-medium">
-              <td colSpan={2} className="py-3 px-4 text-right">Totais:</td>
-              <td className="py-3 px-4 text-center">{totals.questionsCount}</td>
-              <td className="py-3 px-4 text-center">{totals.hits}</td>
-              <td className="py-3 px-4 text-center">{totals.errors}</td>
-              <td className={cn(
-                "py-3 px-4 text-center",
-                calculatePerformance(totals.hits, totals.questionsCount) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
-              )}>
-                {calculatePerformance(totals.hits, totals.questionsCount)}%
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

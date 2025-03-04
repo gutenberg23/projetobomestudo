@@ -43,10 +43,10 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     >
       <ul className={`flex gap-2 ${hasHorizontalScroll ? 'flex-row md:flex-row' : 'flex-col'}`}>
         {sections.map(section => (
-          <li key={section.id} className={hasHorizontalScroll ? 'min-w-[180px] sm:min-w-[240px] md:min-w-[300px] flex-shrink-0' : ''}>
+          <li key={section.id} className={hasHorizontalScroll ? 'min-w-[180px] sm:min-w-[220px] md:min-w-[250px] flex-shrink-0' : ''}>
             <button
               onClick={() => onSectionClick(section.id)}
-              className={`flex justify-between items-center px-3 sm:px-4 py-2 sm:py-3 w-full text-sm sm:text-base font-medium text-left rounded-xl border border-solid min-h-[50px] ${
+              className={`flex justify-between items-center px-2.5 sm:px-3 py-2 w-full text-xs sm:text-sm font-medium text-left rounded-xl border border-solid min-h-[50px] ${
                 selectedSection === section.id
                   ? "bg-fuchsia-100 border-fuchsia-500 text-fuchsia-500"
                   : "bg-white border-gray-100 text-slate-800"

@@ -25,7 +25,7 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
   hasFilters
 }) => {
   return (
-    <>
+    <div className="w-full overflow-x-hidden">
       <QuestionListSummary count={questions.length} hasFilters={hasFilters} />
       
       <hr className="border-t border-gray-200 w-full mb-4 md:mb-6" />
@@ -46,7 +46,7 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
         totalPages={totalPages} 
         handlePageChange={handlePageChange} 
       />
-    </>
+    </div>
   );
 };
 

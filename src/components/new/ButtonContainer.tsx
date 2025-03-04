@@ -35,17 +35,19 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
   ];
 
   return (
-    <section className="flex overflow-hidden flex-wrap flex-1 shrink gap-2.5 items-center px-5 py-2.5 rounded-xl border border-gray-100 border-solid basis-0 bg-slate-50 min-w-60 size-full max-md:max-w-full">
-      {actions.map((action, index) => (
-        <ActionButton
-          key={index}
-          icon={action.icon}
-          label={action.label}
-          variant={action.variant}
-          isActive={action.isActive}
-          onClick={action.onClick}
-        />
-      ))}
+    <section className="flex overflow-x-auto overflow-y-hidden flex-wrap sm:flex-nowrap flex-1 shrink gap-2 items-center px-3 sm:px-5 py-2.5 rounded-xl border border-gray-100 border-solid basis-0 bg-slate-50 w-full">
+      <div className="flex flex-nowrap gap-2 min-w-full sm:min-w-0">
+        {actions.map((action, index) => (
+          <ActionButton
+            key={index}
+            icon={action.icon}
+            label={action.label}
+            variant={action.variant}
+            isActive={action.isActive}
+            onClick={action.onClick}
+          />
+        ))}
+      </div>
     </section>
   );
 };

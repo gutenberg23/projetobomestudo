@@ -112,7 +112,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   };
 
   return (
-    <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
+    <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid overflow-hidden">
       <LessonHeader 
         title={lesson.title}
         description={lesson.description}
@@ -123,7 +123,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       />
 
       {isVideoSectionVisible && (
-        <div className="bg-white pb-5 rounded-lg">
+        <div className="bg-white pb-5 rounded-lg overflow-hidden">
           <VideoContentLayout 
             selectedSection={selectedSection}
             sections={lesson.sections}
@@ -135,8 +135,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             onToggleCompletion={toggleCompletion}
           />
           
-          <div className="px-5">
-            <div className="mt-8">
+          <div className="px-3 sm:px-5">
+            <div className="mt-6 sm:mt-8">
               <ItensDaAula 
                 setShowQuestions={setShowQuestions} 
                 showQuestions={showQuestions} 
@@ -144,7 +144,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             </div>
             
             {showQuestions && (
-              <div className="mt-8">
+              <div className="mt-6 sm:mt-8">
                 <QuestionCard 
                   question={question} 
                   disabledOptions={disabledOptions} 
