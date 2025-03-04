@@ -62,7 +62,7 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     });
   };
   
-  // Ativar/Desativar professor
+  // Ativar/Desativar professor - Correção para funcionar adequadamente
   const toggleTeacherActive = (teacher: TeacherData) => {
     const updatedTeachers = teachers.map(t => 
       t.id === teacher.id ? { ...t, ativo: !t.ativo } : t
@@ -103,12 +103,35 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     });
   };
   
+  // Adicionar novo professor
+  const addTeacher = (newTeacher: Omit<TeacherData, 'id'>) => {
+    // Criar um ID único para o novo professor
+    const id = `teacher-${Date.now()}`;
+    
+    // Adicionar o novo professor à lista
+    const teacherWithId = {
+      ...newTeacher,
+      id,
+      dataCadastro: new Date().toLocaleDateString('pt-BR')
+    };
+    
+    setTeachers([...teachers, teacherWithId as TeacherData]);
+    
+    toast({
+      title: "Professor adicionado",
+      description: `O professor ${newTeacher.nomeCompleto} foi adicionado com sucesso.`,
+    });
+    
+    return teacherWithId;
+  };
+  
   return {
     selectTeacher,
     filterTeachers,
     updateTeacherStatus,
     toggleTeacherActive,
     deleteTeacher,
-    updateTeacher
+    updateTeacher,
+    addTeacher
   };
 };

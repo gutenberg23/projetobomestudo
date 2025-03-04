@@ -6,6 +6,7 @@ import TeacherPagination from "./TeacherPagination";
 import EditTeacherDialog from "./dialogs/EditTeacherDialog";
 import DeleteTeacherDialog from "./dialogs/DeleteTeacherDialog";
 import ViewTeacherDialog from "./dialogs/ViewTeacherDialog";
+import NewTeacherDialog from "./dialogs/NewTeacherDialog";
 
 export {
   TeacherList,
@@ -14,5 +15,6 @@ export {
   TeacherPagination,
   EditTeacherDialog,
   DeleteTeacherDialog,
-  ViewTeacherDialog
+  ViewTeacherDialog,
+  NewTeacherDialog
 };

@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import {
   TeacherList,
   TeacherFilters,
@@ -11,6 +11,7 @@ import {
 } from "@/components/admin/teachers";
 import { useTeachersState } from "@/components/admin/teachers/hooks/useTeachersState";
 import { useTeacherActions } from "@/components/admin/teachers/hooks/useTeacherActions";
+import NewTeacherDialog from "@/components/admin/teachers/dialogs/NewTeacherDialog";
 
 const Professores = () => {
   const state = useTeachersState();
@@ -40,8 +41,11 @@ const Professores = () => {
     filterTeachers,
     deleteTeacher,
     updateTeacher,
-    toggleTeacherActive
+    toggleTeacherActive,
+    addTeacher
   } = useTeacherActions(state);
+  
+  const [newTeacherDialogOpen, setNewTeacherDialogOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -61,10 +65,7 @@ const Professores = () => {
         onChangeStatusFilter={(status) => setFiltros({...filtros, filtroStatus: status})}
         onChangeDisciplinaFilter={(disciplina) => setFiltros({...filtros, filtroDisciplina: disciplina})}
         onFilterSubmit={filterTeachers}
-        onAddNewTeacher={() => {
-          /* Lógica para abrir o formulário de novo professor seria aqui */
-          alert("Essa funcionalidade seria implementada para adicionar novos professores manualmente.");
-        }}
+        onAddNewTeacher={() => setNewTeacherDialogOpen(true)}
         disciplinas={disciplinas}
       />
       
@@ -118,6 +119,14 @@ const Professores = () => {
         open={detailsDialogOpen}
         onOpenChange={setDetailsDialogOpen}
         teacher={selectedTeacher}
+      />
+      
+      {/* Novo diálogo para adicionar professor */}
+      <NewTeacherDialog
+        open={newTeacherDialogOpen}
+        onOpenChange={setNewTeacherDialogOpen}
+        onAddTeacher={addTeacher}
+        disciplinas={disciplinas}
       />
     </div>
   );

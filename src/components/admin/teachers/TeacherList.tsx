@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Edit, Trash2, ExternalLink, Youtube, Facebook, Twitter, Instagram, Power, Star } from "lucide-react";
+import { Edit, Trash2, ExternalLink, Youtube, Facebook, Twitter, Instagram, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
