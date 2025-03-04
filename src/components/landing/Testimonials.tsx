@@ -1,43 +1,76 @@
+
 import React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, ChevronLeft, ChevronRight } from "lucide-react";
+
 export const Testimonials = () => {
-  return <div className="w-full px-2.5 py-16 bg-gray-50">
+  return (
+    <div className="w-full px-2.5 py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-[rgba(38,47,60,1)] text-center">
-            What everyone says
+          <h2 className="text-3xl md:text-4xl font-bold text-[#272f3c]">
+            O que nossos alunos dizem
           </h2>
           
+          <div className="hidden md:flex gap-2">
+            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
         </div>
+        
         <div className="grid md:grid-cols-3 gap-8">
-          {[{
-          text: "Lacus vestibulum ultricies mi risus, duis non, volutpat nullam non. Magna congue nisi maecenas elit aliquet eu sed consectetur. Vitae quis cras vitae praesent morbi adipiscing purus consectetur mi.",
-          name: "Hellen Jummy",
-          role: "Financial Counselor",
-          image: "https://i.pravatar.cc/100?img=1"
-        }, {
-          text: "Odio rhoncus ornare ut quam. Molestie vel duis quis scelerisque ut id. In tortor turpis viverra sagittis ultrices nisi, nec tortor. Vestibulum, ultrices ultricies neque, hac ultricies dolor.",
-          name: "Ralph Edwards",
-          role: "Math Teacher",
-          image: "https://i.pravatar.cc/100?img=2"
-        }, {
-          text: "Sagittis nunc egestas leo et malesuada urna risus. Morbi proin et cras aliquam. Diam tellus, amet, hac imperdiet. Tellus mi volutpat tellus, congue malesuada sit nisl donec a.",
-          name: "Hellena John",
-          role: "Psychology Student",
-          image: "https://i.pravatar.cc/100?img=3"
-        }].map((testimonial, index) => <div key={index} className="bg-white p-8 rounded-lg">
-              <p className="text-gray-600 mb-6">{testimonial.text}</p>
+          {[
+            {
+              text: "O BomEstudo revolucionou minha forma de estudar. Consigo acompanhar meu progresso em cada disciplina e focar nos pontos que preciso melhorar. A plataforma me ajudou a ser aprovado no concurso do Banco do Brasil!",
+              name: "Carlos Oliveira",
+              role: "Aprovado BB 2023",
+              image: "https://i.pravatar.cc/100?img=1"
+            },
+            {
+              text: "Como professora no YouTube, a parceria com o BomEstudo aumentou significativamente o alcance dos meus vídeos. Minhas visualizações cresceram mais de 200% e consegui monetizar melhor meu conteúdo sem cobrar dos alunos.",
+              name: "Fernanda Lima",
+              role: "Professora de Português",
+              image: "https://i.pravatar.cc/100?img=2"
+            },
+            {
+              text: "As ferramentas de estudo são sensacionais! O sistema de simulados personalizados e as estatísticas por banca me ajudaram a entender onde estavam minhas falhas. Recomendo para quem está se preparando para concursos.",
+              name: "Marcos Souza",
+              role: "Aprovado Concurso TRT",
+              image: "https://i.pravatar.cc/100?img=3"
+            }
+          ].map((testimonial, index) => (
+            <div key={index} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex gap-1 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star key={star} className="w-4 h-4 fill-[#ea2be2] text-[#ea2be2]" />
+                ))}
+              </div>
+              <p className="text-[#67748a] mb-6">{testimonial.text}</p>
               <div className="flex items-center gap-4">
                 <img src={testimonial.image} alt={testimonial.name} className="w-12 h-12 rounded-full" />
                 <div>
-                  <div className="font-bold text-[rgba(38,47,60,1)]">
+                  <div className="font-bold text-[#272f3c]">
                     {testimonial.name}
                   </div>
-                  <div className="text-gray-600">{testimonial.role}</div>
+                  <div className="text-[#ea2be2] text-sm">{testimonial.role}</div>
                 </div>
               </div>
-            </div>)}
+            </div>
+          ))}
+        </div>
+        
+        <div className="flex justify-center mt-8 md:hidden gap-2">
+          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
