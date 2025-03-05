@@ -1,13 +1,10 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Youtube, Award, BarChart } from "lucide-react";
 import { TeacherSignupDialog } from "./TeacherSignupDialog";
-
 export const Hero = () => {
   const [teacherDialogOpen, setTeacherDialogOpen] = useState(false);
-  
   return <div className="w-full min-h-screen relative overflow-hidden bg-white">
       {/* Background Effect - Degradê Radial Moderno */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -69,7 +66,7 @@ export const Hero = () => {
       {/* Conteúdo centralizado */}
       <div className="mx-auto px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16">
         <div className="text-center space-y-6 max-w-3xl px-4">
-          <h1 className="text-3xl sm:text-4xl md:text-7xl text-[#272f3c] leading-tight font-extrabold">
+          <h1 className="text-3xl sm:text-4xl text-[#272f3c] leading-tight md:text-7xl font-thin">
             Conectando <span className="text-[#ea2be2]">Alunos</span> e <span className="text-[#ea2be2]">Professores</span>
           </h1>
           
@@ -106,10 +103,7 @@ export const Hero = () => {
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
-            <Button 
-              onClick={() => setTeacherDialogOpen(true)}
-              className="rounded-lg text-sm sm:text-lg font-extrabold tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:shadow-lg hover:shadow-[#ea2be2]/20 hover:-translate-y-1 w-full sm:w-auto"
-            >
+            <Button onClick={() => setTeacherDialogOpen(true)} className="rounded-lg text-sm sm:text-lg font-extrabold tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:shadow-lg hover:shadow-[#ea2be2]/20 hover:-translate-y-1 w-full sm:w-auto">
               QUERO SER PROFESSOR
             </Button>
           </div>
@@ -117,9 +111,6 @@ export const Hero = () => {
       </div>
       
       {/* Diálogo de cadastro de professor */}
-      <TeacherSignupDialog
-        open={teacherDialogOpen}
-        onOpenChange={setTeacherDialogOpen}
-      />
+      <TeacherSignupDialog open={teacherDialogOpen} onOpenChange={setTeacherDialogOpen} />
     </div>;
 };
