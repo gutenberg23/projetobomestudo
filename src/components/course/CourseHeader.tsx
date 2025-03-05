@@ -22,14 +22,14 @@ export const CourseHeader = () => {
             </button>
           </div>
           <div className="mt-2 text-left flex items-center gap-2">
-            <span className="bg-[#fce7fc] text-[#f11ce3] text-sm px-3 py-1 rounded-full inline-block">
+            <span className="bg-[#ede7f9] text-sm px-3 py-1 rounded-full inline-block text-[#5f2ebe]">
               #{courseId}
             </span>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger>
-                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-[#fce7fc] cursor-pointer">
-                    <Info className="w-3.5 h-3.5 text-[#f11ce3]" />
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-[#ede7f9] cursor-pointer">
+                    <Info className="w-3.5 h-3.5 text-[#5f2ebe]" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs bg-white p-3 border border-[#f11ce3]/20 shadow-lg rounded-md">
@@ -41,7 +41,7 @@ export const CourseHeader = () => {
         </div>
 
         <div className="flex flex-col text-[17px] justify-center w-full md:w-[278px] py-[13px] mt-4 md:mt-0">
-          <button className="bg-[#f11ce3] flex items-center gap-2.5 justify-center px-5 py-4 rounded-[10px] text-white">
+          <button className="flex items-center gap-2.5 justify-center px-5 py-4 rounded-[10px] text-white bg-[#5f2ebe] font-thin">
             <img src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/87eae3edb19d6590e38c55cc28e85559b7a359d44c6a2ea44df65f4dd696565f" alt="Certificate Icon" className="w-6" />
             Imprimir Certificado
           </button>
