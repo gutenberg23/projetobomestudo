@@ -34,7 +34,7 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
           <Input 
             type="text" 
             placeholder="Pesquisar artigos, notícias, concursos..." 
-            className="h-12 pl-12 pr-4 border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]" 
+            className="h-10 pl-12 pr-4 border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]" 
             value={searchTerm} 
             onChange={e => setSearchTerm(e.target.value)} 
           />
@@ -42,7 +42,7 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
         </div>
         <Button 
           type="submit" 
-          className="ml-2 h-12 bg-[#5f2ebe] hover:bg-[#5021a5]"
+          className="ml-2 h-10 px-4 bg-[#5f2ebe] hover:bg-[#5021a5]"
         >
           Buscar
         </Button>
