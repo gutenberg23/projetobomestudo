@@ -10,7 +10,7 @@ interface SubmitButtonProps {
 const SubmitButton: React.FC<SubmitButtonProps> = ({ onClick, text }) => {
   return (
     <div>
-      <Button onClick={onClick} variant="hero">
+      <Button onClick={onClick} variant="hero" className="text-white">
         {text}
       </Button>
     </div>

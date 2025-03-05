@@ -100,7 +100,7 @@ export const Hero = () => {
           {/* Botões com design melhorado */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <Link to="/login" className="w-full sm:w-auto">
-              <Button variant="hero" className="w-full">
+              <Button variant="hero" className="w-full text-white">
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>

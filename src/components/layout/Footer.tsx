@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Instagram, Facebook, Twitter, Youtube, Mail, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -13,16 +14,16 @@ export const Footer = () => {
               Plataforma de estudos online para candidatos de concursos públicos com cursos, questões comentadas e estatísticas de desempenho.
             </p>
             <div className="flex space-x-4 pt-2">
-              <a href="#" className="text-white hover:text-[#ea2be2] transition-colors">
+              <a href="#" className="text-white hover:text-[#5f2ebe] transition-colors">
                 <Instagram size={20} />
               </a>
-              <a href="#" className="text-white hover:text-[#ea2be2] transition-colors">
+              <a href="#" className="text-white hover:text-[#5f2ebe] transition-colors">
                 <Facebook size={20} />
               </a>
-              <a href="#" className="text-white hover:text-[#ea2be2] transition-colors">
+              <a href="#" className="text-white hover:text-[#5f2ebe] transition-colors">
                 <Twitter size={20} />
               </a>
-              <a href="#" className="text-white hover:text-[#ea2be2] transition-colors">
+              <a href="#" className="text-white hover:text-[#5f2ebe] transition-colors">
                 <Youtube size={20} />
               </a>
             </div>
@@ -33,25 +34,25 @@ export const Footer = () => {
             <h3 className="text-lg font-bold mb-4">Navegação</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
+                <Link to="/" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
                   <ChevronRight size={16} className="mr-1" />
                   <span>Home</span>
                 </Link>
               </li>
               <li>
-                <Link to="/explore" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
+                <Link to="/explore" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
                   <ChevronRight size={16} className="mr-1" />
                   <span>Explorar</span>
                 </Link>
               </li>
               <li>
-                <Link to="/my-courses" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
+                <Link to="/my-courses" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
                   <ChevronRight size={16} className="mr-1" />
                   <span>Meus Cursos</span>
                 </Link>
               </li>
               <li>
-                <Link to="/questions" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
+                <Link to="/questions" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
                   <ChevronRight size={16} className="mr-1" />
                   <span>Questões</span>
                 </Link>
@@ -64,25 +65,25 @@ export const Footer = () => {
             <h3 className="text-lg font-bold mb-4">Concursos</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
+                <a href="#" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
                   <ChevronRight size={16} className="mr-1" />
                   <span>Banco do Brasil</span>
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
+                <a href="#" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
                   <ChevronRight size={16} className="mr-1" />
                   <span>Concurso INSS</span>
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
+                <a href="#" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
                   <ChevronRight size={16} className="mr-1" />
                   <span>Concurso Receita Federal</span>
                 </a>
               </li>
               <li>
-                <a href="#" className="text-gray-300 hover:text-[#ea2be2] flex items-center transition-colors">
+                <a href="#" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
                   <ChevronRight size={16} className="mr-1" />
                   <span>Concurso Caixa</span>
                 </a>
@@ -101,7 +102,7 @@ export const Footer = () => {
               <h4 className="text-sm font-bold mb-2">Receba Novidades</h4>
               <div className="flex mt-2">
                 <input type="email" placeholder="Seu e-mail" className="px-3 py-2 text-sm rounded-l-md text-gray-800 w-full focus:outline-none" />
-                <button className="px-4 py-2 rounded-r-md hover:bg-opacity-90 transition-colors bg-[#5f2ebe]">
+                <button className="px-4 py-2 rounded-r-md hover:bg-opacity-90 transition-colors bg-[#5f2ebe] text-white">
                   Enviar
                 </button>
               </div>
@@ -116,10 +117,10 @@ export const Footer = () => {
               © {new Date().getFullYear()} BomEstudo. Todos os direitos reservados.
             </p>
             <div className="flex space-x-6">
-              <a href="#" className="text-sm text-gray-400 hover:text-[#ea2be2] transition-colors">
+              <a href="#" className="text-sm text-gray-400 hover:text-[#5f2ebe] transition-colors">
                 Termos de Uso
               </a>
-              <a href="#" className="text-sm text-gray-400 hover:text-[#ea2be2] transition-colors">
+              <a href="#" className="text-sm text-gray-400 hover:text-[#5f2ebe] transition-colors">
                 Política de Privacidade
               </a>
             </div>

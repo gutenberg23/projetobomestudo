@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
@@ -20,11 +21,11 @@ export const Header = () => {
       </div>
 
       <div className="hidden md:flex items-center space-x-6 mr-6">
-        <Link to="/blog" className="flex items-center gap-1 text-[#67748a] hover:text-[#ea2be2] transition-colors">
+        <Link to="/blog" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
           <Newspaper className="w-4 h-4 px-px" />
           <span className="font-extralight">Blog</span>
         </Link>
-        <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#ea2be2] transition-colors">
+        <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
           <Trophy className="w-4 h-4" />
           <span className="font-extralight">Concursos</span>
         </Link>
@@ -58,22 +59,32 @@ export const Header = () => {
               </div>
             </div>
             <nav className="flex flex-col">
-              <Link to="/explore" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
+              <Link to="/explore" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <Compass className="w-4 h-4" />
                 Explorar
               </Link>
-              <Link to="/my-courses" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
+              <Link to="/my-courses" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
                 Meus Cursos
               </Link>
-              <Link to="/questions" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
+              <Link to="/questions" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <User className="w-4 h-4" />
                 Questões
               </Link>
-              <Link to="/settings" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#f11ce3] flex items-center gap-2">
+              <Link to="/settings" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <Settings className="w-4 h-4" />
                 Configurações
               </Link>
+              <div className="md:hidden border-t border-gray-100">
+                <Link to="/blog" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <Newspaper className="w-4 h-4" />
+                  Blog
+                </Link>
+                <Link to="/explore" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <Trophy className="w-4 h-4" />
+                  Concursos
+                </Link>
+              </div>
               <div className="border-t border-gray-100">
                 <Link to="/" className="px-4 py-3 text-sm font-medium text-red-600 hover:bg-slate-50 block flex items-center gap-2">
                   <LogOut className="w-4 h-4" />

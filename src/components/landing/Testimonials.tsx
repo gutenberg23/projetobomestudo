@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Star, ChevronLeft, ChevronRight } from "lucide-react";
 export const Testimonials = () => {
@@ -9,10 +10,10 @@ export const Testimonials = () => {
           </h2>
           
           <div className="hidden md:flex gap-2">
-            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#5f2ebe] hover:text-white hover:border-[#5f2ebe] transition-colors">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+            <button className="p-2 border border-gray-200 rounded-full hover:bg-[#5f2ebe] hover:text-white hover:border-[#5f2ebe] transition-colors">
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
@@ -52,10 +53,10 @@ export const Testimonials = () => {
         </div>
         
         <div className="flex justify-center mt-8 md:hidden gap-2">
-          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#5f2ebe] hover:text-white hover:border-[#5f2ebe] transition-colors">
             <ChevronLeft className="h-5 w-5" />
           </button>
-          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#ea2be2] hover:text-white hover:border-[#ea2be2] transition-colors">
+          <button className="p-2 border border-gray-200 rounded-full hover:bg-[#5f2ebe] hover:text-white hover:border-[#5f2ebe] transition-colors">
             <ChevronRight className="h-5 w-5" />
           </button>
         </div>
