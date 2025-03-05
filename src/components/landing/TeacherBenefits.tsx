@@ -10,7 +10,7 @@ export const TeacherBenefits = () => {
           {/* Lado Esquerdo - Texto e CTA */}
           <div className="md:w-1/2 space-y-4 sm:space-y-6">
             <h2 className="text-2xl sm:text-3xl md:text-4xl text-[#272f3c] font-extrabold leading-tight">
-              Professores, <span className="text-[#5f2ebe]">multiplique</span> seu alcance e sua receita
+              Professor, <span className="text-[#5f2ebe]">multiplique</span> seu alcance e sua receita
             </h2>
             <p className="text-sm sm:text-base text-[#67748a] leading-relaxed">
               Ao se tornar um professor parceiro do BomEstudo, você aumenta sua visibilidade, ganha mais inscritos em seu canal e potencializa sua receita com anúncios, sem cobrar nada dos alunos.
