@@ -29,6 +29,7 @@ export interface TeacherFormData {
   instagram: string;
   twitter: string;
   facebook: string;
+  website: string;
   fotoPerfil: File | null;
   aceitouTermos: boolean;
 }

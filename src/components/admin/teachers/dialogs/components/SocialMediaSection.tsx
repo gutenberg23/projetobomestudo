@@ -8,6 +8,7 @@ interface SocialMediaSectionProps {
     instagram: string;
     twitter: string;
     facebook: string;
+    website?: string;
   };
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -19,7 +20,7 @@ export const SocialMediaSection: React.FC<SocialMediaSectionProps> = ({
   return (
     <div className="space-y-2">
       <Label className="text-[#272f3c]">Redes Sociais</Label>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div>
           <Input 
             id="instagram" 
@@ -47,6 +48,16 @@ export const SocialMediaSection: React.FC<SocialMediaSectionProps> = ({
             value={formData.facebook}
             onChange={handleInputChange}
             placeholder="Facebook (opcional)"
+            className="border-[#ea2be2]/30 focus-visible:ring-[#ea2be2]"
+          />
+        </div>
+        <div>
+          <Input 
+            id="website" 
+            name="website"
+            value={formData.website || ''}
+            onChange={handleInputChange}
+            placeholder="Website (opcional)"
             className="border-[#ea2be2]/30 focus-visible:ring-[#ea2be2]"
           />
         </div>

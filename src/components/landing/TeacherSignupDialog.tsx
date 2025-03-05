@@ -6,10 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import { TeacherBasicInfo } from "./teacher-signup/TeacherBasicInfo";
 import { TeacherPhotoUpload } from "./teacher-signup/TeacherPhotoUpload";
 import { TeacherDisciplineSelect } from "./teacher-signup/TeacherDisciplineSelect";
-import { TeacherTopicsList } from "./teacher-signup/TeacherTopicsList";
 import { TeacherSocialMedia } from "./teacher-signup/TeacherSocialMedia";
 import { TeacherTermsAgreement } from "./teacher-signup/TeacherTermsAgreement";
-import { disciplinas, topicosPorDisciplina, TeacherFormData } from "./teacher-signup/types";
+import { disciplinas, TeacherFormData } from "./teacher-signup/types";
 
 interface TeacherSignupDialogProps {
   open: boolean;
@@ -29,26 +28,13 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
     instagram: "",
     twitter: "",
     facebook: "",
+    website: "",
     fotoPerfil: null,
     aceitouTermos: false
   });
   
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [topicosSelecionados, setTopicosSelecionados] = useState<string[]>([]);
-  const [topicosDisponiveis, setTopicosDisponiveis] = useState<string[]>([]);
-  const [linksVideos, setLinksVideos] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (formData.disciplina && topicosPorDisciplina[formData.disciplina]) {
-      setTopicosDisponiveis(topicosPorDisciplina[formData.disciplina]);
-    } else {
-      setTopicosDisponiveis([]);
-    }
-    // Limpar tópicos selecionados ao mudar de disciplina
-    setTopicosSelecionados([]);
-    setLinksVideos({});
-  }, [formData.disciplina]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -61,21 +47,6 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
 
   const handleDisciplinaChange = (value: string) => {
     setFormData(prev => ({ ...prev, disciplina: value }));
-  };
-
-  const handleTopicoToggle = (topico: string) => {
-    setTopicosSelecionados(prev => 
-      prev.includes(topico) 
-        ? prev.filter(t => t !== topico) 
-        : [...prev, topico]
-    );
-  };
-
-  const handleLinkVideoChange = (topico: string, valor: string) => {
-    setLinksVideos(prev => ({
-      ...prev,
-      [topico]: valor
-    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -123,7 +94,7 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
     setTimeout(() => {
       toast({
         title: "Cadastro recebido com sucesso!",
-        description: "Entraremos em contato em breve para dar continuidade ao processo.",
+        description: "Durante os próximos 3 dias entraremos em contato por e-mail para dar continuidade ao processo.",
       });
       
       // Resetar formulário e fechar diálogo
@@ -135,12 +106,11 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
         instagram: "",
         twitter: "",
         facebook: "",
+        website: "",
         fotoPerfil: null,
         aceitouTermos: false
       });
       setFotoPreview(null);
-      setTopicosSelecionados([]);
-      setLinksVideos({});
       setIsSubmitting(false);
       onOpenChange(false);
     }, 1500);
@@ -168,14 +138,6 @@ export const TeacherSignupDialog: React.FC<TeacherSignupDialogProps> = ({
             disciplina={formData.disciplina} 
             handleDisciplinaChange={handleDisciplinaChange} 
             disciplinas={disciplinas} 
-          />
-          
-          <TeacherTopicsList 
-            topicosDisponiveis={topicosDisponiveis}
-            topicosSelecionados={topicosSelecionados}
-            linksVideos={linksVideos}
-            handleTopicoToggle={handleTopicoToggle}
-            handleLinkVideoChange={handleLinkVideoChange}
           />
           
           <TeacherSocialMedia 
