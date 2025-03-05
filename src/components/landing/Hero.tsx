@@ -77,16 +77,16 @@ export const Hero = () => {
           {/* Feature Icons */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-4 sm:py-6 max-w-2xl mx-auto">
             {[{
-            icon: <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-[#ea2be2]" />,
+            icon: <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-[#6741ad]" />,
             label: "Cursos Gratuitos"
           }, {
-            icon: <Youtube className="h-5 w-5 sm:h-6 sm:w-6 text-[#ea2be2]" />,
+            icon: <Youtube className="h-5 w-5 sm:h-6 sm:w-6 text-[#6741ad]" />,
             label: "Professores YouTubers"
           }, {
-            icon: <BarChart className="h-5 w-5 sm:h-6 sm:w-6 text-[#ea2be2]" />,
+            icon: <BarChart className="h-5 w-5 sm:h-6 sm:w-6 text-[#6741ad]" />,
             label: "Estatísticas Detalhadas"
           }, {
-            icon: <Award className="h-5 w-5 sm:h-6 sm:w-6 text-[#ea2be2]" />,
+            icon: <Award className="h-5 w-5 sm:h-6 sm:w-6 text-[#6741ad]" />,
             label: "Acompanhamento Completo"
           }].map((item, index) => <div key={index} className="flex flex-col items-center gap-2 p-2 sm:p-4">
                 <div className="p-2 bg-white rounded-full shadow-none">
