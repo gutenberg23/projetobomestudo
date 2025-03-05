@@ -41,7 +41,7 @@ export const CourseHeader = () => {
         </div>
 
         <div className="flex flex-col text-[17px] justify-center w-full md:w-[278px] py-[13px] mt-4 md:mt-0">
-          <button className="flex items-center gap-2.5 justify-center px-5 py-4 rounded-[10px] text-white bg-[#5f2ebe] font-thin">
+          <button className="flex items-center gap-2.5 justify-center px-5 py-4 rounded-[10px] text-white font-thin bg-[#c4aeed]">
             <img src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/87eae3edb19d6590e38c55cc28e85559b7a359d44c6a2ea44df65f4dd696565f" alt="Certificate Icon" className="w-6" />
             Imprimir Certificado
           </button>
