@@ -3,7 +3,6 @@ import { BarChart } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QuestionStats } from "./QuestionStats";
-
 interface QuestionHeaderProps {
   year: string;
   institution: string;
@@ -44,7 +43,7 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
                     <BarChart className="h-4 w-4 text-white" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[95vw] md:w-[700px] p-0">
+                <PopoverContent className="w-[45vw] md:w-[700px] p-0">
                   <QuestionStats />
                 </PopoverContent>
               </Popover>
