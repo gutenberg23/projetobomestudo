@@ -1,3 +1,4 @@
+
 import { TeacherData } from "../types";
 import { UseTeachersStateReturn } from "./useTeachersState";
 import { useToast } from "@/hooks/use-toast";
@@ -61,7 +62,7 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     });
   };
   
-  // Ativar/Desativar professor - Corrigido para funcionar corretamente
+  // Ativar/Desativar professor
   const toggleTeacherActive = (teacher: TeacherData) => {
     // Primeiro, crie um novo objeto professor com o estado ativo invertido
     const updatedTeacher = {
@@ -81,6 +82,22 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     toast({
       title: updatedTeacher.ativo ? "Professor ativado" : "Professor desativado",
       description: `O professor ${teacher.nomeCompleto} foi ${updatedTeacher.ativo ? 'ativado' : 'desativado'} com sucesso.`,
+    });
+  };
+  
+  // Atualizar rating do professor
+  const updateTeacherRating = (teacherId: string, newRating: number) => {
+    const updatedTeachers = teachers.map(teacher => 
+      teacher.id === teacherId 
+        ? { ...teacher, rating: newRating } 
+        : teacher
+    );
+    
+    setTeachers(updatedTeachers);
+    
+    toast({
+      title: "Avaliação atualizada",
+      description: `A nota do professor foi atualizada para ${newRating}.`,
     });
   };
   
@@ -140,6 +157,7 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     toggleTeacherActive,
     deleteTeacher,
     updateTeacher,
-    addTeacher
+    addTeacher,
+    updateTeacherRating
   };
 };

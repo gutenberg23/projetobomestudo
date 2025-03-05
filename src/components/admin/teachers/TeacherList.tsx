@@ -13,14 +13,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Edit, Trash2, ExternalLink, Youtube, Facebook, Twitter, Instagram, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 
 interface TeacherListProps {
   teachers: TeacherData[];
   onEdit: (teacher: TeacherData) => void;
   onDelete: (teacher: TeacherData) => void;
   onViewDetails: (teacher: TeacherData) => void;
-  onToggleActive: (teacher: TeacherData) => void;
+  onRatingChange: (teacherId: string, newRating: number) => void;
 }
 
 const TeacherList: React.FC<TeacherListProps> = ({
@@ -28,26 +27,25 @@ const TeacherList: React.FC<TeacherListProps> = ({
   onEdit,
   onDelete,
   onViewDetails,
-  onToggleActive
+  onRatingChange
 }) => {
-  const renderRatingStars = (rating: number) => {
+  const renderEditableRatingStars = (teacher: TeacherData) => {
     const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<Star key={i} className="h-4 w-4 fill-[#5f2ebe] text-[#5f2ebe]" />);
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(<Star key={i} className="h-4 w-4 fill-[#5f2ebe]/50 text-[#5f2ebe]" />);
-      } else {
-        stars.push(<Star key={i} className="h-4 w-4 text-[#5f2ebe]/30" />);
-      }
+    
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <Star 
+          key={i} 
+          className={`h-5 w-5 cursor-pointer ${i <= teacher.rating ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-[#5f2ebe]/30"}`}
+          onClick={() => onRatingChange(teacher.id, i)}
+        />
+      );
     }
+    
     return (
       <div className="flex">
         {stars}
-        <span className="ml-2 text-[#67748a]">{rating.toFixed(1)}</span>
+        <span className="ml-2 text-[#67748a]">{teacher.rating.toFixed(1)}</span>
       </div>
     );
   };
@@ -63,8 +61,6 @@ const TeacherList: React.FC<TeacherListProps> = ({
             <TableHead>Redes Sociais</TableHead>
             <TableHead>Rating</TableHead>
             <TableHead>Data de Cadastro</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Ativo</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -122,31 +118,9 @@ const TeacherList: React.FC<TeacherListProps> = ({
                   </div>
                 </TableCell>
                 <TableCell>
-                  {renderRatingStars(teacher.rating)}
+                  {renderEditableRatingStars(teacher)}
                 </TableCell>
                 <TableCell>{teacher.dataCadastro}</TableCell>
-                <TableCell>
-                  <Badge 
-                    variant="outline" 
-                    className={teacher.status === 'aprovado' 
-                      ? "bg-green-100 text-green-800 border-green-300" 
-                      : teacher.status === 'pendente'
-                      ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-                      : "bg-red-100 text-red-800 border-red-300"
-                    }
-                  >
-                    {teacher.status === 'aprovado' ? 'Aprovado' : 
-                     teacher.status === 'pendente' ? 'Pendente' : 'Rejeitado'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Switch 
-                    checked={teacher.ativo}
-                    onCheckedChange={() => onToggleActive(teacher)}
-                    className="data-[state=checked]:bg-[#5f2ebe]"
-                    aria-label={`Ativar ou desativar professor ${teacher.nomeCompleto}`}
-                  />
-                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end space-x-2">
                     <Button 
@@ -179,7 +153,7 @@ const TeacherList: React.FC<TeacherListProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={9} className="text-center py-8">
+              <TableCell colSpan={7} className="text-center py-8">
                 <div className="text-center">
                   <Youtube className="mx-auto h-12 w-12 text-gray-300" />
                   <h3 className="mt-2 text-lg font-medium text-[#272f3c]">Nenhum professor encontrado</h3>

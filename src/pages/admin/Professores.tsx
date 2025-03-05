@@ -38,8 +38,8 @@ const Professores = () => {
     filterTeachers,
     deleteTeacher,
     updateTeacher,
-    toggleTeacherActive,
-    addTeacher
+    addTeacher,
+    updateTeacherRating
   } = useTeacherActions(state);
   
   const [newTeacherDialogOpen, setNewTeacherDialogOpen] = useState(false);
@@ -58,6 +58,10 @@ const Professores = () => {
   const handleViewTeacherDetails = (teacher: any) => {
     selectTeacher(teacher);
     setDetailsDialogOpen(true);
+  };
+  
+  const handleRatingChange = (teacherId: string, newRating: number) => {
+    updateTeacherRating(teacherId, newRating);
   };
 
   return (
@@ -90,7 +94,7 @@ const Professores = () => {
         onEdit={handleEditTeacher}
         onDelete={handleDeleteTeacher}
         onViewDetails={handleViewTeacherDetails}
-        onToggleActive={toggleTeacherActive}
+        onRatingChange={handleRatingChange}
         onPageChange={setPaginaAtual}
       />
       

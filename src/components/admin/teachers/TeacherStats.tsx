@@ -1,74 +1,77 @@
 
 import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TeacherData } from "./types";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import { UsersRound, UserCheck, ClockIcon, FileBadge } from "lucide-react";
+import { Users, UserCheck, UserX, Award } from "lucide-react";
 
 interface TeacherStatsProps {
   teachers: TeacherData[];
 }
 
-const TeacherStats: React.FC<TeacherStatsProps> = ({ teachers }) => {
-  // Calcular estatísticas
-  const totalProfessores = teachers.length;
-  const professoresAprovados = teachers.filter(t => t.status === 'aprovado').length;
-  const professoresPendentes = teachers.filter(t => t.status === 'pendente').length;
-  const disciplinasUnicas = new Set(teachers.map(t => t.disciplina)).size;
-
+export const TeacherStats: React.FC<TeacherStatsProps> = ({ teachers }) => {
+  // Cálculos estatísticos
+  const totalTeachers = teachers.length;
+  const activeTeachers = teachers.filter(t => t.ativo).length;
+  const inactiveTeachers = teachers.filter(t => !t.ativo).length;
+  const averageRating = teachers.length 
+    ? (teachers.reduce((acc, t) => acc + t.rating, 0) / teachers.length).toFixed(1)
+    : "0.0";
+  
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card className="bg-white">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardDescription className="text-[#67748a]">Total de Professores</CardDescription>
-              <CardTitle className="text-3xl font-bold text-[#022731]">{totalProfessores}</CardTitle>
-            </div>
-            <div className="p-3 rounded-full bg-[#e8f1f3]">
-              <UsersRound className="h-6 w-6 text-[#2a8e9e]" />
-            </div>
-          </div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <Card className="border-t-4 border-t-[#5f2ebe]">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">Total de Professores</CardTitle>
+          <Users className="h-4 w-4 text-[#5f2ebe]" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{totalTeachers}</div>
+          <p className="text-xs text-[#67748a] mt-1">
+            professores cadastrados
+          </p>
         </CardContent>
       </Card>
-
-      <Card className="bg-white">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardDescription className="text-[#67748a]">Professores Aprovados</CardDescription>
-              <CardTitle className="text-3xl font-bold text-[#022731]">{professoresAprovados}</CardTitle>
-            </div>
-            <div className="p-3 rounded-full bg-[#e8f1f3]">
-              <UserCheck className="h-6 w-6 text-[#2a8e9e]" />
-            </div>
-          </div>
+      
+      <Card className="border-t-4 border-t-[#5f2ebe]">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">Professores Ativos</CardTitle>
+          <UserCheck className="h-4 w-4 text-[#5f2ebe]" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{activeTeachers}</div>
+          <p className="text-xs text-[#67748a] mt-1">
+            {Math.round((activeTeachers / totalTeachers) * 100) || 0}% do total
+          </p>
         </CardContent>
       </Card>
-
-      <Card className="bg-white">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardDescription className="text-[#67748a]">Pendentes de Aprovação</CardDescription>
-              <CardTitle className="text-3xl font-bold text-[#022731]">{professoresPendentes}</CardTitle>
-            </div>
-            <div className="p-3 rounded-full bg-[#e8f1f3]">
-              <ClockIcon className="h-6 w-6 text-[#2a8e9e]" />
-            </div>
-          </div>
+      
+      <Card className="border-t-4 border-t-[#5f2ebe]">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">Professores Inativos</CardTitle>
+          <UserX className="h-4 w-4 text-[#5f2ebe]" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{inactiveTeachers}</div>
+          <p className="text-xs text-[#67748a] mt-1">
+            {Math.round((inactiveTeachers / totalTeachers) * 100) || 0}% do total
+          </p>
         </CardContent>
       </Card>
-
-      <Card className="bg-white">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardDescription className="text-[#67748a]">Disciplinas Cobertas</CardDescription>
-              <CardTitle className="text-3xl font-bold text-[#022731]">{disciplinasUnicas}</CardTitle>
-            </div>
-            <div className="p-3 rounded-full bg-[#e8f1f3]">
-              <FileBadge className="h-6 w-6 text-[#2a8e9e]" />
-            </div>
+      
+      <Card className="border-t-4 border-t-[#5f2ebe]">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">Média de Avaliação</CardTitle>
+          <Award className="h-4 w-4 text-[#5f2ebe]" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{averageRating}</div>
+          <div className="flex mt-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star 
+                key={star} 
+                className={`h-3 w-3 ${star <= parseFloat(averageRating) ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-[#5f2ebe]/30"}`} 
+              />
+            ))}
           </div>
         </CardContent>
       </Card>

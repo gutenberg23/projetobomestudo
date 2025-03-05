@@ -2,26 +2,26 @@
 import React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, PieChart, Pie, Cell } from "recharts";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { DollarSign, Calendar, TrendingUp, Ticket } from "lucide-react";
-import { ReceitaData, PlanosData, CupomData, Estatisticas } from "./types";
+import { DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { ReceitaData, PlanosData, Estatisticas } from "./types";
 
 interface ReceitaTabProps {
   dadosReceita: ReceitaData[];
   dadosPlanos: PlanosData[];
-  cuponsAtivos: CupomData[];
   estatisticas: Estatisticas;
 }
 
 export const ReceitaTab: React.FC<ReceitaTabProps> = ({
   dadosReceita,
   dadosPlanos,
-  cuponsAtivos,
   estatisticas
 }) => {
-  const COLORS = ['#5f2ebe', '#0088FE', '#00C49F', '#FFBB28'];
+  // Filtramos apenas os planos mensal e anual
+  const planosFiltrados = dadosPlanos.filter(plano => 
+    plano.name === "Mensal" || plano.name === "Anual"
+  );
+  
+  const COLORS = ['#5f2ebe', '#0088FE'];
 
   return (
     <div className="space-y-4">
@@ -92,78 +92,36 @@ export const ReceitaTab: React.FC<ReceitaTabProps> = ({
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Distribuição por Planos</CardTitle>
-            <CardDescription>
-              Porcentagem de assinantes por tipo de plano
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie 
-                  data={dadosPlanos} 
-                  cx="50%" 
-                  cy="50%" 
-                  labelLine={false} 
-                  outerRadius={80} 
-                  fill="#8884d8" 
-                  dataKey="value" 
-                  label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {dadosPlanos.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={value => [`${value}%`, 'Porcentagem']} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex justify-between items-center">
-              <span>Cupons de Desconto</span>
-              <Button variant="outline" size="sm" className="w-auto">
-                <Ticket className="mr-2 h-4 w-4" />
-                Novo Cupom
-              </Button>
-            </CardTitle>
-            <CardDescription>
-              Gerenciamento de cupons de desconto ativos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Código</TableHead>
-                  <TableHead>Desconto</TableHead>
-                  <TableHead>Validade</TableHead>
-                  <TableHead>Usos</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {cuponsAtivos.map(cupom => (
-                  <TableRow key={cupom.codigo}>
-                    <TableCell className="font-medium">{cupom.codigo}</TableCell>
-                    <TableCell>{cupom.desconto}</TableCell>
-                    <TableCell>{cupom.validade}</TableCell>
-                    <TableCell>
-                      {cupom.usos}/{cupom.limite}
-                      <Progress value={cupom.usos / cupom.limite * 100} className="h-1 mt-1" />
-                    </TableCell>
-                  </TableRow>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Distribuição por Planos</CardTitle>
+          <CardDescription>
+            Comparação entre assinantes com planos Mensal e Anual
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie 
+                data={planosFiltrados} 
+                cx="50%" 
+                cy="50%" 
+                labelLine={false} 
+                outerRadius={80} 
+                fill="#8884d8" 
+                dataKey="value" 
+                label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {planosFiltrados.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+              </Pie>
+              <Tooltip formatter={value => [`${value}%`, 'Porcentagem']} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 };

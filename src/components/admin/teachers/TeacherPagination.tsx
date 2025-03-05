@@ -1,13 +1,7 @@
 
 import React from "react";
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink, 
-  PaginationNext, 
-  PaginationPrevious 
-} from "@/components/ui/pagination";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TeacherPaginationProps {
   paginaAtual: number;
@@ -26,64 +20,50 @@ const TeacherPagination: React.FC<TeacherPaginationProps> = ({
   totalItens,
   onPageChange
 }) => {
-  // Função para gerar botões de página
-  const renderPaginationItems = () => {
-    const items = [];
-    const maxVisiblePages = 5;
-    
-    // Lógica para mostrar páginas corretas (atual, anterior, próxima e algumas adjacentes)
-    let startPage = Math.max(1, paginaAtual - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPaginas, startPage + maxVisiblePages - 1);
-    
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-    
-    // Adicionar botões das páginas
-    for (let i = startPage; i <= endPage; i++) {
-      items.push(
-        <PaginationItem key={i}>
-          <PaginationLink
-            onClick={() => onPageChange(i)}
-            isActive={paginaAtual === i}
-            className={paginaAtual === i ? "bg-[#2a8e9e] text-white" : ""}
-          >
-            {i}
-          </PaginationLink>
-        </PaginationItem>
-      );
-    }
-    
-    return items;
-  };
-  
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-      <div className="text-sm text-[#67748a]">
+    <div className="flex justify-between items-center mt-4 text-sm">
+      <div className="text-[#67748a]">
         Mostrando <span className="font-medium">{indiceInicial + 1}</span> a{" "}
         <span className="font-medium">{indiceFinal}</span> de{" "}
-        <span className="font-medium">{totalItens}</span> resultados
+        <span className="font-medium">{totalItens}</span> professores
       </div>
       
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              onClick={() => paginaAtual > 1 && onPageChange(paginaAtual - 1)}
-              className={paginaAtual === 1 ? "pointer-events-none opacity-50" : ""}
-            />
-          </PaginationItem>
-          
-          {renderPaginationItems()}
-          
-          <PaginationItem>
-            <PaginationNext
-              onClick={() => paginaAtual < totalPaginas && onPageChange(paginaAtual + 1)}
-              className={paginaAtual === totalPaginas ? "pointer-events-none opacity-50" : ""}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+      <div className="flex gap-1">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(paginaAtual - 1)}
+          disabled={paginaAtual === 1}
+          className="border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#f6f8fa] disabled:opacity-50"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        
+        {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((page) => (
+          <Button
+            key={page}
+            variant={paginaAtual === page ? "default" : "outline"}
+            size="sm"
+            onClick={() => onPageChange(page)}
+            className={paginaAtual === page 
+              ? "bg-[#5f2ebe] hover:bg-[#5f2ebe]/90" 
+              : "border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#f6f8fa]"
+            }
+          >
+            {page}
+          </Button>
+        ))}
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPageChange(paginaAtual + 1)}
+          disabled={paginaAtual === totalPaginas}
+          className="border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#f6f8fa] disabled:opacity-50"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 };

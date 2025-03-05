@@ -40,7 +40,6 @@ const Dashboard = () => {
           <ReceitaTab 
             dadosReceita={dashboardData.dadosReceita}
             dadosPlanos={dashboardData.dadosPlanos}
-            cuponsAtivos={dashboardData.cuponsAtivos}
             estatisticas={dashboardData.estatisticas}
           />
         </TabsContent>

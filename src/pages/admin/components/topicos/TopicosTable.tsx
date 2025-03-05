@@ -29,8 +29,9 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
             <TableHead className="w-[50px]">
               <div className="flex items-center">
                 <Checkbox 
+                  id="selectAll"
                   checked={todosSelecionados} 
-                  onCheckedChange={handleSelecaoTodos}
+                  onCheckedChange={() => handleSelecaoTodos()}
                 />
               </div>
             </TableHead>
@@ -48,6 +49,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
               <TableRow key={topico.id}>
                 <TableCell>
                   <Checkbox 
+                    id={`topico-${topico.id}`}
                     checked={topico.selecionado} 
                     onCheckedChange={() => handleSelecaoTopico(topico.id)}
                   />
