@@ -103,7 +103,7 @@ export const Hero = () => {
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
-            <Button onClick={() => setTeacherDialogOpen(true)} className="rounded-lg text-sm sm:text-lg tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#491aa4] hover:bg-[#ea2be2]/5 hover:shadow-lg hover:shadow-[#491aa4]/20 hover:-translate-y-1 w-full sm:w-auto font-normal text-[#5f2bc1]">
+            <Button onClick={() => setTeacherDialogOpen(true)} className="rounded-lg text-sm sm:text-lg tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#491aa4] hover:bg-[#ffffff]/5 hover:shadow-lg hover:shadow-[#491aa4]/20 hover:-translate-y-1 w-full sm:w-auto font-normal text-[#5f2bc1]">
               QUERO SER PROFESSOR
             </Button>
           </div>
