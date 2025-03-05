@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocation, useNavigate } from "react-router-dom";
 
 // Dados fictícios para demonstração
 const MOCK_COURSES = [{
@@ -90,6 +92,18 @@ const Explore = () => {
   const [showSubjects, setShowSubjects] = useState(false);
   const [courses, setCourses] = useState(MOCK_COURSES);
   const [subjects, setSubjects] = useState(MOCK_SUBJECTS);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Extrair parâmetro de pesquisa da URL quando a página carrega
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const searchQuery = searchParams.get('search');
+    if (searchQuery) {
+      setSearchTerm(searchQuery);
+    }
+  }, [location.search]);
+
   const handleToggleFavorite = (id: string) => {
     if (showSubjects) {
       setSubjects(subjects.map(subject => subject.id === id ? {
@@ -103,6 +117,14 @@ const Explore = () => {
       } : course));
     }
   };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/explore?search=${encodeURIComponent(searchTerm)}`);
+    }
+  };
+
   const filteredData = showSubjects ? subjects.filter(subject => subject.title.toLowerCase().includes(searchTerm.toLowerCase())) : courses.filter(course => course.title.toLowerCase().includes(searchTerm.toLowerCase()));
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
@@ -112,8 +134,21 @@ const Explore = () => {
         
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="flex items-center flex-1 relative">
-            <Input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pr-10 w-full" />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <form onSubmit={handleSearch} className="w-full flex">
+              <Input 
+                type="text" 
+                placeholder="Pesquisar..." 
+                value={searchTerm} 
+                onChange={e => setSearchTerm(e.target.value)} 
+                className="pr-10 w-full" 
+              />
+              <button 
+                type="submit"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600"
+              >
+                <Search className="h-4 w-4" />
+              </button>
+            </form>
           </div>
           
           <div className="flex items-center gap-2">
