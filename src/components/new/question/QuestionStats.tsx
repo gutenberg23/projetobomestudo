@@ -18,19 +18,19 @@ const alternativesData = [
 
 export const QuestionStats: React.FC = () => {
   return (
-    <div className="bg-white rounded-md p-3 md:p-4 w-full max-w-full">
+    <div className="bg-white rounded-md p-3 md:p-4 w-full md:w-[600px] max-w-full">
       <div className="flex flex-col gap-4">
-        <div className="p-3 md:p-4 border rounded-md w-full">
-          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-4 text-sm md:text-base">Percentual de Rendimento</h3>
-          <div className="h-[200px] md:h-[280px]">
+        <div className="p-3 md:p-3 border rounded-md w-full">
+          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-3 text-sm md:text-base">Percentual de Rendimento</h3>
+          <div className="h-[180px] md:h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={performanceData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={40}
-                  outerRadius={60}
+                  innerRadius={35}
+                  outerRadius={55}
                   paddingAngle={2}
                   dataKey="value"
                 >
@@ -45,9 +45,9 @@ export const QuestionStats: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-3 md:p-4 border rounded-md w-full">
-          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-4 text-sm md:text-base">Alternativas mais respondidas</h3>
-          <div className="h-[200px] md:h-[280px]">
+        <div className="p-3 md:p-3 border rounded-md w-full">
+          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-3 text-sm md:text-base">Alternativas mais respondidas</h3>
+          <div className="h-[180px] md:h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={alternativesData}
