@@ -86,7 +86,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           {hasExpandableContent && (
             <button 
               onClick={toggleExpandedContent} 
-              className="flex items-center justify-center p-1 text-[#67748a] hover:text-[#ea2be2] transition-colors focus:outline-none"
+              className="flex items-center justify-center p-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors focus:outline-none"
               aria-label={showExpandedContent ? "Recolher conteúdo adicional" : "Expandir conteúdo adicional"}
             >
               {showExpandedContent ? (

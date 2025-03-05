@@ -10,7 +10,10 @@ interface SubmitButtonProps {
 const SubmitButton: React.FC<SubmitButtonProps> = ({ onClick, text }) => {
   return (
     <div>
-      <Button onClick={onClick} variant="hero" className="text-white">
+      <Button 
+        onClick={onClick} 
+        className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 text-white"
+      >
         {text}
       </Button>
     </div>

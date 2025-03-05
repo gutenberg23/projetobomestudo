@@ -124,7 +124,7 @@ const AdminLayout = () => {
                   className={cn(
                     "flex items-center px-3 py-3 rounded-md transition-colors",
                     location.pathname === item.path 
-                      ? "bg-[#e8f1f3] text-[#2a8e9e]"
+                      ? "bg-[#ede7f9] text-[#5f2ebe]"
                       : "text-[#67748a] hover:bg-gray-100",
                     collapsed ? "justify-center" : "justify-start"
                   )}
@@ -141,7 +141,7 @@ const AdminLayout = () => {
           <Link 
             to="/" 
             className={cn(
-              "flex items-center text-[#67748a] hover:text-[#2a8e9e] transition-colors",
+              "flex items-center text-[#67748a] hover:text-[#5f2ebe] transition-colors",
               collapsed ? "justify-center" : "justify-start"
             )}
           >

@@ -1,3 +1,4 @@
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportanceStars } from "./ImportanceStars";
 import { cn } from "@/lib/utils";
@@ -67,7 +68,7 @@ export const SubjectTable = ({
                     <div onClick={e => {
                   e.stopPropagation();
                   onTopicChange(subject.id, topic.id, 'isDone', !topic.isDone);
-                }} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isDone ? "bg-[#F11CE3] border-[#F11CE3]" : "bg-white border border-gray-200"}`}>
+                }} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isDone ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
                       {topic.isDone && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
                           <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>}
@@ -113,7 +114,7 @@ export const SubjectTable = ({
                 </td>
                 <td className="py-3 px-4">
                   <div className="flex items-center justify-center gap-2">
-                    <div onClick={() => handleIsReviewedChange(subject.id, topic.id)} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isReviewed ? "bg-[#F11CE3] border-[#F11CE3]" : "bg-white border border-gray-200"}`}>
+                    <div onClick={() => handleIsReviewedChange(subject.id, topic.id)} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isReviewed ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
                       {topic.isReviewed && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
                           <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>}

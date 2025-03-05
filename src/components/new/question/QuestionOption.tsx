@@ -1,3 +1,4 @@
+
 import React from "react";
 import { X } from "lucide-react";
 interface QuestionOptionProps {
@@ -26,7 +27,7 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
     if (!showAnswer) {
       return {
         container: "border-slate-200",
-        letter: isSelected ? "text-white bg-fuchsia-500 border-fuchsia-500" : "text-fuchsia-500",
+        letter: isSelected ? "text-white bg-[#5f2ebe] border-[#5f2ebe]" : "text-[#5f2ebe]",
         background: isSelected ? "bg-[#F6F8FA]" : "",
         text: ""
       };

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Upload } from "lucide-react";
 
 const VisualizacaoConfig = () => {
-  const [primaryColor, setPrimaryColor] = useState("#ea2be2");
+  const [primaryColor, setPrimaryColor] = useState("#5f2ebe");
   const [secondaryColor, setSecondaryColor] = useState("#f6f8fa");
   const [textTitleColor, setTextTitleColor] = useState("#272f3c");
   const [textParagraphColor, setTextParagraphColor] = useState("#67748a");
@@ -274,7 +274,7 @@ const VisualizacaoConfig = () => {
       </div>
 
       <div className="flex justify-end pt-4">
-        <Button type="submit">Salvar Alterações</Button>
+        <Button type="submit" className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90">Salvar Alterações</Button>
       </div>
     </form>
   );

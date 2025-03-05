@@ -29,7 +29,7 @@ const SearchQuestion: React.FC<SearchQuestionProps> = ({
       </div>
       <Button 
         onClick={handleSearchQuestion}
-        className="bg-[#ea2be2] hover:bg-[#d01ec7] text-white"
+        className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 text-white"
       >
         <Search className="w-4 h-4 mr-2" />
         Buscar Questão
