@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -67,7 +66,7 @@ export const Hero = () => {
       {/* Conteúdo centralizado */}
       <div className="mx-auto px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16 bg-white">
         <div className="text-center space-y-6 max-w-3xl px-4">
-          <h1 className="text-3xl sm:text-4xl leading-tight md:text-7xl font-thin text-black">
+          <h1 className="text-3xl sm:text-4xl leading-tight md:text-7xl font-thin text-[#272f3c]">
             Conectando <span className="text-black font-extrabold">Alunos</span> e <span className="text-black font-extrabold">Professores</span>
           </h1>
           
