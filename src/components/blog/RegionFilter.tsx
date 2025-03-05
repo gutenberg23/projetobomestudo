@@ -21,7 +21,7 @@ export const RegionFilter: React.FC<RegionFilterProps> = ({
         {regions.map((region) => (
           <button
             key={region.id}
-            onClick={() => onSelectRegion(activeRegion === region.id ? null : region.id)}
+            onClick={() => onSelectRegion(activeRegion === region.id ? null : region.value)}
             className={cn(
               "px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-colors",
               activeRegion === region.id
