@@ -79,32 +79,32 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
       </div>;
   };
   return <div className="video-container w-full">
-      {/* Informações do professor */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3">
-        <div className="flex items-center flex-col sm:flex-row">
-          <div className="flex flex-col items-center sm:items-start sm:flex-row">
-            <Avatar className="h-12 w-12 mb-2 sm:mb-0 sm:mr-3 border-3 border-slate-50">
-              <AvatarImage src={teacher.photoUrl} alt={teacher.name} />
-              <AvatarFallback className="bg-[#f6f8fa] text-[#272f3c]">
-                {teacher.name.split(' ').map(name => name[0]).join('').substring(0, 2).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-center sm:text-left">
-              <h3 className="font-medium text-[#272f3c]">{teacher.name}</h3>
-              <p className="text-sm text-[#67748a]">Professor</p>
+      <div className="aspect-video bg-slate-200 rounded-xl relative" style={{
+      height: responsiveHeight || 'auto'
+    }}>
+        {/* Informações do professor sobrepondo o vídeo */}
+        <div className="absolute top-0 left-0 right-0 p-3 z-10 bg-gradient-to-b from-black/50 to-transparent flex flex-col sm:flex-row sm:justify-between sm:items-center w-full rounded-t-xl">
+          <div className="flex items-center flex-col sm:flex-row">
+            <div className="flex flex-col items-center sm:items-start sm:flex-row">
+              <Avatar className="h-12 w-12 mb-2 sm:mb-0 sm:mr-3 border-2 border-white/30">
+                <AvatarImage src={teacher.photoUrl} alt={teacher.name} />
+                <AvatarFallback className="bg-[#f6f8fa] text-[#272f3c]">
+                  {teacher.name.split(' ').map(name => name[0]).join('').substring(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="text-center sm:text-left">
+                <h3 className="font-medium text-white">{teacher.name}</h3>
+                <p className="text-sm text-white/80">Professor</p>
+              </div>
             </div>
+          </div>
+          
+          {/* Ícones de redes sociais - no mobile aparecem centralizados */}
+          <div className="mt-3 sm:mt-0 flex justify-center sm:justify-start">
+            <SocialMediaIcons />
           </div>
         </div>
         
-        {/* Ícones de redes sociais - no mobile aparecem centralizados */}
-        <div className="mt-3 sm:mt-0 flex justify-center sm:justify-start">
-          <SocialMediaIcons />
-        </div>
-      </div>
-      
-      <div className="aspect-video bg-slate-200 rounded-xl" style={{
-      height: responsiveHeight || 'auto'
-    }}>
         <div className="w-full h-full flex items-center justify-center text-slate-500">
           Vídeo da aula: {currentSection?.title}
         </div>
