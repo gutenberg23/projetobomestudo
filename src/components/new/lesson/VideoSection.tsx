@@ -35,53 +35,47 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
   const [responsiveHeight, setResponsiveHeight] = useState(videoHeight);
   useEffect(() => {
     const handleResize = () => {
-      // Ajusta a altura do vídeo de acordo com a largura da tela
       const parentElement = document.querySelector('.video-container');
       if (parentElement) {
         const width = parentElement.clientWidth;
-        // Calculando a altura baseada em uma proporção de aspecto 16:9
         const calculatedHeight = width * 9 / 16;
         setResponsiveHeight(calculatedHeight);
       }
     };
 
-    // Chama handleResize quando o componente monta
     handleResize();
 
-    // Adiciona event listener para resize
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
 
-  // Componente para renderizar os ícones de redes sociais
   const SocialMediaIcons = () => {
     return <div className="flex items-center gap-3">
         {teacher.socialMedia.youtube && <a href={teacher.socialMedia.youtube} target="_blank" rel="noopener noreferrer" aria-label="Youtube">
-            <Youtube className="w-5 h-5 text-[#66748a] hover:text-[#ea2be2] transition-colors" />
+            <Youtube className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
           </a>}
         {teacher.socialMedia.instagram && <a href={teacher.socialMedia.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-            <Instagram className="w-5 h-5 text-[#66748a] hover:text-[#ea2be2] transition-colors" />
+            <Instagram className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
           </a>}
         {teacher.socialMedia.telegram && <a href={teacher.socialMedia.telegram} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
-            <MessageCircle className="w-5 h-5 text-[#ffffff] hover:text-[#ea2be2] transition-colors" />
+            <MessageCircle className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
           </a>}
         {teacher.socialMedia.facebook && <a href={teacher.socialMedia.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-            <Facebook className="w-5 h-5 text-[#66748a] hover:text-[#ea2be2] transition-colors" />
+            <Facebook className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
           </a>}
         {teacher.socialMedia.twitter && <a href={teacher.socialMedia.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-            <Twitter className="w-5 h-5 text-[#66748a] hover:text-[#ea2be2] transition-colors" />
+            <Twitter className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
           </a>}
       </div>;
   };
+
   return <div className="video-container w-full">
-      <div style={{
+      <div className="aspect-video bg-slate-200 rounded-xl relative" style={{
       height: responsiveHeight || 'auto'
-    }} className="aspect-video bg-white rounded-xl relative">
-        {/* Informações do professor sobrepondo o vídeo */}
+    }}>
         <div className="absolute top-0 left-0 right-0 p-3 z-10 bg-gradient-to-b from-black/50 to-transparent flex flex-col sm:flex-row sm:justify-between sm:items-center w-full rounded-t-xl">
           <div className="flex items-center flex-col sm:flex-row">
             <div className="flex flex-col items-center sm:items-start sm:flex-row">
@@ -97,13 +91,10 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
               </div>
             </div>
           </div>
-          
-          {/* Ícones de redes sociais - no mobile aparecem centralizados */}
           <div className="mt-3 sm:mt-0 flex justify-center sm:justify-start">
             <SocialMediaIcons />
           </div>
         </div>
-        
         <div className="w-full h-full flex items-center justify-center text-slate-500">
           Vídeo da aula: {currentSection?.title}
         </div>
