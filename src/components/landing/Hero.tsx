@@ -70,7 +70,7 @@ export const Hero = () => {
             Conectando <span className="text-black font-extrabold">Alunos</span> e <span className="text-[#ea2be2]">Professores</span>
           </h1>
           
-          <p className="text-base sm:text-lg md:text-xl text-[#67748a] max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-[#67748a] max-w-2xl mx-auto leading-relaxed md:text-xl font-light">
             Estude de graça com os melhores professores do YouTube e utilize ferramentas avançadas para potencializar seus estudos para concursos públicos.
           </p>
           
@@ -92,18 +92,18 @@ export const Hero = () => {
                 <div className="p-2 bg-white rounded-full shadow-none">
                   {item.icon}
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-[#67748a]">{item.label}</span>
+                <span className="text-xs sm:text-sm text-[#67748a] font-normal">{item.label}</span>
               </div>)}
           </div>
           
           {/* Botões com design melhorado */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <Link to="/login" className="w-full sm:w-auto">
-              <Button className="text-white rounded-lg text-sm sm:text-lg font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#ea2be2] to-[#f952ec] hover:shadow-lg hover:shadow-[#ea2be2]/30 hover:-translate-y-1 w-full border-b-4 border-[#c71dc0]">
+              <Button className="text-white rounded-lg text-sm sm:text-lg tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#ea2be2] to-[#f952ec] hover:shadow-lg hover:shadow-[#ea2be2]/30 hover:-translate-y-1 w-full border-b-4 border-[#c71dc0] font-normal">
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
-            <Button onClick={() => setTeacherDialogOpen(true)} className="rounded-lg text-sm sm:text-lg font-extrabold tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:shadow-lg hover:shadow-[#ea2be2]/20 hover:-translate-y-1 w-full sm:w-auto">
+            <Button onClick={() => setTeacherDialogOpen(true)} className="rounded-lg text-sm sm:text-lg tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2]/5 hover:shadow-lg hover:shadow-[#ea2be2]/20 hover:-translate-y-1 w-full sm:w-auto font-normal">
               QUERO SER PROFESSOR
             </Button>
           </div>
