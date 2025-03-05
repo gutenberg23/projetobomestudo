@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import type { Section } from "../types";
 import { Youtube, Instagram, Facebook, MessageCircle, Twitter, Globe } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 interface TeacherInfo {
   name: string;
   photoUrl: string;
@@ -17,12 +18,14 @@ interface TeacherInfo {
     website?: string;
   };
 }
+
 interface VideoSectionProps {
   selectedSection: string;
   sections: Section[];
   videoHeight: number;
   teacher?: TeacherInfo;
 }
+
 export const VideoSection: React.FC<VideoSectionProps> = ({
   selectedSection,
   sections,
@@ -35,6 +38,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
 }) => {
   const currentSection = sections.find(s => s.id === selectedSection);
   const [responsiveHeight, setResponsiveHeight] = useState(videoHeight);
+
   useEffect(() => {
     const handleResize = () => {
       const parentElement = document.querySelector('.video-container');
