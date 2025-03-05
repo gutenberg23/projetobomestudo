@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -68,7 +67,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
             <Instagram className="w-5 h-5 text-[#66748a] hover:text-[#ea2be2] transition-colors" />
           </a>}
         {teacher.socialMedia.telegram && <a href={teacher.socialMedia.telegram} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
-            <MessageCircle className="w-5 h-5 text-[#66748a] hover:text-[#ea2be2] transition-colors" />
+            <MessageCircle className="w-5 h-5 text-[#ffffff] hover:text-[#ea2be2] transition-colors" />
           </a>}
         {teacher.socialMedia.facebook && <a href={teacher.socialMedia.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
             <Facebook className="w-5 h-5 text-[#66748a] hover:text-[#ea2be2] transition-colors" />
