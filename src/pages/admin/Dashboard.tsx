@@ -1,85 +1,154 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  BarChart, 
-  LineChart, 
-  PieChart, 
-  ResponsiveContainer, 
-  XAxis, 
-  YAxis, 
-  Bar, 
-  Line, 
-  Tooltip,
-  CartesianGrid,
-  Pie,
-  Cell,
-  Legend
-} from "recharts";
+import { BarChart, LineChart, PieChart, ResponsiveContainer, XAxis, YAxis, Bar, Line, Tooltip, CartesianGrid, Pie, Cell, Legend } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
-  Users, 
-  UserPlus, 
-  UserMinus, 
-  DollarSign, 
-  TrendingUp, 
-  Calendar, 
-  Percent, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  FileDown,
-  Ticket
-} from "lucide-react";
+import { Users, UserPlus, UserMinus, DollarSign, TrendingUp, Calendar, Percent, ArrowUpRight, ArrowDownRight, FileDown, Ticket } from "lucide-react";
 
 // Dados de exemplo para as métricas
-const dadosAssinantes = [
-  { name: 'Jan', ativos: 120, novos: 30, cancelados: 10 },
-  { name: 'Fev', ativos: 140, novos: 35, cancelados: 15 },
-  { name: 'Mar', ativos: 160, novos: 40, cancelados: 20 },
-  { name: 'Abr', ativos: 180, novos: 45, cancelados: 25 },
-  { name: 'Mai', ativos: 200, novos: 50, cancelados: 30 },
-  { name: 'Jun', ativos: 220, novos: 40, cancelados: 20 },
-  { name: 'Jul', ativos: 240, novos: 45, cancelados: 25 },
-  { name: 'Ago', ativos: 260, novos: 50, cancelados: 30 },
-  { name: 'Set', ativos: 280, novos: 55, cancelados: 35 },
-  { name: 'Out', ativos: 300, novos: 60, cancelados: 40 },
-  { name: 'Nov', ativos: 320, novos: 65, cancelados: 45 },
-  { name: 'Dez', ativos: 340, novos: 70, cancelados: 50 },
-];
-
-const dadosReceita = [
-  { name: 'Jan', receita: 12000, mrr: 10000 },
-  { name: 'Fev', receita: 14000, mrr: 11000 },
-  { name: 'Mar', receita: 16000, mrr: 12000 },
-  { name: 'Abr', receita: 18000, mrr: 13000 },
-  { name: 'Mai', receita: 20000, mrr: 14000 },
-  { name: 'Jun', receita: 22000, mrr: 15000 },
-  { name: 'Jul', receita: 24000, mrr: 16000 },
-  { name: 'Ago', receita: 26000, mrr: 17000 },
-  { name: 'Set', receita: 28000, mrr: 18000 },
-  { name: 'Out', receita: 30000, mrr: 19000 },
-  { name: 'Nov', receita: 32000, mrr: 20000 },
-  { name: 'Dez', receita: 34000, mrr: 21000 },
-];
-
-const dadosPlanos = [
-  { name: 'Mensal', value: 65 },
-  { name: 'Trimestral', value: 15 },
-  { name: 'Anual', value: 20 },
-];
-
-const cuponsAtivos = [
-  { codigo: 'BEMVINDO10', desconto: '10%', validade: '30/06/2025', usos: 45, limite: 100 },
-  { codigo: 'VOLTA20', desconto: '20%', validade: '15/04/2025', usos: 23, limite: 50 },
-  { codigo: 'PROMO50', desconto: '50%', validade: '10/03/2025', usos: 18, limite: 20 },
-];
-
+const dadosAssinantes = [{
+  name: 'Jan',
+  ativos: 120,
+  novos: 30,
+  cancelados: 10
+}, {
+  name: 'Fev',
+  ativos: 140,
+  novos: 35,
+  cancelados: 15
+}, {
+  name: 'Mar',
+  ativos: 160,
+  novos: 40,
+  cancelados: 20
+}, {
+  name: 'Abr',
+  ativos: 180,
+  novos: 45,
+  cancelados: 25
+}, {
+  name: 'Mai',
+  ativos: 200,
+  novos: 50,
+  cancelados: 30
+}, {
+  name: 'Jun',
+  ativos: 220,
+  novos: 40,
+  cancelados: 20
+}, {
+  name: 'Jul',
+  ativos: 240,
+  novos: 45,
+  cancelados: 25
+}, {
+  name: 'Ago',
+  ativos: 260,
+  novos: 50,
+  cancelados: 30
+}, {
+  name: 'Set',
+  ativos: 280,
+  novos: 55,
+  cancelados: 35
+}, {
+  name: 'Out',
+  ativos: 300,
+  novos: 60,
+  cancelados: 40
+}, {
+  name: 'Nov',
+  ativos: 320,
+  novos: 65,
+  cancelados: 45
+}, {
+  name: 'Dez',
+  ativos: 340,
+  novos: 70,
+  cancelados: 50
+}];
+const dadosReceita = [{
+  name: 'Jan',
+  receita: 12000,
+  mrr: 10000
+}, {
+  name: 'Fev',
+  receita: 14000,
+  mrr: 11000
+}, {
+  name: 'Mar',
+  receita: 16000,
+  mrr: 12000
+}, {
+  name: 'Abr',
+  receita: 18000,
+  mrr: 13000
+}, {
+  name: 'Mai',
+  receita: 20000,
+  mrr: 14000
+}, {
+  name: 'Jun',
+  receita: 22000,
+  mrr: 15000
+}, {
+  name: 'Jul',
+  receita: 24000,
+  mrr: 16000
+}, {
+  name: 'Ago',
+  receita: 26000,
+  mrr: 17000
+}, {
+  name: 'Set',
+  receita: 28000,
+  mrr: 18000
+}, {
+  name: 'Out',
+  receita: 30000,
+  mrr: 19000
+}, {
+  name: 'Nov',
+  receita: 32000,
+  mrr: 20000
+}, {
+  name: 'Dez',
+  receita: 34000,
+  mrr: 21000
+}];
+const dadosPlanos = [{
+  name: 'Mensal',
+  value: 65
+}, {
+  name: 'Trimestral',
+  value: 15
+}, {
+  name: 'Anual',
+  value: 20
+}];
+const cuponsAtivos = [{
+  codigo: 'BEMVINDO10',
+  desconto: '10%',
+  validade: '30/06/2025',
+  usos: 45,
+  limite: 100
+}, {
+  codigo: 'VOLTA20',
+  desconto: '20%',
+  validade: '15/04/2025',
+  usos: 23,
+  limite: 50
+}, {
+  codigo: 'PROMO50',
+  desconto: '50%',
+  validade: '10/03/2025',
+  usos: 18,
+  limite: 20
+}];
 const COLORS = ['#ea2be2', '#0088FE', '#00C49F', '#FFBB28'];
-
 const Dashboard = () => {
   const [periodoSelecionado, setPeriodoSelecionado] = useState("mes");
 
@@ -107,9 +176,7 @@ const Dashboard = () => {
     console.log(`Exportando dados em formato ${formato}`);
     // Implementação real seria feita aqui
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Cabeçalho */}
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-[#272f3c]">Dashboard</h1>
@@ -150,7 +217,7 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Assinantes Ativos</CardTitle>
-            <Users className="h-4 w-4 text-[#ea2be2]" />
+            <Users className="h-4 w-4 text-[#5f2ebe]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{estatisticas.assinantesAtivos}</div>
@@ -168,7 +235,7 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Novos Assinantes</CardTitle>
-            <UserPlus className="h-4 w-4 text-[#ea2be2]" />
+            <UserPlus className="h-4 w-4 text-[#5f2ebe]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{estatisticas.novosAssinantes}</div>
@@ -182,7 +249,7 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cancelamentos</CardTitle>
-            <UserMinus className="h-4 w-4 text-[#ea2be2]" />
+            <UserMinus className="h-4 w-4 text-[#5f2ebe]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{estatisticas.assinantesCancelados}</div>
@@ -196,7 +263,7 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Taxa de Cancelamento</CardTitle>
-            <Percent className="h-4 w-4 text-[#ea2be2]" />
+            <Percent className="h-4 w-4 text-[#5f2ebe]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{estatisticas.taxaCancelamento}</div>
@@ -220,7 +287,7 @@ const Dashboard = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
-                <DollarSign className="h-4 w-4 text-[#ea2be2]" />
+                <DollarSign className="h-4 w-4 text-[#5f2ebe]" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{estatisticas.receitaTotal}</div>
@@ -238,7 +305,7 @@ const Dashboard = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Receita Mensal (MRR)</CardTitle>
-                <Calendar className="h-4 w-4 text-[#ea2be2]" />
+                <Calendar className="h-4 w-4 text-[#5f2ebe]" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{estatisticas.receitaMensal}</div>
@@ -252,7 +319,7 @@ const Dashboard = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Projeção Próximo Mês</CardTitle>
-                <TrendingUp className="h-4 w-4 text-[#ea2be2]" />
+                <TrendingUp className="h-4 w-4 text-[#5f2ebe]" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{estatisticas.projecaoProximoMes}</div>
@@ -277,10 +344,7 @@ const Dashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip 
-                    formatter={(value) => ['R$ ' + value.toLocaleString('pt-BR')]}
-                    labelFormatter={(label) => 'Mês: ' + label}
-                  />
+                  <Tooltip formatter={value => ['R$ ' + value.toLocaleString('pt-BR')]} labelFormatter={label => 'Mês: ' + label} />
                   <Legend />
                   <Bar dataKey="receita" name="Receita Total" fill="#ea2be2" />
                   <Bar dataKey="mrr" name="MRR" fill="#0088FE" />
@@ -302,21 +366,13 @@ const Dashboard = () => {
               <CardContent className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
-                      data={dadosPlanos}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    >
-                      {dadosPlanos.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
+                    <Pie data={dadosPlanos} cx="50%" cy="50%" labelLine={false} outerRadius={80} fill="#8884d8" dataKey="value" label={({
+                    name,
+                    percent
+                  }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                      {dadosPlanos.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip formatter={(value) => [`${value}%`, 'Porcentagem']} />
+                    <Tooltip formatter={value => [`${value}%`, 'Porcentagem']} />
                     <Legend />
                   </PieChart>
                 </ResponsiveContainer>
@@ -348,20 +404,15 @@ const Dashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {cuponsAtivos.map((cupom) => (
-                      <TableRow key={cupom.codigo}>
+                    {cuponsAtivos.map(cupom => <TableRow key={cupom.codigo}>
                         <TableCell className="font-medium">{cupom.codigo}</TableCell>
                         <TableCell>{cupom.desconto}</TableCell>
                         <TableCell>{cupom.validade}</TableCell>
                         <TableCell>
                           {cupom.usos}/{cupom.limite}
-                          <Progress
-                            value={(cupom.usos / cupom.limite) * 100}
-                            className="h-1 mt-1"
-                          />
+                          <Progress value={cupom.usos / cupom.limite * 100} className="h-1 mt-1" />
                         </TableCell>
-                      </TableRow>
-                    ))}
+                      </TableRow>)}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -387,14 +438,9 @@ const Dashboard = () => {
                   <YAxis />
                   <Tooltip />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="ativos"
-                    name="Assinantes Ativos"
-                    stroke="#ea2be2"
-                    activeDot={{ r: 8 }}
-                    strokeWidth={2}
-                  />
+                  <Line type="monotone" dataKey="ativos" name="Assinantes Ativos" stroke="#ea2be2" activeDot={{
+                  r: 8
+                }} strokeWidth={2} />
                 </LineChart>
               </ResponsiveContainer>
             </CardContent>
@@ -424,8 +470,6 @@ const Dashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
