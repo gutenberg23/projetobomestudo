@@ -81,21 +81,23 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
   return <div className="video-container w-full">
       {/* Informações do professor */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3">
-        <div className="flex items-center">
-          <Avatar className="h-12 w-12 mr-3 border-3 border-slate-50">
-            <AvatarImage src={teacher.photoUrl} alt={teacher.name} />
-            <AvatarFallback className="bg-[#f6f8fa] text-[#272f3c]">
-              {teacher.name.split(' ').map(name => name[0]).join('').substring(0, 2).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="font-medium text-[#272f3c]">{teacher.name}</h3>
-            <p className="text-sm text-[#67748a]">Professor</p>
+        <div className="flex items-center flex-col sm:flex-row">
+          <div className="flex flex-col items-center sm:items-start sm:flex-row">
+            <Avatar className="h-12 w-12 mb-2 sm:mb-0 sm:mr-3 border-3 border-slate-50">
+              <AvatarImage src={teacher.photoUrl} alt={teacher.name} />
+              <AvatarFallback className="bg-[#f6f8fa] text-[#272f3c]">
+                {teacher.name.split(' ').map(name => name[0]).join('').substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="text-center sm:text-left">
+              <h3 className="font-medium text-[#272f3c]">{teacher.name}</h3>
+              <p className="text-sm text-[#67748a]">Professor</p>
+            </div>
           </div>
         </div>
         
-        {/* Ícones de redes sociais - no mobile aparece abaixo do professor */}
-        <div className="mt-3 sm:mt-0">
+        {/* Ícones de redes sociais - no mobile aparecem centralizados */}
+        <div className="mt-3 sm:mt-0 flex justify-center sm:justify-start">
           <SocialMediaIcons />
         </div>
       </div>
