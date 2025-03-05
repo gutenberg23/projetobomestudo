@@ -29,18 +29,20 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
         </p>
       </div>
       
-      <form onSubmit={handleSubmit} className="relative max-w-xl">
-        <Input 
-          type="text" 
-          placeholder="Pesquisar artigos, notícias, concursos..." 
-          className="h-12 pl-12 pr-24 border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]" 
-          value={searchTerm} 
-          onChange={e => setSearchTerm(e.target.value)} 
-        />
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#67748a]" />
+      <form onSubmit={handleSubmit} className="flex max-w-xl">
+        <div className="relative flex-grow">
+          <Input 
+            type="text" 
+            placeholder="Pesquisar artigos, notícias, concursos..." 
+            className="h-12 pl-12 pr-4 border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]" 
+            value={searchTerm} 
+            onChange={e => setSearchTerm(e.target.value)} 
+          />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[#67748a]" />
+        </div>
         <Button 
           type="submit" 
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-10 bg-[#5f2ebe] hover:bg-[#5021a5]"
+          className="ml-2 h-12 bg-[#5f2ebe] hover:bg-[#5021a5]"
         >
           Buscar
         </Button>
