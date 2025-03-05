@@ -20,7 +20,7 @@ export const CourseNavigation = ({
           <span className={cn("md:inline text-xs md:text-base", activeTab === 'disciplinas' ? "inline flex flex-col sm:flex-row" : "hidden")}>
             <span className="sm:hidden text-left">Todas as</span>
             <span className="sm:hidden text-left">Disciplinas</span>
-            <span className="hidden sm:inline text-[#5f2ebe]">Todas as Disciplinas</span>
+            <span className="hidden sm:inline ">Todas as Disciplinas</span>
           </span>
         </button>
 
