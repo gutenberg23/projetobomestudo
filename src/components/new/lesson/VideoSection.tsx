@@ -1,8 +1,9 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
 import type { Section } from "../types";
-import { Youtube, Instagram, Facebook, MessageCircle, Twitter } from "lucide-react";
+import { Youtube, Instagram, Facebook, MessageCircle, Twitter, Globe } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface TeacherInfo {
   name: string;
@@ -13,6 +14,7 @@ interface TeacherInfo {
     telegram?: string;
     facebook?: string;
     twitter?: string;
+    website?: string;
   };
 }
 interface VideoSectionProps {
@@ -68,6 +70,9 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
           </a>}
         {teacher.socialMedia.twitter && <a href={teacher.socialMedia.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
             <Twitter className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
+          </a>}
+        {teacher.socialMedia.website && <a href={teacher.socialMedia.website} target="_blank" rel="noopener noreferrer" aria-label="Website">
+            <Globe className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
           </a>}
       </div>;
   };
