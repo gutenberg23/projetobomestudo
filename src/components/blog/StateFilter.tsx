@@ -20,9 +20,8 @@ export const StateFilter: React.FC<StateFilterProps> = ({
   const [scrollPosition, setScrollPosition] = React.useState(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const filteredStates = regionFilter 
-    ? states.filter(state => state.region === regionFilter)
-    : states;
+  // Não filtramos mais os estados com base na região
+  // Exibimos todos os estados, independentemente da região selecionada
 
   const scrollLeft = () => {
     if (containerRef.current) {
@@ -53,14 +52,14 @@ export const StateFilter: React.FC<StateFilterProps> = ({
         className="flex overflow-x-auto scrollbar-hide py-2 px-6 space-x-2 max-w-full"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {filteredStates.map((state) => (
+        {states.map((state) => (
           <button
             key={state.id}
             onClick={() => onSelectState(activeState === state.id ? null : state.id)}
             className={cn(
               "px-3 py-1 text-sm font-medium rounded-md whitespace-nowrap transition-colors min-w-[40px] text-center",
               activeState === state.id
-                ? "bg-[#ea2be2]/20 text-[#ea2be2] border border-[#ea2be2]"
+                ? "bg-[#5f2ebe]/20 text-[#5f2ebe] border border-[#5f2ebe]"
                 : "bg-gray-100 hover:bg-gray-200 text-[#67748a]"
             )}
           >
