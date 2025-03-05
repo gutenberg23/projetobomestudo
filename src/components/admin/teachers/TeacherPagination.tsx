@@ -34,7 +34,7 @@ const TeacherPagination: React.FC<TeacherPaginationProps> = ({
           size="sm"
           onClick={() => onPageChange(paginaAtual - 1)}
           disabled={paginaAtual === 1}
-          className="border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#f6f8fa] disabled:opacity-50"
+          className="border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa] disabled:opacity-50"
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -46,8 +46,8 @@ const TeacherPagination: React.FC<TeacherPaginationProps> = ({
             size="sm"
             onClick={() => onPageChange(page)}
             className={paginaAtual === page 
-              ? "bg-[#5f2ebe] hover:bg-[#5f2ebe]/90" 
-              : "border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#f6f8fa]"
+              ? "bg-[#ea2be2] hover:bg-[#ea2be2]/90" 
+              : "border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa]"
             }
           >
             {page}
@@ -59,7 +59,7 @@ const TeacherPagination: React.FC<TeacherPaginationProps> = ({
           size="sm"
           onClick={() => onPageChange(paginaAtual + 1)}
           disabled={paginaAtual === totalPaginas}
-          className="border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#f6f8fa] disabled:opacity-50"
+          className="border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa] disabled:opacity-50"
         >
           <ChevronRight className="h-4 w-4" />
         </Button>

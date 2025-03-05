@@ -36,7 +36,7 @@ const TeacherList: React.FC<TeacherListProps> = ({
       stars.push(
         <Star 
           key={i} 
-          className={`h-5 w-5 cursor-pointer ${i <= teacher.rating ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-[#5f2ebe]/30"}`}
+          className={`h-5 w-5 cursor-pointer ${i <= teacher.rating ? "fill-[#ea2be2] text-[#ea2be2]" : "text-[#ea2be2]/30"}`}
           onClick={() => onRatingChange(teacher.id, i)}
         />
       );

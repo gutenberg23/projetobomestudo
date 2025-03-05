@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TeacherData } from "./types";
-import { Users, UserCheck, UserX, Award } from "lucide-react";
+import { Users, UserCheck, UserX, Award, Star } from "lucide-react";
 
 interface TeacherStatsProps {
   teachers: TeacherData[];
@@ -19,10 +19,10 @@ export const TeacherStats: React.FC<TeacherStatsProps> = ({ teachers }) => {
   
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card className="border-t-4 border-t-[#5f2ebe]">
+      <Card className="border-t-4 border-t-[#ea2be2]">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">Total de Professores</CardTitle>
-          <Users className="h-4 w-4 text-[#5f2ebe]" />
+          <Users className="h-4 w-4 text-[#ea2be2]" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{totalTeachers}</div>
@@ -32,10 +32,10 @@ export const TeacherStats: React.FC<TeacherStatsProps> = ({ teachers }) => {
         </CardContent>
       </Card>
       
-      <Card className="border-t-4 border-t-[#5f2ebe]">
+      <Card className="border-t-4 border-t-[#ea2be2]">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">Professores Ativos</CardTitle>
-          <UserCheck className="h-4 w-4 text-[#5f2ebe]" />
+          <UserCheck className="h-4 w-4 text-[#ea2be2]" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{activeTeachers}</div>
@@ -45,10 +45,10 @@ export const TeacherStats: React.FC<TeacherStatsProps> = ({ teachers }) => {
         </CardContent>
       </Card>
       
-      <Card className="border-t-4 border-t-[#5f2ebe]">
+      <Card className="border-t-4 border-t-[#ea2be2]">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">Professores Inativos</CardTitle>
-          <UserX className="h-4 w-4 text-[#5f2ebe]" />
+          <UserX className="h-4 w-4 text-[#ea2be2]" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{inactiveTeachers}</div>
@@ -58,10 +58,10 @@ export const TeacherStats: React.FC<TeacherStatsProps> = ({ teachers }) => {
         </CardContent>
       </Card>
       
-      <Card className="border-t-4 border-t-[#5f2ebe]">
+      <Card className="border-t-4 border-t-[#ea2be2]">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-sm font-medium">Média de Avaliação</CardTitle>
-          <Award className="h-4 w-4 text-[#5f2ebe]" />
+          <Award className="h-4 w-4 text-[#ea2be2]" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{averageRating}</div>
@@ -69,7 +69,7 @@ export const TeacherStats: React.FC<TeacherStatsProps> = ({ teachers }) => {
             {[1, 2, 3, 4, 5].map((star) => (
               <Star 
                 key={star} 
-                className={`h-3 w-3 ${star <= parseFloat(averageRating) ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-[#5f2ebe]/30"}`} 
+                className={`h-3 w-3 ${star <= parseFloat(averageRating) ? "fill-[#ea2be2] text-[#ea2be2]" : "text-[#ea2be2]/30"}`} 
               />
             ))}
           </div>
