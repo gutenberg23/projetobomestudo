@@ -64,10 +64,10 @@ export const Hero = () => {
       </div>
       
       {/* Conteúdo centralizado */}
-      <div className="mx-auto px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16">
+      <div className="mx-auto px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16 bg-white">
         <div className="text-center space-y-6 max-w-3xl px-4">
-          <h1 className="text-3xl sm:text-4xl text-[#272f3c] leading-tight md:text-7xl font-thin">
-            Conectando <span className="text-[#ea2be2]">Alunos</span> e <span className="text-[#ea2be2]">Professores</span>
+          <h1 className="text-3xl sm:text-4xl leading-tight md:text-7xl font-thin text-black">
+            Conectando <span className="font-extrabold text-black">Alunos</span> e <span className="text-[#ea2be2]">Professores</span>
           </h1>
           
           <p className="text-base sm:text-lg md:text-xl text-[#67748a] max-w-2xl mx-auto leading-relaxed">
