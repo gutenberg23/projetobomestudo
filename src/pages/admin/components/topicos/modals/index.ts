@@ -1,4 +1,3 @@
 
-export { CreateTopicoModal } from './CreateTopicoModal';
-export { EditTopicoModal } from './EditTopicoModal';
-export { DeleteTopicoModal } from './DeleteTopicoModal';
+export * from "./EditTopicoModal";
+export * from "./DeleteTopicoModal";

@@ -1,49 +1,59 @@
 
 import React from "react";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Topico } from "../TopicosTypes";
 
 interface DeleteTopicoModalProps {
   isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  currentTopico: Topico | null;
-  handleDeleteTopico: () => void;
+  onClose: () => void;
+  topico: Topico | null;
+  onDelete: (id: string) => void;
 }
 
 export const DeleteTopicoModal: React.FC<DeleteTopicoModalProps> = ({
   isOpen,
-  setIsOpen,
-  currentTopico,
-  handleDeleteTopico
+  onClose,
+  topico,
+  onDelete,
 }) => {
-  if (!currentTopico) return null;
+  const handleDelete = () => {
+    if (topico) {
+      onDelete(topico.id);
+      onClose();
+    }
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Excluir Tópico</DialogTitle>
+          <DialogTitle className="text-[#272f3c]">Excluir Tópico</DialogTitle>
+          <DialogDescription className="text-[#67748a]">
+            Tem certeza que deseja excluir o tópico "{topico?.titulo}"? Esta ação não pode ser desfeita.
+          </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          <p>Tem certeza que deseja excluir o tópico "{currentTopico.titulo}"?</p>
-          <p className="text-red-500 mt-2">Esta ação não pode ser desfeita.</p>
-        </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">Cancelar</Button>
-          </DialogClose>
+        <DialogFooter className="mt-4">
           <Button 
             type="button" 
-            variant="destructive"
-            onClick={handleDeleteTopico}
+            variant="outline" 
+            onClick={onClose}
+            className="w-auto"
+          >
+            Cancelar
+          </Button>
+          <Button 
+            type="button" 
+            variant="destructive" 
+            onClick={handleDelete}
+            className="w-auto"
           >
             Excluir
           </Button>

@@ -1,91 +1,84 @@
 
-import React from "react";
-import { 
+import React, { useEffect, useState } from "react";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Topico } from "../TopicosTypes";
-import { 
-  BasicInfoFields, 
-  MediaFields, 
-  QuestionsManager 
-} from "./components";
 
 interface EditTopicoModalProps {
   isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  currentTopico: Topico | null;
-  setCurrentTopico: React.Dispatch<React.SetStateAction<Topico | null>>;
-  editQuestaoId: string;
-  setEditQuestaoId: (id: string) => void;
-  handleEditTopico: () => void;
-  addQuestaoIdToEdit: () => void;
-  removeQuestaoIdFromEdit: (index: number) => void;
-  handleThumbnailUpload: (e: React.ChangeEvent<HTMLInputElement>, isEdit: boolean) => void;
-  disciplinas: string[];
+  onClose: () => void;
+  topico: Topico | null;
+  onSave: (topico: Topico) => void;
 }
 
 export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
   isOpen,
-  setIsOpen,
-  currentTopico,
-  setCurrentTopico,
-  editQuestaoId,
-  setEditQuestaoId,
-  handleEditTopico,
-  addQuestaoIdToEdit,
-  removeQuestaoIdFromEdit,
-  handleThumbnailUpload,
-  disciplinas
+  onClose,
+  topico,
+  onSave,
 }) => {
-  if (!currentTopico) return null;
-  
+  const [editedTopico, setEditedTopico] = useState<Topico | null>(null);
+
+  useEffect(() => {
+    if (isOpen && topico) {
+      setEditedTopico({ ...topico });
+    }
+  }, [isOpen, topico]);
+
+  const handleSave = () => {
+    if (editedTopico) {
+      onSave(editedTopico);
+      onClose();
+    }
+  };
+
+  if (!editedTopico) return null;
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Editar Tópico</DialogTitle>
+          <DialogTitle className="text-[#272f3c]">Editar Tópico</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 gap-4">
-            {/* Campos de informações básicas */}
-            <BasicInfoFields 
-              newTopico={currentTopico}
-              setNewTopico={setCurrentTopico}
-              handleThumbnailUpload={(e) => handleThumbnailUpload(e, true)}
-              isEditMode={true}
+          <div>
+            <Label htmlFor="edit-titulo">Título</Label>
+            <Input
+              id="edit-titulo"
+              value={editedTopico.titulo}
+              onChange={(e) => setEditedTopico({ ...editedTopico, titulo: e.target.value })}
             />
-            
-            {/* Campos de mídia */}
-            <MediaFields 
-              newTopico={currentTopico}
-              setNewTopico={setCurrentTopico}
+          </div>
+          <div>
+            <Label htmlFor="edit-disciplina">Disciplina</Label>
+            <Input
+              id="edit-disciplina"
+              value={editedTopico.disciplina}
+              onChange={(e) => setEditedTopico({ ...editedTopico, disciplina: e.target.value })}
             />
-
-            {/* Gerenciador de questões */}
-            <QuestionsManager 
-              questoesIds={currentTopico.questoesIds}
-              newQuestaoId={editQuestaoId}
-              setNewQuestaoId={setEditQuestaoId}
-              addQuestaoId={addQuestaoIdToEdit}
-              removeQuestaoId={removeQuestaoIdFromEdit}
+          </div>
+          <div>
+            <Label htmlFor="edit-patrocinador">Patrocinador</Label>
+            <Input
+              id="edit-patrocinador"
+              value={editedTopico.patrocinador}
+              onChange={(e) => setEditedTopico({ ...editedTopico, patrocinador: e.target.value })}
             />
           </div>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">Cancelar</Button>
-          </DialogClose>
-          <Button 
-            type="button" 
-            onClick={handleEditTopico}
-            className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
-          >
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button className="bg-[#ea2be2] hover:bg-[#ea2be2]/90" onClick={handleSave}>
             Salvar Alterações
           </Button>
         </DialogFooter>

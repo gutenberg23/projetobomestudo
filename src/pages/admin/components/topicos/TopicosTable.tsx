@@ -11,7 +11,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pencil, Trash } from "lucide-react";
-import { TopicosTableProps } from "./TopicosTypes";
+import { Topico } from "./TopicosTypes";
+
+interface TopicosTableProps {
+  topicos: Topico[];
+  todosSelecionados: boolean;
+  handleSelecaoTodos: () => void;
+  handleSelecaoTopico: (id: string) => void;
+  openEditModal: (topico: Topico) => void;
+  openDeleteModal: (topico: Topico) => void;
+}
 
 export const TopicosTable: React.FC<TopicosTableProps> = ({
   topicos,
