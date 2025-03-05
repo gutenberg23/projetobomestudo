@@ -1,21 +1,14 @@
-
 import React from "react";
 import { Instagram, Facebook, Twitter, Youtube, Mail, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
-
 export const Footer = () => {
-  return (
-    <footer className="bg-[rgba(66,48,65,1)] w-full pt-[50px] pb-[30px] px-4 text-white mt-10">
+  return <footer className="w-full pt-[50px] pb-[30px] px-4 text-white mt-10 bg-[#2a2438]">
       <div className="max-w-7xl mx-auto">
         {/* Footer Top Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* Column 1 - Logo and About */}
           <div className="space-y-4">
-            <img 
-              src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/d4f7b31dd1bc48e16547963f6b0cd0adc76ffe16e180c12ccfce3d8a912308a0" 
-              alt="BomEstudo Logo" 
-              className="w-[194px] mb-4" 
-            />
+            <img src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/d4f7b31dd1bc48e16547963f6b0cd0adc76ffe16e180c12ccfce3d8a912308a0" alt="BomEstudo Logo" className="w-[194px] mb-4" />
             <p className="text-gray-300 text-sm">
               Plataforma de estudos online para candidatos de concursos públicos com cursos, questões comentadas e estatísticas de desempenho.
             </p>
@@ -101,18 +94,14 @@ export const Footer = () => {
           <div className="space-y-4">
             <h3 className="text-lg font-bold mb-4">Contato</h3>
             <div className="flex items-start space-x-3">
-              <Mail size={20} className="text-[#ea2be2] mt-1 flex-shrink-0" />
+              <Mail size={20} className="text-[#5f2ebe] mt-1 flex-shrink-0" />
               <span className="text-gray-300">contato@bomestudo.com.br</span>
             </div>
             <div className="mt-6">
               <h4 className="text-sm font-bold mb-2">Receba Novidades</h4>
               <div className="flex mt-2">
-                <input 
-                  type="email" 
-                  placeholder="Seu e-mail" 
-                  className="px-3 py-2 text-sm rounded-l-md text-gray-800 w-full focus:outline-none" 
-                />
-                <button className="bg-[#ea2be2] px-4 py-2 rounded-r-md hover:bg-opacity-90 transition-colors">
+                <input type="email" placeholder="Seu e-mail" className="px-3 py-2 text-sm rounded-l-md text-gray-800 w-full focus:outline-none" />
+                <button className="px-4 py-2 rounded-r-md hover:bg-opacity-90 transition-colors bg-[#5f2ebe]">
                   Enviar
                 </button>
               </div>
@@ -137,6 +126,5 @@ export const Footer = () => {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
