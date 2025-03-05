@@ -39,7 +39,7 @@ const Pagination: React.FC<PaginationProps> = ({
             key={pagina}
             variant={pagina === paginaAtual ? "default" : "outline"}
             size="sm"
-            className={pagina === paginaAtual ? "bg-[#ea2be2] hover:bg-[#ea2be2]/90" : ""}
+            className={pagina === paginaAtual ? "bg-[#5f2ebe] hover:bg-[#5f2ebe]/90" : ""}
             onClick={() => onPageChange(pagina)}
           >
             {pagina}

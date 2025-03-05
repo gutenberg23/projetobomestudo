@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,19 +11,19 @@ export const Hero = () => {
       <div className="absolute inset-0 w-full h-full overflow-hidden">
         {/* Primeiro círculo de degradê - maior, mais suave */}
         <div className="absolute w-[800px] h-[800px] rounded-full 
-          bg-gradient-to-r from-[#ea2be2]/40 via-[#ea2be2]/20 to-transparent 
+          bg-gradient-to-r from-[#5f2ebe]/40 via-[#5f2ebe]/20 to-transparent 
           -top-[200px] -left-[200px] blur-[60px]">
         </div>
         
         {/* Segundo círculo de degradê - médio */}
         <div className="absolute w-[600px] h-[600px] rounded-full 
-          bg-gradient-to-r from-[#ea2be2]/30 via-[#ea2be2]/15 to-transparent 
+          bg-gradient-to-r from-[#5f2ebe]/30 via-[#5f2ebe]/15 to-transparent 
           top-[40%] -right-[200px] blur-[50px]">
         </div>
         
         {/* Terceiro círculo de degradê - menor, mais intenso */}
         <div className="absolute w-[400px] h-[400px] rounded-full 
-          bg-gradient-to-r from-[#ea2be2]/25 via-[#ea2be2]/10 to-transparent 
+          bg-gradient-to-r from-[#5f2ebe]/25 via-[#5f2ebe]/10 to-transparent 
           bottom-[10%] left-[20%] blur-[40px]">
         </div>
         
@@ -31,33 +32,33 @@ export const Hero = () => {
         
         {/* Pontos decorativos com animação */}
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[20%] left-[30%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[20%] left-[30%] animate-pulse" style={{
           animationDelay: "0.5s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[50%] left-[70%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[50%] left-[70%] animate-pulse" style={{
           animationDelay: "0.7s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[70%] left-[20%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[70%] left-[20%] animate-pulse" style={{
           animationDelay: "1s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[30%] left-[80%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[30%] left-[80%] animate-pulse" style={{
           animationDelay: "1.2s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[80%] left-[50%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[80%] left-[50%] animate-pulse" style={{
           animationDelay: "0.8s"
         }}></div>
-          <div className="absolute w-2 h-2 bg-[#ea2be2] rounded-full top-[40%] left-[40%] animate-pulse" style={{
+          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[40%] left-[40%] animate-pulse" style={{
           animationDelay: "1.5s"
         }}></div>
           
           {/* Adicionando mais pontos para melhorar o efeito visual */}
-          <div className="absolute w-1 h-1 bg-[#ea2be2] rounded-full top-[25%] left-[55%] animate-pulse" style={{
+          <div className="absolute w-1 h-1 bg-[#5f2ebe] rounded-full top-[25%] left-[55%] animate-pulse" style={{
           animationDelay: "1.8s"
         }}></div>
-          <div className="absolute w-1 h-1 bg-[#ea2be2] rounded-full top-[65%] left-[35%] animate-pulse" style={{
+          <div className="absolute w-1 h-1 bg-[#5f2ebe] rounded-full top-[65%] left-[35%] animate-pulse" style={{
           animationDelay: "2s"
         }}></div>
-          <div className="absolute w-1 h-1 bg-[#ea2be2] rounded-full top-[45%] left-[85%] animate-pulse" style={{
+          <div className="absolute w-1 h-1 bg-[#5f2ebe] rounded-full top-[45%] left-[85%] animate-pulse" style={{
           animationDelay: "1.3s"
         }}></div>
         </div>
@@ -77,16 +78,16 @@ export const Hero = () => {
           {/* Feature Icons */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-4 sm:py-6 max-w-2xl mx-auto">
             {[{
-            icon: <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-[#6741ad]" />,
+            icon: <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-[#5f2ebe]" />,
             label: "Cursos Gratuitos"
           }, {
-            icon: <Youtube className="h-5 w-5 sm:h-6 sm:w-6 text-[#6741ad]" />,
+            icon: <Youtube className="h-5 w-5 sm:h-6 sm:w-6 text-[#5f2ebe]" />,
             label: "Professores YouTubers"
           }, {
-            icon: <BarChart className="h-5 w-5 sm:h-6 sm:w-6 text-[#6741ad]" />,
+            icon: <BarChart className="h-5 w-5 sm:h-6 sm:w-6 text-[#5f2ebe]" />,
             label: "Estatísticas Detalhadas"
           }, {
-            icon: <Award className="h-5 w-5 sm:h-6 sm:w-6 text-[#6741ad]" />,
+            icon: <Award className="h-5 w-5 sm:h-6 sm:w-6 text-[#5f2ebe]" />,
             label: "Acompanhamento Completo"
           }].map((item, index) => <div key={index} className="flex flex-col items-center gap-2 p-2 sm:p-4">
                 <div className="p-2 bg-white rounded-full shadow-none">
@@ -99,11 +100,14 @@ export const Hero = () => {
           {/* Botões com design melhorado */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
             <Link to="/login" className="w-full sm:w-auto">
-              <Button className="text-white rounded-lg text-sm sm:text-lg tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#5f2cc0] to-[#8251d3] hover:shadow-lg hover:shadow-[#491aa4]/30 hover:-translate-y-1 w-full border-b-4 border-[#491aa4] font-normal">
+              <Button variant="hero" className="w-full">
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
-            <Button onClick={() => setTeacherDialogOpen(true)} className="rounded-lg text-sm sm:text-lg tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#491aa4] hover:bg-[#ffffff]/5 hover:shadow-lg hover:shadow-[#491aa4]/20 hover:-translate-y-1 w-full sm:w-auto font-normal text-[#5f2bc1]">
+            <Button 
+              onClick={() => setTeacherDialogOpen(true)} 
+              className="rounded-lg text-sm sm:text-lg tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-white border-2 border-[#491aa4] hover:bg-[#ffffff]/5 hover:shadow-lg hover:shadow-[#491aa4]/20 hover:-translate-y-1 w-full sm:w-auto font-normal text-[#5f2ebe]"
+            >
               QUERO SER PROFESSOR
             </Button>
           </div>

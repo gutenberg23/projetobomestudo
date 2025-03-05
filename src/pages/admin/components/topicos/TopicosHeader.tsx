@@ -18,7 +18,7 @@ export const TopicosHeader: React.FC<TopicosHeaderProps> = ({
       </div>
       <Button 
         onClick={() => setIsOpenCreate(true)}
-        className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
+        variant="hero"
       >
         <Plus className="mr-2 h-4 w-4" /> Novo Tópico
       </Button>

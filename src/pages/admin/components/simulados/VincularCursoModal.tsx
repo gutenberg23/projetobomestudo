@@ -50,7 +50,7 @@ export const VincularCursoModal: React.FC<VincularCursoModalProps> = ({
               id="cursoId"
               value={cursoId}
               onChange={(e) => setCursoId(e.target.value)}
-              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+              className="col-span-3 border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
             />
           </div>
         </div>
@@ -65,7 +65,7 @@ export const VincularCursoModal: React.FC<VincularCursoModalProps> = ({
           <Button 
             type="button" 
             onClick={handleVincular}
-            className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
+            variant="hero"
           >
             Vincular
           </Button>

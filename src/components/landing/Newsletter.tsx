@@ -7,15 +7,15 @@ export const Newsletter = () => {
   return (
     <div className="w-full px-2.5 py-20 bg-gray-50 relative overflow-hidden">
       {/* Background Elements */}
-      <div className="absolute right-0 top-0 w-64 h-64 bg-[#ea2be2]/5 rounded-full -mr-32 -mt-32"></div>
-      <div className="absolute left-0 bottom-0 w-80 h-80 bg-[#ea2be2]/5 rounded-full -ml-40 -mb-40"></div>
+      <div className="absolute right-0 top-0 w-64 h-64 bg-[#5f2ebe]/5 rounded-full -mr-32 -mt-32"></div>
+      <div className="absolute left-0 bottom-0 w-80 h-80 bg-[#5f2ebe]/5 rounded-full -ml-40 -mb-40"></div>
       
       <div className="max-w-4xl mx-auto relative z-10">
         <div className="bg-white p-8 md:p-12 rounded-xl shadow-sm">
           <div className="flex flex-col md:flex-row gap-8 items-center">
             <div className="md:w-2/3 space-y-4">
-              <div className="p-3 bg-[#ea2be2]/10 w-fit rounded-full mb-2">
-                <Bell className="h-6 w-6 text-[#ea2be2]" />
+              <div className="p-3 bg-[#5f2ebe]/10 w-fit rounded-full mb-2">
+                <Bell className="h-6 w-6 text-[#5f2ebe]" />
               </div>
               
               <h2 className="text-2xl md:text-3xl font-bold text-[#272f3c]">
@@ -32,13 +32,14 @@ export const Newsletter = () => {
                   <input
                     type="email"
                     placeholder="Digite seu e-mail"
-                    className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#ea2be2]/50 focus:border-[#ea2be2]"
+                    className="pl-10 w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]/50 focus:border-[#5f2ebe]"
                     required
                   />
                 </div>
                 <Button 
-                  type="submit" 
-                  className="text-white rounded-lg text-sm sm:text-base font-extrabold tracking-wider hover:bg-opacity-90 transition-all px-6 py-3 bg-gradient-to-r from-[#ea2be2] to-[#f952ec] hover:shadow-lg hover:shadow-[#ea2be2]/30 hover:-translate-y-1 border-b-4 border-[#c71dc0] flex items-center gap-2"
+                  type="submit"
+                  variant="hero"
+                  className="text-sm sm:text-base"
                 >
                   <span>Inscrever-se</span>
                   <Send className="h-4 w-4" />

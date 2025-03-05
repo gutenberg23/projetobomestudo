@@ -68,7 +68,7 @@ const CriarEditalCard: React.FC<CriarEditalCardProps> = ({
         </Button>
         <Button 
           onClick={handleSalvar}
-          className="bg-[#ea2be2] hover:bg-[#d01ec7] text-white"
+          variant="hero"
         >
           Salvar Edital
         </Button>

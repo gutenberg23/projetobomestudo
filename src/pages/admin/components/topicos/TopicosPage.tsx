@@ -25,7 +25,7 @@ export const AddAulaButton: React.FC<TopicosPageProps> = ({
                 placeholder="Digite o título da aula"
                 value={tituloAula}
                 onChange={(e) => setTituloAula(e.target.value)}
-                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+                className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
               />
             </div>
             <div>
@@ -35,7 +35,7 @@ export const AddAulaButton: React.FC<TopicosPageProps> = ({
                 placeholder="Digite a descrição"
                 value={descricaoAula}
                 onChange={(e) => setDescricaoAula(e.target.value)}
-                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+                className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
               />
             </div>
           </div>
@@ -43,7 +43,7 @@ export const AddAulaButton: React.FC<TopicosPageProps> = ({
       )}
       <Button 
         onClick={handleCriarAula}
-        className="bg-[#9b87f5] hover:bg-[#9b87f5]/90"
+        variant="hero"
         disabled={!temTopicosSelecionados}
       >
         Adicionar Aula
