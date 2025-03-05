@@ -32,7 +32,7 @@ export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
                 placeholder="Digite o título da disciplina"
                 value={tituloNovaDisciplina}
                 onChange={(e) => setTituloNovaDisciplina(e.target.value)}
-                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+                className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
               />
             </div>
             <div>
@@ -42,7 +42,7 @@ export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
                 placeholder="Digite a descrição"
                 value={descricaoNovaDisciplina}
                 onChange={(e) => setDescricaoNovaDisciplina(e.target.value)}
-                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+                className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
               />
             </div>
             <div className="col-span-2 mt-2">
@@ -52,7 +52,7 @@ export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
                 placeholder="Digite as informações do curso"
                 value={informacoesCurso}
                 onChange={(e) => setInformacoesCurso(e.target.value)}
-                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+                className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
               />
             </div>
           </div>
@@ -61,7 +61,7 @@ export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
       {algumaSelecionada && (
         <Button 
           onClick={handleAdicionarDisciplina}
-          className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
+          className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 w-auto"
           disabled={!tituloNovaDisciplina.trim()}
         >
           Adicionar Curso

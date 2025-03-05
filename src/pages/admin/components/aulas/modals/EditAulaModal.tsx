@@ -72,7 +72,7 @@ export const EditAulaModal: React.FC<EditAulaModalProps> = ({
               id="titulo"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+              className="col-span-3 border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -83,7 +83,7 @@ export const EditAulaModal: React.FC<EditAulaModalProps> = ({
               id="descricao"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+              className="col-span-3 border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -96,12 +96,12 @@ export const EditAulaModal: React.FC<EditAulaModalProps> = ({
                 value={topicoId}
                 onChange={(e) => setTopicoId(e.target.value)}
                 placeholder="Digite o ID do tópico"
-                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+                className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
               />
               <Button
                 type="button"
                 onClick={handleAddTopico}
-                className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
+                className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 w-auto"
               >
                 Adicionar
               </Button>
@@ -137,13 +137,14 @@ export const EditAulaModal: React.FC<EditAulaModalProps> = ({
             type="button" 
             variant="outline" 
             onClick={onClose}
+            className="w-auto"
           >
             Cancelar
           </Button>
           <Button 
             type="button" 
             onClick={handleSave}
-            className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
+            className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 w-auto"
           >
             Salvar
           </Button>

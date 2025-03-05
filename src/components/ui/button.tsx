@@ -10,22 +10,22 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-white rounded-lg text-sm sm:text-lg tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#5f2ebe] to-[#7344d4] hover:shadow-lg hover:shadow-[#5f2ebe]/30 hover:-translate-y-1 w-full border-b-4 border-[#491aa4] font-normal",
+        default: "bg-primary text-white rounded-lg text-sm sm:text-base tracking-wider hover:bg-opacity-90 transition-all px-5 py-2 bg-gradient-to-r from-[#5f2ebe] to-[#7344d4] hover:shadow-lg hover:shadow-[#5f2ebe]/30 hover:-translate-y-1 border-b-2 border-[#491aa4] font-normal w-auto",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90",
+          "bg-destructive text-white hover:bg-destructive/90 px-5",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground text-foreground",
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground text-foreground px-5",
         secondary:
-          "bg-secondary text-white hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground text-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        hero: "text-white rounded-lg text-sm sm:text-lg tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#5f2ebe] to-[#7344d4] hover:shadow-lg hover:shadow-[#5f2ebe]/30 hover:-translate-y-1 border-b-4 border-[#491aa4] font-normal",
+          "bg-secondary text-white hover:bg-secondary/80 px-5",
+        ghost: "hover:bg-accent hover:text-accent-foreground text-foreground px-5",
+        link: "text-primary underline-offset-4 hover:underline px-5",
+        hero: "text-white rounded-lg text-sm sm:text-base tracking-wider hover:bg-opacity-90 transition-all px-5 py-2 bg-gradient-to-r from-[#5f2ebe] to-[#7344d4] hover:shadow-lg hover:shadow-[#5f2ebe]/30 hover:-translate-y-1 border-b-2 border-[#491aa4] font-normal w-auto",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-9 px-5 py-2",
+        sm: "h-8 rounded-md px-5",
+        lg: "h-10 rounded-md px-5",
+        icon: "h-9 w-9",
       },
     },
     defaultVariants: {

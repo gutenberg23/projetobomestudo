@@ -39,7 +39,7 @@ export const Newsletter = () => {
                 <Button 
                   type="submit"
                   variant="hero"
-                  className="text-sm sm:text-base"
+                  className="text-sm sm:text-base w-auto"
                 >
                   <span>Inscrever-se</span>
                   <Send className="h-4 w-4" />

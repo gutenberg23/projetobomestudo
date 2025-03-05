@@ -46,7 +46,7 @@ export const TeacherBenefits = () => {
             
             <div className="pt-4 sm:pt-6">
               <Link to="/teacher-signup">
-                <Button variant="hero" className="w-full sm:w-auto">
+                <Button variant="hero" className="w-auto px-5">
                   QUERO SER PROFESSOR
                 </Button>
               </Link>

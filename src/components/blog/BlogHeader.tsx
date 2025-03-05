@@ -42,7 +42,7 @@ export const BlogHeader: React.FC<BlogHeaderProps> = ({
         </div>
         <Button 
           type="submit" 
-          className="ml-2 h-10 px-4 bg-[#5f2ebe] hover:bg-[#5021a5]"
+          className="ml-2 h-10 px-5 bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 w-auto"
         >
           Buscar
         </Button>

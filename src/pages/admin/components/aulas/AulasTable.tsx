@@ -63,6 +63,7 @@ export const AulasTable: React.FC<AulasTableProps> = ({
                       onClick={() => openEditModal(aula)} 
                       variant="outline" 
                       size="sm"
+                      className="w-auto"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -70,7 +71,7 @@ export const AulasTable: React.FC<AulasTableProps> = ({
                       onClick={() => openDeleteModal(aula)} 
                       variant="outline" 
                       size="sm" 
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 w-auto"
                     >
                       <Trash className="h-4 w-4" />
                     </Button>

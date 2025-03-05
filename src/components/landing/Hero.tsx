@@ -101,12 +101,12 @@ export const Hero = () => {
           
           {/* Botões com design melhorado */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Link to="/login" className="w-full sm:w-auto">
-              <Button variant="hero" className="text-white rounded-lg text-sm sm:text-lg tracking-wider hover:bg-opacity-90 transition-all px-8 sm:px-10 py-6 sm:py-7 bg-gradient-to-r from-[#5f2ebe] to-[#7344d4] hover:shadow-lg hover:shadow-[#5f2ebe]/30 hover:-translate-y-1 w-full border-b-4 border-[#491aa4] font-normal">
+            <Link to="/login" className="w-auto">
+              <Button variant="hero" className="text-white rounded-lg text-sm sm:text-base tracking-wider hover:bg-opacity-90 transition-all px-5 py-2 bg-gradient-to-r from-[#5f2ebe] to-[#7344d4] hover:shadow-lg hover:shadow-[#5f2ebe]/30 hover:-translate-y-1 border-b-2 border-[#491aa4] font-normal w-auto">
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
-            <Button onClick={() => setTeacherDialogOpen(true)} className="rounded-lg text-sm sm:text-lg tracking-wider transition-all px-8 sm:px-10 py-6 sm:py-7 bg-[#5f2ebe] border-2 border-[#5f2ebe] text-white hover:bg-[#5f2ebe]/90 hover:shadow-lg hover:shadow-[#5f2ebe]/20 hover:-translate-y-1 w-full sm:w-auto font-normal">
+            <Button onClick={() => setTeacherDialogOpen(true)} className="rounded-lg text-sm sm:text-base tracking-wider transition-all px-5 py-2 bg-[#5f2ebe] border-2 border-[#5f2ebe] text-white hover:bg-[#5f2ebe]/90 hover:shadow-lg hover:shadow-[#5f2ebe]/20 hover:-translate-y-1 w-auto font-normal">
               QUERO SER PROFESSOR
             </Button>
           </div>

@@ -8,7 +8,6 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Users, UserPlus, UserMinus, DollarSign, TrendingUp, Calendar, Percent, ArrowUpRight, ArrowDownRight, FileDown, Ticket } from "lucide-react";
 
-// Dados de exemplo para as métricas
 const dadosAssinantes = [{
   name: 'Jan',
   ativos: 120,
@@ -149,10 +148,10 @@ const cuponsAtivos = [{
   limite: 20
 }];
 const COLORS = ['#ea2be2', '#0088FE', '#00C49F', '#FFBB28'];
+
 const Dashboard = () => {
   const [periodoSelecionado, setPeriodoSelecionado] = useState("mes");
 
-  // Estatísticas calculadas
   const estatisticas = {
     assinantesAtivos: 340,
     novosAssinantes: 70,
@@ -165,25 +164,20 @@ const Dashboard = () => {
     projecaoProximoMes: 'R$ 37.000,00'
   };
 
-  // Filtros de período
   const handleChangePeriodo = (value: string) => {
     setPeriodoSelecionado(value);
-    // Aqui implementaríamos a lógica para filtrar os dados conforme o período
   };
 
-  // Função para exportar dados
   const exportarDados = (formato: string) => {
     console.log(`Exportando dados em formato ${formato}`);
-    // Implementação real seria feita aqui
   };
+
   return <div className="space-y-6">
-      {/* Cabeçalho */}
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-[#272f3c]">Dashboard</h1>
         <p className="text-[#67748a]">Visão geral das assinaturas e receitas</p>
       </div>
 
-      {/* Seleção de período */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Select defaultValue={periodoSelecionado} onValueChange={handleChangePeriodo}>
@@ -200,20 +194,18 @@ const Dashboard = () => {
           <p className="text-sm text-[#67748a]">Atualizado em: {new Date().toLocaleString('pt-BR')}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportarDados('csv')}>
+          <Button variant="outline" size="sm" onClick={() => exportarDados('csv')} className="w-auto">
             <FileDown className="mr-2 h-4 w-4" />
             Exportar CSV
           </Button>
-          <Button variant="outline" size="sm" onClick={() => exportarDados('pdf')}>
+          <Button variant="outline" size="sm" onClick={() => exportarDados('pdf')} className="w-auto">
             <FileDown className="mr-2 h-4 w-4" />
             Exportar PDF
           </Button>
         </div>
       </div>
 
-      {/* Cards de estatísticas rápidas */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Assinantes Ativos */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Assinantes Ativos</CardTitle>
@@ -231,7 +223,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Novos Assinantes */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Novos Assinantes</CardTitle>
@@ -245,7 +236,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Assinantes Cancelados */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cancelamentos</CardTitle>
@@ -259,7 +249,6 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Taxa de Cancelamento (Churn) */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Taxa de Cancelamento</CardTitle>
@@ -272,18 +261,14 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      {/* Abas para diferentes visões */}
       <Tabs defaultValue="receita">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="receita">Receita e Faturamento</TabsTrigger>
           <TabsTrigger value="assinantes">Assinantes</TabsTrigger>
         </TabsList>
         
-        {/* Tab de Receita */}
         <TabsContent value="receita" className="space-y-4">
-          {/* Cards de Receita */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* Receita Total */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Receita Total</CardTitle>
@@ -301,7 +286,6 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Receita Mensal Recorrente (MRR) */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Receita Mensal (MRR)</CardTitle>
@@ -315,7 +299,6 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Projeção para o próximo mês */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Projeção Próximo Mês</CardTitle>
@@ -330,7 +313,6 @@ const Dashboard = () => {
             </Card>
           </div>
 
-          {/* Gráfico de Receita */}
           <Card>
             <CardHeader>
               <CardTitle>Receita Anual</CardTitle>
@@ -353,9 +335,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Distribuição por Planos */}
           <div className="grid gap-4 md:grid-cols-2">
-            {/* Gráfico de planos */}
             <Card>
               <CardHeader>
                 <CardTitle>Distribuição por Planos</CardTitle>
@@ -379,12 +359,11 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Sistema de cupons */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex justify-between items-center">
                   <span>Cupons de Desconto</span>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="w-auto">
                     <Ticket className="mr-2 h-4 w-4" />
                     Novo Cupom
                   </Button>
@@ -420,9 +399,7 @@ const Dashboard = () => {
           </div>
         </TabsContent>
 
-        {/* Tab de Assinantes */}
         <TabsContent value="assinantes" className="space-y-4">
-          {/* Gráfico de Crescimento de Assinantes */}
           <Card>
             <CardHeader>
               <CardTitle>Evolução de Assinantes</CardTitle>
@@ -446,7 +423,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Novos vs Cancelados */}
           <Card>
             <CardHeader>
               <CardTitle>Novos Assinantes vs Cancelamentos</CardTitle>

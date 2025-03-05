@@ -38,6 +38,7 @@ export const DeleteAulaModal: React.FC<DeleteAulaModalProps> = ({
             type="button" 
             variant="outline" 
             onClick={onClose}
+            className="w-auto"
           >
             Cancelar
           </Button>
@@ -45,6 +46,7 @@ export const DeleteAulaModal: React.FC<DeleteAulaModalProps> = ({
             type="button" 
             variant="destructive" 
             onClick={handleDelete}
+            className="w-auto"
           >
             Excluir
           </Button>
