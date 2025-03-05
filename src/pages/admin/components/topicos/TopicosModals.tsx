@@ -50,23 +50,16 @@ export const TopicosModals: React.FC<TopicosModalsProps> = ({
       
       <EditTopicoModal
         isOpen={isOpenEdit}
-        setIsOpen={setIsOpenEdit}
-        currentTopico={currentTopico}
-        setCurrentTopico={setCurrentTopico}
-        editQuestaoId={editQuestaoId}
-        setEditQuestaoId={setEditQuestaoId}
-        handleEditTopico={handleEditTopico}
-        addQuestaoIdToEdit={addQuestaoIdToEdit}
-        removeQuestaoIdFromEdit={removeQuestaoIdFromEdit}
-        handleThumbnailUpload={handleThumbnailUpload}
-        disciplinas={disciplinas}
+        onClose={() => setIsOpenEdit(false)}
+        topico={currentTopico}
+        onSave={handleEditTopico}
       />
       
       <DeleteTopicoModal
         isOpen={isOpenDelete}
-        setIsOpen={setIsOpenDelete}
-        currentTopico={currentTopico}
-        handleDeleteTopico={handleDeleteTopico}
+        onClose={() => setIsOpenDelete(false)}
+        topico={currentTopico}
+        onDelete={handleDeleteTopico}
       />
     </>
   );

@@ -1,20 +1,14 @@
 
 import React from "react";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Topico } from "../TopicosTypes";
-import { 
-  BasicInfoFields, 
-  MediaFields, 
-  QuestionsManager 
-} from "./components";
 
 interface CreateTopicoModalProps {
   isOpen: boolean;
@@ -45,44 +39,19 @@ export const CreateTopicoModal: React.FC<CreateTopicoModalProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>Criar Novo Tópico</DialogTitle>
+          <DialogTitle className="text-[#272f3c]">Criar Novo Tópico</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-1 gap-4">
-            {/* Campos de informações básicas */}
-            <BasicInfoFields 
-              newTopico={newTopico} 
-              setNewTopico={setNewTopico} 
-              handleThumbnailUpload={handleThumbnailUpload} 
-            />
-            
-            {/* Campos de mídia */}
-            <MediaFields 
-              newTopico={newTopico} 
-              setNewTopico={setNewTopico} 
-            />
-
-            {/* Gerenciador de questões */}
-            <QuestionsManager 
-              questoesIds={newTopico.questoesIds}
-              newQuestaoId={newQuestaoId}
-              setNewQuestaoId={setNewQuestaoId}
-              addQuestaoId={addQuestaoId}
-              removeQuestaoId={removeQuestaoId}
-            />
-          </div>
+          {/* Conteúdo do formulário */}
+          <p className="text-[#67748a]">Adicione os detalhes do novo tópico</p>
         </div>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline">Cancelar</Button>
-          </DialogClose>
-          <Button 
-            type="button" 
-            onClick={handleCreateTopico}
-            className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
-          >
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
+            Cancelar
+          </Button>
+          <Button className="bg-[#ea2be2] hover:bg-[#ea2be2]/90" onClick={handleCreateTopico}>
             Criar Tópico
           </Button>
         </DialogFooter>

@@ -43,7 +43,7 @@ export const AddAulaButton: React.FC<TopicosPageProps> = ({
       )}
       <Button 
         onClick={handleCriarAula}
-        variant="hero"
+        className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
         disabled={!temTopicosSelecionados}
       >
         Adicionar Aula
