@@ -31,7 +31,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
                 <Checkbox 
                   id="selectAll"
                   checked={todosSelecionados} 
-                  onCheckedChange={handleSelecaoTodos}
+                  onCheckedChange={() => handleSelecaoTodos()}
                 />
               </div>
             </TableHead>
