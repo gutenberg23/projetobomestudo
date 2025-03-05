@@ -8,20 +8,15 @@ interface StateFilterProps {
   states: StateFilterType[];
   activeState: string | null;
   onSelectState: (state: string | null) => void;
-  regionFilter: string | null;
 }
 
 export const StateFilter: React.FC<StateFilterProps> = ({ 
   states, 
   activeState, 
-  onSelectState,
-  regionFilter
+  onSelectState
 }) => {
   const [scrollPosition, setScrollPosition] = React.useState(0);
   const containerRef = React.useRef<HTMLDivElement>(null);
-
-  // Não filtramos mais os estados com base na região
-  // Exibimos todos os estados, independentemente da região selecionada
 
   const scrollLeft = () => {
     if (containerRef.current) {
