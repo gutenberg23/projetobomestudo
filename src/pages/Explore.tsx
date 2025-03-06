@@ -73,7 +73,7 @@ const ResultItem: React.FC<ItemProps> = ({
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
         <Link to={`/course/${id}`} className="hover:text-[#5f2ebe] transition-colors">
-          <h3 className="text-[#272f3c] mb-0 leading-none text-xl font-extralight">{title}</h3>
+          <h3 className="text-[#272f3c] mb-0 leading-none font-extralight text-lg">{title}</h3>
         </Link>
       </div>
       <div className="flex items-center">
