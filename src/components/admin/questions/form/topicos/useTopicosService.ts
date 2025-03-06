@@ -99,7 +99,9 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
       const { error } = await supabase
         .from('topicos')
         .update({ 
-          nome: newTopicoNome
+          nome: newTopicoNome,
+          questoes_ids: currentTopico.questoes_ids,
+          patrocinador: currentTopico.patrocinador 
         })
         .eq('id', currentTopico.id);
 
@@ -107,8 +109,14 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
         throw error;
       }
 
+      // Atualizar a lista local de tópicos
       setTopicosList(topicosList.map(t => 
-        t.id === currentTopico.id ? { ...t, nome: newTopicoNome } : t
+        t.id === currentTopico.id ? { 
+          ...t, 
+          nome: newTopicoNome,
+          questoes_ids: currentTopico.questoes_ids,
+          patrocinador: currentTopico.patrocinador
+        } : t
       ));
       
       // Atualizar também no array de tópicos selecionados
