@@ -30,7 +30,6 @@ const MOCK_COURSES = [{
   topics: 8,
   lessons: 16
 }];
-
 const MOCK_SUBJECTS = [{
   id: "direito-administrativo",
   title: "Direito Administrativo",
@@ -53,7 +52,6 @@ const MOCK_SUBJECTS = [{
   topics: 9,
   lessons: 18
 }];
-
 interface ItemProps {
   id: string;
   title: string;
@@ -63,7 +61,6 @@ interface ItemProps {
   lessons: number;
   onToggleFavorite: (id: string) => void;
 }
-
 const ResultItem: React.FC<ItemProps> = ({
   id,
   title,
@@ -73,11 +70,10 @@ const ResultItem: React.FC<ItemProps> = ({
   lessons,
   onToggleFavorite
 }) => {
-  return (
-    <div className="flex justify-between items-center p-4 border-b border-gray-100">
+  return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
         <Link to={`/course/${id}`} className="hover:text-[#5f2ebe] transition-colors">
-          <h3 className="text-[#272f3c] mb-0 leading-none text-xl font-bold">{title}</h3>
+          <h3 className="text-[#272f3c] mb-0 leading-none text-xl font-extralight">{title}</h3>
         </Link>
       </div>
       <div className="flex items-center">
@@ -89,10 +85,8 @@ const ResultItem: React.FC<ItemProps> = ({
           <Star className={`h-5 w-5 ${isFavorite ? "fill-[#ea2be2] text-[#ea2be2]" : "text-gray-400"}`} />
         </Button>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 const Explore = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
@@ -109,7 +103,6 @@ const Explore = () => {
       setSearchTerm(searchQuery);
     }
   }, [location.search]);
-
   const handleToggleFavorite = (id: string) => {
     if (showSubjects) {
       setSubjects(subjects.map(subject => subject.id === id ? {
@@ -123,20 +116,14 @@ const Explore = () => {
       } : course));
     }
   };
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       navigate(`/explore?search=${encodeURIComponent(searchTerm)}`);
     }
   };
-
-  const filteredData = showSubjects
-    ? subjects.filter(subject => subject.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    : courses.filter(course => course.title.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  return (
-    <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+  const filteredData = showSubjects ? subjects.filter(subject => subject.title.toLowerCase().includes(searchTerm.toLowerCase())) : courses.filter(course => course.title.toLowerCase().includes(searchTerm.toLowerCase()));
+  return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
         <h1 className="text-3xl mb-2 md:text-3xl font-extrabold text-[#272f3c]">Explorar</h1>
@@ -145,17 +132,8 @@ const Explore = () => {
         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
           <div className="flex items-center flex-1 relative">
             <form onSubmit={handleSearch} className="w-full flex">
-              <Input 
-                type="text" 
-                placeholder="Pesquisar..." 
-                value={searchTerm} 
-                onChange={e => setSearchTerm(e.target.value)} 
-                className="pr-10 w-full" 
-              />
-              <button 
-                type="submit"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600"
-              >
+              <Input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pr-10 w-full" />
+              <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
                 <Search className="h-4 w-4" />
               </button>
             </form>
@@ -172,30 +150,13 @@ const Explore = () => {
 
         <div className="bg-white rounded-lg overflow-hidden">
           <div className="divide-y divide-gray-100">
-            {filteredData.length > 0 ? (
-              filteredData.map(item => (
-                <ResultItem 
-                  key={item.id} 
-                  id={item.id} 
-                  title={item.title} 
-                  description={item.description} 
-                  isFavorite={item.isFavorite} 
-                  topics={item.topics} 
-                  lessons={item.lessons} 
-                  onToggleFavorite={handleToggleFavorite} 
-                />
-              ))
-            ) : (
-              <div className="p-8 text-center text-gray-500">
+            {filteredData.length > 0 ? filteredData.map(item => <ResultItem key={item.id} id={item.id} title={item.title} description={item.description} isFavorite={item.isFavorite} topics={item.topics} lessons={item.lessons} onToggleFavorite={handleToggleFavorite} />) : <div className="p-8 text-center text-gray-500">
                 Nenhum resultado encontrado para "{searchTerm}"
-              </div>
-            )}
+              </div>}
           </div>
         </div>
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Explore;
