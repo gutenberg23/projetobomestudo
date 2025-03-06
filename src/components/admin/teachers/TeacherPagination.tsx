@@ -1,8 +1,6 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
 interface TeacherPaginationProps {
   paginaAtual: number;
   totalPaginas: number;
@@ -11,7 +9,6 @@ interface TeacherPaginationProps {
   totalItens: number;
   onPageChange: (page: number) => void;
 }
-
 const TeacherPagination: React.FC<TeacherPaginationProps> = ({
   paginaAtual,
   totalPaginas,
@@ -20,8 +17,7 @@ const TeacherPagination: React.FC<TeacherPaginationProps> = ({
   totalItens,
   onPageChange
 }) => {
-  return (
-    <div className="flex justify-between items-center mt-4 text-sm">
+  return <div className="flex justify-between items-center mt-4 text-sm">
       <div className="text-[#67748a]">
         Mostrando <span className="font-medium">{indiceInicial + 1}</span> a{" "}
         <span className="font-medium">{indiceFinal}</span> de{" "}
@@ -29,43 +25,20 @@ const TeacherPagination: React.FC<TeacherPaginationProps> = ({
       </div>
       
       <div className="flex gap-1">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(paginaAtual - 1)}
-          disabled={paginaAtual === 1}
-          className="border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa] disabled:opacity-50"
-        >
+        <Button variant="outline" size="sm" onClick={() => onPageChange(paginaAtual - 1)} disabled={paginaAtual === 1} className="border-[#5f2ebe] hover:bg-[#f6f8fa] disabled:opacity-50 text-[#5f2ebe]">
           <ChevronLeft className="h-4 w-4" />
         </Button>
         
-        {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((page) => (
-          <Button
-            key={page}
-            variant={paginaAtual === page ? "default" : "outline"}
-            size="sm"
-            onClick={() => onPageChange(page)}
-            className={paginaAtual === page 
-              ? "bg-[#ea2be2] hover:bg-[#ea2be2]/90" 
-              : "border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa]"
-            }
-          >
+        {Array.from({
+        length: totalPaginas
+      }, (_, i) => i + 1).map(page => <Button key={page} variant={paginaAtual === page ? "default" : "outline"} size="sm" onClick={() => onPageChange(page)} className={paginaAtual === page ? "bg-[#ea2be2] hover:bg-[#ea2be2]/90" : "border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa]"}>
             {page}
-          </Button>
-        ))}
+          </Button>)}
         
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(paginaAtual + 1)}
-          disabled={paginaAtual === totalPaginas}
-          className="border-[#ea2be2] text-[#ea2be2] hover:bg-[#f6f8fa] disabled:opacity-50"
-        >
+        <Button variant="outline" size="sm" onClick={() => onPageChange(paginaAtual + 1)} disabled={paginaAtual === totalPaginas} className="border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#f6f8fa] disabled:opacity-50">
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default TeacherPagination;
