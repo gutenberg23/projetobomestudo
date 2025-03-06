@@ -221,8 +221,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: new Error("Usuário não autenticado") };
 
     try {
-      const { error } = await supabase
-        .from('profiles')
+      // Usamos o método "from" do supabase, mas tratamos como "any" para evitar erros de tipagem
+      const { error } = await (supabase
+        .from('profiles') as any)
         .update(data)
         .eq('id', user.id);
 
