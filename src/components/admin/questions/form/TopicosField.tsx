@@ -88,7 +88,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
         .insert([{ 
           nome: newTopicoNome, 
           disciplina,
-          user_id: user.id  // Adicionando user_id para resolver o erro de RLS
+          user_id: user.id
         }])
         .select();
 
@@ -124,7 +124,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
         .from('topicos')
         .update({ 
           nome: newTopicoNome,
-          user_id: user.id  // Garantindo que o user_id seja atualizado também
+          user_id: user.id
         })
         .eq('id', currentTopico.id);
 
