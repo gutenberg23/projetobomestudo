@@ -28,7 +28,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
                 </svg>}
             </div>
             <div onClick={toggleVideoSection} className="flex flex-col flex-1 shrink justify-center self-stretch pr-5 my-auto basis-0 min-w-60 cursor-pointer py-0">
-              <h2 className="text-lg md:text-2xl font-bold leading-none text-slate-800 hover:text-[#F11CE3] transition-colors mb-2">
+              <h2 className="text-lg md:text-2xl font-bold leading-none text-slate-800 hover:text-[#5f2ebe] transition-colors mb-2">
                 {title}
               </h2>
               <p className="text-xs md:text-sm leading-none text-slate-500">
