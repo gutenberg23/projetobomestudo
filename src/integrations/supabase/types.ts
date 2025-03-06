@@ -102,18 +102,24 @@ export type Database = {
           disciplina: string
           id: string
           nome: string
+          patrocinador: string | null
+          questoes_ids: string[] | null
         }
         Insert: {
           created_at?: string | null
           disciplina: string
           id?: string
           nome: string
+          patrocinador?: string | null
+          questoes_ids?: string[] | null
         }
         Update: {
           created_at?: string | null
           disciplina?: string
           id?: string
           nome?: string
+          patrocinador?: string | null
+          questoes_ids?: string[] | null
         }
         Relationships: []
       }

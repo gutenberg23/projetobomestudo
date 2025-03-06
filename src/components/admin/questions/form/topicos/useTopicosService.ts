@@ -67,7 +67,9 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
         .from('topicos')
         .insert([{ 
           nome: newTopicoNome, 
-          disciplina
+          disciplina,
+          patrocinador: "",
+          questoes_ids: []
         }])
         .select();
 

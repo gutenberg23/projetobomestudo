@@ -40,14 +40,15 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   const fetchDisciplinas = async () => {
     setLoading(true);
     try {
+      // Usamos o select para obter todas as disciplinas e depois filtramos os valores únicos no JavaScript
       const { data, error } = await supabase
         .from('questoes')
-        .select('discipline')
-        .distinct();
+        .select('discipline');
       
       if (error) throw error;
       
-      const uniqueDisciplinas = data?.map(item => item.discipline) || [];
+      // Extrair disciplinas únicas usando Set
+      const uniqueDisciplinas = [...new Set(data?.map(item => item.discipline) || [])];
       setDisciplinas(uniqueDisciplinas);
     } catch (error) {
       console.error("Erro ao buscar disciplinas:", error);
