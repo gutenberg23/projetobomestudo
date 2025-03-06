@@ -7,11 +7,6 @@ import { Subject, Topic } from "./types/editorialized";
 import { calculateOverallStats } from "./utils/statsCalculations";
 import { StatisticsCard } from "./components/StatisticsCard";
 
-interface EditorializedViewProps {
-  activeTab?: 'edital' | 'simulados';
-  courseId?: string;
-}
-
 const subjects: Subject[] = [
   {
     id: 1,
@@ -60,17 +55,9 @@ const subjects: Subject[] = [
   }
 ];
 
-export const EditorializedView: React.FC<EditorializedViewProps> = ({ activeTab = 'edital', courseId }) => {
+export const EditorializedView = ({ activeTab = 'edital' }) => {
   const [localSubjects, setLocalSubjects] = useState<Subject[]>(subjects);
   const [performanceGoal, setPerformanceGoal] = useState<number>(70);
-
-  // Aqui poderíamos fazer uma chamada para API para buscar os dados do curso com base no ID
-  React.useEffect(() => {
-    if (courseId) {
-      console.log("Carregando edital e simulados para o curso:", courseId);
-      // Lógica para buscar dados do curso baseado no ID
-    }
-  }, [courseId]);
 
   const handleTopicChange = (subjectId: number, topicId: number, field: keyof Topic, value: any) => {
     setLocalSubjects(prevSubjects => prevSubjects.map(subject => {
