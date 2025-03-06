@@ -35,6 +35,8 @@ interface QuestionFormProps {
   setAIExplanation: (value: string) => void;
   options: QuestionOption[];
   setOptions: (options: QuestionOption[]) => void;
+  topicos: string[];
+  setTopicos: (topicos: string[]) => void;
   institutions: string[];
   setInstitutions: (value: string[]) => void;
   organizations: string[];
@@ -83,6 +85,8 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   setAIExplanation,
   options,
   setOptions,
+  topicos,
+  setTopicos,
   institutions,
   setInstitutions,
   organizations,
@@ -112,7 +116,42 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
 
       {/* Question Metadata - First Row */}
       <FormSection cols={3}>
-        <QuestionMetadataFields institution={institution} setInstitution={setInstitution} institutions={institutions} setInstitutions={setInstitutions} organization={organization} setOrganization={setOrganization} organizations={organizations} setOrganizations={setOrganizations} year={year} setYear={setYear} years={years} setYears={setYears} role={role} setRole={setRole} roles={roles} setRoles={setRoles} discipline={discipline} setDiscipline={setDiscipline} disciplines={disciplines} setDisciplines={setDisciplines} level={level} setLevel={setLevel} levels={levels} setLevels={setLevels} difficulty={difficulty} setDifficulty={setDifficulty} difficulties={difficulties} setDifficulties={setDifficulties} questionType={questionType} setQuestionType={setQuestionType} questionTypes={questionTypes} setQuestionTypes={setQuestionTypes} />
+        <QuestionMetadataFields 
+          institution={institution} 
+          setInstitution={setInstitution} 
+          institutions={institutions} 
+          setInstitutions={setInstitutions} 
+          organization={organization} 
+          setOrganization={setOrganization} 
+          organizations={organizations} 
+          setOrganizations={setOrganizations} 
+          year={year} 
+          setYear={setYear} 
+          years={years} 
+          setYears={setYears} 
+          role={role} 
+          setRole={setRole} 
+          roles={roles} 
+          setRoles={setRoles} 
+          discipline={discipline} 
+          setDiscipline={setDiscipline} 
+          disciplines={disciplines} 
+          setDisciplines={setDisciplines} 
+          topicos={topicos}
+          setTopicos={setTopicos}
+          level={level} 
+          setLevel={setLevel} 
+          levels={levels} 
+          setLevels={setLevels} 
+          difficulty={difficulty} 
+          setDifficulty={setDifficulty} 
+          difficulties={difficulties} 
+          setDifficulties={setDifficulties} 
+          questionType={questionType} 
+          setQuestionType={setQuestionType} 
+          questionTypes={questionTypes} 
+          setQuestionTypes={setQuestionTypes} 
+        />
       </FormSection>
 
       {/* Expandable Content */}

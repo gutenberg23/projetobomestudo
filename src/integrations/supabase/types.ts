@@ -33,6 +33,90 @@ export type Database = {
         }
         Relationships: []
       }
+      questoes: {
+        Row: {
+          aiexplanation: string | null
+          content: string
+          created_at: string | null
+          difficulty: string
+          discipline: string
+          expandablecontent: string | null
+          id: string
+          institution: string
+          level: string
+          options: Json | null
+          organization: string
+          questiontype: string
+          role: string
+          teacherexplanation: string
+          topicos: string[] | null
+          updated_at: string | null
+          user_id: string
+          year: string
+        }
+        Insert: {
+          aiexplanation?: string | null
+          content: string
+          created_at?: string | null
+          difficulty: string
+          discipline: string
+          expandablecontent?: string | null
+          id: string
+          institution: string
+          level: string
+          options?: Json | null
+          organization: string
+          questiontype: string
+          role: string
+          teacherexplanation: string
+          topicos?: string[] | null
+          updated_at?: string | null
+          user_id: string
+          year: string
+        }
+        Update: {
+          aiexplanation?: string | null
+          content?: string
+          created_at?: string | null
+          difficulty?: string
+          discipline?: string
+          expandablecontent?: string | null
+          id?: string
+          institution?: string
+          level?: string
+          options?: Json | null
+          organization?: string
+          questiontype?: string
+          role?: string
+          teacherexplanation?: string
+          topicos?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+          year?: string
+        }
+        Relationships: []
+      }
+      topicos: {
+        Row: {
+          created_at: string | null
+          disciplina: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string | null
+          disciplina: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string | null
+          disciplina?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

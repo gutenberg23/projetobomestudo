@@ -18,6 +18,7 @@ export const useQuestionsState = () => {
   const [expandableContent, setExpandableContent] = useState<string>("");
   const [aiExplanation, setAIExplanation] = useState<string>("");
   const [options, setOptions] = useState<QuestionOption[]>([]);
+  const [topicos, setTopicos] = useState<string[]>([]);
   
   // Estado para busca e edição
   const [searchId, setSearchId] = useState<string>("");
@@ -56,6 +57,13 @@ export const useQuestionsState = () => {
     }
   }, [questionType]);
   
+  // Limpar os tópicos quando a disciplina mudar
+  useEffect(() => {
+    if (!discipline) {
+      setTopicos([]);
+    }
+  }, [discipline]);
+  
   // Gerar ID automático para a questão
   useEffect(() => {
     const generateQuestionId = () => {
@@ -91,6 +99,7 @@ export const useQuestionsState = () => {
     expandableContent, setExpandableContent,
     aiExplanation, setAIExplanation,
     options, setOptions,
+    topicos, setTopicos,
     
     // Search and edit state
     searchId, setSearchId,

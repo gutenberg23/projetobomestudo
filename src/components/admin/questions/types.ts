@@ -12,11 +12,13 @@ export interface QuestionItemType {
   content: string;
   teacherExplanation: string;
   aiExplanation?: string;
+  expandableContent?: string;
   options: Array<{
     id: string;
     text: string;
     isCorrect: boolean;
   }>;
+  topicos?: string[];
 }
 
 export interface FiltersType {
@@ -35,4 +37,10 @@ export interface QuestionOption {
   id: string;
   text: string;
   isCorrect: boolean;
+}
+
+export interface Topico {
+  id: string;
+  nome: string;
+  disciplina: string;
 }

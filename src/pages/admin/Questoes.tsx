@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import Card from "@/components/admin/questions/Card";
 import SearchQuestion from "@/components/admin/questions/SearchQuestion";
 import QuestionFilters from "@/components/admin/questions/QuestionFilters";
@@ -7,12 +7,57 @@ import QuestionList from "@/components/admin/questions/QuestionList";
 import QuestionForm from "@/components/admin/questions/QuestionForm";
 import { useQuestionsState } from "@/components/admin/questions/hooks/useQuestionsState";
 import { useQuestionActions } from "@/components/admin/questions/hooks/useQuestionActions";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Questoes: React.FC = () => {
   const state = useQuestionsState();
   const actions = useQuestionActions(state);
+  const { user } = useAuth();
   
   const filteredQuestions = actions.getFilteredQuestions();
+
+  // Carregar questões do banco de dados ao montar o componente
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('questoes')
+          .select('*');
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Transformar os dados para o formato esperado pelo componente
+        const formattedQuestions = data.map(q => ({
+          id: q.id,
+          year: q.year,
+          institution: q.institution,
+          organization: q.organization,
+          role: q.role,
+          discipline: q.discipline,
+          level: q.level,
+          difficulty: q.difficulty,
+          questionType: q.questionType || q.questiontype, // lidar com diferenças de nomenclatura
+          content: q.content,
+          teacherExplanation: q.teacherExplanation || q.teacherexplanation, // lidar com diferenças de nomenclatura
+          aiExplanation: q.aiExplanation || q.aiexplanation, // lidar com diferenças de nomenclatura
+          expandableContent: q.expandableContent || q.expandablecontent, // lidar com diferenças de nomenclatura
+          options: q.options || [],
+          topicos: q.topicos || []
+        }));
+        
+        state.setQuestions(formattedQuestions);
+      } catch (error) {
+        console.error('Erro ao carregar questões:', error);
+        toast.error('Erro ao carregar questões. Tente novamente.');
+      }
+    };
+    
+    fetchQuestions();
+  }, []);
 
   return (
     <div className="space-y-6 p-4">
@@ -59,6 +104,8 @@ const Questoes: React.FC = () => {
             setAIExplanation={state.setAIExplanation}
             options={state.options}
             setOptions={state.setOptions}
+            topicos={state.topicos}
+            setTopicos={state.setTopicos}
             institutions={state.institutions}
             setInstitutions={state.setInstitutions}
             organizations={state.organizations}
@@ -131,6 +178,8 @@ const Questoes: React.FC = () => {
           setAIExplanation={state.setAIExplanation}
           options={state.options}
           setOptions={state.setOptions}
+          topicos={state.topicos}
+          setTopicos={state.setTopicos}
           institutions={state.institutions}
           setInstitutions={state.setInstitutions}
           organizations={state.organizations}

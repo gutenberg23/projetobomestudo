@@ -1,15 +1,17 @@
 
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useUpdateQuestionActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
-  const handleUpdateQuestion = () => {
+  const handleUpdateQuestion = async () => {
     const {
       questionId, year, institution, organization, role, discipline,
       level, difficulty, questionType, questionText, teacherExplanation,
-      aiExplanation, options, questions, setQuestions, setIsEditQuestionCardOpen, setQuestionId, 
-      setYear, setInstitution, setOrganization, setRole, setDiscipline,
-      setLevel, setDifficulty, setQuestionType, setQuestionText, setTeacherExplanation,
-      setAIExplanation, setOptions
+      aiExplanation, expandableContent, options, questions, setQuestions, 
+      setIsEditQuestionCardOpen, setQuestionId, setYear, setInstitution, 
+      setOrganization, setRole, setDiscipline, setLevel, setDifficulty, 
+      setQuestionType, setQuestionText, setTeacherExplanation, setAIExplanation, 
+      setExpandableContent, setOptions, topicos, setTopicos
     } = state;
 
     // Verificações de preenchimento (igual ao salvamento)
@@ -51,42 +53,81 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
       }
     }
 
-    const updatedQuestions = questions.map(q => q.id === questionId ? {
-      ...q,
-      year,
-      institution,
-      organization,
-      role,
-      discipline,
-      level,
-      difficulty,
-      questionType,
-      content: questionText,
-      teacherExplanation,
-      aiExplanation,
-      options
-    } : q);
-    
-    setQuestions(updatedQuestions);
-    setIsEditQuestionCardOpen(false);
-    toast.success("Questão atualizada com sucesso!");
-    
-    // Limpar campos e gerar novo ID
-    const now = new Date();
-    const newId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
-    setQuestionId(newId);
-    setYear("");
-    setInstitution("");
-    setOrganization("");
-    setRole("");
-    setDiscipline("");
-    setLevel("");
-    setDifficulty("");
-    setQuestionType("");
-    setQuestionText("");
-    setTeacherExplanation("");
-    setAIExplanation("");
-    setOptions([]);
+    try {
+      // Construir objeto para atualizar no banco de dados
+      const questionData = {
+        year,
+        institution,
+        organization,
+        role,
+        discipline,
+        level,
+        difficulty,
+        questionType,
+        content: questionText,
+        teacherExplanation,
+        aiExplanation,
+        expandableContent,
+        options,
+        topicos,
+        updated_at: new Date()
+      };
+
+      // Atualizar no banco de dados
+      const { error } = await supabase
+        .from('questoes')
+        .update(questionData)
+        .eq('id', questionId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Atualizar o estado local
+      const updatedQuestions = questions.map(q => q.id === questionId ? {
+        ...q,
+        year,
+        institution,
+        organization,
+        role,
+        discipline,
+        level,
+        difficulty,
+        questionType,
+        content: questionText,
+        teacherExplanation,
+        aiExplanation,
+        expandableContent,
+        options,
+        topicos
+      } : q);
+      
+      setQuestions(updatedQuestions);
+      setIsEditQuestionCardOpen(false);
+      toast.success("Questão atualizada com sucesso!");
+      
+      // Limpar campos e gerar novo ID
+      const now = new Date();
+      const newId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+      setQuestionId(newId);
+      setYear("");
+      setInstitution("");
+      setOrganization("");
+      setRole("");
+      setDiscipline("");
+      setLevel("");
+      setDifficulty("");
+      setQuestionType("");
+      setQuestionText("");
+      setTeacherExplanation("");
+      setAIExplanation("");
+      setExpandableContent("");
+      setOptions([]);
+      setTopicos([]);
+    } catch (error) {
+      console.error("Erro ao atualizar questão:", error);
+      toast.error("Erro ao atualizar questão. Tente novamente.");
+    }
   };
 
   return {

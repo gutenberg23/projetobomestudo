@@ -3,6 +3,7 @@ import React from "react";
 import SelectField from "./SelectField";
 import AddValueDialog from "./AddValueDialog";
 import { useSelectFieldState } from "./useSelectFieldState";
+import TopicosField from "./TopicosField";
 
 interface QuestionMetadataFieldsProps {
   // Institution
@@ -35,6 +36,10 @@ interface QuestionMetadataFieldsProps {
   disciplines: string[];
   setDisciplines: (value: string[]) => void;
   
+  // Tópicos
+  topicos: string[];
+  setTopicos: (value: string[]) => void;
+  
   // Level
   level: string;
   setLevel: (value: string) => void;
@@ -60,6 +65,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
   year, setYear, years, setYears,
   role, setRole, roles, setRoles,
   discipline, setDiscipline, disciplines, setDisciplines,
+  topicos, setTopicos,
   level, setLevel, levels, setLevels,
   difficulty, setDifficulty, difficulties, setDifficulties,
   questionType, setQuestionType, questionTypes, setQuestionTypes
@@ -145,7 +151,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
         />
       </div>
 
-      {/* Role, Discipline, Level Fields */}
+      {/* Role, Discipline, Tópicos Fields */}
       <div>
         <SelectField
           id="role"
@@ -189,6 +195,15 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           value={disciplineState.newValue}
           setValue={disciplineState.setNewValue}
           onAdd={disciplineState.handleAdd}
+        />
+      </div>
+
+      {/* Tópicos Field - only shown when discipline is selected */}
+      <div>
+        <TopicosField
+          disciplina={discipline}
+          topicos={topicos}
+          setTopicos={setTopicos}
         />
       </div>
 

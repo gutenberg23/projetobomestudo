@@ -1,16 +1,21 @@
 
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { QuestionItemType } from "../../types";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
+  const { user } = useAuth();
+
   // Função para salvar questão
-  const handleSaveQuestion = () => {
+  const handleSaveQuestion = async () => {
     const {
       questionId, year, institution, organization, role, discipline,
       level, difficulty, questionType, questionText, teacherExplanation,
-      aiExplanation, options, questions, setQuestions, setQuestionId, setYear, setInstitution,
-      setOrganization, setRole, setDiscipline, setLevel, setDifficulty,
-      setQuestionType, setQuestionText, setTeacherExplanation, setAIExplanation, setOptions
+      aiExplanation, expandableContent, options, questions, setQuestions, 
+      setQuestionId, setYear, setInstitution, setOrganization, setRole, 
+      setDiscipline, setLevel, setDifficulty, setQuestionType, setQuestionText, 
+      setTeacherExplanation, setAIExplanation, setOptions, topicos, setTopicos
     } = state;
 
     if (
@@ -51,44 +56,88 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
       }
     }
 
-    const newQuestion: QuestionItemType = {
-      id: questionId,
-      year,
-      institution,
-      organization,
-      role,
-      discipline,
-      level,
-      difficulty,
-      questionType,
-      content: questionText,
-      teacherExplanation,
-      aiExplanation,
-      options: options
-    };
+    if (!user?.id) {
+      toast.error("Você precisa estar logado para salvar questões!");
+      return;
+    }
 
-    setQuestions([...questions, newQuestion]);
+    try {
+      // Construir objeto para salvar no banco de dados
+      const questionData = {
+        id: questionId,
+        year,
+        institution,
+        organization,
+        role,
+        discipline,
+        level,
+        difficulty,
+        questionType,
+        content: questionText,
+        teacherExplanation,
+        aiExplanation,
+        expandableContent,
+        options,
+        topicos,
+        user_id: user.id
+      };
 
-    // Gerar um novo ID para a próxima questão
-    const now = new Date();
-    const newId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
-    setQuestionId(newId);
+      // Inserir no banco de dados
+      const { error } = await supabase
+        .from('questoes')
+        .insert([questionData]);
 
-    // Limpar campos
-    setYear("");
-    setInstitution("");
-    setOrganization("");
-    setRole("");
-    setDiscipline("");
-    setLevel("");
-    setDifficulty("");
-    setQuestionType("");
-    setQuestionText("");
-    setTeacherExplanation("");
-    setAIExplanation("");
-    setOptions([]);
+      if (error) {
+        throw error;
+      }
 
-    toast.success("Questão salva com sucesso!");
+      // Atualizar estado local
+      const newQuestion: QuestionItemType = {
+        id: questionId,
+        year,
+        institution,
+        organization,
+        role,
+        discipline,
+        level,
+        difficulty,
+        questionType,
+        content: questionText,
+        teacherExplanation,
+        aiExplanation,
+        expandableContent,
+        options,
+        topicos
+      };
+
+      setQuestions([...questions, newQuestion]);
+
+      // Gerar um novo ID para a próxima questão
+      const now = new Date();
+      const newId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+      setQuestionId(newId);
+
+      // Limpar campos
+      setYear("");
+      setInstitution("");
+      setOrganization("");
+      setRole("");
+      setDiscipline("");
+      setLevel("");
+      setDifficulty("");
+      setQuestionType("");
+      setQuestionText("");
+      setTeacherExplanation("");
+      setAIExplanation("");
+      setExpandableContent("");
+      setOptions([]);
+      setTopicos([]);
+
+      toast.success("Questão salva com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar questão:", error);
+      toast.error("Erro ao salvar questão. Tente novamente.");
+    }
   };
 
   return {
