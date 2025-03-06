@@ -1,12 +1,65 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
+
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
-  return <div className="flex flex-col md:flex-row h-screen">
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  
+  const { signIn, signUp, user } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Redirecionar para a página inicial se o usuário já estiver autenticado
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
+
+  const handleSubmit = async (event: React.SyntheticEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    
+    setError("");
+    
+    if (!isLogin && password !== confirmPassword) {
+      setError("As senhas não coincidem");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      if (isLogin) {
+        const { error: signInError } = await signIn(email, password);
+        if (signInError) {
+          setError(signInError.message);
+        }
+      } else {
+        const { error: signUpError } = await signUp(email, password);
+        if (signUpError) {
+          setError(signUpError.message);
+        } else {
+          // Em caso de sucesso no cadastro, mudar para o modo de login
+          setIsLogin(true);
+        }
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row h-screen">
       {/* Coluna da esquerda com imagem */}
       <div className="hidden md:block md:w-1/2 bg-[#272f3c] relative">
         <div className="absolute top-8 left-8">
@@ -45,25 +98,62 @@ const Login = () => {
             {isLogin ? "Estude de forma eficiente com nossa plataforma completa de preparação." : "Crie sua conta e comece a estudar para concursos hoje mesmo."}
           </p>
 
-          <form className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+              {error}
+            </div>
+          )}
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="seu.email@exemplo.com" className="w-full" />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="seu.email@exemplo.com" 
+                className="w-full" 
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
             </div>
 
             <div>
               <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" placeholder="••••••••" className="w-full" />
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="••••••••" 
+                className="w-full" 
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
             </div>
 
-            {!isLogin && <div>
+            {!isLogin && (
+              <div>
                 <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input id="confirmPassword" type="password" placeholder="••••••••" className="w-full" />
-              </div>}
+                <Input 
+                  id="confirmPassword" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  className="w-full" 
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  required={!isLogin}
+                />
+              </div>
+            )}
 
-            {isLogin && <div className="flex justify-between items-center">
+            {isLogin && (
+              <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-2">
-                  <Switch id="remember" />
+                  <Switch 
+                    id="remember" 
+                    checked={rememberMe}
+                    onCheckedChange={setRememberMe}
+                  />
                   <Label htmlFor="remember" className="text-sm">
                     Lembrar de mim
                   </Label>
@@ -71,10 +161,15 @@ const Login = () => {
                 <Link to="/esqueci-senha" className="text-sm text-[#5f2ebe] hover:underline">
                   Esqueceu a senha?
                 </Link>
-              </div>}
+              </div>
+            )}
 
-            <Button type="submit" className="w-full bg-[#ea2be2] hover:bg-[#ea2be2]/90">
-              {isLogin ? "Entrar" : "Cadastrar"}
+            <Button 
+              type="submit" 
+              className="w-full bg-[#ea2be2] hover:bg-[#ea2be2]/90"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Processando..." : isLogin ? "Entrar" : "Cadastrar"}
             </Button>
 
             <div className="relative my-6">
@@ -108,6 +203,8 @@ const Login = () => {
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Login;
