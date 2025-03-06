@@ -45,7 +45,10 @@ export const TeacherBenefits = () => {
             
             <div className="pt-4 sm:pt-6">
               <Link to="/teacher-signup" className="py-[18px] px-[20px]">
-                <Button variant="hero" className="w-auto px-5">
+                <Button 
+                  variant="secondary" 
+                  className="w-auto px-5 rounded-lg text-sm sm:text-base tracking-wider transition-all bg-white border-2 border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#5f2ebe]/10 hover:shadow-lg hover:shadow-[#5f2ebe]/20 hover:-translate-y-1 font-normal"
+                >
                   QUERO SER PROFESSOR
                 </Button>
               </Link>

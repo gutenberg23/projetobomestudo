@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -103,7 +104,11 @@ export const Hero = () => {
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
-            <Button onClick={() => setTeacherDialogOpen(true)} className="rounded-lg text-sm sm:text-base tracking-wider transition-all px-5 bg-[#5f2ebe] border-2 border-[#5f2ebe] text-white hover:bg-[#5f2ebe]/90 hover:shadow-lg hover:shadow-[#5f2ebe]/20 hover:-translate-y-1 w-auto font-normal py-[20px]">
+            <Button 
+              onClick={() => setTeacherDialogOpen(true)} 
+              variant="secondary" 
+              className="rounded-lg text-sm sm:text-base tracking-wider transition-all px-5 bg-white border-2 border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#5f2ebe]/10 hover:shadow-lg hover:shadow-[#5f2ebe]/20 hover:-translate-y-1 w-auto font-normal py-[20px]"
+            >
               QUERO SER PROFESSOR
             </Button>
           </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
@@ -24,7 +25,7 @@ export const Header = () => {
       <div className="hidden md:flex items-center space-x-6 mr-6">
         <Link to="/blog" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
           <Newspaper className="w-4 h-4 px-px" />
-          <span className="font-extralight">Blog</span>
+          <span className="font-extralight">Notícias</span>
         </Link>
         <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
           <Trophy className="w-4 h-4" />
@@ -79,7 +80,7 @@ export const Header = () => {
               <div className="md:hidden border-t border-gray-100">
                 <Link to="/blog" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                   <Newspaper className="w-4 h-4" />
-                  Blog
+                  Notícias
                 </Link>
                 <Link to="/explore" className="px-4 py-3 text-sm font-medium text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                   <Trophy className="w-4 h-4" />
