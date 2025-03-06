@@ -87,8 +87,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
         .from('topicos')
         .insert([{ 
           nome: newTopicoNome, 
-          disciplina,
-          user_id: user.id
+          disciplina
         }])
         .select();
 
@@ -123,8 +122,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
       const { error } = await supabase
         .from('topicos')
         .update({ 
-          nome: newTopicoNome,
-          user_id: user.id
+          nome: newTopicoNome
         })
         .eq('id', currentTopico.id);
 

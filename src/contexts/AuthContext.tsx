@@ -33,6 +33,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Configurar o Supabase para persistir a sessão entre abas
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+        });
+        
+        // Buscar perfil do usuário
+        fetchUserProfile(session.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setProfile(null);
+      }
+    });
+
     const fetchUserData = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -43,21 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           
           // Buscar perfil do usuário
-          const { data: userProfile, error } = await (supabase
-            .from('profiles') as any)
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-            
-          if (userProfile && !error) {
-            setProfile(userProfile);
-            setUser(prev => prev ? { 
-              ...prev, 
-              nome: userProfile.nome,
-              role: userProfile.role,
-              foto_perfil: userProfile.foto_perfil
-            } : null);
-          }
+          await fetchUserProfile(session.user.id);
         }
       } catch (error) {
         console.error("Erro ao buscar dados do usuário:", error);
@@ -67,45 +69,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchUserData();
-
-    // Configurar listener para mudanças no estado de autenticação
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setUser({
-          id: session.user.id,
-          email: session.user.email || '',
-        });
-        
-        // Buscar perfil do usuário
-        const { data: userProfile, error } = await (supabase
-          .from('profiles') as any)
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-          
-        if (userProfile && !error) {
-          setProfile(userProfile);
-          setUser(prev => prev ? { 
-            ...prev, 
-            nome: userProfile.nome,
-            role: userProfile.role,
-            foto_perfil: userProfile.foto_perfil
-          } : null);
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setProfile(null);
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
   }, []);
+
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data: userProfile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (userProfile && !error) {
+        setProfile(userProfile);
+        setUser(prev => prev ? { 
+          ...prev, 
+          nome: userProfile.nome,
+          role: userProfile.role,
+          foto_perfil: userProfile.foto_perfil
+        } : null);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar perfil do usuário:", error);
+    }
+  };
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password,
+        options: {
+          // Garantir que a sessão persista no localStorage
+          persistSession: true
+        }
+      });
+      
       if (error) {
         toast({
           title: "Erro ao fazer login",
@@ -140,7 +138,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             nome: email.split('@')[0],
-          }
+          },
+          // Garantir que a sessão persista
+          persistSession: true
         }
       });
       
@@ -221,8 +221,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: new Error("Usuário não autenticado") };
 
     try {
-      const { error } = await (supabase
-        .from('profiles') as any)
+      const { error } = await supabase
+        .from('profiles')
         .update(data)
         .eq('id', user.id);
 

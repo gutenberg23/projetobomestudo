@@ -43,6 +43,5 @@ export interface Topico {
   id: string;
   nome: string;
   disciplina: string;
-  user_id?: string;
   created_at?: string;
 }
