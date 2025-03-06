@@ -1,129 +1,100 @@
 
-import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { ProfileMenu } from "./ProfileMenu";
-
+import React, { useState } from "react";
+import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
+import { Link, useNavigate } from "react-router-dom";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import logo from "/lovable-uploads/logo.svg";
 export const Header = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
-  const { user, loading } = useAuth();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    // Fechar o menu ao navegar para outra página
-    setIsMenuOpen(false);
-  }, [location.pathname]);
-
-  const NAV_ITEMS = [
-    { label: "Início", href: "/" },
-    { label: "Explorar", href: "/explore" },
-    { label: "Minhas Matrículas", href: "/my-courses" },
-    { label: "Questões", href: "/questions" },
-    { label: "Blog", href: "/blog" },
-  ];
-
-  return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-full ${
-        isScrolled || isMenuOpen
-          ? "bg-white shadow-sm border-b border-gray-200"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="container px-4 md:px-6 py-4 mx-auto">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <img src="/lovable-uploads/logo.svg" alt="BomEstudo" className="h-10" />
-          </Link>
-
-          {/* Menu desktop */}
-          <nav className="hidden md:flex space-x-8">
-            {NAV_ITEMS.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={`text-sm font-medium transition-colors ${
-                  location.pathname === item.href
-                    ? "text-[#ea2be2]"
-                    : "text-[#67748a] hover:text-[#ea2be2]"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-4">
-            {!loading && (
-              <>
-                {user ? (
-                  <ProfileMenu />
-                ) : (
-                  <Button variant="outline" className="hidden md:flex" asChild>
-                    <Link to="/auth">Entrar</Link>
-                  </Button>
-                )}
-              </>
-            )}
-
-            {/* Botão do menu mobile */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </Button>
-          </div>
-        </div>
-
-        {/* Menu mobile */}
-        {isMenuOpen && (
-          <div className="md:hidden mt-4 pb-4">
-            <nav className="flex flex-col space-y-4">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  className={`text-base font-medium transition-colors ${
-                    location.pathname === item.href
-                      ? "text-[#ea2be2]"
-                      : "text-[#67748a] hover:text-[#ea2be2]"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              {!loading && !user && (
-                <Button variant="outline" className="w-full" asChild>
-                  <Link to="/auth">Entrar</Link>
-                </Button>
-              )}
-            </nav>
-          </div>
-        )}
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/explore?search=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+  return <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-[32px]">
+      <div className="flex min-h-[88px] flex-col items-stretch justify-center w-[194px] py-8">
+        <Link to="/">
+          <img loading="lazy" src={logo} alt="Company Logo" className="aspect-[8.06] object-contain w-[194px] md:w-[194px] w-[120px]" />
+        </Link>
       </div>
-    </header>
-  );
+
+      <div className="hidden md:flex items-center space-x-6 mr-6">
+        <Link to="/blog" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+          <Newspaper className="w-4 h-4 px-px" />
+          <span className="font-extralight">Notícias</span>
+        </Link>
+        <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+          <Trophy className="w-4 h-4" />
+          <span className="font-extralight">Concursos</span>
+        </Link>
+      </div>
+
+      <div className="flex items-center gap-2.5">
+        <form onSubmit={handleSearch} className="bg-slate-50 border flex items-center gap-2 max-w-[400px] w-auto px-5 py-[11px] rounded-[5px] border-[rgba(237,240,245,1)] mr-4 hidden md:flex">
+          <input type="text" placeholder="Pesquisar" className="flex-1 bg-transparent text-[15px] text-[#262f3c] outline-none min-w-[200px]" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+          <button type="submit" className="bg-white border flex items-center justify-center w-7 h-7 rounded-[3px] border-[rgba(238,241,246,1)]">
+            <Search className="w-4 h-4" />
+          </button>
+        </form>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-white cursor-pointer">
+              <Menu className="w-6 h-6 text-gray-700" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-64 p-0 border border-gray-100">
+            <div className="p-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-[50px] h-[50px] border-2 border-white">
+                  <AvatarImage src="https://github.com/shadcn.png" />
+                  <AvatarFallback>CN</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium text-gray-900">Carlos Silva</p>
+                  <p className="text-sm text-gray-500">carlos@exemplo.com</p>
+                </div>
+              </div>
+            </div>
+            <nav className="flex flex-col">
+              <Link to="/explore" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                <Compass className="w-4 h-4" />
+                Explorar
+              </Link>
+              <Link to="/my-courses" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Meus Cursos
+              </Link>
+              <Link to="/questions" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Questões
+              </Link>
+              <Link to="/settings" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Configurações
+              </Link>
+              <div className="md:hidden border-t border-gray-100">
+                <Link to="/blog" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <Newspaper className="w-4 h-4" />
+                  Notícias
+                </Link>
+                <Link to="/explore" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <Trophy className="w-4 h-4" />
+                  Concursos
+                </Link>
+              </div>
+              <div className="border-t border-gray-100">
+                <Link to="/" className="px-4 py-3 text-sm font-light text-red-600 hover:bg-slate-50 block flex items-center gap-2">
+                  <LogOut className="w-4 h-4" />
+                  Sair
+                </Link>
+              </div>
+            </nav>
+          </PopoverContent>
+        </Popover>
+      </div>
+    </header>;
 };
