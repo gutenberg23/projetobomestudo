@@ -68,7 +68,7 @@ const Login = () => {
                     Lembrar de mim
                   </Label>
                 </div>
-                <Link to="/esqueci-senha" className="text-sm text-[#ea2be2] hover:underline">
+                <Link to="/esqueci-senha" className="text-sm text-[#5f2ebe] hover:underline">
                   Esqueceu a senha?
                 </Link>
               </div>}
@@ -102,7 +102,7 @@ const Login = () => {
             <span className="text-[#67748a]">
               {isLogin ? "Não tem uma conta?" : "Já tem uma conta?"}
             </span>{" "}
-            <button className="text-[#ea2be2] hover:underline font-medium" onClick={() => setIsLogin(!isLogin)}>
+            <button onClick={() => setIsLogin(!isLogin)} className="text-[#5f2ebe] hover:underline font-medium">
               {isLogin ? "Cadastre-se" : "Entrar"}
             </button>
           </div>
