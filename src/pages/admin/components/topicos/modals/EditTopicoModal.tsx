@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Topico } from "../TopicosTypes";
+import { QuestionsManager } from "./components/QuestionsManager";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface EditTopicoModalProps {
   isOpen: boolean;
@@ -26,6 +29,7 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
   onSave,
 }) => {
   const [editedTopico, setEditedTopico] = useState<Topico | null>(null);
+  const [newQuestaoId, setNewQuestaoId] = useState("");
 
   useEffect(() => {
     if (isOpen && topico) {
@@ -33,10 +37,58 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
     }
   }, [isOpen, topico]);
 
-  const handleSave = () => {
+  const addQuestaoId = () => {
+    if (!editedTopico || !newQuestaoId.trim()) {
+      toast.error("Digite um ID de questão válido");
+      return;
+    }
+
+    if (editedTopico.questoesIds.includes(newQuestaoId)) {
+      toast.error("Esta questão já foi adicionada");
+      return;
+    }
+
+    setEditedTopico({
+      ...editedTopico,
+      questoesIds: [...editedTopico.questoesIds, newQuestaoId]
+    });
+    setNewQuestaoId("");
+  };
+
+  const removeQuestaoId = (index: number) => {
+    if (!editedTopico) return;
+    
+    const updatedQuestoes = [...editedTopico.questoesIds];
+    updatedQuestoes.splice(index, 1);
+    setEditedTopico({
+      ...editedTopico,
+      questoesIds: updatedQuestoes
+    });
+  };
+
+  const handleSave = async () => {
     if (editedTopico) {
-      onSave(editedTopico);
-      onClose();
+      try {
+        // Atualizar no Supabase
+        const { error } = await supabase
+          .from('topicos')
+          .update({ 
+            nome: editedTopico.titulo,
+            disciplina: editedTopico.disciplina,
+            patrocinador: editedTopico.patrocinador,
+            questoes_ids: editedTopico.questoesIds
+          })
+          .eq('id', editedTopico.id);
+
+        if (error) throw error;
+        
+        // Atualizar na interface
+        onSave(editedTopico);
+        toast.success("Tópico atualizado com sucesso!");
+      } catch (error) {
+        console.error("Erro ao atualizar tópico:", error);
+        toast.error("Erro ao atualizar o tópico. Tente novamente.");
+      }
     }
   };
 
@@ -73,6 +125,14 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
               onChange={(e) => setEditedTopico({ ...editedTopico, patrocinador: e.target.value })}
             />
           </div>
+          <QuestionsManager
+            questoesIds={editedTopico.questoesIds}
+            newQuestaoId={newQuestaoId}
+            setNewQuestaoId={setNewQuestaoId}
+            addQuestaoId={addQuestaoId}
+            removeQuestaoId={removeQuestaoId}
+            label="Questões"
+          />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>

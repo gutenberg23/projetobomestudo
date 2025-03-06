@@ -21,8 +21,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 import { Topico } from "./components/topicos/TopicosTypes";
+import { QuestionsManager } from "./components/topicos/modals/components/QuestionsManager";
 
 const Topicos = () => {
   // Obter estados do hook personalizado
@@ -54,9 +54,10 @@ const Topicos = () => {
     questoesIds: [] as string[]
   });
   const [disciplinas, setDisciplinas] = useState<string[]>([]);
-  const [questoes, setQuestoes] = useState<any[]>([]);
   const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
-  const [loadingQuestoes, setLoadingQuestoes] = useState(false);
+  
+  // Estado para gerenciamento de questões
+  const [newQuestaoId, setNewQuestaoId] = useState("");
 
   // Obter tópicos filtrados
   const { topicosFiltrados, todosSelecionados } = useTopicosFiltrados(
@@ -84,11 +85,10 @@ const Topicos = () => {
     setDescricaoNovaAula
   );
 
-  // Buscar dados de disciplinas e questões quando o modal é aberto
+  // Buscar dados de disciplinas quando o modal é aberto
   useEffect(() => {
     if (isCreateModalOpen) {
       fetchDisciplinas();
-      fetchQuestoes();
     }
   }, [isCreateModalOpen]);
 
@@ -148,37 +148,32 @@ const Topicos = () => {
     }
   };
 
-  const fetchQuestoes = async () => {
-    setLoadingQuestoes(true);
-    try {
-      const { data, error } = await supabase
-        .from('questoes')
-        .select('id, content')
-        .limit(20);
-      
-      if (error) throw error;
-      
-      setQuestoes(data || []);
-    } catch (error) {
-      console.error("Erro ao buscar questões:", error);
-      toast.error("Erro ao carregar as questões.");
-    } finally {
-      setLoadingQuestoes(false);
+  // Funções para gerenciar questões
+  const addQuestaoId = () => {
+    if (!newQuestaoId.trim()) {
+      toast.error("Digite um ID de questão válido");
+      return;
     }
+
+    if (newTopico.questoesIds.includes(newQuestaoId)) {
+      toast.error("Esta questão já foi adicionada");
+      return;
+    }
+
+    setNewTopico({
+      ...newTopico,
+      questoesIds: [...newTopico.questoesIds, newQuestaoId]
+    });
+    setNewQuestaoId("");
   };
 
-  const handleQuestoesChange = (questaoId: string) => {
-    if (newTopico.questoesIds.includes(questaoId)) {
-      setNewTopico({
-        ...newTopico,
-        questoesIds: newTopico.questoesIds.filter(id => id !== questaoId)
-      });
-    } else {
-      setNewTopico({
-        ...newTopico,
-        questoesIds: [...newTopico.questoesIds, questaoId]
-      });
-    }
+  const removeQuestaoId = (index: number) => {
+    const updatedQuestoes = [...newTopico.questoesIds];
+    updatedQuestoes.splice(index, 1);
+    setNewTopico({
+      ...newTopico,
+      questoesIds: updatedQuestoes
+    });
   };
 
   const handleCreateTopico = async () => {
@@ -282,21 +277,6 @@ const Topicos = () => {
         temTopicosSelecionados={temTopicosSelecionados}
       />
       
-      {/* Modais de edição e exclusão */}
-      <EditTopicoModal 
-        isOpen={isOpenEdit}
-        onClose={() => setIsOpenEdit(false)}
-        topico={currentTopico}
-        onSave={handleSaveTopico}
-      />
-      
-      <DeleteTopicoModal 
-        isOpen={isOpenDelete}
-        onClose={() => setIsOpenDelete(false)}
-        topico={currentTopico}
-        onDelete={handleDeleteTopico}
-      />
-
       {/* Modal de criação de tópico */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent className="max-w-2xl">
@@ -349,29 +329,34 @@ const Topicos = () => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label>Questões</Label>
-              {loadingQuestoes ? (
-                <div className="text-sm text-[#67748a] p-4 border rounded flex items-center justify-center">
-                  Carregando questões...
-                </div>
-              ) : (
-                <div className="max-h-60 overflow-y-auto border rounded p-2">
-                  <CheckboxGroup
-                    title=""
-                    options={questoes.map(q => `${q.id} - ${q.content.substring(0, 50)}...`)}
-                    selectedValues={newTopico.questoesIds}
-                    onChange={handleQuestoesChange}
-                    placeholder="Selecione as questões"
-                  />
-                </div>
-              )}
-            </div>
+            <QuestionsManager
+              questoesIds={newTopico.questoesIds}
+              newQuestaoId={newQuestaoId}
+              setNewQuestaoId={setNewQuestaoId}
+              addQuestaoId={addQuestaoId}
+              removeQuestaoId={removeQuestaoId}
+              label="Questões"
+            />
             
             <Button onClick={handleCreateTopico} className="w-full">Cadastrar Tópico</Button>
           </div>
         </DialogContent>
       </Dialog>
+      
+      {/* Modais de edição e exclusão */}
+      <EditTopicoModal 
+        isOpen={isOpenEdit}
+        onClose={() => setIsOpenEdit(false)}
+        topico={currentTopico}
+        onSave={handleSaveTopico}
+      />
+      
+      <DeleteTopicoModal 
+        isOpen={isOpenDelete}
+        onClose={() => setIsOpenDelete(false)}
+        topico={currentTopico}
+        onDelete={handleDeleteTopico}
+      />
     </div>
   );
 };
