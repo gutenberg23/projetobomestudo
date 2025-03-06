@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { QuestionItemType } from "../../types";
 import { useAuth } from "@/contexts/AuthContext";
+import { Json } from "@/integrations/supabase/types";
 
 export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
   const { user } = useAuth();
@@ -77,7 +78,7 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
         teacherexplanation: teacherExplanation,
         aiexplanation: aiExplanation,
         expandablecontent: expandableContent,
-        options,
+        options: options as unknown as Json, // Forçar a conversão para Json
         topicos,
         user_id: user.id
       };

@@ -1,6 +1,7 @@
 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 
 export const useUpdateQuestionActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
   const handleUpdateQuestion = async () => {
@@ -68,7 +69,7 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
         teacherexplanation: teacherExplanation,
         aiexplanation: aiExplanation,
         expandablecontent: expandableContent,
-        options,
+        options: options as unknown as Json, // Forçar a conversão para Json
         topicos,
         updated_at: new Date()
       };

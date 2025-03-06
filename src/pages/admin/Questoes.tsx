@@ -162,7 +162,7 @@ const Questoes: React.FC = () => {
           toggleQuestionSelection={actions.toggleQuestionSelection}
           handleCreateSimulado={actions.handleCreateSimulado}
           handleRemoveQuestion={actions.handleRemoveQuestion}
-          handleEditQuestion={(question) => actions.handleEditQuestion(question.id)}
+          handleEditQuestion={actions.handleEditQuestion}
           copyToClipboard={actions.copyToClipboard}
         />
       </Card>
