@@ -9,8 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Edit, Trash } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { PlusCircle, Edit, Trash, Plus } from "lucide-react";
 
 interface TopicosFieldProps {
   disciplina: string;
@@ -23,7 +22,6 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
   topicos,
   setTopicos
 }) => {
-  const { user } = useAuth();
   const [topicosList, setTopicosList] = useState<Topico[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -42,6 +40,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
 
       setLoading(true);
       try {
+        console.log("Buscando tópicos para disciplina:", disciplina);
         const { data, error } = await supabase
           .from('topicos')
           .select('*')
@@ -51,6 +50,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
           throw error;
         }
 
+        console.log("Tópicos retornados:", data);
         setTopicosList(data || []);
       } catch (error) {
         console.error("Erro ao buscar tópicos:", error);
@@ -74,11 +74,6 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
   const handleAddTopico = async () => {
     if (!newTopicoNome.trim()) {
       toast.error("O nome do tópico não pode estar vazio");
-      return;
-    }
-
-    if (!user) {
-      toast.error("Você precisa estar logado para adicionar tópicos");
       return;
     }
 
@@ -110,11 +105,6 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
   const handleEditTopico = async () => {
     if (!currentTopico || !newTopicoNome.trim()) {
       toast.error("O nome do tópico não pode estar vazio");
-      return;
-    }
-
-    if (!user) {
-      toast.error("Você precisa estar logado para editar tópicos");
       return;
     }
 
@@ -154,11 +144,6 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
   const handleDeleteTopico = async () => {
     if (!currentTopico) return;
 
-    if (!user) {
-      toast.error("Você precisa estar logado para excluir tópicos");
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('topicos')
@@ -196,158 +181,35 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
           Tópicos
         </label>
         <div className="flex gap-2">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1"
-                title="Adicionar novo tópico"
-              >
-                <PlusCircle className="h-4 w-4" />
-                <span>Adicionar</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Adicionar Novo Tópico</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="topico-nome">Nome do Tópico</Label>
-                  <Input
-                    id="topico-nome"
-                    value={newTopicoNome}
-                    onChange={(e) => setNewTopicoNome(e.target.value)}
-                    placeholder="Digite o nome do tópico"
-                  />
-                </div>
-                <Button onClick={handleAddTopico} className="w-full">Adicionar Tópico</Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1"
-                disabled={!topicosList.length}
-                title="Editar tópico"
-              >
-                <Edit className="h-4 w-4" />
-                <span>Editar</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Editar Tópico</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="topico-select">Selecione o Tópico</Label>
-                  <Select
-                    onValueChange={(value) => {
-                      const selected = topicosList.find(t => t.id === value);
-                      if (selected) {
-                        setCurrentTopico(selected);
-                        setNewTopicoNome(selected.nome);
-                      }
-                    }}
-                    value={currentTopico?.id || ""}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione um tópico" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {topicosList.map(topico => (
-                        <SelectItem key={topico.id} value={topico.id}>
-                          {topico.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {currentTopico && (
-                  <div className="space-y-2">
-                    <Label htmlFor="novo-nome-topico">Novo Nome</Label>
-                    <Input
-                      id="novo-nome-topico"
-                      value={newTopicoNome}
-                      onChange={(e) => setNewTopicoNome(e.target.value)}
-                      placeholder="Digite o novo nome"
-                    />
-                  </div>
-                )}
-                <Button 
-                  onClick={handleEditTopico} 
-                  className="w-full"
-                  disabled={!currentTopico}
-                >
-                  Salvar Alterações
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-1 text-red-500"
-                disabled={!topicosList.length}
-                title="Excluir tópico"
-              >
-                <Trash className="h-4 w-4" />
-                <span>Excluir</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Excluir Tópico</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="topico-delete-select">Selecione o Tópico para Excluir</Label>
-                  <Select
-                    onValueChange={(value) => {
-                      const selected = topicosList.find(t => t.id === value);
-                      if (selected) {
-                        setCurrentTopico(selected);
-                      }
-                    }}
-                    value={currentTopico?.id || ""}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Selecione um tópico" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {topicosList.map(topico => (
-                        <SelectItem key={topico.id} value={topico.id}>
-                          {topico.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {currentTopico && (
-                  <p className="text-red-500">
-                    Tem certeza que deseja excluir o tópico "{currentTopico.nome}"?
-                    Esta ação não pode ser desfeita.
-                  </p>
-                )}
-                <Button 
-                  onClick={handleDeleteTopico} 
-                  className="w-full bg-red-500 hover:bg-red-600"
-                  disabled={!currentTopico}
-                >
-                  Confirmar Exclusão
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setIsAddDialogOpen(true)}
+            title="Adicionar"
+            type="button"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setIsEditDialogOpen(true)}
+            disabled={!topicosList.length}
+            title="Editar"
+            type="button"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            disabled={!topicosList.length}
+            title="Excluir"
+            type="button"
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -368,6 +230,127 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
           placeholder="Selecione os tópicos"
         />
       )}
+
+      {/* Dialog para adicionar tópico */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Novo Tópico</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="topico-nome">Nome do Tópico</Label>
+              <Input
+                id="topico-nome"
+                value={newTopicoNome}
+                onChange={(e) => setNewTopicoNome(e.target.value)}
+                placeholder="Digite o nome do tópico"
+              />
+            </div>
+            <Button onClick={handleAddTopico} className="w-full">Adicionar Tópico</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para editar tópico */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tópico</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="topico-select">Selecione o Tópico</Label>
+              <Select
+                onValueChange={(value) => {
+                  const selected = topicosList.find(t => t.id === value);
+                  if (selected) {
+                    setCurrentTopico(selected);
+                    setNewTopicoNome(selected.nome);
+                  }
+                }}
+                value={currentTopico?.id || ""}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um tópico" />
+                </SelectTrigger>
+                <SelectContent>
+                  {topicosList.map(topico => (
+                    <SelectItem key={topico.id} value={topico.id}>
+                      {topico.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {currentTopico && (
+              <div className="space-y-2">
+                <Label htmlFor="novo-nome-topico">Novo Nome</Label>
+                <Input
+                  id="novo-nome-topico"
+                  value={newTopicoNome}
+                  onChange={(e) => setNewTopicoNome(e.target.value)}
+                  placeholder="Digite o novo nome"
+                />
+              </div>
+            )}
+            <Button 
+              onClick={handleEditTopico} 
+              className="w-full"
+              disabled={!currentTopico}
+            >
+              Salvar Alterações
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para excluir tópico */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir Tópico</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="topico-delete-select">Selecione o Tópico para Excluir</Label>
+              <Select
+                onValueChange={(value) => {
+                  const selected = topicosList.find(t => t.id === value);
+                  if (selected) {
+                    setCurrentTopico(selected);
+                  }
+                }}
+                value={currentTopico?.id || ""}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecione um tópico" />
+                </SelectTrigger>
+                <SelectContent>
+                  {topicosList.map(topico => (
+                    <SelectItem key={topico.id} value={topico.id}>
+                      {topico.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {currentTopico && (
+              <p className="text-red-500">
+                Tem certeza que deseja excluir o tópico "{currentTopico.nome}"?
+                Esta ação não pode ser desfeita.
+              </p>
+            )}
+            <Button 
+              onClick={handleDeleteTopico} 
+              className="w-full bg-red-500 hover:bg-red-600"
+              disabled={!currentTopico}
+            >
+              Confirmar Exclusão
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
