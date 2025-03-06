@@ -17,7 +17,7 @@ const UserStats: React.FC<UserStatsProps> = ({
       </div>
       <div className="bg-white p-4 rounded-lg shadow">
         <h3 className="text-lg font-medium text-[#272f3c] mb-2">Usuários Ativos</h3>
-        <p className="text-3xl font-bold text-green-500">{usuariosAtivos}</p>
+        <p className="text-3xl font-bold text-primary-DEFAULT">{usuariosAtivos}</p>
       </div>
       <div className="bg-white p-4 rounded-lg shadow">
         <h3 className="text-lg font-medium text-[#272f3c] mb-2">Usuários Inativos</h3>
