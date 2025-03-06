@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -44,39 +43,34 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
         setResponsiveHeight(calculatedHeight);
       }
     };
-
     handleResize();
-
     window.addEventListener('resize', handleResize);
-
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
   const SocialMediaIcons = () => {
     return <div className="flex items-center gap-3">
         {teacher.socialMedia.youtube && <a href={teacher.socialMedia.youtube} target="_blank" rel="noopener noreferrer" aria-label="Youtube">
-            <Youtube className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
+            <Youtube className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
         {teacher.socialMedia.instagram && <a href={teacher.socialMedia.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-            <Instagram className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
+            <Instagram className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
         {teacher.socialMedia.telegram && <a href={teacher.socialMedia.telegram} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
-            <MessageCircle className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
+            <MessageCircle className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
         {teacher.socialMedia.facebook && <a href={teacher.socialMedia.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-            <Facebook className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
+            <Facebook className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
         {teacher.socialMedia.twitter && <a href={teacher.socialMedia.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-            <Twitter className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
+            <Twitter className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
         {teacher.socialMedia.website && <a href={teacher.socialMedia.website} target="_blank" rel="noopener noreferrer" aria-label="Website">
             <Globe className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
           </a>}
       </div>;
   };
-
   return <div className="video-container w-full">
       <div className="aspect-video bg-slate-200 rounded-xl relative" style={{
       height: responsiveHeight || 'auto'
@@ -92,7 +86,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
               </Avatar>
               <div className="text-center sm:text-left">
                 <h3 className="font-medium text-white">{teacher.name}</h3>
-                <p className="text-sm text-white/80">Professor</p>
+                <p className="text-sm text-white/80 font-extralight">Professor</p>
               </div>
             </div>
           </div>
