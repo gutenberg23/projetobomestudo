@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from "react";
@@ -22,7 +23,7 @@ export const LessonHeader: React.FC<LessonHeaderProps> = ({
       <div className="flex justify-between px-5 w-full min-h-[70px]">
         <div className="flex flex-wrap flex-1 shrink justify-between items-center basis-0 min-w-60">
           <div className="flex items-center gap-4 flex-1">
-            <div onClick={toggleLessonCompletion} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${isLessonCompleted ? "bg-[#F11CE3] border-[#F11CE3]" : "bg-white border border-gray-200"}`}>
+            <div onClick={toggleLessonCompletion} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${isLessonCompleted ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
               {isLessonCompleted && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
                   <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>}

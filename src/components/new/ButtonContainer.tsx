@@ -2,6 +2,7 @@
 "use client";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
+import { FileText, File, Folder, BookOpen } from "lucide-react";
 
 interface ButtonContainerProps {
   setShowQuestions: (show: boolean) => void;
