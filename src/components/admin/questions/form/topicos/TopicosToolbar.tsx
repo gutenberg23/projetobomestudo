@@ -20,32 +20,38 @@ const TopicosToolbar: React.FC<TopicosToolbarProps> = ({
     <div className="flex gap-2">
       <Button 
         variant="outline" 
-        size="icon"
+        size="sm"
         onClick={onAdd}
         title="Adicionar"
         type="button"
+        className="flex items-center gap-1"
       >
         <Plus className="h-4 w-4" />
+        Adicionar
       </Button>
       <Button 
         variant="outline" 
-        size="icon"
+        size="sm"
         onClick={onEdit}
         disabled={!topicosList.length}
         title="Editar"
         type="button"
+        className="flex items-center gap-1"
       >
         <Edit className="h-4 w-4" />
+        Editar
       </Button>
       <Button 
         variant="outline" 
-        size="icon"
+        size="sm"
         onClick={onDelete}
         disabled={!topicosList.length}
         title="Excluir"
         type="button"
+        className="flex items-center gap-1"
       >
         <Trash className="h-4 w-4" />
+        Excluir
       </Button>
     </div>
   );
