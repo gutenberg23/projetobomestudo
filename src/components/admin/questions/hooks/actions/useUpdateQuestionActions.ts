@@ -71,7 +71,7 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
         expandablecontent: expandableContent,
         options: options as unknown as Json, // Forçar a conversão para Json
         topicos,
-        updated_at: new Date()
+        updated_at: new Date().toISOString() // Converter Date para string ISO
       };
 
       // Atualizar no banco de dados
