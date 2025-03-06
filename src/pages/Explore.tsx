@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -6,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Search, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 
 // Dados fictícios para demonstração
 const MOCK_COURSES = [{
@@ -31,6 +30,7 @@ const MOCK_COURSES = [{
   topics: 8,
   lessons: 16
 }];
+
 const MOCK_SUBJECTS = [{
   id: "1",
   title: "Direito Administrativo",
@@ -53,6 +53,7 @@ const MOCK_SUBJECTS = [{
   topics: 9,
   lessons: 18
 }];
+
 interface ItemProps {
   id: string;
   title: string;
@@ -61,7 +62,9 @@ interface ItemProps {
   topics: number;
   lessons: number;
   onToggleFavorite: (id: string) => void;
+  isSubject?: boolean;
 }
+
 const ResultItem: React.FC<ItemProps> = ({
   id,
   title,
@@ -69,12 +72,15 @@ const ResultItem: React.FC<ItemProps> = ({
   isFavorite,
   topics,
   lessons,
-  onToggleFavorite
+  onToggleFavorite,
+  isSubject = false
 }) => {
-  return <div className="flex justify-between items-center p-4 border-b border-gray-100">
+  return (
+    <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
-        <h3 className="text-[#272f3c] mb-0 leading-none text-xl font-bold">{title}</h3>
-        
+        <Link to={isSubject ? `/subject/${id}` : `/course/${id}`} className="block">
+          <h3 className="text-[#272f3c] mb-0 leading-none text-xl font-bold hover:text-[#5f2ebe] transition-colors">{title}</h3>
+        </Link>
       </div>
       <div className="flex items-center">
         <div className="text-right mr-4">
@@ -85,8 +91,10 @@ const ResultItem: React.FC<ItemProps> = ({
           <Star className={`h-5 w-5 ${isFavorite ? "fill-[#ea2be2] text-[#ea2be2]" : "text-gray-400"}`} />
         </Button>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 const Explore = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
@@ -95,7 +103,6 @@ const Explore = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Extrair parâmetro de pesquisa da URL quando a página carrega
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const searchQuery = searchParams.get('search');
@@ -125,7 +132,10 @@ const Explore = () => {
     }
   };
 
-  const filteredData = showSubjects ? subjects.filter(subject => subject.title.toLowerCase().includes(searchTerm.toLowerCase())) : courses.filter(course => course.title.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredData = showSubjects 
+    ? subjects.filter(subject => subject.title.toLowerCase().includes(searchTerm.toLowerCase())) 
+    : courses.filter(course => course.title.toLowerCase().includes(searchTerm.toLowerCase()));
+
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
@@ -162,7 +172,17 @@ const Explore = () => {
 
         <div className="bg-white rounded-lg overflow-hidden">
           <div className="divide-y divide-gray-100">
-            {filteredData.length > 0 ? filteredData.map(item => <ResultItem key={item.id} id={item.id} title={item.title} description={item.description} isFavorite={item.isFavorite} topics={item.topics} lessons={item.lessons} onToggleFavorite={handleToggleFavorite} />) : <div className="p-8 text-center text-gray-500">
+            {filteredData.length > 0 ? filteredData.map(item => <ResultItem 
+              key={item.id} 
+              id={item.id} 
+              title={item.title} 
+              description={item.description} 
+              isFavorite={item.isFavorite} 
+              topics={item.topics} 
+              lessons={item.lessons} 
+              onToggleFavorite={handleToggleFavorite}
+              isSubject={showSubjects}
+            />) : <div className="p-8 text-center text-gray-500">
                 Nenhum resultado encontrado para "{searchTerm}"
               </div>}
           </div>
@@ -171,4 +191,5 @@ const Explore = () => {
       <Footer />
     </div>;
 };
+
 export default Explore;
