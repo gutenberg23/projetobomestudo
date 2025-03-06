@@ -123,7 +123,7 @@ export const PricingPlans = () => {
           </CardContent>
           
           <CardFooter className="flex justify-center pb-8">
-            <Link to="/login" className="w-full py-[15px]">
+            <Link to="/login" className="w-full px-[4px] py-[25px]">
               <Button variant="hero" className="w-full py-[15px]">
                 Assinar agora
               </Button>

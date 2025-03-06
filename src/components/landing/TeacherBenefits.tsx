@@ -44,7 +44,7 @@ export const TeacherBenefits = () => {
             </div>
             
             <div className="pt-4 sm:pt-6">
-              <Link to="/teacher-signup">
+              <Link to="/teacher-signup" className="py-[18px] px-[20px]">
                 <Button variant="hero" className="w-auto px-5">
                   QUERO SER PROFESSOR
                 </Button>
