@@ -1,55 +1,42 @@
 
-import React from 'react';
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { renderDonutChart } from '../utils/donutChart';
+import React from "react";
+import { Link } from "react-router-dom";
 
 interface SubjectCardProps {
-  subject: {
-    name: string;
-    progress: number;
-    questionsTotal: number;
-    questionsCorrect: number;
-    questionsWrong: number;
-  };
-  isExpanded: boolean;
-  onToggle: () => void;
+  title: string;
+  description: string;
+  lessonsCount: number;
+  progress: number;
+  courseId?: string;
+  subjectId: string;
 }
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
-  subject,
-  isExpanded,
-  onToggle
+  title,
+  description,
+  lessonsCount,
+  progress,
+  courseId,
+  subjectId
 }) => {
-  return <div className="bg-[rgba(246,248,250,1)] rounded-[10px]">
-      <div className="p-4 cursor-pointer" onClick={onToggle}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative flex items-center justify-center">
-              {renderDonutChart(subject.progress)}
-              <span className="absolute text-xs font-medium">{subject.progress}%</span>
-            </div>
-            <span className="font-medium text-[rgba(38,47,60,1)]">{subject.name}</span>
-          </div>
-          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+  return (
+    <Link to={`/course/${courseId}/subject/${subjectId}`} className="block">
+      <div className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+        <h3 className="text-[#272f3c] font-bold text-xl mb-2">{title}</h3>
+        <p className="text-[#67748a] mb-4 text-sm line-clamp-2">{description}</p>
+        
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs text-[#67748a]">{lessonsCount} aulas</span>
+          <span className="text-xs font-medium text-[#5f2ebe]">{progress}% concluído</span>
+        </div>
+        
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="bg-[#5f2ebe] h-2 rounded-full"
+            style={{ width: `${progress}%` }}
+          ></div>
         </div>
       </div>
-      
-      {isExpanded && <div className="px-4 pb-4 space-y-2">
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="bg-white p-2 rounded">
-              <div className="text-gray-600">Total</div>
-              <div className="font-semibold">{subject.questionsTotal}</div>
-            </div>
-            <div className="bg-white p-2 rounded">
-              <div className="text-green-600">Acertos</div>
-              <div className="font-semibold text-green-600">{subject.questionsCorrect}</div>
-            </div>
-            <div className="bg-white p-2 rounded">
-              <div className="text-red-600">Erros</div>
-              <div className="font-semibold text-red-600">{subject.questionsWrong}</div>
-            </div>
-          </div>
-        </div>}
-    </div>;
+    </Link>
+  );
 };
-

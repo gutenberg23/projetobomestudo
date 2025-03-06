@@ -1,133 +1,101 @@
-"use client";
 
-import React, { useEffect, useState } from "react";
-import { ProgressSummary } from "./components/ProgressSummary";
-import { SubjectCard } from "./components/SubjectCard";
+import React from "react";
 
-export const ProgressPanel = () => {
-  const [expandedSubject, setExpandedSubject] = React.useState<string | null>(null);
-  const [completedLessons, setCompletedLessons] = useState<number>(0);
-  const [totalLessons, setTotalLessons] = useState<number>(0);
+interface ProgressPanelProps {
+  courseId?: string;
+}
 
-  const subjects = [{
-    name: "Língua Portuguesa",
-    rating: 10,
-    progress: 75,
-    questionsTotal: 100,
-    questionsCorrect: 75,
-    questionsWrong: 25
-  }, {
-    name: "Matemática",
-    rating: 10,
-    progress: 60,
-    questionsTotal: 80,
-    questionsCorrect: 48,
-    questionsWrong: 32
-  }, {
-    name: "Direito Constitucional",
-    rating: 10,
-    progress: 90,
-    questionsTotal: 120,
-    questionsCorrect: 108,
-    questionsWrong: 12
-  }, {
-    name: "Direito Administrativo",
-    rating: 9,
-    progress: 45,
-    questionsTotal: 90,
-    questionsCorrect: 40,
-    questionsWrong: 50
-  }, {
-    name: "Direito Tributário",
-    rating: 9,
-    progress: 30,
-    questionsTotal: 70,
-    questionsCorrect: 21,
-    questionsWrong: 49
-  }, {
-    name: "Administração Pública",
-    rating: 9,
-    progress: 55,
-    questionsTotal: 85,
-    questionsCorrect: 47,
-    questionsWrong: 38
-  }, {
-    name: "Administração Geral",
-    rating: 8,
-    progress: 40,
-    questionsTotal: 75,
-    questionsCorrect: 30,
-    questionsWrong: 45
-  }, {
-    name: "Legislação Específica",
-    rating: 8,
-    progress: 25,
-    questionsTotal: 60,
-    questionsCorrect: 15,
-    questionsWrong: 45
-  }, {
-    name: "Direito Econômico",
-    rating: 8,
-    progress: 35,
-    questionsTotal: 65,
-    questionsCorrect: 23,
-    questionsWrong: 42
-  }, {
-    name: "Raciocínio Lógico",
-    rating: 7,
-    progress: 50,
-    questionsTotal: 70,
-    questionsCorrect: 35,
-    questionsWrong: 35
-  }];
-
-  useEffect(() => {
-    const allCheckboxes = document.querySelectorAll('.subject-checkbox:checked');
-    setCompletedLessons(allCheckboxes.length);
-    
-    const totalAvailableLessons = subjects.reduce((acc, subject) => acc + 1, 0);
-    setTotalLessons(totalAvailableLessons);
-  }, [subjects]);
-
-  const progressPercentage = Math.round((completedLessons / totalLessons) * 100);
-
-  const totalQuestions = subjects.reduce(
-    (total, subject) => total + subject.questionsTotal,
-    0
-  );
-  const totalCorrectAnswers = subjects.reduce(
-    (total, subject) => total + subject.questionsCorrect,
-    0
-  );
-  const totalWrongAnswers = subjects.reduce(
-    (total, subject) => total + subject.questionsWrong,
-    0
-  );
-
+export const ProgressPanel: React.FC<ProgressPanelProps> = ({ courseId }) => {
+  // Aqui poderíamos fazer uma chamada para API para buscar o progresso do curso
+  console.log("Carregando progresso para o curso:", courseId);
+  
   return (
-    <div className="bg-white rounded-[10px] space-y-4 p-5">
-      <h2 className="text-2xl font-bold text-[rgba(38,47,60,1)]">
-        Meu Progresso
-      </h2>
-
-      <ProgressSummary
-        totalCompletedSections={completedLessons}
-        totalSections={totalLessons}
-        progressPercentage={progressPercentage}
-        totalQuestions={totalQuestions}
-        totalCorrectAnswers={totalCorrectAnswers}
-        totalWrongAnswers={totalWrongAnswers}
-      />
-
-      <div className="space-y-2">
-        {subjects.map(subject => (
-          <SubjectCard
-            key={subject.name}
-            subject={subject}
-            isExpanded={expandedSubject === subject.name}
-            onToggle={() => setExpandedSubject(expandedSubject === subject.name ? null : subject.name)}
-          />
-        ))}
+    <div className="bg-white p-6 rounded-lg shadow-sm h-fit sticky top-24">
+      <h2 className="text-[#272f3c] font-bold text-xl mb-4">Seu Progresso</h2>
+      
+      <div className="mb-6">
+        <div className="flex justify-between mb-1">
+          <span className="text-sm text-[#67748a]">Progresso Geral</span>
+          <span className="text-sm font-medium text-[#5f2ebe]">45%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="bg-[#5f2ebe] h-2 rounded-full" style={{ width: "45%" }}></div>
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-sm text-[#67748a]">Aulas Assistidas</span>
+            <span className="text-sm font-medium text-[#5f2ebe]">25/56</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-[#5f2ebe] h-2 rounded-full" style={{ width: "45%" }}></div>
+          </div>
+        </div>
+        
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-sm text-[#67748a]">Questões Respondidas</span>
+            <span className="text-sm font-medium text-[#5f2ebe]">120/350</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-[#5f2ebe] h-2 rounded-full" style={{ width: "34%" }}></div>
+          </div>
+        </div>
+        
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-sm text-[#67748a]">Simulados Realizados</span>
+            <span className="text-sm font-medium text-[#5f2ebe]">3/10</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-[#5f2ebe] h-2 rounded-full" style={{ width: "30%" }}></div>
+          </div>
+        </div>
+      </div>
+      
+      <hr className="my-6" />
+      
+      <div>
+        <h3 className="text-[#272f3c] font-bold text-md mb-3">Próximas Aulas</h3>
+        <ul className="space-y-3">
+          <li className="flex items-center p-2 rounded-md hover:bg-gray-50 transition-colors">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[#272f3c] truncate">Português: Concordância Verbal</p>
+              <p className="text-xs text-[#67748a]">Duração: 45min</p>
+            </div>
+            <div className="flex-shrink-0 ml-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#ede7f9] text-[#5f2ebe]">
+                Continuar
+              </span>
+            </div>
+          </li>
+          
+          <li className="flex items-center p-2 rounded-md hover:bg-gray-50 transition-colors">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[#272f3c] truncate">Matemática: Frações</p>
+              <p className="text-xs text-[#67748a]">Duração: 60min</p>
+            </div>
+            <div className="flex-shrink-0 ml-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                Iniciar
+              </span>
+            </div>
+          </li>
+          
+          <li className="flex items-center p-2 rounded-md hover:bg-gray-50 transition-colors">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[#272f3c] truncate">Direito Constitucional: Princípios</p>
+              <p className="text-xs text-[#67748a]">Duração: 50min</p>
+            </div>
+            <div className="flex-shrink-0 ml-2">
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                Iniciar
+              </span>
+            </div>
+          </li>
+        </ul>
       </div>
     </div>
   );

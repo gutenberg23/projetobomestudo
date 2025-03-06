@@ -1,152 +1,104 @@
 
 import React from "react";
-import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { OverallStats, Subject } from "../types/editorialized";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
+import { ProgressSummary } from "./ProgressSummary";
+import { Subject } from "../types/editorialized";
 
 interface DashboardSummaryProps {
-  overallStats: OverallStats;
+  overallStats: {
+    topicsCount: number;
+    topicsDone: number;
+    averagePerformance: number;
+  };
   performanceGoal: number;
-  setPerformanceGoal: (value: number) => void;
-  activeTab: string;
+  setPerformanceGoal: (goal: number) => void;
+  activeTab?: string;
   subjects: Subject[];
 }
 
-export const DashboardSummary = ({
+export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
   overallStats,
   performanceGoal,
   setPerformanceGoal,
   activeTab,
   subjects
-}: DashboardSummaryProps) => {
-  const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
-  const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
-  const [examDate, setExamDate] = React.useState<Date>();
-  
-  const daysUntilExam = React.useMemo(() => {
-    if (!examDate) return null;
-    const today = new Date();
-    const days = differenceInDays(examDate, today);
-    return days >= 0 ? days : null;
-  }, [examDate]);
-  
-  return <div className="mb-8 p-5 bg-white rounded-[10px]">
-      <div className="flex flex-col gap-4 mb-4 text-[#272f3c]">
-        <h3 className="text-2xl font-bold">Resumo Geral</h3>
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-gray-600">Meta de Aproveitamento:</span>
-            <Input type="number" min="1" max="100" value={performanceGoal} onChange={e => setPerformanceGoal(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))} className="w-20 text-center" />
-            <span className="text-sm text-gray-600">%</span>
+}) => {
+  return (
+    <div className="py-6">
+      <h2 className="text-2xl font-bold text-[#272f3c] mb-4">
+        {activeTab === 'edital' ? 'Sumário do Edital' : 'Simulados Disponíveis'}
+      </h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="bg-white p-5 rounded-lg shadow-sm">
+          <h3 className="text-lg font-bold text-[#272f3c] mb-2">
+            {activeTab === 'edital' ? 'Progresso do Edital' : 'Status dos Simulados'}
+          </h3>
+          <p className="text-[#67748a] mb-4 text-sm">
+            {activeTab === 'edital' 
+              ? 'Seu progresso atual no estudo do edital.'
+              : 'Status atual dos seus simulados realizados.'}
+          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-[#67748a] text-sm">Tópicos estudados</p>
+              <p className="text-2xl font-bold text-[#272f3c]">
+                {overallStats.topicsDone}/{overallStats.topicsCount}
+              </p>
+            </div>
+            <ProgressSummary 
+              progress={Math.round((overallStats.topicsDone / Math.max(1, overallStats.topicsCount)) * 100)} 
+            />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-gray-600">Data da Prova:</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-[200px] justify-start text-left font-normal", !examDate && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {examDate ? format(examDate, "PPP", {
-                  locale: ptBR
-                }) : "Selecione uma data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={examDate} onSelect={setExamDate} initialFocus locale={ptBR} />
-              </PopoverContent>
-            </Popover>
+        </div>
+
+        <div className="bg-white p-5 rounded-lg shadow-sm">
+          <h3 className="text-lg font-bold text-[#272f3c] mb-2">Desempenho Médio</h3>
+          <p className="text-[#67748a] mb-4 text-sm">
+            {activeTab === 'edital' 
+              ? 'Seu desempenho médio nos exercícios.'
+              : 'Seu desempenho médio nos simulados.'}
+          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <p className="text-[#67748a] text-sm">Performance</p>
+              <p className="text-2xl font-bold text-[#272f3c]">
+                {overallStats.averagePerformance.toFixed(1)}%
+              </p>
+            </div>
+            <ProgressSummary 
+              progress={overallStats.averagePerformance} 
+              performanceGoal={performanceGoal}
+            />
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-lg shadow-sm">
+          <h3 className="text-lg font-bold text-[#272f3c] mb-2">Meta de Desempenho</h3>
+          <p className="text-[#67748a] mb-4 text-sm">
+            Defina sua meta de desempenho para os estudos.
+          </p>
+          <div>
+            <label htmlFor="performanceGoal" className="text-[#67748a] text-sm">
+              Meta de acertos: {performanceGoal}%
+            </label>
+            <input
+              id="performanceGoal"
+              type="range"
+              min="50"
+              max="100"
+              step="5"
+              value={performanceGoal}
+              onChange={(e) => setPerformanceGoal(parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
+            />
+            <div className="flex justify-between text-xs text-[#67748a] mt-1">
+              <span>50%</span>
+              <span>75%</span>
+              <span>100%</span>
+            </div>
           </div>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {activeTab === 'edital' ? <>
-            <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Evolução Geral</span>
-                <span className="font-semibold">{overallProgress}%</span>
-              </div>
-              <Progress value={overallProgress} className="h-2 bg-gray-200">
-                <div className="h-full bg-[#ea2be2]" style={{
-              width: `${overallProgress}%`
-            }} />
-              </Progress>
-            </div>
-            <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Aulas Concluídas</span>
-                  <span className="font-semibold">{overallStats.completedTopics}/{overallStats.totalTopics}</span>
-                </div>
-                {daysUntilExam !== null && <div className="flex justify-between">
-                    <span className="text-gray-600">Dias até a prova</span>
-                    <span className="font-semibold text-blue-600">{daysUntilExam}</span>
-                  </div>}
-              </div>
-            </div>
-            <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Acertos</span>
-                  <span className="font-semibold text-green-600">{overallStats.totalHits}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Erros</span>
-                  <span className="font-semibold text-red-600">{overallStats.totalErrors}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Aproveitamento</span>
-                  <span className="font-semibold">{overallPerformance}%</span>
-                </div>
-              </div>
-            </div>
-          </> : <>
-            <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Simulados Realizados</span>
-                <span className="font-semibold">2</span>
-              </div>
-              <Progress value={100} className="h-2 bg-gray-200">
-                <div className="h-full bg-[#ea2be2]" style={{
-              width: `100%`
-            }} />
-              </Progress>
-            </div>
-            <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Questões Respondidas</span>
-                  <span className="font-semibold">150</span>
-                </div>
-                {daysUntilExam !== null && <div className="flex justify-between">
-                    <span className="text-gray-600">Dias até a prova</span>
-                    <span className="font-semibold text-blue-600">{daysUntilExam}</span>
-                  </div>}
-              </div>
-            </div>
-            <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Acertos</span>
-                  <span className="font-semibold text-green-600">117</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Erros</span>
-                  <span className="font-semibold text-red-600">33</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Aproveitamento</span>
-                  <span className="font-semibold">{Math.round(117 / 150 * 100)}%</span>
-                </div>
-              </div>
-            </div>
-          </>}
-      </div>
-    </div>;
+    </div>
+  );
 };
