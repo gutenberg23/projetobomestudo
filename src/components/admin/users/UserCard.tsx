@@ -27,7 +27,7 @@ const UserCard: React.FC<UserCardProps> = ({
         <div className="flex items-center space-x-3">
           <Avatar>
             <AvatarImage src={usuario.fotoPerfil} />
-            <AvatarFallback className="bg-[#ea2be2] text-white">
+            <AvatarFallback className="bg-[#5f2ebe] text-white">
               {usuario.nome.substring(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
