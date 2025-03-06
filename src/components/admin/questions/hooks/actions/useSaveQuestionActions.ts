@@ -15,7 +15,7 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
       aiExplanation, expandableContent, options, questions, setQuestions, 
       setQuestionId, setYear, setInstitution, setOrganization, setRole, 
       setDiscipline, setLevel, setDifficulty, setQuestionType, setQuestionText, 
-      setTeacherExplanation, setAIExplanation, setOptions, topicos, setTopicos
+      setTeacherExplanation, setAIExplanation, setOptions, topicos, setTopicos, setExpandableContent
     } = state;
 
     if (
@@ -72,11 +72,11 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
         discipline,
         level,
         difficulty,
-        questionType,
+        questiontype: questionType,
         content: questionText,
-        teacherExplanation,
-        aiExplanation,
-        expandableContent,
+        teacherexplanation: teacherExplanation,
+        aiexplanation: aiExplanation,
+        expandablecontent: expandableContent,
         options,
         topicos,
         user_id: user.id
@@ -85,7 +85,7 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
       // Inserir no banco de dados
       const { error } = await supabase
         .from('questoes')
-        .insert([questionData]);
+        .insert(questionData);
 
       if (error) {
         throw error;

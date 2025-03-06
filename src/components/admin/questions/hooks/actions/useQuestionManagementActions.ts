@@ -67,13 +67,13 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
           discipline: data.discipline,
           level: data.level,
           difficulty: data.difficulty,
-          questionType: data.questionType || data.questiontype,
+          questionType: data.questiontype,
           content: data.content,
-          teacherExplanation: data.teacherExplanation || data.teacherexplanation,
-          aiExplanation: data.aiExplanation || data.aiexplanation,
-          expandableContent: data.expandableContent || data.expandablecontent,
-          options: data.options || [],
-          topicos: data.topicos || []
+          teacherExplanation: data.teacherexplanation,
+          aiExplanation: data.aiexplanation || "",
+          expandableContent: data.expandablecontent || "",
+          options: Array.isArray(data.options) ? data.options : [],
+          topicos: Array.isArray(data.topicos) ? data.topicos : []
         };
       }
 

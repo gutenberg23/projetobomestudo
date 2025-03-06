@@ -7,25 +7,7 @@ import { Copy, Edit, Trash, BarChart } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QuestionStats } from "@/components/new/question/QuestionStats";
-
-interface QuestionItemType {
-  id: string;
-  year: string;
-  institution: string;
-  organization: string;
-  role: string;
-  discipline: string;
-  level: string;
-  difficulty: string;
-  questionType: string;
-  content: string;
-  teacherExplanation: string;
-  options: Array<{
-    id: string;
-    text: string;
-    isCorrect: boolean;
-  }>;
-}
+import { QuestionItemType } from "./types";
 
 interface QuestionListProps {
   filteredQuestions: QuestionItemType[];

@@ -10,6 +10,7 @@ import { useQuestionActions } from "@/components/admin/questions/hooks/useQuesti
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { QuestionItemType } from "@/components/admin/questions/types";
 
 const Questoes: React.FC = () => {
   const state = useQuestionsState();
@@ -31,7 +32,7 @@ const Questoes: React.FC = () => {
         }
         
         // Transformar os dados para o formato esperado pelo componente
-        const formattedQuestions = data.map(q => ({
+        const formattedQuestions: QuestionItemType[] = data.map(q => ({
           id: q.id,
           year: q.year,
           institution: q.institution,
@@ -40,13 +41,13 @@ const Questoes: React.FC = () => {
           discipline: q.discipline,
           level: q.level,
           difficulty: q.difficulty,
-          questionType: q.questionType || q.questiontype, // lidar com diferenças de nomenclatura
+          questionType: q.questiontype,
           content: q.content,
-          teacherExplanation: q.teacherExplanation || q.teacherexplanation, // lidar com diferenças de nomenclatura
-          aiExplanation: q.aiExplanation || q.aiexplanation, // lidar com diferenças de nomenclatura
-          expandableContent: q.expandableContent || q.expandablecontent, // lidar com diferenças de nomenclatura
-          options: q.options || [],
-          topicos: q.topicos || []
+          teacherExplanation: q.teacherexplanation,
+          aiExplanation: q.aiexplanation || "",
+          expandableContent: q.expandablecontent || "",
+          options: Array.isArray(q.options) ? q.options : [],
+          topicos: Array.isArray(q.topicos) ? q.topicos : []
         }));
         
         state.setQuestions(formattedQuestions);
@@ -144,7 +145,7 @@ const Questoes: React.FC = () => {
           toggleQuestionSelection={actions.toggleQuestionSelection}
           handleCreateSimulado={actions.handleCreateSimulado}
           handleRemoveQuestion={actions.handleRemoveQuestion}
-          handleEditQuestion={actions.handleEditQuestion}
+          handleEditQuestion={(question) => actions.handleEditQuestion(question.id)}
           copyToClipboard={actions.copyToClipboard}
         />
       </Card>
