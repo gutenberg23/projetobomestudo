@@ -1,29 +1,31 @@
 
+import { useState, useMemo } from "react";
 import { Topico } from "../TopicosTypes";
-import { useTopicosState } from "./useTopicosState";
 
-export const useTopicosFiltrados = () => {
-  const { 
-    topicos, 
-    searchTerm, 
-    disciplinaFiltro, 
-    patrocinadorFiltro 
-  } = useTopicosState();
+export const useTopicosFiltrados = (
+  topicos: Topico[],
+  searchTerm: string,
+  disciplinaFiltro: string
+) => {
+  // Função para filtrar tópicos
+  const topicosFiltrados = useMemo(() => {
+    return topicos.filter((topico) => {
+      const matchesTitulo = topico.titulo.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDisciplina = disciplinaFiltro 
+        ? topico.disciplina.toLowerCase().includes(disciplinaFiltro.toLowerCase())
+        : true;
+      
+      return matchesTitulo && matchesDisciplina;
+    });
+  }, [topicos, searchTerm, disciplinaFiltro]);
 
-  const topicosFiltrados = topicos.filter(topico => {
-    const matchTitulo = topico.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchDisciplina = disciplinaFiltro === "todas" ? true : topico.disciplina === disciplinaFiltro;
-    const matchPatrocinador = patrocinadorFiltro === "todos" ? true : topico.patrocinador.toLowerCase().includes(patrocinadorFiltro.toLowerCase());
-    
-    return matchTitulo && matchDisciplina && matchPatrocinador;
-  });
-
-  const patrocinadores = Array.from(new Set(topicos.map(topico => topico.patrocinador))).filter(Boolean);
-  const temTopicosSelecionados = topicos.some(topico => topico.selecionado);
+  // Verificar se todos os tópicos estão selecionados
+  const todosSelecionados = useMemo(() => {
+    return topicosFiltrados.length > 0 && topicosFiltrados.every(topico => topico.selecionado);
+  }, [topicosFiltrados]);
 
   return {
     topicosFiltrados,
-    patrocinadores,
-    temTopicosSelecionados
+    todosSelecionados
   };
 };
