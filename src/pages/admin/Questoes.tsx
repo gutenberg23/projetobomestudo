@@ -10,7 +10,8 @@ import { useQuestionActions } from "@/components/admin/questions/hooks/useQuesti
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { QuestionItemType } from "@/components/admin/questions/types";
+import { QuestionItemType, QuestionOption } from "@/components/admin/questions/types";
+import { Json } from "@/integrations/supabase/types";
 
 const Questoes: React.FC = () => {
   const state = useQuestionsState();
@@ -18,6 +19,22 @@ const Questoes: React.FC = () => {
   const { user } = useAuth();
   
   const filteredQuestions = actions.getFilteredQuestions();
+
+  // Função para converter options do banco para o formato esperado
+  const parseOptions = (options: Json | null): QuestionOption[] => {
+    if (!options) return [];
+    
+    // Verificar se options é um array
+    if (Array.isArray(options)) {
+      return options.map((option: any) => ({
+        id: option.id || `option-${Math.random().toString(36).substr(2, 9)}`,
+        text: option.text || '',
+        isCorrect: Boolean(option.isCorrect)
+      }));
+    }
+    
+    return [];
+  };
 
   // Carregar questões do banco de dados ao montar o componente
   useEffect(() => {
@@ -46,7 +63,7 @@ const Questoes: React.FC = () => {
           teacherExplanation: q.teacherexplanation,
           aiExplanation: q.aiexplanation || "",
           expandableContent: q.expandablecontent || "",
-          options: Array.isArray(q.options) ? q.options : [],
+          options: parseOptions(q.options),
           topicos: Array.isArray(q.topicos) ? q.topicos : []
         }));
         

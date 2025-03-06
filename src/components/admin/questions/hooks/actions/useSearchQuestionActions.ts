@@ -1,6 +1,8 @@
 
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
+import { QuestionOption } from "../../types";
 
 export const useSearchQuestionActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
   // Função para buscar questão
@@ -38,6 +40,22 @@ export const useSearchQuestionActions = (state: ReturnType<typeof import("../use
           throw error;
         }
         
+        // Função para garantir que options esteja no formato correto
+        const parseOptions = (options: Json | null): QuestionOption[] => {
+          if (!options) return [];
+          
+          // Verificar se options é um array
+          if (Array.isArray(options)) {
+            return options.map((option: any) => ({
+              id: option.id || `option-${Math.random().toString(36).substr(2, 9)}`,
+              text: option.text || '',
+              isCorrect: Boolean(option.isCorrect)
+            }));
+          }
+          
+          return [];
+        };
+        
         // Formatar dados para o formato esperado
         question = {
           id: data.id,
@@ -51,9 +69,9 @@ export const useSearchQuestionActions = (state: ReturnType<typeof import("../use
           questionType: data.questiontype,
           content: data.content,
           teacherExplanation: data.teacherexplanation,
-          aiExplanation: data.aiexplanation,
-          expandableContent: data.expandablecontent,
-          options: Array.isArray(data.options) ? data.options : [],
+          aiExplanation: data.aiexplanation || "",
+          expandableContent: data.expandablecontent || "",
+          options: parseOptions(data.options),
           topicos: Array.isArray(data.topicos) ? data.topicos : []
         };
       }
