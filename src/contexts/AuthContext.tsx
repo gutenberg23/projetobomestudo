@@ -81,12 +81,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (userProfile && !error) {
         setProfile(userProfile);
-        setUser(prev => prev ? { 
-          ...prev, 
-          nome: userProfile.nome,
-          role: userProfile.role,
-          foto_perfil: userProfile.foto_perfil
-        } : null);
+        // Fix: Ensure we're setting the correct type for role
+        setUser(prev => {
+          if (!prev) return null;
+          return { 
+            ...prev, 
+            nome: userProfile.nome,
+            role: userProfile.role as "aluno" | "professor" | "admin",
+            foto_perfil: userProfile.foto_perfil
+          };
+        });
       }
     } catch (error) {
       console.error("Erro ao buscar perfil do usuário:", error);
@@ -98,10 +102,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signInWithPassword({ 
         email, 
         password,
-        options: {
-          // Garantir que a sessão persista no localStorage
-          persistSession: true
-        }
       });
       
       if (error) {
@@ -138,9 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             nome: email.split('@')[0],
-          },
-          // Garantir que a sessão persista
-          persistSession: true
+          }
         }
       });
       
