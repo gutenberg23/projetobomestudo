@@ -16,7 +16,7 @@ const buttonVariants = cva(
         outline:
           "border border-input bg-background hover:bg-accent hover:text-accent-foreground text-foreground px-5",
         secondary:
-          "bg-white text-[#5f2ebe] border-2 border-[#5f2ebe] hover:bg-[#5f2ebe]/10 hover:shadow-lg hover:shadow-[#5f2ebe]/20 hover:-translate-y-1 transition-all px-5",
+          "bg-white text-[#5f2ebe] border-2 border-[#5f2ebe] hover:bg-[#5f2ebe]/10 hover:shadow-lg hover:-translate-y-1 transition-all px-5",
         ghost: "hover:bg-accent hover:text-accent-foreground text-foreground px-5",
         link: "text-primary underline-offset-4 hover:underline px-5",
         hero: "text-white rounded-lg text-sm sm:text-base tracking-wider hover:bg-opacity-90 transition-all px-5 py-2 bg-gradient-to-r from-[#5f2ebe] to-[#7344d4] hover:shadow-lg hover:shadow-[#5f2ebe]/30 hover:-translate-y-1 border-b-2 border-[#491aa4] font-normal w-auto",
