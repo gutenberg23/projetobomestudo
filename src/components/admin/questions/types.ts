@@ -1,18 +1,4 @@
 
-export interface Topico {
-  id: string;
-  nome: string;
-  disciplina: string;
-  patrocinador?: string;
-  questoes_ids?: string[];
-}
-
-export interface QuestionOption {
-  id: string;
-  text: string;
-  isCorrect: boolean;
-}
-
 export interface QuestionItemType {
   id: string;
   year: string;
@@ -27,7 +13,11 @@ export interface QuestionItemType {
   teacherExplanation: string;
   aiExplanation?: string;
   expandableContent?: string;
-  options: QuestionOption[];
+  options: Array<{
+    id: string;
+    text: string;
+    isCorrect: boolean;
+  }>;
   topicos?: string[];
 }
 
@@ -41,4 +31,17 @@ export interface FiltersType {
   level: string;
   difficulty: string;
   questionType: string;
+}
+
+export interface QuestionOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface Topico {
+  id: string;
+  nome: string;
+  disciplina: string;
+  created_at?: string;
 }

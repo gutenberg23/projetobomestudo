@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { X } from "lucide-react";
+import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 
 interface AddTopicoDialogProps {
   isOpen: boolean;
@@ -26,15 +26,14 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   const [disciplinas, setDisciplinas] = useState<string[]>([]);
   const [selectedDisciplina, setSelectedDisciplina] = useState<string>("");
   const [patrocinador, setPatrocinador] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  
-  // Estados para o novo método de adicionar questões
-  const [questaoId, setQuestaoId] = useState<string>("");
+  const [questoes, setQuestoes] = useState<any[]>([]);
   const [selectedQuestoes, setSelectedQuestoes] = useState<string[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
       fetchDisciplinas();
+      fetchQuestoes();
     }
   }, [isOpen]);
 
@@ -58,24 +57,35 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
     }
   };
 
-  const handleAddQuestao = () => {
-    if (!questaoId.trim()) return;
-    
-    // Verificar se a questão já foi adicionada
-    if (!selectedQuestoes.includes(questaoId)) {
-      setSelectedQuestoes([...selectedQuestoes, questaoId]);
+  const fetchQuestoes = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('questoes')
+        .select('id, content')
+        .limit(20);
+      
+      if (error) throw error;
+      
+      setQuestoes(data || []);
+    } catch (error) {
+      console.error("Erro ao buscar questões:", error);
+    } finally {
+      setLoading(false);
     }
-    
-    // Limpar o input após adicionar
-    setQuestaoId("");
   };
 
-  const handleRemoveQuestao = (id: string) => {
-    setSelectedQuestoes(selectedQuestoes.filter(q => q !== id));
+  const handleQuestoesChange = (questaoId: string) => {
+    if (selectedQuestoes.includes(questaoId)) {
+      setSelectedQuestoes(selectedQuestoes.filter(id => id !== questaoId));
+    } else {
+      setSelectedQuestoes([...selectedQuestoes, questaoId]);
+    }
   };
 
   const handleSubmit = () => {
     // Aqui nós chamamos a função original handleAddTopico, mas com os dados adicionais
+    // Você precisará modificar a função original para receber esses dados adicionais
     console.log({
       nome: newTopicoNome,
       disciplina: selectedDisciplina,
@@ -136,37 +146,21 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
           
           <div className="space-y-2">
             <Label>Questões</Label>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Digite o ID da questão"
-                  value={questaoId}
-                  onChange={(e) => setQuestaoId(e.target.value)}
-                />
-                <Button onClick={handleAddQuestao} type="button">
-                  Adicionar Questão
-                </Button>
+            {loading ? (
+              <div className="text-sm text-[#67748a] p-4 border rounded flex items-center justify-center">
+                Carregando questões...
               </div>
-              
-              {selectedQuestoes.length > 0 && (
-                <div className="border rounded-md p-3 mt-2">
-                  <p className="text-sm font-medium mb-2">Questões adicionadas:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedQuestoes.map((id) => (
-                      <div key={id} className="flex items-center bg-gray-100 px-3 py-1 rounded-full">
-                        <span className="text-sm mr-2">ID: {id}</span>
-                        <button 
-                          onClick={() => handleRemoveQuestao(id)}
-                          className="text-gray-500 hover:text-red-500"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            ) : (
+              <div className="max-h-60 overflow-y-auto border rounded p-2">
+                <CheckboxGroup
+                  title=""
+                  options={questoes.map(q => `${q.id} - ${q.content.substring(0, 50)}...`)}
+                  selectedValues={selectedQuestoes}
+                  onChange={handleQuestoesChange}
+                  placeholder="Selecione as questões"
+                />
+              </div>
+            )}
           </div>
           
           <Button onClick={handleSubmit} className="w-full">Cadastrar Tópico</Button>
