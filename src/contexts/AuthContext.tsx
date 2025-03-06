@@ -43,8 +43,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           
           // Buscar perfil do usuário
-          const { data: userProfile, error } = await supabase
-            .from('profiles')
+          const { data: userProfile, error } = await (supabase
+            .from('profiles') as any)
             .select('*')
             .eq('id', session.user.id)
             .single();
@@ -77,8 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         
         // Buscar perfil do usuário
-        const { data: userProfile, error } = await supabase
-          .from('profiles')
+        const { data: userProfile, error } = await (supabase
+          .from('profiles') as any)
           .select('*')
           .eq('id', session.user.id)
           .single();
