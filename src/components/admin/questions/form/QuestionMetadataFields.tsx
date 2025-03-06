@@ -1,3 +1,4 @@
+
 import React from "react";
 import SelectField from "./SelectField";
 import AddValueDialog from "./AddValueDialog";
@@ -198,13 +199,15 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
       </div>
 
       {/* Tópicos Field - only shown when discipline is selected */}
-      <div>
-        <TopicosField
-          disciplina={discipline}
-          topicos={topicos}
-          setTopicos={setTopicos}
-        />
-      </div>
+      {discipline && (
+        <div>
+          <TopicosField
+            disciplina={discipline}
+            topicos={topicos}
+            setTopicos={setTopicos}
+          />
+        </div>
+      )}
 
       {/* Remaining fields */}
       <div>

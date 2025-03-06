@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Edit, Trash } from "lucide-react";
 
 interface TopicosFieldProps {
@@ -29,6 +30,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
   const [currentTopico, setCurrentTopico] = useState<Topico | null>(null);
   const [newTopicoNome, setNewTopicoNome] = useState("");
 
+  // Carregar os tópicos quando a disciplina mudar
   useEffect(() => {
     const fetchTopicos = async () => {
       if (!disciplina) {
@@ -47,6 +49,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
           throw error;
         }
 
+        console.log("Tópicos carregados:", data);
         setTopicosList(data || []);
       } catch (error) {
         console.error("Erro ao buscar tópicos:", error);
@@ -223,11 +226,9 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
               <div className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="topico-select">Selecione o Tópico</Label>
-                  <select
-                    id="topico-select"
-                    className="w-full p-2 border rounded"
-                    onChange={(e) => {
-                      const selected = topicosList.find(t => t.id === e.target.value);
+                  <Select
+                    onValueChange={(value) => {
+                      const selected = topicosList.find(t => t.id === value);
                       if (selected) {
                         setCurrentTopico(selected);
                         setNewTopicoNome(selected.nome);
@@ -235,13 +236,17 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
                     }}
                     value={currentTopico?.id || ""}
                   >
-                    <option value="">Selecione um tópico</option>
-                    {topicosList.map(topico => (
-                      <option key={topico.id} value={topico.id}>
-                        {topico.nome}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione um tópico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {topicosList.map(topico => (
+                        <SelectItem key={topico.id} value={topico.id}>
+                          {topico.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {currentTopico && (
                   <div className="space-y-2">
@@ -285,24 +290,26 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
               <div className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="topico-delete-select">Selecione o Tópico para Excluir</Label>
-                  <select
-                    id="topico-delete-select"
-                    className="w-full p-2 border rounded"
-                    onChange={(e) => {
-                      const selected = topicosList.find(t => t.id === e.target.value);
+                  <Select
+                    onValueChange={(value) => {
+                      const selected = topicosList.find(t => t.id === value);
                       if (selected) {
                         setCurrentTopico(selected);
                       }
                     }}
                     value={currentTopico?.id || ""}
                   >
-                    <option value="">Selecione um tópico</option>
-                    {topicosList.map(topico => (
-                      <option key={topico.id} value={topico.id}>
-                        {topico.nome}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Selecione um tópico" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {topicosList.map(topico => (
+                        <SelectItem key={topico.id} value={topico.id}>
+                          {topico.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 {currentTopico && (
                   <p className="text-red-500">
@@ -332,12 +339,14 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
           Carregando tópicos...
         </div>
       ) : topicosList.length > 0 ? (
-        <CheckboxGroup
-          title="Selecione os tópicos"
-          options={topicosList.map(t => t.nome)}
-          selectedValues={topicos}
-          onChange={handleTopicosChange}
-        />
+        <div className="border rounded p-4">
+          <CheckboxGroup
+            title=""
+            options={topicosList.map(t => t.nome)}
+            selectedValues={topicos}
+            onChange={handleTopicosChange}
+          />
+        </div>
       ) : (
         <div className="text-sm text-gray-500 p-4 border rounded">
           Nenhum tópico disponível para esta disciplina. Clique em "Adicionar" para criar um novo tópico.

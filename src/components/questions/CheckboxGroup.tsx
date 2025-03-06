@@ -1,9 +1,5 @@
 
-import React, { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import React from "react";
 
 interface CheckboxGroupProps {
   title: string;
@@ -18,38 +14,28 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
   selectedValues,
   onChange
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
-    <div className="space-y-2 relative">
-      <Button 
-        variant="outline" 
-        className="w-full flex justify-between items-center" 
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span>{title}</span>
-        {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-      </Button>
-      
-      {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1 bg-white border rounded-md p-3 space-y-2 max-h-[200px] overflow-y-auto shadow-lg">
-          {options.map(option => (
-            <div key={option} className="flex items-center space-x-2">
-              <Checkbox 
-                id={`${title}-${option}`} 
-                checked={selectedValues.includes(option)} 
-                onCheckedChange={() => onChange(option)} 
-              />
-              <Label 
-                htmlFor={`${title}-${option}`} 
-                className="text-sm font-normal cursor-pointer"
-              >
-                {option}
-              </Label>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="space-y-2">
+      {title && <div className="font-medium text-sm">{title}</div>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {options.map((option) => (
+          <div key={option} className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id={`checkbox-${option}`}
+              checked={selectedValues.includes(option)}
+              onChange={() => onChange(option)}
+              className="h-4 w-4 rounded border-gray-300 text-[#ea2be2] focus:ring-[#ea2be2]"
+            />
+            <label
+              htmlFor={`checkbox-${option}`}
+              className="text-sm font-medium text-[#67748a] cursor-pointer"
+            >
+              {option}
+            </label>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
