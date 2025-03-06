@@ -1,3 +1,4 @@
+
 export interface QuestionItemType {
   id: string;
   year: string;
@@ -42,5 +43,6 @@ export interface Topico {
   id: string;
   nome: string;
   disciplina: string;
+  user_id?: string;
   created_at?: string;
 }

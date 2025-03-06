@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, Edit, Trash } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TopicosFieldProps {
   disciplina: string;
@@ -22,6 +23,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
   topicos,
   setTopicos
 }) => {
+  const { user } = useAuth();
   const [topicosList, setTopicosList] = useState<Topico[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -49,7 +51,6 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
           throw error;
         }
 
-        console.log("Tópicos carregados:", data);
         setTopicosList(data || []);
       } catch (error) {
         console.error("Erro ao buscar tópicos:", error);
@@ -76,10 +77,19 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
       return;
     }
 
+    if (!user) {
+      toast.error("Você precisa estar logado para adicionar tópicos");
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('topicos')
-        .insert([{ nome: newTopicoNome, disciplina }])
+        .insert([{ 
+          nome: newTopicoNome, 
+          disciplina,
+          user_id: user.id  // Adicionando user_id para resolver o erro de RLS
+        }])
         .select();
 
       if (error) {
@@ -104,10 +114,18 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
       return;
     }
 
+    if (!user) {
+      toast.error("Você precisa estar logado para editar tópicos");
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('topicos')
-        .update({ nome: newTopicoNome })
+        .update({ 
+          nome: newTopicoNome,
+          user_id: user.id  // Garantindo que o user_id seja atualizado também
+        })
         .eq('id', currentTopico.id);
 
       if (error) {
@@ -137,6 +155,11 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
 
   const handleDeleteTopico = async () => {
     if (!currentTopico) return;
+
+    if (!user) {
+      toast.error("Você precisa estar logado para excluir tópicos");
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -338,19 +361,14 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
           </svg>
           Carregando tópicos...
         </div>
-      ) : topicosList.length > 0 ? (
-        <div className="border rounded p-4">
-          <CheckboxGroup
-            title=""
-            options={topicosList.map(t => t.nome)}
-            selectedValues={topicos}
-            onChange={handleTopicosChange}
-          />
-        </div>
       ) : (
-        <div className="text-sm text-gray-500 p-4 border rounded">
-          Nenhum tópico disponível para esta disciplina. Clique em "Adicionar" para criar um novo tópico.
-        </div>
+        <CheckboxGroup
+          title=""
+          options={topicosList.map(t => t.nome)}
+          selectedValues={topicos}
+          onChange={handleTopicosChange}
+          placeholder="Selecione os tópicos"
+        />
       )}
     </div>
   );
