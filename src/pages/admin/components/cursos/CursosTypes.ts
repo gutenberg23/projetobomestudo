@@ -1,3 +1,4 @@
+
 export interface Curso {
   id: string;
   titulo: string;
@@ -29,9 +30,10 @@ export interface CursosPageProps {
   setTituloNovoCurso: (titulo: string) => void;
   descricaoNovoCurso: string;
   setDescricaoNovoCurso: (descricao: string) => void;
+  informacoesCurso: string;
+  setInformacoesCurso: (informacoes: string) => void;
   handleAdicionarCurso: () => void;
-  todasSelecionadas: boolean;
-  cursos: Curso[];
+  temDisciplinasSelecionadas: boolean;
 }
 
 export interface EditCursoModalProps {

@@ -1,4 +1,3 @@
-
 export interface Aula {
   id: string;
   titulo: string;
@@ -6,6 +5,7 @@ export interface Aula {
   topicosIds: string[];
   questoesIds: string[];
   selecionada?: boolean;
+  totalQuestoes?: number;
 }
 
 export interface AulasFilterProps {

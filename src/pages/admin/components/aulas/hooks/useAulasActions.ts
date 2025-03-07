@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Aula } from "../AulasTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useAulasFiltrados } from "./useAulasFiltrados";
+import { useAulasFiltrados, calcularTotalQuestoes } from "./useAulasFiltrados";
 
 export const useAulasActions = () => {
   const [aulas, setAulas] = useState<Aula[]>([]);
@@ -30,14 +30,28 @@ export const useAulasActions = () => {
       if (error) throw error;
       
       // Transformar os dados do Supabase para o formato usado na aplicação
-      const formattedAulas: Aula[] = data?.map(item => ({
-        id: item.id,
-        titulo: item.titulo,
-        descricao: item.descricao || "",
-        topicosIds: item.topicos_ids || [],
-        questoesIds: item.questoes_ids || [],
-        selecionada: false
-      })) || [];
+      const formattedAulas: Aula[] = await Promise.all((data || []).map(async (item) => {
+        // Calcular o total de questões para cada aula (incluindo questões dos tópicos)
+        const totalQuestoes = await calcularTotalQuestoes({
+          id: item.id,
+          titulo: item.titulo,
+          descricao: item.descricao || "",
+          topicosIds: item.topicos_ids || [],
+          questoesIds: item.questoes_ids || [],
+          selecionada: false,
+          totalQuestoes: 0
+        });
+        
+        return {
+          id: item.id,
+          titulo: item.titulo,
+          descricao: item.descricao || "",
+          topicosIds: item.topicos_ids || [],
+          questoesIds: item.questoes_ids || [],
+          selecionada: false,
+          totalQuestoes: totalQuestoes
+        };
+      }));
       
       setAulas(formattedAulas);
     } catch (error) {

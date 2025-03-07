@@ -39,6 +39,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cursos: {
+        Row: {
+          aulas_ids: string[] | null
+          created_at: string | null
+          descricao: string | null
+          disciplinas_ids: string[] | null
+          favoritos: number | null
+          id: string
+          informacoes_curso: string | null
+          questoes_ids: string[] | null
+          status: string | null
+          titulo: string
+          topicos_ids: string[] | null
+        }
+        Insert: {
+          aulas_ids?: string[] | null
+          created_at?: string | null
+          descricao?: string | null
+          disciplinas_ids?: string[] | null
+          favoritos?: number | null
+          id?: string
+          informacoes_curso?: string | null
+          questoes_ids?: string[] | null
+          status?: string | null
+          titulo: string
+          topicos_ids?: string[] | null
+        }
+        Update: {
+          aulas_ids?: string[] | null
+          created_at?: string | null
+          descricao?: string | null
+          disciplinas_ids?: string[] | null
+          favoritos?: number | null
+          id?: string
+          informacoes_curso?: string | null
+          questoes_ids?: string[] | null
+          status?: string | null
+          titulo?: string
+          topicos_ids?: string[] | null
+        }
+        Relationships: []
+      }
       disciplinas: {
         Row: {
           aulas_ids: string[] | null

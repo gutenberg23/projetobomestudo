@@ -1,5 +1,6 @@
 
 import { Aula } from "../AulasTypes";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useAulasFiltrados = (
   aulas: Aula[],
@@ -32,4 +33,36 @@ export const useAulasFiltrados = (
     totalPages,
     totalItems: aulasFiltradas.length
   };
+};
+
+// Função para calcular o total de questões de uma aula, incluindo questões de seus tópicos
+export const calcularTotalQuestoes = async (aula: Aula): Promise<number> => {
+  try {
+    // Contar questões diretamente associadas à aula
+    let totalQuestoes = aula.questoesIds.length;
+    
+    // Buscar os tópicos associados a esta aula
+    if (aula.topicosIds && aula.topicosIds.length > 0) {
+      const { data: topicos, error } = await supabase
+        .from("topicos")
+        .select("questoes_ids")
+        .in("id", aula.topicosIds);
+      
+      if (error) throw error;
+      
+      // Somar questões de cada tópico
+      if (topicos) {
+        topicos.forEach(topico => {
+          if (topico.questoes_ids) {
+            totalQuestoes += topico.questoes_ids.length;
+          }
+        });
+      }
+    }
+    
+    return totalQuestoes;
+  } catch (error) {
+    console.error("Erro ao calcular total de questões:", error);
+    return 0;
+  }
 };

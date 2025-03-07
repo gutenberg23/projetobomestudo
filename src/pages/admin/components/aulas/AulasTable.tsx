@@ -56,7 +56,7 @@ export const AulasTable: React.FC<AulasTableProps> = ({
                 <TableCell>{aula.titulo}</TableCell>
                 <TableCell>{aula.descricao}</TableCell>
                 <TableCell>{aula.topicosIds.length} tópicos</TableCell>
-                <TableCell>{aula.questoesIds.length} questões</TableCell>
+                <TableCell>{aula.totalQuestoes || aula.questoesIds.length} questões</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
                     <Button 
