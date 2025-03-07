@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ export const Hero = () => {
       <div className="mx-auto px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16 bg-white">
         <div className="text-center space-y-6 max-w-3xl px-4">
           <h1 className="text-3xl sm:text-4xl leading-tight md:text-7xl font-thin text-[#272f3c]">
-            Conectando <span className="text-[#272f3c] font-thin">Alunos a Professores</span>
+            Conectando <span className="text-[#272f3c] font-thin">Alunos aos Professores</span>
           </h1>
           
           <p className="text-base sm:text-lg text-[#67748a] max-w-2xl mx-auto leading-relaxed md:text-xl font-light">
@@ -104,11 +103,7 @@ export const Hero = () => {
                 QUERO ESTUDAR GRÁTIS
               </Button>
             </Link>
-            <Button 
-              onClick={() => setTeacherDialogOpen(true)} 
-              variant="secondary" 
-              className="rounded-lg text-sm sm:text-base tracking-wider transition-all px-5 bg-white border-2 border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#5f2ebe]/10 hover:shadow-lg hover:shadow-[#5f2ebe]/20 hover:-translate-y-1 w-auto font-normal py-[20px]"
-            >
+            <Button onClick={() => setTeacherDialogOpen(true)} variant="secondary" className="rounded-lg text-sm sm:text-base tracking-wider transition-all px-5 bg-white border-2 border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#5f2ebe]/10 hover:shadow-lg hover:shadow-[#5f2ebe]/20 hover:-translate-y-1 w-auto font-normal py-[20px]">
               QUERO SER PROFESSOR
             </Button>
           </div>
