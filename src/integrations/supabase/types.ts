@@ -39,6 +39,33 @@ export type Database = {
         }
         Relationships: []
       }
+      disciplinas: {
+        Row: {
+          aulas_ids: string[] | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          status: string | null
+          titulo: string
+        }
+        Insert: {
+          aulas_ids?: string[] | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          status?: string | null
+          titulo: string
+        }
+        Update: {
+          aulas_ids?: string[] | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          status?: string | null
+          titulo?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           email: string | null

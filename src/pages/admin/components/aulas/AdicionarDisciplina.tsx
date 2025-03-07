@@ -11,8 +11,6 @@ export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
   descricaoNovaDisciplina,
   setDescricaoNovaDisciplina,
   handleAdicionarDisciplina,
-  todasSelecionadas,
-  aulas,
   temAulasSelecionadas
 }) => {
   return (

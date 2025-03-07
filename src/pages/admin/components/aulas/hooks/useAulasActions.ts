@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Aula } from "../AulasTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAulasFiltrados } from "./useAulasFiltrados";
 
 export const useAulasActions = () => {
   const [aulas, setAulas] = useState<Aula[]>([]);
@@ -52,24 +53,21 @@ export const useAulasActions = () => {
     fetchAulas();
   }, []);
 
-  // Filtrar aulas com base nos termos de pesquisa
-  const aulasFiltradas = aulas.filter((aula) => {
-    const matchesTitulo = aula.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDescricao = aula.descricao.toLowerCase().includes(descricaoFiltro.toLowerCase());
-    
-    return matchesTitulo && matchesDescricao;
-  });
-
-  // Paginar as aulas filtradas
-  const totalPages = Math.max(1, Math.ceil(aulasFiltradas.length / itemsPerPage));
-  const paginatedAulas = aulasFiltradas.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  // Utilizar o hook para filtrar e paginar as aulas
+  const { 
+    aulasFiltradas: paginatedAulas, 
+    todasSelecionadas, 
+    totalPages, 
+    totalItems 
+  } = useAulasFiltrados(
+    aulas, 
+    searchTerm, 
+    descricaoFiltro, 
+    currentPage, 
+    itemsPerPage
   );
 
   // Funções para manipulação de seleção
-  const todasSelecionadas = paginatedAulas.length > 0 && paginatedAulas.every(aula => aula.selecionada);
-
   const handleSelecaoTodas = () => {
     setAulas(aulas.map(aula => {
       if (paginatedAulas.some(aulaFiltrada => aulaFiltrada.id === aula.id)) {
@@ -172,15 +170,7 @@ export const useAulasActions = () => {
         ])
         .select();
       
-      if (error) {
-        // Se a tabela não existir, vamos tentar criá-la
-        if (error.code === '42P01') { // Código para "relation does not exist"
-          toast.error("A tabela 'disciplinas' não existe. Por favor, crie-a primeiro.");
-          console.error("Tabela 'disciplinas' não existe. Crie-a no banco de dados");
-          return;
-        }
-        throw error;
-      }
+      if (error) throw error;
       
       // Sucesso ao adicionar a disciplina
       toast.success("Disciplina adicionada com sucesso!");
@@ -208,7 +198,7 @@ export const useAulasActions = () => {
     setCurrentPage,
     totalPages,
     itemsPerPage,
-    totalItems: aulasFiltradas.length,
+    totalItems,
     todasSelecionadas,
     handleSelecaoTodas,
     handleSelecaoAula,
