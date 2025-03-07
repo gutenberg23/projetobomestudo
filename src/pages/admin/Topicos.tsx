@@ -133,7 +133,8 @@ const Topicos = () => {
       // Usamos o select para obter todas as disciplinas e depois filtramos os valores únicos no JavaScript
       const { data, error } = await supabase
         .from('questoes')
-        .select('discipline');
+        .select('discipline')
+        .order('discipline');
       
       if (error) throw error;
       

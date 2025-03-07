@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Topico } from "../TopicosTypes";
 import { QuestionsManager } from "./components/QuestionsManager";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,12 +31,36 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
 }) => {
   const [editedTopico, setEditedTopico] = useState<Topico | null>(null);
   const [newQuestaoId, setNewQuestaoId] = useState("");
+  const [disciplinas, setDisciplinas] = useState<string[]>([]);
+  const [isLoadingDisciplinas, setIsLoadingDisciplinas] = useState(false);
 
   useEffect(() => {
     if (isOpen && topico) {
       setEditedTopico({ ...topico });
+      fetchDisciplinas();
     }
   }, [isOpen, topico]);
+
+  const fetchDisciplinas = async () => {
+    setIsLoadingDisciplinas(true);
+    try {
+      const { data, error } = await supabase
+        .from('questoes')
+        .select('discipline')
+        .order('discipline');
+      
+      if (error) throw error;
+      
+      // Extrair disciplinas únicas
+      const uniqueDisciplinas = [...new Set(data?.map(item => item.discipline) || [])];
+      setDisciplinas(uniqueDisciplinas);
+    } catch (error) {
+      console.error("Erro ao buscar disciplinas:", error);
+      toast.error("Erro ao carregar as disciplinas.");
+    } finally {
+      setIsLoadingDisciplinas(false);
+    }
+  };
 
   const addQuestaoId = () => {
     if (!editedTopico || !newQuestaoId.trim()) {
@@ -111,11 +136,25 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
           </div>
           <div>
             <Label htmlFor="edit-disciplina">Disciplina</Label>
-            <Input
-              id="edit-disciplina"
-              value={editedTopico.disciplina}
-              onChange={(e) => setEditedTopico({ ...editedTopico, disciplina: e.target.value })}
-            />
+            {isLoadingDisciplinas ? (
+              <div className="text-sm text-[#67748a] py-2">Carregando disciplinas...</div>
+            ) : (
+              <Select
+                value={editedTopico.disciplina}
+                onValueChange={(value) => setEditedTopico({ ...editedTopico, disciplina: value })}
+              >
+                <SelectTrigger id="edit-disciplina">
+                  <SelectValue placeholder="Selecione uma disciplina" />
+                </SelectTrigger>
+                <SelectContent>
+                  {disciplinas.map((disciplina) => (
+                    <SelectItem key={disciplina} value={disciplina}>
+                      {disciplina}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div>
             <Label htmlFor="edit-patrocinador">Patrocinador</Label>

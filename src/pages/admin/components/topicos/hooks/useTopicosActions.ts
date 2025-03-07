@@ -1,5 +1,7 @@
 
 import { Topico } from "../TopicosTypes";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const useTopicosActions = (
   topicos: Topico[],
@@ -52,18 +54,66 @@ export const useTopicosActions = (
   };
 
   // Função para adicionar aula
-  const handleAdicionarAula = (tituloNovaAula: string, descricaoNovaAula: string) => {
-    if (tituloNovaAula.trim()) {
-      // Lógica para adicionar aula com os tópicos selecionados
-      const topicosSelecionados = topicos
-        .filter(topico => topico.selecionado)
-        .map(topico => topico.id);
+  const handleAdicionarAula = async (tituloNovaAula: string, descricaoNovaAula: string) => {
+    if (!tituloNovaAula.trim()) {
+      toast.error("O título da aula é obrigatório");
+      return;
+    }
+    
+    // Obter os tópicos selecionados
+    const topicosSelecionados = topicos
+      .filter(topico => topico.selecionado)
+      .map(topico => topico.id);
+    
+    if (topicosSelecionados.length === 0) {
+      toast.error("Selecione pelo menos um tópico para adicionar a aula");
+      return;
+    }
+
+    try {
+      // Cadastrar a aula no banco de dados
+      const { data, error } = await supabase
+        .from('aulas')
+        .insert([
+          {
+            titulo: tituloNovaAula,
+            descricao: descricaoNovaAula,
+            topicos_ids: topicosSelecionados,
+            status: 'ativo',
+            created_at: new Date().toISOString()
+          }
+        ])
+        .select();
       
-      console.log("Adicionando aula:", {
-        titulo: tituloNovaAula,
-        descricao: descricaoNovaAula,
-        topicosIds: topicosSelecionados
-      });
+      if (error) {
+        if (error.code === '42P01') {
+          // Tabela não existe, vamos criar
+          const createTableError = await supabase.rpc('create_aulas_table');
+          if (createTableError.error) {
+            throw createTableError.error;
+          }
+          
+          // Tentar inserir novamente após criar a tabela
+          const secondAttempt = await supabase
+            .from('aulas')
+            .insert([
+              {
+                titulo: tituloNovaAula,
+                descricao: descricaoNovaAula,
+                topicos_ids: topicosSelecionados,
+                status: 'ativo',
+                created_at: new Date().toISOString()
+              }
+            ]);
+          
+          if (secondAttempt.error) throw secondAttempt.error;
+        } else {
+          throw error;
+        }
+      }
+      
+      // Sucesso ao adicionar a aula
+      toast.success("Aula adicionada com sucesso!");
       
       // Resetar campos após adicionar
       setTituloNovaAula("");
@@ -71,6 +121,15 @@ export const useTopicosActions = (
       
       // Desmarcar todos os tópicos após adicionar
       setTopicos(topicos.map(topico => ({...topico, selecionado: false})));
+    } catch (error: any) {
+      console.error("Erro ao adicionar aula:", error);
+      
+      // Verificar se o erro é porque a tabela não existe
+      if (error.code === '42P01') {
+        toast.error("Erro ao adicionar aula: A tabela de aulas não existe. Por favor, contate o administrador do sistema.");
+      } else {
+        toast.error("Erro ao adicionar a aula. Tente novamente.");
+      }
     }
   };
 
