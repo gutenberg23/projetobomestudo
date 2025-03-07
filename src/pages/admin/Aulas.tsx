@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { 
   AulasFilter, 
   AulasTable, 
@@ -7,124 +7,42 @@ import {
   EditAulaModal,
   DeleteAulaModal
 } from "./components/aulas";
-import { Aula } from "./components/aulas/AulasTypes";
+import { Pagination } from "@/components/ui/pagination";
+import { useAulasActions } from "./components/aulas/hooks/useAulasActions";
+import { Spinner } from "@/components/ui/spinner";
 
 const Aulas = () => {
-  // Estados para filtros
-  const [searchTerm, setSearchTerm] = useState("");
-  const [descricaoFiltro, setDescricaoFiltro] = useState("");
-
-  // Estados para a adição de disciplina
-  const [tituloNovaDisciplina, setTituloNovaDisciplina] = useState("");
-  const [descricaoNovaDisciplina, setDescricaoNovaDisciplina] = useState("");
-
-  // Estados para modais de edição/exclusão
-  const [isOpenEdit, setIsOpenEdit] = useState(false);
-  const [isOpenDelete, setIsOpenDelete] = useState(false);
-  const [currentAula, setCurrentAula] = useState<Aula | null>(null);
-
-  // Dados mockados de aulas para demonstração
-  const [aulas, setAulas] = useState<Aula[]>([
-    {
-      id: "1",
-      titulo: "Aula de Introdução ao Direito Constitucional",
-      descricao: "Fundamentos e princípios da Constituição Federal",
-      topicosIds: ["101", "102", "103"],
-      questoesIds: ["201", "202"],
-      selecionada: false
-    },
-    {
-      id: "2",
-      titulo: "Aula de Direito Penal",
-      descricao: "Conceitos básicos e tipos de crimes",
-      topicosIds: ["104", "105"],
-      questoesIds: ["203", "204", "205", "206"],
-      selecionada: false
-    },
-    {
-      id: "3",
-      titulo: "Aula de Matemática Financeira",
-      descricao: "Juros simples e compostos",
-      topicosIds: ["106", "107", "108", "109"],
-      questoesIds: ["207", "208"],
-      selecionada: false
-    }
-  ]);
-
-  // Função para filtrar aulas
-  const aulasFiltradas = aulas.filter((aula) => {
-    const matchesTitulo = aula.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDescricao = aula.descricao.toLowerCase().includes(descricaoFiltro.toLowerCase());
-    
-    return matchesTitulo && matchesDescricao;
-  });
-
-  // Função para verificar se todas as aulas estão selecionadas
-  const todasSelecionadas = aulasFiltradas.length > 0 && aulasFiltradas.every(aula => aula.selecionada);
-
-  // Funções para manipulação de seleção
-  const handleSelecaoTodas = () => {
-    setAulas(aulas.map(aula => {
-      if (aulasFiltradas.some(aulaFiltrada => aulaFiltrada.id === aula.id)) {
-        return { ...aula, selecionada: !todasSelecionadas };
-      }
-      return aula;
-    }));
-  };
-
-  const handleSelecaoAula = (id: string) => {
-    setAulas(aulas.map(aula => 
-      aula.id === id ? { ...aula, selecionada: !aula.selecionada } : aula
-    ));
-  };
-
-  // Funções para abrir modais
-  const openEditModal = (aula: Aula) => {
-    setCurrentAula(aula);
-    setIsOpenEdit(true);
-  };
-
-  const openDeleteModal = (aula: Aula) => {
-    setCurrentAula(aula);
-    setIsOpenDelete(true);
-  };
-
-  // Função para salvar aula editada
-  const handleSaveAula = (updatedAula: Aula) => {
-    setAulas(aulas.map(aula => 
-      aula.id === updatedAula.id ? updatedAula : aula
-    ));
-    setIsOpenEdit(false);
-  };
-
-  // Função para excluir aula
-  const handleDeleteAula = (id: string) => {
-    setAulas(aulas.filter(aula => aula.id !== id));
-    setIsOpenDelete(false);
-  };
-
-  // Função para adicionar disciplina
-  const handleAdicionarDisciplina = () => {
-    if (tituloNovaDisciplina.trim()) {
-      // Lógica para adicionar disciplina com os tópicos selecionados
-      const topicosIds = aulas
-        .filter(aula => aula.selecionada)
-        .flatMap(aula => aula.topicosIds);
-      
-      console.log("Adicionando disciplina:", {
-        titulo: tituloNovaDisciplina,
-        descricao: descricaoNovaDisciplina,
-        topicosIds: topicosIds
-      });
-      
-      // Resetar campos após adicionar
-      setTituloNovaDisciplina("");
-      setDescricaoNovaDisciplina("");
-      
-      // Desmarcar todas as aulas após adicionar
-      setAulas(aulas.map(aula => ({...aula, selecionada: false})));
-    }
-  };
+  const {
+    aulas,
+    loading,
+    searchTerm,
+    setSearchTerm,
+    descricaoFiltro,
+    setDescricaoFiltro,
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    itemsPerPage,
+    totalItems,
+    todasSelecionadas,
+    handleSelecaoTodas,
+    handleSelecaoAula,
+    openEditModal,
+    openDeleteModal,
+    handleSaveAula,
+    handleDeleteAula,
+    tituloNovaDisciplina,
+    setTituloNovaDisciplina,
+    descricaoNovaDisciplina,
+    setDescricaoNovaDisciplina,
+    handleAdicionarDisciplina,
+    isOpenEdit,
+    setIsOpenEdit,
+    isOpenDelete,
+    setIsOpenDelete,
+    currentAula,
+    temAulasSelecionadas
+  } = useAulasActions();
 
   return (
     <div className="space-y-4">
@@ -140,14 +58,31 @@ const Aulas = () => {
       />
       
       {/* Tabela de aulas */}
-      <AulasTable 
-        aulas={aulasFiltradas}
-        todasSelecionadas={todasSelecionadas}
-        handleSelecaoTodas={handleSelecaoTodas}
-        handleSelecaoAula={handleSelecaoAula}
-        openEditModal={openEditModal}
-        openDeleteModal={openDeleteModal}
-      />
+      {loading ? (
+        <div className="flex justify-center items-center py-10">
+          <Spinner size="lg" />
+        </div>
+      ) : (
+        <>
+          <AulasTable 
+            aulas={aulas}
+            todasSelecionadas={todasSelecionadas}
+            handleSelecaoTodas={handleSelecaoTodas}
+            handleSelecaoAula={handleSelecaoAula}
+            openEditModal={openEditModal}
+            openDeleteModal={openDeleteModal}
+          />
+          
+          {/* Paginação */}
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+          />
+        </>
+      )}
       
       {/* Componente para adicionar disciplina */}
       <AdicionarDisciplina 
@@ -158,6 +93,7 @@ const Aulas = () => {
         handleAdicionarDisciplina={handleAdicionarDisciplina}
         todasSelecionadas={todasSelecionadas}
         aulas={aulas}
+        temAulasSelecionadas={temAulasSelecionadas}
       />
       
       {/* Modais de edição e exclusão */}

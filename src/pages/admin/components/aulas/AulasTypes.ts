@@ -32,6 +32,7 @@ export interface AulasPageProps {
   handleAdicionarDisciplina: () => void;
   todasSelecionadas: boolean;
   aulas: Aula[];
+  temAulasSelecionadas: boolean;
 }
 
 export interface EditAulaModalProps {

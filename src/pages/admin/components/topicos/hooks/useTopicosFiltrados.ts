@@ -1,31 +1,37 @@
 
-import { useState, useMemo } from "react";
 import { Topico } from "../TopicosTypes";
 
 export const useTopicosFiltrados = (
   topicos: Topico[],
   searchTerm: string,
-  disciplinaFiltro: string
+  disciplinaFiltro: string,
+  currentPage: number,
+  itemsPerPage: number
 ) => {
-  // Função para filtrar tópicos
-  const topicosFiltrados = useMemo(() => {
-    return topicos.filter((topico) => {
-      const matchesTitulo = topico.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDisciplina = disciplinaFiltro 
-        ? topico.disciplina.toLowerCase().includes(disciplinaFiltro.toLowerCase())
-        : true;
-      
-      return matchesTitulo && matchesDisciplina;
-    });
-  }, [topicos, searchTerm, disciplinaFiltro]);
+  // Filtrar tópicos com base nos termos de pesquisa
+  const topicosFiltrados = topicos.filter((topico) => {
+    const matchesTitulo = topico.titulo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDisciplina = disciplinaFiltro 
+      ? topico.disciplina === disciplinaFiltro
+      : true;
+    
+    return matchesTitulo && matchesDisciplina;
+  });
 
-  // Verificar se todos os tópicos estão selecionados
-  const todosSelecionados = useMemo(() => {
-    return topicosFiltrados.length > 0 && topicosFiltrados.every(topico => topico.selecionado);
-  }, [topicosFiltrados]);
+  // Paginar os tópicos filtrados
+  const totalPages = Math.max(1, Math.ceil(topicosFiltrados.length / itemsPerPage));
+  const paginatedTopicos = topicosFiltrados.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  return {
-    topicosFiltrados,
-    todosSelecionados
+  // Verificar se todos os tópicos na página atual estão selecionados
+  const todosSelecionados = paginatedTopicos.length > 0 && paginatedTopicos.every(topico => topico.selecionado);
+
+  return { 
+    topicosFiltrados: paginatedTopicos, 
+    todosSelecionados,
+    totalPages,
+    totalItems: topicosFiltrados.length
   };
 };

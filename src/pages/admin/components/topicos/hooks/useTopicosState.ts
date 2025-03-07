@@ -1,11 +1,17 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Topico } from "../TopicosTypes";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const useTopicosState = () => {
-  // Estados para filtros
+  // Estados para os tópicos e filtros
+  const [topicos, setTopicos] = useState<Topico[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [disciplinaFiltro, setDisciplinaFiltro] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Estados para a adição de aula
   const [tituloNovaAula, setTituloNovaAula] = useState("");
@@ -16,56 +22,55 @@ export const useTopicosState = () => {
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [currentTopico, setCurrentTopico] = useState<Topico | null>(null);
 
-  // Dados mockados de tópicos para demonstração
-  const [topicos, setTopicos] = useState<Topico[]>([
-    {
-      id: "1",
-      titulo: "Introdução ao Direito Administrativo",
-      thumbnail: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6",
-      patrocinador: "JurisConsult",
-      disciplina: "Direito Administrativo",
-      videoUrl: "https://www.youtube.com/watch?v=example1",
-      pdfUrl: "https://example.com/pdf/direito-admin.pdf",
-      mapaUrl: "https://example.com/mapa/direito-admin.pdf",
-      resumoUrl: "https://example.com/resumo/direito-admin.pdf",
-      questoesIds: ["101", "102", "103"],
-      selecionado: false
-    },
-    {
-      id: "2",
-      titulo: "Princípios Constitucionais",
-      thumbnail: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d",
-      patrocinador: "LegisPro",
-      disciplina: "Direito Constitucional",
-      videoUrl: "https://www.youtube.com/watch?v=example2",
-      pdfUrl: "https://example.com/pdf/principios.pdf",
-      mapaUrl: "https://example.com/mapa/principios.pdf",
-      resumoUrl: "https://example.com/resumo/principios.pdf",
-      questoesIds: ["201", "202"],
-      selecionado: false
-    },
-    {
-      id: "3",
-      titulo: "Matemática Financeira",
-      thumbnail: "https://images.unsplash.com/photo-1518133910546-b6c2fb7d79e3",
-      patrocinador: "NumeroUm",
-      disciplina: "Matemática",
-      videoUrl: "https://www.youtube.com/watch?v=example3",
-      pdfUrl: "https://example.com/pdf/matematica.pdf",
-      mapaUrl: "https://example.com/mapa/matematica.pdf",
-      resumoUrl: "https://example.com/resumo/matematica.pdf",
-      questoesIds: ["301", "302", "303", "304"],
-      selecionado: false
-    }
-  ]);
+  // Buscar todos os tópicos do banco de dados quando a página carrega
+  useEffect(() => {
+    const fetchTopicos = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('topicos')
+          .select('*');
+        
+        if (error) throw error;
+        
+        // Transformar os dados do Supabase para o formato usado na aplicação
+        const formattedTopicos: Topico[] = data?.map(item => ({
+          id: item.id,
+          titulo: item.nome,
+          thumbnail: "",
+          patrocinador: item.patrocinador || "Não informado",
+          disciplina: item.disciplina,
+          videoUrl: "",
+          pdfUrl: "",
+          mapaUrl: "",
+          resumoUrl: "",
+          questoesIds: item.questoes_ids || [],
+          selecionado: false
+        })) || [];
+        
+        setTopicos(formattedTopicos);
+      } catch (error) {
+        console.error("Erro ao buscar tópicos:", error);
+        toast.error("Erro ao carregar os tópicos. Tente novamente.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTopicos();
+  }, []);
 
   return {
     topicos,
     setTopicos,
+    loading,
     searchTerm,
     setSearchTerm,
     disciplinaFiltro,
     setDisciplinaFiltro,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
     tituloNovaAula,
     setTituloNovaAula,
     descricaoNovaAula,

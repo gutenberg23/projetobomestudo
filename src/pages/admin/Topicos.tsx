@@ -23,16 +23,22 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Topico } from "./components/topicos/TopicosTypes";
 import { QuestionsManager } from "./components/topicos/modals/components/QuestionsManager";
+import { Pagination } from "@/components/ui/pagination";
+import { Spinner } from "@/components/ui/spinner";
 
 const Topicos = () => {
   // Obter estados do hook personalizado
   const {
     topicos,
     setTopicos,
+    loading,
     searchTerm,
     setSearchTerm,
     disciplinaFiltro,
     setDisciplinaFiltro,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
     tituloNovaAula,
     setTituloNovaAula,
     descricaoNovaAula,
@@ -60,10 +66,12 @@ const Topicos = () => {
   const [newQuestaoId, setNewQuestaoId] = useState("");
 
   // Obter tópicos filtrados
-  const { topicosFiltrados, todosSelecionados } = useTopicosFiltrados(
+  const { topicosFiltrados, todosSelecionados, totalPages, totalItems } = useTopicosFiltrados(
     topicos,
     searchTerm,
-    disciplinaFiltro
+    disciplinaFiltro,
+    currentPage,
+    itemsPerPage
   );
 
   // Obter ações para os tópicos
@@ -91,41 +99,6 @@ const Topicos = () => {
       fetchDisciplinas();
     }
   }, [isCreateModalOpen]);
-
-  // Buscar todos os tópicos do banco de dados quando a página carrega
-  useEffect(() => {
-    fetchTopicos();
-  }, []);
-
-  const fetchTopicos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('topicos')
-        .select('*');
-      
-      if (error) throw error;
-      
-      // Transformar os dados do Supabase para o formato usado na aplicação
-      const formattedTopicos: Topico[] = data?.map(item => ({
-        id: item.id,
-        titulo: item.nome,
-        thumbnail: "",
-        patrocinador: item.patrocinador || "Não informado",
-        disciplina: item.disciplina,
-        videoUrl: "",
-        pdfUrl: "",
-        mapaUrl: "",
-        resumoUrl: "",
-        questoesIds: item.questoes_ids || [],
-        selecionado: false
-      })) || [];
-      
-      setTopicos(formattedTopicos);
-    } catch (error) {
-      console.error("Erro ao buscar tópicos:", error);
-      toast.error("Erro ao carregar os tópicos. Tente novamente.");
-    }
-  };
 
   const fetchDisciplinas = async () => {
     setLoadingDisciplinas(true);
@@ -259,14 +232,31 @@ const Topicos = () => {
       />
       
       {/* Tabela de tópicos */}
-      <TopicosTable 
-        topicos={topicosFiltrados}
-        todosSelecionados={todosSelecionados}
-        handleSelecaoTodos={() => handleSelecaoTodos(topicosFiltrados, todosSelecionados)}
-        handleSelecaoTopico={handleSelecaoTopico}
-        openEditModal={openEditModal}
-        openDeleteModal={openDeleteModal}
-      />
+      {loading ? (
+        <div className="flex justify-center items-center py-10">
+          <Spinner size="lg" />
+        </div>
+      ) : (
+        <>
+          <TopicosTable 
+            topicos={topicosFiltrados}
+            todosSelecionados={todosSelecionados}
+            handleSelecaoTodos={() => handleSelecaoTodos(topicosFiltrados, todosSelecionados)}
+            handleSelecaoTopico={handleSelecaoTopico}
+            openEditModal={openEditModal}
+            openDeleteModal={openDeleteModal}
+          />
+          
+          {/* Paginação */}
+          <Pagination 
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            totalItems={totalItems}
+          />
+        </>
+      )}
       
       {/* Componente para adicionar aula */}
       <AdicionarAula 

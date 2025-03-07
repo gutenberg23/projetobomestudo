@@ -12,14 +12,12 @@ export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
   setDescricaoNovaDisciplina,
   handleAdicionarDisciplina,
   todasSelecionadas,
-  aulas
+  aulas,
+  temAulasSelecionadas
 }) => {
-  // Verificar se alguma aula está selecionada
-  const algumaSelecionada = aulas.some(aula => aula.selecionada);
-  
   return (
     <div className="flex justify-end mt-4 items-center gap-3">
-      {algumaSelecionada && (
+      {temAulasSelecionadas && (
         <div className="flex-1 max-w-md">
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -29,7 +27,7 @@ export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
                 placeholder="Digite o título da disciplina"
                 value={tituloNovaDisciplina}
                 onChange={(e) => setTituloNovaDisciplina(e.target.value)}
-                className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
+                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
               />
             </div>
             <div>
@@ -39,16 +37,16 @@ export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
                 placeholder="Digite a descrição"
                 value={descricaoNovaDisciplina}
                 onChange={(e) => setDescricaoNovaDisciplina(e.target.value)}
-                className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
+                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
               />
             </div>
           </div>
         </div>
       )}
-      {algumaSelecionada && (
+      {temAulasSelecionadas && (
         <Button 
           onClick={handleAdicionarDisciplina}
-          className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 w-auto"
+          className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 w-auto"
           disabled={!tituloNovaDisciplina.trim()}
         >
           Adicionar Disciplina
