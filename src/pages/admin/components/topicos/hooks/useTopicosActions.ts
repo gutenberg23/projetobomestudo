@@ -1,4 +1,3 @@
-
 import { Topico } from "../TopicosTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -40,17 +39,50 @@ export const useTopicosActions = (
   };
 
   // Função para salvar tópico editado
-  const handleSaveTopico = (updatedTopico: Topico) => {
-    setTopicos(topicos.map(topico => 
-      topico.id === updatedTopico.id ? updatedTopico : topico
-    ));
-    setIsOpenEdit(false);
+  const handleSaveTopico = async (updatedTopico: Topico) => {
+    try {
+      // Atualizar no Supabase
+      const { error } = await supabase
+        .from('topicos')
+        .update({ 
+          nome: updatedTopico.titulo,
+          disciplina: updatedTopico.disciplina,
+          patrocinador: updatedTopico.patrocinador,
+          questoes_ids: updatedTopico.questoesIds
+        })
+        .eq('id', updatedTopico.id);
+
+      if (error) throw error;
+      
+      // Atualizar na interface
+      setTopicos(topicos.map(topico => 
+        topico.id === updatedTopico.id ? updatedTopico : topico
+      ));
+      setIsOpenEdit(false);
+      toast.success("Tópico atualizado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao atualizar tópico:", error);
+      toast.error("Erro ao atualizar o tópico. Tente novamente.");
+    }
   };
 
   // Função para excluir tópico
-  const handleDeleteTopico = (id: string) => {
-    setTopicos(topicos.filter(topico => topico.id !== id));
-    setIsOpenDelete(false);
+  const handleDeleteTopico = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('topicos')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      setTopicos(topicos.filter(topico => topico.id !== id));
+      setIsOpenDelete(false);
+      toast.success("Tópico excluído com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir tópico:", error);
+      toast.error("Erro ao excluir o tópico. Tente novamente.");
+    }
   };
 
   // Função para adicionar aula
@@ -71,7 +103,7 @@ export const useTopicosActions = (
     }
 
     try {
-      // Cadastrar a aula no banco de dados
+      // Cadastrar a aula no banco de dados usando o método insert correto
       const { data, error } = await supabase
         .from('aulas')
         .insert([
@@ -85,32 +117,7 @@ export const useTopicosActions = (
         ])
         .select();
       
-      if (error) {
-        if (error.code === '42P01') {
-          // Tabela não existe, vamos criar
-          const createTableError = await supabase.rpc('create_aulas_table');
-          if (createTableError.error) {
-            throw createTableError.error;
-          }
-          
-          // Tentar inserir novamente após criar a tabela
-          const secondAttempt = await supabase
-            .from('aulas')
-            .insert([
-              {
-                titulo: tituloNovaAula,
-                descricao: descricaoNovaAula,
-                topicos_ids: topicosSelecionados,
-                status: 'ativo',
-                created_at: new Date().toISOString()
-              }
-            ]);
-          
-          if (secondAttempt.error) throw secondAttempt.error;
-        } else {
-          throw error;
-        }
-      }
+      if (error) throw error;
       
       // Sucesso ao adicionar a aula
       toast.success("Aula adicionada com sucesso!");
@@ -123,13 +130,7 @@ export const useTopicosActions = (
       setTopicos(topicos.map(topico => ({...topico, selecionado: false})));
     } catch (error: any) {
       console.error("Erro ao adicionar aula:", error);
-      
-      // Verificar se o erro é porque a tabela não existe
-      if (error.code === '42P01') {
-        toast.error("Erro ao adicionar aula: A tabela de aulas não existe. Por favor, contate o administrador do sistema.");
-      } else {
-        toast.error("Erro ao adicionar a aula. Tente novamente.");
-      }
+      toast.error("Erro ao adicionar a aula. Tente novamente.");
     }
   };
 
