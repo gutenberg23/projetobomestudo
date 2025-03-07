@@ -1,3 +1,4 @@
+
 import { Topico } from "../TopicosTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -69,6 +70,27 @@ export const useTopicosActions = (
   // Função para excluir tópico
   const handleDeleteTopico = async (id: string) => {
     try {
+      // Primeiro, buscar todas as aulas que contêm este tópico
+      const { data: aulas, error: aulasError } = await supabase
+        .from('aulas')
+        .select('id, topicos_ids')
+        .contains('topicos_ids', [id]);
+      
+      if (aulasError) throw aulasError;
+      
+      // Para cada aula, atualizar removendo o tópico da lista
+      for (const aula of aulas || []) {
+        const topicosAtualizados = aula.topicos_ids.filter((topicoId: string) => topicoId !== id);
+        
+        const { error } = await supabase
+          .from('aulas')
+          .update({ topicos_ids: topicosAtualizados })
+          .eq('id', aula.id);
+        
+        if (error) throw error;
+      }
+      
+      // Agora, excluir o tópico
       const { error } = await supabase
         .from('topicos')
         .delete()

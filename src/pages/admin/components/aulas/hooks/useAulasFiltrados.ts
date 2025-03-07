@@ -38,8 +38,8 @@ export const useAulasFiltrados = (
 // Função para calcular o total de questões de uma aula, incluindo questões de seus tópicos
 export const calcularTotalQuestoes = async (aula: Aula): Promise<number> => {
   try {
-    // Contar questões diretamente associadas à aula
-    let totalQuestoes = aula.questoesIds.length;
+    // Iniciar com as questões diretamente associadas à aula
+    let totalQuestoes = aula.questoesIds?.length || 0;
     
     // Buscar os tópicos associados a esta aula
     if (aula.topicosIds && aula.topicosIds.length > 0) {
@@ -52,11 +52,11 @@ export const calcularTotalQuestoes = async (aula: Aula): Promise<number> => {
       
       // Somar questões de cada tópico
       if (topicos) {
-        topicos.forEach(topico => {
+        for (const topico of topicos) {
           if (topico.questoes_ids) {
             totalQuestoes += topico.questoes_ids.length;
           }
-        });
+        }
       }
     }
     
