@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
@@ -7,24 +6,23 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "/lovable-uploads/logo.svg";
-
 export const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-
+  const {
+    user,
+    signOut
+  } = useAuth();
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/explore?search=${encodeURIComponent(searchQuery)}`);
     }
   };
-
-  return (
-    <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-[32px]">
-      <div className="flex min-h-[88px] flex-col items-stretch justify-center w-[194px] py-8">
+  return <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-[32px]">
+      <div className="flex min-h-[88px] flex-col items-stretch justify-center w-[230px] py-[21px]">
         <Link to="/">
-          <img loading="lazy" src={logo} alt="Company Logo" className="aspect-[8.06] object-contain w-[194px] md:w-[194px] w-[120px]" />
+          <img loading="lazy" src={logo} alt="Company Logo" className="aspect-[8.06] w-[230px] md:w-[230px] w-[120px] object-contain" />
         </Link>
       </div>
 
@@ -47,11 +45,9 @@ export const Header = () => {
           </button>
         </form>
 
-        {!user ? (
-          <Button variant="outline" onClick={() => navigate("/login")} className="mr-2">
+        {!user ? <Button variant="outline" onClick={() => navigate("/login")} className="mr-2">
             Entrar
-          </Button>
-        ) : null}
+          </Button> : null}
 
         <Popover>
           <PopoverTrigger asChild>
@@ -60,8 +56,7 @@ export const Header = () => {
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-64 p-0 border border-gray-100">
-            {user ? (
-              <div className="p-4 border-b border-gray-100">
+            {user ? <div className="p-4 border-b border-gray-100">
                 <div className="flex items-center gap-3">
                   <Avatar className="w-[50px] h-[50px] border-2 border-white">
                     <AvatarImage src={user.foto_perfil || "https://github.com/shadcn.png"} />
@@ -72,8 +67,7 @@ export const Header = () => {
                     <p className="text-sm text-gray-500">{user.email}</p>
                   </div>
                 </div>
-              </div>
-            ) : null}
+              </div> : null}
             <nav className="flex flex-col">
               <Link to="/explore" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <Compass className="w-4 h-4" />
@@ -101,18 +95,15 @@ export const Header = () => {
                   Concursos
                 </Link>
               </div>
-              {user ? (
-                <div className="border-t border-gray-100">
+              {user ? <div className="border-t border-gray-100">
                   <button onClick={signOut} className="w-full text-left px-4 py-3 text-sm font-light text-red-600 hover:bg-slate-50 flex items-center gap-2">
                     <LogOut className="w-4 h-4" />
                     Sair
                   </button>
-                </div>
-              ) : null}
+                </div> : null}
             </nav>
           </PopoverContent>
         </Popover>
       </div>
-    </header>
-  );
+    </header>;
 };
