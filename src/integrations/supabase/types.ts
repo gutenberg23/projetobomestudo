@@ -202,6 +202,8 @@ export type Database = {
           id: string
           nome: string
           patrocinador: string | null
+          professor_id: string | null
+          professor_nome: string | null
           questoes_ids: string[] | null
         }
         Insert: {
@@ -210,6 +212,8 @@ export type Database = {
           id?: string
           nome: string
           patrocinador?: string | null
+          professor_id?: string | null
+          professor_nome?: string | null
           questoes_ids?: string[] | null
         }
         Update: {
@@ -218,6 +222,8 @@ export type Database = {
           id?: string
           nome?: string
           patrocinador?: string | null
+          professor_id?: string | null
+          professor_nome?: string | null
           questoes_ids?: string[] | null
         }
         Relationships: []

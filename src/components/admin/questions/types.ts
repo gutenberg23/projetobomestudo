@@ -43,6 +43,7 @@ export interface Topico {
   id: string;
   nome: string;
   disciplina: string;
-  professor_id?: string;
+  professor_id: string;
+  professor_nome: string;
   created_at?: string;
 }
