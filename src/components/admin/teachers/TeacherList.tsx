@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Edit, Trash2, ExternalLink, Youtube, Facebook, Twitter, Instagram } from "lucide-react";
+import { Edit, Trash2, ExternalLink, Youtube, Facebook, Twitter, Instagram, Link } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TeacherListProps {
   teachers: TeacherData[];
@@ -79,19 +80,60 @@ const TeacherList: React.FC<TeacherListProps> = ({
                 <TableCell>
                   <div className="flex space-x-2">
                     {teacher.instagram && (
-                      <a href={teacher.instagram} target="_blank" rel="noopener noreferrer" className="text-[#5f2ebe]">
-                        <Instagram className="h-4 w-4" />
-                      </a>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a href={teacher.instagram} target="_blank" rel="noopener noreferrer" className="text-[#5f2ebe]">
+                              <Instagram className="h-4 w-4" />
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Instagram</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                     {teacher.twitter && (
-                      <a href={teacher.twitter} target="_blank" rel="noopener noreferrer" className="text-[#5f2ebe]">
-                        <Twitter className="h-4 w-4" />
-                      </a>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a href={teacher.twitter} target="_blank" rel="noopener noreferrer" className="text-[#5f2ebe]">
+                              <Twitter className="h-4 w-4" />
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Twitter</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                     {teacher.facebook && (
-                      <a href={teacher.facebook} target="_blank" rel="noopener noreferrer" className="text-[#5f2ebe]">
-                        <Facebook className="h-4 w-4" />
-                      </a>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a href={teacher.facebook} target="_blank" rel="noopener noreferrer" className="text-[#5f2ebe]">
+                              <Facebook className="h-4 w-4" />
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Facebook</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    {teacher.website && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <a href={teacher.website} target="_blank" rel="noopener noreferrer" className="text-[#5f2ebe]">
+                              <Link className="h-4 w-4" />
+                            </a>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Website</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                 </TableCell>

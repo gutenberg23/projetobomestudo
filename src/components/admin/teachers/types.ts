@@ -10,6 +10,7 @@ export interface TeacherData {
   instagram?: string;
   twitter?: string;
   facebook?: string;
+  website?: string;
   fotoPerfil: string;
   status: TeacherStatus;
   dataCadastro: string;

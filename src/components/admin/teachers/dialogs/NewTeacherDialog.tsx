@@ -41,6 +41,7 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
     instagram: "",
     twitter: "",
     facebook: "",
+    website: "",
     fotoPerfil: "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70), // Placeholder temporário
     status: "pendente" as TeacherStatus,
     ativo: true,
@@ -117,6 +118,7 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
       instagram: "",
       twitter: "",
       facebook: "",
+      website: "",
       fotoPerfil: "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70),
       status: "pendente",
       ativo: true,
