@@ -200,31 +200,46 @@ export type Database = {
           created_at: string | null
           disciplina: string
           id: string
+          mapa_url: string | null
+          musica_url: string | null
           nome: string
           patrocinador: string | null
+          pdf_url: string | null
           professor_id: string | null
           professor_nome: string | null
           questoes_ids: string[] | null
+          resumo_url: string | null
+          video_url: string | null
         }
         Insert: {
           created_at?: string | null
           disciplina: string
           id?: string
+          mapa_url?: string | null
+          musica_url?: string | null
           nome: string
           patrocinador?: string | null
+          pdf_url?: string | null
           professor_id?: string | null
           professor_nome?: string | null
           questoes_ids?: string[] | null
+          resumo_url?: string | null
+          video_url?: string | null
         }
         Update: {
           created_at?: string | null
           disciplina?: string
           id?: string
+          mapa_url?: string | null
+          musica_url?: string | null
           nome?: string
           patrocinador?: string | null
+          pdf_url?: string | null
           professor_id?: string | null
           professor_nome?: string | null
           questoes_ids?: string[] | null
+          resumo_url?: string | null
+          video_url?: string | null
         }
         Relationships: []
       }

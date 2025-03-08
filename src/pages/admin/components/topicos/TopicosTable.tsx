@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pencil, Trash } from "lucide-react";
+import { Pencil, Trash, Check, X } from "lucide-react";
 import { Topico } from "./TopicosTypes";
 
 interface TopicosTableProps {
@@ -21,6 +21,15 @@ interface TopicosTableProps {
   openEditModal: (topico: Topico) => void;
   openDeleteModal: (topico: Topico) => void;
 }
+
+// Componente para exibir ícone de status (✅ ou ❌)
+const StatusIcon = ({ filled }: { filled: boolean }) => {
+  return filled ? (
+    <Check className="h-5 w-5 text-green-500" />
+  ) : (
+    <X className="h-5 w-5 text-red-500" />
+  );
+};
 
 export const TopicosTable: React.FC<TopicosTableProps> = ({
   topicos,
@@ -45,12 +54,16 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
               </div>
             </TableHead>
             <TableHead className="w-[50px]">ID</TableHead>
-            <TableHead className="w-[180px]">Título</TableHead>
-            <TableHead className="w-[150px]">Disciplina</TableHead>
-            <TableHead className="w-[180px]">Professor</TableHead>
-            <TableHead className="w-[120px]">Patrocinador</TableHead>
-            <TableHead className="w-[100px]">Questões</TableHead>
-            <TableHead className="w-[120px]">Ações</TableHead>
+            <TableHead className="w-[150px]">Título</TableHead>
+            <TableHead className="w-[120px]">Disciplina</TableHead>
+            <TableHead className="w-[120px]">Professor</TableHead>
+            <TableHead className="w-[90px]">Vídeo</TableHead>
+            <TableHead className="w-[90px]">PDF</TableHead>
+            <TableHead className="w-[90px]">Mapa</TableHead>
+            <TableHead className="w-[90px]">Resumo</TableHead>
+            <TableHead className="w-[90px]">Música</TableHead>
+            <TableHead className="w-[80px]">Questões</TableHead>
+            <TableHead className="w-[100px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -68,7 +81,21 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
                 <TableCell>{topico.titulo}</TableCell>
                 <TableCell>{topico.disciplina}</TableCell>
                 <TableCell>{topico.professor_nome || "Não atribuído"}</TableCell>
-                <TableCell>{topico.patrocinador}</TableCell>
+                <TableCell className="text-center">
+                  <StatusIcon filled={!!topico.videoUrl} />
+                </TableCell>
+                <TableCell className="text-center">
+                  <StatusIcon filled={!!topico.pdfUrl} />
+                </TableCell>
+                <TableCell className="text-center">
+                  <StatusIcon filled={!!topico.mapaUrl} />
+                </TableCell>
+                <TableCell className="text-center">
+                  <StatusIcon filled={!!topico.resumoUrl} />
+                </TableCell>
+                <TableCell className="text-center">
+                  <StatusIcon filled={!!topico.musicaUrl} />
+                </TableCell>
                 <TableCell>{topico.questoesIds.length} questões</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
@@ -93,7 +120,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={12} className="text-center py-4 text-[#67748a]">
                 Nenhum tópico encontrado com os filtros aplicados.
               </TableCell>
             </TableRow>

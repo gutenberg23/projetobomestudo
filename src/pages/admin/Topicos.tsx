@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   TopicosFilter, 
@@ -33,7 +32,6 @@ interface TeacherData {
 }
 
 const Topicos = () => {
-  // Obter estados do hook personalizado
   const {
     topicos,
     setTopicos,
@@ -59,24 +57,26 @@ const Topicos = () => {
     setCurrentTopico
   } = useTopicosState();
 
-  // Estado para o modal de criação de tópicos
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newTopico, setNewTopico] = useState({
     titulo: "",
     disciplina: "",
     patrocinador: "",
     questoesIds: [] as string[],
-    professor_id: ""
+    professor_id: "",
+    videoUrl: "",
+    pdfUrl: "",
+    mapaUrl: "",
+    resumoUrl: "",
+    musicaUrl: ""
   });
   const [disciplinas, setDisciplinas] = useState<string[]>([]);
   const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
   const [teachers, setTeachers] = useState<TeacherData[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   
-  // Estado para gerenciamento de questões
   const [newQuestaoId, setNewQuestaoId] = useState("");
 
-  // Obter tópicos filtrados
   const { topicosFiltrados, todosSelecionados, totalPages, totalItems } = useTopicosFiltrados(
     topicos,
     searchTerm,
@@ -86,7 +86,6 @@ const Topicos = () => {
     itemsPerPage
   );
 
-  // Obter ações para os tópicos
   const {
     handleSelecaoTodos,
     handleSelecaoTopico,
@@ -105,7 +104,6 @@ const Topicos = () => {
     setDescricaoNovaAula
   );
 
-  // Buscar dados de disciplinas e professores quando o modal é aberto
   useEffect(() => {
     if (isCreateModalOpen) {
       fetchDisciplinas();
@@ -116,7 +114,6 @@ const Topicos = () => {
   const fetchDisciplinas = async () => {
     setLoadingDisciplinas(true);
     try {
-      // Usamos o select para obter todas as disciplinas e depois filtramos os valores únicos no JavaScript
       const { data, error } = await supabase
         .from('questoes')
         .select('discipline')
@@ -124,7 +121,6 @@ const Topicos = () => {
       
       if (error) throw error;
       
-      // Extrair disciplinas únicas usando Set
       const uniqueDisciplinas = [...new Set(data?.map(item => item.discipline) || [])];
       setDisciplinas(uniqueDisciplinas);
     } catch (error) {
@@ -138,8 +134,6 @@ const Topicos = () => {
   const fetchTeachers = async () => {
     setLoadingTeachers(true);
     try {
-      // Esta é uma versão simulada. Quando houver uma tabela real de professores, 
-      // substitua este código por uma consulta ao Supabase
       const mockTeachers = [
         {
           id: "1",
@@ -212,7 +206,6 @@ const Topicos = () => {
         }
       ];
 
-      // Convertendo os dados brutos para o formato TeacherData
       const formattedTeachers: TeacherData[] = mockTeachers.map(teacher => ({
         id: teacher.id,
         nomeCompleto: teacher.nomeCompleto,
@@ -228,7 +221,6 @@ const Topicos = () => {
     }
   };
 
-  // Funções para gerenciar questões
   const addQuestaoId = () => {
     if (!newQuestaoId.trim()) {
       toast.error("Digite um ID de questão válido");
@@ -263,7 +255,6 @@ const Topicos = () => {
     }
 
     try {
-      // Obter o nome do professor, se selecionado
       let professor_nome = "";
       if (newTopico.professor_id) {
         const selectedTeacher = teachers.find(t => t.id === newTopico.professor_id);
@@ -281,14 +272,18 @@ const Topicos = () => {
             patrocinador: newTopico.patrocinador,
             questoes_ids: newTopico.questoesIds,
             professor_id: newTopico.professor_id,
-            professor_nome: professor_nome
+            professor_nome: professor_nome,
+            video_url: newTopico.videoUrl,
+            pdf_url: newTopico.pdfUrl,
+            mapa_url: newTopico.mapaUrl,
+            resumo_url: newTopico.resumoUrl,
+            musica_url: newTopico.musicaUrl
           }
         ])
         .select();
       
       if (error) throw error;
       
-      // Adicionar o novo tópico à lista
       if (data && data.length > 0) {
         const newCreatedTopico: Topico = {
           id: data[0].id,
@@ -296,10 +291,11 @@ const Topicos = () => {
           thumbnail: "",
           patrocinador: data[0].patrocinador || "Não informado",
           disciplina: data[0].disciplina,
-          videoUrl: "",
-          pdfUrl: "",
-          mapaUrl: "",
-          resumoUrl: "",
+          videoUrl: data[0].video_url || "",
+          pdfUrl: data[0].pdf_url || "",
+          mapaUrl: data[0].mapa_url || "",
+          resumoUrl: data[0].resumo_url || "",
+          musicaUrl: data[0].musica_url || "",
           questoesIds: data[0].questoes_ids || [],
           professor_id: data[0].professor_id || "",
           professor_nome: data[0].professor_nome || "",
@@ -309,16 +305,19 @@ const Topicos = () => {
         setTopicos([...topicos, newCreatedTopico]);
         toast.success("Tópico criado com sucesso!");
         
-        // Limpar o formulário
         setNewTopico({
           titulo: "",
           disciplina: "",
           patrocinador: "",
           questoesIds: [],
-          professor_id: ""
+          professor_id: "",
+          videoUrl: "",
+          pdfUrl: "",
+          mapaUrl: "",
+          resumoUrl: "",
+          musicaUrl: ""
         });
         
-        // Fechar o modal
         setIsCreateModalOpen(false);
       }
     } catch (error) {
@@ -327,7 +326,6 @@ const Topicos = () => {
     }
   };
 
-  // Verificar se algum tópico está selecionado
   const temTopicosSelecionados = topicos.some(topico => topico.selecionado);
 
   return (
@@ -343,7 +341,6 @@ const Topicos = () => {
         </Button>
       </div>
       
-      {/* Componente de filtro */}
       <TopicosFilter 
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -353,7 +350,6 @@ const Topicos = () => {
         setProfessorFiltro={setProfessorFiltro}
       />
       
-      {/* Tabela de tópicos */}
       {loading ? (
         <div className="flex justify-center items-center py-10">
           <Spinner size="lg" />
@@ -369,7 +365,6 @@ const Topicos = () => {
             openDeleteModal={openDeleteModal}
           />
           
-          {/* Paginação */}
           <Pagination 
             currentPage={currentPage}
             totalPages={totalPages}
@@ -380,7 +375,6 @@ const Topicos = () => {
         </>
       )}
       
-      {/* Componente para adicionar aula */}
       <AdicionarAula 
         tituloNovaAula={tituloNovaAula}
         setTituloNovaAula={setTituloNovaAula}
@@ -390,9 +384,8 @@ const Topicos = () => {
         temTopicosSelecionados={temTopicosSelecionados}
       />
       
-      {/* Modal de criação de tópico */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastrar Novo Tópico</DialogTitle>
           </DialogHeader>
@@ -467,6 +460,56 @@ const Topicos = () => {
               />
             </div>
             
+            <div className="space-y-2">
+              <Label htmlFor="topico-video-url">Link da Videoaula</Label>
+              <Input
+                id="topico-video-url"
+                value={newTopico.videoUrl}
+                onChange={(e) => setNewTopico({ ...newTopico, videoUrl: e.target.value })}
+                placeholder="https://exemplo.com/video"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="topico-pdf-url">Link da Aula em PDF</Label>
+              <Input
+                id="topico-pdf-url"
+                value={newTopico.pdfUrl}
+                onChange={(e) => setNewTopico({ ...newTopico, pdfUrl: e.target.value })}
+                placeholder="https://exemplo.com/aula.pdf"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="topico-mapa-url">Link do Mapa Mental</Label>
+              <Input
+                id="topico-mapa-url"
+                value={newTopico.mapaUrl}
+                onChange={(e) => setNewTopico({ ...newTopico, mapaUrl: e.target.value })}
+                placeholder="https://exemplo.com/mapa"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="topico-resumo-url">Link do Resumo</Label>
+              <Input
+                id="topico-resumo-url"
+                value={newTopico.resumoUrl}
+                onChange={(e) => setNewTopico({ ...newTopico, resumoUrl: e.target.value })}
+                placeholder="https://exemplo.com/resumo"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="topico-musica-url">Link da Música</Label>
+              <Input
+                id="topico-musica-url"
+                value={newTopico.musicaUrl}
+                onChange={(e) => setNewTopico({ ...newTopico, musicaUrl: e.target.value })}
+                placeholder="https://exemplo.com/musica"
+              />
+            </div>
+            
             <QuestionsManager
               questoesIds={newTopico.questoesIds}
               newQuestaoId={newQuestaoId}
@@ -481,7 +524,6 @@ const Topicos = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Modais de edição e exclusão */}
       <EditTopicoModal 
         isOpen={isOpenEdit}
         onClose={() => setIsOpenEdit(false)}

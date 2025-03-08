@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   Dialog,
@@ -60,7 +59,6 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
       
       if (error) throw error;
       
-      // Extrair disciplinas únicas
       const uniqueDisciplinas = [...new Set(data?.map(item => item.discipline) || [])];
       setDisciplinas(uniqueDisciplinas);
     } catch (error) {
@@ -74,8 +72,6 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
   const fetchTeachers = async () => {
     setIsLoadingTeachers(true);
     try {
-      // Esta é uma versão simulada. Quando houver uma tabela real de professores, 
-      // substitua este código por uma consulta ao Supabase
       const mockTeachers = [
         {
           id: "1",
@@ -148,7 +144,6 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
         }
       ];
 
-      // Convertendo os dados brutos para o formato TeacherData
       const formattedTeachers: TeacherData[] = mockTeachers.map(teacher => ({
         id: teacher.id,
         nomeCompleto: teacher.nomeCompleto,
@@ -196,7 +191,6 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
   const handleSave = async () => {
     if (editedTopico) {
       try {
-        // Atualizar o nome do professor, se selecionado
         let professor_nome = editedTopico.professor_nome || "";
         if (editedTopico.professor_id) {
           const selectedTeacher = teachers.find(t => t.id === editedTopico.professor_id);
@@ -205,7 +199,6 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
           }
         }
 
-        // Atualizar no Supabase
         const { error } = await supabase
           .from('topicos')
           .update({ 
@@ -214,13 +207,17 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
             patrocinador: editedTopico.patrocinador,
             questoes_ids: editedTopico.questoesIds,
             professor_id: editedTopico.professor_id,
-            professor_nome: professor_nome
+            professor_nome: professor_nome,
+            video_url: editedTopico.videoUrl,
+            pdf_url: editedTopico.pdfUrl,
+            mapa_url: editedTopico.mapaUrl,
+            resumo_url: editedTopico.resumoUrl,
+            musica_url: editedTopico.musicaUrl
           })
           .eq('id', editedTopico.id);
 
         if (error) throw error;
         
-        // Atualizar na interface
         onSave({
           ...editedTopico,
           professor_nome: professor_nome
@@ -237,7 +234,7 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-[#272f3c]">Editar Tópico</DialogTitle>
         </DialogHeader>
@@ -300,6 +297,51 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
               id="edit-patrocinador"
               value={editedTopico.patrocinador}
               onChange={(e) => setEditedTopico({ ...editedTopico, patrocinador: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-video-url">Link da Videoaula</Label>
+            <Input
+              id="edit-video-url"
+              value={editedTopico.videoUrl}
+              onChange={(e) => setEditedTopico({ ...editedTopico, videoUrl: e.target.value })}
+              placeholder="https://exemplo.com/video"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-pdf-url">Link da Aula em PDF</Label>
+            <Input
+              id="edit-pdf-url"
+              value={editedTopico.pdfUrl}
+              onChange={(e) => setEditedTopico({ ...editedTopico, pdfUrl: e.target.value })}
+              placeholder="https://exemplo.com/aula.pdf"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-mapa-url">Link do Mapa Mental</Label>
+            <Input
+              id="edit-mapa-url"
+              value={editedTopico.mapaUrl}
+              onChange={(e) => setEditedTopico({ ...editedTopico, mapaUrl: e.target.value })}
+              placeholder="https://exemplo.com/mapa"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-resumo-url">Link do Resumo</Label>
+            <Input
+              id="edit-resumo-url"
+              value={editedTopico.resumoUrl}
+              onChange={(e) => setEditedTopico({ ...editedTopico, resumoUrl: e.target.value })}
+              placeholder="https://exemplo.com/resumo"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-musica-url">Link da Música</Label>
+            <Input
+              id="edit-musica-url"
+              value={editedTopico.musicaUrl}
+              onChange={(e) => setEditedTopico({ ...editedTopico, musicaUrl: e.target.value })}
+              placeholder="https://exemplo.com/musica"
             />
           </div>
           <QuestionsManager
