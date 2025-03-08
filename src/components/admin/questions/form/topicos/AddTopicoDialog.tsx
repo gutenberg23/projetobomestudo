@@ -7,13 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
+import { TeacherData } from "../../../teachers/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface AddTopicoDialogProps {
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
   newTopicoNome: string;
   setNewTopicoNome: (value: string) => void;
-  handleAddTopico: () => void;
+  handleAddTopico: (professorId: string | undefined) => void;
 }
 
 const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
@@ -29,11 +31,15 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   const [questoes, setQuestoes] = useState<any[]>([]);
   const [selectedQuestoes, setSelectedQuestoes] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [teachers, setTeachers] = useState<TeacherData[]>([]);
+  const [selectedTeacher, setSelectedTeacher] = useState<string>("");
+  const [loadingTeachers, setLoadingTeachers] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
       fetchDisciplinas();
       fetchQuestoes();
+      fetchTeachers();
     }
   }, [isOpen]);
 
@@ -75,6 +81,97 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
     }
   };
 
+  const fetchTeachers = async () => {
+    setLoadingTeachers(true);
+    try {
+      // Em uma implementação real, buscaríamos do banco de dados
+      // Por enquanto, usamos os dados mockados definidos em useTeachersState
+      // Isso será substituído por uma chamada de API real quando houver integração com backend
+      const mockTeachers = [
+        {
+          id: "1",
+          nomeCompleto: "Ana Silva",
+          email: "ana.silva@email.com",
+          linkYoutube: "https://youtube.com/c/anasilva",
+          disciplina: "Português",
+          instagram: "https://instagram.com/anasilva",
+          twitter: "https://twitter.com/anasilva",
+          facebook: "https://facebook.com/anasilva",
+          fotoPerfil: "https://i.pravatar.cc/150?img=1",
+          status: "aprovado",
+          dataCadastro: "12/05/2023",
+          ativo: true,
+          rating: 4.5
+        },
+        {
+          id: "2",
+          nomeCompleto: "Carlos Oliveira",
+          email: "carlos.oliveira@email.com",
+          linkYoutube: "https://youtube.com/c/carlosoliveira",
+          disciplina: "Matemática",
+          instagram: "https://instagram.com/carlosoliveira",
+          fotoPerfil: "https://i.pravatar.cc/150?img=2",
+          status: "pendente",
+          dataCadastro: "03/07/2023",
+          ativo: false,
+          rating: 3.8
+        },
+        {
+          id: "3",
+          nomeCompleto: "Juliana Mendes",
+          email: "juliana.mendes@email.com",
+          linkYoutube: "https://youtube.com/c/julianamendes",
+          disciplina: "Direito Constitucional",
+          twitter: "https://twitter.com/julianamendes",
+          facebook: "https://facebook.com/julianamendes",
+          fotoPerfil: "https://i.pravatar.cc/150?img=3",
+          status: "rejeitado",
+          dataCadastro: "28/09/2023",
+          ativo: false,
+          rating: 2.5
+        },
+        {
+          id: "4",
+          nomeCompleto: "Roberto Almeida",
+          email: "roberto.almeida@email.com",
+          linkYoutube: "https://youtube.com/c/robertoalmeida",
+          disciplina: "Contabilidade",
+          instagram: "https://instagram.com/robertoalmeida",
+          twitter: "https://twitter.com/robertoalmeida",
+          fotoPerfil: "https://i.pravatar.cc/150?img=4",
+          status: "aprovado",
+          dataCadastro: "15/01/2023",
+          ativo: true,
+          rating: 5.0
+        },
+        {
+          id: "5",
+          nomeCompleto: "Fernanda Costa",
+          email: "fernanda.costa@email.com",
+          linkYoutube: "https://youtube.com/c/fernandacosta",
+          disciplina: "Direito Administrativo",
+          facebook: "https://facebook.com/fernandacosta",
+          fotoPerfil: "https://i.pravatar.cc/150?img=5",
+          status: "pendente",
+          dataCadastro: "07/04/2023",
+          ativo: true,
+          rating: 4.2
+        }
+      ];
+      
+      // Filtramos apenas professores ativos e aprovados
+      const activeTeachers = mockTeachers.filter(
+        teacher => teacher.ativo && teacher.status === "aprovado"
+      );
+      
+      setTeachers(activeTeachers);
+    } catch (error) {
+      console.error("Erro ao buscar professores:", error);
+    } finally {
+      setLoadingTeachers(false);
+    }
+  };
+
   const handleQuestoesChange = (questaoId: string) => {
     if (selectedQuestoes.includes(questaoId)) {
       setSelectedQuestoes(selectedQuestoes.filter(id => id !== questaoId));
@@ -84,20 +181,14 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   };
 
   const handleSubmit = () => {
-    // Aqui nós chamamos a função original handleAddTopico, mas com os dados adicionais
-    // Você precisará modificar a função original para receber esses dados adicionais
-    console.log({
-      nome: newTopicoNome,
-      disciplina: selectedDisciplina,
-      patrocinador,
-      questoesIds: selectedQuestoes
-    });
+    handleAddTopico(selectedTeacher);
     
     // Reset do estado
     setNewTopicoNome("");
     setSelectedDisciplina("");
     setPatrocinador("");
     setSelectedQuestoes([]);
+    setSelectedTeacher("");
     setIsOpen(false);
   };
 
@@ -132,6 +223,35 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="professor">Professor</Label>
+            {loadingTeachers ? (
+              <div className="text-sm text-[#67748a] p-4 border rounded flex items-center justify-center">
+                Carregando professores...
+              </div>
+            ) : (
+              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+                <SelectTrigger id="professor">
+                  <SelectValue placeholder="Selecione um professor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map((teacher) => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={teacher.fotoPerfil} alt={teacher.nomeCompleto} />
+                          <AvatarFallback>{teacher.nomeCompleto.substring(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span>{teacher.nomeCompleto}</span>
+                        <span className="text-xs text-[#67748a]">({teacher.disciplina})</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           
           <div className="space-y-2">
