@@ -56,24 +56,21 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
     }
   };
 
-  const handleAddTopico = async (professorId?: string) => {
+  const handleAddTopico = async () => {
     if (!newTopicoNome.trim()) {
       toast.error("O nome do tópico não pode estar vazio");
       return;
     }
 
     try {
-      const newTopico = { 
-        nome: newTopicoNome, 
-        disciplina,
-        patrocinador: "",
-        questoes_ids: [],
-        professor_id: professorId
-      };
-
       const { data, error } = await supabase
         .from('topicos')
-        .insert([newTopico])
+        .insert([{ 
+          nome: newTopicoNome, 
+          disciplina,
+          patrocinador: "",
+          questoes_ids: []
+        }])
         .select();
 
       if (error) {
@@ -92,21 +89,18 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
     }
   };
 
-  const handleEditTopico = async (professorId?: string) => {
+  const handleEditTopico = async () => {
     if (!currentTopico || !newTopicoNome.trim()) {
       toast.error("O nome do tópico não pode estar vazio");
       return;
     }
 
     try {
-      const updatedData = { 
-        nome: newTopicoNome,
-        professor_id: professorId
-      };
-
       const { error } = await supabase
         .from('topicos')
-        .update(updatedData)
+        .update({ 
+          nome: newTopicoNome
+        })
         .eq('id', currentTopico.id);
 
       if (error) {
@@ -114,7 +108,7 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
       }
 
       setTopicosList(topicosList.map(t => 
-        t.id === currentTopico.id ? { ...t, nome: newTopicoNome, professor_id: professorId } : t
+        t.id === currentTopico.id ? { ...t, nome: newTopicoNome } : t
       ));
       
       // Atualizar também no array de tópicos selecionados
