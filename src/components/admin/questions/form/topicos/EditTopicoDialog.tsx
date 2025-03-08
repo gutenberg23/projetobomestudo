@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Topico } from "../../types";
-import { TeacherData } from "../../../teachers/types";
+import { TeacherData, TeacherStatus } from "../../../teachers/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface EditTopicoDialogProps {
@@ -61,7 +61,7 @@ const EditTopicoDialog: React.FC<EditTopicoDialogProps> = ({
           twitter: "https://twitter.com/anasilva",
           facebook: "https://facebook.com/anasilva",
           fotoPerfil: "https://i.pravatar.cc/150?img=1",
-          status: "aprovado",
+          status: "aprovado" as TeacherStatus,
           dataCadastro: "12/05/2023",
           ativo: true,
           rating: 4.5
@@ -74,7 +74,7 @@ const EditTopicoDialog: React.FC<EditTopicoDialogProps> = ({
           disciplina: "Matemática",
           instagram: "https://instagram.com/carlosoliveira",
           fotoPerfil: "https://i.pravatar.cc/150?img=2",
-          status: "pendente",
+          status: "pendente" as TeacherStatus,
           dataCadastro: "03/07/2023",
           ativo: false,
           rating: 3.8
@@ -88,7 +88,7 @@ const EditTopicoDialog: React.FC<EditTopicoDialogProps> = ({
           twitter: "https://twitter.com/julianamendes",
           facebook: "https://facebook.com/julianamendes",
           fotoPerfil: "https://i.pravatar.cc/150?img=3",
-          status: "rejeitado",
+          status: "rejeitado" as TeacherStatus,
           dataCadastro: "28/09/2023",
           ativo: false,
           rating: 2.5
@@ -102,7 +102,7 @@ const EditTopicoDialog: React.FC<EditTopicoDialogProps> = ({
           instagram: "https://instagram.com/robertoalmeida",
           twitter: "https://twitter.com/robertoalmeida",
           fotoPerfil: "https://i.pravatar.cc/150?img=4",
-          status: "aprovado",
+          status: "aprovado" as TeacherStatus,
           dataCadastro: "15/01/2023",
           ativo: true,
           rating: 5.0
@@ -115,7 +115,7 @@ const EditTopicoDialog: React.FC<EditTopicoDialogProps> = ({
           disciplina: "Direito Administrativo",
           facebook: "https://facebook.com/fernandacosta",
           fotoPerfil: "https://i.pravatar.cc/150?img=5",
-          status: "pendente",
+          status: "pendente" as TeacherStatus,
           dataCadastro: "07/04/2023",
           ativo: true,
           rating: 4.2

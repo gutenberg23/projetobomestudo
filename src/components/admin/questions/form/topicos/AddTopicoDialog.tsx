@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
-import { TeacherData } from "../../../teachers/types";
+import { TeacherData, TeacherStatus } from "../../../teachers/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface AddTopicoDialogProps {
@@ -46,14 +45,12 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   const fetchDisciplinas = async () => {
     setLoading(true);
     try {
-      // Usamos o select para obter todas as disciplinas e depois filtramos os valores únicos no JavaScript
       const { data, error } = await supabase
         .from('questoes')
         .select('discipline');
       
       if (error) throw error;
       
-      // Extrair disciplinas únicas usando Set
       const uniqueDisciplinas = [...new Set(data?.map(item => item.discipline) || [])];
       setDisciplinas(uniqueDisciplinas);
     } catch (error) {
@@ -84,9 +81,6 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   const fetchTeachers = async () => {
     setLoadingTeachers(true);
     try {
-      // Em uma implementação real, buscaríamos do banco de dados
-      // Por enquanto, usamos os dados mockados definidos em useTeachersState
-      // Isso será substituído por uma chamada de API real quando houver integração com backend
       const mockTeachers = [
         {
           id: "1",
@@ -98,7 +92,7 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
           twitter: "https://twitter.com/anasilva",
           facebook: "https://facebook.com/anasilva",
           fotoPerfil: "https://i.pravatar.cc/150?img=1",
-          status: "aprovado",
+          status: "aprovado" as TeacherStatus,
           dataCadastro: "12/05/2023",
           ativo: true,
           rating: 4.5
@@ -111,7 +105,7 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
           disciplina: "Matemática",
           instagram: "https://instagram.com/carlosoliveira",
           fotoPerfil: "https://i.pravatar.cc/150?img=2",
-          status: "pendente",
+          status: "pendente" as TeacherStatus,
           dataCadastro: "03/07/2023",
           ativo: false,
           rating: 3.8
@@ -125,7 +119,7 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
           twitter: "https://twitter.com/julianamendes",
           facebook: "https://facebook.com/julianamendes",
           fotoPerfil: "https://i.pravatar.cc/150?img=3",
-          status: "rejeitado",
+          status: "rejeitado" as TeacherStatus,
           dataCadastro: "28/09/2023",
           ativo: false,
           rating: 2.5
@@ -139,7 +133,7 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
           instagram: "https://instagram.com/robertoalmeida",
           twitter: "https://twitter.com/robertoalmeida",
           fotoPerfil: "https://i.pravatar.cc/150?img=4",
-          status: "aprovado",
+          status: "aprovado" as TeacherStatus,
           dataCadastro: "15/01/2023",
           ativo: true,
           rating: 5.0
@@ -152,14 +146,13 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
           disciplina: "Direito Administrativo",
           facebook: "https://facebook.com/fernandacosta",
           fotoPerfil: "https://i.pravatar.cc/150?img=5",
-          status: "pendente",
+          status: "pendente" as TeacherStatus,
           dataCadastro: "07/04/2023",
           ativo: true,
           rating: 4.2
         }
       ];
       
-      // Filtramos apenas professores ativos e aprovados
       const activeTeachers = mockTeachers.filter(
         teacher => teacher.ativo && teacher.status === "aprovado"
       );
@@ -183,7 +176,6 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   const handleSubmit = () => {
     handleAddTopico(selectedTeacher);
     
-    // Reset do estado
     setNewTopicoNome("");
     setSelectedDisciplina("");
     setPatrocinador("");
