@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
+import { toast } from "sonner";
 
 interface AddTopicoDialogProps {
   isOpen: boolean;
@@ -14,6 +15,12 @@ interface AddTopicoDialogProps {
   newTopicoNome: string;
   setNewTopicoNome: (value: string) => void;
   handleAddTopico: () => void;
+}
+
+interface TeacherData {
+  id: string;
+  nomeCompleto: string;
+  disciplina: string;
 }
 
 const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
@@ -29,11 +36,14 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   const [questoes, setQuestoes] = useState<any[]>([]);
   const [selectedQuestoes, setSelectedQuestoes] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [teachers, setTeachers] = useState<TeacherData[]>([]);
+  const [selectedProfessorId, setSelectedProfessorId] = useState<string>("");
 
   useEffect(() => {
     if (isOpen) {
       fetchDisciplinas();
       fetchQuestoes();
+      fetchTeachers();
     }
   }, [isOpen]);
 
@@ -75,6 +85,99 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
     }
   };
 
+  const fetchTeachers = async () => {
+    setLoading(true);
+    try {
+      // Esta é uma versão simulada. Quando houver uma tabela real de professores, 
+      // substitua este código por uma consulta ao Supabase
+      const mockTeachers = [
+        {
+          id: "1",
+          nomeCompleto: "Ana Silva",
+          email: "ana.silva@email.com",
+          linkYoutube: "https://youtube.com/c/anasilva",
+          disciplina: "Português",
+          instagram: "https://instagram.com/anasilva",
+          twitter: "https://twitter.com/anasilva",
+          facebook: "https://facebook.com/anasilva",
+          fotoPerfil: "https://i.pravatar.cc/150?img=1",
+          status: "aprovado",
+          dataCadastro: "12/05/2023",
+          ativo: true,
+          rating: 4.5
+        },
+        {
+          id: "2",
+          nomeCompleto: "Carlos Oliveira",
+          email: "carlos.oliveira@email.com",
+          linkYoutube: "https://youtube.com/c/carlosoliveira",
+          disciplina: "Matemática",
+          instagram: "https://instagram.com/carlosoliveira",
+          fotoPerfil: "https://i.pravatar.cc/150?img=2",
+          status: "pendente",
+          dataCadastro: "03/07/2023",
+          ativo: false,
+          rating: 3.8
+        },
+        {
+          id: "3",
+          nomeCompleto: "Juliana Mendes",
+          email: "juliana.mendes@email.com",
+          linkYoutube: "https://youtube.com/c/julianamendes",
+          disciplina: "Direito Constitucional",
+          twitter: "https://twitter.com/julianamendes",
+          facebook: "https://facebook.com/julianamendes",
+          fotoPerfil: "https://i.pravatar.cc/150?img=3",
+          status: "rejeitado",
+          dataCadastro: "28/09/2023",
+          ativo: false,
+          rating: 2.5
+        },
+        {
+          id: "4",
+          nomeCompleto: "Roberto Almeida",
+          email: "roberto.almeida@email.com",
+          linkYoutube: "https://youtube.com/c/robertoalmeida",
+          disciplina: "Contabilidade",
+          instagram: "https://instagram.com/robertoalmeida",
+          twitter: "https://twitter.com/robertoalmeida",
+          fotoPerfil: "https://i.pravatar.cc/150?img=4",
+          status: "aprovado",
+          dataCadastro: "15/01/2023",
+          ativo: true,
+          rating: 5.0
+        },
+        {
+          id: "5",
+          nomeCompleto: "Fernanda Costa",
+          email: "fernanda.costa@email.com",
+          linkYoutube: "https://youtube.com/c/fernandacosta",
+          disciplina: "Direito Administrativo",
+          facebook: "https://facebook.com/fernandacosta",
+          fotoPerfil: "https://i.pravatar.cc/150?img=5",
+          status: "pendente",
+          dataCadastro: "07/04/2023",
+          ativo: true,
+          rating: 4.2
+        }
+      ];
+
+      // Convertendo os dados brutos para o formato TeacherData
+      const formattedTeachers: TeacherData[] = mockTeachers.map(teacher => ({
+        id: teacher.id,
+        nomeCompleto: teacher.nomeCompleto,
+        disciplina: teacher.disciplina
+      }));
+
+      setTeachers(formattedTeachers);
+    } catch (error) {
+      console.error("Erro ao buscar professores:", error);
+      toast.error("Erro ao carregar professores. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleQuestoesChange = (questaoId: string) => {
     if (selectedQuestoes.includes(questaoId)) {
       setSelectedQuestoes(selectedQuestoes.filter(id => id !== questaoId));
@@ -84,20 +187,34 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   };
 
   const handleSubmit = () => {
+    if (!newTopicoNome.trim()) {
+      toast.error("O título do tópico é obrigatório");
+      return;
+    }
+
+    if (!selectedDisciplina) {
+      toast.error("A disciplina é obrigatória");
+      return;
+    }
+
     // Aqui nós chamamos a função original handleAddTopico, mas com os dados adicionais
     // Você precisará modificar a função original para receber esses dados adicionais
     console.log({
       nome: newTopicoNome,
       disciplina: selectedDisciplina,
       patrocinador,
-      questoesIds: selectedQuestoes
+      questoesIds: selectedQuestoes,
+      professor_id: selectedProfessorId
     });
+    
+    handleAddTopico();
     
     // Reset do estado
     setNewTopicoNome("");
     setSelectedDisciplina("");
     setPatrocinador("");
     setSelectedQuestoes([]);
+    setSelectedProfessorId("");
     setIsOpen(false);
   };
 
@@ -128,6 +245,22 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
                 {disciplinas.map((disciplina) => (
                   <SelectItem key={disciplina} value={disciplina}>
                     {disciplina}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="professor">Professor</Label>
+            <Select value={selectedProfessorId} onValueChange={setSelectedProfessorId}>
+              <SelectTrigger id="professor">
+                <SelectValue placeholder="Selecione um professor" />
+              </SelectTrigger>
+              <SelectContent>
+                {teachers.map((teacher) => (
+                  <SelectItem key={teacher.id} value={teacher.id}>
+                    {teacher.nomeCompleto} - {teacher.disciplina}
                   </SelectItem>
                 ))}
               </SelectContent>

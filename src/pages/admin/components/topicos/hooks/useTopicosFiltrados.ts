@@ -5,6 +5,7 @@ export const useTopicosFiltrados = (
   topicos: Topico[],
   searchTerm: string,
   disciplinaFiltro: string,
+  professorFiltro: string,
   currentPage: number,
   itemsPerPage: number
 ) => {
@@ -12,10 +13,13 @@ export const useTopicosFiltrados = (
   const topicosFiltrados = topicos.filter((topico) => {
     const matchesTitulo = topico.titulo.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDisciplina = disciplinaFiltro 
-      ? topico.disciplina === disciplinaFiltro
+      ? topico.disciplina.toLowerCase().includes(disciplinaFiltro.toLowerCase())
+      : true;
+    const matchesProfessor = professorFiltro
+      ? (topico.professor_nome || "").toLowerCase().includes(professorFiltro.toLowerCase())
       : true;
     
-    return matchesTitulo && matchesDisciplina;
+    return matchesTitulo && matchesDisciplina && matchesProfessor;
   });
 
   // Paginar os tópicos filtrados

@@ -23,6 +23,12 @@ interface EditTopicoModalProps {
   onSave: (topico: Topico) => void;
 }
 
+interface TeacherData {
+  id: string;
+  nomeCompleto: string;
+  disciplina: string;
+}
+
 export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
   isOpen,
   onClose,
@@ -33,11 +39,14 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
   const [newQuestaoId, setNewQuestaoId] = useState("");
   const [disciplinas, setDisciplinas] = useState<string[]>([]);
   const [isLoadingDisciplinas, setIsLoadingDisciplinas] = useState(false);
+  const [teachers, setTeachers] = useState<TeacherData[]>([]);
+  const [isLoadingTeachers, setIsLoadingTeachers] = useState(false);
 
   useEffect(() => {
     if (isOpen && topico) {
       setEditedTopico({ ...topico });
       fetchDisciplinas();
+      fetchTeachers();
     }
   }, [isOpen, topico]);
 
@@ -59,6 +68,99 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
       toast.error("Erro ao carregar as disciplinas.");
     } finally {
       setIsLoadingDisciplinas(false);
+    }
+  };
+
+  const fetchTeachers = async () => {
+    setIsLoadingTeachers(true);
+    try {
+      // Esta é uma versão simulada. Quando houver uma tabela real de professores, 
+      // substitua este código por uma consulta ao Supabase
+      const mockTeachers = [
+        {
+          id: "1",
+          nomeCompleto: "Ana Silva",
+          email: "ana.silva@email.com",
+          linkYoutube: "https://youtube.com/c/anasilva",
+          disciplina: "Português",
+          instagram: "https://instagram.com/anasilva",
+          twitter: "https://twitter.com/anasilva",
+          facebook: "https://facebook.com/anasilva",
+          fotoPerfil: "https://i.pravatar.cc/150?img=1",
+          status: "aprovado",
+          dataCadastro: "12/05/2023",
+          ativo: true,
+          rating: 4.5
+        },
+        {
+          id: "2",
+          nomeCompleto: "Carlos Oliveira",
+          email: "carlos.oliveira@email.com",
+          linkYoutube: "https://youtube.com/c/carlosoliveira",
+          disciplina: "Matemática",
+          instagram: "https://instagram.com/carlosoliveira",
+          fotoPerfil: "https://i.pravatar.cc/150?img=2",
+          status: "pendente",
+          dataCadastro: "03/07/2023",
+          ativo: false,
+          rating: 3.8
+        },
+        {
+          id: "3",
+          nomeCompleto: "Juliana Mendes",
+          email: "juliana.mendes@email.com",
+          linkYoutube: "https://youtube.com/c/julianamendes",
+          disciplina: "Direito Constitucional",
+          twitter: "https://twitter.com/julianamendes",
+          facebook: "https://facebook.com/julianamendes",
+          fotoPerfil: "https://i.pravatar.cc/150?img=3",
+          status: "rejeitado",
+          dataCadastro: "28/09/2023",
+          ativo: false,
+          rating: 2.5
+        },
+        {
+          id: "4",
+          nomeCompleto: "Roberto Almeida",
+          email: "roberto.almeida@email.com",
+          linkYoutube: "https://youtube.com/c/robertoalmeida",
+          disciplina: "Contabilidade",
+          instagram: "https://instagram.com/robertoalmeida",
+          twitter: "https://twitter.com/robertoalmeida",
+          fotoPerfil: "https://i.pravatar.cc/150?img=4",
+          status: "aprovado",
+          dataCadastro: "15/01/2023",
+          ativo: true,
+          rating: 5.0
+        },
+        {
+          id: "5",
+          nomeCompleto: "Fernanda Costa",
+          email: "fernanda.costa@email.com",
+          linkYoutube: "https://youtube.com/c/fernandacosta",
+          disciplina: "Direito Administrativo",
+          facebook: "https://facebook.com/fernandacosta",
+          fotoPerfil: "https://i.pravatar.cc/150?img=5",
+          status: "pendente",
+          dataCadastro: "07/04/2023",
+          ativo: true,
+          rating: 4.2
+        }
+      ];
+
+      // Convertendo os dados brutos para o formato TeacherData
+      const formattedTeachers: TeacherData[] = mockTeachers.map(teacher => ({
+        id: teacher.id,
+        nomeCompleto: teacher.nomeCompleto,
+        disciplina: teacher.disciplina
+      }));
+
+      setTeachers(formattedTeachers);
+    } catch (error) {
+      console.error("Erro ao buscar professores:", error);
+      toast.error("Erro ao carregar professores. Tente novamente.");
+    } finally {
+      setIsLoadingTeachers(false);
     }
   };
 
@@ -94,6 +196,15 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
   const handleSave = async () => {
     if (editedTopico) {
       try {
+        // Atualizar o nome do professor, se selecionado
+        let professor_nome = editedTopico.professor_nome || "";
+        if (editedTopico.professor_id) {
+          const selectedTeacher = teachers.find(t => t.id === editedTopico.professor_id);
+          if (selectedTeacher) {
+            professor_nome = selectedTeacher.nomeCompleto;
+          }
+        }
+
         // Atualizar no Supabase
         const { error } = await supabase
           .from('topicos')
@@ -101,14 +212,19 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
             nome: editedTopico.titulo,
             disciplina: editedTopico.disciplina,
             patrocinador: editedTopico.patrocinador,
-            questoes_ids: editedTopico.questoesIds
+            questoes_ids: editedTopico.questoesIds,
+            professor_id: editedTopico.professor_id,
+            professor_nome: professor_nome
           })
           .eq('id', editedTopico.id);
 
         if (error) throw error;
         
         // Atualizar na interface
-        onSave(editedTopico);
+        onSave({
+          ...editedTopico,
+          professor_nome: professor_nome
+        });
         toast.success("Tópico atualizado com sucesso!");
       } catch (error) {
         console.error("Erro ao atualizar tópico:", error);
@@ -150,6 +266,28 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
                   {disciplinas.map((disciplina) => (
                     <SelectItem key={disciplina} value={disciplina}>
                       {disciplina}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="edit-professor">Professor</Label>
+            {isLoadingTeachers ? (
+              <div className="text-sm text-[#67748a] py-2">Carregando professores...</div>
+            ) : (
+              <Select
+                value={editedTopico.professor_id || ""}
+                onValueChange={(value) => setEditedTopico({ ...editedTopico, professor_id: value })}
+              >
+                <SelectTrigger id="edit-professor">
+                  <SelectValue placeholder="Selecione um professor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map((teacher) => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      {teacher.nomeCompleto} - {teacher.disciplina}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -10,6 +10,8 @@ export interface Topico {
   mapaUrl: string;
   resumoUrl: string;
   questoesIds: string[];
+  professor_id?: string;
+  professor_nome?: string;
   selecionado?: boolean;
   abrirVideoEm?: "site" | "destino";
 }

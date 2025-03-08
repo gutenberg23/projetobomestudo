@@ -26,6 +26,12 @@ import { QuestionsManager } from "./components/topicos/modals/components/Questio
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
 
+interface TeacherData {
+  id: string;
+  nomeCompleto: string;
+  disciplina: string;
+}
+
 const Topicos = () => {
   // Obter estados do hook personalizado
   const {
@@ -36,6 +42,8 @@ const Topicos = () => {
     setSearchTerm,
     disciplinaFiltro,
     setDisciplinaFiltro,
+    professorFiltro,
+    setProfessorFiltro,
     currentPage,
     setCurrentPage,
     itemsPerPage,
@@ -57,10 +65,13 @@ const Topicos = () => {
     titulo: "",
     disciplina: "",
     patrocinador: "",
-    questoesIds: [] as string[]
+    questoesIds: [] as string[],
+    professor_id: ""
   });
   const [disciplinas, setDisciplinas] = useState<string[]>([]);
   const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
+  const [teachers, setTeachers] = useState<TeacherData[]>([]);
+  const [loadingTeachers, setLoadingTeachers] = useState(false);
   
   // Estado para gerenciamento de questões
   const [newQuestaoId, setNewQuestaoId] = useState("");
@@ -70,6 +81,7 @@ const Topicos = () => {
     topicos,
     searchTerm,
     disciplinaFiltro,
+    professorFiltro,
     currentPage,
     itemsPerPage
   );
@@ -93,10 +105,11 @@ const Topicos = () => {
     setDescricaoNovaAula
   );
 
-  // Buscar dados de disciplinas quando o modal é aberto
+  // Buscar dados de disciplinas e professores quando o modal é aberto
   useEffect(() => {
     if (isCreateModalOpen) {
       fetchDisciplinas();
+      fetchTeachers();
     }
   }, [isCreateModalOpen]);
 
@@ -119,6 +132,99 @@ const Topicos = () => {
       toast.error("Erro ao carregar as disciplinas.");
     } finally {
       setLoadingDisciplinas(false);
+    }
+  };
+
+  const fetchTeachers = async () => {
+    setLoadingTeachers(true);
+    try {
+      // Esta é uma versão simulada. Quando houver uma tabela real de professores, 
+      // substitua este código por uma consulta ao Supabase
+      const mockTeachers = [
+        {
+          id: "1",
+          nomeCompleto: "Ana Silva",
+          email: "ana.silva@email.com",
+          linkYoutube: "https://youtube.com/c/anasilva",
+          disciplina: "Português",
+          instagram: "https://instagram.com/anasilva",
+          twitter: "https://twitter.com/anasilva",
+          facebook: "https://facebook.com/anasilva",
+          fotoPerfil: "https://i.pravatar.cc/150?img=1",
+          status: "aprovado",
+          dataCadastro: "12/05/2023",
+          ativo: true,
+          rating: 4.5
+        },
+        {
+          id: "2",
+          nomeCompleto: "Carlos Oliveira",
+          email: "carlos.oliveira@email.com",
+          linkYoutube: "https://youtube.com/c/carlosoliveira",
+          disciplina: "Matemática",
+          instagram: "https://instagram.com/carlosoliveira",
+          fotoPerfil: "https://i.pravatar.cc/150?img=2",
+          status: "pendente",
+          dataCadastro: "03/07/2023",
+          ativo: false,
+          rating: 3.8
+        },
+        {
+          id: "3",
+          nomeCompleto: "Juliana Mendes",
+          email: "juliana.mendes@email.com",
+          linkYoutube: "https://youtube.com/c/julianamendes",
+          disciplina: "Direito Constitucional",
+          twitter: "https://twitter.com/julianamendes",
+          facebook: "https://facebook.com/julianamendes",
+          fotoPerfil: "https://i.pravatar.cc/150?img=3",
+          status: "rejeitado",
+          dataCadastro: "28/09/2023",
+          ativo: false,
+          rating: 2.5
+        },
+        {
+          id: "4",
+          nomeCompleto: "Roberto Almeida",
+          email: "roberto.almeida@email.com",
+          linkYoutube: "https://youtube.com/c/robertoalmeida",
+          disciplina: "Contabilidade",
+          instagram: "https://instagram.com/robertoalmeida",
+          twitter: "https://twitter.com/robertoalmeida",
+          fotoPerfil: "https://i.pravatar.cc/150?img=4",
+          status: "aprovado",
+          dataCadastro: "15/01/2023",
+          ativo: true,
+          rating: 5.0
+        },
+        {
+          id: "5",
+          nomeCompleto: "Fernanda Costa",
+          email: "fernanda.costa@email.com",
+          linkYoutube: "https://youtube.com/c/fernandacosta",
+          disciplina: "Direito Administrativo",
+          facebook: "https://facebook.com/fernandacosta",
+          fotoPerfil: "https://i.pravatar.cc/150?img=5",
+          status: "pendente",
+          dataCadastro: "07/04/2023",
+          ativo: true,
+          rating: 4.2
+        }
+      ];
+
+      // Convertendo os dados brutos para o formato TeacherData
+      const formattedTeachers: TeacherData[] = mockTeachers.map(teacher => ({
+        id: teacher.id,
+        nomeCompleto: teacher.nomeCompleto,
+        disciplina: teacher.disciplina
+      }));
+
+      setTeachers(formattedTeachers);
+    } catch (error) {
+      console.error("Erro ao buscar professores:", error);
+      toast.error("Erro ao carregar professores. Tente novamente.");
+    } finally {
+      setLoadingTeachers(false);
     }
   };
 
@@ -157,6 +263,15 @@ const Topicos = () => {
     }
 
     try {
+      // Obter o nome do professor, se selecionado
+      let professor_nome = "";
+      if (newTopico.professor_id) {
+        const selectedTeacher = teachers.find(t => t.id === newTopico.professor_id);
+        if (selectedTeacher) {
+          professor_nome = selectedTeacher.nomeCompleto;
+        }
+      }
+
       const { data, error } = await supabase
         .from('topicos')
         .insert([
@@ -164,7 +279,9 @@ const Topicos = () => {
             nome: newTopico.titulo,
             disciplina: newTopico.disciplina,
             patrocinador: newTopico.patrocinador,
-            questoes_ids: newTopico.questoesIds
+            questoes_ids: newTopico.questoesIds,
+            professor_id: newTopico.professor_id,
+            professor_nome: professor_nome
           }
         ])
         .select();
@@ -184,6 +301,8 @@ const Topicos = () => {
           mapaUrl: "",
           resumoUrl: "",
           questoesIds: data[0].questoes_ids || [],
+          professor_id: data[0].professor_id || "",
+          professor_nome: data[0].professor_nome || "",
           selecionado: false
         };
         
@@ -195,7 +314,8 @@ const Topicos = () => {
           titulo: "",
           disciplina: "",
           patrocinador: "",
-          questoesIds: []
+          questoesIds: [],
+          professor_id: ""
         });
         
         // Fechar o modal
@@ -229,6 +349,8 @@ const Topicos = () => {
         setSearchTerm={setSearchTerm}
         disciplinaFiltro={disciplinaFiltro}
         setDisciplinaFiltro={setDisciplinaFiltro}
+        professorFiltro={professorFiltro}
+        setProfessorFiltro={setProfessorFiltro}
       />
       
       {/* Tabela de tópicos */}
@@ -303,6 +425,31 @@ const Topicos = () => {
                     {disciplinas.map((disciplina) => (
                       <SelectItem key={disciplina} value={disciplina}>
                         {disciplina}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="topico-professor">Professor</Label>
+              {loadingTeachers ? (
+                <div className="text-sm text-[#67748a] p-2 border rounded flex items-center">
+                  Carregando professores...
+                </div>
+              ) : (
+                <Select 
+                  value={newTopico.professor_id} 
+                  onValueChange={(value) => setNewTopico({ ...newTopico, professor_id: value })}
+                >
+                  <SelectTrigger id="topico-professor">
+                    <SelectValue placeholder="Selecione um professor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teachers.map((teacher) => (
+                      <SelectItem key={teacher.id} value={teacher.id}>
+                        {teacher.nomeCompleto} - {teacher.disciplina}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -45,11 +45,12 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
               </div>
             </TableHead>
             <TableHead className="w-[50px]">ID</TableHead>
-            <TableHead className="w-[200px]">Título</TableHead>
+            <TableHead className="w-[180px]">Título</TableHead>
             <TableHead className="w-[150px]">Disciplina</TableHead>
-            <TableHead className="w-[150px]">Patrocinador</TableHead>
-            <TableHead className="w-[150px]">Questões</TableHead>
-            <TableHead className="w-[150px]">Ações</TableHead>
+            <TableHead className="w-[180px]">Professor</TableHead>
+            <TableHead className="w-[120px]">Patrocinador</TableHead>
+            <TableHead className="w-[100px]">Questões</TableHead>
+            <TableHead className="w-[120px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -66,6 +67,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
                 <TableCell className="font-medium">{topico.id}</TableCell>
                 <TableCell>{topico.titulo}</TableCell>
                 <TableCell>{topico.disciplina}</TableCell>
+                <TableCell>{topico.professor_nome || "Não atribuído"}</TableCell>
                 <TableCell>{topico.patrocinador}</TableCell>
                 <TableCell>{topico.questoesIds.length} questões</TableCell>
                 <TableCell>
@@ -91,7 +93,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={8} className="text-center py-4 text-[#67748a]">
                 Nenhum tópico encontrado com os filtros aplicados.
               </TableCell>
             </TableRow>

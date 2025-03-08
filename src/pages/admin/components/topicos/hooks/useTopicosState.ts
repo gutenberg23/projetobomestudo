@@ -10,6 +10,7 @@ export const useTopicosState = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [disciplinaFiltro, setDisciplinaFiltro] = useState("");
+  const [professorFiltro, setProfessorFiltro] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -45,6 +46,8 @@ export const useTopicosState = () => {
           mapaUrl: "",
           resumoUrl: "",
           questoesIds: item.questoes_ids || [],
+          professor_id: item.professor_id || "",
+          professor_nome: item.professor_nome || "",
           selecionado: false
         })) || [];
         
@@ -68,6 +71,8 @@ export const useTopicosState = () => {
     setSearchTerm,
     disciplinaFiltro,
     setDisciplinaFiltro,
+    professorFiltro,
+    setProfessorFiltro,
     currentPage,
     setCurrentPage,
     itemsPerPage,
