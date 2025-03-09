@@ -40,6 +40,9 @@ export const useQuestionsState = () => {
     questionType: ""
   });
   
+  // Estado para o modal de criar simulado
+  const [isSimuladoModalOpen, setIsSimuladoModalOpen] = useState<boolean>(false);
+  
   // Estado para opções selecionáveis
   const [institutions, setInstitutions] = useState<string[]>(["IDECAN", "CESPE", "FGV", "VUNESP"]);
   const [roles, setRoles] = useState<string[]>(["Analista", "Técnico", "Auditor", "Escrivão"]);
@@ -110,6 +113,9 @@ export const useQuestionsState = () => {
     // Filter state
     showFilters, setShowFilters,
     filters, setFilters,
+    
+    // Simulado modal state
+    isSimuladoModalOpen, setIsSimuladoModalOpen,
     
     // Options state
     institutions, setInstitutions,

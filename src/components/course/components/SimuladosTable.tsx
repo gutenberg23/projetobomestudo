@@ -1,49 +1,99 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useParams } from "react-router-dom";
 
 interface Simulado {
-  id: number;
-  title: string;
-  questionsCount: number;
-  hits: number;
-  errors: number;
+  id: string;
+  titulo: string;
+  questoes_ids: string[];
+  hits?: number;
+  errors?: number;
 }
 
 interface SimuladosTableProps {
   performanceGoal: number;
 }
 
-const simulados: Simulado[] = [
-  {
-    id: 1,
-    title: "Simulado Geral #1",
-    questionsCount: 100,
-    hits: 75,
-    errors: 25,
-  },
-  {
-    id: 2,
-    title: "Simulado Específico - Direito Constitucional",
-    questionsCount: 50,
-    hits: 42,
-    errors: 8,
-  },
-];
-
 export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
-  const calculatePerformance = (hits: number, total: number) => {
+  const { courseId } = useParams<{ courseId: string }>();
+  const [simulados, setSimulados] = useState<Simulado[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSimulados = async () => {
+      try {
+        setIsLoading(true);
+        
+        if (!courseId) {
+          setSimulados([]);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("simulados")
+          .select("*")
+          .eq("curso_id", courseId)
+          .eq("ativo", true);
+
+        if (error) {
+          throw error;
+        }
+
+        // Transformar os dados para o formato esperado pelo componente
+        // Adicionando valores fictícios para hits e errors por enquanto
+        const formattedSimulados: Simulado[] = data.map(simulado => ({
+          id: simulado.id,
+          titulo: simulado.titulo,
+          questoes_ids: simulado.questoes_ids || [],
+          hits: Math.floor(Math.random() * simulado.quantidade_questoes * 0.8), // Valor fictício para exemplo
+          errors: Math.floor(Math.random() * simulado.quantidade_questoes * 0.3) // Valor fictício para exemplo
+        }));
+
+        setSimulados(formattedSimulados);
+      } catch (error) {
+        console.error("Erro ao carregar simulados:", error);
+        toast.error("Erro ao carregar simulados. Tente novamente.");
+        setSimulados([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSimulados();
+  }, [courseId]);
+
+  const calculatePerformance = (hits: number = 0, total: number = 0) => {
+    if (total === 0) return 0;
     return Math.round((hits / total) * 100);
   };
 
   const totals = simulados.reduce(
     (acc, simulado) => ({
-      questionsCount: acc.questionsCount + simulado.questionsCount,
-      hits: acc.hits + simulado.hits,
-      errors: acc.errors + simulado.errors,
+      questionsCount: acc.questionsCount + simulado.questoes_ids.length,
+      hits: acc.hits + (simulado.hits || 0),
+      errors: acc.errors + (simulado.errors || 0),
     }),
     { questionsCount: 0, hits: 0, errors: 0 }
   );
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-[10px] p-5 text-center">
+        <p className="text-[#67748a]">Carregando simulados...</p>
+      </div>
+    );
+  }
+
+  if (simulados.length === 0) {
+    return (
+      <div className="bg-white rounded-[10px] p-5 text-center">
+        <p className="text-[#67748a]">Nenhum simulado disponível para este curso.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-[10px] p-5">
@@ -63,15 +113,22 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
             {simulados.map((simulado, index) => (
               <tr key={simulado.id} className="border-t border-gray-200">
                 <td className="py-3 px-4">{index + 1}</td>
-                <td className="py-3 px-4">{simulado.title}</td>
-                <td className="py-3 px-4 text-center">{simulado.questionsCount}</td>
-                <td className="py-3 px-4 text-center">{simulado.hits}</td>
-                <td className="py-3 px-4 text-center">{simulado.errors}</td>
+                <td className="py-3 px-4">
+                  <a 
+                    href={`/simulado/${simulado.id}`} 
+                    className="text-[#5f2ebe] hover:underline"
+                  >
+                    {simulado.titulo}
+                  </a>
+                </td>
+                <td className="py-3 px-4 text-center">{simulado.questoes_ids.length}</td>
+                <td className="py-3 px-4 text-center">{simulado.hits || 0}</td>
+                <td className="py-3 px-4 text-center">{simulado.errors || 0}</td>
                 <td className={cn(
                   "py-3 px-4 text-center",
-                  calculatePerformance(simulado.hits, simulado.questionsCount) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
+                  calculatePerformance(simulado.hits, simulado.questoes_ids.length) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
                 )}>
-                  {calculatePerformance(simulado.hits, simulado.questionsCount)}%
+                  {calculatePerformance(simulado.hits, simulado.questoes_ids.length)}%
                 </td>
               </tr>
             ))}

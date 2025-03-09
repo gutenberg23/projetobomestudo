@@ -25,15 +25,15 @@ export const useQuestionSelectionActions = (state: ReturnType<typeof import("../
   };
 
   const handleCreateSimulado = () => {
-    const { selectedQuestions, setSelectedQuestions } = state;
+    const { selectedQuestions, setIsSimuladoModalOpen } = state;
     
     if (selectedQuestions.length === 0) {
       toast.error("Selecione pelo menos uma questão para criar o simulado.");
       return;
     }
     
-    toast.success(`Simulado criado com ${selectedQuestions.length} questões!`);
-    setSelectedQuestions([]);
+    // Abrir o modal ao invés de apenas mostrar um toast
+    setIsSimuladoModalOpen(true);
   };
 
   return {

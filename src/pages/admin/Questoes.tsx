@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { QuestionItemType, QuestionOption } from "@/components/admin/questions/types";
 import { Json } from "@/integrations/supabase/types";
+import CriarSimuladoModal from "@/components/admin/questions/modals/CriarSimuladoModal";
 
 const Questoes: React.FC = () => {
   const state = useQuestionsState();
@@ -218,6 +219,13 @@ const Questoes: React.FC = () => {
           submitButtonText="Salvar Questão"
         />
       </Card>
+
+      {/* Modal para criar simulado */}
+      <CriarSimuladoModal
+        isOpen={state.isSimuladoModalOpen}
+        onClose={() => state.setIsSimuladoModalOpen(false)}
+        selectedQuestions={state.selectedQuestions}
+      />
     </div>
   );
 };

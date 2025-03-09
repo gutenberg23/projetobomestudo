@@ -195,6 +195,42 @@ export type Database = {
         }
         Relationships: []
       }
+      simulados: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          curso_id: string
+          data_fim: string | null
+          data_inicio: string | null
+          id: string
+          quantidade_questoes: number | null
+          questoes_ids: string[] | null
+          titulo: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          curso_id: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          quantidade_questoes?: number | null
+          questoes_ids?: string[] | null
+          titulo: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          curso_id?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          quantidade_questoes?: number | null
+          questoes_ids?: string[] | null
+          titulo?: string
+        }
+        Relationships: []
+      }
       topicos: {
         Row: {
           created_at: string | null
