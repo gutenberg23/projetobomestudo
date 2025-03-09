@@ -8,13 +8,17 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { QuestionItemType } from "@/components/admin/questions/types";
 import { Json } from "@/integrations/supabase/types";
+import { QuestionCard } from "@/components/new/QuestionCard";
+import { Question } from "@/components/new/types";
 
 const Simulado = () => {
   const { simuladoId } = useParams<{ simuladoId: string }>();
   const [simulado, setSimulado] = useState<any>(null);
   const [questions, setQuestions] = useState<QuestionItemType[]>([]);
+  const [formattedQuestions, setFormattedQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeQuestion, setActiveQuestion] = useState(0);
+  const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchSimulado = async () => {
@@ -46,7 +50,7 @@ const Simulado = () => {
           if (questionsError) throw questionsError;
 
           // Formatar os dados das questões
-          const formattedQuestions: QuestionItemType[] = questionsData.map((q: any) => ({
+          const formattedQuestionsAdmin: QuestionItemType[] = questionsData.map((q: any) => ({
             id: q.id,
             year: q.year,
             institution: q.institution,
@@ -64,7 +68,23 @@ const Simulado = () => {
             topicos: Array.isArray(q.topicos) ? q.topicos : []
           }));
 
-          setQuestions(formattedQuestions);
+          setQuestions(formattedQuestionsAdmin);
+          
+          // Formatar questões para o formato do QuestionCard
+          const questionsForCard: Question[] = questionsData.map((q: any) => ({
+            id: q.id,
+            content: q.content,
+            additionalContent: q.expandablecontent || undefined,
+            year: q.year,
+            institution: q.institution,
+            organization: q.organization,
+            role: q.role,
+            options: parseOptions(q.options),
+            comments: [],
+            aiExplanation: q.aiexplanation || undefined
+          }));
+          
+          setFormattedQuestions(questionsForCard);
         }
       } catch (error) {
         console.error("Erro ao buscar simulado:", error);
@@ -92,8 +112,9 @@ const Simulado = () => {
   };
 
   const handleNextQuestion = () => {
-    if (activeQuestion < questions.length - 1) {
+    if (activeQuestion < formattedQuestions.length - 1) {
       setActiveQuestion(activeQuestion + 1);
+      setDisabledOptions([]);
       window.scrollTo(0, 0);
     }
   };
@@ -101,8 +122,18 @@ const Simulado = () => {
   const handlePreviousQuestion = () => {
     if (activeQuestion > 0) {
       setActiveQuestion(activeQuestion - 1);
+      setDisabledOptions([]);
       window.scrollTo(0, 0);
     }
+  };
+
+  const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    setDisabledOptions(prev => 
+      prev.includes(optionId) 
+        ? prev.filter(id => id !== optionId) 
+        : [...prev, optionId]
+    );
   };
 
   if (isLoading) {
@@ -137,7 +168,7 @@ const Simulado = () => {
     );
   }
 
-  const currentQuestion = questions[activeQuestion];
+  const currentQuestion = formattedQuestions[activeQuestion];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -147,7 +178,7 @@ const Simulado = () => {
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
             <h1 className="text-2xl font-bold text-[#272f3c] mb-2">{simulado.titulo}</h1>
             <div className="text-[#67748a] mb-4">
-              <p>Total de questões: {questions.length}</p>
+              <p>Total de questões: {formattedQuestions.length}</p>
               {simulado.data_inicio && (
                 <p>Disponível de: {new Date(simulado.data_inicio).toLocaleDateString('pt-BR')}</p>
               )}
@@ -159,50 +190,24 @@ const Simulado = () => {
             <div className="bg-[#f6f8fa] p-4 rounded-lg mb-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-[#67748a]">Progresso:</span>
-                <span className="text-[#5f2ebe] font-semibold">{activeQuestion + 1} de {questions.length}</span>
+                <span className="text-[#5f2ebe] font-semibold">{activeQuestion + 1} de {formattedQuestions.length}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
                 <div 
                   className="bg-[#5f2ebe] h-2.5 rounded-full" 
-                  style={{ width: `${((activeQuestion + 1) / questions.length) * 100}%` }}
+                  style={{ width: `${((activeQuestion + 1) / formattedQuestions.length) * 100}%` }}
                 ></div>
               </div>
             </div>
           </div>
 
-          {questions.length > 0 && currentQuestion ? (
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-              <div className="mb-4">
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="bg-[#5f2ebe]/10 text-[#5f2ebe] text-xs px-2 py-1 rounded-full">
-                    {currentQuestion.year}
-                  </span>
-                  <span className="bg-[#5f2ebe]/10 text-[#5f2ebe] text-xs px-2 py-1 rounded-full">
-                    {currentQuestion.institution}
-                  </span>
-                  <span className="bg-[#5f2ebe]/10 text-[#5f2ebe] text-xs px-2 py-1 rounded-full">
-                    {currentQuestion.discipline}
-                  </span>
-                </div>
-                
-                <div className="prose max-w-none mb-6" dangerouslySetInnerHTML={{ __html: currentQuestion.content }}></div>
-                
-                {currentQuestion.options && currentQuestion.options.length > 0 && (
-                  <div className="space-y-3 mt-4">
-                    {currentQuestion.options.map((option) => (
-                      <div 
-                        key={option.id} 
-                        className="flex items-start p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                      >
-                        <div className="w-6 h-6 border-2 border-[#5f2ebe] rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                          {/* Circle will be filled when selected */}
-                        </div>
-                        <div dangerouslySetInnerHTML={{ __html: option.text }}></div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+          {formattedQuestions.length > 0 && currentQuestion ? (
+            <div className="mb-8">
+              <QuestionCard 
+                question={currentQuestion}
+                disabledOptions={disabledOptions}
+                onToggleDisabled={handleToggleDisabled}
+              />
               
               <div className="flex justify-between mt-8">
                 <Button 
@@ -214,7 +219,7 @@ const Simulado = () => {
                 </Button>
                 <Button 
                   onClick={handleNextQuestion}
-                  disabled={activeQuestion === questions.length - 1}
+                  disabled={activeQuestion === formattedQuestions.length - 1}
                 >
                   Próxima Questão
                 </Button>
