@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
@@ -127,7 +127,9 @@ const Simulado = () => {
           <div className="text-center">
             <h1 className="text-2xl font-bold text-[#272f3c] mb-4">Simulado não encontrado</h1>
             <p className="text-[#67748a]">O simulado solicitado não existe ou não está disponível.</p>
-            <Button className="mt-4" href="/">Voltar para o início</Button>
+            <Link to="/">
+              <Button className="mt-4">Voltar para o início</Button>
+            </Link>
           </div>
         </main>
         <Footer />
