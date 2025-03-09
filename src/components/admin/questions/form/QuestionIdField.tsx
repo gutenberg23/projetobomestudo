@@ -40,7 +40,7 @@ const QuestionIdField: React.FC<QuestionIdFieldProps> = ({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-[700px] p-0">
-                  <QuestionStats />
+                  <QuestionStats questionId={questionId} />
                 </PopoverContent>
               </Popover>
             </TooltipTrigger>

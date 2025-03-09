@@ -4,10 +4,10 @@ import { PieChart, BarChart, Cell, XAxis, YAxis, Bar, Pie, Legend, ResponsiveCon
 import { supabase } from "@/integrations/supabase/client";
 
 interface QuestionStatsProps {
-  questionId: string;
+  questionId?: string;
 }
 
-export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId }) => {
+export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [performanceData, setPerformanceData] = useState<Array<any>>([]);
   const [alternativesData, setAlternativesData] = useState<Array<any>>([]);
@@ -16,6 +16,25 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId }) => {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
+        
+        if (!questionId) {
+          // Dados de exemplo para quando não há ID de questão
+          setPerformanceData([
+            { name: "Acertos", value: 0, color: "#4ade80" },
+            { name: "Erros", value: 0, color: "#ef4444" },
+          ]);
+          
+          setAlternativesData([
+            { name: "A", value: 0, color: "#F8C471" },
+            { name: "B", value: 0, color: "#5DADE2" },
+            { name: "C", value: 0, color: "#F4D03F" },
+            { name: "D", value: 0, color: "#ABEBC6" },
+            { name: "E", value: 0, color: "#E59866" },
+          ]);
+          
+          setIsLoading(false);
+          return;
+        }
         
         // Obter estatísticas de acertos e erros
         const { data: respostasData, error: respostasError } = await supabase

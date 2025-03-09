@@ -86,7 +86,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-[700px] p-0">
-                                <QuestionStats />
+                                <QuestionStats questionId={question.id} />
                               </PopoverContent>
                             </Popover>
                           </TooltipTrigger>

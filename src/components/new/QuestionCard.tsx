@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -98,8 +97,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           conteudo,
           created_at,
           usuario_id,
-          profiles:usuario_id (nome, foto_perfil),
-          likes:likes_comentarios (id)
+          profiles (nome, foto_perfil),
+          likes_comentarios (id)
         `)
         .eq('questao_id', question.id)
         .order('created_at', { ascending: false });
@@ -123,7 +122,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             hour: '2-digit',
             minute: '2-digit'
           }),
-          likes: comment.likes ? comment.likes.length : 0,
+          likes: comment.likes_comentarios ? comment.likes_comentarios.length : 0,
           userId: comment.usuario_id
         }));
         
@@ -287,8 +286,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           conteudo,
           created_at,
           usuario_id,
-          profiles:usuario_id (nome, foto_perfil),
-          likes:likes_comentarios (id)
+          profiles (nome, foto_perfil),
+          likes_comentarios (id)
         `)
         .eq('questao_id', question.id)
         .order('created_at', { ascending: false });
@@ -306,7 +305,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             hour: '2-digit',
             minute: '2-digit'
           }),
-          likes: comment.likes ? comment.likes.length : 0,
+          likes: comment.likes_comentarios ? comment.likes_comentarios.length : 0,
           userId: comment.usuario_id
         }));
         
