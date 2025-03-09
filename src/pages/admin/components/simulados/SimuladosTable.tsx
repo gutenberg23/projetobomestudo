@@ -9,7 +9,7 @@ import {
   TableCell
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Link, Trash, Power } from "lucide-react";
+import { Link, Trash, Power, Edit, ExternalLink } from "lucide-react";
 import { SimuladosTableProps } from "./SimuladosTypes";
 
 export const SimuladosTable: React.FC<SimuladosTableProps> = ({
@@ -46,6 +46,15 @@ export const SimuladosTable: React.FC<SimuladosTableProps> = ({
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
+                    <a href={`/simulado/${simulado.id}`} target="_blank" rel="noopener noreferrer">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        title="Visualizar simulado"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                    </a>
                     <Button 
                       onClick={() => handleVincularCurso(simulado.id)} 
                       variant="outline" 

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, PlusCircle, X } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -26,9 +26,29 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
 }) => {
   const [titulo, setTitulo] = useState("");
   const [cursoId, setCursoId] = useState("");
+  const [cursosIds, setCursosIds] = useState<string[]>([]);
   const [dataInicio, setDataInicio] = useState<Date | undefined>(undefined);
   const [dataFim, setDataFim] = useState<Date | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleAddCurso = () => {
+    if (!cursoId.trim()) {
+      toast.error("Por favor, insira um ID de curso válido");
+      return;
+    }
+
+    if (cursosIds.includes(cursoId)) {
+      toast.error("Este curso já foi adicionado");
+      return;
+    }
+
+    setCursosIds([...cursosIds, cursoId]);
+    setCursoId("");
+  };
+
+  const handleRemoveCurso = (id: string) => {
+    setCursosIds(cursosIds.filter(curso => curso !== id));
+  };
 
   const handleCadastrarSimulado = async () => {
     if (!titulo.trim()) {
@@ -36,17 +56,18 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
       return;
     }
 
-    if (!cursoId.trim()) {
-      toast.error("Por favor, insira o ID do curso");
+    if (cursosIds.length === 0) {
+      toast.error("Por favor, adicione pelo menos um curso");
       return;
     }
 
     try {
       setIsLoading(true);
 
+      // Criar o primeiro registro principal de simulado
       const { data, error } = await supabase.from("simulados").insert({
         titulo,
-        curso_id: cursoId,
+        curso_id: cursosIds[0], // O primeiro curso será o principal
         data_inicio: dataInicio ? dataInicio.toISOString() : null,
         data_fim: dataFim ? dataFim.toISOString() : null,
         questoes_ids: selectedQuestions,
@@ -55,6 +76,24 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
 
       if (error) {
         throw error;
+      }
+
+      // Se há mais de um curso, criar registros adicionais
+      if (cursosIds.length > 1) {
+        const restanteCursos = cursosIds.slice(1);
+        const batchInserts = restanteCursos.map(cursoId => ({
+          titulo,
+          curso_id: cursoId,
+          data_inicio: dataInicio ? dataInicio.toISOString() : null,
+          data_fim: dataFim ? dataFim.toISOString() : null,
+          questoes_ids: selectedQuestions,
+          quantidade_questoes: selectedQuestions.length
+        }));
+
+        const { error: batchError } = await supabase.from("simulados").insert(batchInserts);
+        if (batchError) {
+          throw batchError;
+        }
       }
 
       toast.success("Simulado cadastrado com sucesso!");
@@ -71,6 +110,7 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
   const resetForm = () => {
     setTitulo("");
     setCursoId("");
+    setCursosIds([]);
     setDataInicio(undefined);
     setDataFim(undefined);
   };
@@ -100,14 +140,48 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
             <Label htmlFor="cursoId" className="text-right text-[#67748a]">
               ID do Curso
             </Label>
-            <Input
-              id="cursoId"
-              value={cursoId}
-              onChange={(e) => setCursoId(e.target.value)}
-              className="col-span-3 border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
-              placeholder="Digite o ID do curso"
-            />
+            <div className="col-span-3 flex space-x-2">
+              <Input
+                id="cursoId"
+                value={cursoId}
+                onChange={(e) => setCursoId(e.target.value)}
+                className="flex-grow border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
+                placeholder="Digite o ID do curso"
+              />
+              <Button 
+                type="button" 
+                onClick={handleAddCurso}
+                variant="secondary"
+                size="icon"
+                className="h-10 w-10"
+              >
+                <PlusCircle className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
+
+          {cursosIds.length > 0 && (
+            <div className="grid grid-cols-4 items-start gap-4">
+              <div className="col-start-2 col-span-3">
+                <div className="flex flex-wrap gap-2">
+                  {cursosIds.map(id => (
+                    <div key={id} className="flex items-center bg-slate-100 px-3 py-1 rounded-md">
+                      <span className="text-sm text-[#67748a] mr-2">{id}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 p-0"
+                        onClick={() => handleRemoveCurso(id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right text-[#67748a]">
@@ -182,7 +256,7 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
           </Button>
           <Button 
             onClick={handleCadastrarSimulado} 
-            disabled={isLoading || !titulo.trim() || !cursoId.trim()}
+            disabled={isLoading || !titulo.trim() || cursosIds.length === 0}
             className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90"
           >
             {isLoading ? "Cadastrando..." : "Cadastrar Simulado"}
