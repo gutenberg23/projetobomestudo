@@ -70,6 +70,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           
         if (respostaData && respostaData.length > 0) {
           setHasAnswered(true);
+          
+          // Definir a opção selecionada baseada na resposta anterior
+          if (respostaData[0] && respostaData[0].opcao_id) {
+            setSelectedOption(respostaData[0].opcao_id);
+          }
         }
         
         // Verificar quais comentários já foram curtidos pelo usuário
@@ -91,61 +96,74 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   // Buscar comentários da questão
   useEffect(() => {
     const fetchComments = async () => {
-      // Primeiro buscar os comentários
-      const { data: commentsData, error } = await supabase
-        .from('comentarios_questoes')
-        .select(`
-          id,
-          conteudo,
-          created_at,
-          usuario_id,
-          questao_id
-        `)
-        .eq('questao_id', question.id)
-        .order('created_at', { ascending: false });
+      try {
+        // Primeiro buscar os comentários
+        const { data: commentsData, error } = await supabase
+          .from('comentarios_questoes')
+          .select(`
+            id,
+            conteudo,
+            created_at,
+            usuario_id,
+            questao_id
+          `)
+          .eq('questao_id', question.id)
+          .order('created_at', { ascending: false });
+          
+        if (error) {
+          console.error("Erro ao buscar comentários:", error);
+          return;
+        }
         
-      if (error) {
-        console.error("Erro ao buscar comentários:", error);
-        return;
-      }
-      
-      if (commentsData && commentsData.length > 0) {
-        // Para cada comentário, buscar os dados do perfil do usuário e os likes
-        const formattedComments = await Promise.all(
-          commentsData.map(async (comment) => {
-            // Buscar dados do perfil
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('nome, foto_perfil')
-              .eq('id', comment.usuario_id)
-              .single();
+        if (commentsData && commentsData.length > 0) {
+          // Para cada comentário, buscar os dados do perfil do usuário e os likes separadamente
+          const formattedComments = await Promise.all(
+            commentsData.map(async (comment) => {
+              // Buscar dados do perfil separadamente
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('nome, foto_perfil')
+                .eq('id', comment.usuario_id)
+                .single();
+                
+              if (profileError) {
+                console.error("Erro ao buscar perfil:", profileError);
+              }
 
-            // Buscar likes do comentário
-            const { data: likesData } = await supabase
-              .from('likes_comentarios')
-              .select('id')
-              .eq('comentario_id', comment.id);
+              // Buscar likes do comentário
+              const { data: likesData, error: likesError } = await supabase
+                .from('likes_comentarios')
+                .select('id')
+                .eq('comentario_id', comment.id);
+                
+              if (likesError) {
+                console.error("Erro ao buscar likes:", likesError);
+              }
 
-            return {
-              id: comment.id,
-              author: profileData?.nome || "Usuário",
-              avatar: profileData?.foto_perfil || "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
-              content: comment.conteudo,
-              timestamp: new Date(comment.created_at).toLocaleDateString('pt-BR', { 
-                day: '2-digit', 
-                month: '2-digit', 
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }),
-              likes: likesData ? likesData.length : 0,
-              userId: comment.usuario_id
-            };
-          })
-        );
-        
-        setComments(formattedComments);
-      } else {
+              return {
+                id: comment.id,
+                author: profileData?.nome || "Usuário",
+                avatar: profileData?.foto_perfil || "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+                content: comment.conteudo,
+                timestamp: new Date(comment.created_at).toLocaleDateString('pt-BR', { 
+                  day: '2-digit', 
+                  month: '2-digit', 
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }),
+                likes: likesData ? likesData.length : 0,
+                userId: comment.usuario_id
+              };
+            })
+          );
+          
+          setComments(formattedComments);
+        } else {
+          setComments([]);
+        }
+      } catch (error) {
+        console.error("Erro ao processar comentários:", error);
         setComments([]);
       }
     };
@@ -214,14 +232,24 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     
     try {
       if (likedComments.includes(commentId)) {
-        // Remover o like
-        const { error } = await supabase
+        // Remover o like - buscar o ID do like para deletar corretamente
+        const { data, error: findError } = await supabase
           .from('likes_comentarios')
-          .delete()
+          .select('id')
           .eq('comentario_id', commentId)
-          .eq('usuario_id', userId);
+          .eq('usuario_id', userId)
+          .single();
           
-        if (error) throw error;
+        if (findError) throw findError;
+        
+        if (data && data.id) {
+          const { error } = await supabase
+            .from('likes_comentarios')
+            .delete()
+            .eq('id', data.id);
+            
+          if (error) throw error;
+        }
         
         setLikedComments(prev => prev.filter(id => id !== commentId));
       } else {
@@ -237,6 +265,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         
         setLikedComments(prev => [...prev, commentId]);
       }
+      
+      // Atualizar a lista de comentários para refletir a mudança
+      setComments(prevComments => {
+        return prevComments.map(c => {
+          if (c.id === commentId) {
+            return {
+              ...c,
+              likes: likedComments.includes(commentId) ? c.likes - 1 : c.likes + 1
+            };
+          }
+          return c;
+        });
+      });
     } catch (error) {
       console.error("Erro ao curtir comentário:", error);
       toast.error("Erro ao curtir comentário. Tente novamente.");
@@ -244,7 +285,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
   
   const handleOptionClick = (optionId: string) => {
-    if (!disabledOptions.includes(optionId) && !hasAnswered) {
+    if (!hasAnswered) {
       setSelectedOption(optionId);
     }
   };
@@ -267,86 +308,39 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     try {
       setSubmittingComment(true);
       
-      const { error } = await supabase
+      const { data: newComment, error } = await supabase
         .from('comentarios_questoes')
         .insert({
           questao_id: question.id,
           usuario_id: userId,
           conteudo: comment
-        });
+        })
+        .select()
+        .single();
         
       if (error) throw error;
       
-      // Adicionar o novo comentário à lista
-      const newComment = {
-        id: Date.now().toString(), // Temporário até atualizar
-        author: userName || "Usuário",
-        avatar: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
-        content: comment,
-        timestamp: new Date().toLocaleDateString('pt-BR', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        }),
-        likes: 0,
-        userId
-      };
-      
-      setComments(prev => [newComment, ...prev]);
-      setComment("");
-      toast.success("Comentário enviado com sucesso!");
-      
-      // Recarregar comentários para obter o ID correto
-      const { data: commentsData } = await supabase
-        .from('comentarios_questoes')
-        .select(`
-          id,
-          conteudo,
-          created_at,
-          usuario_id,
-          questao_id
-        `)
-        .eq('questao_id', question.id)
-        .order('created_at', { ascending: false });
-      
-      if (commentsData && commentsData.length > 0) {
-        // Para cada comentário, buscar os dados do perfil do usuário e os likes
-        const formattedComments = await Promise.all(
-          commentsData.map(async (comment) => {
-            // Buscar dados do perfil
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('nome, foto_perfil')
-              .eq('id', comment.usuario_id)
-              .single();
-
-            // Buscar likes do comentário
-            const { data: likesData } = await supabase
-              .from('likes_comentarios')
-              .select('id')
-              .eq('comentario_id', comment.id);
-
-            return {
-              id: comment.id,
-              author: profileData?.nome || "Usuário",
-              avatar: profileData?.foto_perfil || "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
-              content: comment.conteudo,
-              timestamp: new Date(comment.created_at).toLocaleDateString('pt-BR', { 
-                day: '2-digit', 
-                month: '2-digit', 
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }),
-              likes: likesData ? likesData.length : 0,
-              userId: comment.usuario_id
-            };
-          })
-        );
+      // Adicionar o novo comentário à lista com os dados do perfil
+      if (newComment) {
+        const newCommentWithProfile = {
+          id: newComment.id,
+          author: userName || "Usuário",
+          avatar: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+          content: newComment.conteudo,
+          timestamp: new Date(newComment.created_at).toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          likes: 0,
+          userId
+        };
         
-        setComments(formattedComments);
+        setComments(prev => [newCommentWithProfile, ...prev]);
+        setComment("");
+        toast.success("Comentário enviado com sucesso!");
       }
     } catch (error) {
       console.error("Erro ao enviar comentário:", error);
