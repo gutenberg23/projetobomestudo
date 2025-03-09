@@ -43,6 +43,41 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   // Verificar se há conteúdo adicional para mostrar (imagens, textos longos, etc.)
   const hasExpandableContent = question.additionalContent || question.images?.length > 0;
   
+  // Resetar o estado quando a questão muda
+  useEffect(() => {
+    setSelectedOption(null);
+    setHasAnswered(false);
+    setShowAnswer(false);
+    setShowOfficialAnswer(false);
+    setShowAIAnswer(false);
+    
+    // Verificar novamente se o usuário já respondeu esta nova questão
+    const checkUserAnswer = async () => {
+      if (userId) {
+        try {
+          const { data: respostaData } = await supabase
+            .from('respostas_alunos')
+            .select('*')
+            .eq('questao_id', question.id)
+            .eq('aluno_id', userId);
+            
+          if (respostaData && respostaData.length > 0) {
+            setHasAnswered(true);
+            
+            // Definir a opção selecionada baseada na resposta anterior
+            if (respostaData[0] && respostaData[0].opcao_id) {
+              setSelectedOption(respostaData[0].opcao_id);
+            }
+          }
+        } catch (error) {
+          console.error("Erro ao verificar resposta do usuário:", error);
+        }
+      }
+    };
+    
+    checkUserAnswer();
+  }, [question.id, userId]);
+  
   // Obter o usuário atual
   useEffect(() => {
     const getUserData = async () => {
@@ -92,6 +127,131 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     
     getUserData();
   }, [question.id]);
+  
+  // Buscar comentários da questão
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        setIsLoading(true);
+        
+        if (!questionId) {
+          // Dados de exemplo para quando não há ID de questão
+          setPerformanceData([
+            { name: "Acertos", value: 0, color: "#4ade80" },
+            { name: "Erros", value: 0, color: "#ef4444" },
+          ]);
+          
+          setAlternativesData([
+            { name: "A", value: 0, color: "#F8C471" },
+            { name: "B", value: 0, color: "#5DADE2" },
+            { name: "C", value: 0, color: "#F4D03F" },
+            { name: "D", value: 0, color: "#ABEBC6" },
+            { name: "E", value: 0, color: "#E59866" },
+          ]);
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        // Obter estatísticas de acertos e erros
+        const { data: respostasData, error: respostasError } = await supabase
+          .from('respostas_alunos')
+          .select('is_correta')
+          .eq('questao_id', questionId);
+          
+        if (respostasError) throw respostasError;
+        
+        // Calcular acertos e erros
+        let acertos = 0;
+        let erros = 0;
+        
+        if (respostasData && respostasData.length > 0) {
+          acertos = respostasData.filter(r => r.is_correta).length;
+          erros = respostasData.filter(r => !r.is_correta).length;
+        }
+        
+        setPerformanceData([
+          { name: "Acertos", value: acertos || 0, color: "#4ade80" },
+          { name: "Erros", value: erros || 0, color: "#ef4444" },
+        ]);
+        
+        // Obter estatísticas de alternativas mais respondidas
+        const { data: alternativasData, error: alternativasError } = await supabase
+          .from('respostas_alunos')
+          .select('opcao_id')
+          .eq('questao_id', questionId);
+          
+        if (alternativasError) throw alternativasError;
+        
+        // Contar respostas por alternativa
+        const alternativasCounts: Record<string, number> = {};
+        
+        if (alternativasData && alternativasData.length > 0) {
+          alternativasData.forEach(resposta => {
+            const alternativaId = resposta.opcao_id;
+            if (alternativasCounts[alternativaId]) {
+              alternativasCounts[alternativaId]++;
+            } else {
+              alternativasCounts[alternativaId] = 1;
+            }
+          });
+        }
+        
+        // Buscar informações das alternativas disponíveis
+        let alternativas = [];
+        
+        if (Object.keys(alternativasCounts).length > 0) {
+          // Obter a questão para mapear os IDs às letras
+          const { data: questaoData } = await supabase
+            .from('questoes')
+            .select('options')
+            .eq('id', questionId)
+            .single();
+            
+          if (questaoData && questaoData.options) {
+            const options = Array.isArray(questaoData.options) ? questaoData.options : [];
+            
+            alternativas = options.map((option, index) => {
+              const letter = String.fromCharCode(65 + index); // A, B, C, D, E
+              return {
+                name: letter,
+                value: alternativasCounts[option.id] || 0,
+                color: getAlternativaColor(index)
+              };
+            });
+          }
+        }
+        
+        setAlternativesData(alternativas.length > 0 ? alternativas : [
+          { name: "A", value: 0, color: "#F8C471" },
+          { name: "B", value: 0, color: "#5DADE2" },
+          { name: "C", value: 0, color: "#F4D03F" },
+          { name: "D", value: 0, color: "#ABEBC6" },
+          { name: "E", value: 0, color: "#E59866" },
+        ]);
+      } catch (error) {
+        console.error("Erro ao buscar estatísticas:", error);
+        
+        // Dados de exemplo para fallback
+        setPerformanceData([
+          { name: "Acertos", value: 0, color: "#4ade80" },
+          { name: "Erros", value: 0, color: "#ef4444" },
+        ]);
+        
+        setAlternativesData([
+          { name: "A", value: 0, color: "#F8C471" },
+          { name: "B", value: 0, color: "#5DADE2" },
+          { name: "C", value: 0, color: "#F4D03F" },
+          { name: "D", value: 0, color: "#ABEBC6" },
+          { name: "E", value: 0, color: "#E59866" },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStats();
+  }, [questionId]);
   
   // Buscar comentários da questão
   useEffect(() => {
@@ -231,7 +391,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     }
     
     try {
-      if (likedComments.includes(commentId)) {
+      // Verificar se já está nos likes (interface)
+      const isLiked = likedComments.includes(commentId);
+      
+      if (isLiked) {
         // Remover o like - buscar o ID do like para deletar corretamente
         const { data, error: findError } = await supabase
           .from('likes_comentarios')
@@ -249,9 +412,23 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             .eq('id', data.id);
             
           if (error) throw error;
+          
+          // Atualizar estado local antes de buscar novamente
+          setLikedComments(prev => prev.filter(id => id !== commentId));
+          
+          // Atualizar contagem visualmente imediatamente
+          setComments(prevComments => {
+            return prevComments.map(c => {
+              if (c.id === commentId) {
+                return {
+                  ...c,
+                  likes: Math.max(0, c.likes - 1) // Garantir que não fique negativo
+                };
+              }
+              return c;
+            });
+          });
         }
-        
-        setLikedComments(prev => prev.filter(id => id !== commentId));
       } else {
         // Adicionar o like
         const { error } = await supabase
@@ -263,21 +440,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           
         if (error) throw error;
         
+        // Atualizar estado local antes de buscar novamente
         setLikedComments(prev => [...prev, commentId]);
-      }
-      
-      // Atualizar a lista de comentários para refletir a mudança
-      setComments(prevComments => {
-        return prevComments.map(c => {
-          if (c.id === commentId) {
-            return {
-              ...c,
-              likes: likedComments.includes(commentId) ? c.likes - 1 : c.likes + 1
-            };
-          }
-          return c;
+        
+        // Atualizar contagem visualmente imediatamente
+        setComments(prevComments => {
+          return prevComments.map(c => {
+            if (c.id === commentId) {
+              return {
+                ...c,
+                likes: c.likes + 1
+              };
+            }
+            return c;
+          });
         });
-      });
+      }
     } catch (error) {
       console.error("Erro ao curtir comentário:", error);
       toast.error("Erro ao curtir comentário. Tente novamente.");

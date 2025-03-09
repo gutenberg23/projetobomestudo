@@ -80,23 +80,45 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
           });
         }
         
-        // Transformar em array para o gráfico
-        const alternativas = Object.keys(alternativasCounts).map((alternativaId, index) => {
-          return {
-            // Considerando que o formato do ID contém o índice da alternativa
-            name: String.fromCharCode(65 + index), // A, B, C, D, E
-            value: alternativasCounts[alternativaId],
-            color: getAlternativaColor(index)
-          };
-        });
+        // Buscar informações das alternativas disponíveis
+        let alternativas = [];
         
-        setAlternativesData(alternativas.length > 0 ? alternativas : [
-          { name: "A", value: 0, color: "#F8C471" },
-          { name: "B", value: 0, color: "#5DADE2" },
-          { name: "C", value: 0, color: "#F4D03F" },
-          { name: "D", value: 0, color: "#ABEBC6" },
-          { name: "E", value: 0, color: "#E59866" },
-        ]);
+        if (Object.keys(alternativasCounts).length > 0) {
+          // Obter a questão para mapear os IDs às letras
+          const { data: questaoData } = await supabase
+            .from('questoes')
+            .select('options')
+            .eq('id', questionId)
+            .single();
+            
+          if (questaoData && questaoData.options) {
+            const options = Array.isArray(questaoData.options) ? questaoData.options : [];
+            
+            // Mapear os IDs das opções para letras (A, B, C, D, E)
+            // e usar isso para plotar os resultados
+            alternativas = options.map((option, index) => {
+              const letter = String.fromCharCode(65 + index); // A, B, C, D, E
+              return {
+                name: letter,
+                id: option.id, // Armazenar o ID para garantir correspondência
+                value: alternativasCounts[option.id] || 0,
+                color: getAlternativaColor(index)
+              };
+            });
+          }
+        }
+        
+        if (alternativas.length === 0) {
+          alternativas = [
+            { name: "A", value: 0, color: "#F8C471" },
+            { name: "B", value: 0, color: "#5DADE2" },
+            { name: "C", value: 0, color: "#F4D03F" },
+            { name: "D", value: 0, color: "#ABEBC6" },
+            { name: "E", value: 0, color: "#E59866" },
+          ];
+        }
+        
+        setAlternativesData(alternativas);
       } catch (error) {
         console.error("Erro ao buscar estatísticas:", error);
         

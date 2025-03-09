@@ -205,6 +205,7 @@ const Simulado = () => {
           {formattedQuestions.length > 0 && currentQuestion ? (
             <div className="mb-8">
               <QuestionCard 
+                key={`question-${currentQuestion.id}-${activeQuestion}`}
                 question={currentQuestion}
                 disabledOptions={disabledOptions}
                 onToggleDisabled={handleToggleDisabled}
