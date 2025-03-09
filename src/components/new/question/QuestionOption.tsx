@@ -1,6 +1,7 @@
 
 import React from "react";
 import { X } from "lucide-react";
+
 interface QuestionOptionProps {
   id: string;
   text: string;
@@ -12,6 +13,7 @@ interface QuestionOptionProps {
   onSelect: (optionId: string) => void;
   showAnswer: boolean;
 }
+
 export const QuestionOption: React.FC<QuestionOptionProps> = ({
   id,
   text,
@@ -55,16 +57,32 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
       text: ""
     };
   };
+  
   const styles = getOptionStyles();
-  return <div className="flex gap-1 items-center md:px-5 py-1 w-full rounded-none min-h-16 px-[6px]">
-      <button onClick={e => onToggleDisabled(id, e)} className="flex gap-5 justify-center items-center self-stretch rounded-xl min-h-[30px] w-[30px] hover:bg-slate-50">
+  
+  return (
+    <div className="flex gap-1 items-center md:px-5 py-1 w-full rounded-none min-h-16 px-[6px]">
+      <button 
+        onClick={e => onToggleDisabled(id, e)} 
+        className="flex gap-5 justify-center items-center self-stretch rounded-xl min-h-[30px] w-[30px] hover:bg-slate-50"
+      >
         <X className={`w-4 h-4 ${isDisabled ? "text-red-500" : "text-slate-400"}`} />
       </button>
-      <button onClick={() => onSelect(id)} className={`flex flex-1 gap-4 items-center self-stretch p-3 text-base whitespace-normal rounded-xl border border-solid ${styles.container} ${styles.background} ${isDisabled ? "opacity-50 line-through" : ""}`} disabled={isDisabled}>
+      
+      <button 
+        onClick={() => onSelect(id)} 
+        className={`flex flex-1 gap-4 items-center self-stretch p-3 text-base whitespace-normal rounded-xl border border-solid ${styles.container} ${styles.background} ${isDisabled ? "opacity-50 line-through" : ""}`} 
+        disabled={isDisabled}
+      >
         <span className={`gap-2.5 self-stretch font-bold text-center rounded border border-solid min-h-[30px] w-[30px] flex items-center justify-center ${styles.letter}`}>
           {String.fromCharCode(65 + index)}
         </span>
-        <span className={`flex-1 text-slate-800 text-left ${styles.text}`}>{text}</span>
+        
+        <span 
+          className={`flex-1 text-slate-800 text-left ${styles.text}`}
+          dangerouslySetInnerHTML={{ __html: text }}
+        />
       </button>
-    </div>;
+    </div>
+  );
 };

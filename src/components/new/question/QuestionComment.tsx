@@ -34,9 +34,10 @@ export const QuestionComment: React.FC<QuestionCommentProps> = ({
                 {comment.timestamp}
               </time>
             </div>
-            <p className="flex-1 shrink w-full text-base leading-6 basis-0 text-neutral-800">
-              {comment.content}
-            </p>
+            <div 
+              className="flex-1 shrink w-full text-base leading-6 basis-0 text-neutral-800"
+              dangerouslySetInnerHTML={{ __html: comment.content }}
+            />
           </div>
         </div>
         <button

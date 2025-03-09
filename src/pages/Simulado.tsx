@@ -75,6 +75,7 @@ const Simulado = () => {
             id: q.id,
             content: q.content,
             additionalContent: q.expandablecontent || undefined,
+            teacherExplanation: q.teacherexplanation || undefined,
             year: q.year,
             institution: q.institution,
             organization: q.organization,

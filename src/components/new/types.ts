@@ -1,7 +1,9 @@
+
 export interface Question {
   id: string;
   content: string;
   additionalContent?: string;
+  teacherExplanation?: string;
   year: string;
   institution: string;
   organization: string;
@@ -25,6 +27,7 @@ export interface Comment {
   content: string;
   timestamp: string;
   likes: number;
+  userId?: string;
 }
 
 export interface Section {

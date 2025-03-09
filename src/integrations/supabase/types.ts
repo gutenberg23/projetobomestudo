@@ -39,6 +39,30 @@ export type Database = {
         }
         Relationships: []
       }
+      comentarios_questoes: {
+        Row: {
+          conteudo: string
+          created_at: string
+          id: string
+          questao_id: string
+          usuario_id: string
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string
+          id?: string
+          questao_id: string
+          usuario_id: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          questao_id?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       cursos: {
         Row: {
           aulas_ids: string[] | null
@@ -105,6 +129,56 @@ export type Database = {
           id?: string
           status?: string | null
           titulo?: string
+        }
+        Relationships: []
+      }
+      likes_comentarios: {
+        Row: {
+          comentario_id: string
+          created_at: string
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          comentario_id: string
+          created_at?: string
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          comentario_id?: string
+          created_at?: string
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_comentarios_comentario_id_fkey"
+            columns: ["comentario_id"]
+            isOneToOne: false
+            referencedRelation: "comentarios_questoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      likes_gabaritos: {
+        Row: {
+          created_at: string
+          id: string
+          questao_id: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          questao_id: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          questao_id?: string
+          usuario_id?: string
         }
         Relationships: []
       }
@@ -192,6 +266,33 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           year?: string
+        }
+        Relationships: []
+      }
+      respostas_alunos: {
+        Row: {
+          aluno_id: string
+          created_at: string
+          id: string
+          is_correta: boolean
+          opcao_id: string
+          questao_id: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string
+          id?: string
+          is_correta: boolean
+          opcao_id: string
+          questao_id: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string
+          id?: string
+          is_correta?: boolean
+          opcao_id?: string
+          questao_id?: string
         }
         Relationships: []
       }

@@ -1,27 +1,129 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { PieChart, BarChart, Cell, XAxis, YAxis, Bar, Pie, Legend, ResponsiveContainer, Tooltip } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
 
-// Dados de exemplo para os gráficos
-const performanceData = [
-  { name: "Acertos", value: 60, color: "#4ade80" },
-  { name: "Erros", value: 40, color: "#ef4444" },
-];
+interface QuestionStatsProps {
+  questionId: string;
+}
 
-const alternativesData = [
-  { name: "A", value: 17, color: "#F8C471" },
-  { name: "B", value: 46, color: "#5DADE2" },
-  { name: "C", value: 7, color: "#F4D03F" },
-  { name: "D", value: 15, color: "#ABEBC6" },
-  { name: "E", value: 11, color: "#E59866" },
-];
+export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [performanceData, setPerformanceData] = useState<Array<any>>([]);
+  const [alternativesData, setAlternativesData] = useState<Array<any>>([]);
 
-export const QuestionStats: React.FC = () => {
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Obter estatísticas de acertos e erros
+        const { data: respostasData, error: respostasError } = await supabase
+          .from('respostas_alunos')
+          .select('is_correta')
+          .eq('questao_id', questionId);
+          
+        if (respostasError) throw respostasError;
+        
+        // Calcular acertos e erros
+        let acertos = 0;
+        let erros = 0;
+        
+        if (respostasData && respostasData.length > 0) {
+          acertos = respostasData.filter(r => r.is_correta).length;
+          erros = respostasData.filter(r => !r.is_correta).length;
+        }
+        
+        setPerformanceData([
+          { name: "Acertos", value: acertos || 0, color: "#4ade80" },
+          { name: "Erros", value: erros || 0, color: "#ef4444" },
+        ]);
+        
+        // Obter estatísticas de alternativas mais respondidas
+        const { data: alternativasData, error: alternativasError } = await supabase
+          .from('respostas_alunos')
+          .select('opcao_id')
+          .eq('questao_id', questionId);
+          
+        if (alternativasError) throw alternativasError;
+        
+        // Contar respostas por alternativa
+        const alternativasCounts: Record<string, number> = {};
+        
+        if (alternativasData && alternativasData.length > 0) {
+          alternativasData.forEach(resposta => {
+            const alternativaId = resposta.opcao_id;
+            if (alternativasCounts[alternativaId]) {
+              alternativasCounts[alternativaId]++;
+            } else {
+              alternativasCounts[alternativaId] = 1;
+            }
+          });
+        }
+        
+        // Transformar em array para o gráfico
+        const alternativas = Object.keys(alternativasCounts).map((alternativaId, index) => {
+          return {
+            // Considerando que o formato do ID contém o índice da alternativa
+            name: String.fromCharCode(65 + index), // A, B, C, D, E
+            value: alternativasCounts[alternativaId],
+            color: getAlternativaColor(index)
+          };
+        });
+        
+        setAlternativesData(alternativas.length > 0 ? alternativas : [
+          { name: "A", value: 0, color: "#F8C471" },
+          { name: "B", value: 0, color: "#5DADE2" },
+          { name: "C", value: 0, color: "#F4D03F" },
+          { name: "D", value: 0, color: "#ABEBC6" },
+          { name: "E", value: 0, color: "#E59866" },
+        ]);
+      } catch (error) {
+        console.error("Erro ao buscar estatísticas:", error);
+        
+        // Dados de exemplo para fallback
+        setPerformanceData([
+          { name: "Acertos", value: 0, color: "#4ade80" },
+          { name: "Erros", value: 0, color: "#ef4444" },
+        ]);
+        
+        setAlternativesData([
+          { name: "A", value: 0, color: "#F8C471" },
+          { name: "B", value: 0, color: "#5DADE2" },
+          { name: "C", value: 0, color: "#F4D03F" },
+          { name: "D", value: 0, color: "#ABEBC6" },
+          { name: "E", value: 0, color: "#E59866" },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStats();
+  }, [questionId]);
+  
+  const getAlternativaColor = (index: number) => {
+    const colors = ["#F8C471", "#5DADE2", "#F4D03F", "#ABEBC6", "#E59866"];
+    return colors[index % colors.length];
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-md p-3 md:p-4 w-full md:w-[600px] max-w-full flex justify-center items-center h-[200px]">
+        <p className="text-[#67748a]">Carregando estatísticas...</p>
+      </div>
+    );
+  }
+  
+  const totalRespostas = performanceData.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <div className="bg-white rounded-md p-3 md:p-4 w-full md:w-[600px] max-w-full">
       <div className="flex flex-col gap-4">
         <div className="p-3 md:p-3 border rounded-md w-full">
-          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-3 text-sm md:text-base">Percentual de Rendimento</h3>
+          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-3 text-sm md:text-base">
+            Percentual de Rendimento {totalRespostas > 0 ? `(${totalRespostas} respostas)` : '(Sem respostas)'}
+          </h3>
           <div className="h-[180px] md:h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
