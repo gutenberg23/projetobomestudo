@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -90,15 +91,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   // Buscar comentários da questão
   useEffect(() => {
     const fetchComments = async () => {
-      const { data, error } = await supabase
+      // Primeiro buscar os comentários
+      const { data: commentsData, error } = await supabase
         .from('comentarios_questoes')
         .select(`
           id,
           conteudo,
           created_at,
           usuario_id,
-          profiles (nome, foto_perfil),
-          likes_comentarios (id)
+          questao_id
         `)
         .eq('questao_id', question.id)
         .order('created_at', { ascending: false });
@@ -108,25 +109,44 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         return;
       }
       
-      if (data) {
-        // Formatar comentários para o formato esperado pelo componente
-        const formattedComments = data.map(comment => ({
-          id: comment.id,
-          author: comment.profiles?.nome || "Usuário",
-          avatar: comment.profiles?.foto_perfil || "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
-          content: comment.conteudo,
-          timestamp: new Date(comment.created_at).toLocaleDateString('pt-BR', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          }),
-          likes: comment.likes_comentarios ? comment.likes_comentarios.length : 0,
-          userId: comment.usuario_id
-        }));
+      if (commentsData && commentsData.length > 0) {
+        // Para cada comentário, buscar os dados do perfil do usuário e os likes
+        const formattedComments = await Promise.all(
+          commentsData.map(async (comment) => {
+            // Buscar dados do perfil
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('nome, foto_perfil')
+              .eq('id', comment.usuario_id)
+              .single();
+
+            // Buscar likes do comentário
+            const { data: likesData } = await supabase
+              .from('likes_comentarios')
+              .select('id')
+              .eq('comentario_id', comment.id);
+
+            return {
+              id: comment.id,
+              author: profileData?.nome || "Usuário",
+              avatar: profileData?.foto_perfil || "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+              content: comment.conteudo,
+              timestamp: new Date(comment.created_at).toLocaleDateString('pt-BR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              likes: likesData ? likesData.length : 0,
+              userId: comment.usuario_id
+            };
+          })
+        );
         
         setComments(formattedComments);
+      } else {
+        setComments([]);
       }
     };
     
@@ -279,35 +299,52 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       toast.success("Comentário enviado com sucesso!");
       
       // Recarregar comentários para obter o ID correto
-      const { data } = await supabase
+      const { data: commentsData } = await supabase
         .from('comentarios_questoes')
         .select(`
           id,
           conteudo,
           created_at,
           usuario_id,
-          profiles (nome, foto_perfil),
-          likes_comentarios (id)
+          questao_id
         `)
         .eq('questao_id', question.id)
         .order('created_at', { ascending: false });
-        
-      if (data) {
-        const formattedComments = data.map(comment => ({
-          id: comment.id,
-          author: comment.profiles?.nome || "Usuário",
-          avatar: comment.profiles?.foto_perfil || "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
-          content: comment.conteudo,
-          timestamp: new Date(comment.created_at).toLocaleDateString('pt-BR', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          }),
-          likes: comment.likes_comentarios ? comment.likes_comentarios.length : 0,
-          userId: comment.usuario_id
-        }));
+      
+      if (commentsData && commentsData.length > 0) {
+        // Para cada comentário, buscar os dados do perfil do usuário e os likes
+        const formattedComments = await Promise.all(
+          commentsData.map(async (comment) => {
+            // Buscar dados do perfil
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('nome, foto_perfil')
+              .eq('id', comment.usuario_id)
+              .single();
+
+            // Buscar likes do comentário
+            const { data: likesData } = await supabase
+              .from('likes_comentarios')
+              .select('id')
+              .eq('comentario_id', comment.id);
+
+            return {
+              id: comment.id,
+              author: profileData?.nome || "Usuário",
+              avatar: profileData?.foto_perfil || "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+              content: comment.conteudo,
+              timestamp: new Date(comment.created_at).toLocaleDateString('pt-BR', { 
+                day: '2-digit', 
+                month: '2-digit', 
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }),
+              likes: likesData ? likesData.length : 0,
+              userId: comment.usuario_id
+            };
+          })
+        );
         
         setComments(formattedComments);
       }
