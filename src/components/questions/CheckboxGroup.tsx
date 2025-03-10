@@ -56,32 +56,29 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredOptions(hierarchicalOptions);
+      return;
+    }
+    
+    const searchTermLower = searchTerm.toLowerCase();
+    
+    if (hierarchical && typeof options[0] !== 'string') {
+      // Para opções hierárquicas, filtramos TopicOption[]
+      const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
+        option.name.toLowerCase().includes(searchTermLower)
+      );
+      setFilteredOptions(filtered);
+    } else if (typeof options[0] === 'string') {
+      // Se todas as opções são strings
+      const filtered = (hierarchicalOptions as string[]).filter(option => 
+        option.toLowerCase().includes(searchTermLower)
+      );
+      setFilteredOptions(filtered);
     } else {
-      const searchTermLower = searchTerm.toLowerCase();
-      
-      if (hierarchical && typeof options[0] !== 'string') {
-        // Para opções hierárquicas, filtramos TopicOption[]
-        const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
-          option.name.toLowerCase().includes(searchTermLower)
-        );
-        // Aqui está seguro pois sabemos que estamos trabalhando com TopicOption[]
-        setFilteredOptions(filtered);
-      } else {
-        // Para opções simples, precisamos verificar o tipo de cada opção
-        if (typeof options[0] === 'string') {
-          // Se todas as opções são strings
-          const filtered = (hierarchicalOptions as string[]).filter(option => 
-            option.toLowerCase().includes(searchTermLower)
-          );
-          setFilteredOptions(filtered);
-        } else {
-          // Se todas as opções são TopicOption
-          const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
-            option.name.toLowerCase().includes(searchTermLower)
-          );
-          setFilteredOptions(filtered);
-        }
-      }
+      // Se todas as opções são TopicOption
+      const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
+        option.name.toLowerCase().includes(searchTermLower)
+      );
+      setFilteredOptions(filtered);
     }
   }, [searchTerm, hierarchicalOptions, options, hierarchical]);
 
