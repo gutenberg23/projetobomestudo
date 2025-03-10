@@ -109,6 +109,9 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
     }
   };
 
+  // Garantir que as listas estejam em ordem alfabética
+  const sortedRoles = [...roles].sort((a, b) => a.localeCompare(b));
+
   return (
     <>
       {/* Institution Field */}
@@ -191,7 +194,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           <div className="flex flex-col gap-2">
             <CheckboxGroup
               title=""
-              options={roles}
+              options={sortedRoles}
               selectedValues={selectedRoles}
               onChange={handleRoleChange}
               placeholder="Selecione os cargos"

@@ -47,10 +47,3 @@ export interface Topico {
   professor_nome: string;
   created_at?: string;
 }
-
-export interface TopicOption {
-  id: string;
-  name: string;
-  parent?: string;
-  level: number;
-}
