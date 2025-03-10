@@ -25,7 +25,7 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  // Definimos um tipo explícito para filteredOptions que corresponde ao tipo de options
+  // Definimos o tipo correto para filteredOptions que corresponde ao tipo de options
   const [filteredOptions, setFilteredOptions] = useState<string[] | TopicOption[]>(options);
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
 
