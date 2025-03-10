@@ -3,7 +3,7 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash, Plus } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 
 interface SelectFieldProps {
   id: string;
@@ -28,25 +28,26 @@ const SelectField: React.FC<SelectFieldProps> = ({
   openAddDialog,
   placeholder = "Selecione uma opção",
 }) => {
-  // Garantir que as opções estão em ordem alfabética
-  const sortedOptions = [...options].sort((a, b) => a.localeCompare(b));
+  // Converter valor único para array para compatibilidade com CheckboxGroup
+  const selectedValues = value ? [value] : [];
+  
+  // Função para lidar com mudanças no CheckboxGroup
+  const handleChange = (optionValue: string) => {
+    // Como precisamos de um valor único, apenas substitui o valor atual
+    onChange(optionValue);
+  };
 
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
       <div className="flex flex-col gap-2">
-        <Select value={value} onValueChange={onChange}>
-          <SelectTrigger id={id} className="w-full h-10">
-            <SelectValue placeholder={placeholder} />
-          </SelectTrigger>
-          <SelectContent>
-            {sortedOptions.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <CheckboxGroup
+          title=""
+          options={options}
+          selectedValues={selectedValues}
+          onChange={handleChange}
+          placeholder={placeholder}
+        />
         
         <div className="flex gap-2 justify-end">
           <Button 

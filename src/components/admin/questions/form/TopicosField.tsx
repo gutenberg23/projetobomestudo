@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 import TopicosToolbar from "./topicos/TopicosToolbar";
 import TopicosLoading from "./topicos/TopicosLoading";
@@ -8,11 +8,19 @@ import EditTopicoDialog from "./topicos/EditTopicoDialog";
 import DeleteTopicoDialog from "./topicos/DeleteTopicoDialog";
 import { useTopicosService } from "./topicos/useTopicosService";
 import { Label } from "@/components/ui/label";
+import { Topico } from "../types";
 
 interface TopicosFieldProps {
   disciplina: string;
   topicos: string[];
   setTopicos: (topicos: string[]) => void;
+}
+
+interface TopicOption {
+  id: string;
+  name: string;
+  parent?: string;
+  level: number;
 }
 
 const TopicosField: React.FC<TopicosFieldProps> = ({
@@ -39,6 +47,39 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
     handleDeleteTopico
   } = useTopicosService(disciplina, topicos, setTopicos);
 
+  // Converter tópicos para o formato hierárquico
+  const topicsHierarchy = React.useMemo(() => {
+    const result: TopicOption[] = [];
+    
+    // Primeiro passo: identificar os níveis dos tópicos
+    topicosList.forEach(topico => {
+      const nameParts = topico.nome.split('.');
+      const level = nameParts.length - 1;
+      const name = topico.nome;
+      
+      // Encontrar o pai (se existir)
+      let parent: string | undefined = undefined;
+      
+      if (level > 0) {
+        // Remove o último número e ponto para obter o pai
+        const parentName = nameParts.slice(0, -1).join('.');
+        const parentTopic = topicosList.find(t => t.nome === parentName);
+        if (parentTopic) {
+          parent = parentTopic.id;
+        }
+      }
+      
+      result.push({
+        id: topico.id,
+        name,
+        parent,
+        level
+      });
+    });
+    
+    return result;
+  }, [topicosList]);
+
   if (!disciplina) {
     return null;
   }
@@ -55,10 +96,11 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
         ) : (
           <CheckboxGroup
             title=""
-            options={topicosList.map(t => t.nome).sort((a, b) => a.localeCompare(b))}
+            options={topicsHierarchy}
             selectedValues={topicos}
             onChange={handleTopicosChange}
             placeholder="Selecione os tópicos"
+            hierarchical={true}
           />
         )}
 

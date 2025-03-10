@@ -36,7 +36,33 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
         }
 
         console.log("Tópicos retornados:", data);
-        setTopicosList(data || []);
+        
+        // Ordenar os tópicos por nome para garantir que a hierarquia funcione corretamente
+        const sortedTopicos = data ? [...data].sort((a, b) => {
+          // Primeiro tentamos comparar por número de seção
+          const aParts = a.nome.split('.');
+          const bParts = b.nome.split('.');
+          
+          // Comparação por nível e depois por número dentro do nível
+          for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+            const aNum = parseInt(aParts[i]);
+            const bNum = parseInt(bParts[i]);
+            
+            if (!isNaN(aNum) && !isNaN(bNum) && aNum !== bNum) {
+              return aNum - bNum;
+            }
+          }
+          
+          // Se os níveis comuns são iguais, o com menos níveis vem primeiro
+          if (aParts.length !== bParts.length) {
+            return aParts.length - bParts.length;
+          }
+          
+          // Por fim, comparação alfabética
+          return a.nome.localeCompare(b.nome);
+        }) : [];
+        
+        setTopicosList(sortedTopicos);
       } catch (error) {
         console.error("Erro ao buscar tópicos:", error);
         toast.error("Erro ao carregar tópicos. Tente novamente.");
@@ -112,9 +138,9 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
       ));
       
       // Atualizar também no array de tópicos selecionados
-      if (selectedTopicos.includes(currentTopico.nome)) {
-        const newTopicos = selectedTopicos.filter(t => t !== currentTopico.nome);
-        newTopicos.push(newTopicoNome);
+      if (selectedTopicos.includes(currentTopico.id)) {
+        const newTopicos = selectedTopicos.filter(t => t !== currentTopico.id);
+        newTopicos.push(currentTopico.id); // Mantém o ID, apenas atualiza o nome
         setSelectedTopicos(newTopicos);
       }
 
@@ -144,8 +170,8 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
       setTopicosList(topicosList.filter(t => t.id !== currentTopico.id));
       
       // Remover do array de tópicos selecionados
-      if (selectedTopicos.includes(currentTopico.nome)) {
-        setSelectedTopicos(selectedTopicos.filter(t => t !== currentTopico.nome));
+      if (selectedTopicos.includes(currentTopico.id)) {
+        setSelectedTopicos(selectedTopicos.filter(t => t !== currentTopico.id));
       }
 
       toast.success("Tópico removido com sucesso!");

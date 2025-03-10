@@ -1,16 +1,24 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { CheckIcon, ChevronDownIcon, Search } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, ChevronRightIcon, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 
+interface TopicOption {
+  id: string;
+  name: string;
+  parent?: string;
+  level: number;
+}
+
 interface CheckboxGroupProps {
   title: string;
-  options: string[];
+  options: string[] | TopicOption[];
   selectedValues: string[];
   onChange: (value: string) => void;
   placeholder?: string;
+  hierarchical?: boolean;
 }
 
 export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
@@ -18,34 +26,130 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
   options,
   selectedValues,
   onChange,
-  placeholder = "Selecione os itens"
+  placeholder = "Selecione os itens",
+  hierarchical = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredOptions, setFilteredOptions] = useState<string[]>(options);
+  const [filteredOptions, setFilteredOptions] = useState<string[] | TopicOption[]>(options);
+  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const closeDropdown = () => setIsOpen(false);
 
-  // Garantir que as opções estão em ordem alfabética
-  const sortedOptions = [...options].sort((a, b) => a.localeCompare(b));
+  // Organizar opções em hierarquia se necessário
+  const hierarchicalOptions = React.useMemo(() => {
+    if (!hierarchical || !Array.isArray(options) || options.length === 0 || typeof options[0] === 'string') {
+      // Se não for hierárquico ou se options for um array de strings, retorna as opções ordenadas alfabeticamente
+      return [...options].sort((a, b) => {
+        const aStr = typeof a === 'string' ? a : a.name;
+        const bStr = typeof b === 'string' ? b : b.name;
+        return aStr.localeCompare(bStr);
+      });
+    }
+
+    // Primeiro ordenamos todas as opções
+    const sortedOptions = [...(options as TopicOption[])].sort((a, b) => a.name.localeCompare(b.name));
+    
+    return sortedOptions;
+  }, [options, hierarchical]);
 
   // Filtrar opções quando o termo de busca mudar
   useEffect(() => {
     if (searchTerm.trim() === '') {
-      setFilteredOptions(sortedOptions);
+      setFilteredOptions(hierarchicalOptions);
     } else {
-      const filtered = sortedOptions.filter(option => 
-        option.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredOptions(filtered);
+      const searchTermLower = searchTerm.toLowerCase();
+      
+      if (hierarchical && typeof options[0] !== 'string') {
+        const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
+          option.name.toLowerCase().includes(searchTermLower)
+        );
+        setFilteredOptions(filtered);
+      } else {
+        const filtered = (hierarchicalOptions as string[]).filter(option => 
+          (typeof option === 'string' ? option : option.name).toLowerCase().includes(searchTermLower)
+        );
+        setFilteredOptions(filtered);
+      }
     }
-  }, [searchTerm, sortedOptions]);
+  }, [searchTerm, hierarchicalOptions, options, hierarchical]);
 
   // Atualizar as opções filtradas quando as opções mudarem
   useEffect(() => {
-    setFilteredOptions(sortedOptions);
-  }, [options]);
+    setFilteredOptions(hierarchicalOptions);
+  }, [hierarchicalOptions]);
+
+  // Função para alternar a expansão de um tópico
+  const toggleExpand = (id: string) => {
+    setExpandedTopics(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  // Renderiza uma opção de tópico hierárquica
+  const renderHierarchicalOption = (option: TopicOption) => {
+    const hasChildren = hierarchical && Array.isArray(options) && 
+      (options as TopicOption[]).some(o => o.parent === option.id);
+    
+    const isExpanded = expandedTopics[option.id];
+    
+    return (
+      <div key={option.id} className="flex flex-col">
+        <div 
+          className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100"
+          style={{ paddingLeft: `${option.level * 12 + 8}px` }}
+        >
+          {hasChildren && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleExpand(option.id);
+              }}
+              className="flex items-center justify-center h-4 w-4 text-gray-500"
+            >
+              {isExpanded ? <ChevronDownIcon className="h-3 w-3" /> : <ChevronRightIcon className="h-3 w-3" />}
+            </button>
+          )}
+          
+          {!hasChildren && <div className="w-4"></div>}
+          
+          <div
+            className={cn(
+              "h-4 w-4 rounded border flex items-center justify-center",
+              selectedValues.includes(option.id)
+                ? "bg-[#5f2ebe] border-[#5f2ebe]"
+                : "border-gray-300"
+            )}
+            onClick={() => onChange(option.id)}
+          >
+            {selectedValues.includes(option.id) && (
+              <CheckIcon className="h-3 w-3 text-white" />
+            )}
+          </div>
+          <label
+            onClick={() => onChange(option.id)}
+            className="text-sm font-medium text-[#67748a] cursor-pointer"
+          >
+            {option.name}
+          </label>
+        </div>
+        
+        {/* Renderiza filhos se estiver expandido */}
+        {isExpanded && hasChildren && (
+          <div className="ml-4">
+            {(options as TopicOption[])
+              .filter(o => o.parent === option.id)
+              .sort((a, b) => a.name.localeCompare(b.name))
+              .map(child => renderHierarchicalOption(child))
+            }
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="relative w-full">
@@ -56,7 +160,7 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
         variant="outline"
         role="combobox"
         aria-expanded={isOpen}
-        className="w-full justify-between"
+        className="w-full justify-between h-10"
         onClick={toggleDropdown}
       >
         <span className="truncate">
@@ -89,29 +193,42 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
               
               {filteredOptions.length > 0 ? (
                 <div className="space-y-1">
-                  {filteredOptions.map((option) => (
-                    <div key={option} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100">
-                      <div
-                        className={cn(
-                          "h-4 w-4 rounded border flex items-center justify-center",
-                          selectedValues.includes(option)
-                            ? "bg-[#5f2ebe] border-[#5f2ebe]"
-                            : "border-gray-300"
-                        )}
-                        onClick={() => onChange(option)}
-                      >
-                        {selectedValues.includes(option) && (
-                          <CheckIcon className="h-3 w-3 text-white" />
-                        )}
-                      </div>
-                      <label
-                        onClick={() => onChange(option)}
-                        className="text-sm font-medium text-[#67748a] cursor-pointer"
-                      >
-                        {option}
-                      </label>
-                    </div>
-                  ))}
+                  {hierarchical && typeof filteredOptions[0] !== 'string' ? (
+                    // Renderiza opções hierárquicas
+                    (filteredOptions as TopicOption[])
+                      .filter(option => !option.parent) // Apenas tópicos raiz
+                      .map(option => renderHierarchicalOption(option))
+                  ) : (
+                    // Renderiza opções simples
+                    (filteredOptions as string[]).map((option) => {
+                      const optionValue = typeof option === 'string' ? option : option.name;
+                      const optionId = typeof option === 'string' ? option : option.id;
+                      
+                      return (
+                        <div key={optionId} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100">
+                          <div
+                            className={cn(
+                              "h-4 w-4 rounded border flex items-center justify-center",
+                              selectedValues.includes(optionValue)
+                                ? "bg-[#5f2ebe] border-[#5f2ebe]"
+                                : "border-gray-300"
+                            )}
+                            onClick={() => onChange(optionValue)}
+                          >
+                            {selectedValues.includes(optionValue) && (
+                              <CheckIcon className="h-3 w-3 text-white" />
+                            )}
+                          </div>
+                          <label
+                            onClick={() => onChange(optionValue)}
+                            className="text-sm font-medium text-[#67748a] cursor-pointer"
+                          >
+                            {optionValue}
+                          </label>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               ) : (
                 <div className="text-sm text-gray-500 p-2">

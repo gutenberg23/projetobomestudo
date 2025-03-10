@@ -1,14 +1,14 @@
 
-import React from "react";
+import React, { useState } from "react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
-import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
+import { Separator } from "@/components/ui/separator";
+import { CheckboxGroup } from "./CheckboxGroup";
 
 interface QuestionFiltersPanelProps {
   searchQuery: string;
-  setSearchQuery: (value: string) => void;
+  setSearchQuery: (query: string) => void;
   selectedFilters: {
     disciplines: string[];
     topics: string[];
@@ -18,7 +18,7 @@ interface QuestionFiltersPanelProps {
     years: string[];
     educationLevels: string[];
   };
-  handleFilterChange: (category: string, value: string) => void;
+  handleFilterChange: (category: keyof typeof selectedFilters, value: string) => void;
   handleApplyFilters: () => void;
   questionsPerPage: string;
   setQuestionsPerPage: (value: string) => void;
@@ -43,102 +43,130 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   setQuestionsPerPage,
   filterOptions
 }) => {
-  // Ordenar todas as listas de opções em ordem alfabética
-  const sortedOptions = {
-    disciplines: [...filterOptions.disciplines].sort((a, b) => a.localeCompare(b)),
-    topics: [...filterOptions.topics].sort((a, b) => a.localeCompare(b)),
-    institutions: [...filterOptions.institutions].sort((a, b) => a.localeCompare(b)),
-    organizations: [...filterOptions.organizations].sort((a, b) => a.localeCompare(b)),
-    roles: [...filterOptions.roles].sort((a, b) => a.localeCompare(b)),
-    years: [...filterOptions.years].sort((a, b) => b.localeCompare(a)), // Anos em ordem decrescente
-    educationLevels: [...filterOptions.educationLevels].sort((a, b) => a.localeCompare(b))
-  };
-
+  const [showFilters, setShowFilters] = useState(false);
+  
   return (
-    <div className="bg-white rounded-lg p-6 mb-8">
-      <div className="grid grid-cols-1 gap-6 mb-6">
-        <div className="relative w-full">
-          <Input 
-            type="text" 
-            placeholder="Pesquisar palavras-chave..." 
-            value={searchQuery} 
-            onChange={e => setSearchQuery(e.target.value)} 
-            className="pr-10 w-full" 
+    <div className="mb-6 space-y-4">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="relative flex-grow">
+          <Search className="absolute left-3 top-3 text-gray-400 h-4 w-4" />
+          <Input
+            type="text"
+            placeholder="Pesquisar questões..."
+            className="pl-10 w-full"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        </div>
+        
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowFilters(!showFilters)}
+            className="text-[#5f2ebe] border-[#5f2ebe] hover:bg-[#5f2ebe] hover:text-white"
+          >
+            {showFilters ? "Ocultar Filtros" : "Mostrar Filtros"}
+          </Button>
+          
+          <Button 
+            onClick={handleApplyFilters}
+            className="bg-[#5f2ebe] hover:bg-[#4f24a0]"
+          >
+            Aplicar Filtros
+          </Button>
         </div>
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-        <CheckboxGroup 
-          title="Disciplina" 
-          options={sortedOptions.disciplines} 
-          selectedValues={selectedFilters.disciplines} 
-          onChange={value => handleFilterChange("disciplines", value)} 
-        />
-        
-        <CheckboxGroup 
-          title="Tópico" 
-          options={sortedOptions.topics} 
-          selectedValues={selectedFilters.topics} 
-          onChange={value => handleFilterChange("topics", value)} 
-        />
-        
-        <CheckboxGroup 
-          title="Banca" 
-          options={sortedOptions.institutions} 
-          selectedValues={selectedFilters.institutions} 
-          onChange={value => handleFilterChange("institutions", value)} 
-        />
-        
-        <CheckboxGroup 
-          title="Instituição" 
-          options={sortedOptions.organizations} 
-          selectedValues={selectedFilters.organizations} 
-          onChange={value => handleFilterChange("organizations", value)} 
-        />
-        
-        <CheckboxGroup 
-          title="Cargo" 
-          options={sortedOptions.roles} 
-          selectedValues={selectedFilters.roles} 
-          onChange={value => handleFilterChange("roles", value)} 
-        />
-        
-        <CheckboxGroup 
-          title="Ano" 
-          options={sortedOptions.years} 
-          selectedValues={selectedFilters.years} 
-          onChange={value => handleFilterChange("years", value)} 
-        />
-        
-        <CheckboxGroup 
-          title="Escolaridade" 
-          options={sortedOptions.educationLevels} 
-          selectedValues={selectedFilters.educationLevels} 
-          onChange={value => handleFilterChange("educationLevels", value)} 
-        />
-        
-        <div className="flex items-center gap-4">
-          <span className="text-sm whitespace-nowrap">Questões por página:</span>
-          <Select value={questionsPerPage} onValueChange={value => setQuestionsPerPage(value)}>
-            <SelectTrigger className="w-[100px]">
-              <SelectValue placeholder="10" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
+      
+      {showFilters && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-white rounded-md shadow">
+          <div>
+            <CheckboxGroup
+              title="Disciplinas"
+              options={filterOptions.disciplines}
+              selectedValues={selectedFilters.disciplines}
+              onChange={(value) => handleFilterChange('disciplines', value)}
+              placeholder="Selecione as disciplinas"
+            />
+          </div>
+          
+          <div>
+            <CheckboxGroup
+              title="Tópicos"
+              options={filterOptions.topics}
+              selectedValues={selectedFilters.topics}
+              onChange={(value) => handleFilterChange('topics', value)}
+              placeholder="Selecione os tópicos"
+              hierarchical={true}
+            />
+          </div>
+          
+          <div>
+            <CheckboxGroup
+              title="Bancas"
+              options={filterOptions.institutions}
+              selectedValues={selectedFilters.institutions}
+              onChange={(value) => handleFilterChange('institutions', value)}
+              placeholder="Selecione as bancas"
+            />
+          </div>
+          
+          <div>
+            <CheckboxGroup
+              title="Instituições"
+              options={filterOptions.organizations}
+              selectedValues={selectedFilters.organizations}
+              onChange={(value) => handleFilterChange('organizations', value)}
+              placeholder="Selecione as instituições"
+            />
+          </div>
+          
+          <div>
+            <CheckboxGroup
+              title="Cargos"
+              options={filterOptions.roles}
+              selectedValues={selectedFilters.roles}
+              onChange={(value) => handleFilterChange('roles', value)}
+              placeholder="Selecione os cargos"
+            />
+          </div>
+          
+          <div>
+            <CheckboxGroup
+              title="Anos"
+              options={filterOptions.years}
+              selectedValues={selectedFilters.years}
+              onChange={(value) => handleFilterChange('years', value)}
+              placeholder="Selecione os anos"
+            />
+          </div>
+          
+          <div>
+            <CheckboxGroup
+              title="Nível de Escolaridade"
+              options={filterOptions.educationLevels}
+              selectedValues={selectedFilters.educationLevels}
+              onChange={(value) => handleFilterChange('educationLevels', value)}
+              placeholder="Selecione os níveis"
+            />
+          </div>
+          
+          <div className="flex flex-col">
+            <span className="font-medium text-sm mb-1">Questões por página</span>
+            <select
+              value={questionsPerPage}
+              onChange={(e) => setQuestionsPerPage(e.target.value)}
+              className="h-10 rounded-md border border-input bg-background px-3 py-2"
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
         </div>
-      </div>
-
-      <Button onClick={handleApplyFilters} className="w-full text-white bg-[#5f2ebe]">
-        Filtrar Questões
-      </Button>
+      )}
+      
+      <Separator />
     </div>
   );
 };
