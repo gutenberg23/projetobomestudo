@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -6,14 +5,7 @@ import QuestionFiltersPanel from "@/components/questions/QuestionFiltersPanel";
 import QuestionResults from "@/components/questions/QuestionResults";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Question as NewQuestion } from "@/components/new/types";
-
-interface TopicOption {
-  id: string;
-  name: string;
-  parent?: string;
-  level: number;
-}
+import { Question as NewQuestion, TopicOption } from "@/components/new/types";
 
 interface Question {
   id: string;
@@ -27,7 +19,7 @@ interface Question {
     text: string;
     isCorrect: boolean;
   }[];
-  comments: {
+  comments?: {
     id: string;
     author: string;
     avatar: string;
@@ -128,7 +120,7 @@ const convertToNewQuestion = (q: Question): NewQuestion => {
     organization: q.organization,
     role: q.role,
     options: q.options,
-    comments: q.comments,
+    comments: q.comments || [],
     additionalContent: q.additionalContent,
     teacherExplanation: q.teacherExplanation,
     aiExplanation: q.aiExplanation,

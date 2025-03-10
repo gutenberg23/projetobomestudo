@@ -50,3 +50,10 @@ export interface Lesson {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface TopicOption {
+  id: string;
+  name: string;
+  parent?: string;
+  level: number;
+}
