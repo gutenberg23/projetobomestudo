@@ -25,7 +25,7 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredOptions, setFilteredOptions] = useState<typeof options>(options);
+  const [filteredOptions, setFilteredOptions] = useState<string[] | TopicOption[]>(options);
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
 
   const toggleDropdown = () => setIsOpen(!isOpen);
@@ -66,19 +66,19 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
       const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
         option.name.toLowerCase().includes(searchTermLower)
       );
-      setFilteredOptions(filtered as typeof options);
+      setFilteredOptions(filtered);
     } else if (typeof options[0] === 'string') {
       // Se todas as opções são strings
       const filtered = (hierarchicalOptions as string[]).filter(option => 
         option.toLowerCase().includes(searchTermLower)
       );
-      setFilteredOptions(filtered as typeof options);
+      setFilteredOptions(filtered);
     } else {
       // Se todas as opções são TopicOption
       const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
         option.name.toLowerCase().includes(searchTermLower)
       );
-      setFilteredOptions(filtered as typeof options);
+      setFilteredOptions(filtered);
     }
   }, [searchTerm, hierarchicalOptions, options, hierarchical]);
 
