@@ -1,6 +1,5 @@
 
-import React, { useState, useEffect } from "react";
-import SelectField from "./SelectField";
+import React from "react";
 import AddValueDialog from "./AddValueDialog";
 import { useSelectFieldState } from "./useSelectFieldState";
 import TopicosField from "./TopicosField";
@@ -11,32 +10,32 @@ import { Label } from "@/components/ui/label";
 
 interface QuestionMetadataFieldsProps {
   // Institution
-  institution: string;
-  setInstitution: (value: string) => void;
+  institution: string[];
+  setInstitution: (value: string[]) => void;
   institutions: string[];
   setInstitutions: (value: string[]) => void;
   
   // Organization
-  organization: string;
-  setOrganization: (value: string) => void;
+  organization: string[];
+  setOrganization: (value: string[]) => void;
   organizations: string[];
   setOrganizations: (value: string[]) => void;
   
   // Year
-  year: string;
-  setYear: (value: string) => void;
+  year: string[];
+  setYear: (value: string[]) => void;
   years: string[];
   setYears: (value: string[]) => void;
   
   // Role
-  role: string;
-  setRole: (value: string) => void;
+  role: string[];
+  setRole: (value: string[]) => void;
   roles: string[];
   setRoles: (value: string[]) => void;
   
   // Discipline
-  discipline: string;
-  setDiscipline: (value: string) => void;
+  discipline: string[];
+  setDiscipline: (value: string[]) => void;
   disciplines: string[];
   setDisciplines: (value: string[]) => void;
   
@@ -45,20 +44,20 @@ interface QuestionMetadataFieldsProps {
   setTopicos: (value: string[]) => void;
   
   // Level
-  level: string;
-  setLevel: (value: string) => void;
+  level: string[];
+  setLevel: (value: string[]) => void;
   levels: string[];
   setLevels: (value: string[]) => void;
   
   // Difficulty
-  difficulty: string;
-  setDifficulty: (value: string) => void;
+  difficulty: string[];
+  setDifficulty: (value: string[]) => void;
   difficulties: string[];
   setDifficulties: (value: string[]) => void;
   
   // Question Type
-  questionType: string;
-  setQuestionType: (value: string) => void;
+  questionType: string[];
+  setQuestionType: (value: string[]) => void;
   questionTypes: string[];
   setQuestionTypes: (value: string[]) => void;
 }
@@ -83,181 +82,70 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
   const difficultyState = useSelectFieldState(difficulty, setDifficulty, difficulties, setDifficulties, "dificuldade");
   const questionTypeState = useSelectFieldState(questionType, setQuestionType, questionTypes, setQuestionTypes, "tipo de questão");
 
-  // Estados para múltipla seleção
-  const [selectedInstitutions, setSelectedInstitutions] = useState<string[]>([]);
-  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
-  const [selectedYears, setSelectedYears] = useState<string[]>([]);
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [selectedDisciplines, setSelectedDisciplines] = useState<string[]>([]);
-  const [selectedLevels, setSelectedLevels] = useState<string[]>([]);
-  const [selectedDifficulties, setSelectedDifficulties] = useState<string[]>([]);
-  const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<string[]>([]);
-
-  // Inicializar os valores selecionados
-  useEffect(() => {
-    if (institution) setSelectedInstitutions([institution]);
-  }, [institution]);
-
-  useEffect(() => {
-    if (organization) setSelectedOrganizations([organization]);
-  }, [organization]);
-
-  useEffect(() => {
-    if (year) setSelectedYears([year]);
-  }, [year]);
-
-  useEffect(() => {
-    if (role) {
-      const rolesArray = role.split(', ').filter(r => roles.includes(r));
-      setSelectedRoles(rolesArray);
-    }
-  }, [role, roles]);
-
-  useEffect(() => {
-    if (discipline) setSelectedDisciplines([discipline]);
-  }, [discipline]);
-
-  useEffect(() => {
-    if (level) setSelectedLevels([level]);
-  }, [level]);
-
-  useEffect(() => {
-    if (difficulty) setSelectedDifficulties([difficulty]);
-  }, [difficulty]);
-
-  useEffect(() => {
-    if (questionType) setSelectedQuestionTypes([questionType]);
-  }, [questionType]);
-
   // Funções para lidar com mudanças nos campos
   const handleInstitutionChange = (value: string) => {
-    if (selectedInstitutions.includes(value)) {
-      setSelectedInstitutions(selectedInstitutions.filter(i => i !== value));
+    if (institution.includes(value)) {
+      setInstitution(institution.filter(i => i !== value));
     } else {
-      setSelectedInstitutions([...selectedInstitutions, value]);
+      setInstitution([...institution, value]);
     }
   };
 
   const handleOrganizationChange = (value: string) => {
-    if (selectedOrganizations.includes(value)) {
-      setSelectedOrganizations(selectedOrganizations.filter(o => o !== value));
+    if (organization.includes(value)) {
+      setOrganization(organization.filter(o => o !== value));
     } else {
-      setSelectedOrganizations([...selectedOrganizations, value]);
+      setOrganization([...organization, value]);
     }
   };
 
   const handleYearChange = (value: string) => {
-    if (selectedYears.includes(value)) {
-      setSelectedYears(selectedYears.filter(y => y !== value));
+    if (year.includes(value)) {
+      setYear(year.filter(y => y !== value));
     } else {
-      setSelectedYears([...selectedYears, value]);
+      setYear([...year, value]);
     }
   };
 
   const handleRoleChange = (value: string) => {
-    if (selectedRoles.includes(value)) {
-      setSelectedRoles(selectedRoles.filter(r => r !== value));
+    if (role.includes(value)) {
+      setRole(role.filter(r => r !== value));
     } else {
-      setSelectedRoles([...selectedRoles, value]);
+      setRole([...role, value]);
     }
   };
 
   const handleDisciplineChange = (value: string) => {
-    if (selectedDisciplines.includes(value)) {
-      setSelectedDisciplines(selectedDisciplines.filter(d => d !== value));
+    if (discipline.includes(value)) {
+      setDiscipline(discipline.filter(d => d !== value));
     } else {
-      setSelectedDisciplines([...selectedDisciplines, value]);
+      setDiscipline([...discipline, value]);
     }
   };
 
   const handleLevelChange = (value: string) => {
-    if (selectedLevels.includes(value)) {
-      setSelectedLevels(selectedLevels.filter(l => l !== value));
+    if (level.includes(value)) {
+      setLevel(level.filter(l => l !== value));
     } else {
-      setSelectedLevels([...selectedLevels, value]);
+      setLevel([...level, value]);
     }
   };
 
   const handleDifficultyChange = (value: string) => {
-    if (selectedDifficulties.includes(value)) {
-      setSelectedDifficulties(selectedDifficulties.filter(d => d !== value));
+    if (difficulty.includes(value)) {
+      setDifficulty(difficulty.filter(d => d !== value));
     } else {
-      setSelectedDifficulties([...selectedDifficulties, value]);
+      setDifficulty([...difficulty, value]);
     }
   };
 
   const handleQuestionTypeChange = (value: string) => {
-    if (selectedQuestionTypes.includes(value)) {
-      setSelectedQuestionTypes(selectedQuestionTypes.filter(qt => qt !== value));
+    if (questionType.includes(value)) {
+      setQuestionType(questionType.filter(qt => qt !== value));
     } else {
-      setSelectedQuestionTypes([...selectedQuestionTypes, value]);
+      setQuestionType([...questionType, value]);
     }
   };
-
-  // Atualizar os valores dos campos quando os selecionados mudarem
-  useEffect(() => {
-    if (selectedInstitutions.length > 0) {
-      setInstitution(selectedInstitutions[0]); // Por enquanto, usamos apenas o primeiro
-    } else {
-      setInstitution('');
-    }
-  }, [selectedInstitutions, setInstitution]);
-
-  useEffect(() => {
-    if (selectedOrganizations.length > 0) {
-      setOrganization(selectedOrganizations[0]); // Por enquanto, usamos apenas o primeiro
-    } else {
-      setOrganization('');
-    }
-  }, [selectedOrganizations, setOrganization]);
-
-  useEffect(() => {
-    if (selectedYears.length > 0) {
-      setYear(selectedYears[0]); // Por enquanto, usamos apenas o primeiro
-    } else {
-      setYear('');
-    }
-  }, [selectedYears, setYear]);
-
-  useEffect(() => {
-    if (selectedRoles.length > 0) {
-      setRole(selectedRoles.join(', '));
-    } else {
-      setRole('');
-    }
-  }, [selectedRoles, setRole]);
-
-  useEffect(() => {
-    if (selectedDisciplines.length > 0) {
-      setDiscipline(selectedDisciplines[0]); // Por enquanto, usamos apenas o primeiro
-    } else {
-      setDiscipline('');
-    }
-  }, [selectedDisciplines, setDiscipline]);
-
-  useEffect(() => {
-    if (selectedLevels.length > 0) {
-      setLevel(selectedLevels[0]); // Por enquanto, usamos apenas o primeiro
-    } else {
-      setLevel('');
-    }
-  }, [selectedLevels, setLevel]);
-
-  useEffect(() => {
-    if (selectedDifficulties.length > 0) {
-      setDifficulty(selectedDifficulties[0]); // Por enquanto, usamos apenas o primeiro
-    } else {
-      setDifficulty('');
-    }
-  }, [selectedDifficulties, setDifficulty]);
-
-  useEffect(() => {
-    if (selectedQuestionTypes.length > 0) {
-      setQuestionType(selectedQuestionTypes[0]); // Por enquanto, usamos apenas o primeiro
-    } else {
-      setQuestionType('');
-    }
-  }, [selectedQuestionTypes, setQuestionType]);
 
   return (
     <>
@@ -268,7 +156,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           <CheckboxGroup
             title=""
             options={institutions}
-            selectedValues={selectedInstitutions}
+            selectedValues={institution}
             onChange={handleInstitutionChange}
             placeholder="Selecione a banca"
           />
@@ -276,8 +164,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => institutionState.handleEdit(institution)}
-              disabled={!institution}
+              onClick={() => institution.length === 1 ? institutionState.handleEdit(institution[0]) : null}
+              disabled={institution.length !== 1}
               title="Editar"
               type="button"
               className="h-8 w-8 p-0"
@@ -287,8 +175,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => institutionState.handleDelete(institution)}
-              disabled={!institution}
+              onClick={() => institution.length === 1 ? institutionState.handleDelete(institution[0]) : null}
+              disabled={institution.length !== 1}
               title="Excluir"
               type="button"
               className="h-8 w-8 p-0"
@@ -325,7 +213,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           <CheckboxGroup
             title=""
             options={organizations}
-            selectedValues={selectedOrganizations}
+            selectedValues={organization}
             onChange={handleOrganizationChange}
             placeholder="Selecione a instituição"
           />
@@ -333,8 +221,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => organizationState.handleEdit(organization)}
-              disabled={!organization}
+              onClick={() => organization.length === 1 ? organizationState.handleEdit(organization[0]) : null}
+              disabled={organization.length !== 1}
               title="Editar"
               type="button"
               className="h-8 w-8 p-0"
@@ -344,8 +232,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => organizationState.handleDelete(organization)}
-              disabled={!organization}
+              onClick={() => organization.length === 1 ? organizationState.handleDelete(organization[0]) : null}
+              disabled={organization.length !== 1}
               title="Excluir"
               type="button"
               className="h-8 w-8 p-0"
@@ -382,7 +270,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           <CheckboxGroup
             title=""
             options={years}
-            selectedValues={selectedYears}
+            selectedValues={year}
             onChange={handleYearChange}
             placeholder="Selecione o ano"
           />
@@ -390,8 +278,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => yearState.handleEdit(year)}
-              disabled={!year}
+              onClick={() => year.length === 1 ? yearState.handleEdit(year[0]) : null}
+              disabled={year.length !== 1}
               title="Editar"
               type="button"
               className="h-8 w-8 p-0"
@@ -401,8 +289,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => yearState.handleDelete(year)}
-              disabled={!year}
+              onClick={() => year.length === 1 ? yearState.handleDelete(year[0]) : null}
+              disabled={year.length !== 1}
               title="Excluir"
               type="button"
               className="h-8 w-8 p-0"
@@ -439,7 +327,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           <CheckboxGroup
             title=""
             options={roles}
-            selectedValues={selectedRoles}
+            selectedValues={role}
             onChange={handleRoleChange}
             placeholder="Selecione os cargos"
           />
@@ -447,8 +335,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => roleState.handleEdit(role)}
-              disabled={!role}
+              onClick={() => role.length === 1 ? roleState.handleEdit(role[0]) : null}
+              disabled={role.length !== 1}
               title="Editar"
               type="button"
               className="h-8 w-8 p-0"
@@ -458,8 +346,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => roleState.handleDelete(role)}
-              disabled={!role}
+              onClick={() => role.length === 1 ? roleState.handleDelete(role[0]) : null}
+              disabled={role.length !== 1}
               title="Excluir"
               type="button"
               className="h-8 w-8 p-0"
@@ -496,7 +384,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           <CheckboxGroup
             title=""
             options={disciplines}
-            selectedValues={selectedDisciplines}
+            selectedValues={discipline}
             onChange={handleDisciplineChange}
             placeholder="Selecione a disciplina"
           />
@@ -504,8 +392,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => disciplineState.handleEdit(discipline)}
-              disabled={!discipline}
+              onClick={() => discipline.length === 1 ? disciplineState.handleEdit(discipline[0]) : null}
+              disabled={discipline.length !== 1}
               title="Editar"
               type="button"
               className="h-8 w-8 p-0"
@@ -515,8 +403,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => disciplineState.handleDelete(discipline)}
-              disabled={!discipline}
+              onClick={() => discipline.length === 1 ? disciplineState.handleDelete(discipline[0]) : null}
+              disabled={discipline.length !== 1}
               title="Excluir"
               type="button"
               className="h-8 w-8 p-0"
@@ -547,10 +435,10 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
       </div>
 
       {/* Tópicos Field - only shown when discipline is selected */}
-      {discipline && (
+      {discipline.length > 0 && (
         <div>
           <TopicosField
-            disciplina={discipline}
+            disciplina={discipline[0]}
             topicos={topicos}
             setTopicos={setTopicos}
           />
@@ -564,7 +452,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           <CheckboxGroup
             title=""
             options={levels}
-            selectedValues={selectedLevels}
+            selectedValues={level}
             onChange={handleLevelChange}
             placeholder="Selecione o nível"
           />
@@ -572,8 +460,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => levelState.handleEdit(level)}
-              disabled={!level}
+              onClick={() => level.length === 1 ? levelState.handleEdit(level[0]) : null}
+              disabled={level.length !== 1}
               title="Editar"
               type="button"
               className="h-8 w-8 p-0"
@@ -583,8 +471,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => levelState.handleDelete(level)}
-              disabled={!level}
+              onClick={() => level.length === 1 ? levelState.handleDelete(level[0]) : null}
+              disabled={level.length !== 1}
               title="Excluir"
               type="button"
               className="h-8 w-8 p-0"
@@ -621,7 +509,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           <CheckboxGroup
             title=""
             options={difficulties}
-            selectedValues={selectedDifficulties}
+            selectedValues={difficulty}
             onChange={handleDifficultyChange}
             placeholder="Selecione a dificuldade"
           />
@@ -629,8 +517,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => difficultyState.handleEdit(difficulty)}
-              disabled={!difficulty}
+              onClick={() => difficulty.length === 1 ? difficultyState.handleEdit(difficulty[0]) : null}
+              disabled={difficulty.length !== 1}
               title="Editar"
               type="button"
               className="h-8 w-8 p-0"
@@ -640,8 +528,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => difficultyState.handleDelete(difficulty)}
-              disabled={!difficulty}
+              onClick={() => difficulty.length === 1 ? difficultyState.handleDelete(difficulty[0]) : null}
+              disabled={difficulty.length !== 1}
               title="Excluir"
               type="button"
               className="h-8 w-8 p-0"
@@ -678,7 +566,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           <CheckboxGroup
             title=""
             options={questionTypes}
-            selectedValues={selectedQuestionTypes}
+            selectedValues={questionType}
             onChange={handleQuestionTypeChange}
             placeholder="Selecione o tipo"
           />
@@ -686,8 +574,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => questionTypeState.handleEdit(questionType)}
-              disabled={!questionType}
+              onClick={() => questionType.length === 1 ? questionTypeState.handleEdit(questionType[0]) : null}
+              disabled={questionType.length !== 1}
               title="Editar"
               type="button"
               className="h-8 w-8 p-0"
@@ -697,8 +585,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
             <Button 
               variant="outline" 
               size="icon"
-              onClick={() => questionTypeState.handleDelete(questionType)}
-              disabled={!questionType}
+              onClick={() => questionType.length === 1 ? questionTypeState.handleDelete(questionType[0]) : null}
+              disabled={questionType.length !== 1}
               title="Excluir"
               type="button"
               className="h-8 w-8 p-0"

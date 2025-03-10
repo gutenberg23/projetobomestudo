@@ -5,14 +5,14 @@ import { QuestionItemType, QuestionOption } from "../types";
 export const useQuestionsState = () => {
   // Estado para informações da questão
   const [questionId, setQuestionId] = useState<string>("");
-  const [year, setYear] = useState<string>("");
-  const [institution, setInstitution] = useState<string>("");
-  const [organization, setOrganization] = useState<string>("");
-  const [role, setRole] = useState<string>("");
-  const [discipline, setDiscipline] = useState<string>("");
-  const [level, setLevel] = useState<string>("");
-  const [difficulty, setDifficulty] = useState<string>("");
-  const [questionType, setQuestionType] = useState<string>("");
+  const [year, setYear] = useState<string[]>([]);
+  const [institution, setInstitution] = useState<string[]>([]);
+  const [organization, setOrganization] = useState<string[]>([]);
+  const [role, setRole] = useState<string[]>([]);
+  const [discipline, setDiscipline] = useState<string[]>([]);
+  const [level, setLevel] = useState<string[]>([]);
+  const [difficulty, setDifficulty] = useState<string[]>([]);
+  const [questionType, setQuestionType] = useState<string[]>([]);
   const [questionText, setQuestionText] = useState<string>("");
   const [teacherExplanation, setTeacherExplanation] = useState<string>("");
   const [expandableContent, setExpandableContent] = useState<string>("");
@@ -28,16 +28,16 @@ export const useQuestionsState = () => {
   
   // Estado para os filtros
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<FiltersType>({
     id: "",
-    year: "",
-    institution: "",
-    organization: "",
-    role: "",
-    discipline: "",
-    level: "",
-    difficulty: "",
-    questionType: ""
+    year: [],
+    institution: [],
+    organization: [],
+    role: [],
+    discipline: [],
+    level: [],
+    difficulty: [],
+    questionType: []
   });
   
   // Estado para o modal de criar simulado
@@ -55,14 +55,14 @@ export const useQuestionsState = () => {
   
   // Limpar as opções quando o tipo de questão mudar
   useEffect(() => {
-    if (!questionType) {
+    if (questionType.length === 0) {
       setOptions([]);
     }
   }, [questionType]);
   
   // Limpar os tópicos quando a disciplina mudar
   useEffect(() => {
-    if (!discipline) {
+    if (discipline.length === 0) {
       setTopicos([]);
     }
   }, [discipline]);

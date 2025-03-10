@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 export interface SelectFieldState {
-  value: string;
+  value: string[];
   setIsDialogOpen: (isOpen: boolean) => void;
   isDialogOpen: boolean;
   newValue: string;
@@ -14,8 +14,8 @@ export interface SelectFieldState {
 }
 
 export const useSelectFieldState = (
-  value: string,
-  setValue: (value: string) => void,
+  value: string[],
+  setValue: (value: string[]) => void,
   values: string[],
   setValues: (values: string[]) => void,
   fieldName: string
@@ -32,17 +32,21 @@ export const useSelectFieldState = (
   };
 
   const handleEdit = (oldValue: string) => {
-    const newValue = prompt(`Editar ${fieldName}`, oldValue);
-    if (newValue && newValue.trim() !== "") {
-      setValues(values.map(v => v === oldValue ? newValue : v));
-      if (value === oldValue) setValue(newValue);
+    const newValuePrompt = prompt(`Editar ${fieldName}`, oldValue);
+    if (newValuePrompt && newValuePrompt.trim() !== "") {
+      setValues(values.map(v => v === oldValue ? newValuePrompt : v));
+      if (value.includes(oldValue)) {
+        setValue(value.map(v => v === oldValue ? newValuePrompt : v));
+      }
     }
   };
 
   const handleDelete = (valueToDelete: string) => {
     if (confirm(`Deseja remover ${fieldName} "${valueToDelete}"?`)) {
       setValues(values.filter(v => v !== valueToDelete));
-      if (value === valueToDelete) setValue("");
+      if (value.includes(valueToDelete)) {
+        setValue(value.filter(v => v !== valueToDelete));
+      }
     }
   };
 

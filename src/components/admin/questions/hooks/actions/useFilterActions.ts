@@ -8,14 +8,14 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
     return questions.filter(question => {
       return (
         (filters.id === "" || question.id.toLowerCase().includes(filters.id.toLowerCase())) &&
-        (filters.year === "" || question.year.toLowerCase().includes(filters.year.toLowerCase())) &&
-        (filters.institution === "" || question.institution.toLowerCase().includes(filters.institution.toLowerCase())) &&
-        (filters.organization === "" || question.organization.toLowerCase().includes(filters.organization.toLowerCase())) &&
-        (filters.role === "" || question.role.toLowerCase().includes(filters.role.toLowerCase())) &&
-        (filters.discipline === "" || question.discipline.toLowerCase().includes(filters.discipline.toLowerCase())) &&
-        (filters.level === "" || question.level.toLowerCase().includes(filters.level.toLowerCase())) &&
-        (filters.difficulty === "" || question.difficulty.toLowerCase().includes(filters.difficulty.toLowerCase())) &&
-        (filters.questionType === "" || question.questionType.toLowerCase().includes(filters.questionType.toLowerCase()))
+        (filters.year.length === 0 || filters.year.some(f => question.year.includes(f))) &&
+        (filters.institution.length === 0 || filters.institution.some(f => question.institution.includes(f))) &&
+        (filters.organization.length === 0 || filters.organization.some(f => question.organization.includes(f))) &&
+        (filters.role.length === 0 || filters.role.some(f => question.role.includes(f))) &&
+        (filters.discipline.length === 0 || filters.discipline.some(f => question.discipline.includes(f))) &&
+        (filters.level.length === 0 || filters.level.some(f => question.level.includes(f))) &&
+        (filters.difficulty.length === 0 || filters.difficulty.some(f => question.difficulty.includes(f))) &&
+        (filters.questionType.length === 0 || filters.questionType.some(f => question.questionType.includes(f)))
       );
     });
   };
@@ -25,14 +25,14 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
     
     setFilters({
       id: "",
-      year: "",
-      institution: "",
-      organization: "",
-      role: "",
-      discipline: "",
-      level: "",
-      difficulty: "",
-      questionType: ""
+      year: [],
+      institution: [],
+      organization: [],
+      role: [],
+      discipline: [],
+      level: [],
+      difficulty: [],
+      questionType: []
     });
   };
 

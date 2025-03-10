@@ -8,8 +8,8 @@ import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 interface SelectFieldProps {
   id: string;
   label: string;
-  value: string;
-  onChange: (value: string) => void;
+  value: string[];
+  onChange: (value: string[]) => void;
   options: string[];
   handleEditOption: (oldValue: string) => void;
   handleDeleteOption: (value: string) => void;
@@ -28,13 +28,11 @@ const SelectField: React.FC<SelectFieldProps> = ({
   openAddDialog,
   placeholder = "Selecione uma opção",
 }) => {
-  const selectedValues = value ? [value] : [];
-  
   const handleValueChange = (option: string) => {
-    if (selectedValues.includes(option)) {
-      onChange('');
+    if (value.includes(option)) {
+      onChange(value.filter(item => item !== option));
     } else {
-      onChange(option);
+      onChange([...value, option]);
     }
   };
 
@@ -45,7 +43,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
         <CheckboxGroup
           title=""
           options={options}
-          selectedValues={selectedValues}
+          selectedValues={value}
           onChange={handleValueChange}
           placeholder={placeholder}
         />
@@ -54,8 +52,8 @@ const SelectField: React.FC<SelectFieldProps> = ({
           <Button 
             variant="outline" 
             size="icon"
-            onClick={() => value ? handleEditOption(value) : null}
-            disabled={!value}
+            onClick={() => value.length === 1 ? handleEditOption(value[0]) : null}
+            disabled={value.length !== 1}
             title="Editar"
             type="button"
             className="h-8 w-8 p-0"
@@ -65,8 +63,8 @@ const SelectField: React.FC<SelectFieldProps> = ({
           <Button 
             variant="outline" 
             size="icon"
-            onClick={() => value ? handleDeleteOption(value) : null}
-            disabled={!value}
+            onClick={() => value.length === 1 ? handleDeleteOption(value[0]) : null}
+            disabled={value.length !== 1}
             title="Excluir"
             type="button"
             className="h-8 w-8 p-0"

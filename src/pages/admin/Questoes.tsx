@@ -36,6 +36,13 @@ const Questoes: React.FC = () => {
     return [];
   };
 
+  // Função para converter strings em arrays
+  const parseStringToArray = (value: string | string[] | null): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    return value.split(',').map(item => item.trim()).filter(Boolean);
+  };
+
   // Buscar questões e dados relacionados do banco de dados
   useEffect(() => {
     const fetchQuestionsAndRelatedData = async () => {
@@ -52,14 +59,14 @@ const Questoes: React.FC = () => {
         // Transformar os dados para o formato esperado pelo componente
         const formattedQuestions: QuestionItemType[] = data.map(q => ({
           id: q.id,
-          year: q.year,
-          institution: q.institution,
-          organization: q.organization,
-          role: q.role,
-          discipline: q.discipline,
-          level: q.level,
-          difficulty: q.difficulty,
-          questionType: q.questiontype,
+          year: parseStringToArray(q.year),
+          institution: parseStringToArray(q.institution),
+          organization: parseStringToArray(q.organization),
+          role: parseStringToArray(q.role),
+          discipline: parseStringToArray(q.discipline),
+          level: parseStringToArray(q.level),
+          difficulty: parseStringToArray(q.difficulty),
+          questionType: parseStringToArray(q.questiontype),
           content: q.content,
           teacherExplanation: q.teacherexplanation,
           aiExplanation: q.aiexplanation || "",
@@ -71,14 +78,14 @@ const Questoes: React.FC = () => {
         state.setQuestions(formattedQuestions);
         
         // Extrair valores únicos para cada dropdown
-        const institutions = [...new Set(data.map(q => q.institution))].filter(Boolean).sort();
-        const organizations = [...new Set(data.map(q => q.organization))].filter(Boolean).sort();
-        const roles = [...new Set(data.map(q => q.role))].filter(Boolean).sort();
-        const disciplines = [...new Set(data.map(q => q.discipline))].filter(Boolean).sort();
-        const levels = [...new Set(data.map(q => q.level))].filter(Boolean).sort();
-        const difficulties = [...new Set(data.map(q => q.difficulty))].filter(Boolean).sort();
-        const questionTypes = [...new Set(data.map(q => q.questiontype))].filter(Boolean).sort();
-        const years = [...new Set(data.map(q => q.year))].filter(Boolean).sort((a, b) => b.localeCompare(a));
+        const institutions = [...new Set(data.flatMap(q => parseStringToArray(q.institution)))].filter(Boolean).sort();
+        const organizations = [...new Set(data.flatMap(q => parseStringToArray(q.organization)))].filter(Boolean).sort();
+        const roles = [...new Set(data.flatMap(q => parseStringToArray(q.role)))].filter(Boolean).sort();
+        const disciplines = [...new Set(data.flatMap(q => parseStringToArray(q.discipline)))].filter(Boolean).sort();
+        const levels = [...new Set(data.flatMap(q => parseStringToArray(q.level)))].filter(Boolean).sort();
+        const difficulties = [...new Set(data.flatMap(q => parseStringToArray(q.difficulty)))].filter(Boolean).sort();
+        const questionTypes = [...new Set(data.flatMap(q => parseStringToArray(q.questiontype)))].filter(Boolean).sort();
+        const years = [...new Set(data.flatMap(q => parseStringToArray(q.year)))].filter(Boolean).sort((a, b) => b.localeCompare(a));
 
         // Atualizar o estado com os valores extraídos
         state.setInstitutions(institutions);
@@ -167,6 +174,14 @@ const Questoes: React.FC = () => {
           showFilters={state.showFilters}
           setShowFilters={state.setShowFilters}
           resetFilters={actions.resetFilters}
+          institutions={state.institutions}
+          organizations={state.organizations}
+          roles={state.roles}
+          disciplines={state.disciplines}
+          levels={state.levels}
+          difficulties={state.difficulties}
+          questionTypes={state.questionTypes}
+          years={state.years}
         />
         
         <QuestionList
