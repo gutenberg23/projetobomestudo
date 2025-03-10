@@ -8,13 +8,15 @@ interface TopicosToolbarProps {
   onEdit: () => void;
   onDelete: () => void;
   topicosList: any[];
+  iconsOnly?: boolean;
 }
 
 const TopicosToolbar: React.FC<TopicosToolbarProps> = ({
   onAdd,
   onEdit,
   onDelete,
-  topicosList
+  topicosList,
+  iconsOnly = false
 }) => {
   return (
     <div className="flex gap-2">
@@ -24,10 +26,10 @@ const TopicosToolbar: React.FC<TopicosToolbarProps> = ({
         onClick={onAdd}
         title="Adicionar"
         type="button"
-        className="flex items-center gap-1"
+        className={`flex items-center ${iconsOnly ? '' : 'gap-1'}`}
       >
         <Plus className="h-4 w-4" />
-        Adicionar
+        {!iconsOnly && "Adicionar"}
       </Button>
       <Button 
         variant="outline" 
@@ -36,10 +38,10 @@ const TopicosToolbar: React.FC<TopicosToolbarProps> = ({
         disabled={!topicosList.length}
         title="Editar"
         type="button"
-        className="flex items-center gap-1"
+        className={`flex items-center ${iconsOnly ? '' : 'gap-1'}`}
       >
         <Edit className="h-4 w-4" />
-        Editar
+        {!iconsOnly && "Editar"}
       </Button>
       <Button 
         variant="outline" 
@@ -48,10 +50,10 @@ const TopicosToolbar: React.FC<TopicosToolbarProps> = ({
         disabled={!topicosList.length}
         title="Excluir"
         type="button"
-        className="flex items-center gap-1"
+        className={`flex items-center ${iconsOnly ? '' : 'gap-1'}`}
       >
         <Trash className="h-4 w-4" />
-        Excluir
+        {!iconsOnly && "Excluir"}
       </Button>
     </div>
   );

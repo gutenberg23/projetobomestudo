@@ -53,6 +53,7 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
           onEdit={() => setIsEditDialogOpen(true)}
           onDelete={() => setIsDeleteDialogOpen(true)}
           topicosList={topicosList}
+          iconsOnly={true}
         />
       </div>
 

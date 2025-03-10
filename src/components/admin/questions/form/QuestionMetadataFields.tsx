@@ -4,6 +4,7 @@ import SelectField from "./SelectField";
 import AddValueDialog from "./AddValueDialog";
 import { useSelectFieldState } from "./useSelectFieldState";
 import TopicosField from "./TopicosField";
+import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 
 interface QuestionMetadataFieldsProps {
   // Institution
@@ -79,6 +80,32 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
   const difficultyState = useSelectFieldState(difficulty, setDifficulty, difficulties, setDifficulties, "dificuldade");
   const questionTypeState = useSelectFieldState(questionType, setQuestionType, questionTypes, setQuestionTypes, "tipo de questão");
 
+  const [selectedRoles, setSelectedRoles] = React.useState<string[]>([]);
+
+  // Atualiza o campo role quando os roles selecionados mudam
+  React.useEffect(() => {
+    if (selectedRoles.length > 0) {
+      setRole(selectedRoles.join(', '));
+    } else {
+      setRole('');
+    }
+  }, [selectedRoles, setRole]);
+
+  // Atualiza selectedRoles quando o valor de role muda externamente
+  React.useEffect(() => {
+    if (role) {
+      setSelectedRoles(role.split(', ').filter(r => roles.includes(r)));
+    }
+  }, [role, roles]);
+
+  const handleRoleChange = (role: string) => {
+    if (selectedRoles.includes(role)) {
+      setSelectedRoles(selectedRoles.filter(r => r !== role));
+    } else {
+      setSelectedRoles([...selectedRoles, role]);
+    }
+  };
+
   return (
     <>
       {/* Institution, Organization, Year Fields */}
@@ -153,17 +180,50 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
 
       {/* Role, Discipline Fields */}
       <div>
-        <SelectField
-          id="role"
-          label="Cargo"
-          value={roleState.value}
-          onChange={setRole}
+        <div className="mb-1">
+          <label htmlFor="roles" className="block text-sm font-medium text-[#272f3c]">Cargos</label>
+        </div>
+        <CheckboxGroup
+          title=""
           options={roles}
-          handleEditOption={roleState.handleEdit}
-          handleDeleteOption={roleState.handleDelete}
-          openAddDialog={() => roleState.setIsDialogOpen(true)}
-          placeholder="Selecione o cargo"
+          selectedValues={selectedRoles}
+          onChange={handleRoleChange}
+          placeholder="Selecione os cargos"
         />
+        <div className="flex justify-end mt-1">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => roleState.setIsDialogOpen(true)}
+            title="Adicionar"
+            type="button"
+            className="flex items-center h-7 w-7 p-0 justify-center"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => roleState.handleEdit(role)}
+            disabled={!role}
+            title="Editar"
+            type="button"
+            className="flex items-center h-7 w-7 p-0 justify-center ml-1"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => roleState.handleDelete(role)}
+            disabled={!role}
+            title="Excluir"
+            type="button"
+            className="flex items-center h-7 w-7 p-0 justify-center ml-1"
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
+        </div>
         <AddValueDialog
           title="Adicionar Novo Cargo"
           placeholder="Nome do cargo"
@@ -282,5 +342,8 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
     </>
   );
 };
+
+import { Button } from "@/components/ui/button";
+import { Plus, Edit, Trash } from "lucide-react";
 
 export default QuestionMetadataFields;

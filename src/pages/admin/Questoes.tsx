@@ -1,7 +1,6 @@
 
 import React, { useEffect } from "react";
 import Card from "@/components/admin/questions/Card";
-import SearchQuestion from "@/components/admin/questions/SearchQuestion";
 import QuestionFilters from "@/components/admin/questions/QuestionFilters";
 import QuestionList from "@/components/admin/questions/QuestionList";
 import QuestionForm from "@/components/admin/questions/QuestionForm";
@@ -37,10 +36,11 @@ const Questoes: React.FC = () => {
     return [];
   };
 
-  // Carregar questões do banco de dados ao montar o componente
+  // Buscar questões e dados relacionados do banco de dados
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchQuestionsAndRelatedData = async () => {
       try {
+        // Buscar todas as questões
         const { data, error } = await supabase
           .from('questoes')
           .select('*');
@@ -69,13 +69,33 @@ const Questoes: React.FC = () => {
         }));
         
         state.setQuestions(formattedQuestions);
+        
+        // Extrair valores únicos para cada dropdown
+        const institutions = [...new Set(data.map(q => q.institution))].filter(Boolean).sort();
+        const organizations = [...new Set(data.map(q => q.organization))].filter(Boolean).sort();
+        const roles = [...new Set(data.map(q => q.role))].filter(Boolean).sort();
+        const disciplines = [...new Set(data.map(q => q.discipline))].filter(Boolean).sort();
+        const levels = [...new Set(data.map(q => q.level))].filter(Boolean).sort();
+        const difficulties = [...new Set(data.map(q => q.difficulty))].filter(Boolean).sort();
+        const questionTypes = [...new Set(data.map(q => q.questiontype))].filter(Boolean).sort();
+        const years = [...new Set(data.map(q => q.year))].filter(Boolean).sort((a, b) => b.localeCompare(a));
+
+        // Atualizar o estado com os valores extraídos
+        state.setInstitutions(institutions);
+        state.setOrganizations(organizations);
+        state.setRoles(roles);
+        state.setDisciplines(disciplines);
+        state.setLevels(levels);
+        state.setDifficulties(difficulties);
+        state.setQuestionTypes(questionTypes);
+        state.setYears(years);
       } catch (error) {
         console.error('Erro ao carregar questões:', error);
         toast.error('Erro ao carregar questões. Tente novamente.');
       }
     };
     
-    fetchQuestions();
+    fetchQuestionsAndRelatedData();
   }, []);
 
   return (
@@ -84,14 +104,6 @@ const Questoes: React.FC = () => {
         <h1 className="text-2xl font-bold text-[#272f3c]">Questões</h1>
         <p className="text-[#67748a]">Gerenciamento de questões</p>
       </div>
-
-      <Card title="Buscar Questão" description="Pesquise e edite questões pelo ID" defaultOpen={true}>
-        <SearchQuestion 
-          searchId={state.searchId} 
-          setSearchId={state.setSearchId} 
-          handleSearchQuestion={actions.handleSearchQuestion} 
-        />
-      </Card>
 
       {state.isEditQuestionCardOpen && (
         <Card title="Editar Questão" description="Edite os dados da questão" defaultOpen={true}>

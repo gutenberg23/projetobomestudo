@@ -44,14 +44,14 @@ export const useQuestionsState = () => {
   const [isSimuladoModalOpen, setIsSimuladoModalOpen] = useState<boolean>(false);
   
   // Estado para opções selecionáveis
-  const [institutions, setInstitutions] = useState<string[]>(["IDECAN", "CESPE", "FGV", "VUNESP"]);
-  const [roles, setRoles] = useState<string[]>(["Analista", "Técnico", "Auditor", "Escrivão"]);
-  const [levels, setLevels] = useState<string[]>(["Básico", "Intermediário", "Avançado"]);
-  const [difficulties, setDifficulties] = useState<string[]>(["Fácil", "Médio", "Difícil"]);
-  const [disciplines, setDisciplines] = useState<string[]>(["Português", "Matemática", "Direito Constitucional", "Informática"]);
-  const [questionTypes, setQuestionTypes] = useState<string[]>(["Múltipla Escolha", "Certo ou Errado"]);
-  const [years, setYears] = useState<string[]>(["2024", "2023", "2022", "2021", "2020", "2019", "2018"]);
-  const [organizations, setOrganizations] = useState<string[]>(["Tribunal de Justiça", "Ministério Público", "Polícia Federal", "Receita Federal"]);
+  const [institutions, setInstitutions] = useState<string[]>([]);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [levels, setLevels] = useState<string[]>([]);
+  const [difficulties, setDifficulties] = useState<string[]>([]);
+  const [disciplines, setDisciplines] = useState<string[]>([]);
+  const [questionTypes, setQuestionTypes] = useState<string[]>([]);
+  const [years, setYears] = useState<string[]>([]);
+  const [organizations, setOrganizations] = useState<string[]>([]);
   
   // Limpar as opções quando o tipo de questão mudar
   useEffect(() => {
