@@ -60,19 +60,27 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
       const searchTermLower = searchTerm.toLowerCase();
       
       if (hierarchical && typeof options[0] !== 'string') {
+        // Para opções hierárquicas, filtramos TopicOption[]
         const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
           option.name.toLowerCase().includes(searchTermLower)
         );
+        // Aqui está seguro pois sabemos que estamos trabalhando com TopicOption[]
         setFilteredOptions(filtered);
       } else {
-        const filtered = (hierarchicalOptions as (string | TopicOption)[]).filter(option => {
-          if (typeof option === 'string') {
-            return option.toLowerCase().includes(searchTermLower);
-          } else {
-            return option.name.toLowerCase().includes(searchTermLower);
-          }
-        });
-        setFilteredOptions(filtered as string[] | TopicOption[]);
+        // Para opções simples, precisamos verificar o tipo de cada opção
+        if (typeof options[0] === 'string') {
+          // Se todas as opções são strings
+          const filtered = (hierarchicalOptions as string[]).filter(option => 
+            option.toLowerCase().includes(searchTermLower)
+          );
+          setFilteredOptions(filtered);
+        } else {
+          // Se todas as opções são TopicOption
+          const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
+            option.name.toLowerCase().includes(searchTermLower)
+          );
+          setFilteredOptions(filtered);
+        }
       }
     }
   }, [searchTerm, hierarchicalOptions, options, hierarchical]);
@@ -203,34 +211,56 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
                       .map(option => renderHierarchicalOption(option))
                   ) : (
                     // Renderiza opções simples
-                    (filteredOptions as (string | TopicOption)[]).map((option) => {
-                      const optionValue = typeof option === 'string' ? option : option.id;
-                      const optionDisplay = typeof option === 'string' ? option : option.name;
-                      
-                      return (
-                        <div key={optionValue} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100">
+                    typeof filteredOptions[0] === 'string' ?
+                      // Se for array de strings
+                      (filteredOptions as string[]).map((option) => (
+                        <div key={option} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100">
                           <div
                             className={cn(
                               "h-4 w-4 rounded border flex items-center justify-center",
-                              selectedValues.includes(optionValue)
+                              selectedValues.includes(option)
                                 ? "bg-[#5f2ebe] border-[#5f2ebe]"
                                 : "border-gray-300"
                             )}
-                            onClick={() => onChange(optionValue)}
+                            onClick={() => onChange(option)}
                           >
-                            {selectedValues.includes(optionValue) && (
+                            {selectedValues.includes(option) && (
                               <CheckIcon className="h-3 w-3 text-white" />
                             )}
                           </div>
                           <label
-                            onClick={() => onChange(optionValue)}
+                            onClick={() => onChange(option)}
                             className="text-sm font-medium text-[#67748a] cursor-pointer"
                           >
-                            {optionDisplay}
+                            {option}
                           </label>
                         </div>
-                      );
-                    })
+                      ))
+                      :
+                      // Se for array de TopicOption
+                      (filteredOptions as TopicOption[]).map((option) => (
+                        <div key={option.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100">
+                          <div
+                            className={cn(
+                              "h-4 w-4 rounded border flex items-center justify-center",
+                              selectedValues.includes(option.id)
+                                ? "bg-[#5f2ebe] border-[#5f2ebe]"
+                                : "border-gray-300"
+                            )}
+                            onClick={() => onChange(option.id)}
+                          >
+                            {selectedValues.includes(option.id) && (
+                              <CheckIcon className="h-3 w-3 text-white" />
+                            )}
+                          </div>
+                          <label
+                            onClick={() => onChange(option.id)}
+                            className="text-sm font-medium text-[#67748a] cursor-pointer"
+                          >
+                            {option.name}
+                          </label>
+                        </div>
+                      ))
                   )}
                 </div>
               ) : (
