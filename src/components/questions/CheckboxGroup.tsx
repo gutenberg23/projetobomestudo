@@ -66,19 +66,22 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
       const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
         option.name.toLowerCase().includes(searchTermLower)
       );
-      setFilteredOptions(filtered);
+      // Usando as from para garantir o tipo correto
+      setFilteredOptions(filtered as TopicOption[]);
     } else if (typeof options[0] === 'string') {
       // Se todas as opções são strings
       const filtered = (hierarchicalOptions as string[]).filter(option => 
         option.toLowerCase().includes(searchTermLower)
       );
-      setFilteredOptions(filtered);
+      // Usando as from para garantir o tipo correto
+      setFilteredOptions(filtered as string[]);
     } else {
       // Se todas as opções são TopicOption
       const filtered = (hierarchicalOptions as TopicOption[]).filter(option => 
         option.name.toLowerCase().includes(searchTermLower)
       );
-      setFilteredOptions(filtered);
+      // Usando as from para garantir o tipo correto
+      setFilteredOptions(filtered as TopicOption[]);
     }
   }, [searchTerm, hierarchicalOptions, options, hierarchical]);
 
