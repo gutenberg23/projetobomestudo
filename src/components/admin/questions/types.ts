@@ -23,14 +23,14 @@ export interface QuestionItemType {
 
 export interface FiltersType {
   id: string;
-  year: string;
-  institution: string;
-  organization: string;
-  role: string;
-  discipline: string;
-  level: string;
-  difficulty: string;
-  questionType: string;
+  year: string[];
+  institution: string[];
+  organization: string[];
+  role: string[];
+  discipline: string[];
+  level: string[];
+  difficulty: string[];
+  questionType: string[];
 }
 
 export interface QuestionOption {
