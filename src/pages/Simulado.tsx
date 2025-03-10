@@ -18,7 +18,7 @@ const Simulado = () => {
   const [formattedQuestions, setFormattedQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeQuestion, setActiveQuestion] = useState(0);
-  const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
+  const [disabledOptions, setDisabledOptions] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     const fetchSimulado = async () => {
@@ -115,7 +115,6 @@ const Simulado = () => {
   const handleNextQuestion = () => {
     if (activeQuestion < formattedQuestions.length - 1) {
       setActiveQuestion(activeQuestion + 1);
-      setDisabledOptions([]);
       window.scrollTo(0, 0);
     }
   };
@@ -123,18 +122,25 @@ const Simulado = () => {
   const handlePreviousQuestion = () => {
     if (activeQuestion > 0) {
       setActiveQuestion(activeQuestion - 1);
-      setDisabledOptions([]);
       window.scrollTo(0, 0);
     }
   };
 
   const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
     event.preventDefault();
-    setDisabledOptions(prev => 
-      prev.includes(optionId) 
-        ? prev.filter(id => id !== optionId) 
-        : [...prev, optionId]
-    );
+    
+    const currentQuestionId = formattedQuestions[activeQuestion].id;
+    
+    setDisabledOptions(prev => {
+      const questionDisabledOptions = prev[currentQuestionId] || [];
+      
+      return {
+        ...prev,
+        [currentQuestionId]: questionDisabledOptions.includes(optionId)
+          ? questionDisabledOptions.filter(id => id !== optionId)
+          : [...questionDisabledOptions, optionId]
+      };
+    });
   };
 
   if (isLoading) {
@@ -170,6 +176,7 @@ const Simulado = () => {
   }
 
   const currentQuestion = formattedQuestions[activeQuestion];
+  const currentDisabledOptions = disabledOptions[currentQuestion?.id] || [];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -207,7 +214,7 @@ const Simulado = () => {
               <QuestionCard 
                 key={`question-${currentQuestion.id}-${activeQuestion}`}
                 question={currentQuestion}
-                disabledOptions={disabledOptions}
+                disabledOptions={currentDisabledOptions}
                 onToggleDisabled={handleToggleDisabled}
               />
               

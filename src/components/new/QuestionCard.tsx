@@ -132,131 +132,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        setIsLoading(true);
-        
-        if (!questionId) {
-          // Dados de exemplo para quando não há ID de questão
-          setPerformanceData([
-            { name: "Acertos", value: 0, color: "#4ade80" },
-            { name: "Erros", value: 0, color: "#ef4444" },
-          ]);
-          
-          setAlternativesData([
-            { name: "A", value: 0, color: "#F8C471" },
-            { name: "B", value: 0, color: "#5DADE2" },
-            { name: "C", value: 0, color: "#F4D03F" },
-            { name: "D", value: 0, color: "#ABEBC6" },
-            { name: "E", value: 0, color: "#E59866" },
-          ]);
-          
-          setIsLoading(false);
-          return;
-        }
-        
-        // Obter estatísticas de acertos e erros
-        const { data: respostasData, error: respostasError } = await supabase
-          .from('respostas_alunos')
-          .select('is_correta')
-          .eq('questao_id', questionId);
-          
-        if (respostasError) throw respostasError;
-        
-        // Calcular acertos e erros
-        let acertos = 0;
-        let erros = 0;
-        
-        if (respostasData && respostasData.length > 0) {
-          acertos = respostasData.filter(r => r.is_correta).length;
-          erros = respostasData.filter(r => !r.is_correta).length;
-        }
-        
-        setPerformanceData([
-          { name: "Acertos", value: acertos || 0, color: "#4ade80" },
-          { name: "Erros", value: erros || 0, color: "#ef4444" },
-        ]);
-        
-        // Obter estatísticas de alternativas mais respondidas
-        const { data: alternativasData, error: alternativasError } = await supabase
-          .from('respostas_alunos')
-          .select('opcao_id')
-          .eq('questao_id', questionId);
-          
-        if (alternativasError) throw alternativasError;
-        
-        // Contar respostas por alternativa
-        const alternativasCounts: Record<string, number> = {};
-        
-        if (alternativasData && alternativasData.length > 0) {
-          alternativasData.forEach(resposta => {
-            const alternativaId = resposta.opcao_id;
-            if (alternativasCounts[alternativaId]) {
-              alternativasCounts[alternativaId]++;
-            } else {
-              alternativasCounts[alternativaId] = 1;
-            }
-          });
-        }
-        
-        // Buscar informações das alternativas disponíveis
-        let alternativas = [];
-        
-        if (Object.keys(alternativasCounts).length > 0) {
-          // Obter a questão para mapear os IDs às letras
-          const { data: questaoData } = await supabase
-            .from('questoes')
-            .select('options')
-            .eq('id', questionId)
-            .single();
-            
-          if (questaoData && questaoData.options) {
-            const options = Array.isArray(questaoData.options) ? questaoData.options : [];
-            
-            alternativas = options.map((option, index) => {
-              const letter = String.fromCharCode(65 + index); // A, B, C, D, E
-              return {
-                name: letter,
-                value: alternativasCounts[option.id] || 0,
-                color: getAlternativaColor(index)
-              };
-            });
-          }
-        }
-        
-        setAlternativesData(alternativas.length > 0 ? alternativas : [
-          { name: "A", value: 0, color: "#F8C471" },
-          { name: "B", value: 0, color: "#5DADE2" },
-          { name: "C", value: 0, color: "#F4D03F" },
-          { name: "D", value: 0, color: "#ABEBC6" },
-          { name: "E", value: 0, color: "#E59866" },
-        ]);
-      } catch (error) {
-        console.error("Erro ao buscar estatísticas:", error);
-        
-        // Dados de exemplo para fallback
-        setPerformanceData([
-          { name: "Acertos", value: 0, color: "#4ade80" },
-          { name: "Erros", value: 0, color: "#ef4444" },
-        ]);
-        
-        setAlternativesData([
-          { name: "A", value: 0, color: "#F8C471" },
-          { name: "B", value: 0, color: "#5DADE2" },
-          { name: "C", value: 0, color: "#F4D03F" },
-          { name: "D", value: 0, color: "#ABEBC6" },
-          { name: "E", value: 0, color: "#E59866" },
-        ]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchStats();
-  }, [questionId]);
-  
-  // Buscar comentários da questão
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
         // Primeiro buscar os comentários
         const { data: commentsData, error } = await supabase
           .from('comentarios_questoes')
@@ -280,16 +155,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           const formattedComments = await Promise.all(
             commentsData.map(async (comment) => {
               // Buscar dados do perfil separadamente
-              const { data: profileData, error: profileError } = await supabase
+              const { data: profileData } = await supabase
                 .from('profiles')
                 .select('nome, foto_perfil')
                 .eq('id', comment.usuario_id)
                 .single();
                 
-              if (profileError) {
-                console.error("Erro ao buscar perfil:", profileError);
-              }
-
               // Buscar likes do comentário
               const { data: likesData, error: likesError } = await supabase
                 .from('likes_comentarios')

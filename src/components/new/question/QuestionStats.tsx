@@ -96,12 +96,13 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
             
             // Mapear os IDs das opções para letras (A, B, C, D, E)
             // e usar isso para plotar os resultados
-            alternativas = options.map((option, index) => {
+            alternativas = options.map((option: any, index: number) => {
               const letter = String.fromCharCode(65 + index); // A, B, C, D, E
+              const optionId = typeof option === 'object' && option !== null ? option.id : option;
               return {
                 name: letter,
-                id: option.id, // Armazenar o ID para garantir correspondência
-                value: alternativasCounts[option.id] || 0,
+                id: optionId, // Armazenar o ID para garantir correspondência
+                value: alternativasCounts[optionId] || 0,
                 color: getAlternativaColor(index)
               };
             });
