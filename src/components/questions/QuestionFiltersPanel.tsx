@@ -6,6 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CheckboxGroup } from "./CheckboxGroup";
 
+interface TopicOption {
+  id: string;
+  name: string;
+  parent?: string;
+  level: number;
+}
+
 interface QuestionFiltersPanelProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
@@ -24,7 +31,7 @@ interface QuestionFiltersPanelProps {
   setQuestionsPerPage: (value: string) => void;
   filterOptions: {
     disciplines: string[];
-    topics: string[];
+    topics: TopicOption[] | string[];
     institutions: string[];
     organizations: string[];
     roles: string[];

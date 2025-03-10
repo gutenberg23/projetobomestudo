@@ -39,7 +39,7 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
 
   // Organizar opções em hierarquia se necessário
   const hierarchicalOptions = React.useMemo(() => {
-    if (!hierarchical || !Array.isArray(options) || options.length === 0 || typeof options[0] === 'string') {
+    if (!hierarchical || options.length === 0) {
       // Se não for hierárquico ou se options for um array de strings, retorna as opções ordenadas alfabeticamente
       return [...options].sort((a, b) => {
         const aStr = typeof a === 'string' ? a : a.name;
@@ -48,10 +48,14 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
       });
     }
 
-    // Primeiro ordenamos todas as opções
-    const sortedOptions = [...(options as TopicOption[])].sort((a, b) => a.name.localeCompare(b.name));
+    // Verificamos se estamos lidando com TopicOption[]
+    if (typeof options[0] !== 'string') {
+      // Primeiro ordenamos todas as opções
+      const sortedOptions = [...(options as TopicOption[])].sort((a, b) => a.name.localeCompare(b.name));
+      return sortedOptions;
+    }
     
-    return sortedOptions;
+    return options;
   }, [options, hierarchical]);
 
   // Filtrar opções quando o termo de busca mudar
@@ -91,6 +95,7 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
   // Renderiza uma opção de tópico hierárquica
   const renderHierarchicalOption = (option: TopicOption) => {
     const hasChildren = hierarchical && Array.isArray(options) && 
+      typeof options[0] !== 'string' &&
       (options as TopicOption[]).some(o => o.parent === option.id);
     
     const isExpanded = expandedTopics[option.id];
@@ -200,12 +205,12 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
                       .map(option => renderHierarchicalOption(option))
                   ) : (
                     // Renderiza opções simples
-                    (filteredOptions as string[]).map((option) => {
-                      const optionValue = typeof option === 'string' ? option : option.name;
-                      const optionId = typeof option === 'string' ? option : option.id;
+                    (filteredOptions as any[]).map((option) => {
+                      const optionValue = typeof option === 'string' ? option : option.id;
+                      const optionDisplay = typeof option === 'string' ? option : option.name;
                       
                       return (
-                        <div key={optionId} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100">
+                        <div key={optionValue} className="flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100">
                           <div
                             className={cn(
                               "h-4 w-4 rounded border flex items-center justify-center",
@@ -223,7 +228,7 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
                             onClick={() => onChange(optionValue)}
                             className="text-sm font-medium text-[#67748a] cursor-pointer"
                           >
-                            {optionValue}
+                            {optionDisplay}
                           </label>
                         </div>
                       );

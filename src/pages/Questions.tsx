@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -5,6 +6,7 @@ import QuestionFiltersPanel from "@/components/questions/QuestionFiltersPanel";
 import QuestionResults from "@/components/questions/QuestionResults";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Question as NewQuestion } from "@/components/new/types";
 
 interface TopicOption {
   id: string;
@@ -25,7 +27,7 @@ interface Question {
     text: string;
     isCorrect: boolean;
   }[];
-  comments?: {
+  comments: {
     id: string;
     author: string;
     avatar: string;
@@ -33,6 +35,10 @@ interface Question {
     timestamp: string;
     likes: number;
   }[];
+  additionalContent?: string;
+  teacherExplanation?: string;
+  aiExplanation?: string;
+  images?: string[];
 }
 
 const MOCK_QUESTIONS: Question[] = [
@@ -111,6 +117,24 @@ const MOCK_QUESTIONS: Question[] = [
     }]
   }
 ];
+
+// Função para converter Question para NewQuestion
+const convertToNewQuestion = (q: Question): NewQuestion => {
+  return {
+    id: q.id,
+    content: q.content,
+    year: q.year,
+    institution: q.institution,
+    organization: q.organization,
+    role: q.role,
+    options: q.options,
+    comments: q.comments,
+    additionalContent: q.additionalContent,
+    teacherExplanation: q.teacherExplanation,
+    aiExplanation: q.aiExplanation,
+    images: q.images
+  };
+};
 
 const Questions = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -267,6 +291,9 @@ const Questions = () => {
   
   const hasFilters = Object.values(selectedFilters).some(arr => arr.length > 0);
   
+  // Converter para o formato esperado pelo componente QuestionResults
+  const convertedQuestions = MOCK_QUESTIONS.map(convertToNewQuestion);
+  
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
@@ -285,7 +312,7 @@ const Questions = () => {
         />
 
         <QuestionResults 
-          questions={MOCK_QUESTIONS}
+          questions={convertedQuestions}
           disabledOptions={disabledOptions}
           onToggleDisabled={handleToggleDisabled}
           currentPage={currentPage}
