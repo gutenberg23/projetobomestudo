@@ -3,7 +3,7 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash, Plus } from "lucide-react";
-import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SelectFieldProps {
   id: string;
@@ -28,27 +28,25 @@ const SelectField: React.FC<SelectFieldProps> = ({
   openAddDialog,
   placeholder = "Selecione uma opção",
 }) => {
-  const selectedValues = value ? [value] : [];
-  
-  const handleValueChange = (option: string) => {
-    if (selectedValues.includes(option)) {
-      onChange('');
-    } else {
-      onChange(option);
-    }
-  };
+  // Garantir que as opções estão em ordem alfabética
+  const sortedOptions = [...options].sort((a, b) => a.localeCompare(b));
 
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
       <div className="flex flex-col gap-2">
-        <CheckboxGroup
-          title=""
-          options={options}
-          selectedValues={selectedValues}
-          onChange={handleValueChange}
-          placeholder={placeholder}
-        />
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger id={id} className="w-full h-10">
+            <SelectValue placeholder={placeholder} />
+          </SelectTrigger>
+          <SelectContent>
+            {sortedOptions.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         
         <div className="flex gap-2 justify-end">
           <Button 
