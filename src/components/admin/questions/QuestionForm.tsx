@@ -7,25 +7,24 @@ import QuestionOptions from "./form/QuestionOptions";
 import FormSection from "./form/FormSection";
 import SubmitButton from "./form/SubmitButton";
 import { QuestionOption } from "./types";
-
 interface QuestionFormProps {
   questionId: string;
-  year: string[];
-  setYear: (value: string[]) => void;
-  institution: string[];
-  setInstitution: (value: string[]) => void;
-  organization: string[];
-  setOrganization: (value: string[]) => void;
-  role: string[];
-  setRole: (value: string[]) => void;
-  discipline: string[];
-  setDiscipline: (value: string[]) => void;
-  level: string[];
-  setLevel: (value: string[]) => void;
-  difficulty: string[];
-  setDifficulty: (value: string[]) => void;
-  questionType: string[];
-  setQuestionType: (value: string[]) => void;
+  year: string;
+  setYear: (value: string) => void;
+  institution: string;
+  setInstitution: (value: string) => void;
+  organization: string;
+  setOrganization: (value: string) => void;
+  role: string;
+  setRole: (value: string) => void;
+  discipline: string;
+  setDiscipline: (value: string) => void;
+  level: string;
+  setLevel: (value: string) => void;
+  difficulty: string;
+  setDifficulty: (value: string) => void;
+  questionType: string;
+  setQuestionType: (value: string) => void;
   questionText: string;
   setQuestionText: (value: string) => void;
   teacherExplanation: string;
@@ -58,7 +57,6 @@ interface QuestionFormProps {
   submitButtonText: string;
   isEditing?: boolean;
 }
-
 const QuestionForm: React.FC<QuestionFormProps> = ({
   questionId,
   year,
@@ -112,7 +110,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   const {
     copyToClipboard
   } = useClipboard();
-  
   return <div className="space-y-6">
       {/* Question ID Field */}
       <QuestionIdField questionId={questionId} copyToClipboard={copyToClipboard} />
@@ -192,7 +189,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       </div>
 
       {/* Question Options */}
-      {questionType.length > 0 && <QuestionOptions questionType={questionType[0]} options={options} setOptions={setOptions} />}
+      {questionType && <QuestionOptions questionType={questionType} options={options} setOptions={setOptions} />}
 
       {/* Teacher Explanation */}
       <div>

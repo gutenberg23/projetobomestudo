@@ -17,14 +17,14 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
 
     // Verificações de preenchimento (igual ao salvamento)
     if (
-      year.length === 0 || 
-      institution.length === 0 || 
-      organization.length === 0 || 
-      role.length === 0 || 
-      discipline.length === 0 || 
-      level.length === 0 || 
-      difficulty.length === 0 || 
-      questionType.length === 0 || 
+      !year || 
+      !institution || 
+      !organization || 
+      !role || 
+      !discipline || 
+      !level || 
+      !difficulty || 
+      !questionType || 
       !questionText
     ) {
       toast.error("Preencha todos os campos obrigatórios!");
@@ -32,13 +32,13 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
     }
 
     // Verificar se as opções estão preenchidas para tipos de questão que precisam delas
-    if (questionType.includes("Múltipla Escolha") || questionType.includes("Certo ou Errado")) {
+    if (["Múltipla Escolha", "Certo ou Errado"].includes(questionType)) {
       if (options.length === 0) {
         toast.error("Adicione as alternativas para a questão!");
         return;
       }
 
-      if (questionType.includes("Múltipla Escolha")) {
+      if (questionType === "Múltipla Escolha") {
         // Verificar se todas as alternativas têm texto para múltipla escolha
         const emptyOptions = options.filter(o => !o.text.trim());
         if (emptyOptions.length > 0) {
@@ -111,14 +111,14 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
       const now = new Date();
       const newId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
       setQuestionId(newId);
-      setYear([]);
-      setInstitution([]);
-      setOrganization([]);
-      setRole([]);
-      setDiscipline([]);
-      setLevel([]);
-      setDifficulty([]);
-      setQuestionType([]);
+      setYear("");
+      setInstitution("");
+      setOrganization("");
+      setRole("");
+      setDiscipline("");
+      setLevel("");
+      setDifficulty("");
+      setQuestionType("");
       setQuestionText("");
       setTeacherExplanation("");
       setAIExplanation("");

@@ -1,14 +1,14 @@
 
 export interface QuestionItemType {
   id: string;
-  year: string[];
-  institution: string[];
-  organization: string[];
-  role: string[];
-  discipline: string[];
-  level: string[];
-  difficulty: string[];
-  questionType: string[];
+  year: string;
+  institution: string;
+  organization: string;
+  role: string;
+  discipline: string;
+  level: string;
+  difficulty: string;
+  questionType: string;
   content: string;
   teacherExplanation: string;
   aiExplanation?: string;

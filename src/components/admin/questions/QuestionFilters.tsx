@@ -4,8 +4,18 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FilterIcon, X } from "lucide-react";
-import { FiltersType } from "./types";
-import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
+
+interface FiltersType {
+  id: string;
+  year: string;
+  institution: string;
+  organization: string;
+  role: string;
+  discipline: string;
+  level: string;
+  difficulty: string;
+  questionType: string;
+}
 
 interface QuestionFiltersProps {
   filters: FiltersType;
@@ -13,14 +23,6 @@ interface QuestionFiltersProps {
   showFilters: boolean;
   setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
   resetFilters: () => void;
-  institutions: string[];
-  organizations: string[];
-  roles: string[];
-  disciplines: string[];
-  levels: string[];
-  difficulties: string[];
-  questionTypes: string[];
-  years: string[];
 }
 
 const QuestionFilters: React.FC<QuestionFiltersProps> = ({
@@ -29,32 +31,7 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
   showFilters,
   setShowFilters,
   resetFilters,
-  institutions,
-  organizations,
-  roles,
-  disciplines,
-  levels,
-  difficulties,
-  questionTypes,
-  years
 }) => {
-  const handleFilterChange = (field: keyof Omit<FiltersType, 'id'>, value: string) => {
-    setFilters(prev => {
-      const currentValues = prev[field];
-      if (currentValues.includes(value)) {
-        return {
-          ...prev,
-          [field]: currentValues.filter(v => v !== value)
-        };
-      } else {
-        return {
-          ...prev,
-          [field]: [...currentValues, value]
-        };
-      }
-    });
-  };
-
   return (
     <div className="mb-4">
       <div className="flex justify-between mb-4">
@@ -92,82 +69,74 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
           </div>
           <div>
             <Label htmlFor="filter-year">Ano</Label>
-            <CheckboxGroup
-              title=""
-              options={years}
-              selectedValues={filters.year}
-              onChange={(value) => handleFilterChange('year', value)}
-              placeholder="Filtrar por Ano"
+            <Input 
+              id="filter-year" 
+              value={filters.year} 
+              onChange={(e) => setFilters({...filters, year: e.target.value})} 
+              placeholder="Filtrar por Ano" 
             />
           </div>
           <div>
             <Label htmlFor="filter-institution">Banca</Label>
-            <CheckboxGroup
-              title=""
-              options={institutions}
-              selectedValues={filters.institution}
-              onChange={(value) => handleFilterChange('institution', value)}
-              placeholder="Filtrar por Banca"
+            <Input 
+              id="filter-institution" 
+              value={filters.institution} 
+              onChange={(e) => setFilters({...filters, institution: e.target.value})} 
+              placeholder="Filtrar por Banca" 
             />
           </div>
           <div>
             <Label htmlFor="filter-organization">Instituição</Label>
-            <CheckboxGroup
-              title=""
-              options={organizations}
-              selectedValues={filters.organization}
-              onChange={(value) => handleFilterChange('organization', value)}
-              placeholder="Filtrar por Instituição"
+            <Input 
+              id="filter-organization" 
+              value={filters.organization} 
+              onChange={(e) => setFilters({...filters, organization: e.target.value})} 
+              placeholder="Filtrar por Instituição" 
             />
           </div>
           <div>
             <Label htmlFor="filter-role">Cargo</Label>
-            <CheckboxGroup
-              title=""
-              options={roles}
-              selectedValues={filters.role}
-              onChange={(value) => handleFilterChange('role', value)}
-              placeholder="Filtrar por Cargo"
+            <Input 
+              id="filter-role" 
+              value={filters.role} 
+              onChange={(e) => setFilters({...filters, role: e.target.value})} 
+              placeholder="Filtrar por Cargo" 
             />
           </div>
           <div>
             <Label htmlFor="filter-discipline">Disciplina</Label>
-            <CheckboxGroup
-              title=""
-              options={disciplines}
-              selectedValues={filters.discipline}
-              onChange={(value) => handleFilterChange('discipline', value)}
-              placeholder="Filtrar por Disciplina"
+            <Input 
+              id="filter-discipline" 
+              value={filters.discipline} 
+              onChange={(e) => setFilters({...filters, discipline: e.target.value})} 
+              placeholder="Filtrar por Disciplina" 
             />
           </div>
           <div>
             <Label htmlFor="filter-level">Nível</Label>
-            <CheckboxGroup
-              title=""
-              options={levels}
-              selectedValues={filters.level}
-              onChange={(value) => handleFilterChange('level', value)}
-              placeholder="Filtrar por Nível"
+            <Input 
+              id="filter-level" 
+              value={filters.level} 
+              onChange={(e) => setFilters({...filters, level: e.target.value})} 
+              placeholder="Filtrar por Nível" 
             />
           </div>
           <div>
             <Label htmlFor="filter-difficulty">Dificuldade</Label>
-            <CheckboxGroup
-              title=""
-              options={difficulties}
-              selectedValues={filters.difficulty}
-              onChange={(value) => handleFilterChange('difficulty', value)}
-              placeholder="Filtrar por Dificuldade"
+            <Input 
+              id="filter-difficulty" 
+              value={filters.difficulty} 
+              onChange={(e) => setFilters({...filters, difficulty: e.target.value})} 
+              placeholder="Filtrar por Dificuldade" 
             />
           </div>
           <div>
             <Label htmlFor="filter-questionType">Tipo de Questão</Label>
-            <CheckboxGroup
-              title=""
-              options={questionTypes}
-              selectedValues={filters.questionType}
-              onChange={(value) => handleFilterChange('questionType', value)}
-              placeholder="Filtrar por Tipo"
+            <Input 
+              id="filter-questionType" 
+              value={filters.questionType} 
+              onChange={(e) => setFilters({...filters, questionType: e.target.value})} 
+              placeholder="Filtrar por Tipo" 
             />
           </div>
         </div>
