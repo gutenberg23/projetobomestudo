@@ -43,6 +43,17 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   setQuestionsPerPage,
   filterOptions
 }) => {
+  // Ordenar todas as listas de opções em ordem alfabética
+  const sortedOptions = {
+    disciplines: [...filterOptions.disciplines].sort((a, b) => a.localeCompare(b)),
+    topics: [...filterOptions.topics].sort((a, b) => a.localeCompare(b)),
+    institutions: [...filterOptions.institutions].sort((a, b) => a.localeCompare(b)),
+    organizations: [...filterOptions.organizations].sort((a, b) => a.localeCompare(b)),
+    roles: [...filterOptions.roles].sort((a, b) => a.localeCompare(b)),
+    years: [...filterOptions.years].sort((a, b) => b.localeCompare(a)), // Anos em ordem decrescente
+    educationLevels: [...filterOptions.educationLevels].sort((a, b) => a.localeCompare(b))
+  };
+
   return (
     <div className="bg-white rounded-lg p-6 mb-8">
       <div className="grid grid-cols-1 gap-6 mb-6">
@@ -61,49 +72,49 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
         <CheckboxGroup 
           title="Disciplina" 
-          options={filterOptions.disciplines} 
+          options={sortedOptions.disciplines} 
           selectedValues={selectedFilters.disciplines} 
           onChange={value => handleFilterChange("disciplines", value)} 
         />
         
         <CheckboxGroup 
           title="Tópico" 
-          options={filterOptions.topics} 
+          options={sortedOptions.topics} 
           selectedValues={selectedFilters.topics} 
           onChange={value => handleFilterChange("topics", value)} 
         />
         
         <CheckboxGroup 
           title="Banca" 
-          options={filterOptions.institutions} 
+          options={sortedOptions.institutions} 
           selectedValues={selectedFilters.institutions} 
           onChange={value => handleFilterChange("institutions", value)} 
         />
         
         <CheckboxGroup 
           title="Instituição" 
-          options={filterOptions.organizations} 
+          options={sortedOptions.organizations} 
           selectedValues={selectedFilters.organizations} 
           onChange={value => handleFilterChange("organizations", value)} 
         />
         
         <CheckboxGroup 
           title="Cargo" 
-          options={filterOptions.roles} 
+          options={sortedOptions.roles} 
           selectedValues={selectedFilters.roles} 
           onChange={value => handleFilterChange("roles", value)} 
         />
         
         <CheckboxGroup 
           title="Ano" 
-          options={filterOptions.years} 
+          options={sortedOptions.years} 
           selectedValues={selectedFilters.years} 
           onChange={value => handleFilterChange("years", value)} 
         />
         
         <CheckboxGroup 
           title="Escolaridade" 
-          options={filterOptions.educationLevels} 
+          options={sortedOptions.educationLevels} 
           selectedValues={selectedFilters.educationLevels} 
           onChange={value => handleFilterChange("educationLevels", value)} 
         />
@@ -125,7 +136,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
         </div>
       </div>
 
-      <Button onClick={handleApplyFilters} className="w-full text-white bg-[#ea2be2]">
+      <Button onClick={handleApplyFilters} className="w-full text-white bg-[#5f2ebe]">
         Filtrar Questões
       </Button>
     </div>

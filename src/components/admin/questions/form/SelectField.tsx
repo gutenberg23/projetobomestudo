@@ -28,51 +28,60 @@ const SelectField: React.FC<SelectFieldProps> = ({
   openAddDialog,
   placeholder = "Selecione uma opção",
 }) => {
+  // Garantir que as opções estão em ordem alfabética
+  const sortedOptions = [...options].sort((a, b) => a.localeCompare(b));
+
   return (
     <div>
       <Label htmlFor={id}>{label}</Label>
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2">
         <Select value={value} onValueChange={onChange}>
-          <SelectTrigger id={id}>
+          <SelectTrigger id={id} className="w-full h-10">
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option) => (
+            {sortedOptions.map((option) => (
               <SelectItem key={option} value={option}>
                 {option}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Button 
-          variant="outline" 
-          size="icon"
-          onClick={() => value ? handleEditOption(value) : null}
-          disabled={!value}
-          title="Editar"
-          type="button"
-        >
-          <Edit className="h-4 w-4" />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="icon"
-          onClick={() => value ? handleDeleteOption(value) : null}
-          disabled={!value}
-          title="Excluir"
-          type="button"
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          onClick={openAddDialog}
-          title="Adicionar"
-          type="button"
-        >
-          <Plus className="h-4 w-4" />
-        </Button>
+        
+        <div className="flex gap-2 justify-end">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => value ? handleEditOption(value) : null}
+            disabled={!value}
+            title="Editar"
+            type="button"
+            className="h-8 w-8 p-0"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => value ? handleDeleteOption(value) : null}
+            disabled={!value}
+            title="Excluir"
+            type="button"
+            className="h-8 w-8 p-0"
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={openAddDialog}
+            title="Adicionar"
+            type="button"
+            className="h-8 w-8 p-0"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

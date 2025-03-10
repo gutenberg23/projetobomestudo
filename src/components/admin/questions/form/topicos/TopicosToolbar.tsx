@@ -19,43 +19,40 @@ const TopicosToolbar: React.FC<TopicosToolbarProps> = ({
   iconsOnly = false
 }) => {
   return (
-    <div className="flex gap-2">
+    <>
       <Button 
         variant="outline" 
-        size="sm"
-        onClick={onAdd}
-        title="Adicionar"
-        type="button"
-        className={`flex items-center ${iconsOnly ? '' : 'gap-1'}`}
-      >
-        <Plus className="h-4 w-4" />
-        {!iconsOnly && "Adicionar"}
-      </Button>
-      <Button 
-        variant="outline" 
-        size="sm"
+        size="icon"
         onClick={onEdit}
         disabled={!topicosList.length}
         title="Editar"
         type="button"
-        className={`flex items-center ${iconsOnly ? '' : 'gap-1'}`}
+        className="h-8 w-8 p-0"
       >
         <Edit className="h-4 w-4" />
-        {!iconsOnly && "Editar"}
       </Button>
       <Button 
         variant="outline" 
-        size="sm"
+        size="icon"
         onClick={onDelete}
         disabled={!topicosList.length}
         title="Excluir"
         type="button"
-        className={`flex items-center ${iconsOnly ? '' : 'gap-1'}`}
+        className="h-8 w-8 p-0"
       >
         <Trash className="h-4 w-4" />
-        {!iconsOnly && "Excluir"}
       </Button>
-    </div>
+      <Button 
+        variant="outline" 
+        size="icon" 
+        onClick={onAdd}
+        title="Adicionar"
+        type="button"
+        className="h-8 w-8 p-0"
+      >
+        <Plus className="h-4 w-4" />
+      </Button>
+    </>
   );
 };
 

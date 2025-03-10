@@ -7,6 +7,7 @@ import AddTopicoDialog from "./topicos/AddTopicoDialog";
 import EditTopicoDialog from "./topicos/EditTopicoDialog";
 import DeleteTopicoDialog from "./topicos/DeleteTopicoDialog";
 import { useTopicosService } from "./topicos/useTopicosService";
+import { Label } from "@/components/ui/label";
 
 interface TopicosFieldProps {
   disciplina: string;
@@ -44,30 +45,33 @@ const TopicosField: React.FC<TopicosFieldProps> = ({
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-2">
-        <label className="block text-sm font-medium text-[#272f3c]">
-          Tópicos
-        </label>
-        <TopicosToolbar 
-          onAdd={() => setIsAddDialogOpen(true)}
-          onEdit={() => setIsEditDialogOpen(true)}
-          onDelete={() => setIsDeleteDialogOpen(true)}
-          topicosList={topicosList}
-          iconsOnly={true}
-        />
-      </div>
+      <Label className="block text-sm font-medium text-[#272f3c]">
+        Tópicos
+      </Label>
 
-      {loading ? (
-        <TopicosLoading />
-      ) : (
-        <CheckboxGroup
-          title=""
-          options={topicosList.map(t => t.nome)}
-          selectedValues={topicos}
-          onChange={handleTopicosChange}
-          placeholder="Selecione os tópicos"
-        />
-      )}
+      <div className="flex flex-col gap-2">
+        {loading ? (
+          <TopicosLoading />
+        ) : (
+          <CheckboxGroup
+            title=""
+            options={topicosList.map(t => t.nome).sort((a, b) => a.localeCompare(b))}
+            selectedValues={topicos}
+            onChange={handleTopicosChange}
+            placeholder="Selecione os tópicos"
+          />
+        )}
+
+        <div className="flex gap-2 justify-end">
+          <TopicosToolbar 
+            onAdd={() => setIsAddDialogOpen(true)}
+            onEdit={() => setIsEditDialogOpen(true)}
+            onDelete={() => setIsDeleteDialogOpen(true)}
+            topicosList={topicosList}
+            iconsOnly={true}
+          />
+        </div>
+      </div>
 
       {/* Dialogs for adding, editing, and deleting topics */}
       <AddTopicoDialog 

@@ -27,17 +27,25 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
   const toggleDropdown = () => setIsOpen(!isOpen);
   const closeDropdown = () => setIsOpen(false);
 
+  // Garantir que as opções estão em ordem alfabética
+  const sortedOptions = [...options].sort((a, b) => a.localeCompare(b));
+
   // Filtrar opções quando o termo de busca mudar
   useEffect(() => {
     if (searchTerm.trim() === '') {
-      setFilteredOptions(options);
+      setFilteredOptions(sortedOptions);
     } else {
-      const filtered = options.filter(option => 
+      const filtered = sortedOptions.filter(option => 
         option.toLowerCase().includes(searchTerm.toLowerCase())
       );
       setFilteredOptions(filtered);
     }
-  }, [searchTerm, options]);
+  }, [searchTerm, sortedOptions]);
+
+  // Atualizar as opções filtradas quando as opções mudarem
+  useEffect(() => {
+    setFilteredOptions(sortedOptions);
+  }, [options]);
 
   return (
     <div className="relative w-full">

@@ -5,6 +5,9 @@ import AddValueDialog from "./AddValueDialog";
 import { useSelectFieldState } from "./useSelectFieldState";
 import TopicosField from "./TopicosField";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
+import { Button } from "@/components/ui/button";
+import { Plus, Edit, Trash } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 interface QuestionMetadataFieldsProps {
   // Institution
@@ -106,9 +109,12 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
     }
   };
 
+  // Garantir que as listas estejam em ordem alfabética
+  const sortedRoles = [...roles].sort((a, b) => a.localeCompare(b));
+
   return (
     <>
-      {/* Institution, Organization, Year Fields */}
+      {/* Institution Field */}
       <div>
         <SelectField
           id="institution"
@@ -132,6 +138,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
         />
       </div>
 
+      {/* Organization Field */}
       <div>
         <SelectField
           id="organization"
@@ -155,6 +162,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
         />
       </div>
 
+      {/* Year Field */}
       <div>
         <SelectField
           id="year"
@@ -178,63 +186,69 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
         />
       </div>
 
-      {/* Role, Discipline Fields */}
+      {/* Cargos Field */}
       <div>
-        <div className="mb-1">
-          <label htmlFor="roles" className="block text-sm font-medium text-[#272f3c]">Cargos</label>
+        <div>
+          <Label className="block text-sm font-medium text-[#272f3c]">Cargos</Label>
+          
+          <div className="flex flex-col gap-2">
+            <CheckboxGroup
+              title=""
+              options={sortedRoles}
+              selectedValues={selectedRoles}
+              onChange={handleRoleChange}
+              placeholder="Selecione os cargos"
+            />
+            
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => roleState.handleEdit(role)}
+                disabled={!role}
+                title="Editar"
+                type="button"
+                className="h-8 w-8 p-0"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => roleState.handleDelete(role)}
+                disabled={!role}
+                title="Excluir"
+                type="button"
+                className="h-8 w-8 p-0"
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => roleState.setIsDialogOpen(true)}
+                title="Adicionar"
+                type="button"
+                className="h-8 w-8 p-0"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          
+          <AddValueDialog
+            title="Adicionar Novo Cargo"
+            placeholder="Nome do cargo"
+            isOpen={roleState.isDialogOpen}
+            setIsOpen={roleState.setIsDialogOpen}
+            value={roleState.newValue}
+            setValue={roleState.setNewValue}
+            onAdd={roleState.handleAdd}
+          />
         </div>
-        <CheckboxGroup
-          title=""
-          options={roles}
-          selectedValues={selectedRoles}
-          onChange={handleRoleChange}
-          placeholder="Selecione os cargos"
-        />
-        <div className="flex justify-end mt-1">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => roleState.setIsDialogOpen(true)}
-            title="Adicionar"
-            type="button"
-            className="flex items-center h-7 w-7 p-0 justify-center"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => roleState.handleEdit(role)}
-            disabled={!role}
-            title="Editar"
-            type="button"
-            className="flex items-center h-7 w-7 p-0 justify-center ml-1"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => roleState.handleDelete(role)}
-            disabled={!role}
-            title="Excluir"
-            type="button"
-            className="flex items-center h-7 w-7 p-0 justify-center ml-1"
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-        </div>
-        <AddValueDialog
-          title="Adicionar Novo Cargo"
-          placeholder="Nome do cargo"
-          isOpen={roleState.isDialogOpen}
-          setIsOpen={roleState.setIsDialogOpen}
-          value={roleState.newValue}
-          setValue={roleState.setNewValue}
-          onAdd={roleState.handleAdd}
-        />
       </div>
 
+      {/* Discipline Field */}
       <div>
         <SelectField
           id="discipline"
@@ -269,7 +283,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
         </div>
       )}
 
-      {/* Remaining fields */}
+      {/* Level Field */}
       <div>
         <SelectField
           id="level"
@@ -293,7 +307,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
         />
       </div>
 
-      {/* Difficulty, Question Type Fields */}
+      {/* Difficulty Field */}
       <div>
         <SelectField
           id="difficulty"
@@ -317,6 +331,7 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
         />
       </div>
 
+      {/* Question Type Field */}
       <div>
         <SelectField
           id="question-type"
@@ -342,8 +357,5 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
     </>
   );
 };
-
-import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash } from "lucide-react";
 
 export default QuestionMetadataFields;
