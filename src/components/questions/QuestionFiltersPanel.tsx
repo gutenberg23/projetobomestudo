@@ -5,13 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { CheckboxGroup } from "./CheckboxGroup";
-
-interface TopicOption {
-  id: string;
-  name: string;
-  parent?: string;
-  level: number;
-}
+import { TopicOption } from "@/components/new/types";
 
 interface QuestionFiltersPanelProps {
   searchQuery: string;

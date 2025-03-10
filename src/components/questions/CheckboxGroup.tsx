@@ -4,13 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CheckIcon, ChevronDownIcon, ChevronRightIcon, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-
-interface TopicOption {
-  id: string;
-  name: string;
-  parent?: string;
-  level: number;
-}
+import { TopicOption } from "@/components/new/types";
 
 interface CheckboxGroupProps {
   title: string;
@@ -71,10 +65,14 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
         );
         setFilteredOptions(filtered);
       } else {
-        const filtered = (hierarchicalOptions as string[]).filter(option => 
-          (typeof option === 'string' ? option : option.name).toLowerCase().includes(searchTermLower)
-        );
-        setFilteredOptions(filtered);
+        const filtered = (hierarchicalOptions as (string | TopicOption)[]).filter(option => {
+          if (typeof option === 'string') {
+            return option.toLowerCase().includes(searchTermLower);
+          } else {
+            return option.name.toLowerCase().includes(searchTermLower);
+          }
+        });
+        setFilteredOptions(filtered as string[] | TopicOption[]);
       }
     }
   }, [searchTerm, hierarchicalOptions, options, hierarchical]);
@@ -205,7 +203,7 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
                       .map(option => renderHierarchicalOption(option))
                   ) : (
                     // Renderiza opções simples
-                    (filteredOptions as any[]).map((option) => {
+                    (filteredOptions as (string | TopicOption)[]).map((option) => {
                       const optionValue = typeof option === 'string' ? option : option.id;
                       const optionDisplay = typeof option === 'string' ? option : option.name;
                       
