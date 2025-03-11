@@ -47,3 +47,22 @@ export interface Topico {
   professor_nome: string;
   created_at?: string;
 }
+
+export interface CourseItemType {
+  id: string;
+  titulo: string;
+  descricao: string;
+  isFavorite: boolean;
+  topics: number;
+  lessons: number;
+  informacoes_curso?: string;
+}
+
+export interface DisciplinaItemType {
+  id: string;
+  titulo: string;
+  descricao: string;
+  isFavorite: boolean;
+  topics: number;
+  lessons: number;
+}
