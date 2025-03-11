@@ -56,6 +56,7 @@ export interface CourseItemType {
   topics: number;
   lessons: number;
   informacoes_curso?: string;
+  friendlyUrl?: string;
 }
 
 export interface DisciplinaItemType {
@@ -65,4 +66,5 @@ export interface DisciplinaItemType {
   isFavorite: boolean;
   topics: number;
   lessons: number;
+  friendlyUrl?: string;
 }

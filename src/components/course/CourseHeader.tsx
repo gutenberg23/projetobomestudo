@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 
 interface CourseHeaderProps {
   courseId: string;
@@ -15,43 +16,46 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
   const [courseTitle, setCourseTitle] = useState("Carregando...");
   const [courseInfo, setCourseInfo] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isCurso, setIsCurso] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCourseData = async () => {
+      if (!courseId) return;
+      
       setLoading(true);
 
       try {
+        // Extrair o ID real da URL amigável, se necessário
+        const realId = extractIdFromFriendlyUrl(courseId);
+        
         // Verificar primeiro se é um curso ou uma disciplina
-        const isCurso = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(courseId);
-        let courseData;
+        // Tenta buscar como curso
+        let { data: cursoData, error: cursoError } = await supabase
+          .from('cursos')
+          .select('*')
+          .ilike('id', `%${realId}%`)
+          .single();
 
-        if (isCurso) {
-          // Buscar detalhes do curso
-          const { data, error } = await supabase
-            .from('cursos')
-            .select('*')
-            .eq('id', courseId)
-            .single();
-
-          if (error) throw error;
-          courseData = data;
-
-          setCourseTitle(courseData.titulo);
-          setCourseInfo(courseData.informacoes_curso || "Este curso contém múltiplos módulos e aulas. Certificado disponível após conclusão de 80% do conteúdo.");
-        } else {
-          // Buscar detalhes da disciplina
-          const { data, error } = await supabase
+        if (cursoError) {
+          // Se não encontrar como curso, tenta como disciplina
+          const { data: disciplinaData, error: disciplinaError } = await supabase
             .from('disciplinas')
             .select('*')
-            .eq('id', courseId)
+            .ilike('id', `%${realId}%`)
             .single();
 
-          if (error) throw error;
-          courseData = data;
-
-          setCourseTitle(courseData.titulo);
-          setCourseInfo(courseData.descricao || "Esta disciplina contém múltiplos módulos e aulas.");
+          if (disciplinaError) {
+            throw new Error("Conteúdo não encontrado");
+          }
+          
+          setIsCurso(false);
+          setCourseTitle(disciplinaData.titulo);
+          setCourseInfo("");
+        } else {
+          setIsCurso(true);
+          setCourseTitle(cursoData.titulo);
+          setCourseInfo(cursoData.informacoes_curso || "Este curso contém múltiplos módulos e aulas. Certificado disponível após conclusão de 80% do conteúdo.");
         }
 
         // Verificar se é favorito
@@ -66,9 +70,9 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
 
           if (profile) {
             if (isCurso) {
-              setIsFavorite((profile.cursos_favoritos || []).includes(courseId));
+              setIsFavorite((profile.cursos_favoritos || []).some(id => id.includes(realId)));
             } else {
-              setIsFavorite((profile.disciplinas_favoritos || []).includes(courseId));
+              setIsFavorite((profile.disciplinas_favoritos || []).some(id => id.includes(realId)));
             }
           }
         }
@@ -95,8 +99,8 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
         return;
       }
 
-      // Verificar se é um curso ou uma disciplina pelo formato do ID
-      const isCurso = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(courseId);
+      // Extrair ID real da URL amigável
+      const realId = extractIdFromFriendlyUrl(courseId);
       
       // Buscar perfil do usuário
       const { data: profile } = await supabase
@@ -111,11 +115,11 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
         // Atualizar cursos favoritos
         let cursosFavoritos = profile.cursos_favoritos || [];
         
-        if (cursosFavoritos.includes(courseId)) {
-          cursosFavoritos = cursosFavoritos.filter(id => id !== courseId);
+        if (cursosFavoritos.some(id => id.includes(realId))) {
+          cursosFavoritos = cursosFavoritos.filter(id => !id.includes(realId));
           toast.success("Curso removido dos favoritos");
         } else {
-          cursosFavoritos.push(courseId);
+          cursosFavoritos.push(courseId); // Usar o courseId completo (que é a URL amigável)
           toast.success("Curso adicionado aos favoritos");
         }
 
@@ -128,11 +132,11 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
         // Atualizar disciplinas favoritas
         let disciplinasFavoritos = profile.disciplinas_favoritos || [];
         
-        if (disciplinasFavoritos.includes(courseId)) {
-          disciplinasFavoritos = disciplinasFavoritos.filter(id => id !== courseId);
+        if (disciplinasFavoritos.some(id => id.includes(realId))) {
+          disciplinasFavoritos = disciplinasFavoritos.filter(id => !id.includes(realId));
           toast.success("Disciplina removida dos favoritos");
         } else {
-          disciplinasFavoritos.push(courseId);
+          disciplinasFavoritos.push(courseId); // Usar o courseId completo (que é a URL amigável)
           toast.success("Disciplina adicionada aos favoritos");
         }
 
@@ -163,20 +167,22 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
           </div>
           <div className="mt-2 text-left flex items-center gap-2">
             <span className="bg-[#ede7f9] text-sm px-3 py-1 rounded-full inline-block text-[#5f2ebe]">
-              #{courseId.substring(0, 8)}
+              #{extractIdFromFriendlyUrl(courseId)}
             </span>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-[#ede7f9] cursor-pointer">
-                    <Info className="w-3.5 h-3.5 text-[#5f2ebe]" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs bg-white p-3 border border-[#5f2ebe]/20 shadow-lg rounded-md">
-                  <p className="text-sm text-[#67748a]">{courseInfo}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {isCurso && courseInfo && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-[#ede7f9] cursor-pointer">
+                      <Info className="w-3.5 h-3.5 text-[#5f2ebe]" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs bg-white p-3 border border-[#5f2ebe]/20 shadow-lg rounded-md">
+                    <p className="text-sm text-[#67748a]">{courseInfo}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
           </div>
         </div>
 

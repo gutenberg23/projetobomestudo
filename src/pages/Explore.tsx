@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -10,6 +9,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
+import { generateFriendlyUrl } from "@/utils/slug-utils";
 
 interface ItemProps {
   id: string;
@@ -19,6 +19,7 @@ interface ItemProps {
   topics: number;
   lessons: number;
   onToggleFavorite: (id: string) => void;
+  friendlyUrl: string;
 }
 
 const ResultItem: React.FC<ItemProps> = ({
@@ -28,11 +29,12 @@ const ResultItem: React.FC<ItemProps> = ({
   isFavorite,
   topics,
   lessons,
-  onToggleFavorite
+  onToggleFavorite,
+  friendlyUrl
 }) => {
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
-        <Link to={`/course/${id}`} className="hover:text-[#5f2ebe] transition-colors">
+        <Link to={`/course/${friendlyUrl}`} className="hover:text-[#5f2ebe] transition-colors">
           <h3 className="text-[#272f3c] mb-0 leading-none font-extralight text-lg">{title}</h3>
         </Link>
       </div>
@@ -41,8 +43,8 @@ const ResultItem: React.FC<ItemProps> = ({
           <p className="text-sm font-bold text-[#262f3c]">Tópicos: <span className="text-gray-600 font-normal">{topics}</span></p>
           <p className="text-sm font-bold text-[#262f3c]">Aulas: <span className="text-gray-600 font-normal">{lessons}</span></p>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => onToggleFavorite(id)} aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
-          <Star className={`h-5 w-5 ${isFavorite ? "fill-[#ea2be2] text-[#ea2be2]" : "text-gray-400"}`} />
+        <Button variant="ghost" size="icon" onClick={() => onToggleFavorite(friendlyUrl)} aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
+          <Star className={`h-5 w-5 ${isFavorite ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-gray-400"}`} />
         </Button>
       </div>
     </div>;
@@ -96,15 +98,21 @@ const Explore = () => {
         }
 
         // Transformar dados de cursos
-        const formattedCourses: CourseItemType[] = coursesData.map(course => ({
-          id: course.id,
-          titulo: course.titulo,
-          descricao: course.descricao || 'Sem descrição',
-          isFavorite: user ? userFavorites.includes(course.id) : false,
-          topics: (course.topicos_ids?.length || 0),
-          lessons: (course.aulas_ids?.length || 0),
-          informacoes_curso: course.informacoes_curso
-        }));
+        const formattedCourses: CourseItemType[] = coursesData.map(course => {
+          // Gerar URL amigável para o curso
+          const friendlyUrl = generateFriendlyUrl(course.titulo, course.id);
+          
+          return {
+            id: course.id,
+            titulo: course.titulo,
+            descricao: course.descricao || 'Sem descrição',
+            isFavorite: user ? userFavorites.some(fav => fav.includes(course.id)) : false,
+            topics: (course.topicos_ids?.length || 0),
+            lessons: (course.aulas_ids?.length || 0),
+            informacoes_curso: course.informacoes_curso,
+            friendlyUrl
+          };
+        });
 
         setCourses(formattedCourses);
 
@@ -116,14 +124,20 @@ const Explore = () => {
         if (disciplinasError) throw disciplinasError;
 
         // Transformar dados de disciplinas
-        const formattedDisciplinas: DisciplinaItemType[] = disciplinasData.map(disciplina => ({
-          id: disciplina.id,
-          titulo: disciplina.titulo,
-          descricao: disciplina.descricao || 'Sem descrição',
-          isFavorite: user ? userDisciplinasFavorites.includes(disciplina.id) : false,
-          topics: 0, // Como não temos essa informação no banco, colocamos um valor padrão
-          lessons: (disciplina.aulas_ids?.length || 0)
-        }));
+        const formattedDisciplinas: DisciplinaItemType[] = disciplinasData.map(disciplina => {
+          // Gerar URL amigável para a disciplina
+          const friendlyUrl = generateFriendlyUrl(disciplina.titulo, disciplina.id);
+          
+          return {
+            id: disciplina.id,
+            titulo: disciplina.titulo,
+            descricao: disciplina.descricao || 'Sem descrição',
+            isFavorite: user ? userDisciplinasFavorites.some(fav => fav.includes(disciplina.id)) : false,
+            topics: 0, 
+            lessons: (disciplina.aulas_ids?.length || 0),
+            friendlyUrl
+          };
+        });
 
         setSubjects(formattedDisciplinas);
       } catch (error) {
@@ -137,7 +151,7 @@ const Explore = () => {
     fetchData();
   }, []);
 
-  const handleToggleFavorite = async (id: string) => {
+  const handleToggleFavorite = async (friendlyUrl: string) => {
     // Verificar se o usuário está logado
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -151,7 +165,7 @@ const Explore = () => {
       if (showSubjects) {
         // Atualizar estado local
         setSubjects(subjects.map(subject => 
-          subject.id === id ? { ...subject, isFavorite: !subject.isFavorite } : subject
+          subject.friendlyUrl === friendlyUrl ? { ...subject, isFavorite: !subject.isFavorite } : subject
         ));
 
         // Buscar favoritos atuais
@@ -164,11 +178,11 @@ const Explore = () => {
         let disciplinasFavoritos = profile?.disciplinas_favoritos || [];
         
         // Adicionar ou remover dos favoritos
-        if (disciplinasFavoritos.includes(id)) {
-          disciplinasFavoritos = disciplinasFavoritos.filter(favId => favId !== id);
+        if (disciplinasFavoritos.some(fav => fav.includes(friendlyUrl))) {
+          disciplinasFavoritos = disciplinasFavoritos.filter(favId => !favId.includes(friendlyUrl));
           toast.success("Disciplina removida dos favoritos");
         } else {
-          disciplinasFavoritos.push(id);
+          disciplinasFavoritos.push(friendlyUrl);
           toast.success("Disciplina adicionada aos favoritos");
         }
 
@@ -181,7 +195,7 @@ const Explore = () => {
       } else {
         // Atualizar estado local de cursos
         setCourses(courses.map(course => 
-          course.id === id ? { ...course, isFavorite: !course.isFavorite } : course
+          course.friendlyUrl === friendlyUrl ? { ...course, isFavorite: !course.isFavorite } : course
         ));
 
         // Buscar favoritos atuais
@@ -194,11 +208,11 @@ const Explore = () => {
         let cursosFavoritos = profile?.cursos_favoritos || [];
         
         // Adicionar ou remover dos favoritos
-        if (cursosFavoritos.includes(id)) {
-          cursosFavoritos = cursosFavoritos.filter(favId => favId !== id);
+        if (cursosFavoritos.some(fav => fav.includes(friendlyUrl))) {
+          cursosFavoritos = cursosFavoritos.filter(favId => !favId.includes(friendlyUrl));
           toast.success("Curso removido dos favoritos");
         } else {
-          cursosFavoritos.push(id);
+          cursosFavoritos.push(friendlyUrl);
           toast.success("Curso adicionado aos favoritos");
         }
 
@@ -225,7 +239,8 @@ const Explore = () => {
     ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase())) 
     : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+  return (
+    <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
         <h1 className="text-3xl mb-2 md:text-3xl font-extrabold text-[#272f3c]">Explorar</h1>
@@ -268,7 +283,8 @@ const Explore = () => {
                     isFavorite={item.isFavorite} 
                     topics={item.topics} 
                     lessons={item.lessons} 
-                    onToggleFavorite={handleToggleFavorite} 
+                    onToggleFavorite={handleToggleFavorite}
+                    friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)}
                   />
                 ))
               ) : (
@@ -281,7 +297,8 @@ const Explore = () => {
         </div>
       </main>
       <Footer />
-    </div>;
+    </div>
+  );
 };
 
 export default Explore;
