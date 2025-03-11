@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
+import { Spinner } from "@/components/ui/spinner";
 
 interface CourseHeaderProps {
   courseId: string;
@@ -13,7 +14,7 @@ interface CourseHeaderProps {
 
 export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
   const [isFavorite, setIsFavorite] = useState(false);
-  const [courseTitle, setCourseTitle] = useState("Carregando...");
+  const [courseTitle, setCourseTitle] = useState("");
   const [courseInfo, setCourseInfo] = useState("");
   const [loading, setLoading] = useState(true);
   const [isCurso, setIsCurso] = useState(true);
@@ -24,28 +25,34 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
       if (!courseId) return;
       
       setLoading(true);
+      console.log("Buscando dados do curso/disciplina:", courseId);
 
       try {
-        // Extrair o ID real da URL amigável, se necessário
+        // Extrair o ID real da URL amigável
         const realId = extractIdFromFriendlyUrl(courseId);
+        console.log("ID real extraído:", realId);
         
         // Verificar primeiro se é um curso ou uma disciplina
         // Tenta buscar como curso
         let { data: cursoData, error: cursoError } = await supabase
           .from('cursos')
           .select('*')
-          .ilike('id', `%${realId}%`)
-          .single();
+          .eq('id', realId)
+          .maybeSingle();
 
-        if (cursoError) {
+        console.log("Dados do curso:", cursoData, "Erro:", cursoError);
+
+        if (cursoError || !cursoData) {
           // Se não encontrar como curso, tenta como disciplina
           const { data: disciplinaData, error: disciplinaError } = await supabase
             .from('disciplinas')
             .select('*')
-            .ilike('id', `%${realId}%`)
-            .single();
+            .eq('id', realId)
+            .maybeSingle();
 
-          if (disciplinaError) {
+          console.log("Dados da disciplina:", disciplinaData, "Erro:", disciplinaError);
+
+          if (disciplinaError || !disciplinaData) {
             throw new Error("Conteúdo não encontrado");
           }
           
@@ -70,15 +77,16 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
 
           if (profile) {
             if (isCurso) {
-              setIsFavorite((profile.cursos_favoritos || []).some(id => id.includes(realId)));
+              setIsFavorite((profile.cursos_favoritos || []).some(id => id === realId || id.includes(realId)));
             } else {
-              setIsFavorite((profile.disciplinas_favoritos || []).some(id => id.includes(realId)));
+              setIsFavorite((profile.disciplinas_favoritos || []).some(id => id === realId || id.includes(realId)));
             }
           }
         }
       } catch (error) {
         console.error("Erro ao buscar dados do curso:", error);
         toast.error("Erro ao carregar dados do curso");
+        setCourseTitle("Conteúdo não encontrado");
       } finally {
         setLoading(false);
       }
@@ -115,11 +123,11 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
         // Atualizar cursos favoritos
         let cursosFavoritos = profile.cursos_favoritos || [];
         
-        if (cursosFavoritos.some(id => id.includes(realId))) {
-          cursosFavoritos = cursosFavoritos.filter(id => !id.includes(realId));
+        if (cursosFavoritos.some(id => id === realId || id.includes(realId))) {
+          cursosFavoritos = cursosFavoritos.filter(id => id !== realId && !id.includes(realId));
           toast.success("Curso removido dos favoritos");
         } else {
-          cursosFavoritos.push(courseId); // Usar o courseId completo (que é a URL amigável)
+          cursosFavoritos.push(realId);
           toast.success("Curso adicionado aos favoritos");
         }
 
@@ -132,11 +140,11 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
         // Atualizar disciplinas favoritas
         let disciplinasFavoritos = profile.disciplinas_favoritos || [];
         
-        if (disciplinasFavoritos.some(id => id.includes(realId))) {
-          disciplinasFavoritos = disciplinasFavoritos.filter(id => !id.includes(realId));
+        if (disciplinasFavoritos.some(id => id === realId || id.includes(realId))) {
+          disciplinasFavoritos = disciplinasFavoritos.filter(id => id !== realId && !id.includes(realId));
           toast.success("Disciplina removida dos favoritos");
         } else {
-          disciplinasFavoritos.push(courseId); // Usar o courseId completo (que é a URL amigável)
+          disciplinasFavoritos.push(realId);
           toast.success("Disciplina adicionada aos favoritos");
         }
 
@@ -160,7 +168,14 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
       <div className="mx-auto flex min-w-60 w-full items-start justify-between flex-wrap py-[50px] px-[10px] md:px-[32px] bg-transparent">
         <div className="flex min-w-60 flex-col justify-center py-2.5 w-full md:w-auto md:flex-1">
           <div className="flex w-full max-w-[859px] gap-2.5 text-[35px] md:text-[35px] text-[24px] text-[rgba(38,47,60,1)] font-bold leading-[31px] items-center">
-            <h1 className="inline-block w-auto">{loading ? "Carregando..." : courseTitle}</h1>
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <Spinner size="sm" className="fill-[#5f2ebe]" />
+                <span>Carregando...</span>
+              </div>
+            ) : (
+              <h1 className="inline-block w-auto">{courseTitle}</h1>
+            )}
             <button onClick={toggleFavorite} className="flex items-center justify-center shrink-0">
               <Star className={`w-[30px] h-[30px] cursor-pointer ${isFavorite ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-gray-400"}`} />
             </button>

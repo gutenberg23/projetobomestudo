@@ -6,6 +6,7 @@ import { Subject } from "./types/subjects";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 export const SubjectsList = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -14,8 +15,8 @@ export const SubjectsList = () => {
   const [loading, setLoading] = useState(true);
   const [isCurso, setIsCurso] = useState(true);
 
-  const toggleExpand = (subjectName: string) => {
-    setExpandedSubject(expandedSubject === subjectName ? null : subjectName);
+  const toggleExpand = (subjectId: string) => {
+    setExpandedSubject(expandedSubject === subjectId ? null : subjectId);
   };
 
   useEffect(() => {
@@ -23,27 +24,33 @@ export const SubjectsList = () => {
       if (!courseId) return;
       
       setLoading(true);
+      console.log("Buscando disciplinas para:", courseId);
 
       try {
         // Extrair o ID real da URL amigável
         const realId = extractIdFromFriendlyUrl(courseId);
+        console.log("ID real extraído:", realId);
         
         // Verificar se é um curso ou uma disciplina
         let { data: cursoData, error: cursoError } = await supabase
           .from('cursos')
           .select('*')
-          .ilike('id', `%${realId}%`)
-          .single();
+          .eq('id', realId)
+          .maybeSingle();
         
-        if (cursoError) {
+        console.log("Dados do curso:", cursoData, "Erro:", cursoError);
+        
+        if (cursoError || !cursoData) {
           // Se não for um curso, verificar se é uma disciplina
           const { data: disciplinaData, error: disciplinaError } = await supabase
             .from('disciplinas')
             .select('*')
-            .ilike('id', `%${realId}%`)
-            .single();
+            .eq('id', realId)
+            .maybeSingle();
           
-          if (disciplinaError) {
+          console.log("Dados da disciplina:", disciplinaData, "Erro:", disciplinaError);
+          
+          if (disciplinaError || !disciplinaData) {
             throw new Error("Conteúdo não encontrado");
           }
           
@@ -51,6 +58,7 @@ export const SubjectsList = () => {
           
           // Mostrar apenas a disciplina atual
           const disciplina: Subject = {
+            id: disciplinaData.id,
             name: disciplinaData.titulo,
             rating: 10,
             lessons: [],
@@ -58,12 +66,15 @@ export const SubjectsList = () => {
           
           // Carregar as aulas da disciplina
           if (disciplinaData.aulas_ids && disciplinaData.aulas_ids.length > 0) {
-            const { data: aulasData } = await supabase
+            console.log("Buscando aulas:", disciplinaData.aulas_ids);
+            const { data: aulasData, error: aulasError } = await supabase
               .from('aulas')
               .select('*')
               .in('id', disciplinaData.aulas_ids);
               
-            if (aulasData) {
+            console.log("Aulas encontradas:", aulasData, "Erro:", aulasError);
+            
+            if (aulasData && !aulasError) {
               disciplina.lessons = aulasData.map(aula => ({
                 id: aula.id,
                 title: aula.titulo,
@@ -97,18 +108,23 @@ export const SubjectsList = () => {
         } else {
           // É um curso, carregar suas disciplinas
           setIsCurso(true);
+          console.log("É um curso, buscando disciplinas...");
           
           // Verificar se o curso tem disciplinas associadas
           if (cursoData.disciplinas_ids && cursoData.disciplinas_ids.length > 0) {
-            const { data: disciplinasData } = await supabase
+            console.log("Disciplinas do curso:", cursoData.disciplinas_ids);
+            const { data: disciplinasData, error: disciplinasError } = await supabase
               .from('disciplinas')
               .select('*')
               .in('id', cursoData.disciplinas_ids);
               
-            if (disciplinasData) {
+            console.log("Disciplinas encontradas:", disciplinasData, "Erro:", disciplinasError);
+            
+            if (disciplinasData && !disciplinasError) {
               // Converter os dados das disciplinas para o formato esperado pelo componente
               const formattedSubjects: Subject[] = await Promise.all(disciplinasData.map(async disciplina => {
                 const subject: Subject = {
+                  id: disciplina.id,
                   name: disciplina.titulo,
                   rating: 10,
                   lessons: [],
@@ -116,12 +132,15 @@ export const SubjectsList = () => {
                 
                 // Carregar as aulas de cada disciplina
                 if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-                  const { data: aulasData } = await supabase
+                  console.log("Buscando aulas para disciplina:", disciplina.titulo, disciplina.aulas_ids);
+                  const { data: aulasData, error: aulasError } = await supabase
                     .from('aulas')
                     .select('*')
                     .in('id', disciplina.aulas_ids);
                     
-                  if (aulasData) {
+                  console.log("Aulas da disciplina:", aulasData, "Erro:", aulasError);
+                  
+                  if (aulasData && !aulasError) {
                     subject.lessons = aulasData.map(aula => ({
                       id: aula.id,
                       title: aula.titulo,
@@ -177,8 +196,8 @@ export const SubjectsList = () => {
   if (loading) {
     return (
       <div className="bg-white rounded-[10px] mb-10 p-8 text-center">
-        <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-        <p className="mt-3 text-gray-500">Carregando disciplinas...</p>
+        <Spinner size="lg" className="mx-auto fill-[#5f2ebe]" />
+        <p className="mt-3 text-[#67748a]">Carregando disciplinas...</p>
       </div>
     );
   }
@@ -186,7 +205,7 @@ export const SubjectsList = () => {
   if (subjects.length === 0) {
     return (
       <div className="bg-white rounded-[10px] mb-10 p-8 text-center">
-        <p className="text-gray-500">Nenhuma disciplina encontrada para este {isCurso ? "curso" : "conteúdo"}.</p>
+        <p className="text-[#67748a]">Nenhuma disciplina encontrada para este {isCurso ? "curso" : "conteúdo"}.</p>
       </div>
     );
   }
@@ -195,10 +214,10 @@ export const SubjectsList = () => {
     <div className="bg-white rounded-[10px] mb-10">
       {subjects.map(subject => (
         <SubjectComponent
-          key={subject.name}
+          key={subject.id}
           subject={subject}
-          isExpanded={expandedSubject === subject.name}
-          onToggle={() => toggleExpand(subject.name)}
+          isExpanded={expandedSubject === subject.id}
+          onToggle={() => toggleExpand(subject.id)}
         />
       ))}
     </div>

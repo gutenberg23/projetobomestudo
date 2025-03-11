@@ -3,17 +3,20 @@ import React from 'react';
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Subject as SubjectType } from '../types/subjects';
 import { SubjectLessons } from './SubjectLessons';
+
 interface SubjectProps {
   subject: SubjectType;
   isExpanded: boolean;
   onToggle: () => void;
 }
+
 export const Subject: React.FC<SubjectProps> = ({
   subject,
   isExpanded,
   onToggle
 }) => {
-  return <div className="border-b border-[rgba(246,248,250,1)]">
+  return (
+    <div className="border-b border-[rgba(246,248,250,1)]">
       <div onClick={onToggle} className="flex min-h-[90px] w-full items-stretch justify-between px-4 cursor-pointer md:px-[15px] my-0">
         <div className="flex min-w-60 w-full items-center justify-between my-0">
           <h2 className="text-xl md:text-[28px] text-[rgba(38,47,60,1)] leading-none w-full mr-5 py-1 font-bold">
@@ -30,5 +33,6 @@ export const Subject: React.FC<SubjectProps> = ({
         </div>
       </div>
       {isExpanded && <SubjectLessons lessons={subject.lessons} />}
-    </div>;
+    </div>
+  );
 };

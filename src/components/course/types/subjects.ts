@@ -1,5 +1,6 @@
 
 export interface Subject {
+  id: string;
   name: string;
   rating: number;
   lessons: Lesson[];
