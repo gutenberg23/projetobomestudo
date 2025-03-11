@@ -82,6 +82,8 @@ const Explore = () => {
         const { data: { user } } = await supabase.auth.getUser();
         
         let userFavorites: string[] = [];
+        let userDisciplinasFavorites: string[] = [];
+        
         if (user) {
           const { data: favoritesData } = await supabase
             .from('profiles')
@@ -90,6 +92,7 @@ const Explore = () => {
             .single();
           
           userFavorites = favoritesData?.cursos_favoritos || [];
+          userDisciplinasFavorites = favoritesData?.disciplinas_favoritos || [];
         }
 
         // Transformar dados de cursos
@@ -111,17 +114,6 @@ const Explore = () => {
           .select('*');
 
         if (disciplinasError) throw disciplinasError;
-
-        let userDisciplinasFavorites: string[] = [];
-        if (user) {
-          const { data: favoritesData } = await supabase
-            .from('profiles')
-            .select('disciplinas_favoritos')
-            .eq('id', user.id)
-            .single();
-          
-          userDisciplinasFavorites = favoritesData?.disciplinas_favoritos || [];
-        }
 
         // Transformar dados de disciplinas
         const formattedDisciplinas: DisciplinaItemType[] = disciplinasData.map(disciplina => ({
@@ -183,7 +175,7 @@ const Explore = () => {
         // Atualizar no banco de dados
         await supabase
           .from('profiles')
-          .update({ disciplinas_favoritos })
+          .update({ disciplinas_favoritos: disciplinasFavoritos })
           .eq('id', user.id);
 
       } else {
@@ -213,7 +205,7 @@ const Explore = () => {
         // Atualizar no banco de dados
         await supabase
           .from('profiles')
-          .update({ cursos_favoritos })
+          .update({ cursos_favoritos: cursosFavoritos })
           .eq('id', user.id);
       }
     } catch (error) {

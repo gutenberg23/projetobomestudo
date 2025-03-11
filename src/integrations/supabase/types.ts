@@ -184,6 +184,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          cursos_favoritos: string[] | null
+          disciplinas_favoritos: string[] | null
           email: string | null
           foto_perfil: string | null
           id: string
@@ -191,6 +193,8 @@ export type Database = {
           role: string | null
         }
         Insert: {
+          cursos_favoritos?: string[] | null
+          disciplinas_favoritos?: string[] | null
           email?: string | null
           foto_perfil?: string | null
           id: string
@@ -198,6 +202,8 @@ export type Database = {
           role?: string | null
         }
         Update: {
+          cursos_favoritos?: string[] | null
+          disciplinas_favoritos?: string[] | null
           email?: string | null
           foto_perfil?: string | null
           id?: string

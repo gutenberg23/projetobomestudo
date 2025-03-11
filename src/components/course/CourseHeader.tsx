@@ -23,7 +23,7 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
 
       try {
         // Verificar primeiro se é um curso ou uma disciplina
-        const isCurso = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId);
+        const isCurso = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(courseId);
         let courseData;
 
         if (isCurso) {
@@ -96,7 +96,7 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
       }
 
       // Verificar se é um curso ou uma disciplina pelo formato do ID
-      const isCurso = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId);
+      const isCurso = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(courseId);
       
       // Buscar perfil do usuário
       const { data: profile } = await supabase
