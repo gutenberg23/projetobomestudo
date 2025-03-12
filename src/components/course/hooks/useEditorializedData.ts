@@ -15,7 +15,6 @@ export const useEditorializedData = () => {
     try {
       setLoading(true);
       
-      // Primeiro, buscar o edital verticalizado para este curso
       const { data: editalData, error: editalError } = await supabase
         .from('cursoverticalizado')
         .select('*')
@@ -29,7 +28,6 @@ export const useEditorializedData = () => {
         return;
       }
 
-      // Buscar as disciplinas associadas
       const { data: disciplinasData, error: disciplinasError } = await supabase
         .from('disciplinaverticalizada')
         .select('*')
@@ -37,9 +35,8 @@ export const useEditorializedData = () => {
 
       if (disciplinasError) throw disciplinasError;
 
-      // Converter os dados para o formato esperado pelo componente
-      const formattedSubjects: Subject[] = (disciplinasData || []).map((disciplina, index) => ({
-        id: Number(index + 1),
+      const formattedSubjects: Subject[] = (disciplinasData || []).map((disciplina) => ({
+        id: disciplina.id,
         name: disciplina.titulo,
         topics: disciplina.topicos.map((topico, topicIndex) => ({
           id: topicIndex,
@@ -47,7 +44,7 @@ export const useEditorializedData = () => {
           topic: topico,
           isDone: false,
           isReviewed: false,
-          importance: disciplina.importancia[topicIndex] || 1,
+          importance: (disciplina.importancia[topicIndex] || 1) as 1 | 2 | 3 | 4 | 5,
           difficulty: "Médio",
           exercisesDone: 0,
           hits: 0,
@@ -72,7 +69,8 @@ export const useEditorializedData = () => {
   const updateTopicProgress = async (
     subjectId: number,
     topicId: number,
-    data: Partial<Topic>
+    field: keyof Topic,
+    value: any
   ) => {
     try {
       setSubjects(prevSubjects =>
@@ -82,7 +80,7 @@ export const useEditorializedData = () => {
               ...subject,
               topics: subject.topics.map(topic =>
                 topic.id === topicId
-                  ? { ...topic, ...data }
+                  ? { ...topic, [field]: value }
                   : topic
               )
             };

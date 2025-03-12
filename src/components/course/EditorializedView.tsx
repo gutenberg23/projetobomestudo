@@ -6,6 +6,7 @@ import { SimuladosTable } from "./components/SimuladosTable";
 import { StatisticsCard } from "./components/StatisticsCard";
 import { useEditorializedData } from "./hooks/useEditorializedData";
 import { Skeleton } from "@/components/ui/skeleton";
+import { calculateOverallStats } from "./utils/statsCalculations";
 
 export const EditorializedView = ({ activeTab = 'edital' }) => {
   const [performanceGoal, setPerformanceGoal] = useState<number>(70);
