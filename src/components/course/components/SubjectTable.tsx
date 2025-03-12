@@ -1,3 +1,4 @@
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportanceStars } from "./ImportanceStars";
 import { cn } from "@/lib/utils";
@@ -140,5 +141,3 @@ export const SubjectTable = ({
       </div>
     </div>;
 };
-
-export { SubjectTable };
