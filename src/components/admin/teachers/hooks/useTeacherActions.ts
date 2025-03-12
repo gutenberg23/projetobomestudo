@@ -125,14 +125,12 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
   };
   
   // Adicionar novo professor
-  const addTeacher = (newTeacher: Omit<TeacherData, 'id'>) => {
-    // Adição ao banco de dados feita no componente NewTeacherDialog
-    // Aqui apenas atualiza a interface
-    const teacherWithId = newTeacher as TeacherData;
+  const addTeacher = (newTeacher: TeacherData) => {
+    // Aqui está a correção: em vez de usar uma função callback que retorna um array,
+    // estamos diretamente concatenando o novo professor com o array existente
+    setTeachers([newTeacher, ...teachers]);
     
-    setTeachers(prev => [teacherWithId, ...prev]);
-    
-    return teacherWithId;
+    return newTeacher;
   };
   
   return {
