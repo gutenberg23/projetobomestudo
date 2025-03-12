@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Edit, Trash2, ExternalLink, Youtube, Facebook, Twitter, Instagram, Link } from "lucide-react";
+import { Edit, Trash2, ExternalLink, Youtube, Facebook, Twitter, Instagram, Link, StickyNote } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -20,6 +20,7 @@ interface TeacherListProps {
   onEdit: (teacher: TeacherData) => void;
   onDelete: (teacher: TeacherData) => void;
   onViewDetails: (teacher: TeacherData) => void;
+  onViewNotes: (teacher: TeacherData) => void;
   onRatingChange: (teacherId: string, newRating: number) => void;
 }
 
@@ -28,6 +29,7 @@ const TeacherList: React.FC<TeacherListProps> = ({
   onEdit,
   onDelete,
   onViewDetails,
+  onViewNotes,
   onRatingChange
 }) => {
   return (
@@ -67,15 +69,19 @@ const TeacherList: React.FC<TeacherListProps> = ({
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <a 
-                    href={teacher.linkYoutube} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-[#5f2ebe] hover:underline"
-                  >
-                    <Youtube className="h-4 w-4 mr-1" />
-                    Canal
-                  </a>
+                  {teacher.linkYoutube ? (
+                    <a 
+                      href={teacher.linkYoutube} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-[#5f2ebe] hover:underline"
+                    >
+                      <Youtube className="h-4 w-4 mr-1" />
+                      Canal
+                    </a>
+                  ) : (
+                    <span className="text-gray-400 text-sm">Não informado</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
@@ -147,6 +153,14 @@ const TeacherList: React.FC<TeacherListProps> = ({
                       className="border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#f6f8fa]"
                     >
                       <ExternalLink size={16} />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => onViewNotes(teacher)}
+                      className="border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#f6f8fa]"
+                    >
+                      <StickyNote size={16} />
                     </Button>
                     <Button 
                       variant="outline" 

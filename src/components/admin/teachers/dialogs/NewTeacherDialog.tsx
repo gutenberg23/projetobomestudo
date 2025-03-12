@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { TeacherData, TeacherStatus } from "../types";
@@ -7,32 +7,23 @@ import {
   BasicInfoSection, 
   ProfilePhotoSection, 
   DisciplineSection, 
-  TopicsSection, 
   SocialMediaSection 
 } from "./components";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface NewTeacherDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddTeacher: (teacher: Omit<TeacherData, 'id'>) => void;
-  disciplinas: string[];
 }
-
-// Lista de tópicos simulada - em um caso real seria carregada do backend
-const topicsByDisciplina: Record<string, string[]> = {
-  "Português": ["Gramática", "Interpretação de Texto", "Redação", "Literatura"],
-  "Matemática": ["Álgebra", "Geometria", "Estatística", "Probabilidade"],
-  "Direito Constitucional": ["Princípios Fundamentais", "Direitos e Garantias", "Organização do Estado"],
-  "Direito Administrativo": ["Atos Administrativos", "Licitação", "Contratos Administrativos"],
-  "Contabilidade": ["Contabilidade Básica", "Demonstrações Financeiras", "Análise de Balanços"]
-};
 
 const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
   open,
   onOpenChange,
-  onAddTeacher,
-  disciplinas
+  onAddTeacher
 }) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     nomeCompleto: "",
     email: "",
@@ -49,20 +40,7 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
   });
   
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
-  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
-  const [topicVideos, setTopicVideos] = useState<Record<string, string>>({});
-  const [availableTopics, setAvailableTopics] = useState<string[]>([]);
-  
-  useEffect(() => {
-    if (formData.disciplina && topicsByDisciplina[formData.disciplina]) {
-      setAvailableTopics(topicsByDisciplina[formData.disciplina]);
-    } else {
-      setAvailableTopics([]);
-    }
-    // Limpar tópicos selecionados quando a disciplina mudar
-    setSelectedTopics([]);
-    setTopicVideos({});
-  }, [formData.disciplina]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -80,55 +58,92 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
     setFotoPreview(randomAvatar);
   };
   
-  const handleTopicToggle = (topic: string) => {
-    setSelectedTopics(prev => 
-      prev.includes(topic)
-        ? prev.filter(t => t !== topic)
-        : [...prev, topic]
-    );
-  };
-
-  const handleVideoLinkChange = (topic: string, value: string) => {
-    setTopicVideos(prev => ({
-      ...prev,
-      [topic]: value
-    }));
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.nomeCompleto || !formData.email || !formData.disciplina) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
       return;
     }
     
-    onAddTeacher({
-      ...formData,
-      // Adicionar outros dados necessários
-      dataCadastro: new Date().toLocaleDateString('pt-BR')
-    });
+    setIsSubmitting(true);
     
-    // Resetar formulário
-    setFormData({
-      nomeCompleto: "",
-      email: "",
-      linkYoutube: "",
-      disciplina: "",
-      instagram: "",
-      twitter: "",
-      facebook: "",
-      website: "",
-      fotoPerfil: "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70),
-      status: "pendente",
-      ativo: true,
-      rating: 0
-    });
-    setFotoPreview(null);
-    setSelectedTopics([]);
-    setTopicVideos({});
-    
-    onOpenChange(false);
+    try {
+      // Inserir no banco de dados
+      const { data, error } = await supabase
+        .from('professores')
+        .insert({
+          nome_completo: formData.nomeCompleto,
+          email: formData.email,
+          link_youtube: formData.linkYoutube,
+          disciplina: formData.disciplina,
+          instagram: formData.instagram,
+          twitter: formData.twitter,
+          facebook: formData.facebook,
+          website: formData.website,
+          foto_perfil: formData.fotoPerfil
+        })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      // Converter dados do formato do banco para o formato da interface
+      const newTeacher: TeacherData = {
+        id: data.id,
+        nomeCompleto: data.nome_completo,
+        email: data.email,
+        linkYoutube: data.link_youtube || '',
+        disciplina: data.disciplina,
+        instagram: data.instagram || '',
+        twitter: data.twitter || '',
+        facebook: data.facebook || '',
+        website: data.website || '',
+        fotoPerfil: data.foto_perfil || '',
+        status: 'aprovado',
+        dataCadastro: new Date(data.data_cadastro).toLocaleDateString('pt-BR'),
+        ativo: true,
+        rating: data.rating || 0
+      };
+      
+      onAddTeacher(newTeacher);
+      
+      toast({
+        title: "Professor adicionado",
+        description: `O professor ${formData.nomeCompleto} foi adicionado com sucesso.`,
+      });
+      
+      // Resetar formulário
+      setFormData({
+        nomeCompleto: "",
+        email: "",
+        linkYoutube: "",
+        disciplina: "",
+        instagram: "",
+        twitter: "",
+        facebook: "",
+        website: "",
+        fotoPerfil: "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70),
+        status: "pendente",
+        ativo: true,
+        rating: 0
+      });
+      setFotoPreview(null);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Erro ao adicionar professor:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o professor. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -155,15 +170,6 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
           <DisciplineSection 
             disciplina={formData.disciplina} 
             handleDisciplinaChange={handleDisciplinaChange} 
-            disciplinas={disciplinas} 
-          />
-          
-          <TopicsSection 
-            availableTopics={availableTopics} 
-            selectedTopics={selectedTopics} 
-            topicVideos={topicVideos} 
-            handleTopicToggle={handleTopicToggle} 
-            handleVideoLinkChange={handleVideoLinkChange} 
           />
           
           <SocialMediaSection 
@@ -182,9 +188,10 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
             </Button>
             <Button 
               type="submit"
+              disabled={isSubmitting}
               className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-white"
             >
-              Adicionar Professor
+              {isSubmitting ? "Adicionando..." : "Adicionar Professor"}
             </Button>
           </DialogFooter>
         </form>

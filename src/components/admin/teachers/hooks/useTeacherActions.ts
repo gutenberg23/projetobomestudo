@@ -2,6 +2,7 @@
 import { TeacherData } from "../types";
 import { UseTeachersStateReturn } from "./useTeachersState";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useTeacherActions = (state: UseTeachersStateReturn) => {
   const { toast } = useToast();
@@ -14,6 +15,7 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     setEditDialogOpen,
     setDeleteDialogOpen,
     setDetailsDialogOpen,
+    setNotesDialogOpen,
     setTeachers
   } = state;
   
@@ -48,104 +50,87 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
     setFilteredTeachers(filtered);
   };
   
-  // Atualizar status do professor
-  const updateTeacherStatus = (id: string, status: "aprovado" | "pendente" | "rejeitado") => {
-    const updatedTeachers = teachers.map(teacher => 
-      teacher.id === id ? { ...teacher, status } : teacher
-    );
-    
-    setTeachers(updatedTeachers);
-    
-    toast({
-      title: "Status atualizado",
-      description: `O professor foi ${status === 'aprovado' ? 'aprovado' : status === 'rejeitado' ? 'rejeitado' : 'marcado como pendente'} com sucesso.`,
-    });
-  };
-  
-  // Ativar/Desativar professor
-  const toggleTeacherActive = (teacher: TeacherData) => {
-    // Primeiro, crie um novo objeto professor com o estado ativo invertido
-    const updatedTeacher = {
-      ...teacher,
-      ativo: !teacher.ativo
-    };
-    
-    // Depois, atualize o array de professores com o novo objeto
-    const updatedTeachers = teachers.map(t => 
-      t.id === teacher.id ? updatedTeacher : t
-    );
-    
-    // Atualize o estado
-    setTeachers(updatedTeachers);
-    
-    // Mostrar toast com o novo status (usando o valor atualizado)
-    toast({
-      title: updatedTeacher.ativo ? "Professor ativado" : "Professor desativado",
-      description: `O professor ${teacher.nomeCompleto} foi ${updatedTeacher.ativo ? 'ativado' : 'desativado'} com sucesso.`,
-    });
-  };
-  
   // Atualizar rating do professor
-  const updateTeacherRating = (teacherId: string, newRating: number) => {
-    const updatedTeachers = teachers.map(teacher => 
-      teacher.id === teacherId 
-        ? { ...teacher, rating: newRating } 
-        : teacher
-    );
-    
-    setTeachers(updatedTeachers);
-    
-    toast({
-      title: "Avaliação atualizada",
-      description: `A nota do professor foi atualizada para ${newRating}.`,
-    });
+  const updateTeacherRating = async (teacherId: string, newRating: number) => {
+    try {
+      // Atualizar no banco de dados
+      const { error } = await supabase
+        .from('professores')
+        .update({ rating: newRating })
+        .eq('id', teacherId);
+      
+      if (error) throw error;
+      
+      // Atualizar na interface
+      const updatedTeachers = teachers.map(teacher => 
+        teacher.id === teacherId 
+          ? { ...teacher, rating: newRating } 
+          : teacher
+      );
+      
+      setTeachers(updatedTeachers);
+      
+      toast({
+        title: "Avaliação atualizada",
+        description: `A nota do professor foi atualizada para ${newRating}.`,
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar avaliação:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a avaliação. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Deletar professor
-  const deleteTeacher = (id: string) => {
-    const updatedTeachers = teachers.filter(teacher => teacher.id !== id);
-    setTeachers(updatedTeachers);
-    setDeleteDialogOpen(false);
-    
-    toast({
-      title: "Professor excluído",
-      description: "O professor foi excluído com sucesso.",
-    });
+  const deleteTeacher = async (id: string) => {
+    try {
+      // Excluir do banco de dados
+      const { error } = await supabase
+        .from('professores')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      // Excluir da interface
+      const updatedTeachers = teachers.filter(teacher => teacher.id !== id);
+      setTeachers(updatedTeachers);
+      setDeleteDialogOpen(false);
+      
+      toast({
+        title: "Professor excluído",
+        description: "O professor foi excluído com sucesso.",
+      });
+    } catch (error) {
+      console.error("Erro ao excluir professor:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o professor. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Atualizar professor
   const updateTeacher = (updatedTeacher: TeacherData) => {
+    // Atualização da interface feita no componente EditTeacherDialog
     const updatedTeachers = teachers.map(teacher => 
       teacher.id === updatedTeacher.id ? updatedTeacher : teacher
     );
     
     setTeachers(updatedTeachers);
-    setEditDialogOpen(false);
-    
-    toast({
-      title: "Professor atualizado",
-      description: "Os dados do professor foram atualizados com sucesso.",
-    });
   };
   
   // Adicionar novo professor
   const addTeacher = (newTeacher: Omit<TeacherData, 'id'>) => {
-    // Criar um ID único para o novo professor
-    const id = `teacher-${Date.now()}`;
+    // Adição ao banco de dados feita no componente NewTeacherDialog
+    // Aqui apenas atualiza a interface
+    const teacherWithId = newTeacher as TeacherData;
     
-    // Adicionar o novo professor à lista
-    const teacherWithId = {
-      ...newTeacher,
-      id,
-      dataCadastro: new Date().toLocaleDateString('pt-BR')
-    };
-    
-    setTeachers([...teachers, teacherWithId as TeacherData]);
-    
-    toast({
-      title: "Professor adicionado",
-      description: `O professor ${newTeacher.nomeCompleto} foi adicionado com sucesso.`,
-    });
+    setTeachers(prev => [teacherWithId, ...prev]);
     
     return teacherWithId;
   };
@@ -153,8 +138,6 @@ export const useTeacherActions = (state: UseTeachersStateReturn) => {
   return {
     selectTeacher,
     filterTeachers,
-    updateTeacherStatus,
-    toggleTeacherActive,
     deleteTeacher,
     updateTeacher,
     addTeacher,

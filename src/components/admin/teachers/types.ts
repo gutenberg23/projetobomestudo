@@ -23,3 +23,11 @@ export interface TeacherFiltersState {
   filtroStatus: string;
   filtroDisciplina: string;
 }
+
+export interface TeacherNote {
+  id: string;
+  professorId: string;
+  conteudo: string;
+  dataCriacao: string;
+  usuarioId?: string;
+}

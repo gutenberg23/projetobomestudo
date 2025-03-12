@@ -14,6 +14,7 @@ interface TeacherListSectionProps {
   onEdit: (teacher: TeacherData) => void;
   onDelete: (teacher: TeacherData) => void;
   onViewDetails: (teacher: TeacherData) => void;
+  onViewNotes: (teacher: TeacherData) => void;
   onRatingChange: (teacherId: string, newRating: number) => void;
   onPageChange: (page: number) => void;
 }
@@ -28,6 +29,7 @@ export const TeacherListSection: React.FC<TeacherListSectionProps> = ({
   onEdit,
   onDelete,
   onViewDetails,
+  onViewNotes,
   onRatingChange,
   onPageChange
 }) => {
@@ -39,6 +41,7 @@ export const TeacherListSection: React.FC<TeacherListSectionProps> = ({
         onEdit={onEdit}
         onDelete={onDelete}
         onViewDetails={onViewDetails}
+        onViewNotes={onViewNotes}
         onRatingChange={onRatingChange}
       />
       

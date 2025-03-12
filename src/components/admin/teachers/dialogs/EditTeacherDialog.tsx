@@ -12,22 +12,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface EditTeacherDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   teacher: TeacherData | null;
   onUpdateTeacher: (teacher: TeacherData) => void;
-  disciplinas: string[];
 }
 
 const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
   open,
   onOpenChange,
   teacher,
-  onUpdateTeacher,
-  disciplinas
+  onUpdateTeacher
 }) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<TeacherData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -47,25 +48,57 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
     setFormData(prev => ({ ...prev, status: value as TeacherData["status"] }));
   };
   
-  const handleDisciplinaChange = (value: string) => {
-    setFormData(prev => ({ ...prev, disciplina: value }));
-  };
-  
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!teacher || !formData.nomeCompleto || !formData.email || !formData.linkYoutube || !formData.disciplina) {
+    if (!teacher || !formData.nomeCompleto || !formData.email || !formData.disciplina) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
       return;
     }
     
     setIsSubmitting(true);
     
-    // Simulação de envio
-    setTimeout(() => {
+    try {
+      // Atualizar no banco de dados
+      const { error } = await supabase
+        .from('professores')
+        .update({
+          nome_completo: formData.nomeCompleto,
+          email: formData.email,
+          link_youtube: formData.linkYoutube,
+          disciplina: formData.disciplina,
+          instagram: formData.instagram,
+          twitter: formData.twitter,
+          facebook: formData.facebook,
+          website: formData.website
+        })
+        .eq('id', teacher.id);
+      
+      if (error) throw error;
+      
+      // Atualizar na interface
       onUpdateTeacher(formData as TeacherData);
-      setIsSubmitting(false);
+      
+      toast({
+        title: "Professor atualizado",
+        description: "Os dados do professor foram atualizados com sucesso.",
+      });
+      
       onOpenChange(false);
-    }, 500);
+    } catch (error) {
+      console.error("Erro ao atualizar professor:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o professor. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   if (!teacher) return null;
@@ -113,6 +146,17 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
           </div>
           
           <div className="space-y-2">
+            <Label htmlFor="disciplina" className="text-[#022731]">Disciplina</Label>
+            <Input 
+              id="disciplina" 
+              name="disciplina"
+              value={formData.disciplina || ""}
+              onChange={handleInputChange}
+              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+            />
+          </div>
+          
+          <div className="space-y-2">
             <Label htmlFor="instagram" className="text-[#022731]">Instagram</Label>
             <Input 
               id="instagram" 
@@ -145,42 +189,32 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
             />
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="disciplina" className="text-[#022731]">Disciplina</Label>
-              <Select
-                value={formData.disciplina}
-                onValueChange={handleDisciplinaChange}
-              >
-                <SelectTrigger className="border-[#2a8e9e]/30 focus:ring-[#2a8e9e]">
-                  <SelectValue placeholder="Selecione uma disciplina" />
-                </SelectTrigger>
-                <SelectContent>
-                  {disciplinas.map((disciplina) => (
-                    <SelectItem key={disciplina} value={disciplina}>
-                      {disciplina}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="status" className="text-[#022731]">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={handleStatusChange}
-              >
-                <SelectTrigger className="border-[#2a8e9e]/30 focus:ring-[#2a8e9e]">
-                  <SelectValue placeholder="Selecione um status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="aprovado">Aprovado</SelectItem>
-                  <SelectItem value="pendente">Pendente</SelectItem>
-                  <SelectItem value="rejeitado">Rejeitado</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="website" className="text-[#022731]">Website</Label>
+            <Input 
+              id="website" 
+              name="website"
+              value={formData.website || ""}
+              onChange={handleInputChange}
+              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="status" className="text-[#022731]">Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={handleStatusChange}
+            >
+              <SelectTrigger className="border-[#2a8e9e]/30 focus:ring-[#2a8e9e]">
+                <SelectValue placeholder="Selecione um status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="aprovado">Aprovado</SelectItem>
+                <SelectItem value="pendente">Pendente</SelectItem>
+                <SelectItem value="rejeitado">Rejeitado</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
           <DialogFooter>

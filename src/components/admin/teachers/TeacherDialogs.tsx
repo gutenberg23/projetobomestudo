@@ -4,6 +4,7 @@ import EditTeacherDialog from "./dialogs/EditTeacherDialog";
 import DeleteTeacherDialog from "./dialogs/DeleteTeacherDialog";
 import ViewTeacherDialog from "./dialogs/ViewTeacherDialog";
 import NewTeacherDialog from "./dialogs/NewTeacherDialog";
+import TeacherNotesDialog from "./dialogs/TeacherNotesDialog";
 import { TeacherData } from "./types";
 
 interface TeacherDialogsProps {
@@ -11,12 +12,13 @@ interface TeacherDialogsProps {
   deleteDialogOpen: boolean;
   detailsDialogOpen: boolean;
   newTeacherDialogOpen: boolean;
+  notesDialogOpen: boolean;
   selectedTeacher: TeacherData | null;
-  disciplinas: string[];
   setEditDialogOpen: (open: boolean) => void;
   setDeleteDialogOpen: (open: boolean) => void;
   setDetailsDialogOpen: (open: boolean) => void;
   setNewTeacherDialogOpen: (open: boolean) => void;
+  setNotesDialogOpen: (open: boolean) => void;
   updateTeacher: (teacher: TeacherData) => void;
   deleteTeacher: (id: string) => void;
   addTeacher: (teacher: Omit<TeacherData, 'id'>) => void;
@@ -27,12 +29,13 @@ export const TeacherDialogs: React.FC<TeacherDialogsProps> = ({
   deleteDialogOpen,
   detailsDialogOpen,
   newTeacherDialogOpen,
+  notesDialogOpen,
   selectedTeacher,
-  disciplinas,
   setEditDialogOpen,
   setDeleteDialogOpen,
   setDetailsDialogOpen,
   setNewTeacherDialogOpen,
+  setNotesDialogOpen,
   updateTeacher,
   deleteTeacher,
   addTeacher
@@ -44,7 +47,6 @@ export const TeacherDialogs: React.FC<TeacherDialogsProps> = ({
         onOpenChange={setEditDialogOpen}
         teacher={selectedTeacher}
         onUpdateTeacher={updateTeacher}
-        disciplinas={disciplinas}
       />
       
       <DeleteTeacherDialog
@@ -64,7 +66,12 @@ export const TeacherDialogs: React.FC<TeacherDialogsProps> = ({
         open={newTeacherDialogOpen}
         onOpenChange={setNewTeacherDialogOpen}
         onAddTeacher={addTeacher}
-        disciplinas={disciplinas}
+      />
+      
+      <TeacherNotesDialog
+        open={notesDialogOpen}
+        onOpenChange={setNotesDialogOpen}
+        teacher={selectedTeacher}
       />
     </>
   );

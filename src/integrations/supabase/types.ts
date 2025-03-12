@@ -182,6 +182,83 @@ export type Database = {
         }
         Relationships: []
       }
+      notas_professores: {
+        Row: {
+          conteudo: string
+          data_criacao: string | null
+          id: string
+          professor_id: string
+          usuario_id: string | null
+        }
+        Insert: {
+          conteudo: string
+          data_criacao?: string | null
+          id?: string
+          professor_id: string
+          usuario_id?: string | null
+        }
+        Update: {
+          conteudo?: string
+          data_criacao?: string | null
+          id?: string
+          professor_id?: string
+          usuario_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_professores_professor_id_fkey"
+            columns: ["professor_id"]
+            isOneToOne: false
+            referencedRelation: "professores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professores: {
+        Row: {
+          data_cadastro: string | null
+          disciplina: string
+          email: string
+          facebook: string | null
+          foto_perfil: string | null
+          id: string
+          instagram: string | null
+          link_youtube: string | null
+          nome_completo: string
+          rating: number | null
+          twitter: string | null
+          website: string | null
+        }
+        Insert: {
+          data_cadastro?: string | null
+          disciplina: string
+          email: string
+          facebook?: string | null
+          foto_perfil?: string | null
+          id?: string
+          instagram?: string | null
+          link_youtube?: string | null
+          nome_completo: string
+          rating?: number | null
+          twitter?: string | null
+          website?: string | null
+        }
+        Update: {
+          data_cadastro?: string | null
+          disciplina?: string
+          email?: string
+          facebook?: string | null
+          foto_perfil?: string | null
+          id?: string
+          instagram?: string | null
+          link_youtube?: string | null
+          nome_completo?: string
+          rating?: number | null
+          twitter?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           cursos_favoritos: string[] | null

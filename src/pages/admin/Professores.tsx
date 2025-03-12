@@ -9,6 +9,7 @@ import {
 } from "@/components/admin/teachers";
 import { useTeachersState } from "@/components/admin/teachers/hooks/useTeachersState";
 import { useTeacherActions } from "@/components/admin/teachers/hooks/useTeacherActions";
+import { Spinner } from "@/components/ui/spinner";
 
 const Professores = () => {
   const state = useTeachersState();
@@ -24,13 +25,15 @@ const Professores = () => {
     editDialogOpen,
     deleteDialogOpen,
     detailsDialogOpen,
+    notesDialogOpen,
     selectedTeacher,
-    disciplinas,
+    isLoading,
     setFiltros,
     setPaginaAtual,
     setEditDialogOpen,
     setDeleteDialogOpen,
-    setDetailsDialogOpen
+    setDetailsDialogOpen,
+    setNotesDialogOpen
   } = state;
 
   const {
@@ -60,9 +63,22 @@ const Professores = () => {
     setDetailsDialogOpen(true);
   };
   
+  const handleViewTeacherNotes = (teacher: any) => {
+    selectTeacher(teacher);
+    setNotesDialogOpen(true);
+  };
+  
   const handleRatingChange = (teacherId: string, newRating: number) => {
     updateTeacherRating(teacherId, newRating);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Spinner className="w-10 h-10 text-[#5f2ebe]" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -80,7 +96,7 @@ const Professores = () => {
         onChangeDisciplinaFilter={(disciplina) => setFiltros({...filtros, filtroDisciplina: disciplina})}
         onFilterSubmit={filterTeachers}
         onAddNewTeacher={() => setNewTeacherDialogOpen(true)}
-        disciplinas={disciplinas}
+        disciplinas={["todas", ...state.disciplinas]}
       />
       
       {/* Seção de listagem e paginação */}
@@ -94,6 +110,7 @@ const Professores = () => {
         onEdit={handleEditTeacher}
         onDelete={handleDeleteTeacher}
         onViewDetails={handleViewTeacherDetails}
+        onViewNotes={handleViewTeacherNotes}
         onRatingChange={handleRatingChange}
         onPageChange={setPaginaAtual}
       />
@@ -104,12 +121,13 @@ const Professores = () => {
         deleteDialogOpen={deleteDialogOpen}
         detailsDialogOpen={detailsDialogOpen}
         newTeacherDialogOpen={newTeacherDialogOpen}
+        notesDialogOpen={notesDialogOpen}
         selectedTeacher={selectedTeacher}
-        disciplinas={disciplinas}
         setEditDialogOpen={setEditDialogOpen}
         setDeleteDialogOpen={setDeleteDialogOpen}
         setDetailsDialogOpen={setDetailsDialogOpen}
         setNewTeacherDialogOpen={setNewTeacherDialogOpen}
+        setNotesDialogOpen={setNotesDialogOpen}
         updateTeacher={updateTeacher}
         deleteTeacher={deleteTeacher}
         addTeacher={addTeacher}
