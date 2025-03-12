@@ -1,13 +1,20 @@
 
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { UserData, UserNote } from "../types";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Spinner } from "@/components/ui/spinner";
-import { StickyNote, Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { Trash2 } from "lucide-react";
 
 interface UserNotesDialogProps {
   open: boolean;
@@ -20,203 +27,171 @@ const UserNotesDialog: React.FC<UserNotesDialogProps> = ({
   onOpenChange,
   usuario
 }) => {
+  const [notas, setNotas] = useState<UserNote[]>([]);
+  const [novaNota, setNovaNota] = useState("");
+  const [carregando, setCarregando] = useState(false);
   const { toast } = useToast();
-  const [notes, setNotes] = useState<UserNote[]>([]);
-  const [newNote, setNewNote] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (open && usuario) {
-      fetchNotes();
+      carregarNotas();
     }
   }, [open, usuario]);
 
-  const fetchNotes = async () => {
+  const carregarNotas = async () => {
     if (!usuario) return;
-    
-    setIsLoading(true);
+
+    setCarregando(true);
     try {
       const { data, error } = await supabase
-        .from('notas_usuarios')
-        .select('*')
-        .eq('usuario_id', usuario.id)
-        .order('data_criacao', { ascending: false });
-      
+        .from("notas_usuarios")
+        .select("*")
+        .eq("usuario_id", usuario.id)
+        .order("data_criacao", { ascending: false });
+
       if (error) throw error;
-      
-      const formattedNotes: UserNote[] = data.map(note => ({
-        id: note.id,
-        usuarioId: note.usuario_id,
-        conteudo: note.conteudo,
-        dataCriacao: new Date(note.data_criacao).toLocaleString('pt-BR'),
-        criadoPor: note.criado_por
-      }));
-      
-      setNotes(formattedNotes);
+      setNotas(data || []);
     } catch (error) {
-      console.error("Erro ao buscar notas:", error);
+      console.error("Erro ao carregar notas:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar as notas. Tente novamente.",
+        description: "Não foi possível carregar as notas do usuário.",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setCarregando(false);
     }
   };
 
-  const handleAddNote = async () => {
-    if (!usuario || !newNote.trim()) return;
-    
-    setIsSubmitting(true);
+  const adicionarNota = async () => {
+    if (!usuario || !novaNota.trim()) return;
+
     try {
-      // Obter o ID do usuário autenticado (para registrar quem criou a nota)
-      const { data: sessionData } = await supabase.auth.getSession();
-      const currentUserId = sessionData.session?.user.id;
-      
-      const { data, error } = await supabase
-        .from('notas_usuarios')
-        .insert({
-          usuario_id: usuario.id,
-          conteudo: newNote.trim(),
-          criado_por: currentUserId
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      
-      const newNoteItem: UserNote = {
-        id: data.id,
-        usuarioId: data.usuario_id,
-        conteudo: data.conteudo,
-        dataCriacao: new Date(data.data_criacao).toLocaleString('pt-BR'),
-        criadoPor: data.criado_por
+      const novaNota_ = {
+        usuario_id: usuario.id,
+        conteudo: novaNota,
+        criado_por: user?.id
       };
-      
-      setNotes([newNoteItem, ...notes]);
-      setNewNote("");
-      
+
+      const { error } = await supabase
+        .from("notas_usuarios")
+        .insert([novaNota_]);
+
+      if (error) throw error;
+
       toast({
         title: "Nota adicionada",
         description: "A nota foi adicionada com sucesso."
       });
+
+      setNovaNota("");
+      carregarNotas();
     } catch (error) {
       console.error("Erro ao adicionar nota:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar a nota. Tente novamente.",
+        description: "Não foi possível adicionar a nota.",
         variant: "destructive"
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const handleDeleteNote = async (noteId: string) => {
+  const excluirNota = async (id: string) => {
+    if (!confirm("Deseja realmente excluir esta nota?")) return;
+
     try {
       const { error } = await supabase
-        .from('notas_usuarios')
+        .from("notas_usuarios")
         .delete()
-        .eq('id', noteId);
-      
+        .eq("id", id);
+
       if (error) throw error;
-      
-      // Atualizar a lista local de notas
-      setNotes(notes.filter(note => note.id !== noteId));
-      
+
       toast({
         title: "Nota excluída",
         description: "A nota foi excluída com sucesso."
       });
+
+      carregarNotas();
     } catch (error) {
       console.error("Erro ao excluir nota:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível excluir a nota. Tente novamente.",
+        description: "Não foi possível excluir a nota.",
         variant: "destructive"
       });
     }
+  };
+
+  const formatarData = (dataString: string) => {
+    return new Date(dataString).toLocaleString('pt-BR');
   };
 
   if (!usuario) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle className="text-[#272f3c] text-xl font-bold">Notas - {usuario.nome}</DialogTitle>
+          <DialogTitle>Notas do Usuário</DialogTitle>
+          <DialogDescription>
+            Gerenciar notas para {usuario.nome} ({usuario.email})
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <Textarea
-                  placeholder="Digite uma nova nota..."
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
-                  rows={3}
-                />
-              </div>
-              <Button
-                type="button"
-                onClick={handleAddNote}
-                disabled={isSubmitting || !newNote.trim()}
-                className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 text-white"
-              >
-                {isSubmitting ? <Spinner size="sm" /> : "Adicionar"}
-              </Button>
-            </div>
+            <label htmlFor="nova-nota" className="font-medium">Nova Nota</label>
+            <Textarea
+              id="nova-nota"
+              value={novaNota}
+              onChange={(e) => setNovaNota(e.target.value)}
+              placeholder="Digite uma nova nota sobre este usuário..."
+              className="min-h-[100px]"
+            />
+            <Button 
+              onClick={adicionarNota} 
+              disabled={!novaNota.trim()} 
+              className="mt-2"
+            >
+              Adicionar Nota
+            </Button>
           </div>
           
-          <div className="border-t pt-4">
-            <h3 className="font-medium text-[#272f3c] mb-3">Notas salvas</h3>
-            
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <Spinner className="text-[#5f2ebe]" />
-              </div>
-            ) : notes.length > 0 ? (
-              <div className="space-y-3">
-                {notes.map((note) => (
-                  <div key={note.id} className="bg-[#f6f8fa] p-3 rounded-md">
-                    <div className="flex justify-between items-start">
-                      <div className="flex items-center gap-2 text-sm text-[#67748a] mb-1">
-                        <StickyNote className="h-3.5 w-3.5" />
-                        <span>{note.dataCriacao}</span>
+          <div className="mt-6 space-y-4">
+            <h3 className="font-semibold text-lg border-b pb-2">Histórico de Notas</h3>
+            {carregando ? (
+              <p className="text-center py-4 text-gray-500">Carregando notas...</p>
+            ) : notas.length === 0 ? (
+              <p className="text-center py-4 text-gray-500">Nenhuma nota encontrada para este usuário.</p>
+            ) : (
+              <div className="space-y-4">
+                {notas.map((nota) => (
+                  <div key={nota.id} className="bg-gray-50 p-4 rounded-md">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="text-sm text-gray-500">
+                        {formatarData(nota.dataCriacao)}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteNote(note.id)}
-                        className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => excluirNota(nota.id)}
+                        className="text-red-500 h-8 w-8 p-0"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 size={16} />
                       </Button>
                     </div>
-                    <p className="text-[#272f3c] whitespace-pre-wrap">{note.conteudo}</p>
+                    <p className="whitespace-pre-wrap">{nota.conteudo}</p>
                   </div>
                 ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-[#67748a]">
-                <StickyNote className="mx-auto h-10 w-10 text-gray-300 mb-2" />
-                <p>Nenhuma nota adicionada</p>
               </div>
             )}
           </div>
         </div>
         
         <DialogFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="border-[#5f2ebe] text-[#5f2ebe]"
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
         </DialogFooter>
