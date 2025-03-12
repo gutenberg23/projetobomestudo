@@ -1,14 +1,15 @@
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportanceStars } from "./ImportanceStars";
 import { cn } from "@/lib/utils";
 import { Subject, Topic } from "../types/editorialized";
 import { calculateErrors, calculatePerformance, calculateSubjectTotals } from "../utils/statsCalculations";
+
 interface SubjectTableProps {
   subject: Subject;
   performanceGoal: number;
-  onTopicChange: (subjectId: number, topicId: number, field: keyof Topic, value: any) => void;
+  onTopicChange: (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => void;
 }
+
 export const SubjectTable = ({
   subject,
   performanceGoal,
@@ -17,21 +18,22 @@ export const SubjectTable = ({
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
   const subjectPerformance = calculatePerformance(subjectTotals.hits, subjectTotals.exercisesDone);
-  const handleIsReviewedChange = (subjectId: number, topicId: number) => {
+
+  const handleIsReviewedChange = (subjectId: string | number, topicId: number) => {
     const topic = subject.topics.find(t => t.id === topicId);
     if (topic) {
       onTopicChange(subjectId, topicId, 'isReviewed', !topic.isReviewed);
     }
   };
-  const handleNotReviewedChange = (subjectId: number, topicId: number) => {
-    // Independentemente do valor atual, estamos apenas invertendo o estado do checkbox "Não revisado"
-    // Isso permite qualquer combinação: ambos marcados, ambos desmarcados, ou um marcado e outro desmarcado
+
+  const handleNotReviewedChange = (subjectId: string | number, topicId: number) => {
     const topic = subject.topics.find(t => t.id === topicId);
     if (topic) {
       const currentValue = topic.isReviewed;
       onTopicChange(subjectId, topicId, 'isReviewed', currentValue);
     }
   };
+
   return <div className="mb-8 last:mb-0">
       <div className="flex items-center justify-between bg-[#9747FF] text-white p-3 rounded-t-lg">
         <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
@@ -138,3 +140,5 @@ export const SubjectTable = ({
       </div>
     </div>;
 };
+
+export { SubjectTable };

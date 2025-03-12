@@ -67,7 +67,7 @@ export const useEditorializedData = () => {
   };
 
   const updateTopicProgress = async (
-    subjectId: number,
+    subjectId: string | number,
     topicId: number,
     field: keyof Topic,
     value: any

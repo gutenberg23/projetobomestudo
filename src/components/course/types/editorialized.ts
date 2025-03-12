@@ -1,6 +1,6 @@
 
 export type Subject = {
-  id: number;
+  id: string | number;
   name: string;
   topics: Topic[];
 };
@@ -34,4 +34,3 @@ export type OverallStats = {
   completedTopics: number;
   totalTopics: number;
 };
-
