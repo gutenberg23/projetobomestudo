@@ -14,23 +14,44 @@ import {
 
 interface UserListProps {
   usuarios: UserData[];
+  isLoading?: boolean;
   onEdit: (usuario: UserData) => void;
   onChangePassword: (usuario: UserData) => void;
   onSendMessage: (usuario: UserData) => void;
   onViewHistory: (usuario: UserData) => void;
+  onViewNotes: (usuario: UserData) => void;
   onChangeStatus: (id: string, status: "ativo" | "inativo") => void;
   onDelete: (usuario: UserData) => void;
 }
 
 const UserList: React.FC<UserListProps> = ({
   usuarios,
+  isLoading = false,
   onEdit,
   onChangePassword,
   onSendMessage,
   onViewHistory,
+  onViewNotes,
   onChangeStatus,
   onDelete
 }) => {
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-lg shadow overflow-hidden p-8">
+        <div className="text-center">
+          <div className="animate-pulse flex space-x-4 items-center justify-center">
+            <div className="rounded-full bg-slate-200 h-12 w-12"></div>
+            <div className="flex-1 space-y-4 max-w-md">
+              <div className="h-4 bg-slate-200 rounded"></div>
+              <div className="h-4 bg-slate-200 rounded w-5/6"></div>
+            </div>
+          </div>
+          <p className="mt-4 text-[#67748a]">Carregando usuários...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
       <Table>
@@ -57,6 +78,7 @@ const UserList: React.FC<UserListProps> = ({
                 onChangePassword={onChangePassword}
                 onSendMessage={onSendMessage}
                 onViewHistory={onViewHistory}
+                onViewNotes={onViewNotes}
                 onChangeStatus={onChangeStatus}
                 onDelete={onDelete}
               />

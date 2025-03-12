@@ -214,6 +214,30 @@ export type Database = {
           },
         ]
       }
+      notas_usuarios: {
+        Row: {
+          conteudo: string
+          criado_por: string | null
+          data_criacao: string | null
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          conteudo: string
+          criado_por?: string | null
+          data_criacao?: string | null
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          conteudo?: string
+          criado_por?: string | null
+          data_criacao?: string | null
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       professores: {
         Row: {
           data_cadastro: string | null
@@ -261,31 +285,49 @@ export type Database = {
       }
       profiles: {
         Row: {
+          assinante: boolean | null
           cursos_favoritos: string[] | null
           disciplinas_favoritos: string[] | null
           email: string | null
           foto_perfil: string | null
           id: string
+          inicio_assinatura: string | null
           nome: string | null
           role: string | null
+          status: string | null
+          termino_assinatura: string | null
+          tipo: string | null
+          ultimo_login: string | null
         }
         Insert: {
+          assinante?: boolean | null
           cursos_favoritos?: string[] | null
           disciplinas_favoritos?: string[] | null
           email?: string | null
           foto_perfil?: string | null
           id: string
+          inicio_assinatura?: string | null
           nome?: string | null
           role?: string | null
+          status?: string | null
+          termino_assinatura?: string | null
+          tipo?: string | null
+          ultimo_login?: string | null
         }
         Update: {
+          assinante?: boolean | null
           cursos_favoritos?: string[] | null
           disciplinas_favoritos?: string[] | null
           email?: string | null
           foto_perfil?: string | null
           id?: string
+          inicio_assinatura?: string | null
           nome?: string | null
           role?: string | null
+          status?: string | null
+          termino_assinatura?: string | null
+          tipo?: string | null
+          ultimo_login?: string | null
         }
         Relationships: []
       }

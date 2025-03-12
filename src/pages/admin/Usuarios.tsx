@@ -10,7 +10,8 @@ import {
   DeleteUserDialog,
   ChangePasswordDialog,
   SendMessageDialog,
-  ViewHistoryDialog
+  ViewHistoryDialog,
+  UserNotesDialog
 } from "@/components/admin/users";
 import { useUsersState } from "@/components/admin/users/hooks/useUsersState";
 import { useUserActions } from "@/components/admin/users/hooks/useUserActions";
@@ -26,12 +27,14 @@ const Usuarios = () => {
     indiceInicial,
     indiceFinal,
     usuarios,
+    isLoading,
     dialogEditarUsuario,
     dialogNovoUsuario,
     dialogExcluirUsuario,
     dialogAlterarSenha,
     dialogEnviarMensagem,
     dialogVerHistorico,
+    dialogNotasUsuario,
     usuarioSelecionado,
     novoUsuario,
     setFiltros,
@@ -41,6 +44,7 @@ const Usuarios = () => {
     setDialogAlterarSenha,
     setDialogEnviarMensagem,
     setDialogVerHistorico,
+    setDialogNotasUsuario,
     setDialogExcluirUsuario,
     setUsuarioSelecionado,
     setNovoUsuario
@@ -81,6 +85,7 @@ const Usuarios = () => {
       {/* Tabela de usuários */}
       <UserList 
         usuarios={usuariosPaginados}
+        isLoading={isLoading}
         onEdit={(usuario) => {
           selecionarUsuario(usuario);
           setDialogEditarUsuario(true);
@@ -96,6 +101,10 @@ const Usuarios = () => {
         onViewHistory={(usuario) => {
           selecionarUsuario(usuario);
           setDialogVerHistorico(true);
+        }}
+        onViewNotes={(usuario) => {
+          selecionarUsuario(usuario);
+          setDialogNotasUsuario(true);
         }}
         onChangeStatus={alterarStatusUsuario}
         onDelete={(usuario) => {
@@ -157,6 +166,12 @@ const Usuarios = () => {
       <ViewHistoryDialog
         open={dialogVerHistorico}
         onOpenChange={setDialogVerHistorico}
+        usuario={usuarioSelecionado}
+      />
+
+      <UserNotesDialog
+        open={dialogNotasUsuario}
+        onOpenChange={setDialogNotasUsuario}
         usuario={usuarioSelecionado}
       />
     </div>

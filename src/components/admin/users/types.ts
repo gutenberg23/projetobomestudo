@@ -22,11 +22,20 @@ export interface UserFiltersState {
   filtroTipo: string;
 }
 
+export interface UserNote {
+  id: string;
+  usuarioId: string;
+  conteudo: string;
+  dataCriacao: string;
+  criadoPor?: string;
+}
+
 // Hook related types 
 export interface UseUsersStateReturn {
   usuarios: UserData[];
   usuariosFiltrados: UserData[];
   usuariosPaginados: UserData[];
+  isLoading: boolean;
   filtros: UserFiltersState;
   paginaAtual: number;
   totalPaginas: number;
@@ -38,6 +47,7 @@ export interface UseUsersStateReturn {
   dialogAlterarSenha: boolean;
   dialogEnviarMensagem: boolean;
   dialogVerHistorico: boolean;
+  dialogNotasUsuario: boolean;
   usuarioSelecionado: UserData | null;
   novoUsuario: Partial<UserData>;
   itensPorPagina: number;
@@ -51,6 +61,7 @@ export interface UseUsersStateReturn {
   setDialogAlterarSenha: (open: boolean) => void;
   setDialogEnviarMensagem: (open: boolean) => void;
   setDialogVerHistorico: (open: boolean) => void;
+  setDialogNotasUsuario: (open: boolean) => void;
   setUsuarioSelecionado: (usuario: UserData | null) => void;
   setNovoUsuario: (usuario: Partial<UserData>) => void;
 }

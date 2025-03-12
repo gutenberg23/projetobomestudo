@@ -17,7 +17,7 @@ interface ChangePasswordDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   usuario: UserData | null;
-  onChangePassword: () => void;
+  onChangePassword: (senha: string) => void;
 }
 
 const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
@@ -26,43 +26,77 @@ const ChangePasswordDialog: React.FC<ChangePasswordDialogProps> = ({
   usuario,
   onChangePassword
 }) => {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [erro, setErro] = useState("");
+
+  const handleSubmit = () => {
+    if (novaSenha !== confirmarSenha) {
+      setErro("As senhas não coincidem");
+      return;
+    }
+    
+    if (novaSenha.length < 6) {
+      setErro("A senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+    
+    onChangePassword(novaSenha);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setNovaSenha("");
+    setConfirmarSenha("");
+    setErro("");
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      resetForm();
+    }
+    onOpenChange(open);
+  };
 
   if (!usuario) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Alterar Senha</DialogTitle>
           <DialogDescription>
-            Defina uma nova senha para o usuário {usuario.nome}
+            Altere a senha do usuário {usuario.nome}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="novaSenha">Nova Senha</Label>
+            <Label htmlFor="nova-senha">Nova Senha</Label>
             <Input 
-              id="novaSenha" 
+              id="nova-senha" 
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              value={novaSenha} 
+              onChange={(e) => setNovaSenha(e.target.value)}
+              placeholder="Digite a nova senha"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmarSenha">Confirmar Senha</Label>
+            <Label htmlFor="confirmar-senha">Confirmar Senha</Label>
             <Input 
-              id="confirmarSenha" 
+              id="confirmar-senha" 
               type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              value={confirmarSenha} 
+              onChange={(e) => setConfirmarSenha(e.target.value)}
+              placeholder="Confirme a nova senha"
             />
           </div>
+          {erro && (
+            <div className="text-red-500 text-sm">{erro}</div>
+          )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={onChangePassword}>Alterar Senha</Button>
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancelar</Button>
+          <Button onClick={handleSubmit}>Alterar Senha</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

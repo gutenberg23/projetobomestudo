@@ -1,79 +1,14 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { UserData, UserFiltersState, UseUsersStateReturn } from "../types";
-
-// Dados de exemplo para exibição
-const usuariosExemplo: UserData[] = [
-  {
-    id: "1",
-    nome: "João Silva",
-    email: "joao.silva@exemplo.com",
-    tipo: "aluno",
-    status: "ativo",
-    dataCadastro: "2023-01-15",
-    ultimoLogin: "2023-05-10 14:30",
-    fotoPerfil: "",
-    assinante: true,
-    inicioAssinatura: "2023-01-15",
-    terminoAssinatura: "2024-01-15"
-  },
-  {
-    id: "2",
-    nome: "Maria Oliveira",
-    email: "maria.oliveira@exemplo.com",
-    tipo: "professor",
-    status: "ativo",
-    dataCadastro: "2022-11-05",
-    ultimoLogin: "2023-05-12 09:15",
-    fotoPerfil: "",
-    assinante: true,
-    inicioAssinatura: "2022-11-05",
-    terminoAssinatura: "2023-11-05"
-  },
-  {
-    id: "3",
-    nome: "Carlos Ferreira",
-    email: "carlos.ferreira@exemplo.com",
-    tipo: "administrador",
-    status: "ativo",
-    dataCadastro: "2022-08-20",
-    ultimoLogin: "2023-05-11 16:45",
-    fotoPerfil: "",
-    assinante: false,
-    inicioAssinatura: "",
-    terminoAssinatura: ""
-  },
-  {
-    id: "4",
-    nome: "Ana Beatriz",
-    email: "ana.beatriz@exemplo.com",
-    tipo: "aluno",
-    status: "inativo",
-    dataCadastro: "2023-02-10",
-    ultimoLogin: "2023-04-25 11:20",
-    fotoPerfil: "",
-    assinante: false,
-    inicioAssinatura: "",
-    terminoAssinatura: ""
-  },
-  {
-    id: "5",
-    nome: "Pedro Santos",
-    email: "pedro.santos@exemplo.com",
-    tipo: "aluno",
-    status: "ativo",
-    dataCadastro: "2023-03-05",
-    ultimoLogin: "2023-05-11 10:30",
-    fotoPerfil: "",
-    assinante: true,
-    inicioAssinatura: "2023-03-05",
-    terminoAssinatura: "2024-03-05"
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const useUsersState = (): UseUsersStateReturn => {
-  const [usuarios, setUsuarios] = useState<UserData[]>(usuariosExemplo);
-  const [usuariosFiltrados, setUsuariosFiltrados] = useState<UserData[]>(usuariosExemplo);
+  const { toast } = useToast();
+  const [usuarios, setUsuarios] = useState<UserData[]>([]);
+  const [usuariosFiltrados, setUsuariosFiltrados] = useState<UserData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filtros, setFiltros] = useState<UserFiltersState>({
     termoPesquisa: "",
     filtroStatus: "todos",
@@ -89,6 +24,7 @@ export const useUsersState = (): UseUsersStateReturn => {
   const [dialogAlterarSenha, setDialogAlterarSenha] = useState(false);
   const [dialogEnviarMensagem, setDialogEnviarMensagem] = useState(false);
   const [dialogVerHistorico, setDialogVerHistorico] = useState(false);
+  const [dialogNotasUsuario, setDialogNotasUsuario] = useState(false);
   
   // Estado para armazenar usuário selecionado
   const [usuarioSelecionado, setUsuarioSelecionado] = useState<UserData | null>(null);
@@ -104,6 +40,63 @@ export const useUsersState = (): UseUsersStateReturn => {
     terminoAssinatura: ""
   });
 
+  // Buscar usuários do Supabase
+  useEffect(() => {
+    const fetchUsuarios = async () => {
+      setIsLoading(true);
+      try {
+        // Buscar usuários da auth.users
+        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
+        
+        if (authError) throw authError;
+        
+        // Buscar perfis de profiles
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (profilesError) throw profilesError;
+        
+        // Combinar dados dos usuários com seus perfis
+        const usuariosCombinados = authUsers.users.map(authUser => {
+          const profile = profiles.find(p => p.id === authUser.id) || {};
+          
+          return {
+            id: authUser.id,
+            nome: profile.nome || authUser.email?.split('@')[0] || '',
+            email: authUser.email || '',
+            tipo: profile.tipo || 'aluno',
+            status: profile.status || 'ativo',
+            dataCadastro: new Date(authUser.created_at).toISOString().split('T')[0],
+            ultimoLogin: profile.ultimo_login 
+              ? new Date(profile.ultimo_login).toLocaleString('pt-BR')
+              : authUser.last_sign_in_at 
+                ? new Date(authUser.last_sign_in_at).toLocaleString('pt-BR')
+                : '-',
+            fotoPerfil: profile.foto_perfil || '',
+            assinante: profile.assinante || false,
+            inicioAssinatura: profile.inicio_assinatura || '',
+            terminoAssinatura: profile.termino_assinatura || ''
+          };
+        });
+        
+        setUsuarios(usuariosCombinados);
+        setUsuariosFiltrados(usuariosCombinados);
+      } catch (error) {
+        console.error("Erro ao buscar usuários:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os usuários. Tente novamente.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchUsuarios();
+  }, [toast]);
+
   // Paginação
   const indiceInicial = (paginaAtual - 1) * itensPorPagina;
   const indiceFinal = indiceInicial + itensPorPagina;
@@ -114,6 +107,7 @@ export const useUsersState = (): UseUsersStateReturn => {
     usuarios,
     usuariosFiltrados,
     usuariosPaginados,
+    isLoading,
     filtros,
     paginaAtual,
     totalPaginas,
@@ -125,6 +119,7 @@ export const useUsersState = (): UseUsersStateReturn => {
     dialogAlterarSenha,
     dialogEnviarMensagem,
     dialogVerHistorico,
+    dialogNotasUsuario,
     usuarioSelecionado,
     novoUsuario,
     itensPorPagina,
@@ -138,6 +133,7 @@ export const useUsersState = (): UseUsersStateReturn => {
     setDialogAlterarSenha,
     setDialogEnviarMensagem,
     setDialogVerHistorico,
+    setDialogNotasUsuario,
     setUsuarioSelecionado,
     setNovoUsuario
   };
