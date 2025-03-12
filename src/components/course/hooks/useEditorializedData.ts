@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Subject, Topic } from '../types/editorialized';
+import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
 
 export const useEditorializedData = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -15,15 +16,28 @@ export const useEditorializedData = () => {
     try {
       setLoading(true);
       
+      if (!courseId) {
+        setSubjects([]);
+        return;
+      }
+
+      // Extrair o ID real da URL amigável
+      const realId = extractIdFromFriendlyUrl(courseId);
+      console.log("ID real para edital:", realId);
+      
       const { data: editalData, error: editalError } = await supabase
         .from('cursoverticalizado')
         .select('*')
-        .eq('curso_id', courseId)
-        .single();
+        .eq('curso_id', realId)
+        .maybeSingle();
 
-      if (editalError) throw editalError;
+      if (editalError) {
+        console.error('Erro ao buscar edital:', editalError);
+        throw editalError;
+      }
       
       if (!editalData) {
+        console.log('Nenhum edital encontrado para o curso:', realId);
         setSubjects([]);
         return;
       }
@@ -33,12 +47,15 @@ export const useEditorializedData = () => {
         .select('*')
         .in('id', editalData.disciplinas_ids || []);
 
-      if (disciplinasError) throw disciplinasError;
+      if (disciplinasError) {
+        console.error('Erro ao buscar disciplinas:', disciplinasError);
+        throw disciplinasError;
+      }
 
       const formattedSubjects: Subject[] = (disciplinasData || []).map((disciplina) => ({
         id: disciplina.id,
         name: disciplina.titulo,
-        topics: disciplina.topicos.map((topico, topicIndex) => ({
+        topics: disciplina.topicos.map((topico: string, topicIndex: number) => ({
           id: topicIndex,
           name: topico,
           topic: topico,
@@ -57,10 +74,11 @@ export const useEditorializedData = () => {
     } catch (error) {
       console.error('Erro ao carregar dados do edital:', error);
       toast({
-        title: "Erro",
+        title: "Erro ao carregar edital",
         description: "Não foi possível carregar os dados do edital verticalizado.",
         variant: "destructive"
       });
+      setSubjects([]);
     } finally {
       setLoading(false);
     }
