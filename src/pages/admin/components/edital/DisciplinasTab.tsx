@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import DisciplinaForm from "./DisciplinaForm";
 import DisciplinasTable from "./DisciplinasTable";
 import CriarEditalCard from "./CriarEditalCard";
 import { Disciplina, Edital } from "./types";
+import { useEditalActions } from "./hooks/useEditalActions";
 
 interface DisciplinasTabProps {
   disciplinas: Disciplina[];
@@ -19,12 +19,21 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
   editais,
   setEditais
 }) => {
+  const { cadastrarDisciplina, listarDisciplinas, cadastrarEdital } = useEditalActions();
   const { toast } = useToast();
   const [showCriarEditalCard, setShowCriarEditalCard] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredDisciplinas, setFilteredDisciplinas] = useState<Disciplina[]>(disciplinas);
   
-  // Efeito para filtrar disciplinas quando a busca ou a lista de disciplinas mudar
+  useEffect(() => {
+    const carregarDisciplinas = async () => {
+      const data = await listarDisciplinas();
+      setDisciplinas(data);
+    };
+    
+    carregarDisciplinas();
+  }, []);
+  
   useEffect(() => {
     if (searchTerm.trim() === "") {
       setFilteredDisciplinas(disciplinas);
@@ -40,7 +49,6 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
     }
   }, [searchTerm, disciplinas]);
   
-  // Funções para gerenciar disciplinas
   const todasDisciplinasSelecionadas = filteredDisciplinas.length > 0 && filteredDisciplinas.every(d => d.selecionada);
   
   const handleToggleSelecaoTodas = () => {
@@ -58,18 +66,12 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
     ));
   };
   
-  const adicionarDisciplina = (disciplina: Disciplina) => {
-    // Verificar se já existe uma disciplina com esse ID
-    if (disciplinas.some(d => d.id === disciplina.id)) {
-      toast({
-        title: "Erro",
-        description: "Já existe uma disciplina com esse ID.",
-        variant: "destructive"
-      });
-      return;
+  const adicionarDisciplina = async (disciplina: Disciplina) => {
+    const { id, selecionada, ...disciplinaData } = disciplina;
+    const novaDisciplina = await cadastrarDisciplina(disciplinaData);
+    if (novaDisciplina) {
+      setDisciplinas([...disciplinas, { ...novaDisciplina, selecionada: false }]);
     }
-    
-    setDisciplinas([...disciplinas, disciplina]);
   };
   
   const excluirDisciplina = (id: string) => {
@@ -81,7 +83,6 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
     });
   };
   
-  // Funções para criar edital
   const criarEdital = () => {
     const disciplinasSelecionadas = disciplinas.filter(d => d.selecionada);
     
@@ -97,36 +98,21 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
     setShowCriarEditalCard(true);
   };
   
-  const salvarEdital = (titulo: string, cursoId: string) => {
-    if (!cursoId || !titulo) {
-      toast({
-        title: "Erro",
-        description: "ID do Curso e Título do Edital são obrigatórios.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
+  const salvarEdital = async (titulo: string, cursoId: string) => {
     const disciplinasSelecionadas = disciplinas.filter(d => d.selecionada);
     
-    const novoEdital: Edital = {
-      id: `edital-${editais.length + 1}`,
-      titulo: titulo,
-      disciplinasIds: disciplinasSelecionadas.map(d => d.id),
-      cursoId: cursoId,
+    const novoEdital = await cadastrarEdital({
+      titulo,
+      curso_id: cursoId,
+      disciplinas_ids: disciplinasSelecionadas.map(d => d.id),
       ativo: true
-    };
-    
-    setEditais([...editais, novoEdital]);
-    
-    // Limpar seleções e fechar o card
-    setDisciplinas(disciplinas.map(d => ({...d, selecionada: false})));
-    setShowCriarEditalCard(false);
-    
-    toast({
-      title: "Sucesso",
-      description: "Edital criado com sucesso!",
     });
+
+    if (novoEdital) {
+      setEditais([...editais, novoEdital]);
+      setDisciplinas(disciplinas.map(d => ({...d, selecionada: false})));
+      setShowCriarEditalCard(false);
+    }
   };
 
   return (
@@ -157,3 +143,4 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
 };
 
 export default DisciplinasTab;
+

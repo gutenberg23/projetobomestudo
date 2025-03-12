@@ -105,6 +105,33 @@ export type Database = {
         }
         Relationships: []
       }
+      cursoverticalizado: {
+        Row: {
+          ativo: boolean | null
+          created_at: string
+          curso_id: string
+          disciplinas_ids: string[] | null
+          id: string
+          titulo: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string
+          curso_id: string
+          disciplinas_ids?: string[] | null
+          id?: string
+          titulo: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string
+          curso_id?: string
+          disciplinas_ids?: string[] | null
+          id?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
       disciplinas: {
         Row: {
           aulas_ids: string[] | null
@@ -129,6 +156,33 @@ export type Database = {
           id?: string
           status?: string | null
           titulo?: string
+        }
+        Relationships: []
+      }
+      disciplinaverticalizada: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          importancia: number[] | null
+          titulo: string
+          topicos: string[] | null
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          importancia?: number[] | null
+          titulo: string
+          topicos?: string[] | null
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          importancia?: number[] | null
+          titulo?: string
+          topicos?: string[] | null
         }
         Relationships: []
       }

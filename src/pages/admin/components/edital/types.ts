@@ -4,14 +4,16 @@ export interface Disciplina {
   titulo: string;
   descricao: string;
   topicos: string[];
-  importancia: number[]; // Array para armazenar o valor de importância para cada tópico
+  importancia: number[];
   selecionada: boolean;
 }
 
 export interface Edital {
   id: string;
   titulo: string;
-  disciplinasIds: string[];
-  cursoId: string;
+  disciplinas_ids: string[];
+  curso_id: string;
   ativo: boolean;
+  created_at?: string;
 }
+

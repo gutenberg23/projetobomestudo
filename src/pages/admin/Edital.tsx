@@ -6,8 +6,6 @@ import { Disciplina, Edital } from "./components/edital/types";
 
 const EditalPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("disciplinas");
-  
-  // Estados para as listas
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [editais, setEditais] = useState<Edital[]>([]);
 
@@ -22,7 +20,6 @@ const EditalPage: React.FC = () => {
           <TabsTrigger value="editais">Editais Verticalizados</TabsTrigger>
         </TabsList>
         
-        {/* Aba de Disciplinas Cadastradas */}
         <TabsContent value="disciplinas">
           <DisciplinasTab 
             disciplinas={disciplinas}
@@ -32,7 +29,6 @@ const EditalPage: React.FC = () => {
           />
         </TabsContent>
         
-        {/* Aba de Editais Verticalizados */}
         <TabsContent value="editais">
           <EditaisTab 
             editais={editais}
