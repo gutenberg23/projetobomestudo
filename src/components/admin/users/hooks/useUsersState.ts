@@ -45,34 +45,23 @@ export const useUsersState = (): UseUsersStateReturn => {
     const fetchUsuarios = async () => {
       setIsLoading(true);
       try {
-        // Buscar usuários da auth.users
-        const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
-        
-        if (authError) throw authError;
-        
-        // Buscar perfis de profiles
+        // Simular a busca de usuários já que não temos acesso admin
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('*');
         
         if (profilesError) throw profilesError;
         
-        // Combinar dados dos usuários com seus perfis
-        const usuariosCombinados = authUsers.users.map(authUser => {
-          const profile = profiles.find(p => p.id === authUser.id) || {};
-          
+        // Transformar os dados dos perfis em usuários
+        const usuariosCombinados = profiles.map(profile => {
           return {
-            id: authUser.id,
-            nome: profile.nome || authUser.email?.split('@')[0] || '',
-            email: authUser.email || '',
-            tipo: profile.tipo || 'aluno',
-            status: profile.status || 'ativo',
-            dataCadastro: new Date(authUser.created_at).toISOString().split('T')[0],
-            ultimoLogin: profile.ultimo_login 
-              ? new Date(profile.ultimo_login).toLocaleString('pt-BR')
-              : authUser.last_sign_in_at 
-                ? new Date(authUser.last_sign_in_at).toLocaleString('pt-BR')
-                : '-',
+            id: profile.id || '',
+            nome: profile.nome || '',
+            email: profile.email || '',
+            tipo: (profile.tipo as UserData['tipo']) || 'aluno',
+            status: (profile.status as UserData['status']) || 'ativo',
+            dataCadastro: '2023-01-01', // Valor padrão
+            ultimoLogin: profile.ultimo_login ? new Date(profile.ultimo_login).toLocaleString('pt-BR') : '-',
             fotoPerfil: profile.foto_perfil || '',
             assinante: profile.assinante || false,
             inicioAssinatura: profile.inicio_assinatura || '',

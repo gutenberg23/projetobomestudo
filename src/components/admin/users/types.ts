@@ -24,10 +24,10 @@ export interface UserFiltersState {
 
 export interface UserNote {
   id: string;
-  usuarioId: string;
+  usuario_id: string;
   conteudo: string;
-  dataCriacao: string;
-  criadoPor?: string;
+  data_criacao: string;
+  criado_por?: string;
 }
 
 // Hook related types 

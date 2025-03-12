@@ -51,6 +51,8 @@ const UserNotesDialog: React.FC<UserNotesDialogProps> = ({
         .order("data_criacao", { ascending: false });
 
       if (error) throw error;
+      
+      // Utilizando a nova interface UserNote que corresponde aos dados do Supabase
       setNotas(data || []);
     } catch (error) {
       console.error("Erro ao carregar notas:", error);
@@ -171,7 +173,7 @@ const UserNotesDialog: React.FC<UserNotesDialogProps> = ({
                   <div key={nota.id} className="bg-gray-50 p-4 rounded-md">
                     <div className="flex justify-between items-start mb-2">
                       <div className="text-sm text-gray-500">
-                        {formatarData(nota.dataCriacao)}
+                        {formatarData(nota.data_criacao)}
                       </div>
                       <Button 
                         variant="ghost" 
