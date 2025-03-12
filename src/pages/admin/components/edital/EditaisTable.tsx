@@ -41,8 +41,8 @@ const EditaisTable: React.FC<EditaisTableProps> = ({
                   <TableRow key={edital.id}>
                     <TableCell>{edital.id}</TableCell>
                     <TableCell>{edital.titulo}</TableCell>
-                    <TableCell>{edital.cursoId}</TableCell>
-                    <TableCell>{edital.disciplinasIds.length} disciplinas</TableCell>
+                    <TableCell>{edital.curso_id}</TableCell>
+                    <TableCell>{edital.disciplinas_ids.length} disciplinas</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs ${edital.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                         {edital.ativo ? 'Ativo' : 'Inativo'}
