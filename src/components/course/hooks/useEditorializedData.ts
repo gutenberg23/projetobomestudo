@@ -25,6 +25,30 @@ export const useEditorializedData = () => {
       const realId = extractIdFromFriendlyUrl(courseId);
       console.log("ID real para edital:", realId);
       
+      // Primeiro, buscamos o curso para verificar se ele existe
+      const { data: cursoData, error: cursoError } = await supabase
+        .from('cursos')
+        .select('id, titulo')
+        .eq('id', realId)
+        .maybeSingle();
+        
+      if (cursoError) {
+        console.error('Erro ao buscar curso:', cursoError);
+        throw new Error('Erro ao buscar dados do curso');
+      }
+      
+      if (!cursoData) {
+        console.log('Curso não encontrado:', realId);
+        toast({
+          title: "Curso não encontrado",
+          description: "O curso solicitado não foi encontrado no sistema.",
+          variant: "destructive"
+        });
+        setSubjects([]);
+        return;
+      }
+      
+      // Agora buscamos o edital verticalizado
       const { data: editalData, error: editalError } = await supabase
         .from('cursoverticalizado')
         .select('*')
@@ -41,7 +65,11 @@ export const useEditorializedData = () => {
         setSubjects([]);
         return;
       }
+      
+      console.log('Dados do edital encontrados:', editalData);
+      console.log('Disciplinas IDs:', editalData.disciplinas_ids);
 
+      // Buscar as disciplinas associadas ao edital
       const { data: disciplinasData, error: disciplinasError } = await supabase
         .from('disciplinaverticalizada')
         .select('*')
@@ -51,23 +79,27 @@ export const useEditorializedData = () => {
         console.error('Erro ao buscar disciplinas:', disciplinasError);
         throw disciplinasError;
       }
+      
+      console.log('Disciplinas encontradas:', disciplinasData);
 
       const formattedSubjects: Subject[] = (disciplinasData || []).map((disciplina) => ({
         id: disciplina.id,
         name: disciplina.titulo,
-        topics: disciplina.topicos.map((topico: string, topicIndex: number) => ({
+        topics: Array.isArray(disciplina.topicos) ? disciplina.topicos.map((topico: string, topicIndex: number) => ({
           id: topicIndex,
           name: topico,
           topic: topico,
           isDone: false,
           isReviewed: false,
-          importance: (disciplina.importancia[topicIndex] || 1) as 1 | 2 | 3 | 4 | 5,
+          importance: (Array.isArray(disciplina.importancia) && disciplina.importancia[topicIndex] 
+            ? disciplina.importancia[topicIndex] 
+            : 1) as 1 | 2 | 3 | 4 | 5,
           difficulty: "Médio",
           exercisesDone: 0,
           hits: 0,
           errors: 0,
           performance: 0
-        }))
+        })) : []
       }));
 
       setSubjects(formattedSubjects);

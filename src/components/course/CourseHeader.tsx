@@ -18,6 +18,7 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
   const [courseInfo, setCourseInfo] = useState("");
   const [loading, setLoading] = useState(true);
   const [isCurso, setIsCurso] = useState(true);
+  const [realId, setRealId] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,15 +30,16 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
 
       try {
         // Extrair o ID real da URL amigável
-        const realId = extractIdFromFriendlyUrl(courseId);
-        console.log("ID real extraído:", realId);
+        const extractedId = extractIdFromFriendlyUrl(courseId);
+        setRealId(extractedId);
+        console.log("ID real extraído:", extractedId);
         
         // Verificar primeiro se é um curso ou uma disciplina
         // Tenta buscar como curso
         let { data: cursoData, error: cursoError } = await supabase
           .from('cursos')
           .select('*')
-          .eq('id', realId)
+          .eq('id', extractedId)
           .maybeSingle();
 
         console.log("Dados do curso:", cursoData, "Erro:", cursoError);
@@ -47,7 +49,7 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
           const { data: disciplinaData, error: disciplinaError } = await supabase
             .from('disciplinas')
             .select('*')
-            .eq('id', realId)
+            .eq('id', extractedId)
             .maybeSingle();
 
           console.log("Dados da disciplina:", disciplinaData, "Erro:", disciplinaError);
@@ -77,9 +79,9 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
 
           if (profile) {
             if (isCurso) {
-              setIsFavorite((profile.cursos_favoritos || []).some(id => id === realId || id.includes(realId)));
+              setIsFavorite((profile.cursos_favoritos || []).some(id => id === extractedId || id.includes(extractedId)));
             } else {
-              setIsFavorite((profile.disciplinas_favoritos || []).some(id => id === realId || id.includes(realId)));
+              setIsFavorite((profile.disciplinas_favoritos || []).some(id => id === extractedId || id.includes(extractedId)));
             }
           }
         }
@@ -87,6 +89,7 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
         console.error("Erro ao buscar dados do curso:", error);
         toast.error("Erro ao carregar dados do curso");
         setCourseTitle("Conteúdo não encontrado");
+        setRealId("");
       } finally {
         setLoading(false);
       }
@@ -107,8 +110,10 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
         return;
       }
 
-      // Extrair ID real da URL amigável
-      const realId = extractIdFromFriendlyUrl(courseId);
+      if (!realId) {
+        toast.error("ID do curso inválido");
+        return;
+      }
       
       // Buscar perfil do usuário
       const { data: profile } = await supabase
@@ -182,7 +187,7 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
           </div>
           <div className="mt-2 text-left flex items-center gap-2">
             <span className="bg-[#ede7f9] text-sm px-3 py-1 rounded-full inline-block text-[#5f2ebe]">
-              #{extractIdFromFriendlyUrl(courseId)}
+              #{realId}
             </span>
             {isCurso && courseInfo && (
               <TooltipProvider>

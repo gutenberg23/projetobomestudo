@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
+import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 
 interface Simulado {
   id: string;
@@ -32,15 +33,22 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
           return;
         }
 
+        // Extrair o ID real da URL amigável
+        const realId = extractIdFromFriendlyUrl(courseId);
+        console.log("ID real para simulados:", realId);
+
         const { data, error } = await supabase
           .from("simulados")
           .select("*")
-          .eq("curso_id", courseId)
+          .eq("curso_id", realId)
           .eq("ativo", true);
 
         if (error) {
+          console.error("Erro ao buscar simulados:", error);
           throw error;
         }
+
+        console.log("Simulados encontrados:", data);
 
         // Transformar os dados para o formato esperado pelo componente
         // Adicionando valores fictícios para hits e errors por enquanto
@@ -48,8 +56,8 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
           id: simulado.id,
           titulo: simulado.titulo,
           questoes_ids: simulado.questoes_ids || [],
-          hits: Math.floor(Math.random() * simulado.quantidade_questoes * 0.8), // Valor fictício para exemplo
-          errors: Math.floor(Math.random() * simulado.quantidade_questoes * 0.3) // Valor fictício para exemplo
+          hits: Math.floor(Math.random() * (simulado.questoes_ids?.length || 10) * 0.8), // Valor fictício para exemplo
+          errors: Math.floor(Math.random() * (simulado.questoes_ids?.length || 10) * 0.3) // Valor fictício para exemplo
         }));
 
         setSimulados(formattedSimulados);
