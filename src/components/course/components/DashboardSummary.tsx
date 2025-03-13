@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { OverallStats, Subject } from "../types/editorialized";
@@ -10,6 +9,7 @@ import { CalendarIcon } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useParams } from "react-router-dom";
 
 interface DashboardSummaryProps {
   overallStats: OverallStats;
@@ -26,9 +26,46 @@ export const DashboardSummary = ({
   activeTab,
   subjects
 }: DashboardSummaryProps) => {
+  const { courseId } = useParams<{ courseId: string }>();
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
-  const [examDate, setExamDate] = React.useState<Date>();
+  const [examDate, setExamDate] = React.useState<Date | undefined>();
+  
+  // Carregar dados salvos do localStorage quando o componente é montado
+  useEffect(() => {
+    if (!courseId) return;
+    
+    // Carregar a meta de aproveitamento
+    const savedGoal = localStorage.getItem(`${courseId}_performanceGoal`);
+    if (savedGoal) {
+      setPerformanceGoal(parseInt(savedGoal));
+    }
+    
+    // Carregar a data da prova
+    const savedExamDate = localStorage.getItem(`${courseId}_examDate`);
+    if (savedExamDate) {
+      setExamDate(new Date(savedExamDate));
+    }
+  }, [courseId, setPerformanceGoal]);
+  
+  // Salvar a meta de aproveitamento no localStorage quando ela mudar
+  const handlePerformanceGoalChange = (value: number) => {
+    const newValue = Math.max(1, Math.min(100, value || 1));
+    setPerformanceGoal(newValue);
+    if (courseId) {
+      localStorage.setItem(`${courseId}_performanceGoal`, newValue.toString());
+    }
+  };
+  
+  // Salvar a data da prova no localStorage quando ela mudar
+  const handleExamDateChange = (date: Date | undefined) => {
+    setExamDate(date);
+    if (courseId && date) {
+      localStorage.setItem(`${courseId}_examDate`, date.toISOString());
+    } else if (courseId) {
+      localStorage.removeItem(`${courseId}_examDate`);
+    }
+  };
   
   const daysUntilExam = React.useMemo(() => {
     if (!examDate) return null;
@@ -43,7 +80,14 @@ export const DashboardSummary = ({
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Meta de Aproveitamento:</span>
-            <Input type="number" min="1" max="100" value={performanceGoal} onChange={e => setPerformanceGoal(Math.max(1, Math.min(100, parseInt(e.target.value) || 1)))} className="w-20 text-center" />
+            <Input 
+              type="number" 
+              min="1" 
+              max="100" 
+              value={performanceGoal} 
+              onChange={e => handlePerformanceGoalChange(parseInt(e.target.value))} 
+              className="w-20 text-center" 
+            />
             <span className="text-sm text-gray-600">%</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -58,7 +102,7 @@ export const DashboardSummary = ({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={examDate} onSelect={setExamDate} initialFocus locale={ptBR} />
+                <Calendar mode="single" selected={examDate} onSelect={handleExamDateChange} initialFocus locale={ptBR} />
               </PopoverContent>
             </Popover>
           </div>

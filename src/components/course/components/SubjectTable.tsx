@@ -85,10 +85,10 @@ export const SubjectTable = ({
                   <div className="flex items-center justify-center">
                     <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
                       <div style={{
-                    width: `${topic.importance * 20}%`
+                    width: `${topic.importance * 100}%`
                   }} className="h-full bg-[#5f2ebe] transition-all" />
                     </div>
-                    <span className="ml-2 text-sm text-gray-600">{topic.importance * 20}%</span>
+                    <span className="ml-2 text-sm text-gray-600">{topic.importance * 100}%</span>
                   </div>
                 </td>
                 <td className="py-3 px-4">

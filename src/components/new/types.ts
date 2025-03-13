@@ -1,4 +1,3 @@
-
 export interface Question {
   id: string;
   content: string;
@@ -37,6 +36,9 @@ export interface Section {
   duration?: number;
   videoUrl?: string;
   textContent?: string;
+  isActive?: boolean;
+  professorId?: string;
+  professorNome?: string;
 }
 
 export interface Lesson {
@@ -49,4 +51,6 @@ export interface Lesson {
   instructor?: string;
   createdAt?: string;
   updatedAt?: string;
+  rating?: string;
+  question?: Question;
 }

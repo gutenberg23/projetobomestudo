@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
@@ -9,23 +8,23 @@ import { SectionsNavigation } from "./SectionsNavigation";
 interface VideoContentLayoutProps {
   selectedSection: string;
   sections: Section[];
-  completedSections: string[];
-  hasHorizontalScroll: boolean;
-  videoHeight: number;
-  setVideoHeight: (height: number) => void;
+  completedSections?: string[];
+  hasHorizontalScroll?: boolean;
+  videoHeight?: number;
+  setVideoHeight?: (height: number) => void;
   onSectionClick: (sectionId: string) => void;
-  onToggleCompletion: (sectionId: string, event: React.MouseEvent) => void;
+  onToggleCompletion?: (sectionId: string, event: React.MouseEvent) => void;
 }
 
 export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
   selectedSection,
   sections,
-  completedSections,
-  hasHorizontalScroll,
-  videoHeight,
-  setVideoHeight,
+  completedSections = [],
+  hasHorizontalScroll = false,
+  videoHeight = 400,
+  setVideoHeight = () => {},
   onSectionClick,
-  onToggleCompletion
+  onToggleCompletion = () => {}
 }) => {
   const videoRef = useRef<HTMLDivElement>(null);
   const [currentVideoHeight, setCurrentVideoHeight] = useState(videoHeight);

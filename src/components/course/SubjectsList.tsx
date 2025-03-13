@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Subject as SubjectComponent } from "./components/Subject";
@@ -75,17 +74,27 @@ export const SubjectsList = () => {
             console.log("Aulas encontradas:", aulasData, "Erro:", aulasError);
             
             if (aulasData && !aulasError) {
-              disciplina.lessons = aulasData.map(aula => ({
-                id: aula.id,
-                title: aula.titulo,
-                description: aula.descricao || '',
-                rating: 'V',
-                sections: [
-                  { id: '1', title: 'Introdução', isActive: true },
-                  { id: '2', title: 'Desenvolvimento', isActive: false },
-                  { id: '3', title: 'Conclusão', isActive: false },
-                ],
-                question: {
+              // Para cada aula, buscar os tópicos associados
+              const aulasComTopicos = await Promise.all(aulasData.map(async aula => {
+                let topicos = [];
+                
+                // Verificar se a aula tem tópicos associados
+                if (aula.topicos_ids && aula.topicos_ids.length > 0) {
+                  console.log("Buscando tópicos para aula:", aula.titulo, aula.topicos_ids);
+                  const { data: topicosData, error: topicosError } = await supabase
+                    .from('topicos')
+                    .select('*')
+                    .in('id', aula.topicos_ids);
+                    
+                  console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
+                  
+                  if (topicosData && !topicosError) {
+                    topicos = topicosData;
+                  }
+                }
+                
+                // Buscar questões associadas à aula para o caderno de questões
+                let questao = {
                   id: '1',
                   year: '2024',
                   institution: 'SELECON',
@@ -99,7 +108,59 @@ export const SubjectsList = () => {
                     { id: 'd', text: 'Opção D', isCorrect: false }
                   ],
                   comments: []
+                };
+                
+                if (aula.questoes_ids && aula.questoes_ids.length > 0) {
+                  const { data: questaoData, error: questaoError } = await supabase
+                    .from('questoes')
+                    .select('*')
+                    .eq('id', aula.questoes_ids[0])
+                    .single();
+                    
+                  if (questaoData && !questaoError) {
+                    const options = questaoData.options as any[] || [];
+                    
+                    questao = {
+                      id: questaoData.id,
+                      year: questaoData.year,
+                      institution: questaoData.institution,
+                      organization: questaoData.organization,
+                      role: questaoData.role,
+                      content: questaoData.content,
+                      options: options.map((opt: any) => ({
+                        id: opt.id,
+                        text: opt.text,
+                        isCorrect: opt.isCorrect
+                      })),
+                      comments: []
+                    };
+                  }
                 }
+                
+                return {
+                  ...aula,
+                  topicos,
+                  questao
+                };
+              }));
+              
+              disciplina.lessons = aulasComTopicos.map(aula => ({
+                id: aula.id,
+                title: aula.titulo,
+                description: aula.descricao || '',
+                rating: 'V',
+                sections: aula.topicos.map(topico => ({
+                  id: topico.id,
+                  title: topico.nome,
+                  isActive: false,
+                  contentType: "video",
+                  duration: 0,
+                  videoUrl: topico.video_url,
+                  textContent: "",
+                  professorId: topico.professor_id,
+                  professorNome: topico.professor_nome
+                })),
+                question: aula.questao
               }));
             }
           }
@@ -141,17 +202,27 @@ export const SubjectsList = () => {
                   console.log("Aulas da disciplina:", aulasData, "Erro:", aulasError);
                   
                   if (aulasData && !aulasError) {
-                    subject.lessons = aulasData.map(aula => ({
-                      id: aula.id,
-                      title: aula.titulo,
-                      description: aula.descricao || '',
-                      rating: 'V',
-                      sections: [
-                        { id: '1', title: 'Introdução', isActive: true },
-                        { id: '2', title: 'Desenvolvimento', isActive: false },
-                        { id: '3', title: 'Conclusão', isActive: false },
-                      ],
-                      question: {
+                    // Para cada aula, buscar os tópicos associados
+                    const aulasComTopicos = await Promise.all(aulasData.map(async aula => {
+                      let topicos = [];
+                      
+                      // Verificar se a aula tem tópicos associados
+                      if (aula.topicos_ids && aula.topicos_ids.length > 0) {
+                        console.log("Buscando tópicos para aula:", aula.titulo, aula.topicos_ids);
+                        const { data: topicosData, error: topicosError } = await supabase
+                          .from('topicos')
+                          .select('*')
+                          .in('id', aula.topicos_ids);
+                          
+                        console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
+                        
+                        if (topicosData && !topicosError) {
+                          topicos = topicosData;
+                        }
+                      }
+                      
+                      // Buscar questões associadas à aula para o caderno de questões
+                      let questao = {
                         id: '1',
                         year: '2024',
                         institution: 'SELECON',
@@ -165,7 +236,59 @@ export const SubjectsList = () => {
                           { id: 'd', text: 'Opção D', isCorrect: false }
                         ],
                         comments: []
+                      };
+                      
+                      if (aula.questoes_ids && aula.questoes_ids.length > 0) {
+                        const { data: questaoData, error: questaoError } = await supabase
+                          .from('questoes')
+                          .select('*')
+                          .eq('id', aula.questoes_ids[0])
+                          .single();
+                          
+                        if (questaoData && !questaoError) {
+                          const options = questaoData.options as any[] || [];
+                          
+                          questao = {
+                            id: questaoData.id,
+                            year: questaoData.year,
+                            institution: questaoData.institution,
+                            organization: questaoData.organization,
+                            role: questaoData.role,
+                            content: questaoData.content,
+                            options: options.map((opt: any) => ({
+                              id: opt.id,
+                              text: opt.text,
+                              isCorrect: opt.isCorrect
+                            })),
+                            comments: []
+                          };
+                        }
                       }
+                      
+                      return {
+                        ...aula,
+                        topicos,
+                        questao
+                      };
+                    }));
+                    
+                    subject.lessons = aulasComTopicos.map(aula => ({
+                      id: aula.id,
+                      title: aula.titulo,
+                      description: aula.descricao || '',
+                      rating: 'V',
+                      sections: aula.topicos.map(topico => ({
+                        id: topico.id,
+                        title: topico.nome,
+                        isActive: false,
+                        contentType: "video",
+                        duration: 0,
+                        videoUrl: topico.video_url,
+                        textContent: "",
+                        professorId: topico.professor_id,
+                        professorNome: topico.professor_nome
+                      })),
+                      question: aula.questao
                     }));
                   }
                 }

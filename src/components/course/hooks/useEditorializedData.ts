@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +23,21 @@ export const useEditorializedData = () => {
       // Extrair o ID real da URL amigável
       const realId = extractIdFromFriendlyUrl(courseId);
       console.log("ID real para edital:", realId);
+      
+      // Verificar se há dados salvos no localStorage
+      const savedSubjectsData = localStorage.getItem(`${realId}_subjectsData`);
+      
+      if (savedSubjectsData) {
+        try {
+          const parsedSubjects = JSON.parse(savedSubjectsData);
+          setSubjects(parsedSubjects);
+          setLoading(false);
+          return;
+        } catch (parseError) {
+          console.error('Erro ao analisar dados salvos:', parseError);
+          // Continuar com a busca no banco de dados se houver erro ao analisar os dados salvos
+        }
+      }
       
       // Primeiro, buscamos o curso para verificar se ele existe
       const { data: cursoData, error: cursoError } = await supabase
@@ -85,24 +99,42 @@ export const useEditorializedData = () => {
       const formattedSubjects: Subject[] = (disciplinasData || []).map((disciplina) => ({
         id: disciplina.id,
         name: disciplina.titulo,
-        topics: Array.isArray(disciplina.topicos) ? disciplina.topicos.map((topico: string, topicIndex: number) => ({
-          id: topicIndex,
-          name: topico,
-          topic: topico,
-          isDone: false,
-          isReviewed: false,
-          importance: (Array.isArray(disciplina.importancia) && disciplina.importancia[topicIndex] 
-            ? disciplina.importancia[topicIndex] 
-            : 1) as 1 | 2 | 3 | 4 | 5,
-          difficulty: "Médio",
-          exercisesDone: 0,
-          hits: 0,
-          errors: 0,
-          performance: 0
-        })) : []
+        topics: Array.isArray(disciplina.topicos) ? disciplina.topicos.map((topico: string, topicIndex: number) => {
+          // Verificar se há dados salvos para este tópico específico
+          const topicKey = `${realId}_${disciplina.id}_${topicIndex}`;
+          const savedTopicData = localStorage.getItem(topicKey);
+          
+          if (savedTopicData) {
+            try {
+              return JSON.parse(savedTopicData);
+            } catch (e) {
+              console.error('Erro ao analisar dados do tópico:', e);
+            }
+          }
+          
+          // Retornar dados padrão se não houver dados salvos
+          return {
+            id: topicIndex,
+            name: topico,
+            topic: topico,
+            isDone: false,
+            isReviewed: false,
+            importance: (Array.isArray(disciplina.importancia) && disciplina.importancia[topicIndex] 
+              ? disciplina.importancia[topicIndex] 
+              : 0.5) as 1 | 2 | 3 | 4 | 5,
+            difficulty: "Médio",
+            exercisesDone: 0,
+            hits: 0,
+            errors: 0,
+            performance: 0
+          };
+        }) : []
       }));
 
       setSubjects(formattedSubjects);
+      
+      // Salvar os dados formatados no localStorage
+      localStorage.setItem(`${realId}_subjectsData`, JSON.stringify(formattedSubjects));
     } catch (error) {
       console.error('Erro ao carregar dados do edital:', error);
       toast({
@@ -123,21 +155,39 @@ export const useEditorializedData = () => {
     value: any
   ) => {
     try {
-      setSubjects(prevSubjects =>
-        prevSubjects.map(subject => {
+      setSubjects(prevSubjects => {
+        const updatedSubjects = prevSubjects.map(subject => {
           if (subject.id === subjectId) {
             return {
               ...subject,
-              topics: subject.topics.map(topic =>
-                topic.id === topicId
-                  ? { ...topic, [field]: value }
-                  : topic
-              )
+              topics: subject.topics.map(topic => {
+                if (topic.id === topicId) {
+                  const updatedTopic = { ...topic, [field]: value };
+                  
+                  // Salvar o tópico atualizado no localStorage
+                  if (courseId) {
+                    const realId = extractIdFromFriendlyUrl(courseId);
+                    const topicKey = `${realId}_${subjectId}_${topicId}`;
+                    localStorage.setItem(topicKey, JSON.stringify(updatedTopic));
+                  }
+                  
+                  return updatedTopic;
+                }
+                return topic;
+              })
             };
           }
           return subject;
-        })
-      );
+        });
+        
+        // Salvar todos os dados atualizados no localStorage
+        if (courseId) {
+          const realId = extractIdFromFriendlyUrl(courseId);
+          localStorage.setItem(`${realId}_subjectsData`, JSON.stringify(updatedSubjects));
+        }
+        
+        return updatedSubjects;
+      });
       
       // Aqui você pode implementar a lógica para salvar no banco
       // por exemplo, criar uma nova tabela para progresso do aluno

@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import type { Section } from "../types";
 import { Youtube, Instagram, Facebook, MessageCircle, Twitter, Globe } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
+
 interface TeacherInfo {
   name: string;
   photoUrl: string;
@@ -16,12 +18,14 @@ interface TeacherInfo {
     website?: string;
   };
 }
+
 interface VideoSectionProps {
   selectedSection: string;
   sections: Section[];
   videoHeight: number;
   teacher?: TeacherInfo;
 }
+
 export const VideoSection: React.FC<VideoSectionProps> = ({
   selectedSection,
   sections,
@@ -34,6 +38,8 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
 }) => {
   const currentSection = sections.find(s => s.id === selectedSection);
   const [responsiveHeight, setResponsiveHeight] = useState(videoHeight);
+  const [professorData, setProfessorData] = useState<TeacherInfo | null>(null);
+
   useEffect(() => {
     const handleResize = () => {
       const parentElement = document.querySelector('.video-container');
@@ -49,28 +55,141 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+
+  // Buscar informações do professor quando o tópico mudar
+  useEffect(() => {
+    const fetchProfessorData = async () => {
+      if (!currentSection || !currentSection.professorId) {
+        setProfessorData(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('professores')
+          .select('*')
+          .eq('id', currentSection.professorId)
+          .single();
+
+        if (data && !error) {
+          setProfessorData({
+            name: data.nome_completo,
+            photoUrl: data.foto_perfil || "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg",
+            socialMedia: {
+              youtube: data.link_youtube,
+              instagram: data.instagram,
+              facebook: data.facebook,
+              twitter: data.twitter,
+              website: data.website
+            }
+          });
+        } else {
+          // Se não encontrar o professor pelo ID, tenta pelo nome
+          if (currentSection.professorNome) {
+            const { data: nameData, error: nameError } = await supabase
+              .from('professores')
+              .select('*')
+              .ilike('nome_completo', `%${currentSection.professorNome}%`)
+              .single();
+
+            if (nameData && !nameError) {
+              setProfessorData({
+                name: nameData.nome_completo,
+                photoUrl: nameData.foto_perfil || "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg",
+                socialMedia: {
+                  youtube: nameData.link_youtube,
+                  instagram: nameData.instagram,
+                  facebook: nameData.facebook,
+                  twitter: nameData.twitter,
+                  website: nameData.website
+                }
+              });
+            } else {
+              // Usa o nome do professor mesmo sem dados adicionais
+              setProfessorData({
+                name: currentSection.professorNome,
+                photoUrl: "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg",
+                socialMedia: {}
+              });
+            }
+          } else {
+            setProfessorData(null);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar dados do professor:", error);
+        setProfessorData(null);
+      }
+    };
+
+    fetchProfessorData();
+  }, [currentSection]);
+
   const SocialMediaIcons = () => {
+    const teacherData = professorData || teacher;
+    
     return <div className="flex items-center gap-3">
-        {teacher.socialMedia.youtube && <a href={teacher.socialMedia.youtube} target="_blank" rel="noopener noreferrer" aria-label="Youtube">
+        {teacherData.socialMedia.youtube && <a href={teacherData.socialMedia.youtube} target="_blank" rel="noopener noreferrer" aria-label="Youtube">
             <Youtube className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
-        {teacher.socialMedia.instagram && <a href={teacher.socialMedia.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+        {teacherData.socialMedia.instagram && <a href={teacherData.socialMedia.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
             <Instagram className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
-        {teacher.socialMedia.telegram && <a href={teacher.socialMedia.telegram} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+        {teacherData.socialMedia.telegram && <a href={teacherData.socialMedia.telegram} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
             <MessageCircle className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
-        {teacher.socialMedia.facebook && <a href={teacher.socialMedia.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+        {teacherData.socialMedia.facebook && <a href={teacherData.socialMedia.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
             <Facebook className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
-        {teacher.socialMedia.twitter && <a href={teacher.socialMedia.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+        {teacherData.socialMedia.twitter && <a href={teacherData.socialMedia.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
             <Twitter className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
-        {teacher.socialMedia.website && <a href={teacher.socialMedia.website} target="_blank" rel="noopener noreferrer" aria-label="Website">
+        {teacherData.socialMedia.website && <a href={teacherData.socialMedia.website} target="_blank" rel="noopener noreferrer" aria-label="Website">
             <Globe className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
           </a>}
       </div>;
   };
+
+  const renderVideoContent = () => {
+    if (!currentSection || !currentSection.videoUrl) {
+      return (
+        <div className="w-full h-full flex items-center justify-center text-slate-500">
+          Selecione um tópico para assistir à videoaula
+        </div>
+      );
+    }
+
+    // Verificar se é um URL do YouTube
+    const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+    const match = currentSection.videoUrl.match(youtubeRegex);
+    
+    if (match && match[1]) {
+      const videoId = match[1];
+      return (
+        <iframe 
+          src={`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0`}
+          title={currentSection.title}
+          className="w-full h-full absolute top-0 left-0 rounded-xl"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        ></iframe>
+      );
+    } else {
+      // Se não for um URL do YouTube, tenta exibir como vídeo normal
+      return (
+        <video 
+          src={currentSection.videoUrl} 
+          controls 
+          className="w-full h-full absolute top-0 left-0 rounded-xl"
+        >
+          Seu navegador não suporta a tag de vídeo.
+        </video>
+      );
+    }
+  };
+
+  const teacherData = professorData || teacher;
+
   return <div className="video-container w-full">
       <div className="aspect-video bg-slate-200 rounded-xl relative" style={{
       height: responsiveHeight || 'auto'
@@ -79,13 +198,13 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
           <div className="flex items-center flex-col sm:flex-row">
             <div className="flex flex-col items-center sm:items-start sm:flex-row">
               <Avatar className="h-12 w-12 mb-2 sm:mb-0 sm:mr-3 border-2 border-white/30">
-                <AvatarImage src={teacher.photoUrl} alt={teacher.name} />
+                <AvatarImage src={teacherData.photoUrl} alt={teacherData.name} />
                 <AvatarFallback className="bg-[#f6f8fa] text-[#272f3c]">
-                  {teacher.name.split(' ').map(name => name[0]).join('').substring(0, 2).toUpperCase()}
+                  {teacherData.name.split(' ').map(name => name[0]).join('').substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="text-center sm:text-left">
-                <h3 className="font-medium text-white">{teacher.name}</h3>
+                <h3 className="font-medium text-white">{teacherData.name}</h3>
                 <p className="text-sm text-white/80 font-extralight">Professor</p>
               </div>
             </div>
@@ -94,9 +213,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
             <SocialMediaIcons />
           </div>
         </div>
-        <div className="w-full h-full flex items-center justify-center text-slate-500">
-          Vídeo da aula: {currentSection?.title}
-        </div>
+        {renderVideoContent()}
       </div>
     </div>;
 };

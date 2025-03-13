@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LessonCard } from "../../new/LessonCard";
 import { Lesson } from '../types/subjects';
@@ -23,10 +22,12 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
               contentType: section.contentType || "video",
               duration: section.duration,
               videoUrl: section.videoUrl,
-              textContent: section.textContent
-            }))
+              textContent: section.textContent,
+              professorId: section.professorId,
+              professorNome: section.professorNome
+            })),
+            question: lesson.question
           }} 
-          question={lesson.question} 
         />
       ))}
     </div>

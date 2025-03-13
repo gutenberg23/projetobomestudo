@@ -1,24 +1,22 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import type { Lesson } from "./types";
+import type { Lesson, Question } from "./types";
 import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
-import { Question } from "./types";
 import { LessonHeader } from "./lesson/LessonHeader";
 import { VideoContentLayout } from "./lesson/VideoContentLayout";
 
 interface LessonCardProps {
   lesson: Lesson;
-  question: Question;
 }
 
 export const LessonCard: React.FC<LessonCardProps> = ({
-  lesson,
-  question
+  lesson
 }) => {
-  const [selectedSection, setSelectedSection] = useState(lesson.sections[0].id);
+  const [selectedSection, setSelectedSection] = useState<string>(
+    lesson.sections && lesson.sections.length > 0 ? lesson.sections[0].id : ""
+  );
   const [completedSections, setCompletedSections] = useState<string[]>([]);
   const [isVideoSectionVisible, setIsVideoSectionVisible] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
@@ -28,6 +26,12 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
+  
+  // Estados para gerenciar a questão
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
 
   useEffect(() => {
     const updateLayout = () => {
@@ -69,7 +73,13 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   }, []);
 
   const handleSectionClick = (sectionId: string) => {
+    console.log("Seção selecionada:", sectionId);
     setSelectedSection(sectionId);
+  };
+
+  const handleQuestionButtonClick = () => {
+    console.log("Botão de questões clicado para a seção:", selectedSection);
+    setShowQuestions(!showQuestions);
   };
 
   const toggleCompletion = (sectionId: string, event: React.MouseEvent) => {
@@ -111,6 +121,15 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     );
   };
 
+  const handleOptionSelect = (optionId: string) => {
+    setSelectedOptionId(optionId);
+  };
+
+  const handleCommentSubmit = (comment: string) => {
+    console.log("Comentário enviado:", comment);
+    // Implementar lógica para enviar comentário
+  };
+
   return (
     <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <LessonHeader 
@@ -123,10 +142,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       />
 
       {isVideoSectionVisible && (
-        <div className="bg-white pb-5 rounded-lg">
+        <div className="mt-4">
           <VideoContentLayout 
-            selectedSection={selectedSection}
             sections={lesson.sections}
+            selectedSection={selectedSection}
             completedSections={completedSections}
             hasHorizontalScroll={hasHorizontalScroll}
             videoHeight={videoHeight}
@@ -134,25 +153,19 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             onSectionClick={handleSectionClick}
             onToggleCompletion={toggleCompletion}
           />
-          
-          <div className="px-5">
-            <div className="mt-8">
-              <ItensDaAula 
-                setShowQuestions={setShowQuestions} 
-                showQuestions={showQuestions} 
+          <ItensDaAula 
+            setShowQuestions={setShowQuestions} 
+            showQuestions={showQuestions} 
+          />
+          {showQuestions && lesson.question && (
+            <div className="mt-4">
+              <QuestionCard
+                question={lesson.question}
+                disabledOptions={disabledOptions}
+                onToggleDisabled={toggleOptionDisabled}
               />
             </div>
-            
-            {showQuestions && (
-              <div className="mt-8">
-                <QuestionCard 
-                  question={question} 
-                  disabledOptions={disabledOptions} 
-                  onToggleDisabled={toggleOptionDisabled} 
-                />
-              </div>
-            )}
-          </div>
+          )}
         </div>
       )}
     </article>

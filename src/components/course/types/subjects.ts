@@ -1,4 +1,3 @@
-
 export interface Subject {
   id: string;
   name: string;
@@ -23,6 +22,8 @@ export interface Section {
   duration?: number;
   videoUrl?: string;
   textContent?: string;
+  professorId?: string;
+  professorNome?: string;
 }
 
 export interface Question {

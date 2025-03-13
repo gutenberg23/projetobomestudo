@@ -1,27 +1,3 @@
-
-/**
- * Converte texto em slug amigável para URL
- * Remove acentos, converte espaços em hífens e remove caracteres especiais
- */
-export const createSlug = (text: string): string => {
-  return text
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
-    .replace(/\s+/g, '-') // Substitui espaços por hífens
-    .replace(/-+/g, '-') // Remove hífens consecutivos
-    .trim();
-};
-
-/**
- * Gera um ID único para URL combinando slug e ID
- */
-export const generateFriendlyUrl = (title: string, id: string): string => {
-  const slug = createSlug(title);
-  return `${slug}-${id}`;
-};
-
 /**
  * Extrai o ID original a partir da URL amigável
  * Retorna o UUID completo correspondente ao prefixo de 8 caracteres
@@ -96,6 +72,29 @@ export const extractIdFromFriendlyUrl = (friendlyUrl: string): string => {
   // Se não conseguir extrair de nenhuma forma, retorna a URL original
   console.log("Não foi possível extrair um ID válido, retornando a URL original:", friendlyUrl);
   return friendlyUrl;
+};
+
+/**
+ * Converte texto em slug amigável para URL
+ * Remove acentos, converte espaços em hífens e remove caracteres especiais
+ */
+export const createSlug = (text: string): string => {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
+    .replace(/\s+/g, '-') // Substitui espaços por hífens
+    .replace(/-+/g, '-') // Remove hífens consecutivos
+    .trim();
+};
+
+/**
+ * Gera um ID único para URL combinando slug e ID
+ */
+export const generateFriendlyUrl = (title: string, id: string): string => {
+  const slug = createSlug(title);
+  return `${slug}-${id}`;
 };
 
 /**
