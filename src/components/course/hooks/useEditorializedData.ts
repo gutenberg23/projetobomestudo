@@ -4,38 +4,36 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Subject, Topic } from '../types/editorialized';
 import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useEditorializedData = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const userId = user?.id || 'guest';
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEditorializedData = async () => {
+    if (!courseId) return;
+    
+    setLoading(true);
+    
     try {
-      setLoading(true);
-      
-      if (!courseId) {
-        setSubjects([]);
-        return;
-      }
-
-      // Extrair o ID real da URL amigável
       const realId = extractIdFromFriendlyUrl(courseId);
-      console.log("ID real para edital:", realId);
       
-      // Verificar se há dados salvos no localStorage
-      const savedSubjectsData = localStorage.getItem(`${realId}_subjectsData`);
+      // Verificar se já temos dados salvos no localStorage para este curso e usuário
+      const savedData = localStorage.getItem(`${userId}_${realId}_subjectsData`);
       
-      if (savedSubjectsData) {
+      if (savedData) {
         try {
-          const parsedSubjects = JSON.parse(savedSubjectsData);
-          setSubjects(parsedSubjects);
+          const parsedData = JSON.parse(savedData);
+          setSubjects(parsedData);
           setLoading(false);
           return;
-        } catch (parseError) {
-          console.error('Erro ao analisar dados salvos:', parseError);
-          // Continuar com a busca no banco de dados se houver erro ao analisar os dados salvos
+        } catch (e) {
+          console.error('Erro ao analisar dados salvos:', e);
+          // Continuar com a busca no banco de dados
         }
       }
       
@@ -101,7 +99,7 @@ export const useEditorializedData = () => {
         name: disciplina.titulo,
         topics: Array.isArray(disciplina.topicos) ? disciplina.topicos.map((topico: string, topicIndex: number) => {
           // Verificar se há dados salvos para este tópico específico
-          const topicKey = `${realId}_${disciplina.id}_${topicIndex}`;
+          const topicKey = `${userId}_${realId}_${disciplina.id}_${topicIndex}`;
           const savedTopicData = localStorage.getItem(topicKey);
           
           if (savedTopicData) {
@@ -134,7 +132,7 @@ export const useEditorializedData = () => {
       setSubjects(formattedSubjects);
       
       // Salvar os dados formatados no localStorage
-      localStorage.setItem(`${realId}_subjectsData`, JSON.stringify(formattedSubjects));
+      localStorage.setItem(`${userId}_${realId}_subjectsData`, JSON.stringify(formattedSubjects));
     } catch (error) {
       console.error('Erro ao carregar dados do edital:', error);
       toast({
@@ -167,7 +165,7 @@ export const useEditorializedData = () => {
                   // Salvar o tópico atualizado no localStorage
                   if (courseId) {
                     const realId = extractIdFromFriendlyUrl(courseId);
-                    const topicKey = `${realId}_${subjectId}_${topicId}`;
+                    const topicKey = `${userId}_${subjectId}_${topicId}`;
                     localStorage.setItem(topicKey, JSON.stringify(updatedTopic));
                   }
                   
@@ -183,7 +181,7 @@ export const useEditorializedData = () => {
         // Salvar todos os dados atualizados no localStorage
         if (courseId) {
           const realId = extractIdFromFriendlyUrl(courseId);
-          localStorage.setItem(`${realId}_subjectsData`, JSON.stringify(updatedSubjects));
+          localStorage.setItem(`${userId}_${realId}_subjectsData`, JSON.stringify(updatedSubjects));
         }
         
         return updatedSubjects;

@@ -10,6 +10,7 @@ import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DashboardSummaryProps {
   overallStats: OverallStats;
@@ -27,6 +28,8 @@ export const DashboardSummary = ({
   subjects
 }: DashboardSummaryProps) => {
   const { courseId } = useParams<{ courseId: string }>();
+  const { user } = useAuth();
+  const userId = user?.id || 'guest';
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
   const [examDate, setExamDate] = React.useState<Date | undefined>();
@@ -36,24 +39,24 @@ export const DashboardSummary = ({
     if (!courseId) return;
     
     // Carregar a meta de aproveitamento
-    const savedGoal = localStorage.getItem(`${courseId}_performanceGoal`);
+    const savedGoal = localStorage.getItem(`${userId}_${courseId}_performanceGoal`);
     if (savedGoal) {
       setPerformanceGoal(parseInt(savedGoal));
     }
     
     // Carregar a data da prova
-    const savedExamDate = localStorage.getItem(`${courseId}_examDate`);
+    const savedExamDate = localStorage.getItem(`${userId}_${courseId}_examDate`);
     if (savedExamDate) {
       setExamDate(new Date(savedExamDate));
     }
-  }, [courseId, setPerformanceGoal]);
+  }, [courseId, setPerformanceGoal, userId]);
   
   // Salvar a meta de aproveitamento no localStorage quando ela mudar
   const handlePerformanceGoalChange = (value: number) => {
     const newValue = Math.max(1, Math.min(100, value || 1));
     setPerformanceGoal(newValue);
     if (courseId) {
-      localStorage.setItem(`${courseId}_performanceGoal`, newValue.toString());
+      localStorage.setItem(`${userId}_${courseId}_performanceGoal`, newValue.toString());
     }
   };
   
@@ -61,9 +64,9 @@ export const DashboardSummary = ({
   const handleExamDateChange = (date: Date | undefined) => {
     setExamDate(date);
     if (courseId && date) {
-      localStorage.setItem(`${courseId}_examDate`, date.toISOString());
+      localStorage.setItem(`${userId}_${courseId}_examDate`, date.toISOString());
     } else if (courseId) {
-      localStorage.removeItem(`${courseId}_examDate`);
+      localStorage.removeItem(`${userId}_${courseId}_examDate`);
     }
   };
   

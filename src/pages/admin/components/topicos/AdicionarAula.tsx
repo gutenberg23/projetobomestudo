@@ -27,7 +27,7 @@ export const AdicionarAula: React.FC<AdicionarAulaProps> = ({
         <div className="flex-1 max-w-md">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="titulo-aula" className="mb-1 block">Título</Label>
+              <Label htmlFor="titulo-aula" className="mb-1 block">Título da aula</Label>
               <Input
                 id="titulo-aula"
                 placeholder="Digite o título da aula"
@@ -37,10 +37,10 @@ export const AdicionarAula: React.FC<AdicionarAulaProps> = ({
               />
             </div>
             <div>
-              <Label htmlFor="descricao-aula" className="mb-1 block">Descrição</Label>
+              <Label htmlFor="descricao-aula" className="mb-1 block">No edital</Label>
               <Input
                 id="descricao-aula"
-                placeholder="Digite a descrição"
+                placeholder="Tópicos do edital"
                 value={descricaoNovaAula}
                 onChange={(e) => setDescricaoNovaAula(e.target.value)}
                 className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
