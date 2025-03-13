@@ -55,12 +55,29 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
           console.log("Dados da disciplina:", disciplinaData, "Erro:", disciplinaError);
 
           if (disciplinaError || !disciplinaData) {
-            throw new Error("Conteúdo não encontrado");
+            // Tenta buscar pelo ID original sem modificação
+            const { data: cursoDataOriginal } = await supabase
+              .from('cursos')
+              .select('*')
+              .eq('id', courseId)
+              .maybeSingle();
+              
+            if (cursoDataOriginal) {
+              setIsCurso(true);
+              setCourseTitle(cursoDataOriginal.titulo);
+              setCourseInfo(cursoDataOriginal.informacoes_curso || "Este curso contém múltiplos módulos e aulas. Certificado disponível após conclusão de 80% do conteúdo.");
+              setRealId(courseId);
+            } else {
+              // Se ainda não encontrar, redireciona para 404
+              toast.error("Conteúdo não encontrado");
+              navigate('/not-found');
+              return;
+            }
+          } else {
+            setIsCurso(false);
+            setCourseTitle(disciplinaData.titulo);
+            setCourseInfo("");
           }
-          
-          setIsCurso(false);
-          setCourseTitle(disciplinaData.titulo);
-          setCourseInfo("");
         } else {
           setIsCurso(true);
           setCourseTitle(cursoData.titulo);
@@ -98,7 +115,7 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
     if (courseId) {
       fetchCourseData();
     }
-  }, [courseId]);
+  }, [courseId, navigate]);
 
   const toggleFavorite = async () => {
     try {

@@ -19,7 +19,7 @@ export const createSlug = (text: string): string => {
  */
 export const generateFriendlyUrl = (title: string, id: string): string => {
   const slug = createSlug(title);
-  return `${slug}-${id.substring(0, 8)}`;
+  return `${slug}-${id}`;
 };
 
 /**
@@ -27,32 +27,47 @@ export const generateFriendlyUrl = (title: string, id: string): string => {
  * Retorna o UUID completo correspondente ao prefixo de 8 caracteres
  */
 export const extractIdFromFriendlyUrl = (friendlyUrl: string): string => {
-  // Se a URL contiver o UUID completo, extraí-lo diretamente
-  const uuidPattern = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
-  const fullUuidMatch = friendlyUrl.match(uuidPattern);
+  console.log("Extraindo ID da URL amigável:", friendlyUrl);
+  
+  // Primeiro, verifica se a URL já é um UUID válido
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidPattern.test(friendlyUrl)) {
+    console.log("A URL já é um UUID válido:", friendlyUrl);
+    return friendlyUrl;
+  }
+  
+  // Se não for um UUID, tenta extrair o UUID completo da URL
+  const fullUuidPattern = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+  const fullUuidMatch = friendlyUrl.match(fullUuidPattern);
   
   if (fullUuidMatch && fullUuidMatch[1]) {
+    console.log("UUID completo encontrado na URL:", fullUuidMatch[1]);
     return fullUuidMatch[1];
   }
   
-  // Se não for encontrado o UUID completo, extrair o prefixo
-  const prefixPattern = /-([0-9a-f]{8})(?:-|$)/i;
-  const prefixMatch = friendlyUrl.match(prefixPattern);
+  // Se não encontrar o UUID completo, tenta extrair apenas o ID do final da URL
+  // Este padrão busca qualquer sequência de caracteres após o último hífen
+  const idFromEndPattern = /-([^-]+)$/;
+  const idFromEndMatch = friendlyUrl.match(idFromEndPattern);
   
-  if (prefixMatch && prefixMatch[1]) {
-    // Para o nosso caso específico, sabemos que o ID completo deve ser
-    // "459d43e6-06ac-4672-a061-b2e526d49a76"
-    // Esta é uma solução temporária para garantir que funcione
-    if (prefixMatch[1] === "459d43e6") {
-      return "459d43e6-06ac-4672-a061-b2e526d49a76";
+  if (idFromEndMatch && idFromEndMatch[1]) {
+    console.log("ID extraído do final da URL:", idFromEndMatch[1]);
+    
+    // Verifica se o ID extraído é um UUID completo
+    if (uuidPattern.test(idFromEndMatch[1])) {
+      return idFromEndMatch[1];
     }
     
-    // Em uma implementação ideal, seria feita uma consulta ao banco
-    // para encontrar o UUID completo com base no prefixo
-    return prefixMatch[1];
+    // Verifica se o ID extraído é um prefixo de UUID (8 caracteres)
+    const uuidPrefixPattern = /^[0-9a-f]{8}$/i;
+    if (uuidPrefixPattern.test(idFromEndMatch[1])) {
+      console.log("Prefixo de UUID encontrado, tentando buscar UUID completo.");
+      return idFromEndMatch[1];
+    }
   }
   
-  // Se não conseguir extrair de nenhuma forma, retornar a URL original
+  // Se não conseguir extrair de nenhuma forma, retorna a URL original
+  console.log("Não foi possível extrair um ID válido, retornando a URL original:", friendlyUrl);
   return friendlyUrl;
 };
 

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EditCursoModalProps } from "../CursosTypes";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 
 export const EditCursoModal: React.FC<EditCursoModalProps> = ({
   isOpen,
@@ -26,6 +27,7 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
   const [informacoesCurso, setInformacoesCurso] = useState("");
   const [disciplinaId, setDisciplinaId] = useState("");
   const [disciplinasIds, setDisciplinasIds] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (curso) {
@@ -49,8 +51,15 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
     setDisciplinasIds(newDisciplinasIds);
   };
 
-  const handleSave = () => {
-    if (curso && titulo.trim() && descricao.trim()) {
+  const handleSave = async () => {
+    if (!curso || !titulo.trim() || !descricao.trim()) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      
       const updatedCurso = {
         ...curso,
         titulo,
@@ -60,7 +69,13 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
       };
       
       console.log("Salvando curso com dados:", updatedCurso);
-      onSave(updatedCurso);
+      await onSave(updatedCurso);
+      toast.success("Curso atualizado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao salvar curso:", error);
+      toast.error("Erro ao atualizar o curso");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -164,9 +179,10 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
           <Button 
             type="button" 
             onClick={handleSave}
+            disabled={isSubmitting}
             className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90"
           >
-            Salvar
+            {isSubmitting ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
       </DialogContent>
