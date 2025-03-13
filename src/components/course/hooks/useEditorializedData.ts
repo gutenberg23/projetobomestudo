@@ -14,6 +14,12 @@ export const useEditorializedData = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (courseId) {
+      fetchEditorializedData();
+    }
+  }, [courseId]);
+
   const fetchEditorializedData = async () => {
     if (!courseId) return;
     
@@ -22,12 +28,68 @@ export const useEditorializedData = () => {
     try {
       const realId = extractIdFromFriendlyUrl(courseId);
       
-      // Verificar se já temos dados salvos no localStorage para este curso e usuário
+      // Primeiro, verificar se existem dados do usuário no banco de dados
+      if (userId !== 'guest') {
+        const { data: userData, error: userDataError } = await supabase
+          .from('user_course_progress')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('course_id', realId)
+          .single();
+        
+        if (!userDataError && userData && userData.subjects_data) {
+          try {
+            const parsedData = JSON.parse(userData.subjects_data);
+            setSubjects(parsedData);
+            setLoading(false);
+            
+            // Também salvar no localStorage como backup
+            localStorage.setItem(`${userId}_${realId}_subjectsData`, userData.subjects_data);
+            
+            // Carregar dados da meta de aproveitamento e data da prova
+            if (userData.performance_goal) {
+              localStorage.setItem(`${userId}_${realId}_performanceGoal`, userData.performance_goal.toString());
+            }
+            
+            if (userData.exam_date) {
+              localStorage.setItem(`${userId}_${realId}_examDate`, userData.exam_date);
+            }
+            
+            return;
+          } catch (e) {
+            console.error('Erro ao analisar dados do banco:', e);
+            // Continuar com a busca no localStorage ou banco
+          }
+        }
+      }
+      
+      // Se não encontrou no banco ou deu erro, verificar no localStorage
       const savedData = localStorage.getItem(`${userId}_${realId}_subjectsData`);
       
       if (savedData) {
         try {
           const parsedData = JSON.parse(savedData);
+          setSubjects(parsedData);
+          setLoading(false);
+          
+          // Se temos dados no localStorage mas não no banco, e o usuário está logado, salvar no banco
+          if (userId !== 'guest') {
+            await saveUserDataToDatabase(realId, parsedData);
+          }
+          
+          return;
+        } catch (e) {
+          console.error('Erro ao analisar dados salvos:', e);
+          // Continuar com a busca no banco de dados
+        }
+      }
+      
+      // Verificar se já temos dados salvos no localStorage para este curso e usuário
+      const savedData2 = localStorage.getItem(`${userId}_${realId}_subjectsData`);
+      
+      if (savedData2) {
+        try {
+          const parsedData = JSON.parse(savedData2);
           setSubjects(parsedData);
           setLoading(false);
           return;
@@ -133,6 +195,11 @@ export const useEditorializedData = () => {
       
       // Salvar os dados formatados no localStorage
       localStorage.setItem(`${userId}_${realId}_subjectsData`, JSON.stringify(formattedSubjects));
+      
+      // Se o usuário estiver logado, salvar também no banco de dados
+      if (userId !== 'guest') {
+        await saveUserDataToDatabase(realId, formattedSubjects);
+      }
     } catch (error) {
       console.error('Erro ao carregar dados do edital:', error);
       toast({
@@ -143,6 +210,68 @@ export const useEditorializedData = () => {
       setSubjects([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Função para salvar os dados do usuário no banco de dados
+  const saveUserDataToDatabase = async (courseRealId: string, subjectsData: Subject[]) => {
+    if (userId === 'guest') return;
+    
+    try {
+      // Obter a meta de aproveitamento e a data da prova do localStorage
+      const performanceGoal = localStorage.getItem(`${userId}_${courseRealId}_performanceGoal`);
+      const examDate = localStorage.getItem(`${userId}_${courseRealId}_examDate`);
+      
+      // Verificar se o registro já existe
+      const { data: existingData, error: checkError } = await supabase
+        .from('user_course_progress')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('course_id', courseRealId)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 é o código para "não encontrado"
+        console.error('Erro ao verificar dados existentes:', checkError);
+        return;
+      }
+      
+      const subjectsDataString = JSON.stringify(subjectsData);
+      
+      if (existingData) {
+        // Atualizar registro existente
+        const { error: updateError } = await supabase
+          .from('user_course_progress')
+          .update({
+            subjects_data: subjectsDataString,
+            performance_goal: performanceGoal,
+            exam_date: examDate,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData.id);
+        
+        if (updateError) {
+          console.error('Erro ao atualizar dados no banco:', updateError);
+        }
+      } else {
+        // Criar novo registro
+        const { error: insertError } = await supabase
+          .from('user_course_progress')
+          .insert({
+            user_id: userId,
+            course_id: courseRealId,
+            subjects_data: subjectsDataString,
+            performance_goal: performanceGoal,
+            exam_date: examDate,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (insertError) {
+          console.error('Erro ao inserir dados no banco:', insertError);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao salvar dados no banco:', error);
     }
   };
 
@@ -182,14 +311,15 @@ export const useEditorializedData = () => {
         if (courseId) {
           const realId = extractIdFromFriendlyUrl(courseId);
           localStorage.setItem(`${userId}_${realId}_subjectsData`, JSON.stringify(updatedSubjects));
+          
+          // Se o usuário estiver logado, salvar também no banco de dados
+          if (userId !== 'guest') {
+            saveUserDataToDatabase(realId, updatedSubjects);
+          }
         }
         
         return updatedSubjects;
       });
-      
-      // Aqui você pode implementar a lógica para salvar no banco
-      // por exemplo, criar uma nova tabela para progresso do aluno
-      
     } catch (error) {
       console.error('Erro ao atualizar progresso:', error);
       toast({
@@ -199,12 +329,6 @@ export const useEditorializedData = () => {
       });
     }
   };
-
-  useEffect(() => {
-    if (courseId) {
-      fetchEditorializedData();
-    }
-  }, [courseId]);
 
   return {
     subjects,
