@@ -36,7 +36,7 @@ export const AulasTable: React.FC<AulasTableProps> = ({
             </TableHead>
             <TableHead className="w-[50px]">ID</TableHead>
             <TableHead className="w-[200px]">Título</TableHead>
-            <TableHead className="w-[200px]">Descrição</TableHead>
+            <TableHead className="w-[200px]">No Edital</TableHead>
             <TableHead className="w-[120px]">Nº de Tópicos</TableHead>
             <TableHead className="w-[120px]">Nº de Questões</TableHead>
             <TableHead className="w-[150px]">Ações</TableHead>
