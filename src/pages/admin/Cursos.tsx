@@ -90,6 +90,8 @@ const Cursos = () => {
   // Função para salvar curso editado
   const handleSaveCurso = async (updatedCurso: Curso) => {
     try {
+      console.log("Salvando curso atualizado:", updatedCurso);
+      
       const { error } = await supabase
         .from('cursos')
         .update({ 
@@ -100,7 +102,10 @@ const Cursos = () => {
         })
         .eq('id', updatedCurso.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro do Supabase:", error);
+        throw error;
+      }
       
       // Atualizar o curso na lista
       setCursos(cursos.map(curso => 

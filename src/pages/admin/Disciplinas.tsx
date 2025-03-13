@@ -31,6 +31,46 @@ const Disciplinas = () => {
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Função para calcular o total de questões de uma disciplina
+  const calcularTotalQuestoesDisciplina = async (aulasIds: string[]): Promise<number> => {
+    if (!aulasIds || aulasIds.length === 0) return 0;
+    
+    let totalQuestoes = 0;
+    
+    // Buscar todas as aulas desta disciplina
+    const { data: aulas } = await supabase
+      .from('aulas')
+      .select('questoes_ids, topicos_ids')
+      .in('id', aulasIds);
+    
+    if (!aulas) return 0;
+    
+    // Para cada aula, contar suas questões diretas
+    for (const aula of aulas) {
+      if (aula.questoes_ids) {
+        totalQuestoes += aula.questoes_ids.length;
+      }
+      
+      // Buscar questões dos tópicos da aula
+      if (aula.topicos_ids && aula.topicos_ids.length > 0) {
+        const { data: topicos } = await supabase
+          .from('topicos')
+          .select('questoes_ids')
+          .in('id', aula.topicos_ids);
+        
+        if (topicos) {
+          for (const topico of topicos) {
+            if (topico.questoes_ids) {
+              totalQuestoes += topico.questoes_ids.length;
+            }
+          }
+        }
+      }
+    }
+    
+    return totalQuestoes;
+  };
+
   // Função para carregar disciplinas do banco de dados
   const fetchDisciplinas = async () => {
     try {
@@ -45,52 +85,29 @@ const Disciplinas = () => {
       
       // Processar cada disciplina para calcular totais
       for (const disciplina of data || []) {
-        let totalAulas = disciplina.aulas_ids?.length || 0;
-        let totalTopicos = 0;
-        let totalQuestoes = 0;
+        // Calcular total de questões para cada disciplina
+        const totalQuestoes = await calcularTotalQuestoesDisciplina(disciplina.aulas_ids || []);
         
-        // Buscar aulas associadas para calcular tópicos e questões
+        // Calcular total de tópicos
+        let totalTopicos = 0;
+        
         if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
           const { data: aulas } = await supabase
             .from('aulas')
-            .select('topicos_ids, questoes_ids')
+            .select('topicos_ids')
             .in('id', disciplina.aulas_ids);
           
           if (aulas) {
-            // Calcular total de tópicos (sem duplicatas)
+            // Usar um Set para evitar contagem duplicada de tópicos
             const todosTopicos = new Set<string>();
-            const todasQuestoes = new Set<string>();
             
             for (const aula of aulas) {
-              // Adicionar tópicos da aula
               if (aula.topicos_ids) {
                 aula.topicos_ids.forEach((id: string) => todosTopicos.add(id));
-              }
-              
-              // Adicionar questões da aula
-              if (aula.questoes_ids) {
-                aula.questoes_ids.forEach((id: string) => todasQuestoes.add(id));
-              }
-              
-              // Buscar questões dos tópicos
-              if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-                const { data: topicos } = await supabase
-                  .from('topicos')
-                  .select('questoes_ids')
-                  .in('id', aula.topicos_ids);
-                
-                if (topicos) {
-                  for (const topico of topicos) {
-                    if (topico.questoes_ids) {
-                      topico.questoes_ids.forEach((id: string) => todasQuestoes.add(id));
-                    }
-                  }
-                }
               }
             }
             
             totalTopicos = todosTopicos.size;
-            totalQuestoes = todasQuestoes.size;
           }
         }
         
@@ -172,9 +189,19 @@ const Disciplinas = () => {
       
       if (error) throw error;
       
+      // Atualizar a disciplina com totais recalculados
+      const totalQuestoes = await calcularTotalQuestoesDisciplina(updatedDisciplina.aulasIds);
+      
+      // Atualizar o estado local
       setDisciplinas(disciplinas.map(disciplina => 
-        disciplina.id === updatedDisciplina.id ? updatedDisciplina : disciplina
+        disciplina.id === updatedDisciplina.id 
+          ? { 
+              ...updatedDisciplina, 
+              questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)) 
+            } 
+          : disciplina
       ));
+      
       setIsOpenEdit(false);
       toast.success("Disciplina atualizada com sucesso!");
     } catch (error) {

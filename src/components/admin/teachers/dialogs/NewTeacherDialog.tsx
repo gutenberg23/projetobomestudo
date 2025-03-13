@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 interface NewTeacherDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAddTeacher: (teacher: Omit<TeacherData, 'id'>) => void;
+  onAddTeacher: (teacher: TeacherData) => void;
 }
 
 const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
@@ -182,14 +182,14 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
               type="button" 
               variant="outline" 
               onClick={() => onOpenChange(false)}
-              className="border-[#ea2be2] text-[#ea2be2]"
+              className="border-[#5f2ebe] text-[#5f2ebe]"
             >
               Cancelar
             </Button>
             <Button 
               type="submit"
               disabled={isSubmitting}
-              className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-white"
+              className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 text-white"
             >
               {isSubmitting ? "Adicionando..." : "Adicionar Professor"}
             </Button>

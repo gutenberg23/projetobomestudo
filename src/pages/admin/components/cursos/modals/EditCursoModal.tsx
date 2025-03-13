@@ -57,7 +57,6 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
         informacoesCurso,
         disciplinasIds,
       });
-      onClose();
     }
   };
 

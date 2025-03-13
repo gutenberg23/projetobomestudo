@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { TeacherData } from "../types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProfilePhotoSection } from "./components/ProfilePhotoSection";
 
 interface EditTeacherDialogProps {
   open: boolean;
@@ -31,11 +32,13 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
   const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<TeacherData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   
   // Atualizar formulário quando o professor mudar
   useEffect(() => {
     if (teacher) {
       setFormData({ ...teacher });
+      setFotoPreview(teacher.fotoPerfil || null);
     }
   }, [teacher]);
   
@@ -46,6 +49,13 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
   
   const handleStatusChange = (value: string) => {
     setFormData(prev => ({ ...prev, status: value as TeacherData["status"] }));
+  };
+  
+  const handleFileSelect = () => {
+    // Simulação de upload de arquivo (em produção, usaríamos um sistema real de upload)
+    const randomAvatar = "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70);
+    setFormData(prev => ({ ...prev, fotoPerfil: randomAvatar }));
+    setFotoPreview(randomAvatar);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,7 +84,8 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
           instagram: formData.instagram,
           twitter: formData.twitter,
           facebook: formData.facebook,
-          website: formData.website
+          website: formData.website,
+          foto_perfil: formData.fotoPerfil
         })
         .eq('id', teacher.id);
       
@@ -105,108 +116,116 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-[#022731] text-xl font-bold">Editar Professor</DialogTitle>
+          <DialogTitle className="text-[#272f3c] text-xl font-bold">Editar Professor</DialogTitle>
+          <DialogDescription className="text-[#67748a]">
+            Atualize os dados do professor.
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="nomeCompleto" className="text-[#022731]">Nome Completo</Label>
+            <Label htmlFor="nomeCompleto" className="text-[#272f3c]">Nome Completo</Label>
             <Input 
               id="nomeCompleto" 
               name="nomeCompleto"
               value={formData.nomeCompleto || ""}
               onChange={handleInputChange}
-              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+              className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-[#022731]">E-mail</Label>
+            <Label htmlFor="email" className="text-[#272f3c]">E-mail</Label>
             <Input 
               id="email" 
               name="email"
               type="email"
               value={formData.email || ""}
               onChange={handleInputChange}
-              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+              className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
             />
           </div>
           
+          <ProfilePhotoSection 
+            fotoPreview={fotoPreview} 
+            handleFileSelect={handleFileSelect} 
+          />
+          
           <div className="space-y-2">
-            <Label htmlFor="linkYoutube" className="text-[#022731]">Link do Canal no YouTube</Label>
+            <Label htmlFor="linkYoutube" className="text-[#272f3c]">Link do Canal no YouTube</Label>
             <Input 
               id="linkYoutube" 
               name="linkYoutube"
               value={formData.linkYoutube || ""}
               onChange={handleInputChange}
-              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+              className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="disciplina" className="text-[#022731]">Disciplina</Label>
+            <Label htmlFor="disciplina" className="text-[#272f3c]">Disciplina</Label>
             <Input 
               id="disciplina" 
               name="disciplina"
               value={formData.disciplina || ""}
               onChange={handleInputChange}
-              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+              className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="instagram" className="text-[#022731]">Instagram</Label>
+            <Label htmlFor="instagram" className="text-[#272f3c]">Instagram</Label>
             <Input 
               id="instagram" 
               name="instagram"
               value={formData.instagram || ""}
               onChange={handleInputChange}
-              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+              className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="twitter" className="text-[#022731]">Twitter</Label>
+            <Label htmlFor="twitter" className="text-[#272f3c]">Twitter</Label>
             <Input 
               id="twitter" 
               name="twitter"
               value={formData.twitter || ""}
               onChange={handleInputChange}
-              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+              className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="facebook" className="text-[#022731]">Facebook</Label>
+            <Label htmlFor="facebook" className="text-[#272f3c]">Facebook</Label>
             <Input 
               id="facebook" 
               name="facebook"
               value={formData.facebook || ""}
               onChange={handleInputChange}
-              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+              className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="website" className="text-[#022731]">Website</Label>
+            <Label htmlFor="website" className="text-[#272f3c]">Website</Label>
             <Input 
               id="website" 
               name="website"
               value={formData.website || ""}
               onChange={handleInputChange}
-              className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+              className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="status" className="text-[#022731]">Status</Label>
+            <Label htmlFor="status" className="text-[#272f3c]">Status</Label>
             <Select
               value={formData.status}
               onValueChange={handleStatusChange}
             >
-              <SelectTrigger className="border-[#2a8e9e]/30 focus:ring-[#2a8e9e]">
+              <SelectTrigger className="border-[#5f2ebe]/30 focus:ring-[#5f2ebe]">
                 <SelectValue placeholder="Selecione um status" />
               </SelectTrigger>
               <SelectContent>
@@ -221,7 +240,7 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
             <Button 
               type="submit" 
               disabled={isSubmitting}
-              className="bg-[#2a8e9e] hover:bg-[#2a8e9e]/90"
+              className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90"
             >
               {isSubmitting ? "Salvando..." : "Salvar Alterações"}
             </Button>
