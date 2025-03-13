@@ -3,34 +3,53 @@ import { ImportanceStars } from "./ImportanceStars";
 import { cn } from "@/lib/utils";
 import { Subject, Topic } from "../types/editorialized";
 import { calculateErrors, calculatePerformance, calculateSubjectTotals } from "../utils/statsCalculations";
+import { useParams } from "react-router-dom";
+import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
+import { useUserProgress } from "@/hooks/use-user-progress";
 
 interface SubjectTableProps {
   subject: Subject;
   performanceGoal: number;
-  onTopicChange: (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => void;
 }
 
 export const SubjectTable = ({
   subject,
   performanceGoal,
-  onTopicChange
 }: SubjectTableProps) => {
+  const { courseId } = useParams<{ courseId: string }>();
+  const realId = extractIdFromFriendlyUrl(courseId || '');
+  const { progress, updateProgress } = useUserProgress(realId);
+
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
   const subjectPerformance = calculatePerformance(subjectTotals.hits, subjectTotals.exercisesDone);
 
+  const handleTopicChange = (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => {
+    const updatedTopics = subject.topics.map(topic => {
+      if (topic.id === topicId) {
+        return { ...topic, [field]: value };
+      }
+      return topic;
+    });
+
+    const subjectData = progress?.subjects_data || {};
+    const updatedSubjectData = {
+      ...subjectData,
+      [subjectId]: {
+        ...subjectData[subjectId],
+        topics: updatedTopics
+      }
+    };
+
+    updateProgress({
+      subjects_data: updatedSubjectData
+    });
+  };
+
   const handleIsReviewedChange = (subjectId: string | number, topicId: number) => {
     const topic = subject.topics.find(t => t.id === topicId);
     if (topic) {
-      onTopicChange(subjectId, topicId, 'isReviewed', !topic.isReviewed);
-    }
-  };
-
-  const handleNotReviewedChange = (subjectId: string | number, topicId: number) => {
-    const topic = subject.topics.find(t => t.id === topicId);
-    if (topic) {
-      const currentValue = topic.isReviewed;
-      onTopicChange(subjectId, topicId, 'isReviewed', currentValue);
+      handleTopicChange(subjectId, topicId, 'isReviewed', !topic.isReviewed);
     }
   };
 
@@ -69,7 +88,7 @@ export const SubjectTable = ({
                   <div className="flex items-center">
                     <div onClick={e => {
                   e.stopPropagation();
-                  onTopicChange(subject.id, topic.id, 'isDone', !topic.isDone);
+                  handleTopicChange(subject.id, topic.id, 'isDone', !topic.isDone);
                 }} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isDone ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
                       {topic.isDone && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
                           <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -91,7 +110,7 @@ export const SubjectTable = ({
                   </div>
                 </td>
                 <td className="py-3 px-4">
-                  <Select value={topic.difficulty} onValueChange={value => onTopicChange(subject.id, topic.id, 'difficulty', value)}>
+                  <Select value={topic.difficulty} onValueChange={value => handleTopicChange(subject.id, topic.id, 'difficulty', value)}>
                     <SelectTrigger className="w-[140px]">
                       <SelectValue />
                     </SelectTrigger>
@@ -105,10 +124,10 @@ export const SubjectTable = ({
                   </Select>
                 </td>
                 <td className="py-3 px-4 text-center">
-                  <input type="number" min="0" value={topic.exercisesDone} onChange={e => onTopicChange(subject.id, topic.id, 'exercisesDone', parseInt(e.target.value))} className="w-20 text-center border rounded p-1" />
+                  <input type="number" min="0" value={topic.exercisesDone} onChange={e => handleTopicChange(subject.id, topic.id, 'exercisesDone', parseInt(e.target.value))} className="w-20 text-center border rounded p-1" />
                 </td>
                 <td className="py-3 px-4 text-center">
-                  <input type="number" min="0" max={topic.exercisesDone} value={topic.hits} onChange={e => onTopicChange(subject.id, topic.id, 'hits', parseInt(e.target.value))} className="w-20 text-center border rounded p-1" />
+                  <input type="number" min="0" max={topic.exercisesDone} value={topic.hits} onChange={e => handleTopicChange(subject.id, topic.id, 'hits', parseInt(e.target.value))} className="w-20 text-center border rounded p-1" />
                 </td>
                 <td className="py-3 px-4 text-center">{calculateErrors(topic.exercisesDone, topic.hits)}</td>
                 <td className={cn("py-3 px-4 text-center", calculatePerformance(topic.hits, topic.exercisesDone) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]")}>

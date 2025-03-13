@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { OverallStats, Subject } from "../types/editorialized";
@@ -11,205 +11,42 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
-import { useToast } from "@/hooks/use-toast";
+import { useUserProgress } from "@/hooks/use-user-progress";
 
 interface DashboardSummaryProps {
   overallStats: OverallStats;
-  performanceGoal: number;
-  setPerformanceGoal: (value: number) => void;
   activeTab: string;
   subjects: Subject[];
 }
 
 export const DashboardSummary = ({
   overallStats,
-  performanceGoal,
-  setPerformanceGoal,
   activeTab,
   subjects
 }: DashboardSummaryProps) => {
   const { courseId } = useParams<{ courseId: string }>();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const userId = user?.id || 'guest';
+  const realId = extractIdFromFriendlyUrl(courseId || '');
+  const { progress, updateProgress } = useUserProgress(realId);
+  
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
-  const [examDate, setExamDate] = React.useState<Date | undefined>();
   
-  // Carregar dados salvos do localStorage e do banco de dados quando o componente é montado
-  useEffect(() => {
-    if (!courseId) return;
-    
-    const loadUserData = async () => {
-      const realId = extractIdFromFriendlyUrl(courseId);
-      
-      // Se o usuário estiver logado, tentar buscar dados do banco primeiro
-      if (userId !== 'guest') {
-        try {
-          const { data, error } = await supabase
-            .from('user_course_progress')
-            .select('performance_goal, exam_date')
-            .eq('user_id', userId)
-            .eq('course_id', realId)
-            .single();
-          
-          if (!error && data) {
-            // Carregar a meta de aproveitamento do banco
-            if (data.performance_goal) {
-              const goalValue = parseInt(data.performance_goal);
-              setPerformanceGoal(goalValue);
-              localStorage.setItem(`${userId}_${realId}_performanceGoal`, goalValue.toString());
-            }
-            
-            // Carregar a data da prova do banco
-            if (data.exam_date) {
-              const examDateValue = new Date(data.exam_date);
-              setExamDate(examDateValue);
-              localStorage.setItem(`${userId}_${realId}_examDate`, data.exam_date);
-            }
-            
-            return;
-          }
-        } catch (e) {
-          console.error('Erro ao buscar dados do usuário:', e);
-        }
-      }
-      
-      // Se não encontrou no banco ou deu erro, carregar do localStorage
-      
-      // Carregar a meta de aproveitamento
-      const savedGoal = localStorage.getItem(`${userId}_${realId}_performanceGoal`);
-      if (savedGoal) {
-        setPerformanceGoal(parseInt(savedGoal));
-      }
-      
-      // Carregar a data da prova
-      const savedExamDate = localStorage.getItem(`${userId}_${realId}_examDate`);
-      if (savedExamDate) {
-        setExamDate(new Date(savedExamDate));
-      }
-    };
-    
-    loadUserData();
-  }, [courseId, setPerformanceGoal, userId]);
-  
-  // Função para salvar dados no banco de dados
-  const saveUserDataToDatabase = async (field: string, value: string) => {
-    if (!courseId || userId === 'guest') return;
-    
-    const realId = extractIdFromFriendlyUrl(courseId);
-    
-    try {
-      // Verificar se o registro já existe
-      const { data: existingData, error: checkError } = await supabase
-        .from('user_course_progress')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('course_id', realId)
-        .single();
-      
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 é o código para "não encontrado"
-        console.error('Erro ao verificar dados existentes:', checkError);
-        return;
-      }
-      
-      const updateData: any = {
-        updated_at: new Date().toISOString()
-      };
-      updateData[field] = value;
-      
-      if (existingData) {
-        // Atualizar registro existente
-        const { error: updateError } = await supabase
-          .from('user_course_progress')
-          .update(updateData)
-          .eq('id', existingData.id);
-        
-        if (updateError) {
-          console.error(`Erro ao atualizar ${field}:`, updateError);
-          toast({
-            title: "Erro",
-            description: `Não foi possível salvar ${field === 'performance_goal' ? 'a meta de aproveitamento' : 'a data da prova'}.`,
-            variant: "destructive"
-          });
-        }
-      } else {
-        // Criar novo registro
-        const insertData: any = {
-          user_id: userId,
-          course_id: realId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        insertData[field] = value;
-        
-        const { error: insertError } = await supabase
-          .from('user_course_progress')
-          .insert(insertData);
-        
-        if (insertError) {
-          console.error(`Erro ao inserir ${field}:`, insertError);
-          toast({
-            title: "Erro",
-            description: `Não foi possível salvar ${field === 'performance_goal' ? 'a meta de aproveitamento' : 'a data da prova'}.`,
-            variant: "destructive"
-          });
-        }
-      }
-    } catch (error) {
-      console.error(`Erro ao salvar ${field}:`, error);
-    }
-  };
-  
-  // Salvar a meta de aproveitamento no localStorage e no banco de dados quando ela mudar
   const handlePerformanceGoalChange = (value: number) => {
     const newValue = Math.max(1, Math.min(100, value || 1));
-    setPerformanceGoal(newValue);
-    
-    if (courseId) {
-      const realId = extractIdFromFriendlyUrl(courseId);
-      const stringValue = newValue.toString();
-      
-      // Salvar no localStorage
-      localStorage.setItem(`${userId}_${realId}_performanceGoal`, stringValue);
-      
-      // Salvar no banco de dados se o usuário estiver logado
-      if (userId !== 'guest') {
-        saveUserDataToDatabase('performance_goal', stringValue);
-      }
-    }
+    updateProgress({
+      performance_goal: newValue
+    });
   };
   
-  // Salvar a data da prova no localStorage e no banco de dados quando ela mudar
   const handleExamDateChange = (date: Date | undefined) => {
-    setExamDate(date);
-    
-    if (courseId) {
-      const realId = extractIdFromFriendlyUrl(courseId);
-      
-      if (date) {
-        const dateString = date.toISOString();
-        
-        // Salvar no localStorage
-        localStorage.setItem(`${userId}_${realId}_examDate`, dateString);
-        
-        // Salvar no banco de dados se o usuário estiver logado
-        if (userId !== 'guest') {
-          saveUserDataToDatabase('exam_date', dateString);
-        }
-      } else {
-        // Remover do localStorage
-        localStorage.removeItem(`${userId}_${realId}_examDate`);
-        
-        // Remover do banco de dados se o usuário estiver logado
-        if (userId !== 'guest') {
-          saveUserDataToDatabase('exam_date', null);
-        }
-      }
-    }
+    updateProgress({
+      exam_date: date ? date.toISOString() : null
+    });
   };
+
+  const examDate = progress?.exam_date ? new Date(progress.exam_date) : undefined;
+  const performanceGoal = progress?.performance_goal || 85;
   
   const daysUntilExam = React.useMemo(() => {
     if (!examDate) return null;
