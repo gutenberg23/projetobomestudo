@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pencil, Trash } from "lucide-react";
 import { AulasTableProps } from "./AulasTypes";
+
 export const AulasTable: React.FC<AulasTableProps> = ({
   aulas,
   todasSelecionadas,
@@ -12,7 +13,8 @@ export const AulasTable: React.FC<AulasTableProps> = ({
   openEditModal,
   openDeleteModal
 }) => {
-  return <div className="rounded-md border bg-white">
+  return (
+    <div className="rounded-md border bg-white">
       <Table>
         <TableHeader>
           <TableRow>
@@ -30,7 +32,9 @@ export const AulasTable: React.FC<AulasTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {aulas.length > 0 ? aulas.map(aula => <TableRow key={aula.id}>
+          {aulas.length > 0 ? (
+            aulas.map((aula) => (
+              <TableRow key={aula.id}>
                 <TableCell>
                   <Checkbox checked={aula.selecionada} onCheckedChange={() => handleSelecaoAula(aula.id)} />
                 </TableCell>
@@ -49,12 +53,17 @@ export const AulasTable: React.FC<AulasTableProps> = ({
                     </Button>
                   </div>
                 </TableCell>
-              </TableRow>) : <TableRow>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
               <TableCell colSpan={7} className="text-center py-4 text-[#67748a]">
                 Nenhuma aula encontrada com os filtros aplicados.
               </TableCell>
-            </TableRow>}
+            </TableRow>
+          )}
         </TableBody>
       </Table>
-    </div>;
+    </div>
+  );
 };
