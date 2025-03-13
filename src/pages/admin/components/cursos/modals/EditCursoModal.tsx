@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,13 +51,16 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
 
   const handleSave = () => {
     if (curso && titulo.trim() && descricao.trim()) {
-      onSave({
+      const updatedCurso = {
         ...curso,
         titulo,
         descricao,
         informacoesCurso,
         disciplinasIds,
-      });
+      };
+      
+      console.log("Salvando curso com dados:", updatedCurso);
+      onSave(updatedCurso);
     }
   };
 
@@ -65,6 +69,9 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-[#272f3c]">Editar Curso</DialogTitle>
+          <DialogDescription className="text-[#67748a]">
+            Altere os dados do curso e clique em Salvar para confirmar.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
@@ -75,7 +82,7 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
               id="titulo"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+              className="col-span-3 border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -86,7 +93,7 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
               id="descricao"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+              className="col-span-3 border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
             />
           </div>
           <div className="grid grid-cols-4 items-start gap-4">
@@ -97,7 +104,7 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
               id="informacoesCurso"
               value={informacoesCurso}
               onChange={(e) => setInformacoesCurso(e.target.value)}
-              className="col-span-3 min-h-[100px] border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+              className="col-span-3 min-h-[100px] border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -110,12 +117,12 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
                 value={disciplinaId}
                 onChange={(e) => setDisciplinaId(e.target.value)}
                 placeholder="Digite o ID da disciplina"
-                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+                className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
               />
               <Button
                 type="button"
                 onClick={handleAddDisciplina}
-                className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
+                className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90"
               >
                 Adicionar
               </Button>
@@ -157,7 +164,7 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
           <Button 
             type="button" 
             onClick={handleSave}
-            className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
+            className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90"
           >
             Salvar
           </Button>

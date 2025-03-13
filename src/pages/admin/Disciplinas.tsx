@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   DisciplinasFilter, 
@@ -31,44 +30,68 @@ const Disciplinas = () => {
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Função para calcular o total de questões de uma disciplina
+  // Função melhorada para calcular o total de questões de uma disciplina
   const calcularTotalQuestoesDisciplina = async (aulasIds: string[]): Promise<number> => {
     if (!aulasIds || aulasIds.length === 0) return 0;
     
     let totalQuestoes = 0;
     
-    // Buscar todas as aulas desta disciplina
-    const { data: aulas } = await supabase
-      .from('aulas')
-      .select('questoes_ids, topicos_ids')
-      .in('id', aulasIds);
-    
-    if (!aulas) return 0;
-    
-    // Para cada aula, contar suas questões diretas
-    for (const aula of aulas) {
-      if (aula.questoes_ids) {
-        totalQuestoes += aula.questoes_ids.length;
+    try {
+      console.log("Calculando questões para aulas:", aulasIds);
+      
+      // Buscar todas as aulas desta disciplina
+      const { data: aulas, error: aulasError } = await supabase
+        .from('aulas')
+        .select('questoes_ids, topicos_ids')
+        .in('id', aulasIds);
+      
+      if (aulasError) {
+        console.error("Erro ao buscar aulas:", aulasError);
+        return 0;
       }
       
-      // Buscar questões dos tópicos da aula
-      if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-        const { data: topicos } = await supabase
-          .from('topicos')
-          .select('questoes_ids')
-          .in('id', aula.topicos_ids);
+      if (!aulas || aulas.length === 0) return 0;
+      
+      console.log("Aulas encontradas:", aulas.length);
+      
+      // Para cada aula, contar suas questões diretas
+      for (const aula of aulas) {
+        if (aula.questoes_ids && aula.questoes_ids.length > 0) {
+          console.log(`Aula com ${aula.questoes_ids.length} questões diretas`);
+          totalQuestoes += aula.questoes_ids.length;
+        }
         
-        if (topicos) {
-          for (const topico of topicos) {
-            if (topico.questoes_ids) {
-              totalQuestoes += topico.questoes_ids.length;
+        // Buscar questões dos tópicos da aula
+        if (aula.topicos_ids && aula.topicos_ids.length > 0) {
+          console.log(`Aula com ${aula.topicos_ids.length} tópicos`);
+          
+          const { data: topicos, error: topicosError } = await supabase
+            .from('topicos')
+            .select('questoes_ids')
+            .in('id', aula.topicos_ids);
+          
+          if (topicosError) {
+            console.error("Erro ao buscar tópicos:", topicosError);
+            continue;
+          }
+          
+          if (topicos) {
+            for (const topico of topicos) {
+              if (topico.questoes_ids && topico.questoes_ids.length > 0) {
+                console.log(`Tópico com ${topico.questoes_ids.length} questões`);
+                totalQuestoes += topico.questoes_ids.length;
+              }
             }
           }
         }
       }
+      
+      console.log("Total de questões calculado:", totalQuestoes);
+      return totalQuestoes;
+    } catch (error) {
+      console.error("Erro ao calcular total de questões:", error);
+      return 0;
     }
-    
-    return totalQuestoes;
   };
 
   // Função para carregar disciplinas do banco de dados
@@ -85,11 +108,14 @@ const Disciplinas = () => {
       
       // Processar cada disciplina para calcular totais
       for (const disciplina of data || []) {
+        console.log(`Processando disciplina: ${disciplina.titulo}`);
+        
         // Calcular total de questões para cada disciplina
         const totalQuestoes = await calcularTotalQuestoesDisciplina(disciplina.aulas_ids || []);
         
         // Calcular total de tópicos
         let totalTopicos = 0;
+        let topicosIds: string[] = [];
         
         if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
           const { data: aulas } = await supabase
@@ -108,6 +134,7 @@ const Disciplinas = () => {
             }
             
             totalTopicos = todosTopicos.size;
+            topicosIds = Array.from(todosTopicos);
           }
         }
         
@@ -116,7 +143,7 @@ const Disciplinas = () => {
           titulo: disciplina.titulo,
           descricao: disciplina.descricao || "",
           aulasIds: disciplina.aulas_ids || [],
-          topicosIds: Array(totalTopicos).fill("").map((_, i) => String(i)),
+          topicosIds: topicosIds,
           questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)),
           selecionada: false,
           favoritos: 0
