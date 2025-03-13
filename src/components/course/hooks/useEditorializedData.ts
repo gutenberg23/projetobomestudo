@@ -52,7 +52,7 @@ export const useEditorializedData = () => {
       const { data: editalData, error: editalError } = await supabase
         .from('cursoverticalizado')
         .select('*')
-        .eq('curso_id', realId)
+        .eq('curso_id', cursoData.id.toString())
         .maybeSingle();
 
       if (editalError) {

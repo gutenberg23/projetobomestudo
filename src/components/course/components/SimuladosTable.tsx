@@ -37,10 +37,30 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
         const realId = extractIdFromFriendlyUrl(courseId);
         console.log("ID real para simulados:", realId);
 
+        // Primeiro, vamos verificar se o curso existe
+        const { data: cursoData, error: cursoError } = await supabase
+          .from("cursos")
+          .select("id")
+          .eq("id", realId)
+          .maybeSingle();
+          
+        if (cursoError) {
+          console.error("Erro ao verificar curso:", cursoError);
+          throw cursoError;
+        }
+        
+        if (!cursoData) {
+          console.log("Curso não encontrado:", realId);
+          toast.error("Curso não encontrado");
+          setSimulados([]);
+          return;
+        }
+
+        // Agora buscar os simulados associados ao curso
         const { data, error } = await supabase
           .from("simulados")
           .select("*")
-          .eq("curso_id", realId)
+          .eq("curso_id", cursoData.id.toString())
           .eq("ativo", true);
 
         if (error) {
