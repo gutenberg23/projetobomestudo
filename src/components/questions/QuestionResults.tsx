@@ -1,8 +1,8 @@
 
 import React from "react";
 import { QuestionCard } from "@/components/new/QuestionCard";
-import { QuestionListSummary } from "./QuestionListSummary";
-import { QuestionPagination } from "./QuestionPagination";
+import QuestionListSummary from "./QuestionListSummary";
+import QuestionPagination from "./QuestionPagination";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface QuestionResultsProps {
