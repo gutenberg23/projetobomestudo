@@ -209,7 +209,7 @@ const Disciplinas = () => {
         .from('disciplinas')
         .update({
           titulo: updatedDisciplina.titulo,
-          descricao: updatedDisciplina.descricao,
+          descricao: updatedDisciplina.descricao, // This now contains the rating value
           aulas_ids: updatedDisciplina.aulasIds
         })
         .eq('id', updatedDisciplina.id);
@@ -274,7 +274,7 @@ const Disciplinas = () => {
         .insert([
           {
             titulo: tituloNovaDisciplina,
-            descricao: descricaoNovaDisciplina,
+            descricao: descricaoNovaDisciplina, // This will store the rating
             aulas_ids: aulasIds
           }
         ])

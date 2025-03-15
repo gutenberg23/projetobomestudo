@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Subject as SubjectType } from '../types/subjects';
@@ -8,12 +7,14 @@ interface SubjectProps {
   subject: SubjectType;
   isExpanded: boolean;
   onToggle: () => void;
+  isCurso?: boolean;
 }
 
 export const Subject: React.FC<SubjectProps> = ({
   subject,
   isExpanded,
-  onToggle
+  onToggle,
+  isCurso = true
 }) => {
   return (
     <div className="border-b border-[rgba(246,248,250,1)]">

@@ -21,7 +21,22 @@ export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
             <div>
               <Label htmlFor="descricao-disciplina" className="mb-1 block">Nota de rating
           </Label>
-              <Input id="descricao-disciplina" placeholder="Digite a descrição" value={descricaoNovaDisciplina} onChange={e => setDescricaoNovaDisciplina(e.target.value)} className="border-[#ea2be2] focus-visible:ring-[#ea2be2]" />
+              <Input 
+                id="descricao-disciplina" 
+                type="number" 
+                min="1" 
+                max="10"
+                placeholder="Digite a nota" 
+                value={descricaoNovaDisciplina} 
+                onChange={e => {
+                  const value = e.target.value;
+                  // Only allow numbers between 1 and 10
+                  if (value === "" || (/^\d+$/.test(value) && parseInt(value) >= 1 && parseInt(value) <= 10)) {
+                    setDescricaoNovaDisciplina(value);
+                  }
+                }} 
+                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]" 
+              />
             </div>
           </div>
         </div>}
