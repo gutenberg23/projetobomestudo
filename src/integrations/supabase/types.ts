@@ -559,6 +559,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_course_progress: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          exam_date: string | null
+          id: string
+          performance_goal: number | null
+          subjects_data: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          exam_date?: string | null
+          id?: string
+          performance_goal?: number | null
+          subjects_data?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          exam_date?: string | null
+          id?: string
+          performance_goal?: number | null
+          subjects_data?: Json | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
