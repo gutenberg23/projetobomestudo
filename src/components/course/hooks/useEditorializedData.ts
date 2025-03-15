@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -40,12 +39,12 @@ export const useEditorializedData = () => {
         
         if (!userDataError && userData && userData.subjects_data) {
           try {
-            const parsedData = JSON.parse(userData.subjects_data.toString());
+            const parsedData = JSON.parse(userData.subjects_data);
             setSubjects(parsedData);
             setLoading(false);
             
             // Também salvar no localStorage como backup
-            localStorage.setItem(`${userId}_${realId}_subjectsData`, userData.subjects_data.toString());
+            localStorage.setItem(`${userId}_${realId}_subjectsData`, userData.subjects_data);
             
             // Carregar dados da meta de aproveitamento e data da prova
             if (userData.performance_goal) {
@@ -53,7 +52,7 @@ export const useEditorializedData = () => {
             }
             
             if (userData.exam_date) {
-              localStorage.setItem(`${userId}_${realId}_examDate`, userData.exam_date.toString());
+              localStorage.setItem(`${userId}_${realId}_examDate`, userData.exam_date);
             }
             
             return;
@@ -220,11 +219,8 @@ export const useEditorializedData = () => {
     
     try {
       // Obter a meta de aproveitamento e a data da prova do localStorage
-      const performanceGoalStr = localStorage.getItem(`${userId}_${courseRealId}_performanceGoal`);
+      const performanceGoal = localStorage.getItem(`${userId}_${courseRealId}_performanceGoal`);
       const examDate = localStorage.getItem(`${userId}_${courseRealId}_examDate`);
-      
-      // Converter a meta de aproveitamento para número
-      const performanceGoal = performanceGoalStr ? parseInt(performanceGoalStr) : 85;
       
       // Verificar se o registro já existe
       const { data: existingData, error: checkError } = await supabase

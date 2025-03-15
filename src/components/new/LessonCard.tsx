@@ -1,70 +1,173 @@
+"use client";
 
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Play } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import type { Lesson, Question } from "./types";
+import ItensDaAula from "./ItensDaAula";
+import { QuestionCard } from "./QuestionCard";
+import { LessonHeader } from "./lesson/LessonHeader";
+import { VideoContentLayout } from "./lesson/VideoContentLayout";
 
-export interface LessonCardProps {
-  lesson: {
-    id: string;
-    title: string;
-    description: string;
-    sections: {
-      id: string;
-      title: string;
-      contentType: "video";
-      videoUrl: string;
-    }[];
-  };
-  question?: {
-    id: string;
-    year: string;
-    institution: string;
-    organization: string;
-    role: string;
-    content: string;
-    options: { 
-      id: string; 
-      text: string; 
-      isCorrect: boolean 
-    }[];
-    comments: any[];
-  };
+interface LessonCardProps {
+  lesson: Lesson;
 }
 
-export const LessonCard: React.FC<LessonCardProps> = ({ lesson, question }) => {
+export const LessonCard: React.FC<LessonCardProps> = ({
+  lesson
+}) => {
+  const [selectedSection, setSelectedSection] = useState<string>(
+    lesson.sections && lesson.sections.length > 0 ? lesson.sections[0].id : ""
+  );
+  const [completedSections, setCompletedSections] = useState<string[]>([]);
+  const [isVideoSectionVisible, setIsVideoSectionVisible] = useState(false);
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
+  const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
+  const [isLessonCompleted, setIsLessonCompleted] = useState(false);
+  const sectionsContainerRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLElement>(null);
+  const [videoHeight, setVideoHeight] = useState<number>(0);
+  
+  // Estados para gerenciar a questão
+  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+
+  useEffect(() => {
+    const updateLayout = () => {
+      checkScroll();
+    };
+    updateLayout();
+    const timeoutId = setTimeout(updateLayout, 100);
+    window.addEventListener('resize', updateLayout);
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      clearTimeout(timeoutId);
+    };
+  }, [isVideoSectionVisible]);
+
+  useEffect(() => {
+    // Verifica se todas as seções estão completas
+    const allSectionsCompleted = lesson.sections.every(section => completedSections.includes(section.id));
+    setIsLessonCompleted(allSectionsCompleted);
+  }, [completedSections, lesson.sections]);
+
+  const checkScroll = () => {
+    if (sectionsContainerRef.current) {
+      const {
+        scrollWidth,
+        clientWidth
+      } = sectionsContainerRef.current;
+      setHasHorizontalScroll(scrollWidth > clientWidth);
+    }
+  };
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setHasHorizontalScroll(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleSectionClick = (sectionId: string) => {
+    console.log("Seção selecionada:", sectionId);
+    setSelectedSection(sectionId);
+  };
+
+  const handleQuestionButtonClick = () => {
+    console.log("Botão de questões clicado para a seção:", selectedSection);
+    setShowQuestions(!showQuestions);
+  };
+
+  const toggleCompletion = (sectionId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setCompletedSections(prev => 
+      prev.includes(sectionId) 
+        ? prev.filter(id => id !== sectionId) 
+        : [...prev, sectionId]
+    );
+  };
+
+  const toggleLessonCompletion = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (isLessonCompleted) {
+      // Se a aula está completa, remove todas as seções da lista de completadas
+      setCompletedSections([]);
+    } else {
+      // Se a aula não está completa, adiciona todas as seções à lista de completadas
+      setCompletedSections(lesson.sections.map(section => section.id));
+    }
+  };
+
+  const toggleVideoSection = () => {
+    setIsVideoSectionVisible(!isVideoSectionVisible);
+    if (!isVideoSectionVisible && cardRef.current) {
+      cardRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
+  const toggleOptionDisabled = (optionId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setDisabledOptions(prev => 
+      prev.includes(optionId) 
+        ? prev.filter(id => id !== optionId) 
+        : [...prev, optionId]
+    );
+  };
+
+  const handleOptionSelect = (optionId: string) => {
+    setSelectedOptionId(optionId);
+  };
+
+  const handleCommentSubmit = (comment: string) => {
+    console.log("Comentário enviado:", comment);
+    // Implementar lógica para enviar comentário
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden">
-      <div className="p-4">
-        <h3 className="text-xl font-semibold mb-2 text-[#272f3c]">{lesson.title}</h3>
-        <p className="text-[#67748a] mb-4">{lesson.description}</p>
-        <div className="flex flex-wrap gap-2">
-          {lesson.sections.map((section) => (
-            <Link
-              key={section.id}
-              to={`/lesson/${lesson.id}/section/${section.id}`}
-              className="inline-flex items-center px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full text-sm hover:bg-purple-200 transition-colors"
-            >
-              <Play className="w-4 h-4 mr-1" />
-              {section.title}
-            </Link>
-          ))}
-        </div>
-      </div>
-      {question && (
-        <div className="mt-2 p-4 border-t border-gray-100">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-gray-500">
-              Questão relacionada
-            </span>
-            <Link
-              to={`/question/${question.id}`}
-              className="text-sm text-purple-600 hover:text-purple-800"
-            >
-              Ver questão
-            </Link>
-          </div>
+    <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
+      <LessonHeader 
+        title={lesson.title}
+        description={lesson.description}
+        isVideoSectionVisible={isVideoSectionVisible}
+        isLessonCompleted={isLessonCompleted}
+        toggleLessonCompletion={toggleLessonCompletion}
+        toggleVideoSection={toggleVideoSection}
+      />
+
+      {isVideoSectionVisible && (
+        <div className="mt-4">
+          <VideoContentLayout 
+            sections={lesson.sections}
+            selectedSection={selectedSection}
+            completedSections={completedSections}
+            hasHorizontalScroll={hasHorizontalScroll}
+            videoHeight={videoHeight}
+            setVideoHeight={setVideoHeight}
+            onSectionClick={handleSectionClick}
+            onToggleCompletion={toggleCompletion}
+          />
+          <ItensDaAula 
+            setShowQuestions={setShowQuestions} 
+            showQuestions={showQuestions} 
+          />
+          {showQuestions && lesson.question && (
+            <div className="mt-4">
+              <QuestionCard
+                question={lesson.question}
+                disabledOptions={disabledOptions}
+                onToggleDisabled={toggleOptionDisabled}
+              />
+            </div>
+          )}
         </div>
       )}
-    </div>
+    </article>
   );
 };

@@ -58,7 +58,7 @@ export const DashboardSummary = ({
           if (!error && data) {
             // Carregar a meta de aproveitamento do banco
             if (data.performance_goal) {
-              const goalValue = parseInt(data.performance_goal.toString());
+              const goalValue = parseInt(data.performance_goal);
               setPerformanceGoal(goalValue);
               localStorage.setItem(`${userId}_${realId}_performanceGoal`, goalValue.toString());
             }
@@ -96,7 +96,7 @@ export const DashboardSummary = ({
   }, [courseId, setPerformanceGoal, userId]);
   
   // Função para salvar dados no banco de dados
-  const saveUserDataToDatabase = async (field: string, value: string | number | null) => {
+  const saveUserDataToDatabase = async (field: string, value: string) => {
     if (!courseId || userId === 'guest') return;
     
     const realId = extractIdFromFriendlyUrl(courseId);
@@ -177,7 +177,7 @@ export const DashboardSummary = ({
       
       // Salvar no banco de dados se o usuário estiver logado
       if (userId !== 'guest') {
-        saveUserDataToDatabase('performance_goal', newValue);
+        saveUserDataToDatabase('performance_goal', stringValue);
       }
     }
   };
@@ -203,7 +203,7 @@ export const DashboardSummary = ({
         // Remover do localStorage
         localStorage.removeItem(`${userId}_${realId}_examDate`);
         
-        // Salvar no banco de dados se o usuário estiver logado
+        // Remover do banco de dados se o usuário estiver logado
         if (userId !== 'guest') {
           saveUserDataToDatabase('exam_date', null);
         }
