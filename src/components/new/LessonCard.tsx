@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -9,10 +10,12 @@ import { VideoContentLayout } from "./lesson/VideoContentLayout";
 
 interface LessonCardProps {
   lesson: Lesson;
+  question?: Question;
 }
 
 export const LessonCard: React.FC<LessonCardProps> = ({
-  lesson
+  lesson,
+  question
 }) => {
   const [selectedSection, setSelectedSection] = useState<string>(
     lesson.sections && lesson.sections.length > 0 ? lesson.sections[0].id : ""
@@ -130,6 +133,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     // Implementar lógica para enviar comentário
   };
 
+  // Use the question from props or from lesson
+  const displayQuestion = question || lesson.question;
+
   return (
     <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <LessonHeader 
@@ -157,10 +163,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             setShowQuestions={setShowQuestions} 
             showQuestions={showQuestions} 
           />
-          {showQuestions && lesson.question && (
+          {showQuestions && displayQuestion && (
             <div className="mt-4">
               <QuestionCard
-                question={lesson.question}
+                question={displayQuestion}
                 disabledOptions={disabledOptions}
                 onToggleDisabled={toggleOptionDisabled}
               />

@@ -39,12 +39,12 @@ export const useEditorializedData = () => {
         
         if (!userDataError && userData && userData.subjects_data) {
           try {
-            const parsedData = JSON.parse(userData.subjects_data);
+            const parsedData = JSON.parse(typeof userData.subjects_data === 'string' ? userData.subjects_data : JSON.stringify(userData.subjects_data));
             setSubjects(parsedData);
             setLoading(false);
             
             // Também salvar no localStorage como backup
-            localStorage.setItem(`${userId}_${realId}_subjectsData`, userData.subjects_data);
+            localStorage.setItem(`${userId}_${realId}_subjectsData`, typeof userData.subjects_data === 'string' ? userData.subjects_data : JSON.stringify(userData.subjects_data));
             
             // Carregar dados da meta de aproveitamento e data da prova
             if (userData.performance_goal) {
@@ -236,6 +236,7 @@ export const useEditorializedData = () => {
       }
       
       const subjectsDataString = JSON.stringify(subjectsData);
+      const performanceGoalNumber = performanceGoal ? parseInt(performanceGoal) : undefined;
       
       if (existingData) {
         // Atualizar registro existente
@@ -243,7 +244,7 @@ export const useEditorializedData = () => {
           .from('user_course_progress')
           .update({
             subjects_data: subjectsDataString,
-            performance_goal: performanceGoal,
+            performance_goal: performanceGoalNumber,
             exam_date: examDate,
             updated_at: new Date().toISOString()
           })
@@ -260,7 +261,7 @@ export const useEditorializedData = () => {
             user_id: userId,
             course_id: courseRealId,
             subjects_data: subjectsDataString,
-            performance_goal: performanceGoal,
+            performance_goal: performanceGoalNumber,
             exam_date: examDate,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()

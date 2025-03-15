@@ -58,7 +58,7 @@ export const DashboardSummary = ({
           if (!error && data) {
             // Carregar a meta de aproveitamento do banco
             if (data.performance_goal) {
-              const goalValue = parseInt(data.performance_goal);
+              const goalValue = parseInt(data.performance_goal.toString());
               setPerformanceGoal(goalValue);
               localStorage.setItem(`${userId}_${realId}_performanceGoal`, goalValue.toString());
             }
@@ -96,7 +96,7 @@ export const DashboardSummary = ({
   }, [courseId, setPerformanceGoal, userId]);
   
   // Função para salvar dados no banco de dados
-  const saveUserDataToDatabase = async (field: string, value: string) => {
+  const saveUserDataToDatabase = async (field: string, value: string | number | null) => {
     if (!courseId || userId === 'guest') return;
     
     const realId = extractIdFromFriendlyUrl(courseId);
@@ -177,7 +177,7 @@ export const DashboardSummary = ({
       
       // Salvar no banco de dados se o usuário estiver logado
       if (userId !== 'guest') {
-        saveUserDataToDatabase('performance_goal', stringValue);
+        saveUserDataToDatabase('performance_goal', newValue);
       }
     }
   };
