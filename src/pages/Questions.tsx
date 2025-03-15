@@ -1,94 +1,12 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import QuestionFiltersPanel from "@/components/questions/QuestionFiltersPanel";
 import QuestionResults from "@/components/questions/QuestionResults";
-
-// Dados fictícios para demonstração
-const MOCK_QUESTIONS = [{
-  id: "q1",
-  content: "Conforme a Constituição Federal de 1988, é CORRETO afirmar que:",
-  year: "2023",
-  institution: "CESPE",
-  organization: "TCU",
-  role: "Auditor Federal",
-  options: [{
-    id: "o1",
-    text: "O sistema tributário nacional é regido pelos princípios da legalidade, anterioridade e transparência fiscal.",
-    isCorrect: false
-  }, {
-    id: "o2",
-    text: "A saúde é direito de todos e dever do Estado, garantido mediante políticas sociais e econômicas.",
-    isCorrect: false
-  }, {
-    id: "o3",
-    text: "Os cargos, empregos e funções públicas são acessíveis aos brasileiros que preencham os requisitos estabelecidos em lei.",
-    isCorrect: false
-  }, {
-    id: "o4",
-    text: "O ensino fundamental é obrigatório e gratuito, assegurada sua oferta para todos que não tiverem acesso na idade própria.",
-    isCorrect: true
-  }, {
-    id: "o5",
-    text: "A previdência social será organizada sob a forma de regime geral, de caráter contributivo e de filiação obrigatória.",
-    isCorrect: false
-  }],
-  comments: [{
-    id: "c1",
-    author: "João Silva",
-    avatar: "https://github.com/shadcn.png",
-    content: "Esta questão aborda princípios constitucionais fundamentais.",
-    timestamp: "Há 2 dias",
-    likes: 5
-  }]
-}, {
-  id: "q2",
-  content: "Em relação ao Direito Administrativo, assinale a alternativa correta:",
-  year: "2022",
-  institution: "FGV",
-  organization: "Prefeitura de São Paulo",
-  role: "Procurador Municipal",
-  options: [{
-    id: "o6",
-    text: "O princípio da legalidade significa que o administrador público está sujeito aos mandamentos da lei em toda sua atividade funcional.",
-    isCorrect: true
-  }, {
-    id: "o7",
-    text: "A administração pública pode revogar seus próprios atos quando eivados de vícios que os tornem ilegais.",
-    isCorrect: false
-  }, {
-    id: "o8",
-    text: "O princípio da impessoalidade estabelece que a finalidade pública deve nortear toda a atividade administrativa.",
-    isCorrect: false
-  }, {
-    id: "o9",
-    text: "A presunção de legitimidade dos atos administrativos é absoluta, não admitindo prova em contrário.",
-    isCorrect: false
-  }, {
-    id: "o10",
-    text: "O poder de polícia é indelegável, não podendo ser exercido por entidades da administração indireta.",
-    isCorrect: false
-  }],
-  comments: [{
-    id: "c2",
-    author: "Maria Oliveira",
-    avatar: "https://github.com/shadcn.png",
-    content: "O gabarito desta questão é a letra A, pois trata do princípio da legalidade corretamente.",
-    timestamp: "Há 3 dias",
-    likes: 8
-  }]
-}];
-
-// Opções para os filtros
-const FILTER_OPTIONS = {
-  disciplines: ["Direito Constitucional", "Direito Administrativo", "Português", "Matemática", "Informática"],
-  topics: ["Princípios Constitucionais", "Direitos Fundamentais", "Atos Administrativos", "Concordância Verbal", "Lógica de Programação"],
-  institutions: ["CESPE", "FGV", "VUNESP", "FEPESE", "FCC"],
-  organizations: ["TCU", "STF", "TRF", "Prefeitura de São Paulo", "INSS"],
-  roles: ["Auditor Federal", "Analista Judiciário", "Técnico Administrativo", "Procurador Municipal", "Especialista em Políticas Públicas"],
-  years: ["2023", "2022", "2021", "2020", "2019"],
-  educationLevels: ["Médio", "Superior", "Pós-graduação"]
-};
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
 
 const Questions = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,8 +22,107 @@ const Questions = () => {
   const [questionsPerPage, setQuestionsPerPage] = useState("10");
   const [currentPage, setCurrentPage] = useState(1);
   const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filterOptions, setFilterOptions] = useState({
+    disciplines: [] as string[],
+    topics: [] as string[],
+    institutions: [] as string[],
+    organizations: [] as string[],
+    roles: [] as string[],
+    years: [] as string[],
+    educationLevels: [] as string[]
+  });
   
-  const totalQuestions = MOCK_QUESTIONS.length;
+  const totalQuestions = questions.length;
+  
+  // Função para converter options do banco para o formato esperado
+  const parseOptions = (options: Json | null): any[] => {
+    if (!options) return [];
+    
+    // Verificar se options é um array
+    if (Array.isArray(options)) {
+      return options.map((option: any) => ({
+        id: option.id || `option-${Math.random().toString(36).substr(2, 9)}`,
+        text: option.text || '',
+        isCorrect: Boolean(option.isCorrect)
+      }));
+    }
+    
+    return [];
+  };
+
+  // Buscar questões do banco de dados
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        setLoading(true);
+        
+        // Buscar todas as questões
+        const { data, error } = await supabase
+          .from('questoes')
+          .select('*');
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Transformar os dados para o formato esperado pelo componente
+        const formattedQuestions = data.map(q => ({
+          id: q.id,
+          year: q.year,
+          institution: q.institution,
+          organization: q.organization,
+          role: q.role,
+          discipline: q.discipline,
+          level: q.level,
+          difficulty: q.difficulty,
+          questionType: q.questiontype,
+          content: q.content,
+          teacherExplanation: q.teacherexplanation,
+          aiExplanation: q.aiexplanation || "",
+          expandableContent: q.expandablecontent || "",
+          options: parseOptions(q.options),
+          topicos: Array.isArray(q.topicos) ? q.topicos : []
+        }));
+        
+        setQuestions(formattedQuestions);
+        
+        // Extrair valores únicos para cada dropdown
+        const institutions = [...new Set(data.map(q => q.institution).filter(Boolean))].sort();
+        const organizations = [...new Set(data.map(q => q.organization).filter(Boolean))].sort();
+        const roles = [...new Set(data.map(q => q.role).filter(Boolean))].sort();
+        const disciplines = [...new Set(data.map(q => q.discipline).filter(Boolean))].sort();
+        const levels = [...new Set(data.map(q => q.level).filter(Boolean))].sort();
+        const years = [...new Set(data.map(q => q.year).filter(Boolean))].sort((a, b) => b.localeCompare(a));
+        
+        // Coletar todos os tópicos únicos
+        const allTopics = data.flatMap(q => q.topicos || [])
+          .filter(Boolean)
+          .filter((value, index, self) => self.indexOf(value) === index)
+          .sort();
+        
+        // Atualizar as opções de filtro
+        setFilterOptions({
+          disciplines,
+          topics: allTopics,
+          institutions,
+          organizations,
+          roles,
+          years,
+          educationLevels: ['Médio', 'Superior', 'Pós-graduação'] // Mantém esses valores padrão pois não estão no banco
+        });
+        
+      } catch (error) {
+        console.error('Erro ao carregar questões:', error);
+        toast.error('Erro ao carregar questões. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchQuestions();
+  }, []);
   
   const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
     event.preventDefault();
@@ -136,8 +153,59 @@ const Questions = () => {
     setCurrentPage(newPage);
   };
 
+  // Filtrar as questões com base nos filtros selecionados
+  const filteredQuestions = questions.filter(question => {
+    // Filtrar por texto de pesquisa
+    if (searchQuery && !question.content.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+    
+    // Aplicar filtros de seleção
+    if (selectedFilters.disciplines.length > 0 && !selectedFilters.disciplines.includes(question.discipline)) {
+      return false;
+    }
+    
+    if (selectedFilters.institutions.length > 0 && !selectedFilters.institutions.includes(question.institution)) {
+      return false;
+    }
+    
+    if (selectedFilters.organizations.length > 0 && !selectedFilters.organizations.includes(question.organization)) {
+      return false;
+    }
+    
+    if (selectedFilters.roles.length > 0 && !selectedFilters.roles.includes(question.role)) {
+      return false;
+    }
+    
+    if (selectedFilters.years.length > 0 && !selectedFilters.years.includes(question.year)) {
+      return false;
+    }
+    
+    if (selectedFilters.educationLevels.length > 0 && !selectedFilters.educationLevels.includes(question.level)) {
+      return false;
+    }
+    
+    // Filtrar por tópicos
+    if (selectedFilters.topics.length > 0) {
+      const hasMatchingTopic = question.topicos.some((topico: string) => 
+        selectedFilters.topics.includes(topico)
+      );
+      if (!hasMatchingTopic) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
   // Cálculo para paginação
-  const totalPages = Math.ceil(totalQuestions / parseInt(questionsPerPage));
+  const totalPages = Math.ceil(filteredQuestions.length / parseInt(questionsPerPage));
+  
+  // Paginação
+  const paginatedQuestions = filteredQuestions.slice(
+    (currentPage - 1) * parseInt(questionsPerPage),
+    currentPage * parseInt(questionsPerPage)
+  );
   
   const hasFilters = Object.values(selectedFilters).some(arr => arr.length > 0);
   
@@ -155,17 +223,18 @@ const Questions = () => {
           handleApplyFilters={handleApplyFilters}
           questionsPerPage={questionsPerPage}
           setQuestionsPerPage={setQuestionsPerPage}
-          filterOptions={FILTER_OPTIONS}
+          filterOptions={filterOptions}
         />
 
         <QuestionResults 
-          questions={MOCK_QUESTIONS}
+          questions={paginatedQuestions}
           disabledOptions={disabledOptions}
           onToggleDisabled={handleToggleDisabled}
           currentPage={currentPage}
           totalPages={totalPages}
           handlePageChange={handlePageChange}
           hasFilters={hasFilters}
+          loading={loading}
         />
       </main>
       <Footer />

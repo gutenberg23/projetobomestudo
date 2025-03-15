@@ -38,7 +38,7 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
       <button 
         onClick={onToggleAnswer} 
         disabled={!hasSelectedOption || isSubmittingAnswer} 
-        className={`flex gap-1 md:gap-2.5 justify-center self-stretch px-1 py-1 md:py-1.5 my-auto text-fuchsia-500 whitespace-nowrap rounded-xl border border-fuchsia-500 border-solid max-w-[180px] md:max-w-[200px] min-w-[120px] md:min-w-[184px] w-auto md:w-[194px] transition-colors ${hasSelectedOption && !isSubmittingAnswer ? 'hover:bg-fuchsia-50' : 'opacity-50 cursor-not-allowed'}`}
+        className={`flex gap-1 md:gap-2.5 justify-center self-stretch px-1 py-1 md:py-1.5 my-auto text-white whitespace-nowrap rounded-xl bg-gradient-to-r from-[#5f2ebe] to-[#7344d4] border border-[#491aa4] max-w-[180px] md:max-w-[200px] min-w-[120px] md:min-w-[184px] w-auto md:w-[194px] transition-colors hover:shadow-lg hover:shadow-[#5f2ebe]/30 hover:-translate-y-1 ${hasSelectedOption && !isSubmittingAnswer ? '' : 'opacity-50 cursor-not-allowed'}`}
       >
         <span className="flex flex-1 shrink gap-1 md:gap-2.5 justify-center items-center py-1 md:py-2.5 pr-1 md:pr-8 pl-1 md:pl-8 basis-0 px-1 md:px-[10px]">
           <img 

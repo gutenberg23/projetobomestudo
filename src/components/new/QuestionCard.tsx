@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -11,6 +10,7 @@ import { Send, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 interface QuestionCardProps {
   question: Question;
@@ -46,7 +46,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   // Resetar o estado quando a questão muda
   useEffect(() => {
     setSelectedOption(null);
-    setHasAnswered(false);
     setShowAnswer(false);
     setShowOfficialAnswer(false);
     setShowAIAnswer(false);
@@ -64,10 +63,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           if (respostaData && respostaData.length > 0) {
             setHasAnswered(true);
             
-            // Definir a opção selecionada baseada na resposta anterior
-            if (respostaData[0] && respostaData[0].opcao_id) {
-              setSelectedOption(respostaData[0].opcao_id);
-            }
+            // Não selecionamos automaticamente nenhuma opção para permitir
+            // que o usuário responda novamente
+          } else {
+            setHasAnswered(false);
           }
         } catch (error) {
           console.error("Erro ao verificar resposta do usuário:", error);
@@ -105,11 +104,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           
         if (respostaData && respostaData.length > 0) {
           setHasAnswered(true);
-          
-          // Definir a opção selecionada baseada na resposta anterior
-          if (respostaData[0] && respostaData[0].opcao_id) {
-            setSelectedOption(respostaData[0].opcao_id);
-          }
+          // Não selecionamos automaticamente nenhuma opção para permitir
+          // que o usuário responda novamente
         }
         
         // Verificar quais comentários já foram curtidos pelo usuário
@@ -209,7 +205,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
   
   const toggleAnswer = async () => {
-    if (!showAnswer && !hasAnswered && selectedOption !== null) {
+    if (!showAnswer && selectedOption !== null) {
       // Verificar se a opção selecionada é a correta
       const correctOption = question.options.find(opt => opt.isCorrect);
       const isCorrect = correctOption?.id === selectedOption;
@@ -334,9 +330,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
   
   const handleOptionClick = (optionId: string) => {
-    if (!hasAnswered) {
-      setSelectedOption(optionId);
-    }
+    setSelectedOption(optionId);
   };
   
   const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
@@ -399,7 +393,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     }
   };
   
-  return <article className="w-full rounded-xl border border-solid border-gray-100 mb-5 bg-white">
+  return <article className="w-full rounded-xl border border-solid border-gray-100 mb-5 bg-white relative">
+      {hasAnswered && (
+        <Badge variant="secondary" className="absolute top-2 right-2 bg-[#5f2ebe] text-white z-10">
+          Você já respondeu
+        </Badge>
+      )}
       <header className="overflow-hidden rounded-t-xl rounded-b-none border-b border-gray-100">
         <QuestionHeader 
           year={question.year} 
