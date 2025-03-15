@@ -70,7 +70,7 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
 
   return (
     <div className="space-y-8 mt-8">
-      <QuestionListSummary total={questions.length} hasFilters={hasFilters} />
+      <QuestionListSummary count={questions.length} hasFilters={hasFilters} />
       
       {questions.map(question => (
         <QuestionCard
@@ -85,7 +85,7 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
         <QuestionPagination
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={handlePageChange}
+          handlePageChange={handlePageChange}
         />
       )}
     </div>
