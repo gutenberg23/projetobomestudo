@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Header } from "../layout/Header";
 import { Footer } from "../layout/Footer";
@@ -14,6 +14,7 @@ export const CourseLayout = () => {
   const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados'>('disciplinas');
   const [isProgressVisible, setIsProgressVisible] = useState(true);
   const progressRef = React.useRef<HTMLDivElement>(null);
+  const [subjectsCount, setSubjectsCount] = useState<number>(0);
   
   const handleProgressClick = () => {
     setIsProgressVisible(!isProgressVisible);
@@ -26,24 +27,34 @@ export const CourseLayout = () => {
       }, 100);
     }
   };
+
+  // Função para receber o número de disciplinas do componente SubjectsList
+  const handleSubjectsCountChange = (count: number) => {
+    setSubjectsCount(count);
+  };
+  
+  const showNavigation = subjectsCount > 1;
+  const showProgress = showNavigation && isProgressVisible;
   
   return (
     <div className="min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="pt-[88px]">
         <CourseHeader courseId={courseId || ''} />
-        <CourseNavigation 
-          activeTab={activeTab} 
-          setActiveTab={setActiveTab} 
-          onProgressClick={handleProgressClick} 
-          isProgressVisible={isProgressVisible} 
-        />
+        {showNavigation && (
+          <CourseNavigation 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            onProgressClick={handleProgressClick} 
+            isProgressVisible={isProgressVisible} 
+          />
+        )}
         {activeTab === 'disciplinas' && (
           <div className="bg-[rgba(246,248,250,1)] flex w-full gap-5 py-0 flex-col xl:flex-row px-[10px] md:px-[32px]">
-            <div className="flex-1">
-              <SubjectsList />
+            <div className={`flex-1 ${!showNavigation ? 'mt-5' : ''}`}>
+              <SubjectsList onSubjectsCountChange={handleSubjectsCountChange} />
             </div>
-            {isProgressVisible && (
+            {showProgress && (
               <div ref={progressRef} className="w-full xl:min-w-[300px] xl:max-w-[400px] mb-10">
                 <ProgressPanel />
               </div>

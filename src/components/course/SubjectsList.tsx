@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Subject as SubjectComponent } from "./components/Subject";
@@ -7,7 +8,11 @@ import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 
-export const SubjectsList = () => {
+interface SubjectsListProps {
+  onSubjectsCountChange?: (count: number) => void;
+}
+
+export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
   const { courseId } = useParams<{ courseId: string }>();
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -166,6 +171,7 @@ export const SubjectsList = () => {
           }
           
           setSubjects([disciplina]);
+          if (onSubjectsCountChange) onSubjectsCountChange(1);
         } else {
           // É um curso, carregar suas disciplinas
           setIsCurso(true);
@@ -297,24 +303,28 @@ export const SubjectsList = () => {
               }));
               
               setSubjects(formattedSubjects);
+              if (onSubjectsCountChange) onSubjectsCountChange(formattedSubjects.length);
             } else {
               setSubjects([]);
+              if (onSubjectsCountChange) onSubjectsCountChange(0);
             }
           } else {
             setSubjects([]);
+            if (onSubjectsCountChange) onSubjectsCountChange(0);
           }
         }
       } catch (error) {
         console.error("Erro ao carregar disciplinas:", error);
         toast.error("Erro ao carregar disciplinas");
         setSubjects([]);
+        if (onSubjectsCountChange) onSubjectsCountChange(0);
       } finally {
         setLoading(false);
       }
     };
 
     fetchSubjects();
-  }, [courseId]);
+  }, [courseId, onSubjectsCountChange]);
 
   if (loading) {
     return (
