@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { LessonCard } from "../../new/LessonCard";
-import { Lesson } from '../types/subjects';
+import { Lesson, Section } from '../types/subjects';
 
 interface SubjectLessonsProps {
   lessons: Lesson[];
@@ -15,18 +16,10 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
           lesson={{
             id: lesson.id,
             title: lesson.title,
-            description: lesson.description,
-            sections: lesson.sections.map(section => ({
-              id: section.id,
-              title: section.title,
-              contentType: section.contentType || "video",
-              duration: section.duration,
-              videoUrl: section.videoUrl,
-              textContent: section.textContent,
-              professorId: section.professorId,
-              professorNome: section.professorNome
-            })),
-            question: lesson.question
+            description: lesson.description || '',
+            sections: lesson.sections || [],
+            question: lesson.question,
+            duration: lesson.duration,
           }} 
         />
       ))}

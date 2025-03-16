@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Subject as SubjectComponent } from "./components/Subject";
-import { Subject } from "./types/subjects";
+import { Subject, Lesson } from "./types/subjects";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { toast } from "sonner";
@@ -65,7 +66,8 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                   const subject: Subject = {
                     id: disciplina.id,
                     name: disciplina.titulo,
-                    rating: parseInt(disciplina.descricao) || 0,
+                    // Converter para string para compatibilidade com o tipo
+                    rating: disciplina.descricao || "0",
                     lessons: [],
                   };
                   
@@ -162,6 +164,7 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                         subject.lessons = aulasComTopicos.map(aula => ({
                           id: aula.id,
                           title: aula.titulo,
+                          duration: "0",
                           description: aula.descricao || '',
                           rating: 'V',
                           sections: aula.topicos.map(topico => ({
@@ -187,7 +190,11 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                 }));
                 
                 // Sort subjects by rating in descending order (highest to lowest)
-                const sortedSubjects = [...formattedSubjects].sort((a, b) => b.rating - a.rating);
+                const sortedSubjects = [...formattedSubjects].sort((a, b) => {
+                  const ratingA = a.rating ? Number(a.rating) : 0;
+                  const ratingB = b.rating ? Number(b.rating) : 0;
+                  return ratingB - ratingA;
+                });
                 
                 setSubjects(sortedSubjects);
                 if (onSubjectsCountChange) onSubjectsCountChange(sortedSubjects.length);
@@ -222,7 +229,7 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
               const disciplina: Subject = {
                 id: disciplinaData.id,
                 name: disciplinaData.titulo,
-                rating: parseInt(disciplinaData.descricao) || 0,
+                rating: disciplinaData.descricao || "0",
                 lessons: [],
               };
               
@@ -319,6 +326,7 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                     disciplina.lessons = aulasComTopicos.map(aula => ({
                       id: aula.id,
                       title: aula.titulo,
+                      duration: "0",
                       description: aula.descricao || '',
                       rating: 'V',
                       sections: aula.topicos.map(topico => ({

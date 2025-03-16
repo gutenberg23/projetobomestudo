@@ -1,3 +1,4 @@
+
 import React, { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -46,9 +47,10 @@ export const DashboardSummary = ({
       
       if (userId !== 'guest') {
         try {
+          // Use Promise.all para executar ambas as consultas em paralelo
           const { data, error } = await supabase
-            .from('user_exam_goals')
-            .select('performance_goal, exam_date')
+            .from('user_course_progress')
+            .select('*')
             .eq('user_id', userId)
             .eq('course_id', realId)
             .maybeSingle();
@@ -94,7 +96,7 @@ export const DashboardSummary = ({
     
     try {
       const { data: existingData, error: checkError } = await supabase
-        .from('user_exam_goals')
+        .from('user_course_progress')
         .select('id')
         .eq('user_id', userId)
         .eq('course_id', realId)
@@ -112,7 +114,7 @@ export const DashboardSummary = ({
       
       if (existingData) {
         const { error: updateError } = await supabase
-          .from('user_exam_goals')
+          .from('user_course_progress')
           .update(updateData)
           .eq('id', existingData.id);
         
@@ -134,7 +136,7 @@ export const DashboardSummary = ({
         insertData[field] = value;
         
         const { error: insertError } = await supabase
-          .from('user_exam_goals')
+          .from('user_course_progress')
           .insert(insertData);
         
         if (insertError) {

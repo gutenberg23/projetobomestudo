@@ -31,45 +31,28 @@ export const useEditorializedData = () => {
       
       // Verificar se usuário está logado
       if (userId !== 'guest') {
-        // Buscar dados do progresso por disciplina
+        // Buscar dados do progresso por disciplina através da tabela user_course_progress
+        // Estamos usando user_course_progress até que o tipo do Supabase seja atualizado
         const { data: subjectProgressData, error: subjectProgressError } = await supabase
-          .from('user_subject_progress')
+          .from('user_course_progress')
           .select('*')
           .eq('user_id', userId)
-          .eq('course_id', realId);
+          .eq('course_id', realId)
+          .eq('subjects_data', true) // Filtrar apenas registros que contêm dados de disciplinas
+          .maybeSingle();
         
-        if (!subjectProgressError && subjectProgressData && subjectProgressData.length > 0) {
-          // Transformar os dados do banco em formato de Subject[]
-          const formattedSubjects: Subject[] = subjectProgressData.map(progressData => {
-            const topics: Topic[] = [];
-            
-            // Mapear os arrays paralelos para objetos de tópico
-            for (let i = 0; i < progressData.line_numbers.length; i++) {
-              topics.push({
-                id: progressData.line_numbers[i],
-                name: progressData.topics[i] || '',
-                topic: progressData.topics[i] || '',
-                isDone: progressData.completed[i] || false,
-                isReviewed: progressData.reviewed[i] || false,
-                importance: progressData.importance[i] || 3,
-                difficulty: progressData.difficulty[i] || "Médio",
-                exercisesDone: progressData.total_exercises[i] || 0,
-                hits: progressData.correct_answers[i] || 0,
-                errors: 0, // Calculado no frontend
-                performance: 0 // Calculado no frontend
-              });
+        if (!subjectProgressError && subjectProgressData && subjectProgressData.subjects_data) {
+          try {
+            // Tentar converter os dados do JSON para o formato Subject[]
+            const parsedData = JSON.parse(JSON.stringify(subjectProgressData.subjects_data));
+            if (Array.isArray(parsedData)) {
+              setSubjects(parsedData as Subject[]);
+              setLoading(false);
+              return;
             }
-            
-            return {
-              id: progressData.subject_name,
-              name: progressData.subject_name,
-              topics
-            };
-          });
-          
-          setSubjects(formattedSubjects);
-          setLoading(false);
-          return;
+          } catch (e) {
+            console.error('Erro ao converter dados JSON:', e);
+          }
         }
       }
       
@@ -218,42 +201,45 @@ export const useEditorializedData = () => {
       const performanceGoal = localStorage.getItem(`${userId}_${courseRealId}_performanceGoal`);
       const examDate = localStorage.getItem(`${userId}_${courseRealId}_examDate`);
       
-      // Salvar metas e data do exame
-      const performanceGoalNumber = performanceGoal ? parseInt(performanceGoal) : undefined;
+      // Salvar metas e data do exame junto com os dados das disciplinas na tabela user_course_progress
+      // Estamos usando user_course_progress até que o tipo do Supabase seja atualizado
+      const performanceGoalNumber = performanceGoal ? parseInt(performanceGoal) : 85; // Valor padrão de 85%
       
       // Verificar se já existe um registro para este usuário e curso
-      const { data: existingGoal, error: checkGoalError } = await supabase
-        .from('user_exam_goals')
+      const { data: existingProgress, error: checkProgressError } = await supabase
+        .from('user_course_progress')
         .select('id')
         .eq('user_id', userId)
         .eq('course_id', courseRealId)
         .maybeSingle();
       
-      if (checkGoalError && checkGoalError.code !== 'PGRST116') { // PGRST116 é o código para "não encontrado"
-        console.error('Erro ao verificar metas existentes:', checkGoalError);
+      if (checkProgressError && checkProgressError.code !== 'PGRST116') { // PGRST116 é o código para "não encontrado"
+        console.error('Erro ao verificar progresso existente:', checkProgressError);
       } else {
-        // Atualizar ou inserir metas de exame
-        if (existingGoal) {
+        // Atualizar ou inserir dados de progresso completos
+        if (existingProgress) {
           // Atualizar registro existente
           const { error: updateError } = await supabase
-            .from('user_exam_goals')
+            .from('user_course_progress')
             .update({
+              subjects_data: subjectsData,
               performance_goal: performanceGoalNumber,
               exam_date: examDate ? new Date(examDate).toISOString() : null,
               updated_at: new Date().toISOString()
             })
-            .eq('id', existingGoal.id);
+            .eq('id', existingProgress.id);
           
           if (updateError) {
-            console.error('Erro ao atualizar metas no banco:', updateError);
+            console.error('Erro ao atualizar progresso no banco:', updateError);
           }
         } else {
           // Criar novo registro
           const { error: insertError } = await supabase
-            .from('user_exam_goals')
+            .from('user_course_progress')
             .insert({
               user_id: userId,
               course_id: courseRealId,
+              subjects_data: subjectsData,
               performance_goal: performanceGoalNumber,
               exam_date: examDate ? new Date(examDate).toISOString() : null,
               created_at: new Date().toISOString(),
@@ -261,91 +247,7 @@ export const useEditorializedData = () => {
             });
           
           if (insertError) {
-            console.error('Erro ao inserir metas no banco:', insertError);
-          }
-        }
-      }
-      
-      // Preparar e salvar dados de progresso por disciplina
-      for (const subject of subjectsData) {
-        // Verificar se já existe registro para esta disciplina
-        const { data: existingProgress, error: checkProgressError } = await supabase
-          .from('user_subject_progress')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('course_id', courseRealId)
-          .eq('subject_name', subject.name)
-          .maybeSingle();
-        
-        // Preparar arrays para o banco de dados
-        const lineNumbers: number[] = [];
-        const completed: boolean[] = [];
-        const topics: string[] = [];
-        const importance: number[] = [];
-        const difficulty: string[] = [];
-        const totalExercises: number[] = [];
-        const correctAnswers: number[] = [];
-        const reviewed: boolean[] = [];
-        
-        // Preencher os arrays com dados dos tópicos
-        subject.topics.forEach(topic => {
-          lineNumbers.push(topic.id);
-          completed.push(topic.isDone);
-          topics.push(topic.topic);
-          importance.push(topic.importance);
-          difficulty.push(topic.difficulty);
-          totalExercises.push(topic.exercisesDone);
-          correctAnswers.push(topic.hits);
-          reviewed.push(topic.isReviewed);
-        });
-        
-        if (checkProgressError && checkProgressError.code !== 'PGRST116') {
-          console.error('Erro ao verificar progresso existente:', checkProgressError);
-        } else {
-          // Atualizar ou inserir dados de progresso
-          if (existingProgress) {
-            // Atualizar registro existente
-            const { error: updateError } = await supabase
-              .from('user_subject_progress')
-              .update({
-                line_numbers: lineNumbers,
-                completed: completed,
-                topics: topics,
-                importance: importance,
-                difficulty: difficulty,
-                total_exercises: totalExercises,
-                correct_answers: correctAnswers,
-                reviewed: reviewed,
-                updated_at: new Date().toISOString()
-              })
-              .eq('id', existingProgress.id);
-            
-            if (updateError) {
-              console.error('Erro ao atualizar progresso no banco:', updateError);
-            }
-          } else {
-            // Criar novo registro
-            const { error: insertError } = await supabase
-              .from('user_subject_progress')
-              .insert({
-                user_id: userId,
-                course_id: courseRealId,
-                subject_name: subject.name,
-                line_numbers: lineNumbers,
-                completed: completed,
-                topics: topics,
-                importance: importance,
-                difficulty: difficulty,
-                total_exercises: totalExercises,
-                correct_answers: correctAnswers,
-                reviewed: reviewed,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-            
-            if (insertError) {
-              console.error('Erro ao inserir progresso no banco:', insertError);
-            }
+            console.error('Erro ao inserir progresso no banco:', insertError);
           }
         }
       }
@@ -373,7 +275,7 @@ export const useEditorializedData = () => {
                   // Salvar o tópico atualizado no localStorage
                   if (courseId) {
                     const realId = extractIdFromFriendlyUrl(courseId);
-                    const topicKey = `${userId}_${subjectId}_${topicId}`;
+                    const topicKey = `${userId}_${realId}_${subjectId}_${topicId}`;
                     localStorage.setItem(topicKey, JSON.stringify(updatedTopic));
                   }
                   
