@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +21,45 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
   const { courseId } = useParams<{ courseId: string }>();
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Função para buscar os resultados do usuário para um simulado específico
+  const fetchUserSimuladoResults = async (simuladoId: string) => {
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !userData.user) {
+        console.error("Erro ao obter usuário atual:", userError);
+        return { hits: 0, errors: 0 };
+      }
+      
+      const userId = userData.user.id;
+      
+      // Buscar os resultados do usuário para este simulado
+      const { data, error } = await supabase
+        .from("user_simulado_results")
+        .select("acertos, erros")
+        .eq("user_id", userId)
+        .eq("simulado_id", simuladoId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error(`Erro ao buscar resultados para simulado ${simuladoId}:`, error);
+        return { hits: 0, errors: 0 };
+      }
+      
+      if (data) {
+        return { 
+          hits: data.acertos || 0, 
+          errors: data.erros || 0 
+        };
+      }
+      
+      return { hits: 0, errors: 0 };
+    } catch (error) {
+      console.error(`Erro ao processar resultados para simulado ${simuladoId}:`, error);
+      return { hits: 0, errors: 0 };
+    }
+  };
 
   useEffect(() => {
     const fetchSimulados = async () => {
@@ -71,14 +109,20 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
         console.log("Simulados encontrados:", data);
 
         // Transformar os dados para o formato esperado pelo componente
-        // Adicionando valores fictícios para hits e errors por enquanto
-        const formattedSimulados: Simulado[] = data.map(simulado => ({
-          id: simulado.id,
-          titulo: simulado.titulo,
-          questoes_ids: simulado.questoes_ids || [],
-          hits: Math.floor(Math.random() * (simulado.questoes_ids?.length || 10) * 0.8), // Valor fictício para exemplo
-          errors: Math.floor(Math.random() * (simulado.questoes_ids?.length || 10) * 0.3) // Valor fictício para exemplo
-        }));
+        const formattedSimulados: Simulado[] = [];
+        
+        // Para cada simulado, buscar os resultados do usuário
+        for (const simulado of data) {
+          const userResults = await fetchUserSimuladoResults(simulado.id);
+          
+          formattedSimulados.push({
+            id: simulado.id,
+            titulo: simulado.titulo,
+            questoes_ids: simulado.questoes_ids || [],
+            hits: userResults.hits,
+            errors: userResults.errors
+          });
+        }
 
         setSimulados(formattedSimulados);
       } catch (error) {
