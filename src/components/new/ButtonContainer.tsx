@@ -17,8 +17,10 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
     <div className="flex items-center justify-between w-full max-md:flex-wrap max-md:max-w-full px-0">
       <div className="flex gap-5 justify-center items-center">
         <ActionButton
-          title="Caderno de Questões"
-          isSelected={showQuestions}
+          icon="/lovable-uploads/interroga.svg"
+          label="Caderno de Questões"
+          variant="highlight"
+          isActive={showQuestions}
           onClick={setShowQuestions}
         />
       </div>

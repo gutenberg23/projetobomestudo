@@ -93,7 +93,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       
       console.log("Dados do tópico:", topicoData);
       
-      if (!topicoData.questoes_ids || topicoData.questoes_ids.length === 0) {
+      if (!topicoData.questoes_ids || !Array.isArray(topicoData.questoes_ids) || topicoData.questoes_ids.length === 0) {
         console.log("Tópico não tem questões vinculadas");
         setCurrentSectionQuestions([]);
         return;
