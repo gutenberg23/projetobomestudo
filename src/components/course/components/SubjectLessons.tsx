@@ -33,8 +33,12 @@ export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
               description: lesson.description || '',
               sections: processedSections,
               question: lesson.question,
-              // Garantir que duration seja uma string
-              duration: typeof lesson.duration === 'string' ? lesson.duration : String(lesson.duration || ''),
+              // Convertemos a duration de string para número
+              duration: typeof lesson.duration === 'number' 
+                ? lesson.duration 
+                : typeof lesson.duration === 'string' 
+                  ? parseInt(lesson.duration) || 0 
+                  : 0,
             }} 
           />
         );

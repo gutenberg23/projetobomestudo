@@ -9,7 +9,7 @@ export interface Subject {
 export interface Lesson {
   id: string;
   title: string;
-  duration: string;
+  duration: string | number; // Atualizando para aceitar string ou número
   description?: string;
   sections?: Section[];
   question?: any;
