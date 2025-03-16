@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { 
   CursosFilter, 
@@ -39,58 +38,67 @@ const Cursos = () => {
       // Questões diretamente associadas ao curso
       const questoesDiretas = curso.questoes_ids?.length || 0;
       
+      // Questões associadas aos tópicos do curso
+      let questoesTopicos = 0;
+      
+      if (curso.topicos_ids && curso.topicos_ids.length > 0) {
+        // Buscar dados de todos os tópicos de uma vez
+        const { data: topicosData, error: topicosError } = await supabase
+          .from('topicos')
+          .select('questoes_ids')
+          .in('id', curso.topicos_ids);
+          
+        if (topicosError) throw topicosError;
+        
+        // Contar questões de todos os tópicos
+        if (topicosData) {
+          topicosData.forEach(topico => {
+            if (topico.questoes_ids && Array.isArray(topico.questoes_ids)) {
+              questoesTopicos += topico.questoes_ids.length;
+            }
+          });
+        }
+      }
+      
       // Questões associadas às disciplinas do curso
       let questoesDisciplinas = 0;
       
       if (curso.disciplinas_ids && curso.disciplinas_ids.length > 0) {
-        console.log(`Processando ${curso.disciplinas_ids.length} disciplinas para o curso ${curso.titulo}`);
-        
+        // Buscar aulas de todas as disciplinas
         for (const disciplinaId of curso.disciplinas_ids) {
-          console.log(`Processando disciplina: ${disciplinaId}`);
-          
-          // Buscar dados da disciplina
           const { data: disciplina } = await supabase
             .from('disciplinas')
-            .select('*')
+            .select('aulas_ids')
             .eq('id', disciplinaId)
             .single();
             
-          if (disciplina) {
-            console.log(`Calculando questões para aulas: ${JSON.stringify(disciplina.aulas_ids)}`);
-            // Questões associadas às aulas da disciplina
-            if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-              console.log(`Aulas encontradas: ${disciplina.aulas_ids.length}`);
+          if (disciplina && disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
+            // Buscar dados de todas as aulas da disciplina de uma vez
+            const { data: aulasData } = await supabase
+              .from('aulas')
+              .select('questoes_ids, topicos_ids')
+              .in('id', disciplina.aulas_ids);
               
-              for (const aulaId of disciplina.aulas_ids) {
-                // Buscar dados da aula
-                const { data: aula } = await supabase
-                  .from('aulas')
-                  .select('*')
-                  .eq('id', aulaId)
-                  .single();
-                  
-                if (aula) {
-                  // Questões diretamente associadas à aula
-                  questoesDisciplinas += aula.questoes_ids?.length || 0;
-                  
-                  // Questões associadas aos tópicos da aula
-                  if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-                    console.log(`Aula com ${aula.topicos_ids.length} tópicos`);
+            if (aulasData) {
+              // Contar questões diretamente associadas às aulas
+              for (const aula of aulasData) {
+                if (aula.questoes_ids && Array.isArray(aula.questoes_ids)) {
+                  questoesDisciplinas += aula.questoes_ids.length;
+                }
+                
+                // Contar questões dos tópicos das aulas
+                if (aula.topicos_ids && aula.topicos_ids.length > 0) {
+                  const { data: topicosAula } = await supabase
+                    .from('topicos')
+                    .select('questoes_ids')
+                    .in('id', aula.topicos_ids);
                     
-                    for (const topicoId of aula.topicos_ids) {
-                      // Buscar dados do tópico
-                      const { data: topico } = await supabase
-                        .from('topicos')
-                        .select('*')
-                        .eq('id', topicoId)
-                        .single();
-                        
-                      if (topico) {
-                        const questoesTopico = topico.questoes_ids?.length || 0;
-                        console.log(`Tópico com ${questoesTopico} questões`);
-                        questoesDisciplinas += questoesTopico;
+                  if (topicosAula) {
+                    topicosAula.forEach(topico => {
+                      if (topico.questoes_ids && Array.isArray(topico.questoes_ids)) {
+                        questoesDisciplinas += topico.questoes_ids.length;
                       }
-                    }
+                    });
                   }
                 }
               }
@@ -99,26 +107,8 @@ const Cursos = () => {
         }
       }
       
-      // Questões associadas aos tópicos do curso
-      let questoesTopicos = 0;
-      
-      if (curso.topicos_ids && curso.topicos_ids.length > 0) {
-        for (const topicoId of curso.topicos_ids) {
-          // Buscar dados do tópico
-          const { data: topico } = await supabase
-            .from('topicos')
-            .select('*')
-            .eq('id', topicoId)
-            .single();
-            
-          if (topico) {
-            questoesTopicos += topico.questoes_ids?.length || 0;
-          }
-        }
-      }
-      
-      // Total de questões
-      const total = questoesDiretas + questoesDisciplinas + questoesTopicos;
+      // Total de questões (evitando duplicações - lógica simplificada)
+      const total = questoesDiretas + questoesTopicos + questoesDisciplinas;
       console.log(`Total de questões calculado: ${total}`);
       
       return total;

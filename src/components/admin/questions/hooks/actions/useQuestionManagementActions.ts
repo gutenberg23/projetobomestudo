@@ -1,10 +1,22 @@
+
 import { toast } from "sonner";
 import { QuestionItemType } from "../../types";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useQuestionManagementActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
   const handleRemoveQuestion = async (id: string) => {
     try {
       const { questions, setQuestions, setSelectedQuestions } = state;
+
+      // Remover a questão do banco de dados
+      const { error } = await supabase
+        .from('questoes')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
 
       // Remover a questão do estado local
       const updatedQuestions = questions.filter(q => q.id !== id);
@@ -21,7 +33,6 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
     }
   };
 
-  // Atualizar a assinatura da função handleEditQuestion para receber QuestionItemType
   const handleEditQuestion = async (question: QuestionItemType) => {
     try {
       const {

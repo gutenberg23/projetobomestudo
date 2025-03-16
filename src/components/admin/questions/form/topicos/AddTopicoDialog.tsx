@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -50,14 +49,12 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   const fetchDisciplinas = async () => {
     setLoading(true);
     try {
-      // Usamos o select para obter todas as disciplinas e depois filtramos os valores únicos no JavaScript
       const { data, error } = await supabase
         .from('questoes')
         .select('discipline');
       
       if (error) throw error;
       
-      // Extrair disciplinas únicas usando Set
       const uniqueDisciplinas = [...new Set(data?.map(item => item.discipline) || [])];
       setDisciplinas(uniqueDisciplinas);
     } catch (error) {
@@ -88,86 +85,18 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
   const fetchTeachers = async () => {
     setLoading(true);
     try {
-      // Esta é uma versão simulada. Quando houver uma tabela real de professores, 
-      // substitua este código por uma consulta ao Supabase
-      const mockTeachers = [
-        {
-          id: "1",
-          nomeCompleto: "Ana Silva",
-          email: "ana.silva@email.com",
-          linkYoutube: "https://youtube.com/c/anasilva",
-          disciplina: "Português",
-          instagram: "https://instagram.com/anasilva",
-          twitter: "https://twitter.com/anasilva",
-          facebook: "https://facebook.com/anasilva",
-          fotoPerfil: "https://i.pravatar.cc/150?img=1",
-          status: "aprovado",
-          dataCadastro: "12/05/2023",
-          ativo: true,
-          rating: 4.5
-        },
-        {
-          id: "2",
-          nomeCompleto: "Carlos Oliveira",
-          email: "carlos.oliveira@email.com",
-          linkYoutube: "https://youtube.com/c/carlosoliveira",
-          disciplina: "Matemática",
-          instagram: "https://instagram.com/carlosoliveira",
-          fotoPerfil: "https://i.pravatar.cc/150?img=2",
-          status: "pendente",
-          dataCadastro: "03/07/2023",
-          ativo: false,
-          rating: 3.8
-        },
-        {
-          id: "3",
-          nomeCompleto: "Juliana Mendes",
-          email: "juliana.mendes@email.com",
-          linkYoutube: "https://youtube.com/c/julianamendes",
-          disciplina: "Direito Constitucional",
-          twitter: "https://twitter.com/julianamendes",
-          facebook: "https://facebook.com/julianamendes",
-          fotoPerfil: "https://i.pravatar.cc/150?img=3",
-          status: "rejeitado",
-          dataCadastro: "28/09/2023",
-          ativo: false,
-          rating: 2.5
-        },
-        {
-          id: "4",
-          nomeCompleto: "Roberto Almeida",
-          email: "roberto.almeida@email.com",
-          linkYoutube: "https://youtube.com/c/robertoalmeida",
-          disciplina: "Contabilidade",
-          instagram: "https://instagram.com/robertoalmeida",
-          twitter: "https://twitter.com/robertoalmeida",
-          fotoPerfil: "https://i.pravatar.cc/150?img=4",
-          status: "aprovado",
-          dataCadastro: "15/01/2023",
-          ativo: true,
-          rating: 5.0
-        },
-        {
-          id: "5",
-          nomeCompleto: "Fernanda Costa",
-          email: "fernanda.costa@email.com",
-          linkYoutube: "https://youtube.com/c/fernandacosta",
-          disciplina: "Direito Administrativo",
-          facebook: "https://facebook.com/fernandacosta",
-          fotoPerfil: "https://i.pravatar.cc/150?img=5",
-          status: "pendente",
-          dataCadastro: "07/04/2023",
-          ativo: true,
-          rating: 4.2
-        }
-      ];
-
-      // Convertendo os dados brutos para o formato TeacherData
-      const formattedTeachers: TeacherData[] = mockTeachers.map(teacher => ({
+      const { data, error } = await supabase
+        .from('professores')
+        .select('id, nome_completo, disciplina')
+        .order('nome_completo');
+        
+      if (error) throw error;
+      
+      const formattedTeachers: TeacherData[] = data?.map(teacher => ({
         id: teacher.id,
-        nomeCompleto: teacher.nomeCompleto,
+        nomeCompleto: teacher.nome_completo,
         disciplina: teacher.disciplina
-      }));
+      })) || [];
 
       setTeachers(formattedTeachers);
     } catch (error) {
@@ -197,8 +126,6 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
       return;
     }
 
-    // Aqui nós chamamos a função original handleAddTopico, mas com os dados adicionais
-    // Você precisará modificar a função original para receber esses dados adicionais
     console.log({
       nome: newTopicoNome,
       disciplina: selectedDisciplina,
@@ -209,7 +136,6 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
     
     handleAddTopico();
     
-    // Reset do estado
     setNewTopicoNome("");
     setSelectedDisciplina("");
     setPatrocinador("");
