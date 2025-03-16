@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { BarChart } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -46,17 +45,19 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
         <span className="text-slate-500">{id}</span>
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger asChild>
-              <Popover open={statsOpen} onOpenChange={setStatsOpen}>
-                <PopoverTrigger asChild>
-                  <button className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors">
-                    <BarChart className="h-4 w-4 text-white" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[45vw] md:w-[700px] p-0">
-                  <QuestionStats questionId={id} />
-                </PopoverContent>
-              </Popover>
+            <TooltipTrigger>
+              <div>
+                <Popover open={statsOpen} onOpenChange={setStatsOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors">
+                      <BarChart className="h-4 w-4 text-white" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[45vw] md:w-[700px] p-0">
+                    <QuestionStats questionId={id} />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </TooltipTrigger>
             <TooltipContent>
               <p>Estatísticas da Questão</p>

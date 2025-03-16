@@ -5,6 +5,22 @@ import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 
+// Definição de tipo para a tabela user_simulado_results
+interface UserSimuladoResult {
+  id?: string;
+  user_id: string;
+  simulado_id: string;
+  acertos: number;
+  erros: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Tipo para o Supabase Client estendido
+type SupabaseClientWithCustomTables = typeof supabase & {
+  from(table: 'user_simulado_results'): any;
+};
+
 interface Simulado {
   id: string;
   titulo: string;
@@ -35,7 +51,9 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
       const userId = userData.user.id;
       
       // Buscar os resultados do usuário para este simulado
-      const { data, error } = await supabase
+      // Usando type assertion para evitar erros de TypeScript
+      const supabaseWithCustomTables = supabase as SupabaseClientWithCustomTables;
+      const { data, error } = await supabaseWithCustomTables
         .from("user_simulado_results")
         .select("acertos, erros")
         .eq("user_id", userId)

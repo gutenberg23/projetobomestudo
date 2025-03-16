@@ -10,10 +10,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
 import { Spinner } from "@/components/ui/spinner";
+import { useParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
+
 interface LessonCardProps {
   lesson: Lesson;
   question?: Question;
 }
+
 export const LessonCard: React.FC<LessonCardProps> = ({
   lesson,
   question
@@ -34,6 +39,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const [showExplanation, setShowExplanation] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const { courseId } = useParams<{ courseId: string }>();
+  const { user } = useAuth();
+
   useEffect(() => {
     const updateLayout = () => {
       checkScroll();
@@ -46,15 +54,153 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       clearTimeout(timeoutId);
     };
   }, [isVideoSectionVisible]);
+
   useEffect(() => {
     const allSectionsCompleted = lesson.sections.every(section => completedSections.includes(section.id));
     setIsLessonCompleted(allSectionsCompleted);
   }, [completedSections, lesson.sections]);
+
   useEffect(() => {
     if (showQuestions && selectedSection) {
       fetchQuestionsForSection(selectedSection);
     }
   }, [selectedSection, showQuestions]);
+
+  useEffect(() => {
+    if (!user || !courseId || !lesson.id) return;
+
+    const loadCompletedSections = async () => {
+      try {
+        const realCourseId = extractIdFromFriendlyUrl(courseId);
+        
+        // Buscar progresso do usuário
+        const { data: userProgress, error: progressError } = await supabase
+          .from('user_course_progress')
+          .select('subjects_data')
+          .eq('user_id', user.id)
+          .eq('course_id', realCourseId)
+          .maybeSingle();
+          
+        if (progressError && progressError.code !== 'PGRST116') {
+          console.error('Erro ao buscar progresso do usuário:', progressError);
+          return;
+        }
+        
+        if (userProgress?.subjects_data) {
+          const subjectsData = userProgress.subjects_data;
+          
+          // Verificar se há seções completadas para esta aula
+          if (
+            typeof subjectsData === 'object' && 
+            !Array.isArray(subjectsData) && 
+            subjectsData.completed_sections && 
+            subjectsData.completed_sections[lesson.id]
+          ) {
+            // Carregar as seções completadas
+            const savedCompletedSections = subjectsData.completed_sections[lesson.id];
+            if (Array.isArray(savedCompletedSections)) {
+              setCompletedSections(savedCompletedSections);
+              
+              // Verificar se todas as seções estão completas
+              const allSectionsCompleted = lesson.sections.every(section => 
+                savedCompletedSections.includes(section.id)
+              );
+              setIsLessonCompleted(allSectionsCompleted);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar seções completadas:', error);
+      }
+    };
+    
+    loadCompletedSections();
+  }, [user, courseId, lesson.id, lesson.sections]);
+
+  useEffect(() => {
+    if (!user || !courseId || !lesson.id) return;
+    
+    const saveCompletedSectionsToDatabase = async () => {
+      try {
+        const realCourseId = extractIdFromFriendlyUrl(courseId);
+        
+        // Fetch existing progress
+        const { data: existingProgress, error: fetchError } = await supabase
+          .from('user_course_progress')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('course_id', realCourseId)
+          .maybeSingle();
+        
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('Error fetching user progress:', fetchError);
+          return;
+        }
+        
+        // Prepare the subjects_data object
+        let subjectsData = existingProgress?.subjects_data || {};
+        
+        if (typeof subjectsData !== 'object' || Array.isArray(subjectsData)) {
+          subjectsData = {};
+        }
+        
+        if (!subjectsData.completed_sections) {
+          subjectsData.completed_sections = {};
+        }
+        
+        // Update the completed sections for this lesson
+        subjectsData.completed_sections[lesson.id] = completedSections;
+        
+        // Save to database
+        if (existingProgress) {
+          // Update existing record
+          const { error: updateError } = await supabase
+            .from('user_course_progress')
+            .update({
+              subjects_data: subjectsData,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingProgress.id);
+          
+          if (updateError) {
+            console.error('Error updating user progress:', updateError);
+            toast.error('Erro ao salvar progresso');
+          } else {
+            console.log('Progress updated successfully');
+          }
+        } else {
+          // Insert new record
+          const { error: insertError } = await supabase
+            .from('user_course_progress')
+            .insert({
+              user_id: user.id,
+              course_id: realCourseId,
+              subjects_data: subjectsData,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          
+          if (insertError) {
+            console.error('Error inserting user progress:', insertError);
+            toast.error('Erro ao salvar progresso');
+          } else {
+            console.log('Progress inserted successfully');
+          }
+        }
+      } catch (error) {
+        console.error('Error saving completed sections:', error);
+        toast.error('Erro ao salvar progresso');
+      }
+    };
+    
+    // Debounce the save operation to avoid too many database calls
+    const timeoutId = setTimeout(() => {
+      saveCompletedSectionsToDatabase();
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [completedSections, user, courseId, lesson.id]);
+
   const convertToQuestionOptions = (options: any): QuestionOption[] => {
     if (!options) return [];
     let optionsArray: any[] = [];
@@ -80,6 +226,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       };
     });
   };
+
   const fetchQuestionsForSection = async (sectionId: string) => {
     setIsLoadingQuestions(true);
     setCurrentSectionQuestions([]); // Limpar questões anteriores
@@ -156,6 +303,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       setIsLoadingQuestions(false);
     }
   };
+
   const checkScroll = () => {
     if (sectionsContainerRef.current) {
       const {
@@ -165,6 +313,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       setHasHorizontalScroll(scrollWidth > clientWidth);
     }
   };
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -174,10 +323,12 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
   const handleSectionClick = (sectionId: string) => {
     console.log("Seção selecionada:", sectionId);
     setSelectedSection(sectionId);
   };
+
   const handleQuestionButtonClick = () => {
     console.log("Botão de questões clicado para a seção:", selectedSection);
     if (!showQuestions) {
@@ -185,10 +336,12 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     }
     setShowQuestions(!showQuestions);
   };
+
   const toggleCompletion = (sectionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setCompletedSections(prev => prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]);
   };
+
   const toggleLessonCompletion = (event: React.MouseEvent) => {
     event.stopPropagation();
     if (isLessonCompleted) {
@@ -197,6 +350,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       setCompletedSections(lesson.sections.map(section => section.id));
     }
   };
+
   const toggleVideoSection = () => {
     setIsVideoSectionVisible(!isVideoSectionVisible);
     if (!isVideoSectionVisible && cardRef.current) {
@@ -206,30 +360,73 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       });
     }
   };
+
   const toggleOptionDisabled = (optionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setDisabledOptions(prev => prev.includes(optionId) ? prev.filter(id => id !== optionId) : [...prev, optionId]);
   };
+
   const handleOptionSelect = (optionId: string) => {
     setSelectedOptionId(optionId);
   };
+
   const handleCommentSubmit = (comment: string) => {
     console.log("Comentário enviado:", comment);
   };
-  return <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
-      <LessonHeader title={lesson.title} description={lesson.description} isVideoSectionVisible={isVideoSectionVisible} isLessonCompleted={isLessonCompleted} toggleLessonCompletion={toggleLessonCompletion} toggleVideoSection={toggleVideoSection} />
 
-      {isVideoSectionVisible && <div className="mt-4">
-          <VideoContentLayout sections={lesson.sections} selectedSection={selectedSection} completedSections={completedSections} hasHorizontalScroll={hasHorizontalScroll} videoHeight={videoHeight} setVideoHeight={setVideoHeight} onSectionClick={handleSectionClick} onToggleCompletion={toggleCompletion} />
-          <ItensDaAula setShowQuestions={handleQuestionButtonClick} showQuestions={showQuestions} />
-          {showQuestions && <div className="mt-4 px-[20px]">
-              {isLoadingQuestions ? <div className="flex justify-center items-center py-8">
+  return (
+    <article ref={cardRef} className="mb-4 bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+      <LessonHeader
+        title={lesson.title}
+        description={lesson.description}
+        duration={lesson.duration}
+        isCompleted={isLessonCompleted}
+        onToggleCompletion={toggleLessonCompletion}
+        isVideoSectionVisible={isVideoSectionVisible}
+        toggleVideoSection={toggleVideoSection}
+      />
+
+      {isVideoSectionVisible && (
+        <div className="mt-4">
+          <VideoContentLayout
+            sections={lesson.sections}
+            selectedSection={selectedSection}
+            completedSections={completedSections}
+            hasHorizontalScroll={hasHorizontalScroll}
+            videoHeight={videoHeight}
+            setVideoHeight={setVideoHeight}
+            onSectionClick={handleSectionClick}
+            onToggleCompletion={toggleCompletion}
+          />
+          <ItensDaAula
+            setShowQuestions={handleQuestionButtonClick}
+            showQuestions={showQuestions}
+          />
+          {showQuestions && (
+            <div className="mt-4 px-[20px]">
+              {isLoadingQuestions ? (
+                <div className="flex justify-center items-center py-8">
                   <Spinner size="md" className="fill-[#5f2ebe]" />
-                </div> : currentSectionQuestions.length > 0 ? currentSectionQuestions.map((q, index) => <QuestionCard key={`${q.id}-${index}`} question={q} disabledOptions={disabledOptions} onToggleDisabled={toggleOptionDisabled} />) : <div className="text-center py-8 text-[#67748a] px-0">
+                </div>
+              ) : currentSectionQuestions.length > 0 ? (
+                currentSectionQuestions.map((q, index) => (
+                  <QuestionCard
+                    key={`${q.id}-${index}`}
+                    question={q}
+                    disabledOptions={disabledOptions}
+                    onToggleDisabled={toggleOptionDisabled}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-[#67748a] px-0">
                   <p className="text-lg font-medium mb-2">Nenhuma questão encontrada</p>
                   <p>Este tópico não possui questões cadastradas no banco de dados.</p>
-                </div>}
-            </div>}
-        </div>}
-    </article>;
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </article>
+  );
 };

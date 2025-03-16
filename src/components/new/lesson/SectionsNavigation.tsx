@@ -1,7 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import type { Section } from "../types";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useParams } from "react-router-dom";
+import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 
 interface SectionsNavigationProps {
   sections: Section[];
@@ -11,6 +15,7 @@ interface SectionsNavigationProps {
   videoHeight?: number;
   onSectionClick: (sectionId: string) => void;
   onToggleCompletion?: (sectionId: string, event: React.MouseEvent) => void;
+  lessonId?: string;
 }
 
 export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
@@ -20,8 +25,87 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
   hasHorizontalScroll = false,
   videoHeight = 400,
   onSectionClick,
-  onToggleCompletion = () => {}
+  onToggleCompletion = () => {},
+  lessonId
 }) => {
+  const { user } = useAuth();
+  const { courseId } = useParams<{ courseId: string }>();
+
+  useEffect(() => {
+    if (!user || !courseId || !lessonId) return;
+
+    const saveCompletedSections = async () => {
+      try {
+        const realCourseId = extractIdFromFriendlyUrl(courseId);
+
+        const { data: existingProgress, error: fetchError } = await supabase
+          .from('user_course_progress')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('course_id', realCourseId)
+          .maybeSingle();
+
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('Error fetching user progress:', fetchError);
+          return;
+        }
+
+        let subjectsData = existingProgress?.subjects_data || {};
+
+        if (typeof subjectsData !== 'object' || Array.isArray(subjectsData)) {
+          subjectsData = {};
+        }
+
+        if (!subjectsData.completed_sections) {
+          subjectsData.completed_sections = {};
+        }
+
+        subjectsData.completed_sections[lessonId] = completedSections;
+
+        if (existingProgress) {
+          const { error: updateError } = await supabase
+            .from('user_course_progress')
+            .update({
+              subjects_data: subjectsData,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingProgress.id);
+
+          if (updateError) {
+            console.error('Error updating user progress:', updateError);
+          } else {
+            console.log('Progress updated successfully in SectionsNavigation');
+          }
+        } else {
+          const { error: insertError } = await supabase
+            .from('user_course_progress')
+            .insert({
+              user_id: user.id,
+              course_id: realCourseId,
+              subjects_data: subjectsData,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            console.error('Error inserting user progress:', insertError);
+          } else {
+            console.log('Progress inserted successfully in SectionsNavigation');
+          }
+        }
+      } catch (error) {
+        console.error('Error saving completed sections:', error);
+      }
+    };
+
+    // Use a debounce to avoid too many database calls
+    const timeoutId = setTimeout(() => {
+      saveCompletedSections();
+    }, 500);
+    
+    return () => clearTimeout(timeoutId);
+  }, [completedSections, user, courseId, lessonId]);
+
   return (
     <div
       style={{
