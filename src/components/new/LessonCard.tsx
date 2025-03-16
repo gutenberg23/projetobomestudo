@@ -93,18 +93,21 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       
       console.log("Dados do tópico:", topicoData);
       
-      if (!topicoData.questoes_ids || !Array.isArray(topicoData.questoes_ids) || topicoData.questoes_ids.length === 0) {
+      // Verificação adequada para garantir que questoes_ids seja um array
+      const questoesIds = Array.isArray(topicoData.questoes_ids) ? topicoData.questoes_ids : [];
+      
+      if (questoesIds.length === 0) {
         console.log("Tópico não tem questões vinculadas");
         setCurrentSectionQuestions([]);
         return;
       }
       
       // Buscar as questões vinculadas ao tópico
-      console.log("Buscando questões com IDs:", topicoData.questoes_ids);
+      console.log("Buscando questões com IDs:", questoesIds);
       const { data: questoesData, error: questoesError } = await supabase
         .from('questoes')
         .select('*')
-        .in('id', topicoData.questoes_ids);
+        .in('id', questoesIds);
         
       if (questoesError) {
         console.error("Erro ao buscar questões:", questoesError);
