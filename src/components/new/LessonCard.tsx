@@ -93,14 +93,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
 
   const fetchQuestionsForSection = async (sectionId: string) => {
     setIsLoadingQuestions(true);
+    setCurrentSectionQuestions([]); // Limpar questões anteriores
+    
     try {
-      const currentSection = lesson.sections.find(section => section.id === sectionId);
-      
-      if (!currentSection) {
-        setCurrentSectionQuestions([]);
-        return;
-      }
-      
+      // Buscar o tópico para obter os IDs das questões
       console.log("Buscando tópico:", sectionId);
       const { data: topicoData, error: topicoError } = await supabase
         .from('topicos')
@@ -111,19 +107,19 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       if (topicoError) {
         console.error("Erro ao buscar tópico:", topicoError);
         toast.error("Erro ao buscar questões do tópico");
-        setCurrentSectionQuestions([]);
         return;
       }
       
       console.log("Dados do tópico:", topicoData);
       
+      // Verificar se o tópico tem questões associadas
       if (!topicoData.questoes_ids || 
           (Array.isArray(topicoData.questoes_ids) && topicoData.questoes_ids.length === 0)) {
         console.log("Tópico não tem questões vinculadas");
-        setCurrentSectionQuestions([]);
         return;
       }
       
+      // Extrair IDs das questões em um formato consistente
       let questoesIds: string[] = [];
       if (Array.isArray(topicoData.questoes_ids)) {
         questoesIds = topicoData.questoes_ids.map(id => String(id));
@@ -135,10 +131,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       
       if (questoesIds.length === 0) {
         console.log("Não foi possível extrair IDs de questões válidos");
-        setCurrentSectionQuestions([]);
         return;
       }
       
+      // Buscar as questões pelo ID
       console.log("Buscando questões com IDs:", questoesIds);
       const { data: questoesData, error: questoesError } = await supabase
         .from('questoes')
@@ -148,7 +144,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       if (questoesError) {
         console.error("Erro ao buscar questões:", questoesError);
         toast.error("Erro ao carregar questões");
-        setCurrentSectionQuestions([]);
         return;
       }
       
@@ -173,13 +168,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         }));
         
         setCurrentSectionQuestions(formattedQuestions);
-      } else {
-        setCurrentSectionQuestions([]);
       }
     } catch (error) {
       console.error("Erro ao buscar questões:", error);
       toast.error("Erro ao carregar questões");
-      setCurrentSectionQuestions([]);
     } finally {
       setIsLoadingQuestions(false);
     }
