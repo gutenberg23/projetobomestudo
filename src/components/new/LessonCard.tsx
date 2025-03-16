@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -166,7 +167,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           aiExplanation: q.aiexplanation || undefined,
           options: convertToQuestionOptions(q.options),
           comments: [],
-          images: q.images || []
+          // A propriedade 'images' não existe no objeto da questão retornado pelo Supabase
+          // Então vamos definir como um array vazio por padrão
+          images: []
         }));
         
         setCurrentSectionQuestions(formattedQuestions);
