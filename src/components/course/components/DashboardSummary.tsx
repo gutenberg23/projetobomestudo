@@ -1,12 +1,11 @@
-
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { OverallStats, Subject } from "../types/editorialized";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, CheckIcon, XIcon, PencilIcon } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -22,6 +21,13 @@ interface DashboardSummaryProps {
   setPerformanceGoal: (value: number) => void;
   activeTab: string;
   subjects: Subject[];
+  simuladosStats?: {
+    total: number;
+    realizados: number;
+    questionsCount: number;
+    hits: number;
+    errors: number;
+  };
 }
 
 export const DashboardSummary = ({
@@ -29,7 +35,14 @@ export const DashboardSummary = ({
   performanceGoal,
   setPerformanceGoal,
   activeTab,
-  subjects
+  subjects,
+  simuladosStats = {
+    total: 0,
+    realizados: 0,
+    questionsCount: 0,
+    hits: 0,
+    errors: 0
+  }
 }: DashboardSummaryProps) => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
@@ -38,7 +51,10 @@ export const DashboardSummary = ({
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
   const [examDate, setExamDate] = React.useState<Date | undefined>();
-  
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempGoal, setTempGoal] = useState(performanceGoal);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
   useEffect(() => {
     if (!courseId) return;
     
@@ -88,7 +104,7 @@ export const DashboardSummary = ({
     
     loadUserData();
   }, [courseId, setPerformanceGoal, userId]);
-  
+
   const saveUserDataToDatabase = async (field: string, value: string | number | null) => {
     if (!courseId || userId === 'guest') return;
     
@@ -152,7 +168,7 @@ export const DashboardSummary = ({
       console.error(`Erro ao salvar ${field}:`, error);
     }
   };
-  
+
   const handlePerformanceGoalChange = (value: number) => {
     const newValue = Math.max(1, Math.min(100, value || 1));
     setPerformanceGoal(newValue);
@@ -168,7 +184,7 @@ export const DashboardSummary = ({
       }
     }
   };
-  
+
   const handleExamDateChange = (date: Date | undefined) => {
     setExamDate(date);
     
@@ -192,28 +208,66 @@ export const DashboardSummary = ({
       }
     }
   };
-  
+
   const daysUntilExam = React.useMemo(() => {
     if (!examDate) return null;
     const today = new Date();
     const days = differenceInDays(examDate, today);
     return days >= 0 ? days : null;
   }, [examDate]);
-  
+
+  const calculateAproveitamento = () => {
+    if (simuladosStats.questionsCount === 0) return 0;
+    return Math.round((simuladosStats.hits / simuladosStats.questionsCount) * 100);
+  };
+
   return <div className="mb-8 p-5 bg-white rounded-[10px]">
       <div className="flex flex-col gap-4 mb-4 text-[#272f3c]">
         <h3 className="text-2xl font-bold">Resumo Geral</h3>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Meta de Aproveitamento:</span>
-            <Input 
-              type="number" 
-              min="1" 
-              max="100" 
-              value={performanceGoal} 
-              onChange={e => handlePerformanceGoalChange(parseInt(e.target.value))} 
-              className="w-20 text-center" 
-            />
+            {isEditing ? (
+              <div className="flex items-center">
+                <Input 
+                  type="number" 
+                  min="1" 
+                  max="100" 
+                  value={tempGoal} 
+                  onChange={e => setTempGoal(parseInt(e.target.value))} 
+                  className="w-20 text-center" 
+                />
+                <button
+                  onClick={() => {
+                    setPerformanceGoal(tempGoal);
+                    saveUserDataToDatabase('performance_goal', tempGoal);
+                    setIsEditing(false);
+                  }}
+                  className="text-green-600 hover:text-green-800 mr-1"
+                >
+                  <CheckIcon className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => {
+                    setTempGoal(performanceGoal);
+                    setIsEditing(false);
+                  }}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <XIcon className="h-5 w-5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center">
+                <span className="font-bold text-lg">{performanceGoal}%</span>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="ml-2 text-gray-500 hover:text-gray-700"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                </button>
+              </div>
+            )}
             <span className="text-sm text-gray-600">%</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -280,11 +334,11 @@ export const DashboardSummary = ({
             <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Simulados Realizados</span>
-                <span className="font-semibold">2</span>
+                <span className="font-semibold">{simuladosStats.realizados}/{simuladosStats.total}</span>
               </div>
-              <Progress value={100} className="h-2 bg-gray-200">
+              <Progress value={(simuladosStats.total > 0 ? (simuladosStats.realizados / simuladosStats.total) * 100 : 0)} className="h-2 bg-gray-200">
                 <div className="h-full bg-[#ea2be2]" style={{
-              width: `100%`
+              width: `${simuladosStats.total > 0 ? (simuladosStats.realizados / simuladosStats.total) * 100 : 0}%`
             }} />
               </Progress>
             </div>
@@ -292,7 +346,7 @@ export const DashboardSummary = ({
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Questões Respondidas</span>
-                  <span className="font-semibold">150</span>
+                  <span className="font-semibold">{simuladosStats.questionsCount}</span>
                 </div>
                 {daysUntilExam !== null && <div className="flex justify-between">
                     <span className="text-gray-600">Dias até a prova</span>
@@ -304,15 +358,15 @@ export const DashboardSummary = ({
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Acertos</span>
-                  <span className="font-semibold text-green-600">117</span>
+                  <span className="font-semibold text-green-600">{simuladosStats.hits}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Erros</span>
-                  <span className="font-semibold text-red-600">33</span>
+                  <span className="font-semibold text-red-600">{simuladosStats.errors}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Aproveitamento</span>
-                  <span className="font-semibold">{Math.round(117 / 150 * 100)}%</span>
+                  <span className="font-semibold">{calculateAproveitamento()}%</span>
                 </div>
               </div>
             </div>

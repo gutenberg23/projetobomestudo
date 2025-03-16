@@ -27,13 +27,21 @@ interface Simulado {
   questoes_ids: string[];
   hits?: number;
   errors?: number;
+  realizado?: boolean;
 }
 
 interface SimuladosTableProps {
   performanceGoal: number;
+  onStatsUpdate?: (stats: {
+    total: number;
+    realizados: number;
+    questionsCount: number;
+    hits: number;
+    errors: number;
+  }) => void;
 }
 
-export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
+export const SimuladosTable = ({ performanceGoal, onStatsUpdate }: SimuladosTableProps) => {
   const { courseId } = useParams<{ courseId: string }>();
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +53,7 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
       
       if (userError || !userData.user) {
         console.error("Erro ao obter usuário atual:", userError);
-        return { hits: 0, errors: 0 };
+        return { hits: 0, errors: 0, realizado: false };
       }
       
       const userId = userData.user.id;
@@ -62,20 +70,21 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
       
       if (error) {
         console.error(`Erro ao buscar resultados para simulado ${simuladoId}:`, error);
-        return { hits: 0, errors: 0 };
+        return { hits: 0, errors: 0, realizado: false };
       }
       
       if (data) {
         return { 
           hits: data.acertos || 0, 
-          errors: data.erros || 0 
+          errors: data.erros || 0,
+          realizado: true
         };
       }
       
-      return { hits: 0, errors: 0 };
+      return { hits: 0, errors: 0, realizado: false };
     } catch (error) {
       console.error(`Erro ao processar resultados para simulado ${simuladoId}:`, error);
-      return { hits: 0, errors: 0 };
+      return { hits: 0, errors: 0, realizado: false };
     }
   };
 
@@ -138,11 +147,34 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
             titulo: simulado.titulo,
             questoes_ids: simulado.questoes_ids || [],
             hits: userResults.hits,
-            errors: userResults.errors
+            errors: userResults.errors,
+            realizado: userResults.realizado
           });
         }
 
         setSimulados(formattedSimulados);
+
+        // Calcular e atualizar as estatísticas para o DashboardSummary
+        if (onStatsUpdate) {
+          const completedSimulados = formattedSimulados.filter(simulado => simulado.realizado);
+          
+          const totals = completedSimulados.reduce(
+            (acc, simulado) => ({
+              questionsCount: acc.questionsCount + simulado.questoes_ids.length,
+              hits: acc.hits + (simulado.hits || 0),
+              errors: acc.errors + (simulado.errors || 0),
+            }),
+            { questionsCount: 0, hits: 0, errors: 0 }
+          );
+
+          onStatsUpdate({
+            total: formattedSimulados.length,
+            realizados: completedSimulados.length,
+            questionsCount: totals.questionsCount,
+            hits: totals.hits,
+            errors: totals.errors
+          });
+        }
       } catch (error) {
         console.error("Erro ao carregar simulados:", error);
         toast.error("Erro ao carregar simulados. Tente novamente.");
@@ -153,21 +185,18 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
     };
 
     fetchSimulados();
-  }, [courseId]);
+  }, [courseId, onStatsUpdate]);
 
   const calculatePerformance = (hits: number = 0, total: number = 0) => {
     if (total === 0) return 0;
     return Math.round((hits / total) * 100);
   };
 
-  const totals = simulados.reduce(
-    (acc, simulado) => ({
-      questionsCount: acc.questionsCount + simulado.questoes_ids.length,
-      hits: acc.hits + (simulado.hits || 0),
-      errors: acc.errors + (simulado.errors || 0),
-    }),
-    { questionsCount: 0, hits: 0, errors: 0 }
-  );
+  // Função para iniciar ou refazer um simulado
+  const handleStartSimulado = (simuladoId: string) => {
+    // Redirecionar para a página do simulado
+    window.location.href = `/simulado/${simuladoId}`;
+  };
 
   if (isLoading) {
     return (
@@ -191,48 +220,107 @@ export const SimuladosTable = ({ performanceGoal }: SimuladosTableProps) => {
         <table className="w-full min-w-[800px]">
           <thead className="bg-gray-50">
             <tr className="text-sm text-gray-600">
-              <th className="py-3 px-4 text-left font-medium">#</th>
-              <th className="py-3 px-4 text-left font-medium">Título</th>
-              <th className="py-3 px-4 text-center font-medium">Questões</th>
-              <th className="py-3 px-4 text-center font-medium">Acertos</th>
-              <th className="py-3 px-4 text-center font-medium">Erros</th>
-              <th className="py-3 px-4 text-center font-medium">Aproveitamento</th>
+              <th className="px-4 py-3 text-left font-medium">Simulado</th>
+              <th className="px-4 py-3 text-center font-medium">Questões</th>
+              <th className="px-4 py-3 text-center font-medium">Acertos</th>
+              <th className="px-4 py-3 text-center font-medium">Erros</th>
+              <th className="px-4 py-3 text-center font-medium">Aproveitamento</th>
+              <th className="px-4 py-3 text-center font-medium">Realizado</th>
+              <th className="px-4 py-3 text-center font-medium">Ações</th>
             </tr>
           </thead>
-          <tbody>
-            {simulados.map((simulado, index) => (
-              <tr key={simulado.id} className="border-t border-gray-200">
-                <td className="py-3 px-4">{index + 1}</td>
-                <td className="py-3 px-4">
-                  <a 
-                    href={`/simulado/${simulado.id}`} 
-                    className="text-[#5f2ebe] hover:underline"
-                  >
-                    {simulado.titulo}
-                  </a>
-                </td>
-                <td className="py-3 px-4 text-center">{simulado.questoes_ids.length}</td>
-                <td className="py-3 px-4 text-center">{simulado.hits || 0}</td>
-                <td className="py-3 px-4 text-center">{simulado.errors || 0}</td>
-                <td className={cn(
-                  "py-3 px-4 text-center",
-                  calculatePerformance(simulado.hits, simulado.questoes_ids.length) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
-                )}>
-                  {calculatePerformance(simulado.hits, simulado.questoes_ids.length)}%
-                </td>
-              </tr>
-            ))}
-            <tr className="border-t border-gray-200 bg-gray-50 font-medium">
-              <td colSpan={2} className="py-3 px-4 text-right">Totais:</td>
-              <td className="py-3 px-4 text-center">{totals.questionsCount}</td>
-              <td className="py-3 px-4 text-center">{totals.hits}</td>
-              <td className="py-3 px-4 text-center">{totals.errors}</td>
-              <td className={cn(
-                "py-3 px-4 text-center",
-                calculatePerformance(totals.hits, totals.questionsCount) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]"
-              )}>
-                {calculatePerformance(totals.hits, totals.questionsCount)}%
+          <tbody className="divide-y divide-gray-200">
+            {simulados.map((simulado) => {
+              const totalQuestions = simulado.questoes_ids.length;
+              const hits = simulado.hits || 0;
+              const errors = simulado.errors || 0;
+              const performance = calculatePerformance(hits, totalQuestions);
+              const isCompleted = simulado.realizado || false;
+
+              return (
+                <tr key={simulado.id} className="text-sm text-gray-700 hover:bg-gray-50">
+                  <td className="px-4 py-3">{simulado.titulo}</td>
+                  <td className="px-4 py-3 text-center">{totalQuestions}</td>
+                  <td className="px-4 py-3 text-center text-green-600 font-medium">
+                    {isCompleted ? hits : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-center text-red-600 font-medium">
+                    {isCompleted ? errors : "-"}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {isCompleted ? (
+                      <div className="flex items-center justify-center">
+                        <div className="w-full max-w-[100px] bg-gray-200 rounded-full h-2.5">
+                          <div
+                            className={`h-2.5 rounded-full ${
+                              performance >= performanceGoal
+                                ? "bg-green-600"
+                                : "bg-orange-500"
+                            }`}
+                            style={{ width: `${performance}%` }}
+                          ></div>
+                        </div>
+                        <span className="ml-2 font-medium">{performance}%</span>
+                      </div>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {isCompleted ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Sim
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        Não
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <button
+                      onClick={() => handleStartSimulado(simulado.id)}
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      {isCompleted ? "Refazer" : "Iniciar"}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+
+            {/* Linha de totais - agora só considera simulados realizados */}
+            <tr className="bg-gray-50 font-medium text-sm">
+              <td className="px-4 py-3">Total</td>
+              <td className="px-4 py-3 text-center">
+                {simulados
+                  .filter(s => s.realizado)
+                  .reduce((acc, s) => acc + s.questoes_ids.length, 0)}
               </td>
+              <td className="px-4 py-3 text-center text-green-600">
+                {simulados
+                  .filter(s => s.realizado)
+                  .reduce((acc, s) => acc + (s.hits || 0), 0)}
+              </td>
+              <td className="px-4 py-3 text-center text-red-600">
+                {simulados
+                  .filter(s => s.realizado)
+                  .reduce((acc, s) => acc + (s.errors || 0), 0)}
+              </td>
+              <td className="px-4 py-3 text-center">
+                {calculatePerformance(
+                  simulados
+                    .filter(s => s.realizado)
+                    .reduce((acc, s) => acc + (s.hits || 0), 0),
+                  simulados
+                    .filter(s => s.realizado)
+                    .reduce((acc, s) => acc + s.questoes_ids.length, 0)
+                )}%
+              </td>
+              <td className="px-4 py-3 text-center">
+                {simulados.filter(s => s.realizado).length}/{simulados.length}
+              </td>
+              <td className="px-4 py-3 text-center"></td>
             </tr>
           </tbody>
         </table>
