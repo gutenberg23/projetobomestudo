@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -9,6 +8,7 @@ import { LessonHeader } from "./lesson/LessonHeader";
 import { VideoContentLayout } from "./lesson/VideoContentLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -34,7 +34,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const [currentSectionQuestions, setCurrentSectionQuestions] = useState<Question[]>([]);
   const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   
-  // Estados para gerenciar a questão
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -54,12 +53,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   }, [isVideoSectionVisible]);
 
   useEffect(() => {
-    // Verifica se todas as seções estão completas
     const allSectionsCompleted = lesson.sections.every(section => completedSections.includes(section.id));
     setIsLessonCompleted(allSectionsCompleted);
   }, [completedSections, lesson.sections]);
 
-  // Novo useEffect para buscar as questões quando a seção selecionada mudar
   useEffect(() => {
     if (showQuestions && selectedSection) {
       fetchQuestionsForSection(selectedSection);
@@ -69,7 +66,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const fetchQuestionsForSection = async (sectionId: string) => {
     setIsLoadingQuestions(true);
     try {
-      // Buscar o tópico selecionado para obter suas questões
       const currentSection = lesson.sections.find(section => section.id === sectionId);
       
       if (!currentSection) {
@@ -93,8 +89,21 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       
       console.log("Dados do tópico:", topicoData);
       
-      // Verificação adequada para garantir que questoes_ids seja um array
-      const questoesIds = Array.isArray(topicoData.questoes_ids) ? topicoData.questoes_ids : [];
+      let questoesIds: string[] = [];
+      
+      if (topicoData.questoes_ids) {
+        if (Array.isArray(topicoData.questoes_ids)) {
+          questoesIds = topicoData.questoes_ids.map(id => String(id));
+        } 
+        else if (typeof topicoData.questoes_ids === 'object') {
+          try {
+            const values = Object.values(topicoData.questoes_ids);
+            questoesIds = values.map(v => String(v));
+          } catch (e) {
+            console.error("Erro ao converter questoes_ids para array:", e);
+          }
+        }
+      }
       
       if (questoesIds.length === 0) {
         console.log("Tópico não tem questões vinculadas");
@@ -102,7 +111,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         return;
       }
       
-      // Buscar as questões vinculadas ao tópico
       console.log("Buscando questões com IDs:", questoesIds);
       const { data: questoesData, error: questoesError } = await supabase
         .from('questoes')
@@ -118,7 +126,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       
       console.log("Questões encontradas:", questoesData);
       
-      // Converter os dados para o formato esperado pelo QuestionCard
       if (questoesData && questoesData.length > 0) {
         const formattedQuestions = questoesData.map(q => ({
           id: q.id,
@@ -189,10 +196,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const toggleLessonCompletion = (event: React.MouseEvent) => {
     event.stopPropagation();
     if (isLessonCompleted) {
-      // Se a aula está completa, remove todas as seções da lista de completadas
       setCompletedSections([]);
     } else {
-      // Se a aula não está completa, adiciona todas as seções à lista de completadas
       setCompletedSections(lesson.sections.map(section => section.id));
     }
   };
@@ -222,7 +227,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
 
   const handleCommentSubmit = (comment: string) => {
     console.log("Comentário enviado:", comment);
-    // Implementar lógica para enviar comentário
   };
 
   return (
