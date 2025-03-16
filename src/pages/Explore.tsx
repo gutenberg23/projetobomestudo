@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
 import { generateFriendlyUrl } from "@/utils/slug-utils";
-
 interface ItemProps {
   id: string;
   title: string;
@@ -21,7 +20,6 @@ interface ItemProps {
   onToggleFavorite: (id: string) => void;
   friendlyUrl: string;
 }
-
 const ResultItem: React.FC<ItemProps> = ({
   id,
   title,
@@ -35,13 +33,13 @@ const ResultItem: React.FC<ItemProps> = ({
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
         <Link to={`/course/${friendlyUrl}`} className="hover:text-[#5f2ebe] transition-colors">
-          <h3 className="text-[#272f3c] mb-0 leading-none font-extralight text-lg">{title}</h3>
+          <h3 className="text-[#272f3c] mb-0 leading-none font-extralight text-sm">{title}</h3>
         </Link>
       </div>
       <div className="flex items-center">
         <div className="text-right mr-4">
-          <p className="text-sm font-bold text-[#262f3c]">Tópicos: <span className="text-gray-600 font-normal">{topics}</span></p>
-          <p className="text-sm font-bold text-[#262f3c]">Aulas: <span className="text-gray-600 font-normal">{lessons}</span></p>
+          <p className="font-bold text-[#262f3c] text-xs">Tópicos: <span className="text-gray-600 font-normal">{topics}</span></p>
+          <p className="font-bold text-[#262f3c] text-xs">Aulas: <span className="text-gray-600 font-normal">{lessons}</span></p>
         </div>
         <Button variant="ghost" size="icon" onClick={() => onToggleFavorite(friendlyUrl)} aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
           <Star className={`h-5 w-5 ${isFavorite ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-gray-400"}`} />
@@ -49,7 +47,6 @@ const ResultItem: React.FC<ItemProps> = ({
       </div>
     </div>;
 };
-
 const Explore = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
@@ -74,25 +71,24 @@ const Explore = () => {
       setLoading(true);
       try {
         // Buscar cursos
-        const { data: coursesData, error: coursesError } = await supabase
-          .from('cursos')
-          .select('*');
-
+        const {
+          data: coursesData,
+          error: coursesError
+        } = await supabase.from('cursos').select('*');
         if (coursesError) throw coursesError;
 
         // Buscar favoritos do usuário logado
-        const { data: { user } } = await supabase.auth.getUser();
-        
+        const {
+          data: {
+            user
+          }
+        } = await supabase.auth.getUser();
         let userFavorites: string[] = [];
         let userDisciplinasFavorites: string[] = [];
-        
         if (user) {
-          const { data: favoritesData } = await supabase
-            .from('profiles')
-            .select('cursos_favoritos, disciplinas_favoritos')
-            .eq('id', user.id)
-            .single();
-          
+          const {
+            data: favoritesData
+          } = await supabase.from('profiles').select('cursos_favoritos, disciplinas_favoritos').eq('id', user.id).single();
           userFavorites = favoritesData?.cursos_favoritos || [];
           userDisciplinasFavorites = favoritesData?.disciplinas_favoritos || [];
         }
@@ -101,44 +97,40 @@ const Explore = () => {
         const formattedCourses: CourseItemType[] = coursesData.map(course => {
           // Gerar URL amigável para o curso
           const friendlyUrl = generateFriendlyUrl(course.titulo, course.id);
-          
           return {
             id: course.id,
             titulo: course.titulo,
             descricao: course.descricao || 'Sem descrição',
             isFavorite: user ? userFavorites.some(fav => fav.includes(course.id)) : false,
-            topics: (course.topicos_ids?.length || 0),
-            lessons: (course.aulas_ids?.length || 0),
+            topics: course.topicos_ids?.length || 0,
+            lessons: course.aulas_ids?.length || 0,
             informacoes_curso: course.informacoes_curso,
             friendlyUrl
           };
         });
-
         setCourses(formattedCourses);
 
         // Buscar disciplinas
-        const { data: disciplinasData, error: disciplinasError } = await supabase
-          .from('disciplinas')
-          .select('*');
-
+        const {
+          data: disciplinasData,
+          error: disciplinasError
+        } = await supabase.from('disciplinas').select('*');
         if (disciplinasError) throw disciplinasError;
 
         // Transformar dados de disciplinas
         const formattedDisciplinas: DisciplinaItemType[] = disciplinasData.map(disciplina => {
           // Gerar URL amigável para a disciplina
           const friendlyUrl = generateFriendlyUrl(disciplina.titulo, disciplina.id);
-          
           return {
             id: disciplina.id,
             titulo: disciplina.titulo,
             descricao: disciplina.descricao || 'Sem descrição',
             isFavorite: user ? userDisciplinasFavorites.some(fav => fav.includes(disciplina.id)) : false,
-            topics: 0, 
-            lessons: (disciplina.aulas_ids?.length || 0),
+            topics: 0,
+            lessons: disciplina.aulas_ids?.length || 0,
             friendlyUrl
           };
         });
-
         setSubjects(formattedDisciplinas);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
@@ -147,36 +139,34 @@ const Explore = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
-
   const handleToggleFavorite = async (friendlyUrl: string) => {
     // Verificar se o usuário está logado
-    const { data: { user } } = await supabase.auth.getUser();
-    
+    const {
+      data: {
+        user
+      }
+    } = await supabase.auth.getUser();
     if (!user) {
       toast.error("Você precisa estar logado para adicionar favoritos.");
       navigate('/login');
       return;
     }
-
     try {
       if (showSubjects) {
         // Atualizar estado local
-        setSubjects(subjects.map(subject => 
-          subject.friendlyUrl === friendlyUrl ? { ...subject, isFavorite: !subject.isFavorite } : subject
-        ));
+        setSubjects(subjects.map(subject => subject.friendlyUrl === friendlyUrl ? {
+          ...subject,
+          isFavorite: !subject.isFavorite
+        } : subject));
 
         // Buscar favoritos atuais
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('disciplinas_favoritos')
-          .eq('id', user.id)
-          .single();
-
+        const {
+          data: profile
+        } = await supabase.from('profiles').select('disciplinas_favoritos').eq('id', user.id).single();
         let disciplinasFavoritos = profile?.disciplinas_favoritos || [];
-        
+
         // Adicionar ou remover dos favoritos
         if (disciplinasFavoritos.some(fav => fav.includes(friendlyUrl))) {
           disciplinasFavoritos = disciplinasFavoritos.filter(favId => !favId.includes(friendlyUrl));
@@ -187,26 +177,22 @@ const Explore = () => {
         }
 
         // Atualizar no banco de dados
-        await supabase
-          .from('profiles')
-          .update({ disciplinas_favoritos: disciplinasFavoritos })
-          .eq('id', user.id);
-
+        await supabase.from('profiles').update({
+          disciplinas_favoritos: disciplinasFavoritos
+        }).eq('id', user.id);
       } else {
         // Atualizar estado local de cursos
-        setCourses(courses.map(course => 
-          course.friendlyUrl === friendlyUrl ? { ...course, isFavorite: !course.isFavorite } : course
-        ));
+        setCourses(courses.map(course => course.friendlyUrl === friendlyUrl ? {
+          ...course,
+          isFavorite: !course.isFavorite
+        } : course));
 
         // Buscar favoritos atuais
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('cursos_favoritos')
-          .eq('id', user.id)
-          .single();
-
+        const {
+          data: profile
+        } = await supabase.from('profiles').select('cursos_favoritos').eq('id', user.id).single();
         let cursosFavoritos = profile?.cursos_favoritos || [];
-        
+
         // Adicionar ou remover dos favoritos
         if (cursosFavoritos.some(fav => fav.includes(friendlyUrl))) {
           cursosFavoritos = cursosFavoritos.filter(favId => !favId.includes(friendlyUrl));
@@ -217,30 +203,23 @@ const Explore = () => {
         }
 
         // Atualizar no banco de dados
-        await supabase
-          .from('profiles')
-          .update({ cursos_favoritos: cursosFavoritos })
-          .eq('id', user.id);
+        await supabase.from('profiles').update({
+          cursos_favoritos: cursosFavoritos
+        }).eq('id', user.id);
       }
     } catch (error) {
       console.error("Erro ao atualizar favoritos:", error);
       toast.error("Erro ao atualizar favoritos. Por favor, tente novamente.");
     }
   };
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       navigate(`/explore?search=${encodeURIComponent(searchTerm)}`);
     }
   };
-
-  const filteredData = showSubjects 
-    ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase())) 
-    : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  return (
-    <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+  const filteredData = showSubjects ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase())) : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
+  return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
         <h1 className="text-3xl mb-2 md:text-3xl font-extrabold text-[#272f3c]">Explorar</h1>
@@ -266,39 +245,17 @@ const Explore = () => {
         </div>
 
         <div className="bg-white rounded-lg overflow-hidden">
-          {loading ? (
-            <div className="p-8 text-center">
+          {loading ? <div className="p-8 text-center">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
               <p className="mt-3 text-gray-500">Carregando dados...</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {filteredData.length > 0 ? (
-                filteredData.map(item => (
-                  <ResultItem 
-                    key={item.id} 
-                    id={item.id} 
-                    title={item.titulo} 
-                    description={item.descricao || ""} 
-                    isFavorite={item.isFavorite} 
-                    topics={item.topics} 
-                    lessons={item.lessons} 
-                    onToggleFavorite={handleToggleFavorite}
-                    friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)}
-                  />
-                ))
-              ) : (
-                <div className="p-8 text-center text-gray-500">
+            </div> : <div className="divide-y divide-gray-100">
+              {filteredData.length > 0 ? filteredData.map(item => <ResultItem key={item.id} id={item.id} title={item.titulo} description={item.descricao || ""} isFavorite={item.isFavorite} topics={item.topics} lessons={item.lessons} onToggleFavorite={handleToggleFavorite} friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} />) : <div className="p-8 text-center text-gray-500">
                   Nenhum resultado encontrado para "{searchTerm}"
-                </div>
-              )}
-            </div>
-          )}
+                </div>}
+            </div>}
         </div>
       </main>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Explore;
