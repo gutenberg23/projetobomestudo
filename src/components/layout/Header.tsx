@@ -19,7 +19,7 @@ export const Header = () => {
       navigate(`/explore?search=${encodeURIComponent(searchQuery)}`);
     }
   };
-  return <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-[32px]">
+  return <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-0">
       <div className="flex min-h-[88px] flex-col items-stretch justify-center w-[230px] py-[21px]">
         <Link to="/">
           <img loading="lazy" src={logo} alt="Company Logo" className="aspect-[8.06] w-[230px] md:w-[230px] w-[120px] object-contain" />
