@@ -10,6 +10,7 @@ import { VideoContentLayout } from "./lesson/VideoContentLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
+import { Spinner } from "@/components/ui/spinner";
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -90,32 +91,26 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       
       console.log("Dados do tópico:", topicoData);
       
+      // Verifica e extrai os IDs das questões de forma segura
+      if (!topicoData.questoes_ids || 
+          (Array.isArray(topicoData.questoes_ids) && topicoData.questoes_ids.length === 0)) {
+        console.log("Tópico não tem questões vinculadas");
+        setCurrentSectionQuestions([]);
+        return;
+      }
+      
+      // Certifica que questoes_ids é um array de strings
       let questoesIds: string[] = [];
-      
-      // Função auxiliar para converter qualquer tipo para string[]
-      const extractQuestaoIds = (input: any): string[] => {
-        if (!input) return [];
-        
-        if (Array.isArray(input)) {
-          return input.map(id => String(id));
-        } 
-        
-        if (typeof input === 'object') {
-          try {
-            return Object.values(input).map(v => String(v));
-          } catch (e) {
-            console.error("Erro ao extrair IDs de questões:", e);
-            return [];
-          }
-        }
-        
-        return [];
-      };
-      
-      questoesIds = extractQuestaoIds(topicoData.questoes_ids);
+      if (Array.isArray(topicoData.questoes_ids)) {
+        questoesIds = topicoData.questoes_ids.map(id => String(id));
+      } else if (typeof topicoData.questoes_ids === 'object') {
+        questoesIds = Object.values(topicoData.questoes_ids).map(id => String(id));
+      } else if (typeof topicoData.questoes_ids === 'string') {
+        questoesIds = [topicoData.questoes_ids];
+      }
       
       if (questoesIds.length === 0) {
-        console.log("Tópico não tem questões vinculadas");
+        console.log("Não foi possível extrair IDs de questões válidos");
         setCurrentSectionQuestions([]);
         return;
       }
@@ -143,7 +138,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           organization: q.organization || "",
           role: q.role || "",
           content: q.content || "",
-          options: q.options ? [...q.options] : [],
+          options: q.options ? 
+            (Array.isArray(q.options) ? q.options : 
+            (typeof q.options === 'object' ? Object.values(q.options) : [])) 
+            : [],
           comments: []
         }));
         
@@ -269,7 +267,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             <div className="mt-4">
               {isLoadingQuestions ? (
                 <div className="flex justify-center items-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5f2ebe]"></div>
+                  <Spinner size="md" className="fill-[#5f2ebe]" />
                 </div>
               ) : currentSectionQuestions.length > 0 ? (
                 currentSectionQuestions.map((q, index) => (

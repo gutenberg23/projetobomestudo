@@ -1,6 +1,8 @@
+
 "use client";
 
 import * as React from "react";
+
 interface ActionButtonProps {
   icon: string;
   label: string;
@@ -8,6 +10,7 @@ interface ActionButtonProps {
   isActive?: boolean;
   onClick?: () => void;
 }
+
 export const ActionButton: React.FC<ActionButtonProps> = ({
   icon,
   label,
@@ -17,8 +20,11 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
 }) => {
   const baseStyles = "flex overflow-hidden gap-2.5 justify-center items-center p-2.5 bg-white rounded-md border w-auto";
   const variantStyles = isActive && variant === "highlight" ? "text-[#5f2ebe] border-[#5f2ebe]" : "border-gray-100";
-  return <button onClick={onClick} className={`${baseStyles} ${variantStyles} border-solid hover:bg-gray-50 transition-colors`}>
-      
+  
+  return (
+    <button onClick={onClick} className={`${baseStyles} ${variantStyles} border-solid hover:bg-gray-50 transition-colors`}>
+      <img src={icon} alt="" className="object-contain shrink-0 my-auto w-5 aspect-square text-[#5f2ebe]" />
       <span className="whitespace-nowrap text-xs text-[#5f2ebe]">{label}</span>
-    </button>;
+    </button>
+  );
 };
