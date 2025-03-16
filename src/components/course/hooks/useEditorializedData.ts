@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -28,38 +29,47 @@ export const useEditorializedData = () => {
     try {
       const realId = extractIdFromFriendlyUrl(courseId);
       
-      // Primeiro, verificar se existem dados do usuário no banco de dados
+      // Verificar se usuário está logado
       if (userId !== 'guest') {
-        const { data: userData, error: userDataError } = await supabase
-          .from('user_course_progress')
+        // Buscar dados do progresso por disciplina
+        const { data: subjectProgressData, error: subjectProgressError } = await supabase
+          .from('user_subject_progress')
           .select('*')
           .eq('user_id', userId)
-          .eq('course_id', realId)
-          .single();
+          .eq('course_id', realId);
         
-        if (!userDataError && userData && userData.subjects_data) {
-          try {
-            const parsedData = JSON.parse(typeof userData.subjects_data === 'string' ? userData.subjects_data : JSON.stringify(userData.subjects_data));
-            setSubjects(parsedData);
-            setLoading(false);
+        if (!subjectProgressError && subjectProgressData && subjectProgressData.length > 0) {
+          // Transformar os dados do banco em formato de Subject[]
+          const formattedSubjects: Subject[] = subjectProgressData.map(progressData => {
+            const topics: Topic[] = [];
             
-            // Também salvar no localStorage como backup
-            localStorage.setItem(`${userId}_${realId}_subjectsData`, typeof userData.subjects_data === 'string' ? userData.subjects_data : JSON.stringify(userData.subjects_data));
-            
-            // Carregar dados da meta de aproveitamento e data da prova
-            if (userData.performance_goal) {
-              localStorage.setItem(`${userId}_${realId}_performanceGoal`, userData.performance_goal.toString());
+            // Mapear os arrays paralelos para objetos de tópico
+            for (let i = 0; i < progressData.line_numbers.length; i++) {
+              topics.push({
+                id: progressData.line_numbers[i],
+                name: progressData.topics[i] || '',
+                topic: progressData.topics[i] || '',
+                isDone: progressData.completed[i] || false,
+                isReviewed: progressData.reviewed[i] || false,
+                importance: progressData.importance[i] || 3,
+                difficulty: progressData.difficulty[i] || "Médio",
+                exercisesDone: progressData.total_exercises[i] || 0,
+                hits: progressData.correct_answers[i] || 0,
+                errors: 0, // Calculado no frontend
+                performance: 0 // Calculado no frontend
+              });
             }
             
-            if (userData.exam_date) {
-              localStorage.setItem(`${userId}_${realId}_examDate`, userData.exam_date);
-            }
-            
-            return;
-          } catch (e) {
-            console.error('Erro ao analisar dados do banco:', e);
-            // Continuar com a busca no localStorage ou banco
-          }
+            return {
+              id: progressData.subject_name,
+              name: progressData.subject_name,
+              topics
+            };
+          });
+          
+          setSubjects(formattedSubjects);
+          setLoading(false);
+          return;
         }
       }
       
@@ -80,25 +90,10 @@ export const useEditorializedData = () => {
           return;
         } catch (e) {
           console.error('Erro ao analisar dados salvos:', e);
-          // Continuar com a busca no banco de dados
         }
       }
       
-      // Verificar se já temos dados salvos no localStorage para este curso e usuário
-      const savedData2 = localStorage.getItem(`${userId}_${realId}_subjectsData`);
-      
-      if (savedData2) {
-        try {
-          const parsedData = JSON.parse(savedData2);
-          setSubjects(parsedData);
-          setLoading(false);
-          return;
-        } catch (e) {
-          console.error('Erro ao analisar dados salvos:', e);
-          // Continuar com a busca no banco de dados
-        }
-      }
-      
+      // Se não encontrou dados no localStorage nem no banco, buscar dados do edital verticalizado
       // Primeiro, buscamos o curso para verificar se ele existe
       const { data: cursoData, error: cursoError } = await supabase
         .from('cursos')
@@ -159,6 +154,7 @@ export const useEditorializedData = () => {
       const formattedSubjects: Subject[] = (disciplinasData || []).map((disciplina) => ({
         id: disciplina.id,
         name: disciplina.titulo,
+        rating: disciplina.descricao, // Adicionando o valor de rating (antigo campo descrição)
         topics: Array.isArray(disciplina.topicos) ? disciplina.topicos.map((topico: string, topicIndex: number) => {
           // Verificar se há dados salvos para este tópico específico
           const topicKey = `${userId}_${realId}_${disciplina.id}_${topicIndex}`;
@@ -222,53 +218,135 @@ export const useEditorializedData = () => {
       const performanceGoal = localStorage.getItem(`${userId}_${courseRealId}_performanceGoal`);
       const examDate = localStorage.getItem(`${userId}_${courseRealId}_examDate`);
       
-      // Verificar se o registro já existe
-      const { data: existingData, error: checkError } = await supabase
-        .from('user_course_progress')
+      // Salvar metas e data do exame
+      const performanceGoalNumber = performanceGoal ? parseInt(performanceGoal) : undefined;
+      
+      // Verificar se já existe um registro para este usuário e curso
+      const { data: existingGoal, error: checkGoalError } = await supabase
+        .from('user_exam_goals')
         .select('id')
         .eq('user_id', userId)
         .eq('course_id', courseRealId)
-        .single();
+        .maybeSingle();
       
-      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 é o código para "não encontrado"
-        console.error('Erro ao verificar dados existentes:', checkError);
-        return;
+      if (checkGoalError && checkGoalError.code !== 'PGRST116') { // PGRST116 é o código para "não encontrado"
+        console.error('Erro ao verificar metas existentes:', checkGoalError);
+      } else {
+        // Atualizar ou inserir metas de exame
+        if (existingGoal) {
+          // Atualizar registro existente
+          const { error: updateError } = await supabase
+            .from('user_exam_goals')
+            .update({
+              performance_goal: performanceGoalNumber,
+              exam_date: examDate ? new Date(examDate).toISOString() : null,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingGoal.id);
+          
+          if (updateError) {
+            console.error('Erro ao atualizar metas no banco:', updateError);
+          }
+        } else {
+          // Criar novo registro
+          const { error: insertError } = await supabase
+            .from('user_exam_goals')
+            .insert({
+              user_id: userId,
+              course_id: courseRealId,
+              performance_goal: performanceGoalNumber,
+              exam_date: examDate ? new Date(examDate).toISOString() : null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          
+          if (insertError) {
+            console.error('Erro ao inserir metas no banco:', insertError);
+          }
+        }
       }
       
-      const subjectsDataString = JSON.stringify(subjectsData);
-      const performanceGoalNumber = performanceGoal ? parseInt(performanceGoal) : undefined;
-      
-      if (existingData) {
-        // Atualizar registro existente
-        const { error: updateError } = await supabase
-          .from('user_course_progress')
-          .update({
-            subjects_data: subjectsDataString,
-            performance_goal: performanceGoalNumber,
-            exam_date: examDate,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingData.id);
+      // Preparar e salvar dados de progresso por disciplina
+      for (const subject of subjectsData) {
+        // Verificar se já existe registro para esta disciplina
+        const { data: existingProgress, error: checkProgressError } = await supabase
+          .from('user_subject_progress')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('course_id', courseRealId)
+          .eq('subject_name', subject.name)
+          .maybeSingle();
         
-        if (updateError) {
-          console.error('Erro ao atualizar dados no banco:', updateError);
-        }
-      } else {
-        // Criar novo registro
-        const { error: insertError } = await supabase
-          .from('user_course_progress')
-          .insert({
-            user_id: userId,
-            course_id: courseRealId,
-            subjects_data: subjectsDataString,
-            performance_goal: performanceGoalNumber,
-            exam_date: examDate,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
+        // Preparar arrays para o banco de dados
+        const lineNumbers: number[] = [];
+        const completed: boolean[] = [];
+        const topics: string[] = [];
+        const importance: number[] = [];
+        const difficulty: string[] = [];
+        const totalExercises: number[] = [];
+        const correctAnswers: number[] = [];
+        const reviewed: boolean[] = [];
         
-        if (insertError) {
-          console.error('Erro ao inserir dados no banco:', insertError);
+        // Preencher os arrays com dados dos tópicos
+        subject.topics.forEach(topic => {
+          lineNumbers.push(topic.id);
+          completed.push(topic.isDone);
+          topics.push(topic.topic);
+          importance.push(topic.importance);
+          difficulty.push(topic.difficulty);
+          totalExercises.push(topic.exercisesDone);
+          correctAnswers.push(topic.hits);
+          reviewed.push(topic.isReviewed);
+        });
+        
+        if (checkProgressError && checkProgressError.code !== 'PGRST116') {
+          console.error('Erro ao verificar progresso existente:', checkProgressError);
+        } else {
+          // Atualizar ou inserir dados de progresso
+          if (existingProgress) {
+            // Atualizar registro existente
+            const { error: updateError } = await supabase
+              .from('user_subject_progress')
+              .update({
+                line_numbers: lineNumbers,
+                completed: completed,
+                topics: topics,
+                importance: importance,
+                difficulty: difficulty,
+                total_exercises: totalExercises,
+                correct_answers: correctAnswers,
+                reviewed: reviewed,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingProgress.id);
+            
+            if (updateError) {
+              console.error('Erro ao atualizar progresso no banco:', updateError);
+            }
+          } else {
+            // Criar novo registro
+            const { error: insertError } = await supabase
+              .from('user_subject_progress')
+              .insert({
+                user_id: userId,
+                course_id: courseRealId,
+                subject_name: subject.name,
+                line_numbers: lineNumbers,
+                completed: completed,
+                topics: topics,
+                importance: importance,
+                difficulty: difficulty,
+                total_exercises: totalExercises,
+                correct_answers: correctAnswers,
+                reviewed: reviewed,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+            
+            if (insertError) {
+              console.error('Erro ao inserir progresso no banco:', insertError);
+            }
+          }
         }
       }
     } catch (error) {
