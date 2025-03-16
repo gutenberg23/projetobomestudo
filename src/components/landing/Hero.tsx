@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Youtube, Award, BarChart } from "lucide-react";
 import { TeacherSignupDialog } from "./TeacherSignupDialog";
+
 export const Hero = () => {
   const [teacherDialogOpen, setTeacherDialogOpen] = useState(false);
-  return <div className="w-full min-h-screen relative overflow-hidden bg-white">
+  return (
+    <div className="w-full min-h-screen relative overflow-hidden bg-white">
       {/* Background Effect - Degradê Radial Moderno */}
       <div className="absolute inset-0 w-full h-full overflow-hidden">
         {/* Primeiro círculo de degradê - maior, mais suave */}
@@ -66,9 +68,13 @@ export const Hero = () => {
       {/* Conteúdo centralizado */}
       <div className="mx-auto px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16 bg-white">
         <div className="text-center space-y-6 max-w-3xl px-4">
-          <h1 className="text-3xl sm:text-4xl leading-tight md:text-7xl font-thin text-[#272f3c]">
-            Conectando <span className="text-[#272f3c] font-thin">Alunos a Professores</span>
-          </h1>
+          <div className="flex justify-center items-center">
+            <img 
+              src="/lovable-uploads/hero.svg" 
+              alt="Conectando Alunos a Professores" 
+              className="w-full max-w-xl mx-auto h-auto"
+            />
+          </div>
           
           <p className="text-base sm:text-lg text-[#67748a] max-w-2xl mx-auto leading-relaxed md:text-xl font-light">
             Estude de graça com os melhores professores do YouTube e utilize ferramentas avançadas para potencializar seus estudos para concursos públicos.
@@ -112,5 +118,6 @@ export const Hero = () => {
       
       {/* Diálogo de cadastro de professor */}
       <TeacherSignupDialog open={teacherDialogOpen} onOpenChange={setTeacherDialogOpen} />
-    </div>;
+    </div>
+  );
 };
