@@ -1,13 +1,24 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import SelectField from "./SelectField";
+import SelectFieldDB from "./SelectFieldDB";
 import AddValueDialog from "./AddValueDialog";
 import { useSelectFieldState } from "./useSelectFieldState";
-import TopicosField from "./TopicosField";
+import { useSelectFieldStateDB } from "./useSelectFieldStateDB";
+import AssuntosField from "./AssuntosField";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash } from "lucide-react";
 import { Label } from "@/components/ui/label";
+
+// Importando os serviços
+import { fetchBancas, addBanca, updateBanca, deleteBanca, Banca } from "@/services/bancasService";
+import { fetchInstituicoes, addInstituicao, updateInstituicao, deleteInstituicao, Instituicao } from "@/services/instituicoesService";
+import { fetchAnos, addAno, updateAno, deleteAno, Ano } from "@/services/anosService";
+import { fetchCargos, addCargo, updateCargo, deleteCargo, Cargo } from "@/services/cargosService";
+import { fetchDisciplinasQuestoes, addDisciplinaQuestao, updateDisciplinaQuestao, deleteDisciplinaQuestao, DisciplinaQuestao } from "@/services/disciplinasQuestoesService";
+import { fetchNiveis, addNivel, updateNivel, deleteNivel, Nivel } from "@/services/niveisService";
+import { fetchDificuldades, addDificuldade, updateDificuldade, deleteDificuldade, Dificuldade } from "@/services/dificuldadesService";
+import { fetchTiposQuestao, addTipoQuestao, updateTipoQuestao, deleteTipoQuestao, TipoQuestao } from "@/services/tiposQuestaoService";
 
 interface QuestionMetadataFieldsProps {
   // Institution
@@ -40,7 +51,7 @@ interface QuestionMetadataFieldsProps {
   disciplines: string[];
   setDisciplines: (value: string[]) => void;
   
-  // Tópicos
+  // Assuntos (antigo Tópicos)
   topicos: string[];
   setTopicos: (value: string[]) => void;
   
@@ -74,287 +85,271 @@ const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
   difficulty, setDifficulty, difficulties, setDifficulties,
   questionType, setQuestionType, questionTypes, setQuestionTypes
 }) => {
-  const institutionState = useSelectFieldState(institution, setInstitution, institutions, setInstitutions, "instituição");
-  const organizationState = useSelectFieldState(organization, setOrganization, organizations, setOrganizations, "instituição");
-  const yearState = useSelectFieldState(year, setYear, years, setYears, "ano");
-  const roleState = useSelectFieldState(role, setRole, roles, setRoles, "cargo");
-  const disciplineState = useSelectFieldState(discipline, setDiscipline, disciplines, setDisciplines, "disciplina");
-  const levelState = useSelectFieldState(level, setLevel, levels, setLevels, "nível");
-  const difficultyState = useSelectFieldState(difficulty, setDifficulty, difficulties, setDifficulties, "dificuldade");
-  const questionTypeState = useSelectFieldState(questionType, setQuestionType, questionTypes, setQuestionTypes, "tipo de questão");
+  // Estados para os campos de seleção usando o novo hook com banco de dados
+  const bancaState = useSelectFieldStateDB<Banca>(
+    institution, 
+    setInstitution, 
+    "Banca", 
+    fetchBancas, 
+    addBanca, 
+    updateBanca, 
+    deleteBanca
+  );
 
-  const [selectedRoles, setSelectedRoles] = React.useState<string[]>([]);
+  const instituicaoState = useSelectFieldStateDB<Instituicao>(
+    organization, 
+    setOrganization, 
+    "Órgão", 
+    fetchInstituicoes, 
+    addInstituicao, 
+    updateInstituicao, 
+    deleteInstituicao
+  );
 
-  // Atualiza o campo role quando os roles selecionados mudam
-  React.useEffect(() => {
-    if (selectedRoles.length > 0) {
-      setRole(selectedRoles.join(', '));
-    } else {
-      setRole('');
-    }
-  }, [selectedRoles, setRole]);
+  const anoState = useSelectFieldStateDB<Ano>(
+    year, 
+    setYear, 
+    "Ano", 
+    fetchAnos, 
+    addAno, 
+    updateAno, 
+    deleteAno,
+    'valor'
+  );
 
-  // Atualiza selectedRoles quando o valor de role muda externamente
-  React.useEffect(() => {
-    if (role) {
-      setSelectedRoles(role.split(', ').filter(r => roles.includes(r)));
-    }
-  }, [role, roles]);
+  const cargoState = useSelectFieldStateDB<Cargo>(
+    role, 
+    setRole, 
+    "Cargo", 
+    fetchCargos, 
+    addCargo, 
+    updateCargo, 
+    deleteCargo
+  );
 
-  const handleRoleChange = (role: string) => {
-    if (selectedRoles.includes(role)) {
-      setSelectedRoles(selectedRoles.filter(r => r !== role));
-    } else {
-      setSelectedRoles([...selectedRoles, role]);
-    }
-  };
+  const disciplinaState = useSelectFieldStateDB<DisciplinaQuestao>(
+    discipline, 
+    setDiscipline, 
+    "Disciplina", 
+    fetchDisciplinasQuestoes, 
+    addDisciplinaQuestao, 
+    updateDisciplinaQuestao, 
+    deleteDisciplinaQuestao
+  );
 
-  // Garantir que as listas estejam em ordem alfabética
-  const sortedRoles = [...roles].sort((a, b) => a.localeCompare(b));
+  const nivelState = useSelectFieldStateDB<Nivel>(
+    level, 
+    setLevel, 
+    "Nível", 
+    fetchNiveis, 
+    addNivel, 
+    updateNivel, 
+    deleteNivel
+  );
+
+  const dificuldadeState = useSelectFieldStateDB<Dificuldade>(
+    difficulty, 
+    setDifficulty, 
+    "Dificuldade", 
+    fetchDificuldades, 
+    addDificuldade, 
+    updateDificuldade, 
+    deleteDificuldade
+  );
+
+  const tipoQuestaoState = useSelectFieldStateDB<TipoQuestao>(
+    questionType, 
+    setQuestionType, 
+    "Tipo de Questão", 
+    fetchTiposQuestao, 
+    addTipoQuestao, 
+    updateTipoQuestao, 
+    deleteTipoQuestao
+  );
 
   return (
-    <>
-      {/* Institution Field */}
-      <div>
-        <SelectField
-          id="institution"
-          label="Banca"
-          value={institutionState.value}
-          onChange={setInstitution}
-          options={institutions}
-          handleEditOption={institutionState.handleEdit}
-          handleDeleteOption={institutionState.handleDelete}
-          openAddDialog={() => institutionState.setIsDialogOpen(true)}
-          placeholder="Selecione a instituição"
-        />
-        <AddValueDialog
-          title="Adicionar Nova Instituição"
-          placeholder="Nome da instituição"
-          isOpen={institutionState.isDialogOpen}
-          setIsOpen={institutionState.setIsDialogOpen}
-          value={institutionState.newValue}
-          setValue={institutionState.setNewValue}
-          onAdd={institutionState.handleAdd}
-        />
-      </div>
-
-      {/* Organization Field */}
-      <div>
-        <SelectField
-          id="organization"
-          label="Instituição"
-          value={organizationState.value}
-          onChange={setOrganization}
-          options={organizations}
-          handleEditOption={organizationState.handleEdit}
-          handleDeleteOption={organizationState.handleDelete}
-          openAddDialog={() => organizationState.setIsDialogOpen(true)}
-          placeholder="Selecione a instituição"
-        />
-        <AddValueDialog
-          title="Adicionar Nova Instituição"
-          placeholder="Nome da instituição"
-          isOpen={organizationState.isDialogOpen}
-          setIsOpen={organizationState.setIsDialogOpen}
-          value={organizationState.newValue}
-          setValue={organizationState.setNewValue}
-          onAdd={organizationState.handleAdd}
-        />
-      </div>
-
-      {/* Year Field */}
-      <div>
-        <SelectField
-          id="year"
-          label="Ano"
-          value={yearState.value}
-          onChange={setYear}
-          options={years}
-          handleEditOption={yearState.handleEdit}
-          handleDeleteOption={yearState.handleDelete}
-          openAddDialog={() => yearState.setIsDialogOpen(true)}
-          placeholder="Selecione o ano"
-        />
-        <AddValueDialog
-          title="Adicionar Novo Ano"
-          placeholder="Ano"
-          isOpen={yearState.isDialogOpen}
-          setIsOpen={yearState.setIsDialogOpen}
-          value={yearState.newValue}
-          setValue={yearState.setNewValue}
-          onAdd={yearState.handleAdd}
-        />
-      </div>
-
-      {/* Cargos Field */}
-      <div>
+    <div className="space-y-6">
+      {/* Primeira linha: Banca, Órgão, Ano */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <Label className="block text-sm font-medium text-[#272f3c]">Cargos</Label>
-          
-          <div className="flex flex-col gap-2">
-            <CheckboxGroup
-              title=""
-              options={sortedRoles}
-              selectedValues={selectedRoles}
-              onChange={handleRoleChange}
-              placeholder="Selecione os cargos"
-            />
-            
-            <div className="flex gap-2 justify-end">
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => roleState.handleEdit(role)}
-                disabled={!role}
-                title="Editar"
-                type="button"
-                className="h-8 w-8 p-0"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => roleState.handleDelete(role)}
-                disabled={!role}
-                title="Excluir"
-                type="button"
-                className="h-8 w-8 p-0"
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => roleState.setIsDialogOpen(true)}
-                title="Adicionar"
-                type="button"
-                className="h-8 w-8 p-0"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          <AddValueDialog
-            title="Adicionar Novo Cargo"
-            placeholder="Nome do cargo"
-            isOpen={roleState.isDialogOpen}
-            setIsOpen={roleState.setIsDialogOpen}
-            value={roleState.newValue}
-            setValue={roleState.setNewValue}
-            onAdd={roleState.handleAdd}
+          <SelectFieldDB
+            id="institution"
+            label="Banca"
+            value={bancaState.value}
+            onChange={setInstitution}
+            items={bancaState.items}
+            loading={bancaState.loading}
+            handleEditOption={bancaState.handleEdit}
+            handleDeleteOption={bancaState.handleDelete}
+            openAddDialog={() => bancaState.setIsDialogOpen(true)}
+            isDialogOpen={bancaState.isDialogOpen}
+            setIsDialogOpen={bancaState.setIsDialogOpen}
+            newValue={bancaState.newValue}
+            setNewValue={bancaState.setNewValue}
+            handleAdd={bancaState.handleAdd}
+            placeholder="Selecione a banca"
+          />
+        </div>
+
+        <div>
+          <SelectFieldDB
+            id="organization"
+            label="Órgão"
+            value={instituicaoState.value}
+            onChange={setOrganization}
+            items={instituicaoState.items}
+            loading={instituicaoState.loading}
+            handleEditOption={instituicaoState.handleEdit}
+            handleDeleteOption={instituicaoState.handleDelete}
+            openAddDialog={() => instituicaoState.setIsDialogOpen(true)}
+            isDialogOpen={instituicaoState.isDialogOpen}
+            setIsDialogOpen={instituicaoState.setIsDialogOpen}
+            newValue={instituicaoState.newValue}
+            setNewValue={instituicaoState.setNewValue}
+            handleAdd={instituicaoState.handleAdd}
+            placeholder="Selecione o órgão"
+          />
+        </div>
+
+        <div>
+          <SelectFieldDB
+            id="year"
+            label="Ano"
+            value={anoState.value}
+            onChange={setYear}
+            items={anoState.items}
+            loading={anoState.loading}
+            nameField="valor"
+            handleEditOption={anoState.handleEdit}
+            handleDeleteOption={anoState.handleDelete}
+            openAddDialog={() => anoState.setIsDialogOpen(true)}
+            isDialogOpen={anoState.isDialogOpen}
+            setIsDialogOpen={anoState.setIsDialogOpen}
+            newValue={anoState.newValue}
+            setNewValue={anoState.setNewValue}
+            handleAdd={anoState.handleAdd}
+            placeholder="Selecione o ano"
           />
         </div>
       </div>
 
-      {/* Discipline Field */}
-      <div>
-        <SelectField
-          id="discipline"
-          label="Disciplina"
-          value={disciplineState.value}
-          onChange={setDiscipline}
-          options={disciplines}
-          handleEditOption={disciplineState.handleEdit}
-          handleDeleteOption={disciplineState.handleDelete}
-          openAddDialog={() => disciplineState.setIsDialogOpen(true)}
-          placeholder="Selecione a disciplina"
-        />
-        <AddValueDialog
-          title="Adicionar Nova Disciplina"
-          placeholder="Nome da disciplina"
-          isOpen={disciplineState.isDialogOpen}
-          setIsOpen={disciplineState.setIsDialogOpen}
-          value={disciplineState.newValue}
-          setValue={disciplineState.setNewValue}
-          onAdd={disciplineState.handleAdd}
-        />
+      {/* Segunda linha: Cargo, Disciplina, Nível */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <SelectFieldDB
+            id="role"
+            label="Cargo"
+            value={cargoState.value}
+            onChange={setRole}
+            items={cargoState.items}
+            loading={cargoState.loading}
+            handleEditOption={cargoState.handleEdit}
+            handleDeleteOption={cargoState.handleDelete}
+            openAddDialog={() => cargoState.setIsDialogOpen(true)}
+            isDialogOpen={cargoState.isDialogOpen}
+            setIsDialogOpen={cargoState.setIsDialogOpen}
+            newValue={cargoState.newValue}
+            setNewValue={cargoState.setNewValue}
+            handleAdd={cargoState.handleAdd}
+            placeholder="Selecione o cargo"
+          />
+        </div>
+
+        <div>
+          <SelectFieldDB
+            id="discipline"
+            label="Disciplina"
+            value={disciplinaState.value}
+            onChange={setDiscipline}
+            items={disciplinaState.items}
+            loading={disciplinaState.loading}
+            handleEditOption={disciplinaState.handleEdit}
+            handleDeleteOption={disciplinaState.handleDelete}
+            openAddDialog={() => disciplinaState.setIsDialogOpen(true)}
+            isDialogOpen={disciplinaState.isDialogOpen}
+            setIsDialogOpen={disciplinaState.setIsDialogOpen}
+            newValue={disciplinaState.newValue}
+            setNewValue={disciplinaState.setNewValue}
+            handleAdd={disciplinaState.handleAdd}
+            placeholder="Selecione a disciplina"
+          />
+        </div>
+
+        <div>
+          <SelectFieldDB
+            id="level"
+            label="Nível"
+            value={nivelState.value}
+            onChange={setLevel}
+            items={nivelState.items}
+            loading={nivelState.loading}
+            handleEditOption={nivelState.handleEdit}
+            handleDeleteOption={nivelState.handleDelete}
+            openAddDialog={() => nivelState.setIsDialogOpen(true)}
+            isDialogOpen={nivelState.isDialogOpen}
+            setIsDialogOpen={nivelState.setIsDialogOpen}
+            newValue={nivelState.newValue}
+            setNewValue={nivelState.setNewValue}
+            handleAdd={nivelState.handleAdd}
+            placeholder="Selecione o nível"
+          />
+        </div>
       </div>
 
-      {/* Tópicos Field - only shown when discipline is selected */}
-      {discipline && (
+      {/* Terceira linha: Dificuldade, Tipo de Questão */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <TopicosField
+          <SelectFieldDB
+            id="difficulty"
+            label="Dificuldade"
+            value={dificuldadeState.value}
+            onChange={setDifficulty}
+            items={dificuldadeState.items}
+            loading={dificuldadeState.loading}
+            handleEditOption={dificuldadeState.handleEdit}
+            handleDeleteOption={dificuldadeState.handleDelete}
+            openAddDialog={() => dificuldadeState.setIsDialogOpen(true)}
+            isDialogOpen={dificuldadeState.isDialogOpen}
+            setIsDialogOpen={dificuldadeState.setIsDialogOpen}
+            newValue={dificuldadeState.newValue}
+            setNewValue={dificuldadeState.setNewValue}
+            handleAdd={dificuldadeState.handleAdd}
+            placeholder="Selecione a dificuldade"
+          />
+        </div>
+
+        <div>
+          <SelectFieldDB
+            id="questionType"
+            label="Tipo de Questão"
+            value={tipoQuestaoState.value}
+            onChange={setQuestionType}
+            items={tipoQuestaoState.items}
+            loading={tipoQuestaoState.loading}
+            handleEditOption={tipoQuestaoState.handleEdit}
+            handleDeleteOption={tipoQuestaoState.handleDelete}
+            openAddDialog={() => tipoQuestaoState.setIsDialogOpen(true)}
+            isDialogOpen={tipoQuestaoState.isDialogOpen}
+            setIsDialogOpen={tipoQuestaoState.setIsDialogOpen}
+            newValue={tipoQuestaoState.newValue}
+            setNewValue={tipoQuestaoState.setNewValue}
+            handleAdd={tipoQuestaoState.handleAdd}
+            placeholder="Selecione o tipo de questão"
+          />
+        </div>
+      </div>
+
+      {/* Assuntos Field - only shown when discipline is selected */}
+      {discipline && (
+        <div className="mt-4">
+          <AssuntosField
             disciplina={discipline}
-            topicos={topicos}
-            setTopicos={setTopicos}
+            assuntos={topicos}
+            setAssuntos={setTopicos}
           />
         </div>
       )}
-
-      {/* Level Field */}
-      <div>
-        <SelectField
-          id="level"
-          label="Nível"
-          value={levelState.value}
-          onChange={setLevel}
-          options={levels}
-          handleEditOption={levelState.handleEdit}
-          handleDeleteOption={levelState.handleDelete}
-          openAddDialog={() => levelState.setIsDialogOpen(true)}
-          placeholder="Selecione o nível"
-        />
-        <AddValueDialog
-          title="Adicionar Novo Nível"
-          placeholder="Nome do nível"
-          isOpen={levelState.isDialogOpen}
-          setIsOpen={levelState.setIsDialogOpen}
-          value={levelState.newValue}
-          setValue={levelState.setNewValue}
-          onAdd={levelState.handleAdd}
-        />
-      </div>
-
-      {/* Difficulty Field */}
-      <div>
-        <SelectField
-          id="difficulty"
-          label="Dificuldade"
-          value={difficultyState.value}
-          onChange={setDifficulty}
-          options={difficulties}
-          handleEditOption={difficultyState.handleEdit}
-          handleDeleteOption={difficultyState.handleDelete}
-          openAddDialog={() => difficultyState.setIsDialogOpen(true)}
-          placeholder="Selecione a dificuldade"
-        />
-        <AddValueDialog
-          title="Adicionar Nova Dificuldade"
-          placeholder="Nome da dificuldade"
-          isOpen={difficultyState.isDialogOpen}
-          setIsOpen={difficultyState.setIsDialogOpen}
-          value={difficultyState.newValue}
-          setValue={difficultyState.setNewValue}
-          onAdd={difficultyState.handleAdd}
-        />
-      </div>
-
-      {/* Question Type Field */}
-      <div>
-        <SelectField
-          id="question-type"
-          label="Tipo de Questão"
-          value={questionTypeState.value}
-          onChange={setQuestionType}
-          options={questionTypes}
-          handleEditOption={questionTypeState.handleEdit}
-          handleDeleteOption={questionTypeState.handleDelete}
-          openAddDialog={() => questionTypeState.setIsDialogOpen(true)}
-          placeholder="Selecione o tipo"
-        />
-        <AddValueDialog
-          title="Adicionar Novo Tipo de Questão"
-          placeholder="Nome do tipo"
-          isOpen={questionTypeState.isDialogOpen}
-          setIsOpen={questionTypeState.setIsDialogOpen}
-          value={questionTypeState.newValue}
-          setValue={questionTypeState.setNewValue}
-          onAdd={questionTypeState.handleAdd}
-        />
-      </div>
-    </>
+    </div>
   );
 };
 

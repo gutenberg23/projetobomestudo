@@ -1,4 +1,3 @@
-
 import React, { ReactNode } from "react";
 
 interface FormSectionProps {
@@ -19,11 +18,11 @@ const FormSection: React.FC<FormSectionProps> = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {title && (
         <h3 className="text-sm font-medium text-[#272f3c]">{title}</h3>
       )}
-      <div className={`grid ${gridCols[cols]} gap-4`}>
+      <div className={`grid ${gridCols[cols]} gap-3`}>
         {children}
       </div>
     </div>

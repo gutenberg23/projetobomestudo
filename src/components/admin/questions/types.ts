@@ -1,4 +1,3 @@
-
 export interface QuestionItemType {
   id: string;
   year: string;
@@ -67,4 +66,12 @@ export interface DisciplinaItemType {
   topics: number;
   lessons: number;
   friendlyUrl?: string;
+}
+
+export interface Assunto {
+  id: string;
+  nome: string;
+  disciplina: string;
+  patrocinador?: string;
+  questoes_ids?: string[];
 }

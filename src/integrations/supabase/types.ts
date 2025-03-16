@@ -39,6 +39,57 @@ export type Database = {
         }
         Relationships: []
       }
+      assuntos: {
+        Row: {
+          id: string
+          nome: string
+          disciplina: string
+          patrocinador: string | null
+          questoes_ids: string[] | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          disciplina: string
+          patrocinador?: string | null
+          questoes_ids?: string[] | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          disciplina?: string
+          patrocinador?: string | null
+          questoes_ids?: string[] | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      bancas: {
+        Row: {
+          id: string
+          nome: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       comentarios_questoes: {
         Row: {
           conteudo: string
@@ -186,6 +237,111 @@ export type Database = {
         }
         Relationships: []
       }
+      anos: {
+        Row: {
+          id: string
+          valor: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          valor: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          valor?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cargos: {
+        Row: {
+          id: string
+          nome: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      disciplinas_questoes: {
+        Row: {
+          id: string
+          nome: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      dificuldades: {
+        Row: {
+          id: string
+          nome: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      instituicoes: {
+        Row: {
+          id: string
+          nome: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       likes_comentarios: {
         Row: {
           comentario_id: string
@@ -233,6 +389,27 @@ export type Database = {
           id?: string
           questao_id?: string
           usuario_id?: string
+        }
+        Relationships: []
+      }
+      niveis: {
+        Row: {
+          id: string
+          nome: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          created_at?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -508,6 +685,27 @@ export type Database = {
           quantidade_questoes?: number | null
           questoes_ids?: string[] | null
           titulo?: string
+        }
+        Relationships: []
+      }
+      tipos_questao: {
+        Row: {
+          id: string
+          nome: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          nome: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          nome?: string
+          created_at?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }

@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckIcon, ChevronDownIcon, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,15 +21,17 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredOptions, setFilteredOptions] = useState<string[]>(options);
+  const [filteredOptions, setFilteredOptions] = useState<string[]>([]);
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const closeDropdown = () => setIsOpen(false);
 
-  // Garantir que as opções estão em ordem alfabética
-  const sortedOptions = [...options].sort((a, b) => a.localeCompare(b));
+  // Memoize sortedOptions para evitar recriação a cada renderização
+  const sortedOptions = useMemo(() => {
+    return [...options].sort((a, b) => a.localeCompare(b));
+  }, [options]);
 
-  // Filtrar opções quando o termo de busca mudar
+  // Filtrar opções quando o termo de busca ou sortedOptions mudar
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredOptions(sortedOptions);
@@ -42,10 +43,10 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
     }
   }, [searchTerm, sortedOptions]);
 
-  // Atualizar as opções filtradas quando as opções mudarem
+  // Inicializar as opções filtradas quando o componente montar
   useEffect(() => {
     setFilteredOptions(sortedOptions);
-  }, [options]);
+  }, []); // Executa apenas na montagem do componente
 
   return (
     <div className="relative w-full">

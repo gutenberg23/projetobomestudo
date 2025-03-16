@@ -1,12 +1,23 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import QuestionIdField from "./form/QuestionIdField";
 import QuestionMetadataFields from "./form/QuestionMetadataFields";
 import QuestionTextFields from "./form/QuestionTextFields";
 import QuestionOptions from "./form/QuestionOptions";
 import FormSection from "./form/FormSection";
 import SubmitButton from "./form/SubmitButton";
+import { useClipboard } from "./form/useClipboard";
 import { QuestionOption } from "./types";
+
+// Importando os serviços
+import { fetchBancas } from "@/services/bancasService";
+import { fetchInstituicoes } from "@/services/instituicoesService";
+import { fetchAnos } from "@/services/anosService";
+import { fetchCargos } from "@/services/cargosService";
+import { fetchDisciplinasQuestoes } from "@/services/disciplinasQuestoesService";
+import { fetchNiveis } from "@/services/niveisService";
+import { fetchDificuldades } from "@/services/dificuldadesService";
+import { fetchTiposQuestao } from "@/services/tiposQuestaoService";
+
 interface QuestionFormProps {
   questionId: string;
   year: string;
@@ -57,6 +68,7 @@ interface QuestionFormProps {
   submitButtonText: string;
   isEditing?: boolean;
 }
+
 const QuestionForm: React.FC<QuestionFormProps> = ({
   questionId,
   year,
@@ -110,49 +122,95 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   const {
     copyToClipboard
   } = useClipboard();
+
+  // Carregar dados iniciais das tabelas
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        // Carregar dados das bancas
+        const bancasData = await fetchBancas();
+        setInstitutions(bancasData.map(banca => banca.nome));
+
+        // Carregar dados dos anos
+        const anosData = await fetchAnos();
+        setYears(anosData.map(ano => ano.valor));
+
+        // Carregar dados dos cargos
+        const cargosData = await fetchCargos();
+        setRoles(cargosData.map(cargo => cargo.nome));
+
+        // Carregar dados das disciplinas
+        const disciplinasData = await fetchDisciplinasQuestoes();
+        setDisciplines(disciplinasData.map(disciplina => disciplina.nome));
+
+        // Carregar dados dos níveis
+        const niveisData = await fetchNiveis();
+        setLevels(niveisData.map(nivel => nivel.nome));
+
+        // Carregar dados das dificuldades
+        const dificuldadesData = await fetchDificuldades();
+        setDifficulties(dificuldadesData.map(dificuldade => dificuldade.nome));
+
+        // Carregar dados dos tipos de questão
+        const tiposQuestaoData = await fetchTiposQuestao();
+        setQuestionTypes(tiposQuestaoData.map(tipo => tipo.nome));
+      } catch (error) {
+        console.error("Erro ao carregar dados iniciais:", error);
+      }
+    };
+
+    loadInitialData();
+  }, [
+    setInstitutions,
+    setYears,
+    setRoles,
+    setDisciplines,
+    setLevels,
+    setDifficulties,
+    setQuestionTypes
+  ]);
+
   return <div className="space-y-6">
       {/* Question ID Field */}
       <QuestionIdField questionId={questionId} copyToClipboard={copyToClipboard} />
 
-      {/* Question Metadata - First Row */}
-      <FormSection cols={3}>
-        <QuestionMetadataFields 
-          institution={institution} 
-          setInstitution={setInstitution} 
-          institutions={institutions} 
-          setInstitutions={setInstitutions} 
-          organization={organization} 
-          setOrganization={setOrganization} 
-          organizations={organizations} 
-          setOrganizations={setOrganizations} 
-          year={year} 
-          setYear={setYear} 
-          years={years} 
-          setYears={setYears} 
-          role={role} 
-          setRole={setRole} 
-          roles={roles} 
-          setRoles={setRoles} 
-          discipline={discipline} 
-          setDiscipline={setDiscipline} 
-          disciplines={disciplines} 
-          setDisciplines={setDisciplines} 
-          topicos={topicos}
-          setTopicos={setTopicos}
-          level={level} 
-          setLevel={setLevel} 
-          levels={levels} 
-          setLevels={setLevels} 
-          difficulty={difficulty} 
-          setDifficulty={setDifficulty} 
-          difficulties={difficulties} 
-          setDifficulties={setDifficulties} 
-          questionType={questionType} 
-          setQuestionType={setQuestionType} 
-          questionTypes={questionTypes} 
-          setQuestionTypes={setQuestionTypes} 
-        />
-      </FormSection>
+      {/* Question Metadata Fields */}
+      <QuestionMetadataFields 
+        institution={institution} 
+        setInstitution={setInstitution} 
+        institutions={institutions} 
+        setInstitutions={setInstitutions} 
+        organization={organization} 
+        setOrganization={setOrganization} 
+        organizations={organizations} 
+        setOrganizations={setOrganizations} 
+        year={year} 
+        setYear={setYear} 
+        years={years} 
+        setYears={setYears} 
+        role={role} 
+        setRole={setRole} 
+        roles={roles} 
+        setRoles={setRoles} 
+        discipline={discipline} 
+        setDiscipline={setDiscipline} 
+        disciplines={disciplines} 
+        setDisciplines={setDisciplines} 
+        topicos={topicos}
+        setTopicos={setTopicos}
+        level={level}
+        setLevel={setLevel}
+        levels={levels}
+        setLevels={setLevels}
+        difficulty={difficulty}
+        setDifficulty={setDifficulty}
+        difficulties={difficulties}
+        setDifficulties={setDifficulties}
+        questionType={questionType}
+        setQuestionType={setQuestionType}
+        questionTypes={questionTypes}
+        setQuestionTypes={setQuestionTypes}
+      />
 
       {/* Expandable Content */}
       <div>
@@ -230,6 +288,4 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     </div>;
 };
 
-// Add missing import
-import { useClipboard } from "./form/useClipboard";
 export default QuestionForm;

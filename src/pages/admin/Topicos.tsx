@@ -400,9 +400,33 @@ const Topicos = () => {
               <Input
                 id="topico-video-url"
                 value={newTopico.videoUrl}
-                onChange={(e) => setNewTopico({ ...newTopico, videoUrl: e.target.value })}
+                onChange={(e) => {
+                  // Transformar URL do YouTube no formato de incorporação
+                  const url = e.target.value;
+                  let transformedUrl = url;
+                  
+                  // Verificar se é um link do YouTube no formato padrão
+                  const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)(?:&.*)?/;
+                  const youtubeShortRegex = /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]+)(?:\?.*)?/;
+                  
+                  const match = url.match(youtubeRegex);
+                  const shortMatch = url.match(youtubeShortRegex);
+                  
+                  if (match && match[1]) {
+                    // Transformar para o formato de incorporação
+                    transformedUrl = `https://www.youtube.com/embed/${match[1]}`;
+                  } else if (shortMatch && shortMatch[1]) {
+                    // Transformar links curtos do YouTube
+                    transformedUrl = `https://www.youtube.com/embed/${shortMatch[1]}`;
+                  }
+                  
+                  setNewTopico({ ...newTopico, videoUrl: transformedUrl });
+                }}
                 placeholder="https://exemplo.com/video"
               />
+              <p className="text-xs text-[#67748a] mt-1">
+                Links do YouTube serão automaticamente convertidos para o formato de incorporação.
+              </p>
             </div>
             
             <div className="space-y-2">
