@@ -31,7 +31,7 @@ const ResultItem: React.FC<ItemProps> = ({
   friendlyUrl
 }) => {
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
-      <div className="flex-1">
+      <div className="flex-1 pr-10">
         <Link to={`/course/${friendlyUrl}`} className="hover:text-[#5f2ebe] transition-colors">
           <h3 className="text-[#272f3c] mb-0 leading-none font-extralight text-sm">{title}</h3>
         </Link>
