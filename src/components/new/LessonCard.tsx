@@ -7,6 +7,8 @@ import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { LessonHeader } from "./lesson/LessonHeader";
 import { VideoContentLayout } from "./lesson/VideoContentLayout";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -29,6 +31,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
+  const [currentSectionQuestions, setCurrentSectionQuestions] = useState<Question[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   
   // Estados para gerenciar a questão
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -54,6 +58,88 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     const allSectionsCompleted = lesson.sections.every(section => completedSections.includes(section.id));
     setIsLessonCompleted(allSectionsCompleted);
   }, [completedSections, lesson.sections]);
+
+  // Novo useEffect para buscar as questões quando a seção selecionada mudar
+  useEffect(() => {
+    if (showQuestions && selectedSection) {
+      fetchQuestionsForSection(selectedSection);
+    }
+  }, [selectedSection, showQuestions]);
+
+  const fetchQuestionsForSection = async (sectionId: string) => {
+    setIsLoadingQuestions(true);
+    try {
+      // Buscar o tópico selecionado para obter suas questões
+      const currentSection = lesson.sections.find(section => section.id === sectionId);
+      
+      if (!currentSection) {
+        setCurrentSectionQuestions([]);
+        return;
+      }
+      
+      console.log("Buscando tópico:", sectionId);
+      const { data: topicoData, error: topicoError } = await supabase
+        .from('topicos')
+        .select('*')
+        .eq('id', sectionId)
+        .single();
+        
+      if (topicoError) {
+        console.error("Erro ao buscar tópico:", topicoError);
+        toast.error("Erro ao buscar questões do tópico");
+        setCurrentSectionQuestions([]);
+        return;
+      }
+      
+      console.log("Dados do tópico:", topicoData);
+      
+      if (!topicoData.questoes_ids || topicoData.questoes_ids.length === 0) {
+        console.log("Tópico não tem questões vinculadas");
+        setCurrentSectionQuestions([]);
+        return;
+      }
+      
+      // Buscar as questões vinculadas ao tópico
+      console.log("Buscando questões com IDs:", topicoData.questoes_ids);
+      const { data: questoesData, error: questoesError } = await supabase
+        .from('questoes')
+        .select('*')
+        .in('id', topicoData.questoes_ids);
+        
+      if (questoesError) {
+        console.error("Erro ao buscar questões:", questoesError);
+        toast.error("Erro ao carregar questões");
+        setCurrentSectionQuestions([]);
+        return;
+      }
+      
+      console.log("Questões encontradas:", questoesData);
+      
+      // Converter os dados para o formato esperado pelo QuestionCard
+      if (questoesData && questoesData.length > 0) {
+        const formattedQuestions = questoesData.map(q => ({
+          id: q.id,
+          year: q.year || "",
+          institution: q.institution || "",
+          organization: q.organization || "",
+          role: q.role || "",
+          content: q.content || "",
+          options: q.options ? [...q.options] : [],
+          comments: []
+        }));
+        
+        setCurrentSectionQuestions(formattedQuestions);
+      } else {
+        setCurrentSectionQuestions([]);
+      }
+    } catch (error) {
+      console.error("Erro ao buscar questões:", error);
+      toast.error("Erro ao carregar questões");
+      setCurrentSectionQuestions([]);
+    } finally {
+      setIsLoadingQuestions(false);
+    }
+  };
 
   const checkScroll = () => {
     if (sectionsContainerRef.current) {
@@ -82,6 +168,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({
 
   const handleQuestionButtonClick = () => {
     console.log("Botão de questões clicado para a seção:", selectedSection);
+    if (!showQuestions) {
+      fetchQuestionsForSection(selectedSection);
+    }
     setShowQuestions(!showQuestions);
   };
 
@@ -133,9 +222,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     // Implementar lógica para enviar comentário
   };
 
-  // Use the question from props or from lesson
-  const displayQuestion = question || lesson.question;
-
   return (
     <article ref={cardRef} className="mb-5 w-full bg-white rounded-xl border border-gray-100 border-solid">
       <LessonHeader 
@@ -160,16 +246,30 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             onToggleCompletion={toggleCompletion}
           />
           <ItensDaAula 
-            setShowQuestions={setShowQuestions} 
+            setShowQuestions={handleQuestionButtonClick} 
             showQuestions={showQuestions} 
           />
-          {showQuestions && displayQuestion && (
+          {showQuestions && (
             <div className="mt-4">
-              <QuestionCard
-                question={displayQuestion}
-                disabledOptions={disabledOptions}
-                onToggleDisabled={toggleOptionDisabled}
-              />
+              {isLoadingQuestions ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5f2ebe]"></div>
+                </div>
+              ) : currentSectionQuestions.length > 0 ? (
+                currentSectionQuestions.map((q, index) => (
+                  <QuestionCard
+                    key={`${q.id}-${index}`}
+                    question={q}
+                    disabledOptions={disabledOptions}
+                    onToggleDisabled={toggleOptionDisabled}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8 text-[#67748a]">
+                  <p className="text-lg font-medium mb-2">Nenhuma questão encontrada</p>
+                  <p>Este tópico não possui questões cadastradas no banco de dados.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
