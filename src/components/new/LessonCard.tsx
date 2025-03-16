@@ -1,8 +1,7 @@
-
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import type { Lesson, Question } from "./types";
+import type { Lesson, Question, QuestionOption } from "./types";
 import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { LessonHeader } from "./lesson/LessonHeader";
@@ -65,6 +64,32 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     }
   }, [selectedSection, showQuestions]);
 
+  const convertToQuestionOptions = (options: any): QuestionOption[] => {
+    if (!options) return [];
+    
+    let optionsArray: any[] = [];
+    
+    if (Array.isArray(options)) {
+      optionsArray = options;
+    } else if (typeof options === 'object') {
+      optionsArray = Object.values(options);
+    } else {
+      return [];
+    }
+    
+    return optionsArray.map(opt => {
+      if (typeof opt === 'string') {
+        return { id: `opt-${Math.random().toString(36).substring(2, 9)}`, text: opt, isCorrect: false };
+      }
+      
+      return {
+        id: typeof opt.id === 'string' ? opt.id : `opt-${Math.random().toString(36).substring(2, 9)}`,
+        text: typeof opt.text === 'string' ? opt.text : (opt.text || ''),
+        isCorrect: Boolean(opt.isCorrect)
+      };
+    });
+  };
+
   const fetchQuestionsForSection = async (sectionId: string) => {
     setIsLoadingQuestions(true);
     try {
@@ -91,7 +116,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       
       console.log("Dados do tópico:", topicoData);
       
-      // Verifica e extrai os IDs das questões de forma segura
       if (!topicoData.questoes_ids || 
           (Array.isArray(topicoData.questoes_ids) && topicoData.questoes_ids.length === 0)) {
         console.log("Tópico não tem questões vinculadas");
@@ -99,7 +123,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         return;
       }
       
-      // Certifica que questoes_ids é um array de strings
       let questoesIds: string[] = [];
       if (Array.isArray(topicoData.questoes_ids)) {
         questoesIds = topicoData.questoes_ids.map(id => String(id));
@@ -131,18 +154,19 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       console.log("Questões encontradas:", questoesData);
       
       if (questoesData && questoesData.length > 0) {
-        const formattedQuestions = questoesData.map(q => ({
+        const formattedQuestions: Question[] = questoesData.map(q => ({
           id: q.id,
           year: q.year || "",
           institution: q.institution || "",
           organization: q.organization || "",
           role: q.role || "",
           content: q.content || "",
-          options: q.options ? 
-            (Array.isArray(q.options) ? q.options : 
-            (typeof q.options === 'object' ? Object.values(q.options) : [])) 
-            : [],
-          comments: []
+          additionalContent: q.expandablecontent || undefined,
+          teacherExplanation: q.teacherexplanation || undefined,
+          aiExplanation: q.aiexplanation || undefined,
+          options: convertToQuestionOptions(q.options),
+          comments: [],
+          images: q.images || []
         }));
         
         setCurrentSectionQuestions(formattedQuestions);
