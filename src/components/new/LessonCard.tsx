@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
@@ -91,19 +92,27 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       
       let questoesIds: string[] = [];
       
-      if (topicoData.questoes_ids) {
-        if (Array.isArray(topicoData.questoes_ids)) {
-          questoesIds = topicoData.questoes_ids.map(id => String(id));
+      // Função auxiliar para converter qualquer tipo para string[]
+      const extractQuestaoIds = (input: any): string[] => {
+        if (!input) return [];
+        
+        if (Array.isArray(input)) {
+          return input.map(id => String(id));
         } 
-        else if (typeof topicoData.questoes_ids === 'object') {
+        
+        if (typeof input === 'object') {
           try {
-            const values = Object.values(topicoData.questoes_ids);
-            questoesIds = values.map(v => String(v));
+            return Object.values(input).map(v => String(v));
           } catch (e) {
-            console.error("Erro ao converter questoes_ids para array:", e);
+            console.error("Erro ao extrair IDs de questões:", e);
+            return [];
           }
         }
-      }
+        
+        return [];
+      };
+      
+      questoesIds = extractQuestaoIds(topicoData.questoes_ids);
       
       if (questoesIds.length === 0) {
         console.log("Tópico não tem questões vinculadas");
