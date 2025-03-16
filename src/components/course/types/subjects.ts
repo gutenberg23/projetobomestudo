@@ -20,8 +20,8 @@ export interface Section {
   id: string;
   title: string;
   isActive?: boolean;
-  contentType: string;
-  duration: number;
+  contentType: "video" | "text" | "quiz";  // Atualizado para corresponder ao tipo em new/types.ts
+  duration: number;                        // Garantindo que seja number
   videoUrl?: string;
   textContent?: string;
   professorId?: string;

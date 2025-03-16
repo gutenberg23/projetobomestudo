@@ -10,19 +10,35 @@ interface SubjectLessonsProps {
 export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
   return (
     <div className="px-4 pb-8 md:px-[15px] bg-slate-50 py-[30px] border-l-2 border-r-2 border-[#fff] rounded-xl mb-1">
-      {lessons.map(lesson => (
-        <LessonCard 
-          key={lesson.id} 
-          lesson={{
-            id: lesson.id,
-            title: lesson.title,
-            description: lesson.description || '',
-            sections: lesson.sections || [],
-            question: lesson.question,
-            duration: lesson.duration,
-          }} 
-        />
-      ))}
+      {lessons.map(lesson => {
+        // Processamos as seções para garantir que contentType seja um dos valores permitidos
+        const processedSections = lesson.sections?.map(section => ({
+          ...section,
+          // Garantir que contentType seja um dos valores permitidos
+          contentType: section.contentType === "video" || section.contentType === "text" || section.contentType === "quiz" 
+            ? section.contentType 
+            : "text" as const, // fallback para "text" se o valor não for um dos permitidos
+          // Garantir que duration seja um número
+          duration: typeof section.duration === 'number' 
+            ? section.duration 
+            : parseInt(String(section.duration)) || 0
+        })) || [];
+
+        return (
+          <LessonCard 
+            key={lesson.id} 
+            lesson={{
+              id: lesson.id,
+              title: lesson.title,
+              description: lesson.description || '',
+              sections: processedSections,
+              question: lesson.question,
+              // Garantir que duration seja uma string
+              duration: typeof lesson.duration === 'string' ? lesson.duration : String(lesson.duration || ''),
+            }} 
+          />
+        );
+      })}
     </div>
   );
 };
