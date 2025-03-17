@@ -14,7 +14,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
 import { useToast } from "@/hooks/use-toast";
-
 interface DashboardSummaryProps {
   overallStats: OverallStats;
   performanceGoal: number;
@@ -29,7 +28,6 @@ interface DashboardSummaryProps {
     errors: number;
   };
 }
-
 export const DashboardSummary = ({
   overallStats,
   performanceGoal,
@@ -44,9 +42,17 @@ export const DashboardSummary = ({
     errors: 0
   }
 }: DashboardSummaryProps) => {
-  const { courseId } = useParams<{ courseId: string }>();
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const {
+    courseId
+  } = useParams<{
+    courseId: string;
+  }>();
+  const {
+    user
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const userId = user?.id || 'guest';
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
@@ -54,86 +60,65 @@ export const DashboardSummary = ({
   const [isEditing, setIsEditing] = useState(false);
   const [tempGoal, setTempGoal] = useState(performanceGoal);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-
   useEffect(() => {
     if (!courseId) return;
-    
     const loadUserData = async () => {
       const realId = extractIdFromFriendlyUrl(courseId);
-      
       if (userId !== 'guest') {
         try {
           // Use Promise.all para executar ambas as consultas em paralelo
-          const { data, error } = await supabase
-            .from('user_course_progress')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('course_id', realId)
-            .maybeSingle();
-          
+          const {
+            data,
+            error
+          } = await supabase.from('user_course_progress').select('*').eq('user_id', userId).eq('course_id', realId).maybeSingle();
           if (!error && data) {
             if (data.performance_goal) {
               const goalValue = parseInt(data.performance_goal.toString());
               setPerformanceGoal(goalValue);
               localStorage.setItem(`${userId}_${realId}_performanceGoal`, goalValue.toString());
             }
-            
             if (data.exam_date) {
               const examDateValue = new Date(data.exam_date);
               setExamDate(examDateValue);
               localStorage.setItem(`${userId}_${realId}_examDate`, data.exam_date);
             }
-            
             return;
           }
         } catch (e) {
           console.error('Erro ao buscar dados do usuário:', e);
         }
       }
-      
       const savedGoal = localStorage.getItem(`${userId}_${realId}_performanceGoal`);
       if (savedGoal) {
         setPerformanceGoal(parseInt(savedGoal));
       }
-      
       const savedExamDate = localStorage.getItem(`${userId}_${realId}_examDate`);
       if (savedExamDate) {
         setExamDate(new Date(savedExamDate));
       }
     };
-    
     loadUserData();
   }, [courseId, setPerformanceGoal, userId]);
-
   const saveUserDataToDatabase = async (field: string, value: string | number | null) => {
     if (!courseId || userId === 'guest') return;
-    
     const realId = extractIdFromFriendlyUrl(courseId);
-    
     try {
-      const { data: existingData, error: checkError } = await supabase
-        .from('user_course_progress')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('course_id', realId)
-        .maybeSingle();
-      
+      const {
+        data: existingData,
+        error: checkError
+      } = await supabase.from('user_course_progress').select('id').eq('user_id', userId).eq('course_id', realId).maybeSingle();
       if (checkError && checkError.code !== 'PGRST116') {
         console.error('Erro ao verificar dados existentes:', checkError);
         return;
       }
-      
       const updateData: any = {
         updated_at: new Date().toISOString()
       };
       updateData[field] = value;
-      
       if (existingData) {
-        const { error: updateError } = await supabase
-          .from('user_course_progress')
-          .update(updateData)
-          .eq('id', existingData.id);
-        
+        const {
+          error: updateError
+        } = await supabase.from('user_course_progress').update(updateData).eq('id', existingData.id);
         if (updateError) {
           console.error(`Erro ao atualizar ${field}:`, updateError);
           toast({
@@ -150,11 +135,9 @@ export const DashboardSummary = ({
           updated_at: new Date().toISOString()
         };
         insertData[field] = value;
-        
-        const { error: insertError } = await supabase
-          .from('user_course_progress')
-          .insert(insertData);
-        
+        const {
+          error: insertError
+        } = await supabase.from('user_course_progress').insert(insertData);
         if (insertError) {
           console.error(`Erro ao inserir ${field}:`, insertError);
           toast({
@@ -168,107 +151,74 @@ export const DashboardSummary = ({
       console.error(`Erro ao salvar ${field}:`, error);
     }
   };
-
   const handlePerformanceGoalChange = (value: number) => {
     const newValue = Math.max(1, Math.min(100, value || 1));
     setPerformanceGoal(newValue);
-    
     if (courseId) {
       const realId = extractIdFromFriendlyUrl(courseId);
       const stringValue = newValue.toString();
-      
       localStorage.setItem(`${userId}_${realId}_performanceGoal`, stringValue);
-      
       if (userId !== 'guest') {
         saveUserDataToDatabase('performance_goal', newValue);
       }
     }
   };
-
   const handleExamDateChange = (date: Date | undefined) => {
     setExamDate(date);
-    
     if (courseId) {
       const realId = extractIdFromFriendlyUrl(courseId);
-      
       if (date) {
         const dateString = date.toISOString();
-        
         localStorage.setItem(`${userId}_${realId}_examDate`, dateString);
-        
         if (userId !== 'guest') {
           saveUserDataToDatabase('exam_date', dateString);
         }
       } else {
         localStorage.removeItem(`${userId}_${realId}_examDate`);
-        
         if (userId !== 'guest') {
           saveUserDataToDatabase('exam_date', null);
         }
       }
     }
   };
-
   const daysUntilExam = React.useMemo(() => {
     if (!examDate) return null;
     const today = new Date();
     const days = differenceInDays(examDate, today);
     return days >= 0 ? days : null;
   }, [examDate]);
-
   const calculateAproveitamento = () => {
     if (simuladosStats.questionsCount === 0) return 0;
-    return Math.round((simuladosStats.hits / simuladosStats.questionsCount) * 100);
+    return Math.round(simuladosStats.hits / simuladosStats.questionsCount * 100);
   };
-
   return <div className="mb-8 p-5 bg-white rounded-[10px]">
       <div className="flex flex-col gap-4 mb-4 text-[#272f3c]">
         <h3 className="text-2xl font-bold">Resumo Geral</h3>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Meta de Aproveitamento:</span>
-            {isEditing ? (
-              <div className="flex items-center">
-                <Input 
-                  type="number" 
-                  min="1" 
-                  max="100" 
-                  value={tempGoal} 
-                  onChange={e => setTempGoal(parseInt(e.target.value))} 
-                  className="w-20 text-center" 
-                />
-                <button
-                  onClick={() => {
-                    setPerformanceGoal(tempGoal);
-                    saveUserDataToDatabase('performance_goal', tempGoal);
-                    setIsEditing(false);
-                  }}
-                  className="text-green-600 hover:text-green-800 mr-1"
-                >
+            {isEditing ? <div className="flex items-center">
+                <Input type="number" min="1" max="100" value={tempGoal} onChange={e => setTempGoal(parseInt(e.target.value))} className="w-20 text-center" />
+                <button onClick={() => {
+              setPerformanceGoal(tempGoal);
+              saveUserDataToDatabase('performance_goal', tempGoal);
+              setIsEditing(false);
+            }} className="text-green-600 hover:text-green-800 mr-1">
                   <CheckIcon className="h-5 w-5" />
                 </button>
-                <button
-                  onClick={() => {
-                    setTempGoal(performanceGoal);
-                    setIsEditing(false);
-                  }}
-                  className="text-red-600 hover:text-red-800"
-                >
+                <button onClick={() => {
+              setTempGoal(performanceGoal);
+              setIsEditing(false);
+            }} className="text-red-600 hover:text-red-800">
                   <XIcon className="h-5 w-5" />
                 </button>
-              </div>
-            ) : (
-              <div className="flex items-center">
+              </div> : <div className="flex items-center">
                 <span className="font-bold text-lg">{performanceGoal}%</span>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="ml-2 text-gray-500 hover:text-gray-700"
-                >
+                <button onClick={() => setIsEditing(true)} className="ml-2 text-gray-500 hover:text-gray-700">
                   <PencilIcon className="h-4 w-4" />
                 </button>
-              </div>
-            )}
-            <span className="text-sm text-gray-600">%</span>
+              </div>}
+            
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Data da Prova:</span>
@@ -336,9 +286,9 @@ export const DashboardSummary = ({
                 <span className="text-gray-600">Simulados Realizados</span>
                 <span className="font-semibold">{simuladosStats.realizados}/{simuladosStats.total}</span>
               </div>
-              <Progress value={(simuladosStats.total > 0 ? (simuladosStats.realizados / simuladosStats.total) * 100 : 0)} className="h-2 bg-gray-200">
+              <Progress value={simuladosStats.total > 0 ? simuladosStats.realizados / simuladosStats.total * 100 : 0} className="h-2 bg-gray-200">
                 <div className="h-full bg-[#ea2be2]" style={{
-              width: `${simuladosStats.total > 0 ? (simuladosStats.realizados / simuladosStats.total) * 100 : 0}%`
+              width: `${simuladosStats.total > 0 ? simuladosStats.realizados / simuladosStats.total * 100 : 0}%`
             }} />
               </Progress>
             </div>
