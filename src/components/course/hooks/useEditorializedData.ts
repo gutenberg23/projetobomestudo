@@ -25,6 +25,7 @@ export const useEditorializedData = () => {
     
     setLoading(true);
     console.log("Iniciando carregamento de dados do edital verticalizado");
+    console.log("Usuário atual:", userId);
     
     try {
       const realId = extractIdFromFriendlyUrl(courseId);
@@ -96,41 +97,20 @@ export const useEditorializedData = () => {
         } else {
           console.log("Nenhum dado de progresso encontrado no banco ou ocorreu um erro");
         }
-      }
-      
-      // Se não encontrou no banco ou deu erro, verificar no localStorage
-      const savedData = localStorage.getItem(`${userId}_${realId}_subjectsData`);
-      console.log("Verificando dados no localStorage");
-      
-      if (savedData) {
-        try {
-          const parsedData = JSON.parse(savedData);
-          console.log("Dados do localStorage:", parsedData);
-          console.log("É array?", Array.isArray(parsedData));
-          console.log("Tamanho:", parsedData.length);
-          
-          if (Array.isArray(parsedData) && parsedData.length > 0) {
-            console.log("Usando dados do localStorage");
-            setSubjects(parsedData);
-            setLoading(false);
-            
-            // Se temos dados no localStorage mas não no banco, e o usuário está logado, salvar no banco
-            if (userId !== 'guest') {
-              await saveUserDataToDatabase(realId, parsedData);
-            }
-            
-            return;
-          } else {
-            console.log("Dados do localStorage não são um array válido ou estão vazios");
-          }
-        } catch (e) {
-          console.error('Erro ao analisar dados salvos:', e);
-        }
       } else {
-        console.log("Nenhum dado encontrado no localStorage");
+        // Se o usuário não está logado, não podemos mostrar dados personalizados
+        console.log("Usuário não está logado, não podemos mostrar dados personalizados");
+        toast({
+          title: "Login necessário",
+          description: "Faça login para acessar o conteúdo personalizado.",
+          variant: "default"
+        });
+        setSubjects([]);
+        setLoading(false);
+        return;
       }
       
-      // Se não encontrou dados no localStorage nem no banco, buscar dados do edital verticalizado
+      // Se não encontrou no banco, buscar dados do edital verticalizado
       console.log("Buscando dados do edital verticalizado");
       // Agora buscamos o edital verticalizado
       const { data: editalData, error: editalError } = await supabase
@@ -139,22 +119,32 @@ export const useEditorializedData = () => {
         .eq('curso_id', cursoData.id.toString())
         .maybeSingle();
 
-      if (editalError) {
+      if (editalError && editalError.code !== 'PGRST116') { // PGRST116 é o código para "não encontrado"
         console.error('Erro ao buscar edital:', editalError);
         throw editalError;
       }
       
       console.log("Dados do edital:", editalData);
       
+      // Se não encontrou edital verticalizado, não mostrar nada
+      if (!editalData) {
+        console.log('Nenhum edital verticalizado encontrado para este curso');
+        setSubjects([]);
+        setLoading(false);
+        return;
+      }
+      
       let disciplinasIds: string[] = [];
       
-      if (editalData && editalData.disciplinas_ids && editalData.disciplinas_ids.length > 0) {
+      if (editalData.disciplinas_ids && editalData.disciplinas_ids.length > 0) {
         disciplinasIds = editalData.disciplinas_ids;
         console.log("Usando IDs de disciplinas do edital:", disciplinasIds);
-      } else if (cursoData.disciplinas_ids && cursoData.disciplinas_ids.length > 0) {
-        // Se não encontrou no edital verticalizado, usar as disciplinas do curso
-        disciplinasIds = cursoData.disciplinas_ids;
-        console.log("Usando IDs de disciplinas do curso:", disciplinasIds);
+      } else {
+        // Se o edital não tem disciplinas, não mostrar nada
+        console.log('Edital verticalizado encontrado, mas sem disciplinas');
+        setSubjects([]);
+        setLoading(false);
+        return;
       }
       
       if (disciplinasIds.length === 0) {
@@ -221,19 +211,6 @@ export const useEditorializedData = () => {
           rating: disciplina.descricao || "", // Adicionando o valor de rating (antigo campo descrição)
           topics: isVerticalizada && Array.isArray(disciplina.topicos) 
             ? disciplina.topicos.map((topico: string, topicIndex: number) => {
-                // Verificar se há dados salvos para este tópico específico
-                const topicKey = `${userId}_${realId}_${disciplina.id}_${topicIndex}`;
-                const savedTopicData = localStorage.getItem(topicKey);
-                
-                if (savedTopicData) {
-                  try {
-                    return JSON.parse(savedTopicData);
-                  } catch (e) {
-                    console.error('Erro ao analisar dados do tópico:', e);
-                  }
-                }
-                
-                // Retornar dados padrão se não houver dados salvos
                 return {
                   id: topicIndex,
                   name: topico,
@@ -259,9 +236,6 @@ export const useEditorializedData = () => {
       
       setSubjects(formattedSubjects);
       
-      // Salvar os dados formatados no localStorage
-      localStorage.setItem(`${userId}_${realId}_subjectsData`, JSON.stringify(formattedSubjects));
-      
       // Se o usuário estiver logado, salvar também no banco de dados
       if (userId !== 'guest') {
         await saveUserDataToDatabase(realId, formattedSubjects);
@@ -284,18 +258,10 @@ export const useEditorializedData = () => {
     if (userId === 'guest') return;
     
     try {
-      // Obter a meta de aproveitamento e a data da prova do localStorage
-      const performanceGoal = localStorage.getItem(`${userId}_${courseRealId}_performanceGoal`);
-      const examDate = localStorage.getItem(`${userId}_${courseRealId}_examDate`);
-      
-      // Salvar metas e data do exame junto com os dados das disciplinas na tabela user_course_progress
-      // Estamos usando user_course_progress até que o tipo do Supabase seja atualizado
-      const performanceGoalNumber = performanceGoal ? parseInt(performanceGoal) : 85; // Valor padrão de 85%
-      
       // Verificar se já existe um registro para este usuário e curso
       const { data: existingProgress, error: checkProgressError } = await supabase
         .from('user_course_progress')
-        .select('id')
+        .select('id, performance_goal, exam_date')
         .eq('user_id', userId)
         .eq('course_id', courseRealId)
         .maybeSingle();
@@ -310,8 +276,6 @@ export const useEditorializedData = () => {
             .from('user_course_progress')
             .update({
               subjects_data: subjectsData,
-              performance_goal: performanceGoalNumber,
-              exam_date: examDate ? new Date(examDate).toISOString() : null,
               updated_at: new Date().toISOString()
             })
             .eq('id', existingProgress.id);
@@ -329,8 +293,7 @@ export const useEditorializedData = () => {
               user_id: userId,
               course_id: courseRealId,
               subjects_data: subjectsData,
-              performance_goal: performanceGoalNumber,
-              exam_date: examDate ? new Date(examDate).toISOString() : null,
+              performance_goal: 85, // Valor padrão de 85%
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             });
@@ -361,16 +324,7 @@ export const useEditorializedData = () => {
               ...subject,
               topics: subject.topics.map(topic => {
                 if (topic.id === topicId) {
-                  const updatedTopic = { ...topic, [field]: value };
-                  
-                  // Salvar o tópico atualizado no localStorage
-                  if (courseId) {
-                    const realId = extractIdFromFriendlyUrl(courseId);
-                    const topicKey = `${userId}_${realId}_${subjectId}_${topicId}`;
-                    localStorage.setItem(topicKey, JSON.stringify(updatedTopic));
-                  }
-                  
-                  return updatedTopic;
+                  return { ...topic, [field]: value };
                 }
                 return topic;
               })
@@ -379,15 +333,10 @@ export const useEditorializedData = () => {
           return subject;
         });
         
-        // Salvar todos os dados atualizados no localStorage
-        if (courseId) {
+        // Se o usuário estiver logado, salvar no banco de dados
+        if (userId !== 'guest' && courseId) {
           const realId = extractIdFromFriendlyUrl(courseId);
-          localStorage.setItem(`${userId}_${realId}_subjectsData`, JSON.stringify(updatedSubjects));
-          
-          // Se o usuário estiver logado, salvar também no banco de dados
-          if (userId !== 'guest') {
-            saveUserDataToDatabase(realId, updatedSubjects);
-          }
+          saveUserDataToDatabase(realId, updatedSubjects);
         }
         
         return updatedSubjects;

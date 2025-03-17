@@ -52,12 +52,47 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
   });
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
+  const [hasEdital, setHasEdital] = useState<boolean | null>(null);
+  const [isLoadingEdital, setIsLoadingEdital] = useState<boolean>(false);
 
   useEffect(() => {
     if (activeTab === 'simulados' && courseId && user) {
       fetchSimuladosStats();
     }
   }, [activeTab, courseId, user]);
+
+  useEffect(() => {
+    if (courseId && activeTab === 'edital') {
+      checkEditalExists();
+    }
+  }, [courseId, activeTab]);
+
+  const checkEditalExists = async () => {
+    if (!courseId) return;
+    
+    setIsLoadingEdital(true);
+    try {
+      const realId = extractIdFromFriendlyUrl(courseId);
+      
+      const { data, error } = await supabase
+        .from('cursoverticalizado')
+        .select('id')
+        .eq('curso_id', realId)
+        .maybeSingle();
+        
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao verificar existência do edital:', error);
+      }
+      
+      setHasEdital(!!data);
+      console.log('Edital existe?', !!data);
+    } catch (error) {
+      console.error('Erro ao verificar existência do edital:', error);
+      setHasEdital(false);
+    } finally {
+      setIsLoadingEdital(false);
+    }
+  };
 
   const fetchSimuladosStats = async () => {
     try {
@@ -125,7 +160,8 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
     }
   };
 
-  if (loading) {
+  // Mostra o loading apenas na aba de edital quando estiver carregando o edital
+  if ((loading && activeTab === 'edital') || (isLoadingEdital && activeTab === 'edital')) {
     return (
       <div className="space-y-4 p-4">
         <Skeleton className="h-32 w-full" />
@@ -134,18 +170,32 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
     );
   }
 
+  // Só verificamos a existência do edital se estivermos na aba 'edital'
+  if (hasEdital === false && activeTab === 'edital') {
+    return (
+      <div className="bg-[#f6f8fa] rounded-[10px] pb-5 px-[10px] md:px-5">
+        <div className="text-center py-8 text-[#67748a]">
+          Não há edital verticalizado para este curso.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#f6f8fa] rounded-[10px] pb-5 px-[10px] md:px-5">
-      <DashboardSummary 
-        overallStats={calculateOverallStats(subjects)} 
-        performanceGoal={performanceGoal} 
-        setPerformanceGoal={setPerformanceGoal}
-        activeTab={activeTab}
-        subjects={subjects}
-        simuladosStats={simuladosStats}
-      />
+      {/* Só renderiza o DashboardSummary na aba de edital se houver edital */}
+      {(activeTab !== 'edital' || (activeTab === 'edital' && hasEdital)) && (
+        <DashboardSummary 
+          overallStats={calculateOverallStats(subjects)} 
+          performanceGoal={performanceGoal} 
+          setPerformanceGoal={setPerformanceGoal}
+          activeTab={activeTab}
+          subjects={subjects}
+          simuladosStats={simuladosStats}
+        />
+      )}
 
-      {activeTab === 'edital' && (
+      {activeTab === 'edital' && hasEdital && (
         <>
           <StatisticsCard subjects={subjects} />
           

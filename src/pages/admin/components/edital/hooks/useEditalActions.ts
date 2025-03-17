@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -153,6 +152,20 @@ export const useEditalActions = () => {
   const excluirEdital = async (id: string) => {
     try {
       setIsLoading(true);
+      
+      // Primeiro, obter o curso_id associado a este edital
+      const { data: editalData, error: getEditalError } = await supabase
+        .from('cursoverticalizado')
+        .select('curso_id')
+        .eq('id', id)
+        .single();
+        
+      if (getEditalError) {
+        console.error('Erro ao obter dados do edital:', getEditalError);
+        throw getEditalError;
+      }
+      
+      // Agora excluir o edital
       const { error } = await supabase
         .from('cursoverticalizado')
         .delete()
@@ -176,6 +189,35 @@ export const useEditalActions = () => {
     }
   };
 
+  const excluirDisciplina = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase
+        .from('disciplinaverticalizada')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Disciplina excluída com sucesso!",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao excluir disciplina:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir disciplina. Tente novamente.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     cadastrarDisciplina,
@@ -183,6 +225,7 @@ export const useEditalActions = () => {
     cadastrarEdital,
     listarEditais,
     toggleAtivoEdital,
-    excluirEdital
+    excluirEdital,
+    excluirDisciplina
   };
 };

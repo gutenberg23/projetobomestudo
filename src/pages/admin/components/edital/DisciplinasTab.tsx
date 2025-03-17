@@ -19,7 +19,7 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
   editais,
   setEditais
 }) => {
-  const { cadastrarDisciplina, listarDisciplinas, cadastrarEdital } = useEditalActions();
+  const { cadastrarDisciplina, listarDisciplinas, cadastrarEdital, excluirDisciplina } = useEditalActions();
   const { toast } = useToast();
   const [showCriarEditalCard, setShowCriarEditalCard] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -74,13 +74,15 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
     }
   };
   
-  const excluirDisciplina = (id: string) => {
-    setDisciplinas(disciplinas.filter(d => d.id !== id));
-    
-    toast({
-      title: "Sucesso",
-      description: "Disciplina excluída com sucesso!",
-    });
+  const excluirDisciplinaHandler = async (id: string) => {
+    const success = await excluirDisciplina(id);
+    if (success) {
+      setDisciplinas(disciplinas.filter(d => d.id !== id));
+      toast({
+        title: "Sucesso",
+        description: "Disciplina excluída com sucesso!",
+      });
+    }
   };
   
   const criarEdital = () => {
@@ -127,7 +129,7 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
         todasSelecionadas={todasDisciplinasSelecionadas}
         onToggleSelecaoTodas={handleToggleSelecaoTodas}
         onToggleSelecao={handleToggleSelecaoDisciplina}
-        onExcluir={excluirDisciplina}
+        onExcluir={excluirDisciplinaHandler}
         onCriarEdital={criarEdital}
       />
       
@@ -143,4 +145,3 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
 };
 
 export default DisciplinasTab;
-
