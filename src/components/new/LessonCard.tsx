@@ -213,6 +213,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       if (!selectedSection) return;
       
       try {
+        console.log('Buscando dados do tópico com ID:', selectedSection);
+        
         const { data, error } = await supabase
           .from('topicos')
           .select('*')
@@ -225,6 +227,13 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         }
         
         console.log('Dados do tópico carregados:', data);
+        console.log('URLs dos recursos:', {
+          pdf: data?.pdf_url,
+          mapa: data?.mapa_url,
+          resumo: data?.resumo_url,
+          musica: data?.musica_url
+        });
+        
         setTopicData(data);
       } catch (error) {
         console.error('Erro ao buscar dados do tópico:', error);
