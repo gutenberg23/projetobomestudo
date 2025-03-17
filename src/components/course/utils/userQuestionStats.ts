@@ -16,7 +16,7 @@ export const fetchUserQuestionAttempts = async (userId: string): Promise<UserQue
   try {
     // Verificar se a tabela user_question_attempts existe usando uma consulta SQL direta
     const { data: tableExists, error: tableCheckError } = await supabase
-      .rpc('table_exists', { table_name: 'user_question_attempts' });
+      .rpc('table_exists', { table_name: 'user_question_attempts' }) as any;
 
     // Se a tabela não existir, buscar das respostas_alunos
     if (tableCheckError || !tableExists) {
@@ -104,7 +104,7 @@ export const saveUserQuestionAttempt = async (
   try {
     // Verificar se a tabela user_question_attempts existe
     const { data: tableExists, error: tableCheckError } = await supabase
-      .rpc('table_exists', { table_name: 'user_question_attempts' });
+      .rpc('table_exists', { table_name: 'user_question_attempts' }) as any;
 
     // Se a tabela não existir, salvar apenas em respostas_alunos
     if (tableCheckError || !tableExists) {
@@ -118,7 +118,7 @@ export const saveUserQuestionAttempt = async (
         p_user_id: userId,
         p_question_id: questionId,
         p_is_correct: isCorrect
-      });
+      }) as any;
 
     if (error) {
       console.error('Erro ao salvar tentativa de questão:', error);

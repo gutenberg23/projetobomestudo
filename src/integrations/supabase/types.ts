@@ -852,7 +852,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      table_exists: {
+        Args: {
+          table_name: string
+        }
+        Returns: boolean
+      }
+      upsert_user_question_attempt: {
+        Args: {
+          p_user_id: string
+          p_question_id: string
+          p_is_correct: boolean
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       user_role: "aluno" | "professor" | "admin"
