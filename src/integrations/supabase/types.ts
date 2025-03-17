@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      anos: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          valor: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: string
+        }
+        Relationships: []
+      }
+      assuntos: {
+        Row: {
+          created_at: string
+          disciplina: string
+          id: string
+          nome: string
+          patrocinador: string | null
+          questoes_ids: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          disciplina: string
+          id?: string
+          nome: string
+          patrocinador?: string | null
+          questoes_ids?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          disciplina?: string
+          id?: string
+          nome?: string
+          patrocinador?: string | null
+          questoes_ids?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       aulas: {
         Row: {
           created_at: string | null
@@ -39,54 +90,45 @@ export type Database = {
         }
         Relationships: []
       }
-      assuntos: {
+      bancas: {
         Row: {
+          created_at: string
           id: string
           nome: string
-          disciplina: string
-          patrocinador: string | null
-          questoes_ids: string[] | null
-          created_at: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
+          created_at?: string
           id?: string
           nome: string
-          disciplina: string
-          patrocinador?: string | null
-          questoes_ids?: string[] | null
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
+          created_at?: string
           id?: string
           nome?: string
-          disciplina?: string
-          patrocinador?: string | null
-          questoes_ids?: string[] | null
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
-      bancas: {
+      cargos: {
         Row: {
+          created_at: string
           id: string
           nome: string
-          created_at: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
+          created_at?: string
           id?: string
           nome: string
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
+          created_at?: string
           id?: string
           nome?: string
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -183,6 +225,27 @@ export type Database = {
         }
         Relationships: []
       }
+      dificuldades: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       disciplinas: {
         Row: {
           aulas_ids: string[] | null
@@ -207,6 +270,27 @@ export type Database = {
           id?: string
           status?: string | null
           titulo?: string
+        }
+        Relationships: []
+      }
+      disciplinas_questoes: {
+        Row: {
+          created_at: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nome?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -237,108 +321,24 @@ export type Database = {
         }
         Relationships: []
       }
-      anos: {
-        Row: {
-          id: string
-          valor: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          valor: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          valor?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      cargos: {
-        Row: {
-          id: string
-          nome: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          nome: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          nome?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      disciplinas_questoes: {
-        Row: {
-          id: string
-          nome: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          nome: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          nome?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      dificuldades: {
-        Row: {
-          id: string
-          nome: string
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          nome: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          nome?: string
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       instituicoes: {
         Row: {
+          created_at: string
           id: string
           nome: string
-          created_at: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
+          created_at?: string
           id?: string
           nome: string
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
+          created_at?: string
           id?: string
           nome?: string
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -394,22 +394,22 @@ export type Database = {
       }
       niveis: {
         Row: {
+          created_at: string
           id: string
           nome: string
-          created_at: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
+          created_at?: string
           id?: string
           nome: string
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
+          created_at?: string
           id?: string
           nome?: string
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -690,22 +690,22 @@ export type Database = {
       }
       tipos_questao: {
         Row: {
+          created_at: string
           id: string
           nome: string
-          created_at: string | null
-          updated_at: string | null
+          updated_at: string
         }
         Insert: {
+          created_at?: string
           id?: string
           nome: string
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Update: {
+          created_at?: string
           id?: string
           nome?: string
-          created_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -786,6 +786,36 @@ export type Database = {
           performance_goal?: number | null
           subjects_data?: Json | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_simulado_results: {
+        Row: {
+          acertos: number
+          created_at: string
+          erros: number
+          id: string
+          simulado_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acertos?: number
+          created_at?: string
+          erros?: number
+          id?: string
+          simulado_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acertos?: number
+          created_at?: string
+          erros?: number
+          id?: string
+          simulado_id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

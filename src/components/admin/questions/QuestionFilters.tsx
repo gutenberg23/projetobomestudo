@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FilterIcon, X } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 interface FiltersType {
   id: string;
@@ -32,6 +33,34 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
   setShowFilters,
   resetFilters,
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Função para atualizar a URL com os filtros
+  const updateUrlWithFilters = () => {
+    const params = new URLSearchParams();
+    
+    // Adicionar filtros não vazios à URL
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) {
+        params.set(key, value);
+      }
+    });
+    
+    // Atualizar a URL sem recarregar a página
+    setSearchParams(params);
+  };
+
+  // Aplicar filtros na URL
+  const applyFilters = () => {
+    updateUrlWithFilters();
+  };
+
+  // Limpar filtros e URL
+  const handleResetFilters = () => {
+    resetFilters();
+    setSearchParams(new URLSearchParams());
+  };
+
   return (
     <div className="mb-4">
       <div className="flex justify-between mb-4">
@@ -47,13 +76,22 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
           {showFilters && (
             <Button 
               variant="ghost" 
-              onClick={resetFilters}
+              onClick={handleResetFilters}
               className="ml-2"
             >
               Limpar Filtros
             </Button>
           )}
         </div>
+        {showFilters && (
+          <Button 
+            variant="default" 
+            onClick={applyFilters}
+            className="ml-2 bg-[#5f2ebe] text-white"
+          >
+            Aplicar Filtros
+          </Button>
+        )}
       </div>
 
       {showFilters && (

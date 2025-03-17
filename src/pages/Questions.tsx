@@ -7,8 +7,10 @@ import QuestionResults from "@/components/questions/QuestionResults";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
+import { useSearchParams } from "react-router-dom";
 
 const Questions = () => {
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState({
     disciplines: [] as string[],
@@ -51,6 +53,38 @@ const Questions = () => {
     
     return [];
   };
+
+  // Carregar filtros a partir da URL
+  useEffect(() => {
+    // Função para analisar parâmetros da URL
+    const parseUrlParams = () => {
+      // Obter filtros da URL
+      const querySearch = searchParams.get('q') || '';
+      setSearchQuery(querySearch);
+      
+      // Configurar número de questões por página
+      const perPage = searchParams.get('perPage');
+      if (perPage && ['5', '10', '20', '50', '100'].includes(perPage)) {
+        setQuestionsPerPage(perPage);
+      }
+      
+      // Configurar filtros selecionados
+      const newFilters = { ...selectedFilters };
+      
+      Object.keys(selectedFilters).forEach(key => {
+        const param = searchParams.get(key);
+        if (param) {
+          newFilters[key as keyof typeof selectedFilters] = param.split(',');
+        } else {
+          newFilters[key as keyof typeof selectedFilters] = [];
+        }
+      });
+      
+      setSelectedFilters(newFilters);
+    };
+    
+    parseUrlParams();
+  }, [searchParams]);
 
   // Buscar questões do banco de dados
   useEffect(() => {

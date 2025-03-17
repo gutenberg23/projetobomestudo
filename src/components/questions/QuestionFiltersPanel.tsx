@@ -1,10 +1,11 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search } from "lucide-react";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
+import { useSearchParams, useNavigate } from "react-router-dom";
 
 interface QuestionFiltersPanelProps {
   searchQuery: string;
@@ -43,6 +44,9 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   setQuestionsPerPage,
   filterOptions
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+
   // Ordenar todas as listas de opções em ordem alfabética
   const sortedOptions = {
     disciplines: [...filterOptions.disciplines].sort((a, b) => a.localeCompare(b)),
@@ -52,6 +56,35 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     roles: [...filterOptions.roles].sort((a, b) => a.localeCompare(b)),
     years: [...filterOptions.years].sort((a, b) => b.localeCompare(a)), // Anos em ordem decrescente
     educationLevels: [...filterOptions.educationLevels].sort((a, b) => a.localeCompare(b))
+  };
+
+  // Atualizar a URL com os filtros selecionados
+  const updateUrlWithFilters = () => {
+    const params = new URLSearchParams();
+    
+    // Adicionar consulta de pesquisa
+    if (searchQuery) {
+      params.set('q', searchQuery);
+    }
+    
+    // Adicionar filtros selecionados
+    Object.entries(selectedFilters).forEach(([key, values]) => {
+      if (values.length) {
+        params.set(key, values.join(','));
+      }
+    });
+    
+    // Adicionar questões por página
+    params.set('perPage', questionsPerPage);
+    
+    // Atualizar a URL sem recarregar a página
+    setSearchParams(params);
+  };
+
+  // Aplicar filtros e atualizar URL
+  const applyFiltersWithUrl = () => {
+    updateUrlWithFilters();
+    handleApplyFilters();
   };
 
   return (
@@ -136,7 +169,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
         </div>
       </div>
 
-      <Button onClick={handleApplyFilters} className="w-full text-white bg-[#5f2ebe]">
+      <Button onClick={applyFiltersWithUrl} className="w-full text-white bg-[#5f2ebe]">
         Filtrar Questões
       </Button>
     </div>
