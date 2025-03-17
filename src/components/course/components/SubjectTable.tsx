@@ -1,10 +1,10 @@
-
-import React, { useState } from "react";
-import { Subject, Topic } from "../types/editorialized";
-import { CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportanceStars } from "./ImportanceStars";
-import { Progress } from "@/components/ui/progress";
-import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { Subject, Topic } from "../types/editorialized";
+import { calculateErrors, calculatePerformance, calculateSubjectTotals } from "../utils/statsCalculations";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
 interface SubjectTableProps {
   subject: Subject;
@@ -12,121 +12,153 @@ interface SubjectTableProps {
   onTopicChange: (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => void;
 }
 
-export const SubjectTable: React.FC<SubjectTableProps> = ({ subject, performanceGoal, onTopicChange }) => {
+export const SubjectTable = ({
+  subject,
+  performanceGoal,
+  onTopicChange
+}: SubjectTableProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const subjectTotals = calculateSubjectTotals(subject.topics);
+  const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
+  const subjectPerformance = calculatePerformance(subjectTotals.hits, subjectTotals.exercisesDone);
 
-  if (!subject.topics || subject.topics.length === 0) {
-    return null;
-  }
+  const handleIsReviewedChange = (subjectId: string | number, topicId: number) => {
+    const topic = subject.topics.find(t => t.id === topicId);
+    if (topic) {
+      onTopicChange(subjectId, topicId, 'isReviewed', !topic.isReviewed);
+    }
+  };
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
   };
 
-  return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden mb-5">
-      <div 
-        className="flex justify-between items-center p-4 cursor-pointer" 
-        onClick={toggleExpanded}
-      >
-        <h3 className="text-lg font-medium text-[#272f3c]">{subject.name}</h3>
-        <div className="text-sm font-medium text-[#67748a]">
-          {subject.topics.length} tópicos
+  return <div className="mb-8 last:mb-0">
+      <div className="flex items-center justify-between bg-[#9747FF] text-white p-3 rounded-t-lg">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={toggleExpanded}>
+          {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+          <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-16 md:w-24 h-2 bg-white/20 rounded-full overflow-hidden">
+            <div className="h-full bg-white transition-all" style={{
+            width: `${subjectProgress}%`
+          }} />
+          </div>
+          <span className="text-xs md:text-sm">{subjectProgress}%</span>
         </div>
       </div>
-
       {isExpanded && (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] border-collapse">
-            <thead>
-              <tr className="bg-[#f6f8fa] border-y border-[#e9ecef]">
-                <th className="py-3 px-4 text-left text-sm font-medium text-[#272f3c]">Tópico</th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-[#272f3c]">Importância</th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-[#272f3c]">Questões</th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-[#272f3c]">Desempenho</th>
-                <th className="py-3 px-4 text-center text-sm font-medium text-[#272f3c]">Feito</th>
-                <th className="py-3 px-4 text-center text-sm font-medium text-[#272f3c]">Revisado</th>
-                <th className="py-3 px-4 text-center text-sm font-medium text-[#272f3c]">Link</th>
+        <div className="border border-gray-200 rounded-b-lg overflow-x-auto">
+          <table className="w-full min-w-[1000px]">
+            <thead className="bg-gray-50">
+              <tr className="text-sm text-gray-600">
+                <th className="py-3 px-4 text-left font-medium w-8">#</th>
+                <th className="py-3 px-4 text-left font-medium">Conclusão</th>
+                <th className="py-3 px-4 text-left font-medium">Tópicos</th>
+                <th className="py-3 px-4 text-left font-medium">Importância do Assunto</th>
+                <th className="py-3 px-4 text-left font-medium">Dificuldade</th>
+                <th className="py-3 px-4 text-center font-medium">Total Exercícios feitos</th>
+                <th className="py-3 px-4 text-center font-medium">Acertos</th>
+                <th className="py-3 px-4 text-center font-medium">Erros</th>
+                <th className="py-3 px-4 text-center font-medium">Aproveitamento</th>
+                <th className="py-3 px-4 text-center font-medium">Revisão</th>
               </tr>
             </thead>
             <tbody>
-              {subject.topics.map((topic, index) => {
-                const performance = topic.hits + topic.errors > 0 
-                  ? Math.round((topic.hits / (topic.hits + topic.errors)) * 100) 
-                  : 0;
-                
-                const isPerformanceGood = performance >= performanceGoal;
-                
-                return (
-                  <tr key={index} className="border-b border-[#e9ecef] hover:bg-[#f6f8fa]">
-                    <td className="py-3 px-4 text-sm text-[#272f3c]">
-                      {topic.topic}
-                    </td>
-                    <td className="py-3 px-4">
-                      <ImportanceStars importance={topic.importance} />
-                    </td>
-                    <td className="py-3 px-4 text-sm text-[#67748a]">
-                      {topic.exercisesDone > 0 ? (
-                        <span>
-                          {topic.hits}/{topic.exercisesDone} ({topic.hits > 0 ? 
-                            `${Math.round((topic.hits / topic.exercisesDone) * 100)}%` : 
-                            '0%'})
-                        </span>
-                      ) : (
-                        <span>Nenhuma questão feita</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <Progress 
-                          value={performance} 
-                          className="h-2 w-[100px]" 
-                          indicatorClassName={isPerformanceGood ? "bg-green-500" : "bg-amber-500"}
-                        />
-                        <span className="text-xs text-[#67748a]">{performance}%</span>
+              {subject.topics.map((topic, index) => <tr key={topic.id} className={cn("border-t border-gray-200", index % 2 === 0 ? "bg-white" : "bg-gray-50")}>
+                  <td className="py-3 px-4">{topic.id}</td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center">
+                      <div onClick={e => {
+                    e.stopPropagation();
+                    onTopicChange(subject.id, topic.id, 'isDone', !topic.isDone);
+                  }} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isDone ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
+                        {topic.isDone && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
+                            <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>}
                       </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <Checkbox 
-                        id={`done-${subject.id}-${topic.id}`}
-                        checked={topic.isDone}
-                        onCheckedChange={(checked) => 
-                          onTopicChange(subject.id, topic.id, 'isDone', Boolean(checked))
-                        }
-                        className="data-[state=checked]:bg-blue-500 data-[state=checked]:border-blue-500"
-                      />
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <Checkbox 
-                        id={`reviewed-${subject.id}-${topic.id}`}
-                        checked={topic.isReviewed}
-                        onCheckedChange={(checked) => 
-                          onTopicChange(subject.id, topic.id, 'isReviewed', Boolean(checked))
-                        }
-                        className="data-[state=checked]:bg-purple-500 data-[state=checked]:border-purple-500"
-                      />
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {topic.link ? (
-                        <a 
-                          href={topic.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center text-[#5f2ebe] hover:text-[#5f2ebe]/80"
-                        >
-                          <ExternalLink size={16} />
-                        </a>
-                      ) : (
-                        <span className="text-[#67748a] text-xs">Sem link</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 max-w-xs">
+                    <p className="text-sm text-gray-600">{topic.topic}</p>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center justify-center">
+                      <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div style={{
+                      width: `${topic.importance}%`
+                    }} className="h-full bg-[#5f2ebe] transition-all" />
+                      </div>
+                      <span className="ml-2 text-sm text-gray-600">{topic.importance}%</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <Select 
+                      value={topic.difficulty} 
+                      onValueChange={value => onTopicChange(subject.id, topic.id, 'difficulty', value)}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Muito Fácil">Muito Fácil</SelectItem>
+                        <SelectItem value="Fácil">Fácil</SelectItem>
+                        <SelectItem value="Médio">Médio</SelectItem>
+                        <SelectItem value="Difícil">Difícil</SelectItem>
+                        <SelectItem value="Muito Difícil">Muito Difícil</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <input 
+                      type="number" 
+                      min="0" 
+                      value={topic.exercisesDone} 
+                      onChange={e => onTopicChange(subject.id, topic.id, 'exercisesDone', parseInt(e.target.value) || 0)} 
+                      className="w-20 text-center border rounded p-1" 
+                    />
+                  </td>
+                  <td className="py-3 px-4 text-center">
+                    <input 
+                      type="number" 
+                      min="0" 
+                      max={topic.exercisesDone} 
+                      value={topic.hits} 
+                      onChange={e => onTopicChange(subject.id, topic.id, 'hits', parseInt(e.target.value) || 0)} 
+                      className="w-20 text-center border rounded p-1" 
+                    />
+                  </td>
+                  <td className="py-3 px-4 text-center">{calculateErrors(topic.exercisesDone, topic.hits)}</td>
+                  <td className={cn("py-3 px-4 text-center", calculatePerformance(topic.hits, topic.exercisesDone) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]")}>
+                    {calculatePerformance(topic.hits, topic.exercisesDone)}%
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center justify-center gap-2">
+                      <div 
+                        onClick={() => handleIsReviewedChange(subject.id, topic.id)} 
+                        className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isReviewed ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}
+                      >
+                        {topic.isReviewed && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
+                            <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>}
+                      </div>
+                    </div>
+                  </td>
+                </tr>)}
+              <tr className="border-t border-gray-200 bg-gray-50 font-medium">
+                <td colSpan={5} className="py-3 px-4 text-right">Totais:</td>
+                <td className="py-3 px-4 text-center">{subjectTotals.exercisesDone}</td>
+                <td className="py-3 px-4 text-center">{subjectTotals.hits}</td>
+                <td className="py-3 px-4 text-center">{subjectTotals.errors}</td>
+                <td className={cn("py-3 px-4 text-center", subjectPerformance < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]")}>
+                  {subjectPerformance}%
+                </td>
+                <td className="py-3 px-4"></td>
+              </tr>
             </tbody>
           </table>
         </div>
       )}
-    </div>
-  );
+    </div>;
 };

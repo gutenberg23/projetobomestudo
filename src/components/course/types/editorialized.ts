@@ -17,7 +17,6 @@ export type Topic = {
   hits: number;
   errors: number;
   performance: number;
-  link?: string;
 };
 
 export type SubjectStats = {

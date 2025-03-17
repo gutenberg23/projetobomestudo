@@ -300,7 +300,6 @@ export type Database = {
           descricao: string | null
           id: string
           importancia: number[] | null
-          links: string[] | null
           titulo: string
           topicos: string[] | null
         }
@@ -309,7 +308,6 @@ export type Database = {
           descricao?: string | null
           id?: string
           importancia?: number[] | null
-          links?: string[] | null
           titulo: string
           topicos?: string[] | null
         }
@@ -318,7 +316,6 @@ export type Database = {
           descricao?: string | null
           id?: string
           importancia?: number[] | null
-          links?: string[] | null
           titulo?: string
           topicos?: string[] | null
         }
