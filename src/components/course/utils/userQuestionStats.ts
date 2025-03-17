@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Interface para representar as tentativas de questões do usuário
@@ -13,11 +14,9 @@ export const fetchUserQuestionAttempts = async (userId: string): Promise<UserQue
   }
 
   try {
-    // Verificar se a tabela user_question_attempts existe
+    // Verificar se a tabela user_question_attempts existe usando uma consulta SQL direta
     const { data: tableExists, error: tableCheckError } = await supabase
-      .from('user_question_attempts')
-      .select('id')
-      .limit(1);
+      .rpc('table_exists', { table_name: 'user_question_attempts' });
 
     // Se a tabela não existir, buscar das respostas_alunos
     if (tableCheckError || !tableExists) {
@@ -43,8 +42,8 @@ export const fetchUserQuestionAttempts = async (userId: string): Promise<UserQue
 
     // Converter para o formato da interface
     return data.map(item => ({
-      questionId: item.question_id,
-      isCorrect: item.is_correct
+      questionId: item.question_id as string,
+      isCorrect: item.is_correct as boolean
     }));
   } catch (error) {
     console.error('Erro ao buscar tentativas de questões:', error);
@@ -105,9 +104,7 @@ export const saveUserQuestionAttempt = async (
   try {
     // Verificar se a tabela user_question_attempts existe
     const { data: tableExists, error: tableCheckError } = await supabase
-      .from('user_question_attempts')
-      .select('id')
-      .limit(1);
+      .rpc('table_exists', { table_name: 'user_question_attempts' });
 
     // Se a tabela não existir, salvar apenas em respostas_alunos
     if (tableCheckError || !tableExists) {
@@ -115,15 +112,12 @@ export const saveUserQuestionAttempt = async (
       return true;
     }
 
-    // Inserir ou atualizar a tentativa na tabela user_question_attempts
+    // Usando rpc personalizada para upsert
     const { error } = await supabase
-      .from('user_question_attempts')
-      .upsert({
-        user_id: userId,
-        question_id: questionId,
-        is_correct: isCorrect
-      }, {
-        onConflict: 'user_id,question_id'
+      .rpc('upsert_user_question_attempt', {
+        p_user_id: userId,
+        p_question_id: questionId,
+        p_is_correct: isCorrect
       });
 
     if (error) {

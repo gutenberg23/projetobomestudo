@@ -133,8 +133,8 @@ export function useQuestions(initialSectionId?: string): UseQuestionsResult {
             aiExplanation: q.aiexplanation || undefined,
             options: convertToQuestionOptions(q.options),
             comments: [],
-            // Verificar se o campo images existe antes de tentar acessá-lo
-            images: Array.isArray(q.images) ? q.images : []
+            // Verificar se há imagens disponíveis (tratando como campo potencialmente inexistente)
+            images: (q as any).images ? [...(q as any).images] : []
           };
         });
         
