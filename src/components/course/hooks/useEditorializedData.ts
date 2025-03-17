@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -25,62 +24,16 @@ export const useEditorializedData = () => {
     if (!courseId) return;
     
     setLoading(true);
+    console.log("Iniciando carregamento de dados do edital verticalizado");
     
     try {
       const realId = extractIdFromFriendlyUrl(courseId);
+      console.log("ID do curso:", realId);
       
-      // Verificar se usuário está logado
-      if (userId !== 'guest') {
-        // Buscar dados do progresso por disciplina através da tabela user_course_progress
-        // Estamos usando user_course_progress até que o tipo do Supabase seja atualizado
-        const { data: subjectProgressData, error: subjectProgressError } = await supabase
-          .from('user_course_progress')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('course_id', realId)
-          .eq('subjects_data', true) // Filtrar apenas registros que contêm dados de disciplinas
-          .maybeSingle();
-        
-        if (!subjectProgressError && subjectProgressData && subjectProgressData.subjects_data) {
-          try {
-            // Tentar converter os dados do JSON para o formato Subject[]
-            const parsedData = JSON.parse(JSON.stringify(subjectProgressData.subjects_data));
-            if (Array.isArray(parsedData)) {
-              setSubjects(parsedData as Subject[]);
-              setLoading(false);
-              return;
-            }
-          } catch (e) {
-            console.error('Erro ao converter dados JSON:', e);
-          }
-        }
-      }
-      
-      // Se não encontrou no banco ou deu erro, verificar no localStorage
-      const savedData = localStorage.getItem(`${userId}_${realId}_subjectsData`);
-      
-      if (savedData) {
-        try {
-          const parsedData = JSON.parse(savedData);
-          setSubjects(parsedData);
-          setLoading(false);
-          
-          // Se temos dados no localStorage mas não no banco, e o usuário está logado, salvar no banco
-          if (userId !== 'guest') {
-            await saveUserDataToDatabase(realId, parsedData);
-          }
-          
-          return;
-        } catch (e) {
-          console.error('Erro ao analisar dados salvos:', e);
-        }
-      }
-      
-      // Se não encontrou dados no localStorage nem no banco, buscar dados do edital verticalizado
       // Primeiro, buscamos o curso para verificar se ele existe
       const { data: cursoData, error: cursoError } = await supabase
         .from('cursos')
-        .select('id, titulo')
+        .select('id, titulo, disciplinas_ids')
         .eq('id', realId)
         .maybeSingle();
         
@@ -97,9 +50,88 @@ export const useEditorializedData = () => {
           variant: "destructive"
         });
         setSubjects([]);
+        setLoading(false);
         return;
       }
       
+      console.log("Dados do curso encontrados:", cursoData);
+      console.log("IDs das disciplinas no curso:", cursoData.disciplinas_ids);
+      
+      // Verificar se usuário está logado
+      if (userId !== 'guest') {
+        console.log("Usuário logado, buscando dados de progresso");
+        // Buscar dados do progresso por disciplina através da tabela user_course_progress
+        const { data: subjectProgressData, error: subjectProgressError } = await supabase
+          .from('user_course_progress')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('course_id', realId)
+          .maybeSingle();
+        
+        if (subjectProgressError) {
+          console.error('Erro ao buscar dados de progresso:', subjectProgressError);
+        } else {
+          console.log("Dados de progresso encontrados:", subjectProgressData);
+        }
+        
+        if (!subjectProgressError && subjectProgressData && subjectProgressData.subjects_data) {
+          try {
+            // Tentar converter os dados do JSON para o formato Subject[]
+            const parsedData = JSON.parse(JSON.stringify(subjectProgressData.subjects_data));
+            console.log("Dados de disciplinas do banco:", parsedData);
+            console.log("É array?", Array.isArray(parsedData));
+            console.log("Tamanho:", parsedData.length);
+            
+            if (Array.isArray(parsedData) && parsedData.length > 0) {
+              console.log("Usando dados de disciplinas do banco");
+              setSubjects(parsedData as Subject[]);
+              setLoading(false);
+              return;
+            } else {
+              console.log("Dados do banco não são um array válido ou estão vazios");
+            }
+          } catch (e) {
+            console.error('Erro ao converter dados JSON:', e);
+          }
+        } else {
+          console.log("Nenhum dado de progresso encontrado no banco ou ocorreu um erro");
+        }
+      }
+      
+      // Se não encontrou no banco ou deu erro, verificar no localStorage
+      const savedData = localStorage.getItem(`${userId}_${realId}_subjectsData`);
+      console.log("Verificando dados no localStorage");
+      
+      if (savedData) {
+        try {
+          const parsedData = JSON.parse(savedData);
+          console.log("Dados do localStorage:", parsedData);
+          console.log("É array?", Array.isArray(parsedData));
+          console.log("Tamanho:", parsedData.length);
+          
+          if (Array.isArray(parsedData) && parsedData.length > 0) {
+            console.log("Usando dados do localStorage");
+            setSubjects(parsedData);
+            setLoading(false);
+            
+            // Se temos dados no localStorage mas não no banco, e o usuário está logado, salvar no banco
+            if (userId !== 'guest') {
+              await saveUserDataToDatabase(realId, parsedData);
+            }
+            
+            return;
+          } else {
+            console.log("Dados do localStorage não são um array válido ou estão vazios");
+          }
+        } catch (e) {
+          console.error('Erro ao analisar dados salvos:', e);
+        }
+      } else {
+        console.log("Nenhum dado encontrado no localStorage");
+      }
+      
+      // Se não encontrou dados no localStorage nem no banco, buscar dados do edital verticalizado
+      console.log("Buscando dados do edital verticalizado");
       // Agora buscamos o edital verticalizado
       const { data: editalData, error: editalError } = await supabase
         .from('cursoverticalizado')
@@ -112,64 +144,119 @@ export const useEditorializedData = () => {
         throw editalError;
       }
       
-      if (!editalData) {
-        console.log('Nenhum edital encontrado para o curso:', realId);
+      console.log("Dados do edital:", editalData);
+      
+      let disciplinasIds: string[] = [];
+      
+      if (editalData && editalData.disciplinas_ids && editalData.disciplinas_ids.length > 0) {
+        disciplinasIds = editalData.disciplinas_ids;
+        console.log("Usando IDs de disciplinas do edital:", disciplinasIds);
+      } else if (cursoData.disciplinas_ids && cursoData.disciplinas_ids.length > 0) {
+        // Se não encontrou no edital verticalizado, usar as disciplinas do curso
+        disciplinasIds = cursoData.disciplinas_ids;
+        console.log("Usando IDs de disciplinas do curso:", disciplinasIds);
+      }
+      
+      if (disciplinasIds.length === 0) {
+        console.log('Nenhuma disciplina encontrada para o curso:', realId);
         setSubjects([]);
+        setLoading(false);
         return;
       }
       
-      console.log('Dados do edital encontrados:', editalData);
-      console.log('Disciplinas IDs:', editalData.disciplinas_ids);
+      console.log('Disciplinas IDs para busca:', disciplinasIds);
+      console.log('Total de disciplinas a buscar:', disciplinasIds.length);
 
-      // Buscar as disciplinas associadas ao edital
-      const { data: disciplinasData, error: disciplinasError } = await supabase
+      // Buscar as disciplinas associadas ao edital ou ao curso
+      let disciplinasData: any[] = [];
+      
+      // Primeiro, tentar buscar nas disciplinas verticalizadas
+      const { data: disciplinasVerticalizadasData, error: disciplinasVerticalizadasError } = await supabase
         .from('disciplinaverticalizada')
         .select('*')
-        .in('id', editalData.disciplinas_ids || []);
+        .in('id', disciplinasIds);
 
-      if (disciplinasError) {
-        console.error('Erro ao buscar disciplinas:', disciplinasError);
-        throw disciplinasError;
+      if (disciplinasVerticalizadasError) {
+        console.error('Erro ao buscar disciplinas verticalizadas:', disciplinasVerticalizadasError);
+      } else {
+        console.log("Disciplinas verticalizadas encontradas:", disciplinasVerticalizadasData);
+        console.log("Total de disciplinas verticalizadas:", disciplinasVerticalizadasData?.length || 0);
+      }
+
+      if (!disciplinasVerticalizadasError && disciplinasVerticalizadasData && disciplinasVerticalizadasData.length > 0) {
+        disciplinasData = disciplinasVerticalizadasData;
+        console.log("Usando disciplinas verticalizadas");
+      } else {
+        console.log("Buscando disciplinas normais");
+        // Se não encontrou nas disciplinas verticalizadas, buscar nas disciplinas normais
+        const { data: disciplinasNormaisData, error: disciplinasNormaisError } = await supabase
+          .from('disciplinas')
+          .select('*')
+          .in('id', disciplinasIds);
+          
+        if (disciplinasNormaisError) {
+          console.error('Erro ao buscar disciplinas:', disciplinasNormaisError);
+          throw disciplinasNormaisError;
+        } else {
+          console.log("Disciplinas normais encontradas:", disciplinasNormaisData);
+          console.log("Total de disciplinas normais:", disciplinasNormaisData?.length || 0);
+        }
+        
+        if (disciplinasNormaisData) {
+          disciplinasData = disciplinasNormaisData;
+          console.log("Usando disciplinas normais");
+        }
       }
       
+      console.log('Total de disciplinas encontradas:', disciplinasData?.length || 0);
       console.log('Disciplinas encontradas:', disciplinasData);
 
-      const formattedSubjects: Subject[] = (disciplinasData || []).map((disciplina) => ({
-        id: disciplina.id,
-        name: disciplina.titulo,
-        rating: disciplina.descricao, // Adicionando o valor de rating (antigo campo descrição)
-        topics: Array.isArray(disciplina.topicos) ? disciplina.topicos.map((topico: string, topicIndex: number) => {
-          // Verificar se há dados salvos para este tópico específico
-          const topicKey = `${userId}_${realId}_${disciplina.id}_${topicIndex}`;
-          const savedTopicData = localStorage.getItem(topicKey);
-          
-          if (savedTopicData) {
-            try {
-              return JSON.parse(savedTopicData);
-            } catch (e) {
-              console.error('Erro ao analisar dados do tópico:', e);
-            }
-          }
-          
-          // Retornar dados padrão se não houver dados salvos
-          return {
-            id: topicIndex,
-            name: topico,
-            topic: topico,
-            isDone: false,
-            isReviewed: false,
-            importance: (Array.isArray(disciplina.importancia) && disciplina.importancia[topicIndex] 
-              ? disciplina.importancia[topicIndex] 
-              : 0.5) as 1 | 2 | 3 | 4 | 5,
-            difficulty: "Médio",
-            exercisesDone: 0,
-            hits: 0,
-            errors: 0,
-            performance: 0
-          };
-        }) : []
-      }));
+      const formattedSubjects: Subject[] = (disciplinasData || []).map((disciplina) => {
+        // Determinar se é uma disciplina verticalizada ou normal
+        const isVerticalizada = 'topicos' in disciplina;
+        
+        return {
+          id: disciplina.id,
+          name: disciplina.titulo,
+          rating: disciplina.descricao || "", // Adicionando o valor de rating (antigo campo descrição)
+          topics: isVerticalizada && Array.isArray(disciplina.topicos) 
+            ? disciplina.topicos.map((topico: string, topicIndex: number) => {
+                // Verificar se há dados salvos para este tópico específico
+                const topicKey = `${userId}_${realId}_${disciplina.id}_${topicIndex}`;
+                const savedTopicData = localStorage.getItem(topicKey);
+                
+                if (savedTopicData) {
+                  try {
+                    return JSON.parse(savedTopicData);
+                  } catch (e) {
+                    console.error('Erro ao analisar dados do tópico:', e);
+                  }
+                }
+                
+                // Retornar dados padrão se não houver dados salvos
+                return {
+                  id: topicIndex,
+                  name: topico,
+                  topic: topico,
+                  isDone: false,
+                  isReviewed: false,
+                  importance: (Array.isArray(disciplina.importancia) && disciplina.importancia[topicIndex] 
+                    ? disciplina.importancia[topicIndex] 
+                    : 0.5) as 1 | 2 | 3 | 4 | 5,
+                  difficulty: "Médio",
+                  exercisesDone: 0,
+                  hits: 0,
+                  errors: 0,
+                  performance: 0
+                };
+              }) 
+            : [] // Se não for disciplina verticalizada ou não tiver tópicos, retornar array vazio
+        };
+      });
 
+      console.log('Disciplinas formatadas:', formattedSubjects);
+      console.log('Total de disciplinas formatadas:', formattedSubjects.length);
+      
       setSubjects(formattedSubjects);
       
       // Salvar os dados formatados no localStorage
@@ -231,6 +318,8 @@ export const useEditorializedData = () => {
           
           if (updateError) {
             console.error('Erro ao atualizar progresso no banco:', updateError);
+          } else {
+            console.log('Progresso atualizado com sucesso no banco de dados');
           }
         } else {
           // Criar novo registro
@@ -248,6 +337,8 @@ export const useEditorializedData = () => {
           
           if (insertError) {
             console.error('Erro ao inserir progresso no banco:', insertError);
+          } else {
+            console.log('Novo progresso inserido com sucesso no banco de dados');
           }
         }
       }

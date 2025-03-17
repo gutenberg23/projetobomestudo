@@ -3,131 +3,147 @@
 import React, { useEffect, useState } from "react";
 import { ProgressSummary } from "./components/ProgressSummary";
 import { SubjectCard } from "./components/SubjectCard";
+import { useEditorializedData } from "./hooks/useEditorializedData";
+import { calculateSubjectTotals, calculateOverallStats } from "./utils/statsCalculations";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchUserQuestionAttempts, calculateUserQuestionStats, UserQuestionAttempt } from "./utils/userQuestionStats";
 
-export const ProgressPanel = () => {
-  const [expandedSubject, setExpandedSubject] = React.useState<string | null>(null);
-  const [completedLessons, setCompletedLessons] = useState<number>(0);
-  const [totalLessons, setTotalLessons] = useState<number>(0);
+interface ProgressPanelProps {
+  subjectsFromCourse?: any[];
+}
 
-  const subjects = [{
-    name: "Língua Portuguesa",
-    rating: 10,
-    progress: 75,
-    questionsTotal: 100,
-    questionsCorrect: 75,
-    questionsWrong: 25
-  }, {
-    name: "Matemática",
-    rating: 10,
-    progress: 60,
-    questionsTotal: 80,
-    questionsCorrect: 48,
-    questionsWrong: 32
-  }, {
-    name: "Direito Constitucional",
-    rating: 10,
-    progress: 90,
-    questionsTotal: 120,
-    questionsCorrect: 108,
-    questionsWrong: 12
-  }, {
-    name: "Direito Administrativo",
-    rating: 9,
-    progress: 45,
-    questionsTotal: 90,
-    questionsCorrect: 40,
-    questionsWrong: 50
-  }, {
-    name: "Direito Tributário",
-    rating: 9,
-    progress: 30,
-    questionsTotal: 70,
-    questionsCorrect: 21,
-    questionsWrong: 49
-  }, {
-    name: "Administração Pública",
-    rating: 9,
-    progress: 55,
-    questionsTotal: 85,
-    questionsCorrect: 47,
-    questionsWrong: 38
-  }, {
-    name: "Administração Geral",
-    rating: 8,
-    progress: 40,
-    questionsTotal: 75,
-    questionsCorrect: 30,
-    questionsWrong: 45
-  }, {
-    name: "Legislação Específica",
-    rating: 8,
-    progress: 25,
-    questionsTotal: 60,
-    questionsCorrect: 15,
-    questionsWrong: 45
-  }, {
-    name: "Direito Econômico",
-    rating: 8,
-    progress: 35,
-    questionsTotal: 65,
-    questionsCorrect: 23,
-    questionsWrong: 42
-  }, {
-    name: "Raciocínio Lógico",
-    rating: 7,
-    progress: 50,
-    questionsTotal: 70,
-    questionsCorrect: 35,
-    questionsWrong: 35
-  }];
-
+export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
+  const [expandedSubject, setExpandedSubject] = React.useState<string | number | null>(null);
+  const { subjects, loading } = useEditorializedData();
+  const { user } = useAuth();
+  const userId = user?.id || 'guest';
+  const [questionAttempts, setQuestionAttempts] = useState<UserQuestionAttempt[]>([]);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [combinedSubjects, setCombinedSubjects] = useState<any[]>([]);
+  
+  // Combinar as disciplinas do hook com as disciplinas recebidas do CourseLayout
   useEffect(() => {
-    const allCheckboxes = document.querySelectorAll('.subject-checkbox:checked');
-    setCompletedLessons(allCheckboxes.length);
+    console.log("ProgressPanel - Disciplinas do hook:", subjects.length);
+    console.log("ProgressPanel - Disciplinas do CourseLayout:", subjectsFromCourse?.length || 0);
     
-    const totalAvailableLessons = subjects.reduce((acc, subject) => acc + 1, 0);
-    setTotalLessons(totalAvailableLessons);
-  }, [subjects]);
-
-  const progressPercentage = Math.round((completedLessons / totalLessons) * 100);
-
-  const totalQuestions = subjects.reduce(
-    (total, subject) => total + subject.questionsTotal,
-    0
-  );
-  const totalCorrectAnswers = subjects.reduce(
-    (total, subject) => total + subject.questionsCorrect,
-    0
-  );
-  const totalWrongAnswers = subjects.reduce(
-    (total, subject) => total + subject.questionsWrong,
-    0
-  );
-
+    // Se temos disciplinas do CourseLayout, vamos usá-las para enriquecer os dados
+    if (subjectsFromCourse && subjectsFromCourse.length > 0) {
+      // Mapear as disciplinas do Supabase para o formato esperado pelo ProgressPanel
+      const mappedSubjects = subjectsFromCourse.map(disciplina => {
+        // Tentar encontrar a disciplina correspondente nos dados do hook
+        const matchingSubject = subjects.find(s => s.id === disciplina.id);
+        
+        if (matchingSubject) {
+          // Se encontrou, usar os dados do hook que já têm as estatísticas
+          return matchingSubject;
+        } else {
+          // Se não encontrou, criar uma versão básica com os dados do Supabase
+          return {
+            id: disciplina.id,
+            name: disciplina.titulo,
+            topics: [],
+            // Valores padrão para as estatísticas
+            stats: {
+              exercisesDone: 0,
+              hits: 0,
+              errors: 0,
+              completedTopics: 0,
+              totalTopics: 0
+            }
+          };
+        }
+      });
+      
+      console.log("ProgressPanel - Disciplinas combinadas:", mappedSubjects.length);
+      setCombinedSubjects(mappedSubjects);
+    } else {
+      // Se não temos disciplinas do CourseLayout, usar apenas as do hook
+      setCombinedSubjects(subjects);
+    }
+  }, [subjects, subjectsFromCourse]);
+  
+  // Buscar as tentativas de questões do usuário
+  useEffect(() => {
+    const loadQuestionAttempts = async () => {
+      if (userId === 'guest') {
+        setQuestionAttempts([]);
+        setStatsLoading(false);
+        return;
+      }
+      
+      try {
+        const attempts = await fetchUserQuestionAttempts(userId);
+        setQuestionAttempts(attempts);
+      } catch (error) {
+        console.error('Erro ao carregar tentativas de questões:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    
+    loadQuestionAttempts();
+  }, [userId]);
+  
+  if (loading || statsLoading) {
+    return (
+      <div className="bg-white rounded-[10px] space-y-4 p-5">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+  
+  // Calcular estatísticas com base nas disciplinas combinadas
+  const displaySubjects = combinedSubjects.length > 0 ? combinedSubjects : subjects;
+  const overallStats = calculateOverallStats(displaySubjects);
+  const questionStats = calculateUserQuestionStats(questionAttempts);
+  
+  // Calcular o percentual de progresso
+  const progressPercentage = overallStats.totalTopics > 0
+    ? Math.round((overallStats.completedTopics / overallStats.totalTopics) * 100)
+    : 0;
+  
+  // Combinar estatísticas de questões e tópicos
+  const totalQuestions = questionStats.totalQuestions;
+  const totalCorrectAnswers = questionStats.correctAnswers;
+  const totalWrongAnswers = questionStats.wrongAnswers;
+  
+  const toggleExpand = (subjectId: string | number) => {
+    setExpandedSubject(expandedSubject === subjectId ? null : subjectId);
+  };
+  
   return (
-    <div className="bg-white rounded-[10px] space-y-4 p-5">
-      <h2 className="text-2xl font-bold text-[rgba(38,47,60,1)]">
-        Meu Progresso
-      </h2>
-
+    <div className="bg-white rounded-[10px] p-5 space-y-5">
+      <h2 className="text-xl font-semibold text-[rgba(38,47,60,1)]">Seu progresso</h2>
+      
       <ProgressSummary
-        totalCompletedSections={completedLessons}
-        totalSections={totalLessons}
+        totalCompletedSections={overallStats.completedTopics}
+        totalSections={overallStats.totalTopics}
         progressPercentage={progressPercentage}
         totalQuestions={totalQuestions}
         totalCorrectAnswers={totalCorrectAnswers}
         totalWrongAnswers={totalWrongAnswers}
       />
-
-      <div className="space-y-2">
-        {subjects.map(subject => (
-          <SubjectCard
-            key={subject.name}
-            subject={subject}
-            isExpanded={expandedSubject === subject.name}
-            onToggle={() => setExpandedSubject(expandedSubject === subject.name ? null : subject.name)}
-          />
-        ))}
+      
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium text-[rgba(38,47,60,1)]">Disciplinas</h3>
+        
+        {displaySubjects.length === 0 ? (
+          <div className="text-center py-4 text-gray-500">
+            Nenhuma disciplina disponível.
+          </div>
+        ) : (
+          displaySubjects.map((subject) => (
+            <SubjectCard
+              key={subject.id}
+              subject={subject}
+              isExpanded={expandedSubject === subject.id}
+              onToggle={() => toggleExpand(subject.id)}
+            />
+          ))
+        )}
       </div>
     </div>
   );

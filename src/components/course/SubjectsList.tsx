@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Subject as SubjectComponent } from "./components/Subject";
@@ -9,7 +8,7 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 
 interface SubjectsListProps {
-  onSubjectsCountChange?: (count: number) => void;
+  onSubjectsCountChange?: (count: number, data?: any[]) => void;
 }
 
 export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
@@ -197,7 +196,10 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                 });
                 
                 setSubjects(sortedSubjects);
-                if (onSubjectsCountChange) onSubjectsCountChange(sortedSubjects.length);
+                if (onSubjectsCountChange) {
+                  onSubjectsCountChange(sortedSubjects.length, disciplinasData);
+                  console.log("SubjectsList - Enviando dados de disciplinas:", disciplinasData.length);
+                }
               } else {
                 setSubjects([]);
                 if (onSubjectsCountChange) onSubjectsCountChange(0);
@@ -219,14 +221,14 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
               .select('*')
               .eq('id', realId)
               .maybeSingle();
-            
-            console.log("Dados da disciplina:", disciplinaData, "Erro:", disciplinaError);
-            
-            if (disciplinaData && !disciplinaError) {
-              setIsCurso(false);
               
-              // Mostrar apenas a disciplina atual
-              const disciplina: Subject = {
+            if (disciplinaData && !disciplinaError) {
+              // É uma disciplina, carregar suas aulas
+              setIsCurso(false);
+              console.log("É uma disciplina, buscando aulas...");
+              
+              // Criar um subject com os dados da disciplina
+              const subject: Subject = {
                 id: disciplinaData.id,
                 name: disciplinaData.titulo,
                 rating: disciplinaData.descricao || "0",
@@ -235,15 +237,12 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
               
               // Carregar as aulas da disciplina
               if (disciplinaData.aulas_ids && disciplinaData.aulas_ids.length > 0) {
-                console.log("Buscando aulas:", disciplinaData.aulas_ids);
                 try {
                   const { data: aulasData, error: aulasError } = await supabase
                     .from('aulas')
                     .select('*')
                     .in('id', disciplinaData.aulas_ids);
                     
-                  console.log("Aulas encontradas:", aulasData, "Erro:", aulasError);
-                  
                   if (aulasData && !aulasError) {
                     // Para cada aula, buscar os tópicos associados
                     const aulasComTopicos = await Promise.all(aulasData.map(async aula => {
@@ -251,15 +250,12 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                       
                       // Verificar se a aula tem tópicos associados
                       if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-                        console.log("Buscando tópicos para aula:", aula.titulo, aula.topicos_ids);
                         try {
                           const { data: topicosData, error: topicosError } = await supabase
                             .from('topicos')
                             .select('*')
                             .in('id', aula.topicos_ids);
                             
-                          console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
-                          
                           if (topicosData && !topicosError) {
                             topicos = topicosData;
                           }
@@ -323,7 +319,7 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                       };
                     }));
                     
-                    disciplina.lessons = aulasComTopicos.map(aula => ({
+                    subject.lessons = aulasComTopicos.map(aula => ({
                       id: aula.id,
                       title: aula.titulo,
                       duration: "0",
@@ -348,9 +344,14 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                 }
               }
               
-              setSubjects([disciplina]);
-              if (onSubjectsCountChange) onSubjectsCountChange(1);
+              setSubjects([subject]);
+              if (onSubjectsCountChange) {
+                onSubjectsCountChange(1, [disciplinaData]);
+                console.log("SubjectsList - Enviando dados de disciplina única:", disciplinaData);
+              }
             } else {
+              // Não é nem curso nem disciplina
+              toast.error("Curso ou disciplina não encontrado");
               setSubjects([]);
               if (onSubjectsCountChange) onSubjectsCountChange(0);
             }
@@ -361,40 +362,45 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
           }
         }
       } catch (error) {
-        console.error("Erro ao carregar disciplinas:", error);
+        console.error("Erro ao buscar dados:", error);
+        toast.error("Erro ao carregar dados");
         setSubjects([]);
         if (onSubjectsCountChange) onSubjectsCountChange(0);
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchSubjects();
-  }, [courseId, onSubjectsCountChange]);
-
+  }, [courseId]);
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Spinner />
+      </div>
+    );
+  }
+  
+  if (subjects.length === 0) {
+    return (
+      <div className="bg-white rounded-[10px] p-4 mb-10 text-center">
+        <p className="text-gray-500">Nenhuma disciplina encontrada para este curso.</p>
+      </div>
+    );
+  }
+  
   return (
-    <>
-      {loading ? (
-        <div className="flex justify-center items-center p-10">
-          <Spinner size="lg" />
-        </div>
-      ) : subjects.length > 0 ? (
-        <div className="bg-white rounded-[10px] mb-10">
-          {subjects.map((subject) => (
-            <SubjectComponent
-              key={subject.id}
-              subject={subject}
-              isExpanded={expandedSubject === subject.id}
-              onToggle={() => toggleExpand(subject.id)}
-              isCurso={isCurso}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="bg-white rounded-[10px] p-5 text-center mb-10">
-          <p>Nenhuma disciplina encontrada.</p>
-        </div>
-      )}
-    </>
+    <div className="bg-white rounded-[10px] mb-10">
+      {subjects.map((subject) => (
+        <SubjectComponent
+          key={subject.id}
+          subject={subject}
+          isExpanded={expandedSubject === subject.id}
+          onToggle={() => toggleExpand(subject.id)}
+          isCurso={isCurso}
+        />
+      ))}
+    </div>
   );
 };

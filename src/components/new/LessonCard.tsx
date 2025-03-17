@@ -6,13 +6,14 @@ import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { LessonHeader } from "./lesson/LessonHeader";
 import { VideoContentLayout } from "./lesson/VideoContentLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Json } from "@/integrations/supabase/types";
-import { Spinner } from "@/components/ui/spinner";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
+import { Json } from "@/integrations/supabase/types";
+import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
+import { useQuestions } from "@/hooks/useQuestions";
 
 interface LessonCardProps {
   lesson: Lesson;
@@ -33,14 +34,19 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
-  const [currentSectionQuestions, setCurrentSectionQuestions] = useState<Question[]>([]);
-  const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
+
+  // Usar o novo hook useQuestions
+  const { 
+    questions: currentSectionQuestions, 
+    isLoading: isLoadingQuestions, 
+    refetch: fetchQuestionsForSection 
+  } = useQuestions();
 
   useEffect(() => {
     const updateLayout = () => {
@@ -225,83 +231,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         isCorrect: Boolean(opt.isCorrect)
       };
     });
-  };
-
-  const fetchQuestionsForSection = async (sectionId: string) => {
-    setIsLoadingQuestions(true);
-    setCurrentSectionQuestions([]); // Limpar questões anteriores
-
-    try {
-      // Buscar o tópico para obter os IDs das questões
-      console.log("Buscando tópico:", sectionId);
-      const {
-        data: topicoData,
-        error: topicoError
-      } = await supabase.from('topicos').select('*').eq('id', sectionId).single();
-      if (topicoError) {
-        console.error("Erro ao buscar tópico:", topicoError);
-        toast.error("Erro ao buscar questões do tópico");
-        return;
-      }
-      console.log("Dados do tópico:", topicoData);
-
-      // Verificar se o tópico tem questões associadas
-      if (!topicoData.questoes_ids || Array.isArray(topicoData.questoes_ids) && topicoData.questoes_ids.length === 0) {
-        console.log("Tópico não tem questões vinculadas");
-        return;
-      }
-
-      // Extrair IDs das questões em um formato consistente
-      let questoesIds: string[] = [];
-      if (Array.isArray(topicoData.questoes_ids)) {
-        questoesIds = topicoData.questoes_ids.map(id => String(id));
-      } else if (typeof topicoData.questoes_ids === 'object') {
-        questoesIds = Object.values(topicoData.questoes_ids).map(id => String(id));
-      } else if (typeof topicoData.questoes_ids === 'string') {
-        questoesIds = [topicoData.questoes_ids];
-      }
-      if (questoesIds.length === 0) {
-        console.log("Não foi possível extrair IDs de questões válidos");
-        return;
-      }
-
-      // Buscar as questões pelo ID
-      console.log("Buscando questões com IDs:", questoesIds);
-      const {
-        data: questoesData,
-        error: questoesError
-      } = await supabase.from('questoes').select('*').in('id', questoesIds);
-      if (questoesError) {
-        console.error("Erro ao buscar questões:", questoesError);
-        toast.error("Erro ao carregar questões");
-        return;
-      }
-      console.log("Questões encontradas:", questoesData);
-      if (questoesData && questoesData.length > 0) {
-        const formattedQuestions: Question[] = questoesData.map(q => ({
-          id: q.id,
-          year: q.year || "",
-          institution: q.institution || "",
-          organization: q.organization || "",
-          role: q.role || "",
-          content: q.content || "",
-          additionalContent: q.expandablecontent || undefined,
-          teacherExplanation: q.teacherexplanation || undefined,
-          aiExplanation: q.aiexplanation || undefined,
-          options: convertToQuestionOptions(q.options),
-          comments: [],
-          // A propriedade 'images' não existe no objeto da questão retornado pelo Supabase
-          // Então vamos definir como um array vazio por padrão
-          images: []
-        }));
-        setCurrentSectionQuestions(formattedQuestions);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar questões:", error);
-      toast.error("Erro ao carregar questões");
-    } finally {
-      setIsLoadingQuestions(false);
-    }
   };
 
   const checkScroll = () => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Header } from "../layout/Header";
@@ -15,7 +14,8 @@ export const CourseLayout = () => {
   const [isProgressVisible, setIsProgressVisible] = useState(true);
   const progressRef = React.useRef<HTMLDivElement>(null);
   const [subjectsCount, setSubjectsCount] = useState<number>(0);
-  
+  const [subjectsData, setSubjectsData] = useState<any[]>([]);
+
   const handleProgressClick = () => {
     setIsProgressVisible(!isProgressVisible);
     if (!isProgressVisible) {
@@ -28,25 +28,29 @@ export const CourseLayout = () => {
     }
   };
 
-  // Função para receber o número de disciplinas do componente SubjectsList
-  const handleSubjectsCountChange = (count: number) => {
+  // Função para receber o número de disciplinas e os dados das disciplinas do componente SubjectsList
+  const handleSubjectsCountChange = (count: number, data?: any[]) => {
     setSubjectsCount(count);
+    if (data) {
+      setSubjectsData(data);
+      console.log("CourseLayout - Recebendo dados de disciplinas:", data.length);
+    }
   };
-  
+
   const showNavigation = subjectsCount > 1;
   const showProgress = showNavigation && isProgressVisible;
-  
+
   return (
     <div className="min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="pt-[88px]">
         <CourseHeader courseId={courseId || ''} />
         {showNavigation && (
-          <CourseNavigation 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-            onProgressClick={handleProgressClick} 
-            isProgressVisible={isProgressVisible} 
+          <CourseNavigation
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onProgressClick={handleProgressClick}
+            isProgressVisible={isProgressVisible}
           />
         )}
         {activeTab === 'disciplinas' && (
@@ -56,7 +60,7 @@ export const CourseLayout = () => {
             </div>
             {showProgress && (
               <div ref={progressRef} className="w-full xl:min-w-[300px] xl:max-w-[400px] mb-10">
-                <ProgressPanel />
+                <ProgressPanel subjectsFromCourse={subjectsData} />
               </div>
             )}
           </div>
