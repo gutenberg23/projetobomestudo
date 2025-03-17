@@ -1,11 +1,30 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import type { Section } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
+
+// Definindo a interface para a estrutura de dados subjects_data
+interface SubjectsData {
+  completed_sections?: {
+    [lessonId: string]: string[];
+  };
+  [key: string]: any;
+}
+
+interface UserCourseProgress {
+  id: string;
+  user_id: string;
+  course_id: string;
+  subjects_data: SubjectsData;
+  performance_goal?: number;
+  exam_date?: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface SectionsNavigationProps {
   sections: Section[];
@@ -30,7 +49,58 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
 }) => {
   const { user } = useAuth();
   const { courseId } = useParams<{ courseId: string }>();
+  const [localCompletedSections, setLocalCompletedSections] = React.useState<string[]>(completedSections);
 
+  // Carregar os tópicos concluídos do banco de dados quando o componente for montado
+  useEffect(() => {
+    if (!user || !courseId || !lessonId) return;
+
+    const loadCompletedSections = async () => {
+      try {
+        const realCourseId = extractIdFromFriendlyUrl(courseId);
+
+        const { data: existingProgress, error: fetchError } = await supabase
+          .from('user_course_progress')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('course_id', realCourseId)
+          .maybeSingle();
+
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('Error fetching user progress:', fetchError);
+          return;
+        }
+
+        // Verificar se existingProgress existe e tem a estrutura esperada
+        const progress = existingProgress as UserCourseProgress | null;
+        
+        if (progress?.subjects_data && typeof progress.subjects_data === 'object') {
+          const subjectsData = progress.subjects_data as SubjectsData;
+          
+          if (subjectsData.completed_sections && subjectsData.completed_sections[lessonId]) {
+            const savedCompletedSections = subjectsData.completed_sections[lessonId];
+            if (Array.isArray(savedCompletedSections) && savedCompletedSections.length > 0) {
+              setLocalCompletedSections(savedCompletedSections);
+              console.log('Loaded completed sections from database:', savedCompletedSections);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading completed sections:', error);
+      }
+    };
+
+    loadCompletedSections();
+  }, [user, courseId, lessonId]);
+
+  // Atualizar o estado local quando as props mudarem
+  useEffect(() => {
+    if (completedSections.length > 0 && JSON.stringify(completedSections) !== JSON.stringify(localCompletedSections)) {
+      setLocalCompletedSections(completedSections);
+    }
+  }, [completedSections]);
+
+  // Salvar os tópicos concluídos no banco de dados quando o estado local mudar
   useEffect(() => {
     if (!user || !courseId || !lessonId) return;
 
@@ -50,26 +120,30 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
           return;
         }
 
-        let subjectsData = existingProgress?.subjects_data || {};
+        const progress = existingProgress as UserCourseProgress | null;
+        let subjectsData: SubjectsData = progress?.subjects_data || {};
 
+        // Garantir que subjectsData é um objeto
         if (typeof subjectsData !== 'object' || Array.isArray(subjectsData)) {
           subjectsData = {};
         }
 
+        // Garantir que completed_sections existe
         if (!subjectsData.completed_sections) {
           subjectsData.completed_sections = {};
         }
 
-        subjectsData.completed_sections[lessonId] = completedSections;
+        // Salvar os tópicos concluídos
+        subjectsData.completed_sections[lessonId] = localCompletedSections;
 
-        if (existingProgress) {
+        if (progress) {
           const { error: updateError } = await supabase
             .from('user_course_progress')
             .update({
               subjects_data: subjectsData,
               updated_at: new Date().toISOString()
             })
-            .eq('id', existingProgress.id);
+            .eq('id', progress.id);
 
           if (updateError) {
             console.error('Error updating user progress:', updateError);
@@ -104,7 +178,23 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [completedSections, user, courseId, lessonId]);
+  }, [localCompletedSections, user, courseId, lessonId]);
+
+  // Função para alternar o estado de conclusão de um tópico
+  const handleToggleCompletion = (sectionId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    setLocalCompletedSections(prev => {
+      if (prev.includes(sectionId)) {
+        return prev.filter(id => id !== sectionId);
+      } else {
+        return [...prev, sectionId];
+      }
+    });
+    
+    // Chamar a função de callback original
+    onToggleCompletion(sectionId, event);
+  };
 
   return (
     <div
@@ -150,14 +240,14 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             >
               <div className="flex flex-1 shrink gap-2 sm:gap-3 items-center self-stretch my-auto w-full basis-0 min-w-0">
                 <div
-                  onClick={(e) => onToggleCompletion(section.id, e)}
+                  onClick={(e) => handleToggleCompletion(section.id, e)}
                   className={`flex shrink-0 self-stretch my-auto w-4 h-4 sm:w-5 sm:h-5 rounded cursor-pointer ${
-                    completedSections.includes(section.id)
+                    localCompletedSections.includes(section.id)
                       ? "bg-[#5f2ebe] border-[#5f2ebe]"
                       : "bg-white border border-gray-200"
                   }`}
                 >
-                  {completedSections.includes(section.id) && (
+                  {localCompletedSections.includes(section.id) && (
                     <svg
                       viewBox="0 0 14 14"
                       fill="none"

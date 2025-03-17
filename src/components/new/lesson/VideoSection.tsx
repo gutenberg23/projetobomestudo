@@ -190,11 +190,23 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
 
   const teacherData = professorData || teacher;
 
+  // Estado para controlar a visibilidade das informações do professor
+  const [showTeacherInfo, setShowTeacherInfo] = useState(false);
+
   return <div className="video-container w-full">
-      <div className="aspect-video bg-slate-200 rounded-xl relative" style={{
-      height: responsiveHeight || 'auto'
-    }}>
-        <div className="absolute top-0 left-0 right-0 p-3 z-10 bg-gradient-to-b from-black/50 to-transparent flex flex-col sm:flex-row sm:justify-between sm:items-center w-full rounded-t-xl">
+      <div 
+        className="aspect-video bg-slate-200 rounded-xl relative overflow-hidden" 
+        style={{ height: responsiveHeight || 'auto' }}
+        onMouseEnter={() => setShowTeacherInfo(true)}
+        onMouseLeave={() => setShowTeacherInfo(false)}
+      >
+        {/* Removendo a div de informações do professor do topo */}
+        {renderVideoContent()}
+        
+        {/* Informações do professor na parte inferior, visíveis apenas ao passar o mouse */}
+        <div 
+          className={`absolute bottom-0 left-0 right-0 p-3 z-10 bg-gradient-to-t from-black/70 to-transparent flex flex-col sm:flex-row sm:justify-between sm:items-center w-full rounded-b-xl transition-opacity duration-300 ${showTeacherInfo ? 'opacity-100' : 'opacity-0'}`}
+        >
           <div className="flex items-center flex-col sm:flex-row">
             <div className="flex flex-col items-center sm:items-start sm:flex-row">
               <Avatar className="h-12 w-12 mb-2 sm:mb-0 sm:mr-3 border-2 border-white/30">
@@ -213,7 +225,6 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
             <SocialMediaIcons />
           </div>
         </div>
-        {renderVideoContent()}
       </div>
     </div>;
 };
