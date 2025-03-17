@@ -31,6 +31,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
   const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
   const [isLessonCompleted, setIsLessonCompleted] = useState(false);
+  const [topicData, setTopicData] = useState<any>(null);
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
@@ -207,6 +208,32 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     return () => clearTimeout(timeoutId);
   }, [completedSections, user, courseId, lesson.id]);
 
+  useEffect(() => {
+    const fetchTopicData = async () => {
+      if (!selectedSection) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('topicos')
+          .select('*')
+          .eq('id', selectedSection)
+          .single();
+        
+        if (error) {
+          console.error('Erro ao buscar dados do tópico:', error);
+          return;
+        }
+        
+        console.log('Dados do tópico carregados:', data);
+        setTopicData(data);
+      } catch (error) {
+        console.error('Erro ao buscar dados do tópico:', error);
+      }
+    };
+    
+    fetchTopicData();
+  }, [selectedSection]);
+
   const convertToQuestionOptions = (options: any): QuestionOption[] => {
     if (!options) return [];
     let optionsArray: any[] = [];
@@ -330,6 +357,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           <ItensDaAula
             setShowQuestions={handleQuestionButtonClick}
             showQuestions={showQuestions}
+            pdfUrl={topicData?.pdf_url}
+            mapaUrl={topicData?.mapa_url}
+            resumoUrl={topicData?.resumo_url}
+            musicaUrl={topicData?.musica_url}
           />
           {showQuestions && (
             <div className="mt-4 px-[20px]">
