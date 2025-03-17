@@ -30,7 +30,6 @@ export const useEditorializedData = () => {
       const realId = extractIdFromFriendlyUrl(courseId);
       console.log("ID do curso:", realId);
       
-      // Primeiro, buscamos o curso para verificar se ele existe
       const { data: cursoData, error: cursoError } = await supabase
         .from('cursos')
         .select('id, titulo, disciplinas_ids')
@@ -57,10 +56,8 @@ export const useEditorializedData = () => {
       console.log("Dados do curso encontrados:", cursoData);
       console.log("IDs das disciplinas no curso:", cursoData.disciplinas_ids);
       
-      // Verificar se usuário está logado
       if (userId !== 'guest') {
         console.log("Usuário logado, buscando dados de progresso");
-        // Buscar dados do progresso por disciplina através da tabela user_course_progress
         const { data: subjectProgressData, error: subjectProgressError } = await supabase
           .from('user_course_progress')
           .select('*')
@@ -76,7 +73,6 @@ export const useEditorializedData = () => {
         
         if (!subjectProgressError && subjectProgressData && subjectProgressData.subjects_data) {
           try {
-            // Tentar converter os dados do JSON para o formato Subject[]
             const parsedData = JSON.parse(JSON.stringify(subjectProgressData.subjects_data));
             console.log("Dados de disciplinas do banco:", parsedData);
             console.log("É array?", Array.isArray(parsedData));
@@ -98,7 +94,6 @@ export const useEditorializedData = () => {
         }
       }
       
-      // Se não encontrou no banco ou deu erro, verificar no localStorage
       const savedData = localStorage.getItem(`${userId}_${realId}_subjectsData`);
       console.log("Verificando dados no localStorage");
       
@@ -114,7 +109,6 @@ export const useEditorializedData = () => {
             setSubjects(parsedData);
             setLoading(false);
             
-            // Se temos dados no localStorage mas não no banco, e o usuário está logado, salvar no banco
             if (userId !== 'guest') {
               await saveUserDataToDatabase(realId, parsedData);
             }
@@ -130,9 +124,6 @@ export const useEditorializedData = () => {
         console.log("Nenhum dado encontrado no localStorage");
       }
       
-      // Se não encontrou dados no localStorage nem no banco, buscar dados do edital verticalizado
-      console.log("Buscando dados do edital verticalizado");
-      // Agora buscamos o edital verticalizado
       const { data: editalData, error: editalError } = await supabase
         .from('cursoverticalizado')
         .select('*')
@@ -152,7 +143,6 @@ export const useEditorializedData = () => {
         disciplinasIds = editalData.disciplinas_ids;
         console.log("Usando IDs de disciplinas do edital:", disciplinasIds);
       } else if (cursoData.disciplinas_ids && cursoData.disciplinas_ids.length > 0) {
-        // Se não encontrou no edital verticalizado, usar as disciplinas do curso
         disciplinasIds = cursoData.disciplinas_ids;
         console.log("Usando IDs de disciplinas do curso:", disciplinasIds);
       }
@@ -167,10 +157,8 @@ export const useEditorializedData = () => {
       console.log('Disciplinas IDs para busca:', disciplinasIds);
       console.log('Total de disciplinas a buscar:', disciplinasIds.length);
 
-      // Buscar as disciplinas associadas ao edital ou ao curso
       let disciplinasData: any[] = [];
       
-      // Primeiro, tentar buscar nas disciplinas verticalizadas
       const { data: disciplinasVerticalizadasData, error: disciplinasVerticalizadasError } = await supabase
         .from('disciplinaverticalizada')
         .select('*')
@@ -188,7 +176,6 @@ export const useEditorializedData = () => {
         console.log("Usando disciplinas verticalizadas");
       } else {
         console.log("Buscando disciplinas normais");
-        // Se não encontrou nas disciplinas verticalizadas, buscar nas disciplinas normais
         const { data: disciplinasNormaisData, error: disciplinasNormaisError } = await supabase
           .from('disciplinas')
           .select('*')
@@ -212,16 +199,14 @@ export const useEditorializedData = () => {
       console.log('Disciplinas encontradas:', disciplinasData);
 
       const formattedSubjects: Subject[] = (disciplinasData || []).map((disciplina) => {
-        // Determinar se é uma disciplina verticalizada ou normal
         const isVerticalizada = 'topicos' in disciplina;
         
         return {
           id: disciplina.id,
           name: disciplina.titulo,
-          rating: disciplina.descricao || "", // Adicionando o valor de rating (antigo campo descrição)
+          rating: disciplina.descricao || "",
           topics: isVerticalizada && Array.isArray(disciplina.topicos) 
             ? disciplina.topicos.map((topico: string, topicIndex: number) => {
-                // Verificar se há dados salvos para este tópico específico
                 const topicKey = `${userId}_${realId}_${disciplina.id}_${topicIndex}`;
                 const savedTopicData = localStorage.getItem(topicKey);
                 
@@ -233,7 +218,6 @@ export const useEditorializedData = () => {
                   }
                 }
                 
-                // Retornar dados padrão se não houver dados salvos
                 return {
                   id: topicIndex,
                   name: topico,
@@ -243,6 +227,9 @@ export const useEditorializedData = () => {
                   importance: (Array.isArray(disciplina.importancia) && disciplina.importancia[topicIndex] 
                     ? disciplina.importancia[topicIndex] 
                     : 0.5) as 1 | 2 | 3 | 4 | 5,
+                  link: (Array.isArray(disciplina.links) && disciplina.links[topicIndex]) 
+                    ? disciplina.links[topicIndex] 
+                    : "",
                   difficulty: "Médio",
                   exercisesDone: 0,
                   hits: 0,
@@ -250,7 +237,7 @@ export const useEditorializedData = () => {
                   performance: 0
                 };
               }) 
-            : [] // Se não for disciplina verticalizada ou não tiver tópicos, retornar array vazio
+            : []
         };
       });
 
@@ -259,10 +246,8 @@ export const useEditorializedData = () => {
       
       setSubjects(formattedSubjects);
       
-      // Salvar os dados formatados no localStorage
       localStorage.setItem(`${userId}_${realId}_subjectsData`, JSON.stringify(formattedSubjects));
       
-      // Se o usuário estiver logado, salvar também no banco de dados
       if (userId !== 'guest') {
         await saveUserDataToDatabase(realId, formattedSubjects);
       }
@@ -279,20 +264,15 @@ export const useEditorializedData = () => {
     }
   };
 
-  // Função para salvar os dados do usuário no banco de dados
   const saveUserDataToDatabase = async (courseRealId: string, subjectsData: Subject[]) => {
     if (userId === 'guest') return;
     
     try {
-      // Obter a meta de aproveitamento e a data da prova do localStorage
       const performanceGoal = localStorage.getItem(`${userId}_${courseRealId}_performanceGoal`);
       const examDate = localStorage.getItem(`${userId}_${courseRealId}_examDate`);
       
-      // Salvar metas e data do exame junto com os dados das disciplinas na tabela user_course_progress
-      // Estamos usando user_course_progress até que o tipo do Supabase seja atualizado
-      const performanceGoalNumber = performanceGoal ? parseInt(performanceGoal) : 85; // Valor padrão de 85%
+      const performanceGoalNumber = performanceGoal ? parseInt(performanceGoal) : 85;
       
-      // Verificar se já existe um registro para este usuário e curso
       const { data: existingProgress, error: checkProgressError } = await supabase
         .from('user_course_progress')
         .select('id')
@@ -300,12 +280,10 @@ export const useEditorializedData = () => {
         .eq('course_id', courseRealId)
         .maybeSingle();
       
-      if (checkProgressError && checkProgressError.code !== 'PGRST116') { // PGRST116 é o código para "não encontrado"
+      if (checkProgressError && checkProgressError.code !== 'PGRST116') {
         console.error('Erro ao verificar progresso existente:', checkProgressError);
       } else {
-        // Atualizar ou inserir dados de progresso completos
         if (existingProgress) {
-          // Atualizar registro existente
           const { error: updateError } = await supabase
             .from('user_course_progress')
             .update({
@@ -322,7 +300,6 @@ export const useEditorializedData = () => {
             console.log('Progresso atualizado com sucesso no banco de dados');
           }
         } else {
-          // Criar novo registro
           const { error: insertError } = await supabase
             .from('user_course_progress')
             .insert({
@@ -363,7 +340,6 @@ export const useEditorializedData = () => {
                 if (topic.id === topicId) {
                   const updatedTopic = { ...topic, [field]: value };
                   
-                  // Salvar o tópico atualizado no localStorage
                   if (courseId) {
                     const realId = extractIdFromFriendlyUrl(courseId);
                     const topicKey = `${userId}_${realId}_${subjectId}_${topicId}`;
@@ -379,12 +355,10 @@ export const useEditorializedData = () => {
           return subject;
         });
         
-        // Salvar todos os dados atualizados no localStorage
         if (courseId) {
           const realId = extractIdFromFriendlyUrl(courseId);
           localStorage.setItem(`${userId}_${realId}_subjectsData`, JSON.stringify(updatedSubjects));
           
-          // Se o usuário estiver logado, salvar também no banco de dados
           if (userId !== 'guest') {
             saveUserDataToDatabase(realId, updatedSubjects);
           }
