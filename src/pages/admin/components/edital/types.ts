@@ -1,9 +1,9 @@
-
 export interface Disciplina {
   id: string;
   titulo: string;
   descricao: string;
   topicos: string[];
+  links: string[];
   importancia: number[];
   selecionada: boolean;
 }
@@ -16,4 +16,3 @@ export interface Edital {
   ativo: boolean;
   created_at?: string;
 }
-

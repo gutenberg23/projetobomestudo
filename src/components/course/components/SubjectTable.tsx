@@ -4,7 +4,8 @@ import { ImportanceStars } from "./ImportanceStars";
 import { cn } from "@/lib/utils";
 import { Subject, Topic } from "../types/editorialized";
 import { calculateErrors, calculatePerformance, calculateSubjectTotals } from "../utils/statsCalculations";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface SubjectTableProps {
   subject: Subject;
@@ -56,7 +57,7 @@ export const SubjectTable = ({
                 <th className="py-3 px-4 text-left font-medium w-8">#</th>
                 <th className="py-3 px-4 text-left font-medium">Conclusão</th>
                 <th className="py-3 px-4 text-left font-medium">Tópicos</th>
-                <th className="py-3 px-4 text-left font-medium">Importância do Assunto</th>
+                <th className="py-3 px-4 text-left font-medium">Link</th>
                 <th className="py-3 px-4 text-left font-medium">Dificuldade</th>
                 <th className="py-3 px-4 text-center font-medium">Total Exercícios feitos</th>
                 <th className="py-3 px-4 text-center font-medium">Acertos</th>
@@ -85,12 +86,20 @@ export const SubjectTable = ({
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-center">
-                      <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div style={{
-                      width: `${topic.importance}%`
-                    }} className="h-full bg-[#5f2ebe] transition-all" />
-                      </div>
-                      <span className="ml-2 text-sm text-gray-600">{topic.importance}%</span>
+                      {topic.link ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-blue-600"
+                          onClick={() => window.open(topic.link, '_blank')}
+                          title="Abrir link de questões"
+                        >
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          <span className="text-xs">Questões</span>
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-gray-400">Sem link</span>
+                      )}
                     </div>
                   </td>
                   <td className="py-3 px-4">

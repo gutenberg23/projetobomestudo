@@ -1,4 +1,3 @@
-
 export type Subject = {
   id: string | number;
   name: string;
@@ -11,7 +10,8 @@ export type Topic = {
   topic: string;
   isDone: boolean;
   isReviewed: boolean;
-  importance: 1 | 2 | 3 | 4 | 5;
+  importance: number;
+  link?: string;
   difficulty: "Muito Difícil" | "Difícil" | "Médio" | "Fácil" | "Muito Fácil";
   exercisesDone: number;
   hits: number;
