@@ -1,4 +1,3 @@
-
 import { Topico } from "../TopicosTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -125,6 +124,23 @@ export const useTopicosActions = (
     }
 
     try {
+      // Coletar todos os IDs de questões dos tópicos selecionados
+      const questoesIds: string[] = [];
+      const topicosSelecionadosCompletos = topicos.filter(topico => topico.selecionado);
+      
+      // Adicionar todos os IDs de questões dos tópicos selecionados
+      topicosSelecionadosCompletos.forEach(topico => {
+        if (topico.questoesIds && Array.isArray(topico.questoesIds)) {
+          topico.questoesIds.forEach(questaoId => {
+            if (!questoesIds.includes(questaoId)) {
+              questoesIds.push(questaoId);
+            }
+          });
+        }
+      });
+      
+      console.log("Adicionando aula com questões:", questoesIds);
+      
       // Cadastrar a aula no banco de dados usando o método insert correto
       const { data, error } = await supabase
         .from('aulas')
@@ -133,6 +149,7 @@ export const useTopicosActions = (
             titulo: tituloNovaAula,
             descricao: descricaoNovaAula,
             topicos_ids: topicosSelecionados,
+            questoes_ids: questoesIds, // Adicionar os IDs das questões
             status: 'ativo',
             created_at: new Date().toISOString()
           }
