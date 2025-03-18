@@ -76,17 +76,23 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
         
         // Buscar progresso do curso do Supabase
         if (userId && userId !== 'guest') {
-          const { data, error } = await supabase
-            .from('user_course_progress')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-            
-          if (data && !error) {
-            console.log('Dados de progresso do usuário carregados do Supabase:', data);
-            // Disponibilizar os dados para uso global
-            (window as any).userCourseProgress = data;
-          } else if (error) {
+          try {
+            // Buscar todos os registros de progresso para este usuário
+            const { data, error } = await supabase
+              .from('user_course_progress')
+              .select('*')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })
+              .limit(1);
+              
+            if (data && data.length > 0 && !error) {
+              console.log('Dados de progresso do usuário carregados do Supabase:', data[0]);
+              // Disponibilizar os dados para uso global - usar o registro mais recente
+              (window as any).userCourseProgress = data[0];
+            } else if (error) {
+              console.error('Erro ao carregar progresso do usuário:', error);
+            }
+          } catch (error) {
             console.error('Erro ao carregar progresso do usuário:', error);
           }
         }

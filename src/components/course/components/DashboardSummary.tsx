@@ -225,23 +225,54 @@ export const DashboardSummary = ({
       <div className="flex flex-col gap-4 mb-4 text-[#272f3c]">
         <div className="flex justify-between items-center">
           <h3 className="text-2xl font-bold">Resumo Geral</h3>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              if (window.forceRefreshEdital) {
-                window.forceRefreshEdital();
-              }
-            }}
-            disabled={loading}
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Atualizar dados
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (userId !== 'guest' && courseId) {
+                  const realId = extractIdFromFriendlyUrl(courseId);
+                  // Salvar todos os dados importantes
+                  saveUserDataToDatabase('performance_goal', performanceGoal);
+                  if (examDate) {
+                    saveUserDataToDatabase('exam_date', examDate.toISOString());
+                  }
+                  toast({
+                    title: "Sucesso",
+                    description: "Seus dados foram salvos com sucesso!",
+                    variant: "default"
+                  });
+                } else if (userId === 'guest') {
+                  toast({
+                    title: "Atenção",
+                    description: "Você precisa estar logado para salvar seus dados.",
+                    variant: "destructive"
+                  });
+                }
+              }}
+              disabled={loading || userId === 'guest'}
+            >
+              <CheckIcon className="h-4 w-4 mr-2" />
+              Salvar dados
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (window.forceRefreshEdital) {
+                  window.forceRefreshEdital();
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Atualizar dados
+            </Button>
+          </div>
         </div>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-wrap items-center gap-2">
