@@ -125,21 +125,27 @@ export const useTopicosActions = (
 
     try {
       // Coletar todos os IDs de questões dos tópicos selecionados
-      const questoesIds: string[] = [];
+      const questoesIdsSet = new Set<string>(); // Usar Set para evitar duplicações
       const topicosSelecionadosCompletos = topicos.filter(topico => topico.selecionado);
       
       // Adicionar todos os IDs de questões dos tópicos selecionados
       topicosSelecionadosCompletos.forEach(topico => {
         if (topico.questoesIds && Array.isArray(topico.questoesIds)) {
           topico.questoesIds.forEach(questaoId => {
-            if (!questoesIds.includes(questaoId)) {
-              questoesIds.push(questaoId);
+            // Verificar se o ID da questão é válido (não vazio)
+            if (questaoId && questaoId.trim() !== '') {
+              questoesIdsSet.add(questaoId);
             }
           });
         }
       });
       
-      console.log("Adicionando aula com questões:", questoesIds);
+      // Converter o Set para Array
+      const questoesIds = Array.from(questoesIdsSet);
+      
+      console.log("Adicionando aula com tópicos:", topicosSelecionados);
+      console.log("Questões únicas encontradas:", questoesIds);
+      console.log("Total de questões:", questoesIds.length);
       
       // Cadastrar a aula no banco de dados usando o método insert correto
       const { data, error } = await supabase
@@ -149,7 +155,7 @@ export const useTopicosActions = (
             titulo: tituloNovaAula,
             descricao: descricaoNovaAula,
             topicos_ids: topicosSelecionados,
-            questoes_ids: questoesIds, // Adicionar os IDs das questões
+            questoes_ids: questoesIds, // Adicionar os IDs das questões únicas
             status: 'ativo',
             created_at: new Date().toISOString()
           }
@@ -159,7 +165,7 @@ export const useTopicosActions = (
       if (error) throw error;
       
       // Sucesso ao adicionar a aula
-      toast.success("Aula adicionada com sucesso!");
+      toast.success(`Aula adicionada com sucesso! Contém ${topicosSelecionados.length} tópicos e ${questoesIds.length} questões únicas.`);
       
       // Resetar campos após adicionar
       setTituloNovaAula("");

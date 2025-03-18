@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
@@ -49,6 +48,7 @@ const MyCourses = () => {
   const [favoriteSubjects, setFavoriteSubjects] = useState<DisciplinaItemType[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Buscar favoritos do usuário
   useEffect(() => {
@@ -72,6 +72,8 @@ const MyCourses = () => {
           .eq('id', user.id)
           .single();
 
+        console.log("Perfil do usuário:", profile);
+
         if (!profile) {
           setLoading(false);
           return;
@@ -80,12 +82,17 @@ const MyCourses = () => {
         const cursosFavoritos = profile.cursos_favoritos || [];
         const disciplinasFavoritos = profile.disciplinas_favoritos || [];
 
+        console.log("Cursos favoritos brutos:", cursosFavoritos);
+        console.log("Disciplinas favoritas brutas:", disciplinasFavoritos);
+
         // Se tiver cursos favoritos, buscar detalhes
         if (cursosFavoritos.length > 0) {
           const { data: cursosData } = await supabase
             .from('cursos')
             .select('*')
             .in('id', cursosFavoritos);
+
+          console.log("Dados de cursos obtidos:", cursosData);
 
           if (cursosData) {
             const formattedCourses: CourseItemType[] = cursosData.map(course => ({
@@ -98,7 +105,11 @@ const MyCourses = () => {
               informacoes_curso: course.informacoes_curso
             }));
             setFavoriteCourses(formattedCourses);
+            console.log("Cursos formatados:", formattedCourses);
           }
+        } else {
+          setFavoriteCourses([]);
+          console.log("Nenhum curso favorito encontrado");
         }
 
         // Se tiver disciplinas favoritas, buscar detalhes
@@ -107,6 +118,8 @@ const MyCourses = () => {
             .from('disciplinas')
             .select('*')
             .in('id', disciplinasFavoritos);
+
+          console.log("Dados de disciplinas obtidos:", disciplinasData);
 
           if (disciplinasData) {
             const formattedDisciplinas: DisciplinaItemType[] = disciplinasData.map(disciplina => ({
@@ -118,7 +131,11 @@ const MyCourses = () => {
               lessons: (disciplina.aulas_ids?.length || 0)
             }));
             setFavoriteSubjects(formattedDisciplinas);
+            console.log("Disciplinas formatadas:", formattedDisciplinas);
           }
+        } else {
+          setFavoriteSubjects([]);
+          console.log("Nenhuma disciplina favorita encontrada");
         }
       } catch (error) {
         console.error("Erro ao buscar favoritos:", error);
@@ -128,8 +145,9 @@ const MyCourses = () => {
       }
     };
 
+    console.log("Buscando favoritos...");
     fetchFavorites();
-  }, [navigate]);
+  }, [navigate, location]);
 
   const handleRemoveCourse = async (id: string) => {
     try {

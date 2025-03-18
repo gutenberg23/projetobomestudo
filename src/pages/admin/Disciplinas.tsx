@@ -34,7 +34,8 @@ const Disciplinas = () => {
   const calcularTotalQuestoesDisciplina = async (aulasIds: string[]): Promise<number> => {
     if (!aulasIds || aulasIds.length === 0) return 0;
     
-    let totalQuestoes = 0;
+    // Usar um Set para armazenar IDs únicos de questões
+    const questoesUnicas = new Set<string>();
     
     try {
       console.log("Calculando questões para aulas:", aulasIds);
@@ -54,11 +55,14 @@ const Disciplinas = () => {
       
       console.log("Aulas encontradas:", aulas.length);
       
-      // Para cada aula, contar suas questões diretas
+      // Para cada aula, adicionar suas questões diretas ao Set
       for (const aula of aulas) {
-        if (aula.questoes_ids && aula.questoes_ids.length > 0) {
-          console.log(`Aula com ${aula.questoes_ids.length} questões diretas`);
-          totalQuestoes += aula.questoes_ids.length;
+        if (aula.questoes_ids && Array.isArray(aula.questoes_ids)) {
+          aula.questoes_ids.forEach(questaoId => {
+            if (questaoId && questaoId.trim() !== '') {
+              questoesUnicas.add(questaoId);
+            }
+          });
         }
         
         // Buscar questões dos tópicos da aula
@@ -77,17 +81,20 @@ const Disciplinas = () => {
           
           if (topicos) {
             for (const topico of topicos) {
-              if (topico.questoes_ids && topico.questoes_ids.length > 0) {
-                console.log(`Tópico com ${topico.questoes_ids.length} questões`);
-                totalQuestoes += topico.questoes_ids.length;
+              if (topico.questoes_ids && Array.isArray(topico.questoes_ids)) {
+                topico.questoes_ids.forEach(questaoId => {
+                  if (questaoId && questaoId.trim() !== '') {
+                    questoesUnicas.add(questaoId);
+                  }
+                });
               }
             }
           }
         }
       }
       
-      console.log("Total de questões calculado:", totalQuestoes);
-      return totalQuestoes;
+      console.log("Total de questões únicas calculado:", questoesUnicas.size);
+      return questoesUnicas.size;
     } catch (error) {
       console.error("Erro ao calcular total de questões:", error);
       return 0;
@@ -103,6 +110,31 @@ const Disciplinas = () => {
         .select('*');
       
       if (error) throw error;
+      
+      // Buscar contagem de favoritos para cada disciplina
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('disciplinas_favoritos');
+      
+      if (profilesError) {
+        console.error("Erro ao buscar perfis:", profilesError);
+      }
+      
+      // Calcular contagem de favoritos para cada disciplina
+      const favoritosCount: Record<string, number> = {};
+      
+      if (profiles) {
+        profiles.forEach(profile => {
+          if (profile.disciplinas_favoritos && Array.isArray(profile.disciplinas_favoritos)) {
+            profile.disciplinas_favoritos.forEach(favorito => {
+              // Usar o ID diretamente, já que agora estamos armazenando apenas IDs
+              favoritosCount[favorito] = (favoritosCount[favorito] || 0) + 1;
+            });
+          }
+        });
+      }
+      
+      console.log("Contagem de favoritos:", favoritosCount);
       
       const disciplinasProcessadas: Disciplina[] = [];
       
@@ -144,9 +176,9 @@ const Disciplinas = () => {
           descricao: disciplina.descricao || "",
           aulasIds: disciplina.aulas_ids || [],
           topicosIds: topicosIds,
-          questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)),
+          questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)), // Criar array com o tamanho correto
           selecionada: false,
-          favoritos: 0
+          favoritos: favoritosCount[disciplina.id] || 0
         });
       }
       

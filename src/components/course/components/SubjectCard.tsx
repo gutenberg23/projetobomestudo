@@ -48,7 +48,9 @@ interface QuestaoData {
 }
 
 interface RespostaData {
+  questao_id: string;
   is_correta: boolean;
+  created_at: string;
   [key: string]: any;
 }
 
@@ -76,16 +78,19 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   const [loadingLessons, setLoadingLessons] = useState(false);
   const { user } = useAuth();
   
-  // Buscar aulas da disciplina quando o card for expandido
+  // Buscar aulas da disciplina quando o componente for montado ou quando o card for expandido
   useEffect(() => {
-    if (isExpanded && subject.id) {
+    if (subject.id) {
       fetchLessons();
     }
-  }, [isExpanded, subject.id]);
+  }, [subject.id]);
   
   // Função para buscar as aulas da disciplina
   const fetchLessons = async () => {
     if (!subject.id) return;
+    
+    // Se já temos aulas carregadas, não precisamos buscar novamente
+    if (lessons.length > 0) return;
     
     setLoadingLessons(true);
     try {
@@ -237,7 +242,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           }
         }
         
-        // Buscar estatísticas de questões para cada aula
+        // Se encontrou questões, buscar respostas do aluno
         for (const lesson of lessonsWithStats) {
           // Buscar questões da aula
           let questoesIds: string[] = [];
@@ -278,17 +283,30 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           
           // Se encontrou questões, buscar respostas do aluno
           if (questoesIds.length > 0) {
+            // Buscar todas as respostas do aluno para estas questões, incluindo a data de criação
             const respostasResponse: PostgrestResponse<RespostaData> = await supabase
               .from('respostas_alunos')
-              .select('is_correta')
+              .select('questao_id, is_correta, created_at')
               .eq('aluno_id', user.id)
-              .in('questao_id', questoesIds);
+              .in('questao_id', questoesIds)
+              .order('created_at', { ascending: false });
             
             const respostasData = respostasResponse.data;
             
             if (respostasData && respostasData.length > 0) {
-              const total = respostasData.length;
-              const hits = respostasData.filter((r: RespostaData) => r.is_correta).length;
+              // Filtrar para considerar apenas a resposta mais recente de cada questão
+              const respostasMaisRecentes = new Map<string, boolean>();
+              
+              // Percorre as respostas (já ordenadas por data decrescente)
+              // e guarda apenas a primeira ocorrência (mais recente) de cada questão
+              respostasData.forEach((resposta: RespostaData) => {
+                if (!respostasMaisRecentes.has(resposta.questao_id)) {
+                  respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
+                }
+              });
+              
+              const total = respostasMaisRecentes.size;
+              const hits = Array.from(respostasMaisRecentes.values()).filter(Boolean).length;
               
               lesson.stats = {
                 total,
@@ -307,61 +325,136 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   };
   
   const getSubjectStats = () => {
-    // Calcular estatísticas baseadas nas aulas carregadas
+    // Inicializar estatísticas das aulas
     const lessonStats = {
       questionsTotal: 0,
       questionsCorrect: 0,
       questionsWrong: 0
     };
     
-    // Somar estatísticas de todas as aulas
+    // Calcular estatísticas das aulas
     lessons.forEach(lesson => {
-      lessonStats.questionsTotal += lesson.stats.total;
-      lessonStats.questionsCorrect += lesson.stats.hits;
-      lessonStats.questionsWrong += lesson.stats.errors;
+      if (lesson.stats) {
+        lessonStats.questionsTotal += (lesson.stats.total || 0);
+        lessonStats.questionsCorrect += (lesson.stats.hits || 0);
+        lessonStats.questionsWrong += (lesson.stats.errors || 0);
+      }
+      // Verificar se há estatísticas no formato direto
+      if ('total' in lesson && 'hits' in lesson && 'errors' in lesson) {
+        const total = Number((lesson as any).total) || 0;
+        const hits = Number((lesson as any).hits) || 0;
+        const errors = Number((lesson as any).errors) || 0;
+        
+        lessonStats.questionsTotal += total;
+        lessonStats.questionsCorrect += hits;
+        lessonStats.questionsWrong += errors;
+      }
     });
+    
+    // Log para depuração das estatísticas das aulas
+    console.log(`Estatísticas das aulas para ${subject.name || subject.titulo}:`, lessonStats);
+    
+    // Se o subject já tem estatísticas calculadas, usar diretamente
+    if (subject.questionsTotal !== undefined && 
+        subject.questionsCorrect !== undefined && 
+        subject.questionsWrong !== undefined) {
+      
+      // Garantir que os valores são números válidos
+      const questionsTotal = Number(subject.questionsTotal) || 0;
+      const questionsCorrect = Number(subject.questionsCorrect) || 0;
+      const questionsWrong = Number(subject.questionsWrong) || 0;
+      
+      // Log para depuração
+      console.log(`Usando estatísticas do subject para ${subject.name || subject.titulo}:`, {
+        questionsTotal,
+        questionsCorrect,
+        questionsWrong
+      });
+      
+      return {
+        progress: subject.progress || 0,
+        questionsTotal: questionsTotal,
+        questionsCorrect: questionsCorrect,
+        questionsWrong: questionsWrong,
+        aproveitamento: questionsTotal > 0 
+          ? Math.round((questionsCorrect / questionsTotal) * 100) 
+          : 0
+      };
+    }
     
     // Verificar se já existem estatísticas definidas no subject
     if (subject.progress !== undefined && 
         subject.questionsTotal !== undefined && 
         subject.questionsCorrect !== undefined && 
         subject.questionsWrong !== undefined) {
+      
+      // Garantir que os valores são números válidos
+      const questionsTotal = Number(subject.questionsTotal) || 0;
+      const questionsCorrect = Number(subject.questionsCorrect) || 0;
+      const questionsWrong = Number(subject.questionsWrong) || 0;
+      
+      // Log para depuração
+      console.log(`Usando estatísticas do subject para ${subject.name || subject.titulo}:`, {
+        questionsTotal,
+        questionsCorrect,
+        questionsWrong
+      });
+      
       return {
         progress: subject.progress,
-        questionsTotal: subject.questionsTotal,
-        questionsCorrect: subject.questionsCorrect,
-        questionsWrong: subject.questionsWrong,
-        aproveitamento: subject.questionsTotal > 0 
-          ? Math.round((subject.questionsCorrect / subject.questionsTotal) * 100) 
+        questionsTotal: questionsTotal,
+        questionsCorrect: questionsCorrect,
+        questionsWrong: questionsWrong,
+        aproveitamento: questionsTotal > 0 
+          ? Math.round((questionsCorrect / questionsTotal) * 100) 
           : 0
       };
     }
     
     if (subject.topics) {
       const stats = calculateSubjectTotals(subject.topics);
+      
+      // Combinar estatísticas dos tópicos com as das aulas
+      const combinedStats = {
+        totalTopics: stats.totalTopics,
+        completedTopics: stats.completedTopics,
+        exercisesDone: stats.exercisesDone + lessonStats.questionsTotal,
+        hits: stats.hits + lessonStats.questionsCorrect,
+        errors: stats.errors + lessonStats.questionsWrong
+      };
+      
       return {
-        progress: stats.totalTopics > 0 
-          ? Math.round((stats.completedTopics / stats.totalTopics) * 100) 
+        progress: combinedStats.totalTopics > 0 
+          ? Math.round((combinedStats.completedTopics / combinedStats.totalTopics) * 100) 
           : 0,
-        questionsTotal: stats.exercisesDone,
-        questionsCorrect: stats.hits,
-        questionsWrong: stats.errors,
-        aproveitamento: stats.exercisesDone > 0 
-          ? Math.round((stats.hits / stats.exercisesDone) * 100) 
+        questionsTotal: combinedStats.exercisesDone,
+        questionsCorrect: combinedStats.hits,
+        questionsWrong: combinedStats.errors,
+        aproveitamento: combinedStats.exercisesDone > 0 
+          ? Math.round((combinedStats.hits / combinedStats.exercisesDone) * 100) 
           : 0
       };
     }
     
     if (subject.stats) {
+      // Combinar estatísticas do subject com as das aulas
+      const combinedStats = {
+        totalTopics: subject.stats.totalTopics || 0,
+        completedTopics: subject.stats.completedTopics || 0,
+        exercisesDone: (subject.stats.exercisesDone || 0) + lessonStats.questionsTotal,
+        hits: (subject.stats.hits || 0) + lessonStats.questionsCorrect,
+        errors: (subject.stats.errors || 0) + lessonStats.questionsWrong
+      };
+      
       return {
-        progress: subject.stats.totalTopics > 0 
-          ? Math.round((subject.stats.completedTopics / subject.stats.totalTopics) * 100) 
+        progress: combinedStats.totalTopics > 0 
+          ? Math.round((combinedStats.completedTopics / combinedStats.totalTopics) * 100) 
           : 0,
-        questionsTotal: subject.stats.exercisesDone || 0,
-        questionsCorrect: subject.stats.hits || 0,
-        questionsWrong: subject.stats.errors || 0,
-        aproveitamento: subject.stats.exercisesDone > 0 
-          ? Math.round((subject.stats.hits / subject.stats.exercisesDone) * 100) 
+        questionsTotal: combinedStats.exercisesDone,
+        questionsCorrect: combinedStats.hits,
+        questionsWrong: combinedStats.errors,
+        aproveitamento: combinedStats.exercisesDone > 0 
+          ? Math.round((combinedStats.hits / combinedStats.exercisesDone) * 100) 
           : 0
       };
     }
@@ -393,63 +486,67 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1">
             <div className="relative flex items-center justify-center">
-              {renderDonutChart(stats.progress)}
-              <span className="absolute text-xs font-medium">{stats.progress}%</span>
+              {renderDonutChart(stats.aproveitamento)}
+              <span className="absolute text-xs font-medium">{stats.aproveitamento}%</span>
             </div>
             <span className="font-medium text-[rgba(38,47,60,1)]">{subject.name || subject.titulo}</span>
           </div>
-          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          <div className="flex items-center gap-3">
+            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </div>
         </div>
       </div>
       
-      {isExpanded && (
-        <div className="px-4 pb-4 space-y-2">
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div className="bg-white p-2 rounded">
-              <div className="text-gray-600">Aprov. (%)</div>
-              <div className="font-semibold">{stats.aproveitamento}%</div>
-            </div>
-            <div className="bg-white p-2 rounded">
-              <div className="text-green-600">Acertos</div>
-              <div className="font-semibold text-green-600">{stats.questionsCorrect}</div>
-            </div>
-            <div className="bg-white p-2 rounded">
-              <div className="text-red-600">Erros</div>
-              <div className="font-semibold text-red-600">{stats.questionsWrong}</div>
-            </div>
+      <div className="px-4 pb-4">
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="bg-white p-2 rounded text-center">
+            <div className="text-[#5f2ebe]">Aprov. Total (%)</div>
+            <div className="font-semibold text-[#5f2ebe]">{stats.aproveitamento}</div>
           </div>
-          
-          {/* Seção de aulas */}
-          <div className="mt-4">
-            <h4 className="text-sm font-medium mb-2 text-[rgba(38,47,60,1)]">Aulas</h4>
-            
-            {loadingLessons ? (
-              <div className="text-center py-2 text-gray-500 text-sm">
-                Carregando aulas...
-              </div>
-            ) : lessons.length > 0 ? (
-              <div className="space-y-2">
-                {lessons.map((lesson) => (
-                  <LessonItem 
-                    key={lesson.id}
-                    title={lesson.titulo}
-                    isCompleted={lesson.concluida}
-                    stats={{
-                      total: lesson.stats.total,
-                      hits: lesson.stats.hits,
-                      errors: lesson.stats.errors
-                    }}
-                    questoesIds={lesson.questoesIds}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-2 text-gray-500 text-sm">
-                Nenhuma aula disponível para esta disciplina.
-              </div>
-            )}
+          <div className="bg-white p-2 rounded">
+            <div className="text-green-600">Total Acertos</div>
+            <div className="font-semibold text-green-600">{stats.questionsCorrect}</div>
+          </div>
+          <div className="bg-white p-2 rounded">
+            <div className="text-red-600">Total Erros</div>
+            <div className="font-semibold text-red-600">{stats.questionsWrong}</div>
           </div>
         </div>
-      )}
+        
+        {isExpanded && (
+          <div>
+            {loadingLessons ? (
+              <div className="text-center py-4">
+                <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-[#5f2ebe] border-r-transparent"></div>
+                <div className="mt-2 text-sm text-gray-600">Carregando aulas...</div>
+              </div>
+            ) : (
+              <>
+                {lessons.length > 0 ? (
+                  <div className="space-y-2">
+                    {lessons.map((lesson) => (
+                      <LessonItem 
+                        key={lesson.id}
+                        title={lesson.titulo}
+                        isCompleted={lesson.concluida}
+                        stats={{
+                          total: lesson.stats.total,
+                          hits: lesson.stats.hits,
+                          errors: lesson.stats.errors
+                        }}
+                        questoesIds={lesson.questoesIds}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    Nenhuma aula encontrada para esta disciplina.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>;
 };

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 // Interface para representar as tentativas de questões do usuário
@@ -123,6 +122,16 @@ export const saveUserQuestionAttempt = async (
     if (error) {
       console.error('Erro ao salvar tentativa de questão:', error);
       return false;
+    }
+
+    // Disparar evento personalizado para notificar que uma questão foi respondida
+    // Isso permitirá que o ProgressPanel atualize automaticamente
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('questionAnswered', {
+        detail: { questionId, isCorrect }
+      });
+      window.dispatchEvent(event);
+      console.log('Evento questionAnswered disparado:', { questionId, isCorrect });
     }
 
     return true;

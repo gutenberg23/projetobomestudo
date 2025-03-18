@@ -1,4 +1,3 @@
-
 import { Aula } from "../AulasTypes";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -38,8 +37,17 @@ export const useAulasFiltrados = (
 // Função para calcular o total de questões de uma aula, incluindo questões de seus tópicos
 export const calcularTotalQuestoes = async (aula: Aula): Promise<number> => {
   try {
-    // Iniciar com as questões diretamente associadas à aula
-    let totalQuestoes = aula.questoesIds?.length || 0;
+    // Usar um Set para armazenar IDs únicos de questões
+    const questoesUnicas = new Set<string>();
+    
+    // Adicionar as questões diretamente associadas à aula
+    if (aula.questoesIds && Array.isArray(aula.questoesIds)) {
+      aula.questoesIds.forEach(questaoId => {
+        if (questaoId && questaoId.trim() !== '') {
+          questoesUnicas.add(questaoId);
+        }
+      });
+    }
     
     // Buscar os tópicos associados a esta aula
     if (aula.topicosIds && aula.topicosIds.length > 0) {
@@ -50,17 +58,22 @@ export const calcularTotalQuestoes = async (aula: Aula): Promise<number> => {
       
       if (error) throw error;
       
-      // Somar questões de cada tópico
+      // Adicionar questões de cada tópico ao Set (evita duplicações)
       if (topicos) {
         for (const topico of topicos) {
-          if (topico.questoes_ids) {
-            totalQuestoes += topico.questoes_ids.length;
+          if (topico.questoes_ids && Array.isArray(topico.questoes_ids)) {
+            topico.questoes_ids.forEach(questaoId => {
+              if (questaoId && questaoId.trim() !== '') {
+                questoesUnicas.add(questaoId);
+              }
+            });
           }
         }
       }
     }
     
-    return totalQuestoes;
+    console.log(`Aula ${aula.id} - ${aula.titulo}: ${questoesUnicas.size} questões únicas`);
+    return questoesUnicas.size;
   } catch (error) {
     console.error("Erro ao calcular total de questões:", error);
     return 0;

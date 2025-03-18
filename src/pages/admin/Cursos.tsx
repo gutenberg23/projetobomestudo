@@ -31,16 +31,23 @@ const Cursos = () => {
   const [loading, setLoading] = useState(true);
 
   // Função para calcular o número total de questões para um curso
-  const calcularTotalQuestoes = async (curso: any) => {
+  const calcularTotalQuestoesCurso = async (curso: any) => {
     try {
       console.log(`Calculando questões para o curso: ${curso.titulo}`);
       
-      // Questões diretamente associadas ao curso
-      const questoesDiretas = curso.questoes_ids?.length || 0;
+      // Usar um Set para armazenar IDs únicos de questões
+      const questoesUnicas = new Set<string>();
+      
+      // Adicionar questões diretamente associadas ao curso
+      if (curso.questoes_ids && Array.isArray(curso.questoes_ids)) {
+        curso.questoes_ids.forEach((questaoId: string) => {
+          if (questaoId && questaoId.trim() !== '') {
+            questoesUnicas.add(questaoId);
+          }
+        });
+      }
       
       // Questões associadas aos tópicos do curso
-      let questoesTopicos = 0;
-      
       if (curso.topicos_ids && curso.topicos_ids.length > 0) {
         // Buscar dados de todos os tópicos de uma vez
         const { data: topicosData, error: topicosError } = await supabase
@@ -50,19 +57,21 @@ const Cursos = () => {
           
         if (topicosError) throw topicosError;
         
-        // Contar questões de todos os tópicos
+        // Adicionar questões de todos os tópicos ao Set
         if (topicosData) {
           topicosData.forEach(topico => {
             if (topico.questoes_ids && Array.isArray(topico.questoes_ids)) {
-              questoesTopicos += topico.questoes_ids.length;
+              topico.questoes_ids.forEach(questaoId => {
+                if (questaoId && questaoId.trim() !== '') {
+                  questoesUnicas.add(questaoId);
+                }
+              });
             }
           });
         }
       }
       
       // Questões associadas às disciplinas do curso
-      let questoesDisciplinas = 0;
-      
       if (curso.disciplinas_ids && curso.disciplinas_ids.length > 0) {
         // Buscar aulas de todas as disciplinas
         for (const disciplinaId of curso.disciplinas_ids) {
@@ -80,13 +89,17 @@ const Cursos = () => {
               .in('id', disciplina.aulas_ids);
               
             if (aulasData) {
-              // Contar questões diretamente associadas às aulas
+              // Adicionar questões diretamente associadas às aulas ao Set
               for (const aula of aulasData) {
                 if (aula.questoes_ids && Array.isArray(aula.questoes_ids)) {
-                  questoesDisciplinas += aula.questoes_ids.length;
+                  aula.questoes_ids.forEach(questaoId => {
+                    if (questaoId && questaoId.trim() !== '') {
+                      questoesUnicas.add(questaoId);
+                    }
+                  });
                 }
                 
-                // Contar questões dos tópicos das aulas
+                // Adicionar questões dos tópicos das aulas ao Set
                 if (aula.topicos_ids && aula.topicos_ids.length > 0) {
                   const { data: topicosAula } = await supabase
                     .from('topicos')
@@ -96,7 +109,11 @@ const Cursos = () => {
                   if (topicosAula) {
                     topicosAula.forEach(topico => {
                       if (topico.questoes_ids && Array.isArray(topico.questoes_ids)) {
-                        questoesDisciplinas += topico.questoes_ids.length;
+                        topico.questoes_ids.forEach(questaoId => {
+                          if (questaoId && questaoId.trim() !== '') {
+                            questoesUnicas.add(questaoId);
+                          }
+                        });
                       }
                     });
                   }
@@ -107,11 +124,9 @@ const Cursos = () => {
         }
       }
       
-      // Total de questões (evitando duplicações - lógica simplificada)
-      const total = questoesDiretas + questoesTopicos + questoesDisciplinas;
-      console.log(`Total de questões calculado: ${total}`);
-      
-      return total;
+      // Total de questões únicas
+      console.log(`Total de questões únicas calculado: ${questoesUnicas.size}`);
+      return questoesUnicas.size;
     } catch (error) {
       console.error("Erro ao calcular total de questões:", error);
       return 0;
@@ -128,9 +143,35 @@ const Cursos = () => {
       
       if (error) throw error;
       
+      // Buscar contagem de favoritos para cada curso
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('cursos_favoritos');
+      
+      if (profilesError) {
+        console.error("Erro ao buscar perfis:", profilesError);
+      }
+      
+      // Calcular contagem de favoritos para cada curso
+      const favoritosCount: Record<string, number> = {};
+      
+      if (profiles) {
+        profiles.forEach(profile => {
+          if (profile.cursos_favoritos && Array.isArray(profile.cursos_favoritos)) {
+            profile.cursos_favoritos.forEach(favorito => {
+              // Usar o ID diretamente, sem tentar extrair de um formato URL
+              favoritosCount[favorito] = (favoritosCount[favorito] || 0) + 1;
+            });
+          }
+        });
+      }
+      
+      console.log("Contagem de favoritos para cursos:", favoritosCount);
+      
       // Formatar os cursos e calcular contagens
       const cursosPromises = (data || []).map(async (item) => {
-        const totalQuestoes = await calcularTotalQuestoes(item);
+        // Usar a função melhorada para calcular o total de questões
+        const totalQuestoes = await calcularTotalQuestoesCurso(item);
         
         return {
           id: item.id,
@@ -139,10 +180,9 @@ const Cursos = () => {
           disciplinasIds: item.disciplinas_ids || [],
           aulasIds: item.aulas_ids || [],
           topicosIds: item.topicos_ids || [],
-          questoesIds: item.questoes_ids || [],
-          favoritos: item.favoritos || 0,
-          informacoesCurso: item.informacoes_curso || "",
-          totalQuestoes
+          questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)), // Criar array com o tamanho correto
+          favoritos: favoritosCount[item.id] || 0,
+          informacoesCurso: item.informacoes_curso || ""
         };
       });
       
@@ -202,7 +242,7 @@ const Cursos = () => {
       }
       
       // Atualizar o curso na lista com o novo número de questões calculado
-      const totalQuestoes = await calcularTotalQuestoes({
+      const totalQuestoes = await calcularTotalQuestoesCurso({
         ...updatedCurso,
         disciplinas_ids: updatedCurso.disciplinasIds,
         topicos_ids: updatedCurso.topicosIds,
