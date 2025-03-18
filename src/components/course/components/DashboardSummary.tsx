@@ -5,7 +5,7 @@ import { OverallStats, Subject } from "../types/editorialized";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, CheckIcon, XIcon, PencilIcon } from "lucide-react";
+import { CalendarIcon, CheckIcon, XIcon, PencilIcon, RefreshCw, Loader2 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,7 @@ interface DashboardSummaryProps {
   setPerformanceGoal: (value: number) => void;
   activeTab: string;
   subjects: Subject[];
+  loading?: boolean;
   simuladosStats?: {
     total: number;
     realizados: number;
@@ -36,6 +37,7 @@ export const DashboardSummary = ({
   setPerformanceGoal,
   activeTab,
   subjects,
+  loading,
   simuladosStats = {
     total: 0,
     realizados: 0,
@@ -103,6 +105,29 @@ export const DashboardSummary = ({
     const realId = extractIdFromFriendlyUrl(courseId);
     
     try {
+      // Verificar se a sessão é válida antes de tentar salvar
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.log("Erro ao verificar sessão:", sessionError);
+        toast({
+          title: "Erro",
+          description: "Não foi possível verificar sua sessão. Tente fazer login novamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!sessionData.session) {
+        console.log("Nenhuma sessão ativa encontrada");
+        toast({
+          title: "Sessão expirada",
+          description: "Sua sessão expirou. Por favor, faça login novamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       const { data: existingData, error: checkError } = await supabase
         .from('user_course_progress')
         .select('id')
@@ -198,7 +223,26 @@ export const DashboardSummary = ({
   return (
     <div className="mb-8 p-5 bg-white rounded-[10px]">
       <div className="flex flex-col gap-4 mb-4 text-[#272f3c]">
-        <h3 className="text-2xl font-bold">Resumo Geral</h3>
+        <div className="flex justify-between items-center">
+          <h3 className="text-2xl font-bold">Resumo Geral</h3>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (window.forceRefreshEdital) {
+                window.forceRefreshEdital();
+              }
+            }}
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Atualizar dados
+          </Button>
+        </div>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Meta de Aproveitamento:</span>

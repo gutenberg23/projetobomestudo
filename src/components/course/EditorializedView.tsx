@@ -14,6 +14,17 @@ import { RefreshCw, FileX, Loader2 } from "lucide-react";
 import { calculateOverallStats } from "./utils/statsCalculations";
 import { toast } from "@/components/ui/use-toast";
 
+// Declaração para o TypeScript reconhecer a propriedade global
+declare global {
+  interface Window {
+    forceRefreshEdital?: () => void;
+  }
+}
+
+interface EditorializedViewProps {
+  activeTab?: string;
+}
+
 // Interface para os resultados do simulado do usuário
 interface UserSimuladoResult {
   id: string;
@@ -43,7 +54,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
   from(table: 'user_simulado_results'): any;
 };
 
-export const EditorializedView = ({ activeTab = 'edital' }) => {
+export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewProps) => {
   const [performanceGoal, setPerformanceGoal] = useState<number>(70);
   const { subjects, loading, updateTopicProgress, forceRefresh } = useEditorializedData();
   const [simuladosStats, setSimuladosStats] = useState({
@@ -62,6 +73,14 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
   useEffect(() => {
     // Limpar qualquer cache do navegador relacionado ao edital
     if (typeof window !== 'undefined') {
+      // Expor a função forceRefresh globalmente para que o DashboardSummary possa acessá-la
+      window.forceRefreshEdital = () => {
+        if (forceRefresh) {
+          forceRefresh();
+          checkEditalExists();
+        }
+      };
+      
       // Forçar recarregamento dos dados do Supabase
       const clearCacheAndReload = async () => {
         try {
@@ -100,6 +119,11 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
       };
       
       clearCacheAndReload();
+      
+      // Limpar a função global quando o componente for desmontado
+      return () => {
+        delete window.forceRefreshEdital;
+      };
     }
   }, [user, courseId]); // Remover forceRefresh das dependências para evitar loop infinito
 
@@ -246,34 +270,6 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
 
   return (
     <div className="bg-[#f6f8fa] rounded-[10px] pb-5 px-[10px] md:px-5">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold">Edital Verticalizado</h2>
-          <p className="text-sm text-muted-foreground">
-            Acompanhe seu progresso no edital
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              if (forceRefresh) {
-                forceRefresh();
-                checkEditalExists();
-              }
-            }}
-            disabled={loading}
-          >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            Atualizar dados
-          </Button>
-        </div>
-      </div>
       {/* Só renderiza o DashboardSummary na aba de edital se houver edital */}
       {(activeTab !== 'edital' || (activeTab === 'edital' && hasEdital)) && (
         <DashboardSummary 
@@ -283,6 +279,7 @@ export const EditorializedView = ({ activeTab = 'edital' }) => {
           activeTab={activeTab}
           subjects={subjects}
           simuladosStats={simuladosStats}
+          loading={loading}
         />
       )}
 
