@@ -74,7 +74,7 @@ export function usePostsActions(state: PostsState) {
     setTags(post.tags ? post.tags.join(", ") : "");
     setMetaDescricao(post.metaDescription || "");
     setMetaKeywords(post.metaKeywords ? post.metaKeywords.join(", ") : "");
-    setTempoLeitura(post.readingTime ? post.readingTime.toString() : "");
+    setTempoLeitura(post.readingTime || "");
     setImagemDestaque(post.featuredImage || "");
     setRegiao(post.region || "");
     setEstado(post.state || "");

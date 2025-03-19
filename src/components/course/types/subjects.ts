@@ -9,7 +9,7 @@ export interface Subject {
 export interface Lesson {
   id: string;
   title: string;
-  duration: string | number; // Atualizando para aceitar string ou número
+  duration: string | number; // Aceita string ou número
   description?: string;
   sections?: Section[];
   question?: any;
@@ -20,8 +20,8 @@ export interface Section {
   id: string;
   title: string;
   isActive?: boolean;
-  contentType: "video" | "text" | "quiz";  // Atualizado para corresponder ao tipo em new/types.ts
-  duration: number;                        // Garantindo que seja number
+  contentType: "video" | "text" | "quiz";
+  duration: number;
   videoUrl?: string;
   textContent?: string;
   professorId?: string;

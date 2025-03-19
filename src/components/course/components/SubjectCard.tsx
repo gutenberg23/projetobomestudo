@@ -13,7 +13,7 @@ interface SubjectCardProps {
   onToggle: () => void;
 }
 
-// Simplified type definitions to avoid excessive type instantiation depth
+// Definições de tipo simplificadas para evitar profundidade excessiva de instanciação
 interface LessonStats {
   total: number;
   hits: number;
@@ -28,12 +28,8 @@ interface LessonData {
   stats: LessonStats;
 }
 
-// Simple flat types without circular references
-type DisciplinaData = Record<string, any>;
-type AulaData = Record<string, any>;
-type QuestaoData = Record<string, any>;
-type RespostaData = Record<string, any>;
-type UserProgressData = Record<string, any>;
+// Tipos simplificados sem referencias circulares
+type SimpleObject = Record<string, any>;
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
   subject,
@@ -167,7 +163,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   };
   
   // Processa os dados das aulas e busca estatísticas
-  const processAulas = async (aulasData: AulaData[]) => {
+  const processAulas = async (aulasData: SimpleObject[]) => {
     // Preparar as aulas com dados básicos
     const lessonsWithStats: LessonData[] = aulasData.map((aula) => ({
       id: aula.id,
@@ -265,7 +261,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               
               // Percorre as respostas (já ordenadas por data decrescente)
               // e guarda apenas a primeira ocorrência (mais recente) de cada questão
-              respostasData.forEach((resposta: RespostaData) => {
+              respostasData.forEach((resposta: SimpleObject) => {
                 if (!respostasMaisRecentes.has(resposta.questao_id)) {
                   respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
                 }

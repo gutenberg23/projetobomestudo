@@ -17,7 +17,7 @@ export interface BlogPost {
   metaDescription?: string;
   metaKeywords?: string[];
   featuredImage?: string;
-  readingTime?: string; // This needs to be string to match the data structure
+  readingTime?: string; // Mantido como string para corresponder à estrutura de dados
   relatedPosts?: string[];
   featured?: boolean;
   updatedAt?: string;
