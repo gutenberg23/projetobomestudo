@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, CheckCircle, XCircle, PieChart, Award } from "lucide-react";
 import { renderDonutChart } from '../utils/donutChart';
@@ -6,12 +5,12 @@ import { calculateSubjectTotals } from '../utils/statsCalculations';
 import { LessonItem } from './LessonItem';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { PostgrestSingleResponse, PostgrestResponse } from '@supabase/supabase-js';
 
-// Define simpler, non-recursive type structures
-interface LessonStats {
-  total: number;
-  hits: number;
-  errors: number;
+interface SubjectCardProps {
+  subject: any; 
+  isExpanded: boolean;
+  onToggle: () => void;
 }
 
 interface LessonData {
@@ -19,17 +18,20 @@ interface LessonData {
   titulo: string;
   concluida: boolean;
   questoesIds: string[];
-  stats: LessonStats;
+  stats: {
+    total: number;
+    hits: number;
+    errors: number;
+  };
 }
 
-// Simple interface for disciplina data
 interface DisciplinaData {
   id: string;
   titulo: string;
   aulas_ids?: string[];
+  [key: string]: any;
 }
 
-// Simple interface for aula data
 interface AulaData {
   id: string;
   titulo: string;
@@ -37,29 +39,34 @@ interface AulaData {
   id_disciplina?: string;
   disciplina?: string;
   questoes_ids?: string[];
+  [key: string]: any;
 }
 
-// Simple interface for questao data
 interface QuestaoData {
   id: string;
+  [key: string]: any;
 }
 
-// Simple interface for resposta data
 interface RespostaData {
   questao_id: string;
   is_correta: boolean;
   created_at: string;
+  [key: string]: any;
 }
 
-// Use simple key-value records instead of nested types
-interface LessonProgress {
-  completed: boolean;
-}
-
-interface SubjectCardProps {
-  subject: any; 
-  isExpanded: boolean;
-  onToggle: () => void;
+interface UserProgressData {
+  subjects_data: {
+    [subjectId: string]: {
+      lessons?: {
+        [lessonId: string]: {
+          completed: boolean;
+          [key: string]: any;
+        };
+      };
+      [key: string]: any;
+    };
+  };
+  [key: string]: any;
 }
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
@@ -99,11 +106,14 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 2: Buscar a disciplina do banco para obter aulas_ids
-      const { data: disciplinaData, error: disciplinaError } = await supabase
+      const disciplinaResponse: PostgrestSingleResponse<DisciplinaData> = await supabase
         .from('disciplinas')
         .select('*')
         .eq('id', subject.id)
         .single();
+      
+      const disciplinaData = disciplinaResponse.data;
+      const disciplinaError = disciplinaResponse.error;
       
       if (!disciplinaError && disciplinaData) {
         // Verificar se existe aulas_ids
@@ -114,35 +124,44 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 3: Buscar aulas que tenham referência à disciplina
-      const { data: aulasData, error: aulasError } = await supabase
+      const aulasResponse: PostgrestResponse<AulaData> = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina_id', subject.id);
       
+      const aulasData = aulasResponse.data;
+      const aulasError = aulasResponse.error;
+      
       if (!aulasError && aulasData && aulasData.length > 0) {
-        await processAulas(aulasData as AulaData[]);
+        await processAulas(aulasData);
         return;
       }
       
       // Abordagem 4: Tentar com outro possível nome de coluna
-      const { data: aulasData2, error: aulasError2 } = await supabase
+      const aulasResponse2: PostgrestResponse<AulaData> = await supabase
         .from('aulas')
         .select('*')
         .eq('id_disciplina', subject.id);
       
+      const aulasData2 = aulasResponse2.data;
+      const aulasError2 = aulasResponse2.error;
+      
       if (!aulasError2 && aulasData2 && aulasData2.length > 0) {
-        await processAulas(aulasData2 as AulaData[]);
+        await processAulas(aulasData2);
         return;
       }
       
       // Abordagem 5: Tentar com outro possível nome de coluna
-      const { data: aulasData3, error: aulasError3 } = await supabase
+      const aulasResponse3: PostgrestResponse<AulaData> = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina', subject.id);
       
+      const aulasData3 = aulasResponse3.data;
+      const aulasError3 = aulasResponse3.error;
+      
       if (!aulasError3 && aulasData3 && aulasData3.length > 0) {
-        await processAulas(aulasData3 as AulaData[]);
+        await processAulas(aulasData3);
         return;
       }
       
@@ -164,10 +183,13 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    const { data: aulasData, error: aulasError } = await supabase
+    const aulasResponse: PostgrestResponse<AulaData> = await supabase
       .from('aulas')
       .select('*')
       .in('id', aulaIds);
+    
+    const aulasData = aulasResponse.data;
+    const aulasError = aulasResponse.error;
     
     if (aulasError || !aulasData || aulasData.length === 0) {
       console.error('Erro ao buscar aulas por IDs:', aulasError);
@@ -175,7 +197,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    await processAulas(aulasData as AulaData[]);
+    await processAulas(aulasData);
   };
   
   // Processa os dados das aulas e busca estatísticas
@@ -197,12 +219,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     if (user?.id) {
       try {
         // Buscar dados do progresso do curso
-        const { data: userProgressData, error: progressError } = await supabase
+        const userProgressResponse: PostgrestSingleResponse<UserProgressData> = await supabase
           .from('user_course_progress')
           .select('subjects_data')
           .eq('user_id', user.id)
           .eq('course_id', subject.courseId || 'default')
           .single();
+        
+        const userProgressData = userProgressResponse.data;
+        const progressError = userProgressResponse.error;
         
         if (!progressError && userProgressData && userProgressData.subjects_data) {
           const subjectData = userProgressData.subjects_data[subject.id];
@@ -233,18 +258,22 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           // Se não encontrou questões diretamente, buscar na tabela de questões
           if (questoesIds.length === 0) {
             // Tentar com diferentes nomes de coluna
-            const { data: questoesData1 } = await supabase
+            const questoesResponse1: PostgrestResponse<QuestaoData> = await supabase
               .from('questoes')
               .select('id')
               .eq('aula_id', lesson.id);
             
+            const questoesData1 = questoesResponse1.data;
+            
             if (questoesData1 && questoesData1.length > 0) {
               questoesIds = questoesData1.map((q) => q.id);
             } else {
-              const { data: questoesData2 } = await supabase
+              const questoesResponse2: PostgrestResponse<QuestaoData> = await supabase
                 .from('questoes')
                 .select('id')
                 .eq('id_aula', lesson.id);
+              
+              const questoesData2 = questoesResponse2.data;
               
               if (questoesData2 && questoesData2.length > 0) {
                 questoesIds = questoesData2.map((q) => q.id);
@@ -255,12 +284,14 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           // Se encontrou questões, buscar respostas do aluno
           if (questoesIds.length > 0) {
             // Buscar todas as respostas do aluno para estas questões, incluindo a data de criação
-            const { data: respostasData } = await supabase
+            const respostasResponse: PostgrestResponse<RespostaData> = await supabase
               .from('respostas_alunos')
               .select('questao_id, is_correta, created_at')
               .eq('aluno_id', user.id)
               .in('questao_id', questoesIds)
               .order('created_at', { ascending: false });
+            
+            const respostasData = respostasResponse.data;
             
             if (respostasData && respostasData.length > 0) {
               // Filtrar para considerar apenas a resposta mais recente de cada questão

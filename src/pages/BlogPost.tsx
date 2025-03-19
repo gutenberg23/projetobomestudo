@@ -118,6 +118,7 @@ const BlogPostPage = () => {
   // Atualizar o título da página e adicionar meta tags dinâmicas para SEO
   useEffect(() => {
     if (post) {
+      // Atualizar título da página
       document.title = `${post.title} | BomEstudo`;
       
       // Atualizar meta description

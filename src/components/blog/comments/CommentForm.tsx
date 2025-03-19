@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { createComment } from '@/services/commentService';
@@ -26,7 +25,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
 }) => {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, supabaseUser } = useAuth();
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +55,8 @@ export const CommentForm: React.FC<CommentFormProps> = ({
         postId,
         userId: user.id,
         content: content.trim(),
-        authorName: authorName || user.nome || 'Usuário',
-        authorAvatar: authorAvatar || user.foto_perfil,
+        authorName: authorName || user.user_metadata?.name || 'Usuário',
+        authorAvatar: authorAvatar || user.user_metadata?.avatar_url,
         parentId
       });
 

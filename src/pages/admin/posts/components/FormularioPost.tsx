@@ -20,6 +20,10 @@ interface FormularioPostProps {
   onChangeResumo: (value: string) => void;
   conteudo: string;
   onChangeConteudo: (value: string) => void;
+  autor: string;
+  onChangeAutor: (value: string) => void;
+  autorAvatar: string;
+  onChangeAutorAvatar: (value: string) => void;
   categoria: string;
   onChangeCategoria: (value: string) => void;
   destacado: boolean;
@@ -52,6 +56,10 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
   onChangeResumo,
   conteudo,
   onChangeConteudo,
+  autor,
+  onChangeAutor,
+  autorAvatar,
+  onChangeAutorAvatar,
   categoria,
   onChangeCategoria,
   destacado,
@@ -98,6 +106,10 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
             onChangeTitulo={onChangeTitulo}
             resumo={resumo}
             onChangeResumo={onChangeResumo}
+            autor={autor}
+            onChangeAutor={onChangeAutor}
+            autorAvatar={autorAvatar}
+            onChangeAutorAvatar={onChangeAutorAvatar}
             categoria={categoria}
             onChangeCategoria={onChangeCategoria}
             tempoLeitura={tempoLeitura}
@@ -152,7 +164,7 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
             </Button>
             <Button 
               type="submit" 
-              className="bg-[#5f2ebe] hover:bg-[#4f21a0]"
+              className="bg-[#ea2be2] hover:bg-[#d029d5]"
             >
               {modo === ModoInterface.CRIAR ? "Criar Post" : "Salvar Alterações"}
             </Button>
