@@ -13,7 +13,7 @@ interface SubjectCardProps {
   onToggle: () => void;
 }
 
-// Definições de tipo simplificadas para evitar profundidade excessiva de instanciação
+// Definição de tipos básicos para evitar problemas de instanciação profunda
 interface LessonStats {
   total: number;
   hits: number;
@@ -28,7 +28,7 @@ interface LessonData {
   stats: LessonStats;
 }
 
-// Tipos simplificados sem referencias circulares
+// Tipo simples para evitar referências circulares
 type SimpleObject = Record<string, any>;
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
@@ -57,9 +57,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     setLoadingLessons(true);
     try {
       console.log('Buscando aulas para a disciplina:', subject.id);
-      
-      // Nota: Estamos usando uma abordagem alternativa, já que a estrutura do banco de dados
-      // pode variar dependendo da implementação
       
       // Abordagem 1: Verificar se a disciplina tem um array de IDs de aulas
       if (subject.aulas_ids && Array.isArray(subject.aulas_ids) && subject.aulas_ids.length > 0) {
@@ -261,7 +258,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               
               // Percorre as respostas (já ordenadas por data decrescente)
               // e guarda apenas a primeira ocorrência (mais recente) de cada questão
-              respostasData.forEach((resposta: SimpleObject) => {
+              respostasData.forEach((resposta) => {
                 if (!respostasMaisRecentes.has(resposta.questao_id)) {
                   respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
                 }

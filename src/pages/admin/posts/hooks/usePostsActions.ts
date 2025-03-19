@@ -106,11 +106,6 @@ export function usePostsActions(state: PostsState) {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
       
-      // Parse reading time as number but store as string
-      const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
-        Math.ceil(conteudo.split(' ').length / 200);
-      const readingTimeString = readingTimeNumber.toString();
-      
       // Convert related posts to array
       const relatedPostsArray = postsRelacionados.split(',')
         .map(id => id.trim())
@@ -139,7 +134,7 @@ export function usePostsActions(state: PostsState) {
         metaDescription: metaDescricao || resumo,
         metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
         featuredImage: imagemDestaque || undefined,
-        readingTime: readingTimeString,
+        readingTime: tempoLeitura,
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
         featured: destacado,
         // Add these required properties for new posts
