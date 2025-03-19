@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { BlogPost, Region, RegionOrEmpty } from "@/components/blog/types";
 import { ModoInterface, MOCK_POSTS } from "../types";
@@ -14,8 +15,6 @@ export function usePostsState() {
   const [titulo, setTitulo] = useState("");
   const [resumo, setResumo] = useState("");
   const [conteudo, setConteudo] = useState("");
-  const [autor, setAutor] = useState("");
-  const [autorAvatar, setAutorAvatar] = useState("");
   const [categoria, setCategoria] = useState("");
   const [destacado, setDestacado] = useState(false);
   const [tags, setTags] = useState("");
@@ -70,10 +69,6 @@ export function usePostsState() {
     setResumo,
     conteudo,
     setConteudo,
-    autor,
-    setAutor,
-    autorAvatar,
-    setAutorAvatar,
     categoria,
     setCategoria,
     destacado,

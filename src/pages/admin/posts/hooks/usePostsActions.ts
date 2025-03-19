@@ -1,11 +1,15 @@
+
 import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
 export function usePostsActions(state: PostsState) {
+  const { user } = useAuth();
+  
   const {
     posts,
     setPosts,
@@ -13,8 +17,6 @@ export function usePostsActions(state: PostsState) {
     setTitulo,
     setResumo,
     setConteudo,
-    setAutor,
-    setAutorAvatar,
     setCategoria,
     setDestacado,
     setTags,
@@ -29,8 +31,6 @@ export function usePostsActions(state: PostsState) {
     titulo,
     resumo,
     conteudo,
-    autor,
-    autorAvatar,
     categoria,
     destacado,
     tags,
@@ -50,8 +50,6 @@ export function usePostsActions(state: PostsState) {
     setTitulo("");
     setResumo("");
     setConteudo("");
-    setAutor("");
-    setAutorAvatar("");
     setCategoria("");
     setDestacado(false);
     setTags("");
@@ -71,14 +69,12 @@ export function usePostsActions(state: PostsState) {
     setTitulo(post.title);
     setResumo(post.summary);
     setConteudo(post.content);
-    setAutor(post.author);
-    setAutorAvatar(post.authorAvatar || "");
     setCategoria(post.category);
     setDestacado(post.featured || false);
     setTags(post.tags ? post.tags.join(", ") : "");
     setMetaDescricao(post.metaDescription || "");
     setMetaKeywords(post.metaKeywords ? post.metaKeywords.join(", ") : "");
-    setTempoLeitura(post.readingTime ? post.readingTime.toString() : "");
+    setTempoLeitura(post.readingTime || "");
     setImagemDestaque(post.featuredImage || "");
     setRegiao(post.region || "");
     setEstado(post.state || "");
@@ -91,6 +87,16 @@ export function usePostsActions(state: PostsState) {
   const salvarPost = async () => {
     setLoading(true);
     try {
+      if (!user) {
+        toast({
+          title: "Erro",
+          description: "Você precisa estar logado para salvar posts.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
       const slug = titulo
         .toLowerCase()
         .replace(/[^\w\s]/gi, '')
@@ -101,9 +107,9 @@ export function usePostsActions(state: PostsState) {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
       
-      // Parse reading time as number
-      const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
-        Math.ceil(conteudo.split(' ').length / 200);
+      // Parse reading time as number or calculate based on content length
+      const readingTimeValue = tempoLeitura ? tempoLeitura : 
+        Math.ceil(conteudo.split(' ').length / 200).toString();
       
       // Convert related posts to array
       const relatedPostsArray = postsRelacionados.split(',')
@@ -119,8 +125,8 @@ export function usePostsActions(state: PostsState) {
         title: titulo,
         summary: resumo,
         content: conteudo,
-        author: autor,
-        authorAvatar: autorAvatar || undefined,
+        author: user.nome || user.email || "Usuário BomEstudo",
+        authorAvatar: user.fotoPerfil || undefined,
         slug: slug,
         category: categoria,
         region: regiao as Region || undefined,
@@ -129,9 +135,11 @@ export function usePostsActions(state: PostsState) {
         metaDescription: metaDescricao || resumo,
         metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
         featuredImage: imagemDestaque || undefined,
-        readingTime: readingTimeNumber,
+        readingTime: readingTimeValue,
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
-        featured: destacado
+        featured: destacado,
+        commentCount: postEditando?.commentCount || 0,
+        likesCount: postEditando?.likesCount || 0
       };
 
       let novoPost: BlogPost | null;
