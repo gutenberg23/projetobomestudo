@@ -23,9 +23,12 @@ export const FormularioConteudo: React.FC<FormularioConteudoProps> = ({
           onChange={(e) => onChangeConteudo(e.target.value)} 
           placeholder="Conteúdo completo do post"
           required
-          className="h-48"
+          className="h-60"
           richText={true}
         />
+        <p className="text-xs text-gray-500 mt-1">
+          Use os controles acima para formatar o texto, adicionar links, imagens e tabelas.
+        </p>
       </div>
     </div>
   );

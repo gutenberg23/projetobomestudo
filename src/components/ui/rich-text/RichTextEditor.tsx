@@ -28,13 +28,16 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3, 4, 5, 6],
+        },
         bulletList: {
           keepMarks: true,
-          keepAttributes: false,
+          keepAttributes: true,
         },
         orderedList: {
           keepMarks: true,
-          keepAttributes: false,
+          keepAttributes: true,
         },
       }),
       TextStyle,
@@ -53,6 +56,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         linkOnPaste: true,
         HTMLAttributes: {
           class: 'text-[#ea2be2] underline',
+          rel: 'noopener noreferrer',
+          target: '_blank',
         },
       }),
       Table.configure({
@@ -94,7 +99,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         "min-h-[80px] w-full",
         className
       )}>
-        {editor && <EditorContent editor={editor} />}
+        <EditorContent editor={editor} className="prose max-w-none" />
       </div>
     </div>
   );

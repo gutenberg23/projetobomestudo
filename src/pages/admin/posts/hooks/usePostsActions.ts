@@ -116,8 +116,9 @@ export function usePostsActions(state: PostsState) {
         .map(k => k.trim())
         .filter(k => k.length > 0);
       
-      // Usar nome do usuário logado como autor
-      const autor = profile?.nome || user.email?.split('@')[0] || "Autor Desconhecido";
+      // Usar nome completo do usuário ou nome de exibição como autor
+      const nomeAutor = profile?.nome || profile?.nome_completo || profile?.display_name;
+      const autor = nomeAutor || user.email?.split('@')[0] || "Autor BomEstudo";
       const autorAvatar = profile?.foto_perfil || "";
       
       const postData = {
