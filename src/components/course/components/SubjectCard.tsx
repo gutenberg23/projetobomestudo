@@ -6,6 +6,7 @@ import { calculateSubjectTotals } from '../utils/statsCalculations';
 import { LessonItem } from './LessonItem';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { SupabaseAula, SupabaseResposta, SupabaseProgress } from '../types/editorialized';
 
 interface SubjectCardProps {
   subject: any; 
@@ -27,9 +28,6 @@ interface LessonData {
   questoesIds: string[];
   stats: LessonStats;
 }
-
-// Tipo simples para qualquer objeto
-type AnyObject = Record<string, any>;
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
   subject,
@@ -147,7 +145,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       .select('*')
       .in('id', aulaIds);
     
-    const aulasData = aulasResponse.data;
+    const aulasData = aulasResponse.data as SupabaseAula[] | null;
     const aulasError = aulasResponse.error;
     
     if (aulasError || !aulasData || aulasData.length === 0) {
@@ -160,7 +158,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   };
   
   // Processa os dados das aulas e busca estatísticas
-  const processAulas = async (aulasData: AnyObject[]) => {
+  const processAulas = async (aulasData: SupabaseAula[]) => {
     // Preparar as aulas com dados básicos
     const lessonsWithStats: LessonData[] = aulasData.map((aula) => ({
       id: aula.id,
@@ -185,7 +183,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           .eq('course_id', subject.courseId || 'default')
           .single();
         
-        const userProgressData = userProgressResponse.data;
+        const userProgressData = userProgressResponse.data as { subjects_data: SupabaseProgress['subjects_data'] } | null;
         const progressError = userProgressResponse.error;
         
         if (!progressError && userProgressData && userProgressData.subjects_data) {
@@ -250,7 +248,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               .in('questao_id', questoesIds)
               .order('created_at', { ascending: false });
             
-            const respostasData = respostasResponse.data;
+            const respostasData = respostasResponse.data as SupabaseResposta[] | null;
             
             if (respostasData && respostasData.length > 0) {
               // Filtrar para considerar apenas a resposta mais recente de cada questão
@@ -292,7 +290,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     };
     
     // Calcular estatísticas das aulas
-    lessons.forEach(lesson => {
+    for (const lesson of lessons) {
       if (lesson.stats) {
         lessonStats.questionsTotal += (lesson.stats.total || 0);
         lessonStats.questionsCorrect += (lesson.stats.hits || 0);
@@ -308,7 +306,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         lessonStats.questionsCorrect += hits;
         lessonStats.questionsWrong += errors;
       }
-    });
+    }
     
     // Log para depuração das estatísticas das aulas
     console.log(`Estatísticas das aulas para ${subject.name || subject.titulo}:`, lessonStats);

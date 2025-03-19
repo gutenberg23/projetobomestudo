@@ -35,3 +35,33 @@ export type OverallStats = {
   completedTopics: number;
   totalTopics: number;
 };
+
+// Tipos simples para dados do Supabase
+export type SupabaseAula = {
+  id: string;
+  titulo: string;
+  disciplina_id?: string | number;
+  questoes_ids?: string[];
+  [key: string]: any; // Para outros campos que podem existir
+};
+
+export type SupabaseResposta = {
+  questao_id: string;
+  is_correta: boolean;
+  created_at: string;
+  [key: string]: any; // Para outros campos que podem existir
+};
+
+export type SupabaseProgress = {
+  subjects_data?: Record<string, {
+    completed?: boolean;
+    lessons?: Record<string, {
+      completed?: boolean;
+    }>;
+    stats?: {
+      hits?: number;
+      errors?: number;
+    };
+  }>;
+  [key: string]: any; // Para outros campos que podem existir
+};
