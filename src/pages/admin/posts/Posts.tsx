@@ -4,7 +4,7 @@ import { usePostsState } from "./hooks/usePostsState";
 import { usePostsActions } from "./hooks/usePostsActions";
 import { ListagemPosts } from "./components/ListagemPosts";
 import { FormularioPost } from "./components/FormularioPost";
-import { ModoInterface, CATEGORIAS } from "./types";
+import { ModoInterface } from "./types";
 
 const Posts = () => {
   const state = usePostsState();
@@ -20,10 +20,6 @@ const Posts = () => {
     setResumo,
     conteudo,
     setConteudo,
-    autor,
-    setAutor,
-    autorAvatar,
-    setAutorAvatar,
     categoria,
     setCategoria,
     destacado,
@@ -53,14 +49,6 @@ const Posts = () => {
     excluirPost 
   } = usePostsActions(state);
 
-  // Inicializar a categoria com um valor padrão se estiver vazia
-  React.useEffect(() => {
-    if (!categoria && CATEGORIAS.length > 0) {
-      setCategoria(CATEGORIAS[0]);
-    }
-  }, [categoria, setCategoria]);
-
-  // Renderização condicional baseada no modo atual
   return (
     <div className="container mx-auto px-4 py-6">
       {modo === ModoInterface.LISTAR ? (
@@ -83,10 +71,6 @@ const Posts = () => {
           onChangeResumo={setResumo}
           conteudo={conteudo}
           onChangeConteudo={setConteudo}
-          autor={autor}
-          onChangeAutor={setAutor}
-          autorAvatar={autorAvatar}
-          onChangeAutorAvatar={setAutorAvatar}
           categoria={categoria}
           onChangeCategoria={setCategoria}
           destacado={destacado}

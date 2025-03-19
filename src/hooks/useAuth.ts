@@ -1,16 +1,27 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
 export interface AuthState {
   user: User | null;
+  profile: UserProfile | null;
   loading: boolean;
   error: Error | null;
+}
+
+export interface UserProfile {
+  id: string;
+  nome?: string;
+  email?: string;
+  role?: string;
+  foto_perfil?: string;
 }
 
 export const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
+    profile: null,
     loading: true,
     error: null,
   });
@@ -24,9 +35,33 @@ export const useAuth = () => {
         if (error) {
           throw error;
         }
+        
+        const user = session?.user || null;
+        
+        let profile: UserProfile | null = null;
+        
+        if (user) {
+          // Buscar o perfil do usuário
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          if (!profileError && profileData) {
+            profile = {
+              id: profileData.id,
+              nome: profileData.nome,
+              email: profileData.email,
+              role: profileData.role,
+              foto_perfil: profileData.foto_perfil
+            };
+          }
+        }
 
         setAuthState({
-          user: session?.user || null,
+          user,
+          profile,
           loading: false,
           error: null,
         });
@@ -34,8 +69,32 @@ export const useAuth = () => {
         // Configurar listener para mudanças de autenticação
         const { data: authListener } = supabase.auth.onAuthStateChange(
           async (event, session) => {
+            const user = session?.user || null;
+            
+            let profile: UserProfile | null = null;
+            
+            if (user) {
+              // Buscar o perfil do usuário
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+                
+              if (!profileError && profileData) {
+                profile = {
+                  id: profileData.id,
+                  nome: profileData.nome,
+                  email: profileData.email,
+                  role: profileData.role,
+                  foto_perfil: profileData.foto_perfil
+                };
+              }
+            }
+            
             setAuthState({
-              user: session?.user || null,
+              user,
+              profile,
               loading: false,
               error: null,
             });
@@ -48,6 +107,7 @@ export const useAuth = () => {
       } catch (error) {
         setAuthState({
           user: null,
+          profile: null,
           loading: false,
           error: error as Error,
         });
@@ -108,6 +168,7 @@ export const useAuth = () => {
 
   return {
     user: authState.user,
+    profile: authState.profile,
     loading: authState.loading,
     error: authState.error,
     signIn,

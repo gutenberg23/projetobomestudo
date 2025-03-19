@@ -1,7 +1,9 @@
+
 import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
@@ -13,8 +15,6 @@ export function usePostsActions(state: PostsState) {
     setTitulo,
     setResumo,
     setConteudo,
-    setAutor,
-    setAutorAvatar,
     setCategoria,
     setDestacado,
     setTags,
@@ -29,8 +29,6 @@ export function usePostsActions(state: PostsState) {
     titulo,
     resumo,
     conteudo,
-    autor,
-    autorAvatar,
     categoria,
     destacado,
     tags,
@@ -45,13 +43,13 @@ export function usePostsActions(state: PostsState) {
     setLoading
   } = state;
 
+  const { user, profile } = useAuth();
+
   // Iniciar criação de um novo post
   const iniciarCriacaoPost = () => {
     setTitulo("");
     setResumo("");
     setConteudo("");
-    setAutor("");
-    setAutorAvatar("");
     setCategoria("");
     setDestacado(false);
     setTags("");
@@ -71,8 +69,6 @@ export function usePostsActions(state: PostsState) {
     setTitulo(post.title);
     setResumo(post.summary);
     setConteudo(post.content);
-    setAutor(post.author);
-    setAutorAvatar(post.authorAvatar || "");
     setCategoria(post.category);
     setDestacado(post.featured || false);
     setTags(post.tags ? post.tags.join(", ") : "");
@@ -89,6 +85,15 @@ export function usePostsActions(state: PostsState) {
 
   // Salvar um post (novo ou editado)
   const salvarPost = async () => {
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "É necessário estar logado para salvar um post.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const slug = titulo
@@ -115,12 +120,16 @@ export function usePostsActions(state: PostsState) {
         .map(k => k.trim())
         .filter(k => k.length > 0);
       
+      // Usar nome do usuário logado como autor
+      const autor = profile?.nome || user.email?.split('@')[0] || "Autor Desconhecido";
+      const autorAvatar = profile?.foto_perfil || "";
+      
       const postData = {
         title: titulo,
         summary: resumo,
         content: conteudo,
         author: autor,
-        authorAvatar: autorAvatar || undefined,
+        authorAvatar: autorAvatar,
         slug: slug,
         category: categoria,
         region: regiao as Region || undefined,
