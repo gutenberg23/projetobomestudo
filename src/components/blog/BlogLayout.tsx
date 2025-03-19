@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { BlogHeader } from "./BlogHeader";
 import { CategoryFilter } from "./CategoryFilter";
 import { StateFilter } from "./StateFilter";
@@ -12,12 +12,12 @@ interface BlogLayoutProps {
   categories?: CategoryFilterType[];
   regions?: RegionFilterType[];
   states?: StateFilterType[];
-  selectedCategory?: string;
-  selectedRegion?: string;
-  selectedState?: string;
-  onCategoryChange?: (category: string) => void;
-  onRegionChange?: (region: string) => void;
-  onStateChange?: (state: string) => void;
+  selectedCategory?: string | null;
+  selectedRegion?: string | null;
+  selectedState?: string | null;
+  onCategoryChange?: (category: string | null) => void;
+  onRegionChange?: (region: string | null) => void;
+  onStateChange?: (state: string | null) => void;
   featuredPosts?: BlogPost[];
   latestPosts?: BlogPost[];
   showSidebar?: boolean;
@@ -40,9 +40,20 @@ export const BlogLayout: React.FC<BlogLayoutProps> = ({
   showSidebar = true,
   fullWidth = false
 }) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  
+  const handleSearch = () => {
+    // Implementação da busca
+    console.log("Buscando por:", searchTerm);
+  };
+  
   return (
     <div className="bg-[#f6f8fa] min-h-screen">
-      <BlogHeader />
+      <BlogHeader 
+        searchTerm={searchTerm} 
+        setSearchTerm={setSearchTerm} 
+        onSearch={handleSearch} 
+      />
       
       <div className={`container mx-auto px-4 py-8 ${fullWidth ? "max-w-none" : ""}`}>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
@@ -51,32 +62,43 @@ export const BlogLayout: React.FC<BlogLayoutProps> = ({
               {categories && categories.length > 0 && (
                 <CategoryFilter 
                   categories={categories}
-                  selectedCategory={selectedCategory}
-                  onCategoryChange={onCategoryChange}
+                  activeCategory={selectedCategory}
+                  onSelectCategory={onCategoryChange}
                 />
               )}
               
               {regions && regions.length > 0 && (
                 <RegionFilter 
                   regions={regions}
-                  selectedRegion={selectedRegion}
-                  onRegionChange={onRegionChange}
+                  activeRegion={selectedRegion}
+                  onSelectRegion={onRegionChange}
                 />
               )}
               
               {states && states.length > 0 && (
                 <StateFilter 
                   states={states}
-                  selectedState={selectedState}
-                  onStateChange={onStateChange}
+                  activeState={selectedState}
+                  onSelectState={onStateChange}
                 />
               )}
               
               {(featuredPosts || latestPosts) && (
-                <SidebarPosts 
-                  featuredPosts={featuredPosts}
-                  latestPosts={latestPosts}
-                />
+                <div>
+                  {featuredPosts && featuredPosts.length > 0 && (
+                    <SidebarPosts 
+                      posts={featuredPosts}
+                      title="Posts Destacados"
+                    />
+                  )}
+                  
+                  {latestPosts && latestPosts.length > 0 && (
+                    <SidebarPosts 
+                      posts={latestPosts}
+                      title="Posts Recentes"
+                    />
+                  )}
+                </div>
               )}
             </div>
           )}

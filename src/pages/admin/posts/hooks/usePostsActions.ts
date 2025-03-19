@@ -8,9 +8,9 @@ import { useAuth } from "@/hooks/useAuth";
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
 export function usePostsActions(state: PostsState) {
-  const { session } = useAuth();
-  const userEmail = session?.user?.email || "Usuário BomEstudo";
-  const userAvatar = session?.user?.user_metadata?.avatar_url || "";
+  const { user } = useAuth();
+  const userEmail = user?.email || "Usuário BomEstudo";
+  const userAvatar = user?.user_metadata?.avatar_url || "";
 
   const {
     posts,
@@ -107,9 +107,9 @@ export function usePostsActions(state: PostsState) {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
       
-      // Parse reading time as number
-      const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
-        Math.ceil(conteudo.split(' ').length / 200);
+      // Parse reading time as string
+      const readingTimeString = tempoLeitura || 
+        Math.ceil(conteudo.split(' ').length / 200).toString();
       
       // Convert related posts to array
       const relatedPostsArray = postsRelacionados.split(',')
@@ -127,6 +127,8 @@ export function usePostsActions(state: PostsState) {
         content: conteudo,
         author: userEmail,
         authorAvatar: userAvatar || undefined,
+        commentCount: postEditando?.commentCount || 0,
+        likesCount: postEditando?.likesCount || 0,
         slug: slug,
         category: categoria,
         region: regiao as Region || undefined,
@@ -135,7 +137,7 @@ export function usePostsActions(state: PostsState) {
         metaDescription: metaDescricao || resumo,
         metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
         featuredImage: imagemDestaque || undefined,
-        readingTime: readingTimeNumber,
+        readingTime: readingTimeString,
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
         featured: destacado
       };

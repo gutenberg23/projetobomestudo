@@ -1,13 +1,12 @@
 
 import React from "react";
 import { Region, RegionFilter as RegionFilterType } from "./types";
-import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 interface RegionFilterProps {
   regions: RegionFilterType[];
-  activeRegion: Region | null;
-  onSelectRegion: (region: Region | null) => void;
+  activeRegion: string | null;
+  onSelectRegion: (region: string | null) => void;
 }
 
 export const RegionFilter: React.FC<RegionFilterProps> = ({
@@ -21,7 +20,7 @@ export const RegionFilter: React.FC<RegionFilterProps> = ({
         {regions.map((region) => (
           <button
             key={region.id}
-            onClick={() => onSelectRegion(activeRegion === region.id ? null : region.value)}
+            onClick={() => onSelectRegion(activeRegion === region.id ? null : region.id)}
             className={cn(
               "px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-colors",
               activeRegion === region.id

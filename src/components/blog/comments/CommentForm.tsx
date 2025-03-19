@@ -5,18 +5,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { BlogComment } from "../types";
 
 interface CommentFormProps {
   postId: string;
+  parentId?: string;
   onSubmit: (comment: string) => Promise<void>;
+  onCommentAdded?: (comment: BlogComment) => void;
+  onCancel?: () => void;
 }
 
-export const CommentForm: React.FC<CommentFormProps> = ({ postId, onSubmit }) => {
+export const CommentForm: React.FC<CommentFormProps> = ({ 
+  postId, 
+  parentId, 
+  onSubmit, 
+  onCommentAdded,
+  onCancel
+}) => {
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  const { session } = useAuth();
-  const user = session?.user;
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,13 +95,22 @@ export const CommentForm: React.FC<CommentFormProps> = ({ postId, onSubmit }) =>
             className="resize-none mb-2"
             rows={3}
           />
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            {onCancel && (
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onCancel}
+              >
+                Cancelar
+              </Button>
+            )}
             <Button 
               type="submit" 
               disabled={isSubmitting || !comment.trim()}
               className="bg-[#5f2ebe] hover:bg-[#4a1fb0]"
             >
-              {isSubmitting ? "Enviando..." : "Comentar"}
+              {isSubmitting ? "Enviando..." : parentId ? "Responder" : "Comentar"}
             </Button>
           </div>
         </div>
