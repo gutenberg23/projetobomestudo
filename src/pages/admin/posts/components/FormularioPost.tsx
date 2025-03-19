@@ -56,10 +56,6 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
   onChangeResumo,
   conteudo,
   onChangeConteudo,
-  autor,
-  onChangeAutor,
-  autorAvatar,
-  onChangeAutorAvatar,
   categoria,
   onChangeCategoria,
   destacado,
@@ -106,10 +102,6 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
             onChangeTitulo={onChangeTitulo}
             resumo={resumo}
             onChangeResumo={onChangeResumo}
-            autor={autor}
-            onChangeAutor={onChangeAutor}
-            autorAvatar={autorAvatar}
-            onChangeAutorAvatar={onChangeAutorAvatar}
             categoria={categoria}
             onChangeCategoria={onChangeCategoria}
             tempoLeitura={tempoLeitura}

@@ -1,186 +1,50 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { 
-  MessageSquare, 
-  Heart, 
-  Clock, 
-  ArrowLeft, 
-  Tag, 
-  BookOpen, 
-  Share2, 
-  User,
-  Bookmark,
-  Calendar
-} from "lucide-react";
-import { format } from "date-fns";
+import { useParams, Link } from "react-router-dom";
+import { BlogLayout } from "@/components/blog/BlogLayout";
+import { fetchBlogPostBySlug, incrementLikes } from "@/services/blogService";
+import { BlogPost as BlogPostType } from "@/components/blog/types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { BlogPost } from "@/components/blog/types";
-import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
-import { BlogPostCard } from "@/components/blog/BlogPostCard";
-import { SidebarPosts } from "@/components/blog/SidebarPosts";
-import { LatestNews } from "@/components/blog/LatestNews";
-import { CATEGORIES } from "@/data/blogFilters";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchBlogPostBySlug, fetchBlogPosts, incrementLikes } from "@/services/blogService";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/components/ui/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { CommentList, CommentForm } from "@/components/blog/comments";
+import { useToast } from "@/components/ui/use-toast";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { ArrowLeftIcon, CalendarIcon, ClockIcon, ThumbsUpIcon } from "lucide-react";
 
-const BlogPostPage = () => {
+const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
-  const [isLiked, setIsLiked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
+  const [post, setPost] = useState<BlogPostType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
-  const [commentCount, setCommentCount] = useState(0);
-  const { user } = useAuth();
-  
-  // Buscar o post com base no slug
+  const [liked, setLiked] = useState(false);
+  const { toast } = useToast();
+
   useEffect(() => {
     const loadPost = async () => {
-      if (!slug) {
-        navigate('/blog');
-        return;
-      }
-
       setLoading(true);
       try {
-        // Buscar o post específico
-        const fetchedPost = await fetchBlogPostBySlug(slug);
-        
-        if (!fetchedPost) {
-          setError('Post não encontrado');
-          setLoading(false);
-          return;
+        if (slug) {
+          const postData = await fetchBlogPostBySlug(slug);
+          setPost(postData);
         }
-        
-        setPost(fetchedPost);
-        setCommentCount(fetchedPost.commentCount || 0);
-
-        // Buscar todos os posts para relacionados
-        const posts = await fetchBlogPosts();
-        setAllPosts(posts.length > 0 ? posts : MOCK_BLOG_POSTS);
-        
-        // Filtrar posts relacionados (mesma categoria, excluindo o atual)
-        const related = posts
-          .filter(p => p.id !== fetchedPost.id && p.category === fetchedPost.category)
-          .slice(0, 3);
-        
-        setRelatedPosts(related);
-        
-        // Verificar se o post está curtido
-        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
-        setIsLiked(likedPosts.includes(fetchedPost.id));
-        
-        // Verificar se o post está nos favoritos
-        const bookmarkedPosts = JSON.parse(localStorage.getItem('bookmarkedPosts') || '[]');
-        setIsBookmarked(bookmarkedPosts.includes(fetchedPost.id));
-        
-        setLoading(false);
       } catch (error) {
-        console.error('Erro ao carregar post:', error);
-        setError('Erro ao carregar o post');
+        console.error("Erro ao carregar post:", error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar o post. Tente novamente mais tarde.",
+          variant: "destructive"
+        });
+      } finally {
         setLoading(false);
       }
     };
 
     loadPost();
-  }, [slug, navigate]);
-  
-  // Encontrar posts relacionados - na mesma categoria ou com tags em comum
-  const relatedPostsList = post && allPosts.length > 0
-    ? allPosts.filter(p => 
-        p.id !== post.id && 
-        (p.category === post.category || 
-          (p.tags && post.tags && p.tags.some(tag => post.tags?.includes(tag))))
-      ).slice(0, 3) 
-    : [];
-  
-  // Posts da mesma categoria
-  const sameCategoryPosts = post && allPosts.length > 0
-    ? allPosts.filter(p => p.id !== post.id && p.category === post.category).slice(0, 4)
-    : [];
-  
-  // Posts mais recentes
-  const latestPosts = allPosts.length > 0
-    ? [...allPosts]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .filter(p => p.id !== post?.id)
-        .slice(0, 5)
-    : [];
-  
-  // Atualizar o título da página e adicionar meta tags dinâmicas para SEO
-  useEffect(() => {
-    if (post) {
-      // Atualizar título da página
-      document.title = `${post.title} | BomEstudo`;
-      
-      // Atualizar meta description
-      let metaDescription = document.querySelector('meta[name="description"]');
-      if (!metaDescription) {
-        metaDescription = document.createElement('meta');
-        metaDescription.setAttribute('name', 'description');
-        document.head.appendChild(metaDescription);
-      }
-      metaDescription.setAttribute('content', post.metaDescription || post.summary);
-      
-      // Adicionar meta keywords
-      let metaKeywords = document.querySelector('meta[name="keywords"]');
-      if (!metaKeywords) {
-        metaKeywords = document.createElement('meta');
-        metaKeywords.setAttribute('name', 'keywords');
-        document.head.appendChild(metaKeywords);
-      }
-      const keywords = [
-        post.category,
-        ...(post.tags || []),
-        'concurso público', 
-        'estudos', 
-        'BomEstudo'
-      ].join(', ');
-      metaKeywords.setAttribute('content', keywords);
-      
-      // Adicionar Open Graph para compartilhamento em redes sociais
-      let ogTitle = document.querySelector('meta[property="og:title"]');
-      if (!ogTitle) {
-        ogTitle = document.createElement('meta');
-        ogTitle.setAttribute('property', 'og:title');
-        document.head.appendChild(ogTitle);
-      }
-      ogTitle.setAttribute('content', post.title);
-      
-      let ogDescription = document.querySelector('meta[property="og:description"]');
-      if (!ogDescription) {
-        ogDescription = document.createElement('meta');
-        ogDescription.setAttribute('property', 'og:description');
-        document.head.appendChild(ogDescription);
-      }
-      ogDescription.setAttribute('content', post.summary);
-      
-      let ogImage = document.querySelector('meta[property="og:image"]');
-      if (!ogImage && post.featuredImage) {
-        ogImage = document.createElement('meta');
-        ogImage.setAttribute('property', 'og:image');
-        document.head.appendChild(ogImage);
-        ogImage.setAttribute('content', post.featuredImage);
-      }
-    }
-    
-    // Cleanup function
-    return () => {
-      document.title = 'BomEstudo';
-    };
-  }, [post]);
-  
+  }, [slug, toast]);
+
   const handleLike = async () => {
-    if (!post) return;
-    
+    if (!post || liked) return;
+
     try {
       const success = await incrementLikes(post.id);
       if (success) {
@@ -188,352 +52,166 @@ const BlogPostPage = () => {
           ...post,
           likesCount: post.likesCount + 1
         });
+        setLiked(true);
         toast({
-          title: "Artigo curtido!",
-          description: "Obrigado por curtir este artigo."
+          title: "Post curtido",
+          description: "Obrigado por curtir este post!"
         });
       }
     } catch (error) {
-      console.error('Erro ao curtir artigo:', error);
-      toast({
-        title: "Erro ao curtir",
-        description: "Não foi possível curtir este artigo. Tente novamente mais tarde.",
-        variant: "destructive"
-      });
+      console.error("Erro ao curtir post:", error);
     }
   };
 
-  const handleBookmark = () => {
-    if (!post) return;
-    
-    // Atualizar estado local
-    setIsBookmarked(!isBookmarked);
-    
-    // Atualizar localStorage
-    const bookmarkedPosts = JSON.parse(localStorage.getItem('bookmarkedPosts') || '[]');
-    
-    if (isBookmarked) {
-      // Remover dos favoritos
-      const updatedBookmarks = bookmarkedPosts.filter((id: string) => id !== post.id);
-      localStorage.setItem('bookmarkedPosts', JSON.stringify(updatedBookmarks));
-      toast({
-        title: "Artigo removido dos favoritos",
-        description: "Este artigo foi removido da sua lista de favoritos.",
-      });
-    } else {
-      // Adicionar aos favoritos
-      bookmarkedPosts.push(post.id);
-      localStorage.setItem('bookmarkedPosts', JSON.stringify(bookmarkedPosts));
-      toast({
-        title: "Artigo salvo nos favoritos",
-        description: "Este artigo foi adicionado à sua lista de favoritos.",
-      });
-    }
-  };
-  
-  const handleShare = () => {
-    if (navigator.share && post) {
-      navigator.share({
-        title: post.title,
-        text: post.summary,
-        url: window.location.href,
-      })
-      .catch((error) => console.log('Erro ao compartilhar', error));
-    } else {
-      // Fallback para navegadores que não suportam a API Web Share
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Link copiado",
-        description: "O link deste artigo foi copiado para a área de transferência.",
-      });
-    }
-  };
-  
   if (loading) {
     return (
-      <>
-        <Header />
-        <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold mb-4">Carregando...</h1>
-            <p className="mb-6">Aguarde um momento enquanto carregamos o artigo.</p>
+      <BlogLayout showSidebar={false} fullWidth={true}>
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-3/4" />
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <Skeleton className="h-4 w-[200px]" />
           </div>
-        </main>
-        <Footer />
-      </>
-    );
-  }
-  
-  if (!post) {
-    return (
-      <>
-        <Header />
-        <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold mb-4">Artigo não encontrado</h1>
-            <p className="mb-6">O artigo que você está procurando não existe ou foi removido.</p>
-            <Link to="/blog">
-              <Button>Voltar para o Blog</Button>
-            </Link>
+          <Skeleton className="h-[400px] w-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
           </div>
-        </main>
-        <Footer />
-      </>
+        </div>
+      </BlogLayout>
     );
   }
 
+  if (!post) {
+    return (
+      <BlogLayout showSidebar={false} fullWidth={true}>
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-bold text-[#272f3c] mb-4">Post não encontrado</h2>
+          <p className="text-[#67748a] mb-6">O post que você está procurando não existe ou foi removido.</p>
+          <Button asChild>
+            <Link to="/blog">
+              <ArrowLeftIcon className="mr-2 h-4 w-4" />
+              Voltar para o blog
+            </Link>
+          </Button>
+        </div>
+      </BlogLayout>
+    );
+  }
+
+  const formattedDate = post.createdAt
+    ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: ptBR })
+    : "";
+
   return (
-    <>
-      <Header />
-      <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            {/* Artigo */}
-            <article className="bg-white rounded-lg shadow-sm p-6 mb-8">
-              {/* Categoria */}
-              <Link 
-                to={`/blog/categoria/${post.category?.toLowerCase()}`} 
-                className="inline-block bg-primary/10 text-primary text-sm px-3 py-1 rounded-full mb-4"
-              >
-                {post.category}
-              </Link>
-              
-              {/* Título */}
-              <h1 className="text-3xl font-bold text-[#272f3c] mb-4">{post.title}</h1>
-              
-              {/* Metadados do post */}
-              <div className="flex flex-wrap items-center text-sm text-[#67748a] mb-6">
-                <div className="flex items-center mr-6 mb-2">
-                  <User className="h-4 w-4 mr-2" />
-                  <Link to={`/blog/autor/${encodeURIComponent(post.author.toLowerCase())}`} className="hover:text-primary hover:underline">
-                    {post.author}
-                  </Link>
-                </div>
-                <div className="flex items-center mr-6 mb-2">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
-                </div>
-                <div className="flex items-center mr-6 mb-2">
-                  <Clock className="h-4 w-4 mr-2" />
-                  <span>{post.readingTime || '5 min de leitura'}</span>
-                </div>
-                <div className="flex items-center mr-6 mb-2">
-                  <Heart className="h-4 w-4 mr-2" />
-                  <span>{post.likesCount} curtidas</span>
-                </div>
-              </div>
-              
-              {/* Imagem destacada */}
-              {post.featuredImage && (
-                <div className="mb-6">
-                  <img 
-                    src={post.featuredImage} 
-                    alt={post.title} 
-                    className="w-full h-auto rounded-lg object-cover"
-                  />
-                </div>
-              )}
-              
-              {/* Resumo */}
-              <div className="mb-6 text-lg font-medium text-[#67748a] border-l-4 border-primary pl-4 py-2">
-                {post.summary}
-              </div>
-              
-              {/* Conteúdo */}
-              <div 
-                className="prose max-w-none mb-8" 
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
-              
-              {/* Tags */}
-              {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-6">
-                  {post.tags.map((tag, index) => (
-                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                      <Tag className="w-3 h-3 mr-1" />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-              
-              {/* Ações do post */}
-              <div className="flex flex-wrap items-center justify-between pt-4 border-t border-gray-200">
-                <div className="flex items-center space-x-4 mb-4 sm:mb-0">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleLike}
-                    className={`flex items-center ${isLiked ? 'text-red-500 border-red-500' : ''}`}
-                  >
-                    <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-red-500' : ''}`} />
-                    {isLiked ? 'Curtido' : 'Curtir'}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleBookmark}
-                    className={`flex items-center ${isBookmarked ? 'text-primary border-primary' : ''}`}
-                  >
-                    <Bookmark className={`h-4 w-4 mr-2 ${isBookmarked ? 'fill-primary' : ''}`} />
-                    {isBookmarked ? 'Salvo' : 'Salvar'}
-                  </Button>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleShare}
-                  className="flex items-center"
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Compartilhar
-                </Button>
-              </div>
-            </article>
-            
-            {/* Posts relacionados */}
-            {relatedPostsList.length > 0 && (
-              <div className="mb-8 bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-bold text-[#272f3c] mb-4">Posts relacionados</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {relatedPostsList.map(relatedPost => (
-                    <div key={relatedPost.id} className="group">
-                      <div className="relative overflow-hidden rounded-lg mb-3">
-                        {relatedPost.featuredImage ? (
-                          <img 
-                            src={relatedPost.featuredImage} 
-                            alt={relatedPost.title} 
-                            className="w-full h-40 object-cover rounded-md group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-md">
-                            <BookOpen className="h-10 w-10 text-gray-300" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-                          <div className="p-3 w-full">
-                            <span className="text-xs text-white bg-primary/80 px-2 py-1 rounded-full">
-                              {relatedPost.category}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <Link 
-                        to={`/blog/${relatedPost.slug}`}
-                        className="text-base font-medium text-[#272f3c] group-hover:text-primary line-clamp-2 mb-2 block"
-                      >
-                        {relatedPost.title}
-                      </Link>
-                      <p className="text-sm text-gray-500 line-clamp-2 mb-3">
-                        {relatedPost.summary}
-                      </p>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <div className="flex items-center">
-                          <User className="h-3 w-3 mr-1" />
-                          <Link 
-                            to={`/blog/autor/${encodeURIComponent(relatedPost.author.toLowerCase())}`}
-                            className="hover:text-primary hover:underline"
-                          >
-                            {relatedPost.author}
-                          </Link>
-                        </div>
-                        <div className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          <span>{relatedPost.readingTime || '5 min'}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+    <BlogLayout showSidebar={false} fullWidth={true}>
+      <div className="bg-[#f6f8fa] max-w-4xl mx-auto">
+        <div className="mb-6">
+          <Link 
+            to="/blog" 
+            className="inline-flex items-center text-[#5f2ebe] hover:text-[#4a1fb0] transition-colors"
+          >
+            <ArrowLeftIcon className="mr-2 h-4 w-4" />
+            Voltar para o blog
+          </Link>
+        </div>
+        
+        {post.featuredImage && (
+          <div className="relative w-full h-[300px] md:h-[400px] mb-6 rounded-lg overflow-hidden">
+            <img 
+              src={post.featuredImage} 
+              alt={post.title} 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
           </div>
-          
-          <div className="space-y-8">
-            {/* Informações do autor */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">Sobre o autor</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="flex items-start">
-                  {post.authorAvatar ? (
-                    <img 
-                      src={post.authorAvatar} 
-                      alt={post.author} 
-                      className="w-12 h-12 rounded-full mr-4 object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-                      <User className="h-6 w-6 text-primary" />
-                    </div>
-                  )}
-                  <div>
-                    <Link 
-                      to={`/blog/autor/${encodeURIComponent(post.author.toLowerCase())}`}
-                      className="font-medium hover:text-primary hover:underline block mb-2"
-                    >
-                      {post.author}
-                    </Link>
-                    <p className="text-sm text-gray-500">
-                      Especialista em concursos públicos e autor de conteúdo no BomEstudo.
-                    </p>
-                  </div>
+        )}
+        
+        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+          <div className="space-y-4">
+            <h1 className="text-3xl font-bold text-[#272f3c]">{post.title}</h1>
+            
+            <div className="flex flex-wrap items-center text-sm text-[#67748a] gap-3">
+              <div className="flex items-center">
+                <Avatar className="h-8 w-8 mr-2">
+                  <AvatarImage src={post.authorAvatar} />
+                  <AvatarFallback>{post.author.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <span>{post.author}</span>
+              </div>
+              
+              {formattedDate && (
+                <div className="flex items-center gap-1">
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>{formattedDate}</span>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+              
+              {post.readingTime && (
+                <div className="flex items-center gap-1">
+                  <ClockIcon className="h-4 w-4" />
+                  <span>{post.readingTime} min de leitura</span>
+                </div>
+              )}
+              
+              {post.category && (
+                <div className="bg-[#f0f0f6] px-2 py-1 rounded text-[#5f2ebe]">
+                  {post.category}
+                </div>
+              )}
+            </div>
             
-            {/* Posts da mesma categoria */}
-            {sameCategoryPosts.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold">
-                    Mais sobre {post.category}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <ul className="space-y-4">
-                    {sameCategoryPosts.map(categoryPost => (
-                      <li key={categoryPost.id}>
-                        <Link 
-                          to={`/blog/${categoryPost.slug}`}
-                          className="text-sm font-medium hover:text-primary hover:underline"
-                        >
-                          {categoryPost.title}
-                        </Link>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {format(new Date(categoryPost.createdAt), "dd/MM/yyyy")}
-                        </p>
-                      </li>
+            <p className="text-[#67748a] text-lg font-medium">{post.summary}</p>
+            
+            <div 
+              className="prose prose-lg max-w-none text-[#67748a] mt-6"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+            
+            <div className="pt-6 flex items-center justify-between border-t border-gray-100 mt-8">
+              <div className="flex items-center gap-4">
+                <Button 
+                  onClick={handleLike} 
+                  disabled={liked}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <ThumbsUpIcon className="h-4 w-4" />
+                  <span>{post.likesCount}</span>
+                </Button>
+                
+                {post.tags && post.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {post.tags.map((tag, index) => (
+                      <span 
+                        key={index} 
+                        className="bg-gray-100 text-[#67748a] px-2 py-1 rounded text-xs"
+                      >
+                        #{tag}
+                      </span>
                     ))}
-                  </ul>
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <Link 
-                      to={`/blog/categoria/${post.category?.toLowerCase()}`}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      Ver todos os artigos sobre {post.category}
-                    </Link>
                   </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {/* Últimas notícias */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">Últimas notícias</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <LatestNews posts={latestPosts} title="" />
-              </CardContent>
-            </Card>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      </main>
-      <Footer />
-    </>
+        
+        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+          <h3 className="text-xl font-bold text-[#272f3c] mb-4">Comentários ({post.commentCount})</h3>
+          <CommentForm 
+            postId={post.id}
+            onSubmit={async () => {
+              // Implementar envio de comentário
+              return;
+            }}
+          />
+          <CommentList postId={post.id} />
+        </div>
+      </div>
+    </BlogLayout>
   );
 };
 
-export default BlogPostPage;
+export default BlogPost;

@@ -1,11 +1,17 @@
+
 import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
 export function usePostsActions(state: PostsState) {
+  const { session } = useAuth();
+  const userEmail = session?.user?.email || "Usuário BomEstudo";
+  const userAvatar = session?.user?.user_metadata?.avatar_url || "";
+
   const {
     posts,
     setPosts,
@@ -50,8 +56,8 @@ export function usePostsActions(state: PostsState) {
     setTitulo("");
     setResumo("");
     setConteudo("");
-    setAutor("");
-    setAutorAvatar("");
+    setAutor(userEmail);
+    setAutorAvatar(userAvatar);
     setCategoria("");
     setDestacado(false);
     setTags("");
@@ -71,8 +77,8 @@ export function usePostsActions(state: PostsState) {
     setTitulo(post.title);
     setResumo(post.summary);
     setConteudo(post.content);
-    setAutor(post.author);
-    setAutorAvatar(post.authorAvatar || "");
+    setAutor(userEmail);
+    setAutorAvatar(userAvatar);
     setCategoria(post.category);
     setDestacado(post.featured || false);
     setTags(post.tags ? post.tags.join(", ") : "");
@@ -119,8 +125,8 @@ export function usePostsActions(state: PostsState) {
         title: titulo,
         summary: resumo,
         content: conteudo,
-        author: autor,
-        authorAvatar: autorAvatar || undefined,
+        author: userEmail,
+        authorAvatar: userAvatar || undefined,
         slug: slug,
         category: categoria,
         region: regiao as Region || undefined,
@@ -137,16 +143,36 @@ export function usePostsActions(state: PostsState) {
       let novoPost: BlogPost | null;
       
       if (postEditando) {
-        // Atualiza o post existente no banco de dados
-        novoPost = await updateBlogPost(postEditando.id, postData);
-        if (novoPost) {
-          // Atualiza o post na lista local
-          setPosts(posts.map(post => post.id === postEditando.id ? novoPost! : post));
-          toast({
-            title: "Post atualizado",
-            description: "O post foi atualizado com sucesso.",
-            variant: "default"
-          });
+        // Verificar se o ID é um UUID válido antes de tentar atualizar
+        // Isso tratará o problema com os IDs do formato "1", "2" nos posts mockados
+        const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postEditando.id);
+        
+        if (!isValidUuid) {
+          // Se o ID não for um UUID válido, criar um novo post em vez de atualizar
+          console.log(`ID ${postEditando.id} não é um UUID válido, criando um novo post em vez de atualizar`);
+          novoPost = await createBlogPost(postData);
+          
+          if (novoPost) {
+            // Adiciona o post na lista local, mantendo o post mockado original (não podemos excluí-lo)
+            setPosts([novoPost, ...posts]);
+            toast({
+              title: "Post criado",
+              description: "O post foi criado com sucesso.",
+              variant: "default"
+            });
+          }
+        } else {
+          // É um UUID válido, podemos atualizar
+          novoPost = await updateBlogPost(postEditando.id, postData);
+          if (novoPost) {
+            // Atualiza o post na lista local
+            setPosts(posts.map(post => post.id === postEditando.id ? novoPost! : post));
+            toast({
+              title: "Post atualizado",
+              description: "O post foi atualizado com sucesso.",
+              variant: "default"
+            });
+          }
         }
       } else {
         // Adiciona um novo post no banco de dados
@@ -189,8 +215,12 @@ export function usePostsActions(state: PostsState) {
     if (window.confirm("Tem certeza que deseja excluir este post?")) {
       setLoading(true);
       try {
-        const success = await deleteBlogPost(id);
-        if (success) {
+        // Verificar se o ID é um UUID válido antes de tentar excluir
+        const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        
+        if (!isValidUuid) {
+          // Se o ID não for um UUID válido, apenas remover da lista local
+          console.log(`ID ${id} não é um UUID válido, removendo apenas localmente`);
           setPosts(posts.filter(post => post.id !== id));
           toast({
             title: "Post excluído",
@@ -198,11 +228,22 @@ export function usePostsActions(state: PostsState) {
             variant: "default"
           });
         } else {
-          toast({
-            title: "Erro",
-            description: "Ocorreu um erro ao excluir o post. Tente novamente.",
-            variant: "destructive"
-          });
+          // É um UUID válido, podemos excluir do banco
+          const success = await deleteBlogPost(id);
+          if (success) {
+            setPosts(posts.filter(post => post.id !== id));
+            toast({
+              title: "Post excluído",
+              description: "O post foi excluído com sucesso.",
+              variant: "default"
+            });
+          } else {
+            toast({
+              title: "Erro",
+              description: "Ocorreu um erro ao excluir o post. Tente novamente.",
+              variant: "destructive"
+            });
+          }
         }
       } catch (error) {
         console.error("Erro ao excluir post:", error);
