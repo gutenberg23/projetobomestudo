@@ -3,7 +3,7 @@ import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
@@ -121,8 +121,9 @@ export function usePostsActions(state: PostsState) {
         .map(k => k.trim())
         .filter(k => k.length > 0);
       
+      // Usar nome do usuário diretamente do objeto user de AuthContext
       const authorName = user.nome || user.email || "Usuário BomEstudo";
-      const authorAvatar = user.fotoPerfil;
+      const authorAvatar = user.foto_perfil;
       
       const postData: Omit<BlogPost, "id" | "createdAt"> = {
         title: titulo,

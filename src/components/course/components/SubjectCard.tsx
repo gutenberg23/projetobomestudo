@@ -26,7 +26,6 @@ interface DisciplinaData {
   id: string;
   titulo: string;
   aulas_ids?: string[];
-  [key: string]: any;
 }
 
 interface AulaData {
@@ -36,35 +35,21 @@ interface AulaData {
   id_disciplina?: string;
   disciplina?: string;
   questoes_ids?: string[];
-  [key: string]: any;
 }
 
 interface QuestaoData {
   id: string;
-  [key: string]: any;
 }
 
 interface RespostaData {
   questao_id: string;
   is_correta: boolean;
   created_at: string;
-  [key: string]: any;
 }
 
-// Use Record to avoid deep type nesting
+// Use simple key-value records instead of nested types
 interface LessonProgress {
   completed: boolean;
-  [key: string]: any;
-}
-
-interface SubjectProgress {
-  lessons?: Record<string, LessonProgress>;
-  [key: string]: any;
-}
-
-interface UserProgressData {
-  subjects_data: Record<string, SubjectProgress>;
-  [key: string]: any;
 }
 
 interface SubjectCardProps {
@@ -131,7 +116,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('disciplina_id', subject.id);
       
       if (!aulasError && aulasData && aulasData.length > 0) {
-        await processAulas(aulasData);
+        await processAulas(aulasData as AulaData[]);
         return;
       }
       
@@ -142,7 +127,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('id_disciplina', subject.id);
       
       if (!aulasError2 && aulasData2 && aulasData2.length > 0) {
-        await processAulas(aulasData2);
+        await processAulas(aulasData2 as AulaData[]);
         return;
       }
       
@@ -153,7 +138,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('disciplina', subject.id);
       
       if (!aulasError3 && aulasData3 && aulasData3.length > 0) {
-        await processAulas(aulasData3);
+        await processAulas(aulasData3 as AulaData[]);
         return;
       }
       
@@ -186,7 +171,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    await processAulas(aulasData);
+    await processAulas(aulasData as AulaData[]);
   };
   
   // Processa os dados das aulas e busca estatísticas
