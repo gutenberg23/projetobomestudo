@@ -249,6 +249,20 @@ const BlogPostPage = () => {
     }
   };
   
+  const wrapTablesWithContainer = (content: string) => {
+    const tableRegex = /<table[^>]*>[\s\S]*?<\/table>/g;
+    const tables = content.match(tableRegex);
+    
+    if (!tables) return content;
+    
+    tables.forEach((table) => {
+      const wrapper = `<div class="overflow-x-auto">${table}</div>`;
+      content = content.replace(table, wrapper);
+    });
+    
+    return content;
+  };
+  
   if (loading) {
     return (
       <>
@@ -340,43 +354,40 @@ const BlogPostPage = () => {
               </div>
               
               {/* Conteúdo */}
-              <div 
-                className="prose max-w-none mb-8" 
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
+              <div className="mb-8">
+                <div 
+                  className="prose prose-lg max-w-none overflow-hidden" 
+                  dangerouslySetInnerHTML={{ __html: wrapTablesWithContainer(post.content) }}
+                />
+              </div>
               
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-6">
+                <div className="flex flex-wrap gap-2 mt-6 mb-4">
                   {post.tags.map((tag, index) => (
-                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                      <Tag className="w-3 h-3 mr-1" />
+                    <Link 
+                      key={index} 
+                      to={`/blog?tag=${encodeURIComponent(tag)}`}
+                      className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-primary/80 to-primary text-white hover:shadow-md transition-all"
+                    >
+                      <Tag className="w-3.5 h-3.5 mr-1.5" />
                       {tag}
-                    </span>
+                    </Link>
                   ))}
                 </div>
               )}
               
               {/* Ações do post */}
-              <div className="flex flex-wrap items-center justify-between pt-4 border-t border-gray-200">
+              <div className="flex flex-wrap items-center justify-between pt-4 border-t border-gray-200 mb-4">
                 <div className="flex items-center space-x-4 mb-4 sm:mb-0">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={handleLike}
-                    className={`flex items-center ${isLiked ? 'text-red-500 border-red-500' : ''}`}
+                    className={`flex items-center transition-all duration-300 ${isLiked ? 'text-red-500 border-red-500' : ''}`}
                   >
                     <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-red-500' : ''}`} />
                     {isLiked ? 'Curtido' : 'Curtir'}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleBookmark}
-                    className={`flex items-center ${isBookmarked ? 'text-primary border-primary' : ''}`}
-                  >
-                    <Bookmark className={`h-4 w-4 mr-2 ${isBookmarked ? 'fill-primary' : ''}`} />
-                    {isBookmarked ? 'Salvo' : 'Salvar'}
                   </Button>
                 </div>
                 <Button 
