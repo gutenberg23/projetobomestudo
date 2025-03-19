@@ -22,12 +22,14 @@ interface LessonData {
   stats: LessonStats;
 }
 
+// Simple interface for disciplina data
 interface DisciplinaData {
   id: string;
   titulo: string;
   aulas_ids?: string[];
 }
 
+// Simple interface for aula data
 interface AulaData {
   id: string;
   titulo: string;
@@ -37,10 +39,12 @@ interface AulaData {
   questoes_ids?: string[];
 }
 
+// Simple interface for questao data
 interface QuestaoData {
   id: string;
 }
 
+// Simple interface for resposta data
 interface RespostaData {
   questao_id: string;
   is_correta: boolean;
