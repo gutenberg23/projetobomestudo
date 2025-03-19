@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, CheckCircle, XCircle, PieChart, Award } from "lucide-react";
 import { renderDonutChart } from '../utils/donutChart';
@@ -5,7 +6,6 @@ import { calculateSubjectTotals } from '../utils/statsCalculations';
 import { LessonItem } from './LessonItem';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { PostgrestSingleResponse, PostgrestResponse } from '@supabase/supabase-js';
 
 interface SubjectCardProps {
   subject: any; 
@@ -13,61 +13,27 @@ interface SubjectCardProps {
   onToggle: () => void;
 }
 
+// Simplified type definitions to avoid excessive type instantiation depth
+interface LessonStats {
+  total: number;
+  hits: number;
+  errors: number;
+}
+
 interface LessonData {
   id: string;
   titulo: string;
   concluida: boolean;
   questoesIds: string[];
-  stats: {
-    total: number;
-    hits: number;
-    errors: number;
-  };
+  stats: LessonStats;
 }
 
-interface DisciplinaData {
-  id: string;
-  titulo: string;
-  aulas_ids?: string[];
-  [key: string]: any;
-}
-
-interface AulaData {
-  id: string;
-  titulo: string;
-  disciplina_id?: string;
-  id_disciplina?: string;
-  disciplina?: string;
-  questoes_ids?: string[];
-  [key: string]: any;
-}
-
-interface QuestaoData {
-  id: string;
-  [key: string]: any;
-}
-
-interface RespostaData {
-  questao_id: string;
-  is_correta: boolean;
-  created_at: string;
-  [key: string]: any;
-}
-
-interface UserProgressData {
-  subjects_data: {
-    [subjectId: string]: {
-      lessons?: {
-        [lessonId: string]: {
-          completed: boolean;
-          [key: string]: any;
-        };
-      };
-      [key: string]: any;
-    };
-  };
-  [key: string]: any;
-}
+// Simple flat types without circular references
+type DisciplinaData = Record<string, any>;
+type AulaData = Record<string, any>;
+type QuestaoData = Record<string, any>;
+type RespostaData = Record<string, any>;
+type UserProgressData = Record<string, any>;
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
   subject,
@@ -106,7 +72,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 2: Buscar a disciplina do banco para obter aulas_ids
-      const disciplinaResponse: PostgrestSingleResponse<DisciplinaData> = await supabase
+      const disciplinaResponse = await supabase
         .from('disciplinas')
         .select('*')
         .eq('id', subject.id)
@@ -124,7 +90,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 3: Buscar aulas que tenham referência à disciplina
-      const aulasResponse: PostgrestResponse<AulaData> = await supabase
+      const aulasResponse = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina_id', subject.id);
@@ -138,7 +104,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 4: Tentar com outro possível nome de coluna
-      const aulasResponse2: PostgrestResponse<AulaData> = await supabase
+      const aulasResponse2 = await supabase
         .from('aulas')
         .select('*')
         .eq('id_disciplina', subject.id);
@@ -152,7 +118,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 5: Tentar com outro possível nome de coluna
-      const aulasResponse3: PostgrestResponse<AulaData> = await supabase
+      const aulasResponse3 = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina', subject.id);
@@ -183,7 +149,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    const aulasResponse: PostgrestResponse<AulaData> = await supabase
+    const aulasResponse = await supabase
       .from('aulas')
       .select('*')
       .in('id', aulaIds);
@@ -219,7 +185,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     if (user?.id) {
       try {
         // Buscar dados do progresso do curso
-        const userProgressResponse: PostgrestSingleResponse<UserProgressData> = await supabase
+        const userProgressResponse = await supabase
           .from('user_course_progress')
           .select('subjects_data')
           .eq('user_id', user.id)
@@ -258,7 +224,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           // Se não encontrou questões diretamente, buscar na tabela de questões
           if (questoesIds.length === 0) {
             // Tentar com diferentes nomes de coluna
-            const questoesResponse1: PostgrestResponse<QuestaoData> = await supabase
+            const questoesResponse1 = await supabase
               .from('questoes')
               .select('id')
               .eq('aula_id', lesson.id);
@@ -268,7 +234,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
             if (questoesData1 && questoesData1.length > 0) {
               questoesIds = questoesData1.map((q) => q.id);
             } else {
-              const questoesResponse2: PostgrestResponse<QuestaoData> = await supabase
+              const questoesResponse2 = await supabase
                 .from('questoes')
                 .select('id')
                 .eq('id_aula', lesson.id);
@@ -284,7 +250,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           // Se encontrou questões, buscar respostas do aluno
           if (questoesIds.length > 0) {
             // Buscar todas as respostas do aluno para estas questões, incluindo a data de criação
-            const respostasResponse: PostgrestResponse<RespostaData> = await supabase
+            const respostasResponse = await supabase
               .from('respostas_alunos')
               .select('questao_id, is_correta, created_at')
               .eq('aluno_id', user.id)

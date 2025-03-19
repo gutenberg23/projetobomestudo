@@ -1,3 +1,4 @@
+
 export interface BlogPost {
   id: string;
   title: string;
@@ -16,7 +17,7 @@ export interface BlogPost {
   metaDescription?: string;
   metaKeywords?: string[];
   featuredImage?: string;
-  readingTime?: string;
+  readingTime?: string; // This needs to be string to match the data structure
   relatedPosts?: string[];
   featured?: boolean;
   updatedAt?: string;

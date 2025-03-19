@@ -106,9 +106,10 @@ export function usePostsActions(state: PostsState) {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
       
-      // Parse reading time as number
+      // Parse reading time as number but store as string
       const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
         Math.ceil(conteudo.split(' ').length / 200);
+      const readingTimeString = readingTimeNumber.toString();
       
       // Convert related posts to array
       const relatedPostsArray = postsRelacionados.split(',')
@@ -138,9 +139,12 @@ export function usePostsActions(state: PostsState) {
         metaDescription: metaDescricao || resumo,
         metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
         featuredImage: imagemDestaque || undefined,
-        readingTime: readingTimeNumber,
+        readingTime: readingTimeString,
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
-        featured: destacado
+        featured: destacado,
+        // Add these required properties for new posts
+        commentCount: 0,
+        likesCount: 0
       };
 
       let novoPost: BlogPost | null;
