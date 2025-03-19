@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserQuestionAttempts, calculateUserQuestionStats, UserQuestionAttempt } from "./utils/userQuestionStats";
 import { supabase } from "@/integrations/supabase/client";
+import { BookOpenIcon } from "lucide-react";
 
 interface ProgressPanelProps {
   subjectsFromCourse?: any[];
@@ -283,11 +284,14 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
         totalWrongAnswers={totalWrongAnswers}
       />
       
-      <div className="space-y-4">
-        <h3 className="text-lg font-medium text-[rgba(38,47,60,1)]">Disciplinas</h3>
+      <div className="space-y-3">
+        <h3 className="text-base font-medium text-[rgba(38,47,60,1)] flex items-center gap-2">
+          <BookOpenIcon className="w-4 h-4 text-[#5f2ebe]" />
+          Disciplinas
+        </h3>
         
         {displaySubjects.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
+          <div className="text-center py-3 text-gray-500 text-sm">
             Nenhuma disciplina disponível.
           </div>
         ) : (

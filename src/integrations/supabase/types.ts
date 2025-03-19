@@ -111,6 +111,139 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_comments: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          content: string
+          author_name: string
+          author_avatar: string | null
+          likes_count: number
+          parent_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          content: string
+          author_name: string
+          author_avatar?: string | null
+          likes_count?: number
+          parent_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          content?: string
+          author_name?: string
+          author_avatar?: string | null
+          likes_count?: number
+          parent_id?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blog_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "blog_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blog_comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      blog_posts: {
+        Row: {
+          id: string
+          title: string
+          summary: string
+          content: string
+          author: string
+          author_avatar: string | null
+          comment_count: number
+          likes_count: number
+          created_at: string
+          slug: string
+          category: string
+          region: string | null
+          state: string | null
+          tags: string[] | null
+          meta_description: string | null
+          meta_keywords: string[] | null
+          featured_image: string | null
+          reading_time: number | null
+          related_posts: string[] | null
+          featured: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          summary: string
+          content: string
+          author: string
+          author_avatar?: string | null
+          comment_count?: number
+          likes_count?: number
+          created_at?: string
+          slug: string
+          category: string
+          region?: string | null
+          state?: string | null
+          tags?: string[] | null
+          meta_description?: string | null
+          meta_keywords?: string[] | null
+          featured_image?: string | null
+          reading_time?: number | null
+          related_posts?: string[] | null
+          featured?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          summary?: string
+          content?: string
+          author?: string
+          author_avatar?: string | null
+          comment_count?: number
+          likes_count?: number
+          created_at?: string
+          slug?: string
+          category?: string
+          region?: string | null
+          state?: string | null
+          tags?: string[] | null
+          meta_description?: string | null
+          meta_keywords?: string[] | null
+          featured_image?: string | null
+          reading_time?: number | null
+          related_posts?: string[] | null
+          featured?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cargos: {
         Row: {
           created_at: string
@@ -852,6 +985,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      increment_blog_post_comments: {
+        Args: {
+          post_id: string
+        }
+        Returns: undefined
+      }
+      increment_blog_post_likes: {
+        Args: {
+          post_id: string
+        }
+        Returns: undefined
+      }
+      increment_comment_likes: {
+        Args: {
+          comment_id: string
+        }
+        Returns: undefined
+      }
       table_exists: {
         Args: {
           table_name: string
@@ -863,6 +1014,8 @@ export type Database = {
           p_user_id: string
           p_question_id: string
           p_is_correct: boolean
+          p_answer_text: string
+          p_time_spent_seconds: number
         }
         Returns: undefined
       }

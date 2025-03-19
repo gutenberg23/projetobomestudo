@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
 import { useToast } from "@/hooks/use-toast";
+import { useEditorializedData } from "../hooks/useEditorializedData";
 
 interface DashboardSummaryProps {
   overallStats: OverallStats;
@@ -220,6 +221,8 @@ export const DashboardSummary = ({
     return Math.round(simuladosStats.hits / simuladosStats.questionsCount * 100);
   };
 
+  const { saveAllDataToDatabase } = useEditorializedData();
+
   return (
     <div className="mb-8 p-5 bg-white rounded-[10px]">
       <div className="flex flex-col gap-4 mb-4 text-[#272f3c]">
@@ -229,19 +232,26 @@ export const DashboardSummary = ({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
+              onClick={async () => {
                 if (userId !== 'guest' && courseId) {
                   const realId = extractIdFromFriendlyUrl(courseId);
-                  // Salvar todos os dados importantes
-                  saveUserDataToDatabase('performance_goal', performanceGoal);
+                  
+                  // Salvar a meta de aproveitamento e a data da prova
+                  await saveUserDataToDatabase('performance_goal', performanceGoal);
                   if (examDate) {
-                    saveUserDataToDatabase('exam_date', examDate.toISOString());
+                    await saveUserDataToDatabase('exam_date', examDate.toISOString());
                   }
-                  toast({
-                    title: "Sucesso",
-                    description: "Seus dados foram salvos com sucesso!",
-                    variant: "default"
-                  });
+                  
+                  // Salvar todos os dados de progresso dos tópicos
+                  const success = await saveAllDataToDatabase();
+                  
+                  if (success) {
+                    toast({
+                      title: "Sucesso",
+                      description: "Seus dados foram salvos com sucesso!",
+                      variant: "default"
+                    });
+                  }
                 } else if (userId === 'guest') {
                   toast({
                     title: "Atenção",
@@ -392,13 +402,13 @@ export const DashboardSummary = ({
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Acertos</span>
-                  <span className="font-semibold text-green-600">
+                  <span className="font-semibold text-[#5f2ebe]">
                     {overallStats.totalHits}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Erros</span>
-                  <span className="font-semibold text-red-600">
+                  <span className="font-semibold text-[#ffac33]">
                     {overallStats.totalErrors}
                   </span>
                 </div>
@@ -460,13 +470,13 @@ export const DashboardSummary = ({
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Acertos</span>
-                  <span className="font-semibold text-green-600">
+                  <span className="font-semibold text-[#5f2ebe]">
                     {simuladosStats.hits}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Erros</span>
-                  <span className="font-semibold text-red-600">
+                  <span className="font-semibold text-[#ffac33]">
                     {simuladosStats.errors}
                   </span>
                 </div>

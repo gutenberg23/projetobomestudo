@@ -37,7 +37,13 @@ export const StatisticsCard = ({
     name: 'Pendente',
     value: 100 - progressPercentage
   }];
-  const COLORS = ['#f11ce3', '#E0E0E0'];
+  const DONUT_COLORS = ['#5f2ebe', '#cecfcd'];
+
+  // Colors for the bar chart
+  const BAR_COLORS = {
+    acertos: '#5f2ebe',
+    erros: '#ffac33'
+  };
 
   // Data for stacked bar chart
   const selectedSubjectData = subjects.find(s => s.name === selectedSubject)?.topics.map(topic => ({
@@ -45,18 +51,21 @@ export const StatisticsCard = ({
     acertos: topic.hits,
     erros: topic.exercisesDone - topic.hits
   })) || [];
-  return <div className="mt-4 mb-4 p-4 bg-white rounded-[10px] shadow-sm my-[15px] py-[17px]">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-left text-2xl font-bold text-[#282f3c]">
-          Minhas Estatísticas
-        </h3>
-        <button onClick={toggleExpanded} className="text-[#f11ce3] hover:bg-[#fce7fc] p-2 rounded-full">
+  return <div className={`bg-gradient-to-br from-[#5f2ebe10] to-[#5f2ebe20] rounded-[16px] ${isExpanded ? 'p-4 my-[15px] py-[17px]' : 'p-0 mb-4 py-0'}`}>
+      <div className={`flex justify-between items-center ${isExpanded ? 'mb-4' : 'p-4'}`}>
+        <div className="flex items-center gap-3">
+          <div className="bg-[#5f2ebe] w-1 h-8 rounded-full"></div>
+          <h3 className="text-left text-2xl font-bold bg-gradient-to-r from-[#5f2ebe] to-[#8a5ee0] text-transparent bg-clip-text">
+            Minhas Estatísticas
+          </h3>
+        </div>
+        <button onClick={toggleExpanded} className="text-[#5f2ebe] hover:bg-[#f0ebff] p-2 rounded-full transition-all duration-300">
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </button>
       </div>
 
       {isExpanded && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-[#f6f8fa] p-4 rounded-[10px] py-[15px]">
+          <div className="bg-white p-4 rounded-[14px] py-[15px]">
             <h3 className="font-semibold text-center mb-4">
               Aproveitamento por Disciplina
             </h3>
@@ -67,7 +76,7 @@ export const StatisticsCard = ({
                   <PolarAngleAxis dataKey="subject" tick={{
                 fontSize: window.innerWidth < 768 ? 10 : 12
               }} />
-                  <Radar name="Aproveitamento" dataKey="value" stroke="#f11ce3" fill="#f11ce3" fillOpacity={0.6} />
+                  <Radar name="Aproveitamento" dataKey="value" stroke="#5f2ebe" fill="#5f2ebe" fillOpacity={0.6} />
                   <Tooltip contentStyle={{
                 fontSize: window.innerWidth < 768 ? 10 : 12
               }} />
@@ -76,7 +85,7 @@ export const StatisticsCard = ({
             </div>
           </div>
           
-          <div className="bg-[#f6f8fa] p-4 rounded-[10px]">
+          <div className="bg-white p-4 rounded-[14px]">
             <h3 className="font-semibold text-center mb-4">
               Progresso Geral
             </h3>
@@ -84,7 +93,7 @@ export const StatisticsCard = ({
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                    {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                    {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />)}
                   </Pie>
                   <Tooltip contentStyle={{
                 fontSize: window.innerWidth < 768 ? 10 : 12
@@ -97,7 +106,7 @@ export const StatisticsCard = ({
             </div>
           </div>
 
-          <div className="col-span-1 md:col-span-2 bg-[#f6f8fa] p-4 rounded-[10px]">
+          <div className="col-span-1 md:col-span-2 bg-white p-4 rounded-[14px]">
             <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
               <h3 className="font-semibold text-center">
                 Distribuição de Acertos e Erros por Tópico
@@ -128,8 +137,8 @@ export const StatisticsCard = ({
                   <Legend wrapperStyle={{
                 fontSize: window.innerWidth < 768 ? 10 : 12
               }} />
-                  <Bar dataKey="acertos" stackId="a" fill="#54cd5d" name="Acertos" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="erros" stackId="a" fill="#e33e4e" name="Erros" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="acertos" stackId="a" fill={BAR_COLORS.acertos} name="Acertos" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="erros" stackId="a" fill={BAR_COLORS.erros} name="Erros" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

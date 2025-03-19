@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { BlogLayout } from "@/components/blog/BlogLayout";
 import { BlogList } from "@/components/blog/BlogList";
-import { BlogHeader } from "@/components/blog/BlogHeader";
 import { FeaturedPosts } from "@/components/blog/FeaturedPosts";
 import { StateFilter } from "@/components/blog/StateFilter";
 import { CategoryFilter } from "@/components/blog/CategoryFilter";
@@ -10,18 +8,42 @@ import { SidebarPosts } from "@/components/blog/SidebarPosts";
 import { LatestNews } from "@/components/blog/LatestNews";
 import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
 import { STATES, CATEGORIES } from "@/data/blogFilters";
-import { MessageSquare, Heart, Newspaper, Flame, Calendar } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { fetchBlogPosts } from "@/services/blogService";
+import { BlogPost } from "@/components/blog/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TrendingUp, MessageSquare } from "lucide-react";
 
 const Blog = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeState, setActiveState] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [filteredPosts, setFilteredPosts] = useState(MOCK_BLOG_POSTS);
+  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
+  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Buscar posts do banco de dados
+  useEffect(() => {
+    const loadPosts = async () => {
+      setLoading(true);
+      try {
+        const posts = await fetchBlogPosts();
+        setAllPosts(posts.length > 0 ? posts : MOCK_BLOG_POSTS);
+        setFilteredPosts(posts.length > 0 ? posts : MOCK_BLOG_POSTS);
+      } catch (error) {
+        console.error("Erro ao carregar posts do blog:", error);
+        setAllPosts(MOCK_BLOG_POSTS);
+        setFilteredPosts(MOCK_BLOG_POSTS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPosts();
+  }, []);
 
   // Aplicar filtros aos posts
   useEffect(() => {
-    let result = MOCK_BLOG_POSTS;
+    let result = [...allPosts];
 
     // Filtrar por termo de busca
     if (searchTerm) {
@@ -50,29 +72,21 @@ const Blog = () => {
     }
     
     setFilteredPosts(result);
-  }, [searchTerm, activeState, activeCategory]);
+  }, [searchTerm, activeState, activeCategory, allPosts]);
 
   // Posts destacados para o carrossel
-  const featuredPosts = MOCK_BLOG_POSTS.filter(post => post.featured).slice(0, 3);
+  const featuredPosts = allPosts.filter(post => post.featured).slice(0, 3);
 
   // Posts mais populares (baseado em curtidas)
-  const popularPosts = [...MOCK_BLOG_POSTS].sort((a, b) => b.likesCount - a.likesCount).slice(0, 5);
+  const popularPosts = [...allPosts].sort((a, b) => b.likesCount - a.likesCount).slice(0, 5);
 
   // Posts mais comentados
-  const mostCommentedPosts = [...MOCK_BLOG_POSTS].sort((a, b) => b.commentCount - a.commentCount).slice(0, 5);
+  const mostCommentedPosts = [...allPosts].sort((a, b) => b.commentCount - a.commentCount).slice(0, 5);
 
   // Posts mais recentes
-  const latestPosts = [...MOCK_BLOG_POSTS]
+  const latestPosts = [...allPosts]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 4);
-
-  const handleSearch = () => {
-    // O filtro já é aplicado pelo useEffect
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
 
   const handleStateSelect = (stateId: string | null) => {
     setActiveState(stateId);
@@ -82,54 +96,49 @@ const Blog = () => {
     setActiveCategory(categoryId);
   };
 
+  if (loading) {
+    return (
+      <BlogLayout>
+        <div className="space-y-8">
+          <Skeleton className="h-12 w-full" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-64 w-full" />
+              <div className="space-y-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton key={i} className="h-40 w-full" />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-6">
+              <Skeleton className="h-64 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          </div>
+        </div>
+      </BlogLayout>
+    );
+  }
+
   return (
     <BlogLayout>
-      <BlogHeader searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSearch={handleSearch} />
-      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          {/* Filtro de estados */}
+        <div className="lg:col-span-3">
+          {/* Filtro de estados - agora ocupa toda a largura */}
           <StateFilter 
             states={STATES} 
             activeState={activeState} 
             onSelectState={handleStateSelect} 
           />
-          
+        </div>
+        
+        <div className="lg:col-span-2">
           {/* Posts em destaque (apenas na página inicial sem filtros) */}
-          {!searchTerm && !activeState && !activeCategory && (
+          {!searchTerm && !activeState && !activeCategory && featuredPosts.length > 0 && (
             <FeaturedPosts posts={featuredPosts} />
           )}
           
-          {/* Próximos concursos */}
-          {!searchTerm && !activeState && !activeCategory && (
-            <div className="mb-8">
-              <Card>
-                <CardHeader className="bg-[#ede7f9]/50 pb-2">
-                  <CardTitle className="flex items-center text-lg text-[#272f3c]">
-                    <Calendar className="h-5 w-5 mr-2 text-[#5f2ebe]" />
-                    Próximos concursos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4">
-                  <LatestNews 
-                    posts={MOCK_BLOG_POSTS.filter(post => post.category === "Concursos").slice(0, 4)} 
-                    title="" 
-                    viewAllLink="/blog/categoria/concursos" 
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-          
-          {/* Lista de posts filtrados */}
-          <BlogList 
-            posts={filteredPosts} 
-            postsPerPage={6} 
-            title={searchTerm || activeState || activeCategory ? "Resultados da busca" : "Todos os artigos"} 
-          />
-        </div>
-        
-        <div>
           {/* Filtro de categorias */}
           <CategoryFilter 
             categories={CATEGORIES} 
@@ -137,36 +146,45 @@ const Blog = () => {
             onSelectCategory={handleCategorySelect} 
           />
           
+          {/* Listagem de posts */}
+          <div className="mt-6">
+            <BlogList posts={filteredPosts} />
+            
+            {filteredPosts.length === 0 && (
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <p className="text-gray-500">Nenhum post encontrado com os filtros selecionados.</p>
+                <button 
+                  className="mt-4 text-primary hover:underline"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setActiveState(null);
+                    setActiveCategory(null);
+                  }}
+                >
+                  Limpar filtros
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="space-y-8">
           {/* Posts populares */}
           <SidebarPosts 
+            title="Posts Populares" 
             posts={popularPosts} 
-            title="Posts populares" 
-            icon={<Flame className="h-5 w-5 mr-2 text-[#5f2ebe]" />} 
+            icon={<TrendingUp className="h-5 w-5 mr-2 text-primary" />}
           />
           
           {/* Posts mais comentados */}
           <SidebarPosts 
+            title="Mais Comentados" 
             posts={mostCommentedPosts} 
-            title="Mais comentados" 
-            icon={<MessageSquare className="h-5 w-5 mr-2 text-[#5f2ebe]" />} 
+            icon={<MessageSquare className="h-5 w-5 mr-2 text-primary" />}
           />
           
-          {/* Últimas notícias (versão lateral) */}
-          <Card className="mb-6">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center text-lg text-[#272f3c]">
-                <Newspaper className="h-5 w-5 mr-2 text-[#5f2ebe]" />
-                Últimas notícias
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <LatestNews 
-                posts={latestPosts} 
-                title="" 
-                viewAllLink="/blog" 
-              />
-            </CardContent>
-          </Card>
+          {/* Últimas notícias */}
+          <LatestNews posts={latestPosts} />
         </div>
       </div>
     </BlogLayout>

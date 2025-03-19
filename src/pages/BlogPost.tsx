@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
@@ -24,19 +23,79 @@ import { SidebarPosts } from "@/components/blog/SidebarPosts";
 import { LatestNews } from "@/components/blog/LatestNews";
 import { CATEGORIES } from "@/data/blogFilters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { fetchBlogPostBySlug, fetchBlogPosts, incrementLikes } from "@/services/blogService";
+import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [post, setPost] = useState<BlogPost | null>(null);
+  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
+  const [commentCount, setCommentCount] = useState(0);
+  const { user } = useAuth();
   
-  // Encontrar o post com base no slug
-  const post = MOCK_BLOG_POSTS.find(post => post.slug === slug);
+  // Buscar o post com base no slug
+  useEffect(() => {
+    const loadPost = async () => {
+      if (!slug) {
+        navigate('/blog');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        // Buscar o post específico
+        const fetchedPost = await fetchBlogPostBySlug(slug);
+        
+        if (!fetchedPost) {
+          setError('Post não encontrado');
+          setLoading(false);
+          return;
+        }
+        
+        setPost(fetchedPost);
+        setCommentCount(fetchedPost.commentCount || 0);
+
+        // Buscar todos os posts para relacionados
+        const posts = await fetchBlogPosts();
+        setAllPosts(posts.length > 0 ? posts : MOCK_BLOG_POSTS);
+        
+        // Filtrar posts relacionados (mesma categoria, excluindo o atual)
+        const related = posts
+          .filter(p => p.id !== fetchedPost.id && p.category === fetchedPost.category)
+          .slice(0, 3);
+        
+        setRelatedPosts(related);
+        
+        // Verificar se o post está curtido
+        const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+        setIsLiked(likedPosts.includes(fetchedPost.id));
+        
+        // Verificar se o post está nos favoritos
+        const bookmarkedPosts = JSON.parse(localStorage.getItem('bookmarkedPosts') || '[]');
+        setIsBookmarked(bookmarkedPosts.includes(fetchedPost.id));
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Erro ao carregar post:', error);
+        setError('Erro ao carregar o post');
+        setLoading(false);
+      }
+    };
+
+    loadPost();
+  }, [slug, navigate]);
   
   // Encontrar posts relacionados - na mesma categoria ou com tags em comum
-  const relatedPosts = post 
-    ? MOCK_BLOG_POSTS.filter(p => 
+  const relatedPostsList = post && allPosts.length > 0
+    ? allPosts.filter(p => 
         p.id !== post.id && 
         (p.category === post.category || 
           (p.tags && post.tags && p.tags.some(tag => post.tags?.includes(tag))))
@@ -44,15 +103,17 @@ const BlogPostPage = () => {
     : [];
   
   // Posts da mesma categoria
-  const sameCategoryPosts = post
-    ? MOCK_BLOG_POSTS.filter(p => p.id !== post.id && p.category === post.category).slice(0, 4)
+  const sameCategoryPosts = post && allPosts.length > 0
+    ? allPosts.filter(p => p.id !== post.id && p.category === post.category).slice(0, 4)
     : [];
   
   // Posts mais recentes
-  const latestPosts = [...MOCK_BLOG_POSTS]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .filter(p => p.id !== post?.id)
-    .slice(0, 5);
+  const latestPosts = allPosts.length > 0
+    ? [...allPosts]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .filter(p => p.id !== post?.id)
+        .slice(0, 5)
+    : [];
   
   // Atualizar o título da página e adicionar meta tags dinâmicas para SEO
   useEffect(() => {
@@ -100,265 +161,378 @@ const BlogPostPage = () => {
         ogDescription.setAttribute('property', 'og:description');
         document.head.appendChild(ogDescription);
       }
-      ogDescription.setAttribute('content', post.metaDescription || post.summary);
+      ogDescription.setAttribute('content', post.summary);
       
-      let ogUrl = document.querySelector('meta[property="og:url"]');
-      if (!ogUrl) {
-        ogUrl = document.createElement('meta');
-        ogUrl.setAttribute('property', 'og:url');
-        document.head.appendChild(ogUrl);
+      let ogImage = document.querySelector('meta[property="og:image"]');
+      if (!ogImage && post.featuredImage) {
+        ogImage = document.createElement('meta');
+        ogImage.setAttribute('property', 'og:image');
+        document.head.appendChild(ogImage);
+        ogImage.setAttribute('content', post.featuredImage);
       }
-      ogUrl.setAttribute('content', `https://bomestudo.com.br/blog/${post.slug}`);
-      
-      let ogType = document.querySelector('meta[property="og:type"]');
-      if (!ogType) {
-        ogType = document.createElement('meta');
-        ogType.setAttribute('property', 'og:type');
-        document.head.appendChild(ogType);
-      }
-      ogType.setAttribute('content', 'article');
-      
-      // Limpar as meta tags quando o componente for desmontado
-      return () => {
-        document.title = 'BomEstudo';
-      };
     }
+    
+    // Cleanup function
+    return () => {
+      document.title = 'BomEstudo';
+    };
   }, [post]);
   
-  if (!post) {
-    return (
-      <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
-        <Header />
-        <main className="flex-grow pt-[120px] px-4 md:px-8 w-full max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl mb-6 font-extrabold text-[#272f3c]">Artigo não encontrado</h1>
-          <p className="text-[#67748a] mb-6">O artigo que você está procurando não existe ou foi removido.</p>
-          <Button onClick={() => navigate('/blog')} className="flex items-center">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para o Blog
-          </Button>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  const formattedDate = format(new Date(post.createdAt), "dd/MM/yyyy 'às' HH:mm");
-  
-  // Dividir o conteúdo em parágrafos para melhor formatação
-  const paragraphs = post.content.split('\n\n');
-  
-  // Calcular tempo de leitura estimado se não estiver definido
-  const readingTime = post.readingTime || Math.ceil(post.content.split(' ').length / 200);
-
-  const handleLike = () => {
-    setIsLiked(!isLiked);
+  const handleLike = async () => {
+    if (!post) return;
+    
+    try {
+      const success = await incrementLikes(post.id);
+      if (success) {
+        setPost({
+          ...post,
+          likesCount: post.likesCount + 1
+        });
+        toast({
+          title: "Artigo curtido!",
+          description: "Obrigado por curtir este artigo."
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao curtir artigo:', error);
+      toast({
+        title: "Erro ao curtir",
+        description: "Não foi possível curtir este artigo. Tente novamente mais tarde.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleBookmark = () => {
+    if (!post) return;
+    
+    // Atualizar estado local
     setIsBookmarked(!isBookmarked);
+    
+    // Atualizar localStorage
+    const bookmarkedPosts = JSON.parse(localStorage.getItem('bookmarkedPosts') || '[]');
+    
+    if (isBookmarked) {
+      // Remover dos favoritos
+      const updatedBookmarks = bookmarkedPosts.filter((id: string) => id !== post.id);
+      localStorage.setItem('bookmarkedPosts', JSON.stringify(updatedBookmarks));
+      toast({
+        title: "Artigo removido dos favoritos",
+        description: "Este artigo foi removido da sua lista de favoritos.",
+      });
+    } else {
+      // Adicionar aos favoritos
+      bookmarkedPosts.push(post.id);
+      localStorage.setItem('bookmarkedPosts', JSON.stringify(bookmarkedPosts));
+      toast({
+        title: "Artigo salvo nos favoritos",
+        description: "Este artigo foi adicionado à sua lista de favoritos.",
+      });
+    }
   };
-
+  
   const handleShare = () => {
-    if (navigator.share) {
+    if (navigator.share && post) {
       navigator.share({
         title: post.title,
         text: post.summary,
         url: window.location.href,
-      });
+      })
+      .catch((error) => console.log('Erro ao compartilhar', error));
     } else {
+      // Fallback para navegadores que não suportam a API Web Share
       navigator.clipboard.writeText(window.location.href);
-      alert('Link copiado para a área de transferência!');
+      toast({
+        title: "Link copiado",
+        description: "O link deste artigo foi copiado para a área de transferência.",
+      });
     }
   };
+  
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Carregando...</h1>
+            <p className="mb-6">Aguarde um momento enquanto carregamos o artigo.</p>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
+  
+  if (!post) {
+    return (
+      <>
+        <Header />
+        <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
+          <div className="text-center py-12">
+            <h1 className="text-2xl font-bold mb-4">Artigo não encontrado</h1>
+            <p className="mb-6">O artigo que você está procurando não existe ou foi removido.</p>
+            <Link to="/blog">
+              <Button>Voltar para o Blog</Button>
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+    <>
       <Header />
-      <main className="flex-grow pt-[120px] px-4 md:px-8 w-full max-w-7xl mx-auto">
+      <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <Button 
-              variant="ghost" 
-              onClick={() => navigate('/blog')}
-              className="mb-6 text-[#67748a] hover:text-[#272f3c]"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar para o Blog
-            </Button>
-            
-            <article className="bg-white p-6 md:p-8 rounded-lg shadow-sm" itemScope itemType="https://schema.org/BlogPosting">
-              {/* Elementos de Schema.org para SEO */}
-              <meta itemProp="datePublished" content={post.createdAt} />
-              <meta itemProp="author" content={post.author} />
-              <div itemProp="publisher" itemScope itemType="https://schema.org/Organization">
-                <meta itemProp="name" content="BomEstudo" />
-                <meta itemProp="url" content="https://bomestudo.com.br" />
+            {/* Artigo */}
+            <article className="bg-white rounded-lg shadow-sm p-6 mb-8">
+              {/* Categoria */}
+              <Link 
+                to={`/blog/categoria/${post.category?.toLowerCase()}`} 
+                className="inline-block bg-primary/10 text-primary text-sm px-3 py-1 rounded-full mb-4"
+              >
+                {post.category}
+              </Link>
+              
+              {/* Título */}
+              <h1 className="text-3xl font-bold text-[#272f3c] mb-4">{post.title}</h1>
+              
+              {/* Metadados do post */}
+              <div className="flex flex-wrap items-center text-sm text-[#67748a] mb-6">
+                <div className="flex items-center mr-6 mb-2">
+                  <User className="h-4 w-4 mr-2" />
+                  <Link to={`/blog/autor/${encodeURIComponent(post.author.toLowerCase())}`} className="hover:text-primary hover:underline">
+                    {post.author}
+                  </Link>
+                </div>
+                <div className="flex items-center mr-6 mb-2">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
+                </div>
+                <div className="flex items-center mr-6 mb-2">
+                  <Clock className="h-4 w-4 mr-2" />
+                  <span>{post.readingTime || '5 min de leitura'}</span>
+                </div>
+                <div className="flex items-center mr-6 mb-2">
+                  <Heart className="h-4 w-4 mr-2" />
+                  <span>{post.likesCount} curtidas</span>
+                </div>
               </div>
               
-              {/* Categorias e tags */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                <Link to={`/blog/categoria/${post.category.toLowerCase()}`} className="text-xs font-medium bg-[#fce7fc] text-[#ea2be2] px-2.5 py-1 rounded-full hover:bg-[#f9d0f9]">
-                  {post.category}
-                </Link>
-                {post.region && (
-                  <Link to={`/blog/regiao/${post.region.toLowerCase()}`} className="text-xs font-medium bg-gray-100 text-[#67748a] px-2.5 py-1 rounded-full hover:bg-gray-200">
-                    {post.region}
-                  </Link>
-                )}
-                {post.state && (
-                  <Link to={`/blog/estado/${post.state.toLowerCase()}`} className="text-xs font-medium bg-gray-100 text-[#67748a] px-2.5 py-1 rounded-full hover:bg-gray-200">
-                    {post.state}
-                  </Link>
-                )}
-                {post.tags && post.tags.map(tag => (
-                  <Link key={tag} to={`/blog/tag/${tag.toLowerCase()}`} className="text-xs font-medium bg-gray-100 text-[#67748a] px-2.5 py-1 rounded-full hover:bg-gray-200">
-                    #{tag}
-                  </Link>
-                ))}
-              </div>
-              
-              <h1 className="text-3xl md:text-4xl font-extrabold text-[#272f3c] mb-6" itemProp="headline">{post.title}</h1>
-              
-              {/* Imagem do post */}
+              {/* Imagem destacada */}
               {post.featuredImage && (
-                <div className="mb-6 rounded-lg overflow-hidden">
+                <div className="mb-6">
                   <img 
                     src={post.featuredImage} 
                     alt={post.title} 
-                    className="w-full h-auto object-cover" 
-                    itemProp="image"
+                    className="w-full h-auto rounded-lg object-cover"
                   />
                 </div>
               )}
               
-              <div className="flex flex-wrap items-center text-sm text-[#67748a] mb-6 gap-y-2">
-                <div className="flex items-center mr-6">
-                  {post.authorAvatar ? (
-                    <img 
-                      src={post.authorAvatar} 
-                      alt={post.author} 
-                      className="h-8 w-8 rounded-full mr-2 object-cover"
-                    />
-                  ) : (
-                    <User className="h-5 w-5 mr-2" />
-                  )}
-                  <span itemProp="author">{post.author}</span>
+              {/* Resumo */}
+              <div className="mb-6 text-lg font-medium text-[#67748a] border-l-4 border-primary pl-4 py-2">
+                {post.summary}
+              </div>
+              
+              {/* Conteúdo */}
+              <div 
+                className="prose max-w-none mb-8" 
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
+              
+              {/* Tags */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-6">
+                  {post.tags.map((tag, index) => (
+                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                      <Tag className="w-3 h-3 mr-1" />
+                      {tag}
+                    </span>
+                  ))}
                 </div>
-                <span className="flex items-center mr-6">
-                  <Clock className="h-4 w-4 mr-1.5" />
-                  {formattedDate}
-                </span>
-                <span className="flex items-center">
-                  <BookOpen className="h-4 w-4 mr-1.5" />
-                  {readingTime} min de leitura
-                </span>
-              </div>
+              )}
               
-              <div className="prose max-w-none text-[#67748a]" itemProp="articleBody">
-                {paragraphs.map((paragraph, index) => (
-                  <p key={index} className="mb-4">{paragraph}</p>
-                ))}
-              </div>
-              
-              <div className="flex items-center flex-wrap mt-8 pt-6 border-t border-gray-100 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleLike}
-                  className="flex items-center"
-                >
-                  <Heart className={`h-5 w-5 mr-2 ${isLiked ? 'fill-[#ea2be2] text-[#ea2be2]' : ''}`} />
-                  {post.likesCount + (isLiked ? 1 : 0)} curtidas
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  onClick={handleBookmark}
-                  className="flex items-center"
-                >
-                  <Bookmark className={`h-5 w-5 mr-2 ${isBookmarked ? 'fill-[#ea2be2] text-[#ea2be2]' : ''}`} />
-                  Salvar
-                </Button>
-                
-                <Button
-                  variant="outline"
+              {/* Ações do post */}
+              <div className="flex flex-wrap items-center justify-between pt-4 border-t border-gray-200">
+                <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleLike}
+                    className={`flex items-center ${isLiked ? 'text-red-500 border-red-500' : ''}`}
+                  >
+                    <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-red-500' : ''}`} />
+                    {isLiked ? 'Curtido' : 'Curtir'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleBookmark}
+                    className={`flex items-center ${isBookmarked ? 'text-primary border-primary' : ''}`}
+                  >
+                    <Bookmark className={`h-4 w-4 mr-2 ${isBookmarked ? 'fill-primary' : ''}`} />
+                    {isBookmarked ? 'Salvo' : 'Salvar'}
+                  </Button>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
                   onClick={handleShare}
                   className="flex items-center"
                 >
-                  <Share2 className="h-5 w-5 mr-2" />
+                  <Share2 className="h-4 w-4 mr-2" />
                   Compartilhar
                 </Button>
-                
-                <span className="flex items-center ml-auto">
-                  <MessageSquare className="h-5 w-5 mr-2" />
-                  {post.commentCount} comentários
-                </span>
               </div>
             </article>
             
             {/* Posts relacionados */}
-            {relatedPosts.length > 0 && (
-              <div className="mt-8">
+            {relatedPostsList.length > 0 && (
+              <div className="mb-8 bg-white rounded-lg shadow-sm p-6">
                 <h2 className="text-xl font-bold text-[#272f3c] mb-4">Posts relacionados</h2>
-                <div className="grid gap-4 md:grid-cols-3">
-                  {relatedPosts.map(relatedPost => (
-                    <BlogPostCard 
-                      key={relatedPost.id} 
-                      post={relatedPost} 
-                      variant="compact"
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {relatedPostsList.map(relatedPost => (
+                    <div key={relatedPost.id} className="group">
+                      <div className="relative overflow-hidden rounded-lg mb-3">
+                        {relatedPost.featuredImage ? (
+                          <img 
+                            src={relatedPost.featuredImage} 
+                            alt={relatedPost.title} 
+                            className="w-full h-40 object-cover rounded-md group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-40 bg-gray-100 flex items-center justify-center rounded-md">
+                            <BookOpen className="h-10 w-10 text-gray-300" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
+                          <div className="p-3 w-full">
+                            <span className="text-xs text-white bg-primary/80 px-2 py-1 rounded-full">
+                              {relatedPost.category}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <Link 
+                        to={`/blog/${relatedPost.slug}`}
+                        className="text-base font-medium text-[#272f3c] group-hover:text-primary line-clamp-2 mb-2 block"
+                      >
+                        {relatedPost.title}
+                      </Link>
+                      <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                        {relatedPost.summary}
+                      </p>
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <div className="flex items-center">
+                          <User className="h-3 w-3 mr-1" />
+                          <Link 
+                            to={`/blog/autor/${encodeURIComponent(relatedPost.author.toLowerCase())}`}
+                            className="hover:text-primary hover:underline"
+                          >
+                            {relatedPost.author}
+                          </Link>
+                        </div>
+                        <div className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          <span>{relatedPost.readingTime || '5 min'}</span>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
           </div>
           
-          {/* Sidebar */}
-          <div>
-            {/* Posts da mesma categoria */}
-            <Card className="mb-6">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Tag className="h-5 w-5 mr-2 text-[#ea2be2]" />
-                  Mais em {post.category}
-                </CardTitle>
+          <div className="space-y-8">
+            {/* Informações do autor */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Sobre o autor</CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
-                <LatestNews 
-                  posts={sameCategoryPosts}
-                  title="" 
-                  viewAllLink={`/blog/categoria/${post.category.toLowerCase()}`}
-                />
+              <CardContent className="pt-0">
+                <div className="flex items-start">
+                  {post.authorAvatar ? (
+                    <img 
+                      src={post.authorAvatar} 
+                      alt={post.author} 
+                      className="w-12 h-12 rounded-full mr-4 object-cover"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
+                      <User className="h-6 w-6 text-primary" />
+                    </div>
+                  )}
+                  <div>
+                    <Link 
+                      to={`/blog/autor/${encodeURIComponent(post.author.toLowerCase())}`}
+                      className="font-medium hover:text-primary hover:underline block mb-2"
+                    >
+                      {post.author}
+                    </Link>
+                    <p className="text-sm text-gray-500">
+                      Especialista em concursos públicos e autor de conteúdo no BomEstudo.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             
-            {/* Posts mais recentes */}
-            <SidebarPosts
-              posts={latestPosts}
-              title="Últimos posts"
-              icon={<Clock className="h-5 w-5 mr-2 text-[#ea2be2]" />}
-            />
+            {/* Posts da mesma categoria */}
+            {sameCategoryPosts.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">
+                    Mais sobre {post.category}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <ul className="space-y-4">
+                    {sameCategoryPosts.map(categoryPost => (
+                      <li key={categoryPost.id}>
+                        <Link 
+                          to={`/blog/${categoryPost.slug}`}
+                          className="text-sm font-medium hover:text-primary hover:underline"
+                        >
+                          {categoryPost.title}
+                        </Link>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {format(new Date(categoryPost.createdAt), "dd/MM/yyyy")}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <Link 
+                      to={`/blog/categoria/${post.category?.toLowerCase()}`}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      Ver todos os artigos sobre {post.category}
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
-            {/* Próximos concursos */}
+            {/* Últimas notícias */}
             <Card>
-              <CardHeader className="bg-[#fce7fc]/50 pb-2">
-                <CardTitle className="flex items-center text-lg">
-                  <Calendar className="h-5 w-5 mr-2 text-[#ea2be2]" />
-                  Próximos concursos
-                </CardTitle>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">Últimas notícias</CardTitle>
               </CardHeader>
-              <CardContent className="pt-4">
-                <LatestNews 
-                  posts={MOCK_BLOG_POSTS.filter(p => p.category === "Concursos").slice(0, 4)}
-                  title="" 
-                  viewAllLink="/blog/categoria/concursos"
-                />
+              <CardContent className="pt-0">
+                <LatestNews posts={latestPosts} title="" />
               </CardContent>
             </Card>
           </div>
         </div>
       </main>
       <Footer />
-    </div>
+    </>
   );
 };
 

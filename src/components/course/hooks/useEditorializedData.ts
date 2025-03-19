@@ -460,10 +460,15 @@ export const useEditorializedData = () => {
           return subject;
         });
         
-        // Se o usuário estiver logado, salvar no banco de dados
-        if (userId !== 'guest' && courseId) {
+        // Salvar apenas no localStorage para usuários não logados
+        // Não salvar no banco de dados até que o botão "Salvar dados" seja clicado
+        if (userId === 'guest' && courseId) {
           const realId = extractIdFromFriendlyUrl(courseId);
-          saveUserDataToDatabase(realId, updatedSubjects);
+          try {
+            localStorage.setItem(`edital_${realId}`, JSON.stringify(updatedSubjects));
+          } catch (error) {
+            console.error('Erro ao salvar no localStorage:', error);
+          }
         }
         
         return updatedSubjects;
@@ -478,10 +483,31 @@ export const useEditorializedData = () => {
     }
   };
 
+  // Nova função para salvar todos os dados no banco de dados
+  // Esta função será chamada quando o botão "Salvar dados" for clicado
+  const saveAllDataToDatabase = async () => {
+    if (userId === 'guest' || !courseId) return false;
+    
+    try {
+      const realId = extractIdFromFriendlyUrl(courseId);
+      await saveUserDataToDatabase(realId, subjects);
+      return true;
+    } catch (error) {
+      console.error('Erro ao salvar todos os dados:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível salvar os dados no banco de dados.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   return {
     subjects,
     loading,
     updateTopicProgress,
-    forceRefresh
+    forceRefresh,
+    saveAllDataToDatabase
   };
 };

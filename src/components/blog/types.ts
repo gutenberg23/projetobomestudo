@@ -1,4 +1,3 @@
-
 export interface BlogPost {
   id: string;
   title: string;
@@ -11,16 +10,32 @@ export interface BlogPost {
   createdAt: string;
   slug: string;
   category: string;
-  region?: Region;
+  region?: RegionOrEmpty;
   state?: string;
   tags?: string[];
   metaDescription?: string;
   metaKeywords?: string[];
   featuredImage?: string;
-  readingTime?: number;
+  readingTime?: string;
   relatedPosts?: string[];
   featured?: boolean;
+  updatedAt?: string;
 }
+
+export type BlogComment = {
+  id: string;
+  postId: string;
+  userId: string;
+  content: string;
+  authorName: string;
+  authorAvatar?: string;
+  likesCount: number;
+  parentId?: string;
+  createdAt: string;
+  updatedAt: string;
+  replies?: BlogComment[];
+  isLiked?: boolean;
+};
 
 export type Region = "Norte" | "Nordeste" | "Centro-Oeste" | "Sudeste" | "Sul" | "Federal" | "Nacional";
 

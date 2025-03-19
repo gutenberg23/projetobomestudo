@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +14,7 @@ import Questions from "./pages/Questions";
 import Settings from "./pages/Settings";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import AuthorPosts from "./pages/AuthorPosts";
 import NotFound from "./pages/NotFound";
 import TermosEPoliticas from "./pages/TermosEPoliticas";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -56,6 +56,7 @@ const App = () => (
             <Route path="/questions" element={<Questions />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/autor/:author" element={<AuthorPosts />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
             <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
             

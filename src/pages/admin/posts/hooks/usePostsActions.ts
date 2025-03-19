@@ -1,6 +1,7 @@
-
 import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
+import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
+import { toast } from "@/components/ui/use-toast";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
@@ -40,7 +41,8 @@ export function usePostsActions(state: PostsState) {
     regiao,
     estado,
     postsRelacionados,
-    postEditando
+    postEditando,
+    setLoading
   } = state;
 
   // Iniciar criação de um novo post
@@ -86,70 +88,132 @@ export function usePostsActions(state: PostsState) {
   };
 
   // Salvar um post (novo ou editado)
-  const salvarPost = () => {
-    const slug = titulo
-      .toLowerCase()
-      .replace(/[^\w\s]/gi, '')
-      .replace(/\s+/g, '-');
-    
-    // Convert the comma-separated tags into an array
-    const tagsArray = tags.split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
-    
-    // Parse reading time as number
-    const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
-      Math.ceil(conteudo.split(' ').length / 200);
-    
-    // Convert related posts to array
-    const relatedPostsArray = postsRelacionados.split(',')
-      .map(id => id.trim())
-      .filter(id => id.length > 0);
-    
-    // Convert meta keywords to array
-    const metaKeywordsArray = metaKeywords.split(',')
-      .map(k => k.trim())
-      .filter(k => k.length > 0);
-    
-    const novoPost: BlogPost = {
-      id: postEditando ? postEditando.id : `${Date.now()}`,
-      title: titulo,
-      summary: resumo,
-      content: conteudo,
-      author: autor,
-      authorAvatar: autorAvatar || undefined,
-      commentCount: postEditando ? postEditando.commentCount : 0,
-      likesCount: postEditando ? postEditando.likesCount : 0,
-      createdAt: postEditando ? postEditando.createdAt : new Date().toISOString(),
-      slug: slug,
-      category: categoria,
-      region: regiao as Region || undefined,
-      state: estado || undefined,
-      tags: tagsArray.length > 0 ? tagsArray : undefined,
-      metaDescription: metaDescricao || resumo,
-      metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
-      featuredImage: imagemDestaque || undefined,
-      readingTime: readingTimeNumber,
-      relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
-      featured: destacado
-    };
+  const salvarPost = async () => {
+    setLoading(true);
+    try {
+      const slug = titulo
+        .toLowerCase()
+        .replace(/[^\w\s]/gi, '')
+        .replace(/\s+/g, '-');
+      
+      // Convert the comma-separated tags into an array
+      const tagsArray = tags.split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+      
+      // Parse reading time as number
+      const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
+        Math.ceil(conteudo.split(' ').length / 200);
+      
+      // Convert related posts to array
+      const relatedPostsArray = postsRelacionados.split(',')
+        .map(id => id.trim())
+        .filter(id => id.length > 0);
+      
+      // Convert meta keywords to array
+      const metaKeywordsArray = metaKeywords.split(',')
+        .map(k => k.trim())
+        .filter(k => k.length > 0);
+      
+      const postData = {
+        title: titulo,
+        summary: resumo,
+        content: conteudo,
+        author: autor,
+        authorAvatar: autorAvatar || undefined,
+        slug: slug,
+        category: categoria,
+        region: regiao as Region || undefined,
+        state: estado || undefined,
+        tags: tagsArray.length > 0 ? tagsArray : undefined,
+        metaDescription: metaDescricao || resumo,
+        metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
+        featuredImage: imagemDestaque || undefined,
+        readingTime: readingTimeNumber,
+        relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
+        featured: destacado
+      };
 
-    if (postEditando) {
-      // Atualiza o post existente
-      setPosts(posts.map(post => post.id === postEditando.id ? novoPost : post));
-    } else {
-      // Adiciona um novo post
-      setPosts([novoPost, ...posts]);
+      let novoPost: BlogPost | null;
+      
+      if (postEditando) {
+        // Atualiza o post existente no banco de dados
+        novoPost = await updateBlogPost(postEditando.id, postData);
+        if (novoPost) {
+          // Atualiza o post na lista local
+          setPosts(posts.map(post => post.id === postEditando.id ? novoPost! : post));
+          toast({
+            title: "Post atualizado",
+            description: "O post foi atualizado com sucesso.",
+            variant: "default"
+          });
+        }
+      } else {
+        // Adiciona um novo post no banco de dados
+        novoPost = await createBlogPost(postData);
+        if (novoPost) {
+          // Adiciona o post na lista local
+          setPosts([novoPost, ...posts]);
+          toast({
+            title: "Post criado",
+            description: "O post foi criado com sucesso.",
+            variant: "default"
+          });
+        }
+      }
+
+      if (!novoPost) {
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao salvar o post. Tente novamente.",
+          variant: "destructive"
+        });
+      } else {
+        // Volta para a listagem
+        setModo(ModoInterface.LISTAR);
+      }
+    } catch (error) {
+      console.error("Erro ao salvar post:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar o post. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-
-    // Volta para a listagem
-    setModo(ModoInterface.LISTAR);
   };
 
   // Excluir um post
-  const excluirPost = (id: string) => {
+  const excluirPost = async (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir este post?")) {
-      setPosts(posts.filter(post => post.id !== id));
+      setLoading(true);
+      try {
+        const success = await deleteBlogPost(id);
+        if (success) {
+          setPosts(posts.filter(post => post.id !== id));
+          toast({
+            title: "Post excluído",
+            description: "O post foi excluído com sucesso.",
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Erro",
+            description: "Ocorreu um erro ao excluir o post. Tente novamente.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao excluir post:", error);
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao excluir o post. Tente novamente.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
     }
   };
 

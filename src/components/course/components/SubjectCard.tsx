@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, CheckCircle, XCircle, PieChart, Award } from "lucide-react";
 import { renderDonutChart } from '../utils/donutChart';
 import { calculateSubjectTotals } from '../utils/statsCalculations';
 import { LessonItem } from './LessonItem';
@@ -482,43 +482,59 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   const stats = getSubjectStats();
   
   return <div className="bg-[rgba(246,248,250,1)] rounded-[10px]">
-      <div className="p-4 cursor-pointer" onClick={onToggle}>
+      <div className="p-3 cursor-pointer" onClick={onToggle}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 flex-1">
+          <div className="flex items-center gap-3 flex-1">
             <div className="relative flex items-center justify-center">
-              {renderDonutChart(stats.aproveitamento)}
-              <span className="absolute text-xs font-medium">{stats.aproveitamento}%</span>
+              {renderDonutChart(stats.aproveitamento, '#5f2ebe', 'rgba(38,47,60,0.1)')}
+              <span className="absolute text-xs font-medium text-[rgba(38,47,60,1)]">{stats.aproveitamento}%</span>
             </div>
-            <span className="font-medium text-[rgba(38,47,60,1)]">{subject.name || subject.titulo}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium text-sm text-[rgba(38,47,60,1)]">{subject.name || subject.titulo}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          <div className="flex items-center">
+            <button 
+              onClick={onToggle}
+              className="text-[rgba(38,47,60,0.6)] hover:text-[#5f2ebe] transition-colors"
+            >
+              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
           </div>
         </div>
       </div>
       
-      <div className="px-4 pb-4">
-        <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-white p-2 rounded text-center">
-            <div className="text-[#5f2ebe]">Aprov. Total (%)</div>
-            <div className="font-semibold text-[#5f2ebe]">{stats.aproveitamento}</div>
+      {isExpanded && (
+        <div className="px-3 pb-3">
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="bg-white p-2 rounded text-center">
+              <div className="text-xs text-[#5f2ebe] flex items-center justify-center gap-1 mb-1">
+                <Award className="w-3.5 h-3.5" />
+                <span>Aproveitamento</span>
+              </div>
+              <div className="font-semibold text-sm text-[#5f2ebe]">{stats.aproveitamento}%</div>
+            </div>
+            <div className="bg-white p-2 rounded text-center">
+              <div className="text-xs text-[#5f2ebe] flex items-center justify-center gap-1 mb-1">
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span>Acertos</span>
+              </div>
+              <div className="font-semibold text-sm text-[#5f2ebe]">{stats.questionsCorrect}</div>
+            </div>
+            <div className="bg-white p-2 rounded text-center">
+              <div className="text-xs text-[#ffac33] flex items-center justify-center gap-1 mb-1">
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Erros</span>
+              </div>
+              <div className="font-semibold text-sm text-[#ffac33]">{stats.questionsWrong}</div>
+            </div>
           </div>
-          <div className="bg-white p-2 rounded">
-            <div className="text-green-600">Total Acertos</div>
-            <div className="font-semibold text-green-600">{stats.questionsCorrect}</div>
-          </div>
-          <div className="bg-white p-2 rounded">
-            <div className="text-red-600">Total Erros</div>
-            <div className="font-semibold text-red-600">{stats.questionsWrong}</div>
-          </div>
-        </div>
-        
-        {isExpanded && (
+          
           <div>
             {loadingLessons ? (
-              <div className="text-center py-4">
-                <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-[#5f2ebe] border-r-transparent"></div>
-                <div className="mt-2 text-sm text-gray-600">Carregando aulas...</div>
+              <div className="text-center py-3">
+                <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-[#5f2ebe] border-r-transparent"></div>
+                <div className="mt-1 text-xs text-[rgba(38,47,60,1)]">Carregando aulas...</div>
               </div>
             ) : (
               <>
@@ -539,14 +555,14 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-4 text-gray-500">
+                  <div className="text-center py-3 text-[rgba(38,47,60,0.6)]">
                     Nenhuma aula encontrada para esta disciplina.
                   </div>
                 )}
               </>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>;
 };

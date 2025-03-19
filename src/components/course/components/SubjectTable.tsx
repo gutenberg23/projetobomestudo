@@ -18,7 +18,7 @@ export const SubjectTable = ({
   performanceGoal,
   onTopicChange
 }: SubjectTableProps) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
   const subjectPerformance = calculatePerformance(subjectTotals.hits, subjectTotals.exercisesDone);
@@ -34,15 +34,15 @@ export const SubjectTable = ({
     setIsExpanded(!isExpanded);
   };
 
-  return <div className="mb-8 last:mb-0">
-      <div className="flex items-center justify-between bg-[#9747FF] text-white p-3 rounded-t-lg">
+  return <div className={`${isExpanded ? 'mb-8' : 'mb-3'} last:mb-0`}>
+      <div className="flex items-center justify-between bg-white text-gray-800 p-3 rounded-lg">
         <div className="flex items-center gap-2 cursor-pointer" onClick={toggleExpanded}>
           {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
           <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
         </div>
         <div className="flex items-center gap-3">
-          <div className="w-16 md:w-24 h-2 bg-white/20 rounded-full overflow-hidden">
-            <div className="h-full bg-white transition-all" style={{
+          <div className="w-16 md:w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-[#5f2ebe] transition-all" style={{
             width: `${subjectProgress}%`
           }} />
           </div>
@@ -50,7 +50,7 @@ export const SubjectTable = ({
         </div>
       </div>
       {isExpanded && (
-        <div className="border border-gray-200 rounded-b-lg overflow-x-auto">
+        <div className="border border-gray-200 rounded-lg mt-2 overflow-x-auto">
           <table className="w-full min-w-[1000px]">
             <thead className="bg-gray-50">
               <tr className="text-sm text-gray-600">
@@ -139,7 +139,14 @@ export const SubjectTable = ({
                     />
                   </td>
                   <td className="py-3 px-4 text-center">{calculateErrors(topic.exercisesDone, topic.hits)}</td>
-                  <td className={cn("py-3 px-4 text-center", calculatePerformance(topic.hits, topic.exercisesDone) < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]")}>
+                  <td className={cn(
+                    "py-3 px-4 text-center", 
+                    calculatePerformance(topic.hits, topic.exercisesDone) === 0 
+                      ? "" 
+                      : calculatePerformance(topic.hits, topic.exercisesDone) < performanceGoal 
+                        ? "bg-[#fceadf]" 
+                        : "bg-[#e4e0f3]"
+                  )}>
                     {calculatePerformance(topic.hits, topic.exercisesDone)}%
                   </td>
                   <td className="py-3 px-4">
@@ -160,7 +167,14 @@ export const SubjectTable = ({
                 <td className="py-3 px-4 text-center">{subjectTotals.exercisesDone}</td>
                 <td className="py-3 px-4 text-center">{subjectTotals.hits}</td>
                 <td className="py-3 px-4 text-center">{subjectTotals.errors}</td>
-                <td className={cn("py-3 px-4 text-center", subjectPerformance < performanceGoal ? "bg-[#FFDEE2]" : "bg-[#F2FCE2]")}>
+                <td className={cn(
+                  "py-3 px-4 text-center", 
+                  subjectPerformance === 0 
+                    ? "" 
+                    : subjectPerformance < performanceGoal 
+                      ? "bg-[#fceadf]" 
+                      : "bg-[#e4e0f3]"
+                )}>
                   {subjectPerformance}%
                 </td>
                 <td className="py-3 px-4"></td>

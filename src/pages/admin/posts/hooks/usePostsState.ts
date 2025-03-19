@@ -1,11 +1,12 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BlogPost, Region, RegionOrEmpty } from "@/components/blog/types";
 import { ModoInterface, MOCK_POSTS } from "../types";
+import { fetchBlogPosts } from "@/services/blogService";
 
 export function usePostsState() {
   const [modo, setModo] = useState<ModoInterface>(ModoInterface.LISTAR);
-  const [posts, setPosts] = useState<BlogPost[]>(MOCK_POSTS);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(false);
   const [busca, setBusca] = useState("");
   const [postEditando, setPostEditando] = useState<BlogPost | null>(null);
   
@@ -26,6 +27,24 @@ export function usePostsState() {
   const [estado, setEstado] = useState("");
   const [postsRelacionados, setPostsRelacionados] = useState("");
 
+  // Buscar posts do banco de dados ao carregar o componente
+  useEffect(() => {
+    const carregarPosts = async () => {
+      setLoading(true);
+      try {
+        const postsData = await fetchBlogPosts();
+        setPosts(postsData.length > 0 ? postsData : MOCK_POSTS);
+      } catch (error) {
+        console.error("Erro ao carregar posts:", error);
+        setPosts(MOCK_POSTS); // Fallback para dados mock em caso de erro
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    carregarPosts();
+  }, []);
+
   // Filtragem dos posts baseado na busca
   const postsFiltrados = posts.filter(post => 
     post.title.toLowerCase().includes(busca.toLowerCase()) || 
@@ -38,6 +57,8 @@ export function usePostsState() {
     setModo,
     posts,
     setPosts,
+    loading,
+    setLoading,
     busca,
     setBusca,
     postEditando,

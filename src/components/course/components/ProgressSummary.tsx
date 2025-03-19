@@ -1,4 +1,5 @@
 import React from 'react';
+import { CheckCircle, XCircle, BookOpenIcon, BarChart2, Award } from 'lucide-react';
 
 interface ProgressSummaryProps {
   totalCompletedSections: number;
@@ -43,18 +44,20 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
 
   return <>
     <div className="flex items-center gap-4">
-      <div className="bg-[rgba(246,248,250,1)] flex items-center gap-2.5 px-5 py-4 rounded-[10px]">
-        <span className="text-xl text-[rgba(241,28,227,1)]">
-          <div className="bg-white border min-h-[42px] w-14 flex items-center justify-center px-2.5 py-[9px] rounded-[10px] border-[#5f2ebe] text-center text-[#5f2ebe]">
-            {progressPercentage}%
-          </div>
-        </span>
+      <div className="bg-[rgba(246,248,250,1)] flex items-center gap-2.5 px-4 py-3 rounded-[10px]">
+        <Award className="text-[#5f2ebe] w-5 h-5" />
+        <div className="bg-white min-h-[38px] w-12 flex items-center justify-center px-2 py-1 rounded-[8px] border-[#5f2ebe] text-center text-[#5f2ebe] font-semibold">
+          {progressPercentage}%
+        </div>
       </div>
       <div className="flex-1">
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Aulas assistidas: {totalCompletedSections}/{totalSections}</span>
+        <div className="flex justify-between text-xs text-[rgba(38,47,60,0.7)] mb-1">
+          <span className="flex items-center gap-1">
+            <BookOpenIcon className="w-3.5 h-3.5" />
+            Aulas: {totalCompletedSections}/{totalSections}
+          </span>
         </div>
-        <div className="h-2 rounded-full bg-slate-100">
+        <div className="h-2 rounded-full bg-[rgba(38,47,60,0.1)]">
           <div className="h-full bg-[#5f2ebe] rounded-full" style={{
             width: `${progressPercentage}%`
           }} />
@@ -64,26 +67,34 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
 
     <div className="grid grid-cols-2 gap-4 mb-4">
       <div>
-        <div className="text-sm text-gray-600 mb-2">Questões respondidas</div>
-        <div className="bg-[rgba(246,248,250,1)] p-4 rounded-[10px] text-center">
-          <div className="text-2xl font-bold text-[rgba(38,47,60,1)]">{validTotalCorrect + validTotalWrong}</div>
-          <div className="text-sm text-gray-600">questões totais</div>
+        <div className="text-xs text-[rgba(38,47,60,0.7)] mb-1 flex items-center gap-1">
+          <BarChart2 className="w-3.5 h-3.5" />
+          Questões respondidas
+        </div>
+        <div className="bg-[rgba(246,248,250,1)] p-3 rounded-[10px] text-center">
+          <div className="text-xl font-bold text-[rgba(38,47,60,1)]">{validTotalCorrect + validTotalWrong}</div>
+          <div className="text-xs text-[rgba(38,47,60,0.7)]">questões totais</div>
         </div>
       </div>
       <div>
-        <div className="text-sm text-gray-600 mb-2">Aproveitamento</div>
-        <div className="bg-[rgba(246,248,250,1)] p-4 rounded-[10px] text-center">
+        <div className="text-xs text-[rgba(38,47,60,0.7)] mb-1 flex items-center gap-1">
+          <Award className="w-3.5 h-3.5" />
+          Aproveitamento
+        </div>
+        <div className="bg-[rgba(246,248,250,1)] p-3 rounded-[10px] text-center">
           <div className="flex items-center justify-center gap-1">
-            <span className="text-2xl font-bold text-green-600">{validTotalCorrect}</span>
-            <span className="text-gray-400">/</span>
-            <span className="text-base text-red-600">{validTotalWrong}</span>
-            <span className="text-xs text-gray-500 ml-1">
+            <CheckCircle className="w-4 h-4 text-[#5f2ebe]" />
+            <span className="text-lg font-bold text-[#5f2ebe]">{validTotalCorrect}</span>
+            <span className="text-[rgba(38,47,60,0.4)]">/</span>
+            <XCircle className="w-4 h-4 text-[#ffac33]" />
+            <span className="text-sm text-[#ffac33]">{validTotalWrong}</span>
+            <span className="text-xs text-[rgba(38,47,60,0.7)] ml-1">
               {validTotalCorrect + validTotalWrong > 0 
                 ? `(${correctPercentage}%)`
                 : '(0%)'}
             </span>
           </div>
-          <div className="text-sm text-gray-600">questões corretas/erradas</div>
+          <div className="text-xs text-[rgba(38,47,60,0.7)]">questões corretas/erradas</div>
         </div>
       </div>
     </div>

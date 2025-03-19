@@ -1,4 +1,3 @@
-
 import React from "react";
 import { StateFilter as StateFilterType } from "./types";
 import { cn } from "@/lib/utils";
@@ -33,7 +32,7 @@ export const StateFilter: React.FC<StateFilterProps> = ({
   };
 
   return (
-    <div className="relative mb-6">
+    <div className="relative mb-6 w-full">
       <button 
         onClick={scrollLeft}
         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/70 rounded-full p-1 shadow-md"
@@ -44,7 +43,7 @@ export const StateFilter: React.FC<StateFilterProps> = ({
       
       <div 
         ref={containerRef}
-        className="flex overflow-x-auto scrollbar-hide py-2 px-6 space-x-2 max-w-full"
+        className="flex overflow-x-auto scrollbar-hide py-2 px-6 space-x-2 w-full justify-between"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {states.map((state) => (
