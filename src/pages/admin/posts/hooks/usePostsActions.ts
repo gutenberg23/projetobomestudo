@@ -121,12 +121,15 @@ export function usePostsActions(state: PostsState) {
         .map(k => k.trim())
         .filter(k => k.length > 0);
       
-      const postData = {
+      const authorName = user.nome || user.email || "Usuário BomEstudo";
+      const authorAvatar = user.fotoPerfil;
+      
+      const postData: Omit<BlogPost, "id" | "createdAt"> = {
         title: titulo,
         summary: resumo,
         content: conteudo,
-        author: user.nome || user.email || "Usuário BomEstudo",
-        authorAvatar: user.fotoPerfil || undefined,
+        author: authorName,
+        authorAvatar: authorAvatar || undefined,
         slug: slug,
         category: categoria,
         region: regiao as Region || undefined,
