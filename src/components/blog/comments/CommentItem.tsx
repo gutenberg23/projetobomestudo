@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BlogComment } from '@/components/blog/types';
 import { CommentForm } from './CommentForm';
@@ -7,7 +6,7 @@ import { ptBR } from 'date-fns/locale';
 import { Heart, Reply, Edit, Trash2, User, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { createComment, updateComment, deleteComment, incrementCommentLikes, canModifyComment } from '@/services/commentService';
+import { updateComment, deleteComment, incrementCommentLikes, canModifyComment } from '@/services/commentService';
 import { toast } from '@/components/ui/use-toast';
 import {
   DropdownMenu,
@@ -142,27 +141,6 @@ export const CommentItem: React.FC<CommentItemProps> = ({
     }
   };
 
-  const handleSubmitReply = async (content: string) => {
-    if (!user) return;
-    
-    try {
-      const newReply = await createComment({
-        postId: comment.postId,
-        userId: user.id,
-        content,
-        authorName: user.email || 'Usuário',
-        authorAvatar: user.user_metadata?.avatar_url,
-        parentId: comment.id
-      });
-      
-      onReply(newReply);
-      setIsReplying(false);
-    } catch (error) {
-      console.error("Erro ao enviar resposta:", error);
-      throw error;
-    }
-  };
-
   const canModify = user && canModifyComment(user.id, comment.userId);
 
   return (
@@ -265,7 +243,10 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           <CommentForm 
             postId={comment.postId} 
             parentId={comment.id}
-            onSubmit={handleSubmitReply}
+            onCommentAdded={(newComment) => {
+              onReply(newComment);
+              setIsReplying(false);
+            }}
             onCancel={() => setIsReplying(false)}
           />
         </div>

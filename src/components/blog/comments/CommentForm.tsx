@@ -1,16 +1,16 @@
-
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { BlogComment } from "../types";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { createComment } from '@/services/commentService';
+import { BlogComment } from '@/components/blog/types';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/components/ui/use-toast';
+import { incrementComments } from '@/services/blogService';
 
 interface CommentFormProps {
   postId: string;
   parentId?: string;
-  onSubmit: (comment: string) => Promise<void>;
+  authorName?: string;
+  authorAvatar?: string;
   onCommentAdded?: (comment: BlogComment) => void;
   onCancel?: () => void;
 }
@@ -18,22 +18,22 @@ interface CommentFormProps {
 export const CommentForm: React.FC<CommentFormProps> = ({ 
   postId, 
   parentId, 
-  onSubmit, 
+  authorName,
+  authorAvatar,
   onCommentAdded,
-  onCancel
+  onCancel 
 }) => {
-  const [comment, setComment] = useState("");
+  const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!comment.trim()) {
+
+    if (!content.trim()) {
       toast({
-        title: "Erro",
-        description: "O comentário não pode estar vazio.",
+        title: "Comentário vazio",
+        description: "Por favor, escreva algo antes de enviar.",
         variant: "destructive"
       });
       return;
@@ -41,7 +41,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
 
     if (!user) {
       toast({
-        title: "Autenticação necessária",
+        title: "Login necessário",
         description: "Você precisa estar logado para comentar.",
         variant: "destructive"
       });
@@ -49,18 +49,38 @@ export const CommentForm: React.FC<CommentFormProps> = ({
     }
 
     setIsSubmitting(true);
+
     try {
-      await onSubmit(comment);
-      setComment("");
+      const newComment = await createComment({
+        postId,
+        userId: user.id,
+        content: content.trim(),
+        authorName: authorName || user.user_metadata?.name || 'Usuário',
+        authorAvatar: authorAvatar || user.user_metadata?.avatar_url,
+        parentId
+      });
+
+      // Se for um comentário principal (não uma resposta), incrementar a contagem de comentários do post
+      if (!parentId) {
+        await incrementComments(postId);
+      }
+
+      setContent('');
+      if (onCommentAdded) {
+        onCommentAdded(newComment);
+      }
+      
       toast({
-        title: "Comentário enviado",
-        description: "Seu comentário foi enviado com sucesso."
+        title: parentId ? "Resposta adicionada" : "Comentário adicionado",
+        description: parentId 
+          ? "Sua resposta foi publicada com sucesso." 
+          : "Seu comentário foi publicado com sucesso."
       });
     } catch (error) {
-      console.error("Erro ao enviar comentário:", error);
+      console.error('Erro ao adicionar comentário:', error);
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao enviar o comentário. Tente novamente.",
+        title: "Erro ao publicar",
+        description: "Não foi possível publicar seu comentário. Tente novamente mais tarde.",
         variant: "destructive"
       });
     } finally {
@@ -68,52 +88,35 @@ export const CommentForm: React.FC<CommentFormProps> = ({
     }
   };
 
-  if (!user) {
-    return (
-      <div className="bg-white p-4 rounded-md shadow-sm">
-        <p className="text-center text-[#67748a]">
-          Faça login para comentar neste post.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-4 rounded-md shadow-sm">
-      <div className="flex items-start gap-3">
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email || ""} />
-          <AvatarFallback>
-            {user.email?.charAt(0).toUpperCase() || "U"}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <Textarea
-            placeholder="Escreva seu comentário..."
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            className="resize-none mb-2"
-            rows={3}
-          />
-          <div className="flex justify-end gap-2">
-            {onCancel && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onCancel}
-              >
-                Cancelar
-              </Button>
-            )}
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || !comment.trim()}
-              className="bg-[#5f2ebe] hover:bg-[#4a1fb0]"
-            >
-              {isSubmitting ? "Enviando..." : parentId ? "Responder" : "Comentar"}
-            </Button>
-          </div>
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="border border-gray-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/30">
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder={parentId ? "Escreva sua resposta..." : "Deixe seu comentário..."}
+          className="w-full p-3 focus:outline-none resize-none"
+          style={{ height: '100px' }}
+          disabled={isSubmitting}
+        />
+      </div>
+      <div className="flex justify-end space-x-2">
+        {onCancel && (
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </Button>
+        )}
+        <Button 
+          type="submit" 
+          disabled={isSubmitting || !content.trim()}
+        >
+          {isSubmitting ? 'Enviando...' : parentId ? 'Responder' : 'Comentar'}
+        </Button>
       </div>
     </form>
   );

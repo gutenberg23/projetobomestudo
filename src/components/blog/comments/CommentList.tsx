@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { BlogComment } from '@/components/blog/types';
-import { fetchCommentsByPostId, createComment } from '@/services/commentService';
+import { fetchCommentsByPostId } from '@/services/commentService';
 import { MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
@@ -59,25 +58,6 @@ export const CommentList: React.FC<CommentListProps> = ({
 
     loadComments();
   }, [postId, onCommentCountChange]);
-
-  const handleSubmitComment = async (content: string) => {
-    if (!user) return;
-    
-    try {
-      const newComment = await createComment({
-        postId,
-        userId: user.id,
-        content,
-        authorName: user.email || 'Usuário',
-        authorAvatar: user.user_metadata?.avatar_url
-      });
-      
-      handleCommentAdded(newComment);
-    } catch (error) {
-      console.error("Erro ao enviar comentário:", error);
-      throw error; // Para que o CommentForm possa capturar e mostrar a mensagem de erro
-    }
-  };
 
   const handleCommentAdded = (newComment: BlogComment) => {
     if (newComment.parentId) {
@@ -163,7 +143,7 @@ export const CommentList: React.FC<CommentListProps> = ({
             <h3 className="text-lg font-medium mb-4">Deixe seu comentário</h3>
             <CommentForm 
               postId={postId} 
-              onSubmit={handleSubmitComment} 
+              onCommentAdded={handleCommentAdded} 
             />
           </div>
         ) : (
