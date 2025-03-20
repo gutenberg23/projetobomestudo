@@ -1,525 +1,263 @@
 
-import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, CheckCircle, XCircle, PieChart, Award } from "lucide-react";
-import { renderDonutChart } from '../utils/donutChart';
-import { calculateSubjectTotals } from '../utils/statsCalculations';
-import { LessonItem } from './LessonItem';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { SupabaseAula, SupabaseResposta, SupabaseProgress } from '../types/editorialized';
+import React, { useState } from 'react';
+import { Check, Clock, Star, ChevronDown, ChevronUp, BookOpen, FilePen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { useNavigate } from 'react-router-dom';
+import { ImportanceStars } from './ImportanceStars';
+import { Subject, Topic, SupabaseAula, PerformanceData } from '../types/editorialized';
 
 interface SubjectCardProps {
-  subject: any; 
-  isExpanded: boolean;
-  onToggle: () => void;
-}
-
-// Definição de tipos simples para evitar problemas de instanciação profunda
-interface LessonStats {
-  total: number;
-  hits: number;
-  errors: number;
-}
-
-interface LessonData {
-  id: string;
-  titulo: string;
-  concluida: boolean;
-  questoesIds: string[];
-  stats: LessonStats;
+  subject: Subject;
+  totalTopics: number;
+  completedTopics: number;
+  performance: PerformanceData;
+  onClick?: (id: string | number) => void;
+  updateTopicProgress?: (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => void;
 }
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
   subject,
-  isExpanded,
-  onToggle
+  totalTopics,
+  completedTopics,
+  performance,
+  onClick,
+  updateTopicProgress
 }) => {
-  const [lessons, setLessons] = useState<LessonData[]>([]);
-  const [loadingLessons, setLoadingLessons] = useState(false);
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
   
-  // Buscar aulas da disciplina quando o componente for montado ou quando o card for expandido
-  useEffect(() => {
-    if (subject.id) {
-      fetchLessons();
-    }
-  }, [subject.id]);
+  // Calcular a porcentagem de conclusão
+  const completionPercentage = totalTopics > 0 ? (completedTopics / totalTopics) * 100 : 0;
   
-  // Função para buscar as aulas da disciplina
-  const fetchLessons = async () => {
-    if (!subject.id) return;
-    
-    // Se já temos aulas carregadas, não precisamos buscar novamente
-    if (lessons.length > 0) return;
-    
-    setLoadingLessons(true);
-    try {
-      console.log('Buscando aulas para a disciplina:', subject.id);
-      
-      // Abordagem 1: Verificar se a disciplina tem um array de IDs de aulas
-      if (subject.aulas_ids && Array.isArray(subject.aulas_ids) && subject.aulas_ids.length > 0) {
-        await processAulasFromIds(subject.aulas_ids);
-        return;
-      }
-      
-      // Abordagem 2: Buscar a disciplina do banco para obter aulas_ids
-      const disciplinaResponse = await supabase
-        .from('disciplinas')
-        .select('*')
-        .eq('id', subject.id)
-        .single();
-      
-      const disciplinaData = disciplinaResponse.data;
-      const disciplinaError = disciplinaResponse.error;
-      
-      if (!disciplinaError && disciplinaData) {
-        // Verificar se existe aulas_ids
-        if (disciplinaData.aulas_ids && Array.isArray(disciplinaData.aulas_ids)) {
-          await processAulasFromIds(disciplinaData.aulas_ids);
-          return;
-        }
-      }
-      
-      // Abordagem 3: Buscar aulas que tenham referência à disciplina
-      const aulasResponse = await supabase
-        .from('aulas')
-        .select('*')
-        .eq('disciplina_id', subject.id);
-      
-      const aulasData = aulasResponse.data;
-      const aulasError = aulasResponse.error;
-      
-      if (!aulasError && aulasData && aulasData.length > 0) {
-        await processAulas(aulasData);
-        return;
-      }
-      
-      // Abordagem 4: Tentar com outro possível nome de coluna
-      const aulasResponse2 = await supabase
-        .from('aulas')
-        .select('*')
-        .eq('id_disciplina', subject.id);
-      
-      const aulasData2 = aulasResponse2.data;
-      const aulasError2 = aulasResponse2.error;
-      
-      if (!aulasError2 && aulasData2 && aulasData2.length > 0) {
-        await processAulas(aulasData2);
-        return;
-      }
-      
-      // Abordagem 5: Tentar com outro possível nome de coluna
-      const aulasResponse3 = await supabase
-        .from('aulas')
-        .select('*')
-        .eq('disciplina', subject.id);
-      
-      const aulasData3 = aulasResponse3.data;
-      const aulasError3 = aulasResponse3.error;
-      
-      if (!aulasError3 && aulasData3 && aulasData3.length > 0) {
-        await processAulas(aulasData3);
-        return;
-      }
-      
-      // Não foi possível encontrar aulas para esta disciplina
-      console.log('Nenhuma aula encontrada para a disciplina:', subject.id);
-      setLessons([]);
-    } catch (error) {
-      console.error('Erro ao processar dados das aulas:', error);
-      setLessons([]);
-    } finally {
-      setLoadingLessons(false);
+  // Função para navegar para o link do conteúdo
+  const navigateToContent = (link: string) => {
+    if (link) {
+      navigate(link);
     }
   };
   
-  // Processa aulas a partir de um array de IDs
-  const processAulasFromIds = async (aulaIds: string[]) => {
-    if (!aulaIds || aulaIds.length === 0) {
-      setLessons([]);
-      return;
-    }
-    
-    const aulasResponse = await supabase
-      .from('aulas')
-      .select('*')
-      .in('id', aulaIds);
-    
-    const aulasData = aulasResponse.data as SupabaseAula[] | null;
-    const aulasError = aulasResponse.error;
-    
-    if (aulasError || !aulasData || aulasData.length === 0) {
-      console.error('Erro ao buscar aulas por IDs:', aulasError);
-      setLessons([]);
-      return;
-    }
-    
-    await processAulas(aulasData);
+  // Função para formatar a porcentagem
+  const formatPercentage = (value: number) => {
+    return `${Math.round(value)}%`;
   };
   
-  // Processa os dados das aulas e busca estatísticas
-  const processAulas = async (aulasData: SupabaseAula[]) => {
-    // Preparar as aulas com dados básicos
-    const lessonsWithStats: LessonData[] = aulasData.map((aula) => ({
-      id: aula.id,
-      titulo: aula.titulo,
-      concluida: false,
-      questoesIds: aula.questoes_ids || [],
-      stats: {
-        total: 0,
-        hits: 0,
-        errors: 0
-      }
-    }));
-    
-    // Buscar dados de progresso do usuário
-    if (user?.id) {
-      try {
-        // Buscar dados do progresso do curso
-        const userProgressResponse = await supabase
-          .from('user_course_progress')
-          .select('subjects_data')
-          .eq('user_id', user.id)
-          .eq('course_id', subject.courseId || 'default')
-          .single();
-        
-        const userProgressData = userProgressResponse.data as { subjects_data: SupabaseProgress['subjects_data'] } | null;
-        const progressError = userProgressResponse.error;
-        
-        if (!progressError && userProgressData && userProgressData.subjects_data) {
-          const subjectData = userProgressData.subjects_data[subject.id];
-          
-          if (subjectData?.lessons) {
-            // Atualizar status de conclusão das aulas
-            for (const lesson of lessonsWithStats) {
-              if (subjectData.lessons[lesson.id]?.completed) {
-                lesson.concluida = true;
-              }
-            }
-          }
-        }
-        
-        // Se encontrou questões, buscar respostas do aluno
-        for (const lesson of lessonsWithStats) {
-          // Buscar questões da aula
-          let questoesIds: string[] = [];
-          
-          // Verificar se a aula tem questões diretamente
-          const aulaCompleta = aulasData.find(a => a.id === lesson.id);
-          if (aulaCompleta) {
-            if (aulaCompleta.questoes_ids && Array.isArray(aulaCompleta.questoes_ids)) {
-              questoesIds = aulaCompleta.questoes_ids;
-            }
-          }
-          
-          // Se não encontrou questões diretamente, buscar na tabela de questões
-          if (questoesIds.length === 0) {
-            // Tentar com diferentes nomes de coluna
-            const questoesResponse1 = await supabase
-              .from('questoes')
-              .select('id')
-              .eq('aula_id', lesson.id);
-            
-            const questoesData1 = questoesResponse1.data;
-            
-            if (questoesData1 && questoesData1.length > 0) {
-              questoesIds = questoesData1.map((q) => q.id);
-            } else {
-              const questoesResponse2 = await supabase
-                .from('questoes')
-                .select('id')
-                .eq('id_aula', lesson.id);
-              
-              const questoesData2 = questoesResponse2.data;
-              
-              if (questoesData2 && questoesData2.length > 0) {
-                questoesIds = questoesData2.map((q) => q.id);
-              }
-            }
-          }
-          
-          // Se encontrou questões, buscar respostas do aluno
-          if (questoesIds.length > 0) {
-            // Buscar todas as respostas do aluno para estas questões, incluindo a data de criação
-            const respostasResponse = await supabase
-              .from('respostas_alunos')
-              .select('questao_id, is_correta, created_at')
-              .eq('aluno_id', user.id)
-              .in('questao_id', questoesIds)
-              .order('created_at', { ascending: false });
-            
-            const respostasData = respostasResponse.data as SupabaseResposta[] | null;
-            
-            if (respostasData && respostasData.length > 0) {
-              // Filtrar para considerar apenas a resposta mais recente de cada questão
-              const respostasMaisRecentes = new Map<string, boolean>();
-              
-              // Percorre as respostas (já ordenadas por data decrescente)
-              // e guarda apenas a primeira ocorrência (mais recente) de cada questão
-              for (const resposta of respostasData) {
-                if (!respostasMaisRecentes.has(resposta.questao_id)) {
-                  respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
-                }
-              }
-              
-              const total = respostasMaisRecentes.size;
-              const hits = Array.from(respostasMaisRecentes.values()).filter(Boolean).length;
-              
-              lesson.stats = {
-                total,
-                hits,
-                errors: total - hits
-              };
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Erro ao buscar dados de progresso do usuário:', error);
-      }
+  // Função para marcar um tópico como concluído
+  const markTopicAsDone = (topicId: number) => {
+    if (updateTopicProgress) {
+      updateTopicProgress(subject.id, topicId, 'isDone', true);
     }
-    
-    setLessons(lessonsWithStats);
   };
   
-  const getSubjectStats = () => {
-    // Inicializar estatísticas das aulas
-    const lessonStats = {
-      questionsTotal: 0,
-      questionsCorrect: 0,
-      questionsWrong: 0
-    };
-    
-    // Calcular estatísticas das aulas
-    for (const lesson of lessons) {
-      if (lesson.stats) {
-        lessonStats.questionsTotal += (lesson.stats.total || 0);
-        lessonStats.questionsCorrect += (lesson.stats.hits || 0);
-        lessonStats.questionsWrong += (lesson.stats.errors || 0);
-      }
-      // Verificar se há estatísticas no formato direto
-      if ('total' in lesson && 'hits' in lesson && 'errors' in lesson) {
-        const total = Number((lesson as any).total) || 0;
-        const hits = Number((lesson as any).hits) || 0;
-        const errors = Number((lesson as any).errors) || 0;
-        
-        lessonStats.questionsTotal += total;
-        lessonStats.questionsCorrect += hits;
-        lessonStats.questionsWrong += errors;
-      }
+  // Função para marcar um tópico como revisado
+  const markTopicAsReviewed = (topicId: number) => {
+    if (updateTopicProgress) {
+      updateTopicProgress(subject.id, topicId, 'isReviewed', true);
     }
-    
-    // Log para depuração das estatísticas das aulas
-    console.log(`Estatísticas das aulas para ${subject.name || subject.titulo}:`, lessonStats);
-    
-    // Se o subject já tem estatísticas calculadas, usar diretamente
-    if (subject.questionsTotal !== undefined && 
-        subject.questionsCorrect !== undefined && 
-        subject.questionsWrong !== undefined) {
-      
-      // Garantir que os valores são números válidos
-      const questionsTotal = Number(subject.questionsTotal) || 0;
-      const questionsCorrect = Number(subject.questionsCorrect) || 0;
-      const questionsWrong = Number(subject.questionsWrong) || 0;
-      
-      // Log para depuração
-      console.log(`Usando estatísticas do subject para ${subject.name || subject.titulo}:`, {
-        questionsTotal,
-        questionsCorrect,
-        questionsWrong
-      });
-      
-      return {
-        progress: subject.progress || 0,
-        questionsTotal: questionsTotal,
-        questionsCorrect: questionsCorrect,
-        questionsWrong: questionsWrong,
-        aproveitamento: questionsTotal > 0 
-          ? Math.round((questionsCorrect / questionsTotal) * 100) 
-          : 0
-      };
-    }
-    
-    // Verificar se já existem estatísticas definidas no subject
-    if (subject.progress !== undefined && 
-        subject.questionsTotal !== undefined && 
-        subject.questionsCorrect !== undefined && 
-        subject.questionsWrong !== undefined) {
-      
-      // Garantir que os valores são números válidos
-      const questionsTotal = Number(subject.questionsTotal) || 0;
-      const questionsCorrect = Number(subject.questionsCorrect) || 0;
-      const questionsWrong = Number(subject.questionsWrong) || 0;
-      
-      // Log para depuração
-      console.log(`Usando estatísticas do subject para ${subject.name || subject.titulo}:`, {
-        questionsTotal,
-        questionsCorrect,
-        questionsWrong
-      });
-      
-      return {
-        progress: subject.progress,
-        questionsTotal: questionsTotal,
-        questionsCorrect: questionsCorrect,
-        questionsWrong: questionsWrong,
-        aproveitamento: questionsTotal > 0 
-          ? Math.round((questionsCorrect / questionsTotal) * 100) 
-          : 0
-      };
-    }
-    
-    if (subject.topics) {
-      const stats = calculateSubjectTotals(subject.topics);
-      
-      // Combinar estatísticas dos tópicos com as das aulas
-      const combinedStats = {
-        totalTopics: stats.totalTopics,
-        completedTopics: stats.completedTopics,
-        exercisesDone: stats.exercisesDone + lessonStats.questionsTotal,
-        hits: stats.hits + lessonStats.questionsCorrect,
-        errors: stats.errors + lessonStats.questionsWrong
-      };
-      
-      return {
-        progress: combinedStats.totalTopics > 0 
-          ? Math.round((combinedStats.completedTopics / combinedStats.totalTopics) * 100) 
-          : 0,
-        questionsTotal: combinedStats.exercisesDone,
-        questionsCorrect: combinedStats.hits,
-        questionsWrong: combinedStats.errors,
-        aproveitamento: combinedStats.exercisesDone > 0 
-          ? Math.round((combinedStats.hits / combinedStats.exercisesDone) * 100) 
-          : 0
-      };
-    }
-    
-    if (subject.stats) {
-      // Combinar estatísticas do subject com as das aulas
-      const combinedStats = {
-        totalTopics: subject.stats.totalTopics || 0,
-        completedTopics: subject.stats.completedTopics || 0,
-        exercisesDone: (subject.stats.exercisesDone || 0) + lessonStats.questionsTotal,
-        hits: (subject.stats.hits || 0) + lessonStats.questionsCorrect,
-        errors: (subject.stats.errors || 0) + lessonStats.questionsWrong
-      };
-      
-      return {
-        progress: combinedStats.totalTopics > 0 
-          ? Math.round((combinedStats.completedTopics / combinedStats.totalTopics) * 100) 
-          : 0,
-        questionsTotal: combinedStats.exercisesDone,
-        questionsCorrect: combinedStats.hits,
-        questionsWrong: combinedStats.errors,
-        aproveitamento: combinedStats.exercisesDone > 0 
-          ? Math.round((combinedStats.hits / combinedStats.exercisesDone) * 100) 
-          : 0
-      };
-    }
-    
-    // Usar as estatísticas calculadas das aulas se existirem
-    if (lessonStats.questionsTotal > 0) {
-      return {
-        progress: 0, // Não temos como calcular o progresso apenas com as aulas
-        questionsTotal: lessonStats.questionsTotal,
-        questionsCorrect: lessonStats.questionsCorrect,
-        questionsWrong: lessonStats.questionsWrong,
-        aproveitamento: Math.round((lessonStats.questionsCorrect / lessonStats.questionsTotal) * 100)
-      };
-    }
+  };
+  
+  // Função para calcular estatísticas de um tópico
+  const calculateTopicStats = (topic: Topic) => {
+    const totalAttempts = topic.hits + topic.errors;
+    const hitRate = totalAttempts > 0 ? (topic.hits / totalAttempts) * 100 : 0;
     
     return {
-      progress: 0,
-      questionsTotal: 0,
-      questionsCorrect: 0,
-      questionsWrong: 0,
-      aproveitamento: 0
+      totalAttempts,
+      hitRate
     };
   };
   
-  const stats = getSubjectStats();
-  
-  return <div className="bg-[rgba(246,248,250,1)] rounded-[10px]">
-      <div className="p-3 cursor-pointer" onClick={onToggle}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 flex-1">
-            <div className="relative flex items-center justify-center">
-              {renderDonutChart(stats.aproveitamento, '#5f2ebe', 'rgba(38,47,60,0.1)')}
-              <span className="absolute text-xs font-medium text-[rgba(38,47,60,1)]">{stats.aproveitamento}%</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-medium text-sm text-[rgba(38,47,60,1)]">{subject.name || subject.titulo}</span>
+  // Ordenar tópicos por importância (decrescente)
+  const sortedTopics = [...subject.topics].sort((a, b) => b.importance - a.importance);
+
+  return (
+    <div 
+      className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300"
+      data-testid="subject-card"
+    >
+      {/* Cabeçalho do card */}
+      <div 
+        className="px-6 py-5 cursor-pointer flex justify-between items-center"
+        onClick={() => onClick && onClick(subject.id)}
+      >
+        <div>
+          <h3 className="text-lg font-semibold text-[#272f3c]">{subject.name}</h3>
+          <p className="text-sm text-[#67748a]">{subject.rating}</p>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <div className="text-right">
+            <span className="text-sm font-medium text-[#67748a]">
+              {completedTopics}/{totalTopics} concluídos
+            </span>
+            <div className="flex items-center space-x-2">
+              <Progress value={completionPercentage} className="w-20 h-2" />
+              <span className="text-xs text-[#67748a]">
+                {formatPercentage(completionPercentage)}
+              </span>
             </div>
           </div>
-          <div className="flex items-center">
-            <button 
-              onClick={onToggle}
-              className="text-[rgba(38,47,60,0.6)] hover:text-[#5f2ebe] transition-colors"
-            >
-              {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-0 h-8 w-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
+          >
+            {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </Button>
         </div>
       </div>
       
-      {isExpanded && (
-        <div className="px-3 pb-3">
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            <div className="bg-white p-2 rounded text-center">
-              <div className="text-xs text-[#5f2ebe] flex items-center justify-center gap-1 mb-1">
-                <Award className="w-3.5 h-3.5" />
-                <span>Aproveitamento</span>
-              </div>
-              <div className="font-semibold text-sm text-[#5f2ebe]">{stats.aproveitamento}%</div>
-            </div>
-            <div className="bg-white p-2 rounded text-center">
-              <div className="text-xs text-[#5f2ebe] flex items-center justify-center gap-1 mb-1">
-                <CheckCircle className="w-3.5 h-3.5" />
-                <span>Acertos</span>
-              </div>
-              <div className="font-semibold text-sm text-[#5f2ebe]">{stats.questionsCorrect}</div>
-            </div>
-            <div className="bg-white p-2 rounded text-center">
-              <div className="text-xs text-[#ffac33] flex items-center justify-center gap-1 mb-1">
-                <XCircle className="w-3.5 h-3.5" />
-                <span>Erros</span>
-              </div>
-              <div className="font-semibold text-sm text-[#ffac33]">{stats.questionsWrong}</div>
-            </div>
+      {/* Lista de tópicos (expandível) */}
+      {expanded && (
+        <div className="border-t border-gray-100">
+          {/* Cabeçalho */}
+          <div className="grid grid-cols-12 py-2 px-6 bg-gray-50 text-xs font-medium text-[#67748a]">
+            <div className="col-span-6">Tópico</div>
+            <div className="col-span-2 text-center">Importância</div>
+            <div className="col-span-2 text-center">Desempenho</div>
+            <div className="col-span-2 text-center">Ações</div>
           </div>
           
-          <div>
-            {loadingLessons ? (
-              <div className="text-center py-3">
-                <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-[#5f2ebe] border-r-transparent"></div>
-                <div className="mt-1 text-xs text-[rgba(38,47,60,1)]">Carregando aulas...</div>
+          {/* Lista de tópicos */}
+          {sortedTopics.map((topic) => {
+            const { totalAttempts, hitRate } = calculateTopicStats(topic);
+            
+            return (
+              <div 
+                key={`${subject.id}-${topic.id}`}
+                className={`grid grid-cols-12 py-3 px-6 border-b border-gray-100 items-center ${
+                  topic.isDone ? 'bg-green-50' : topic.isReviewed ? 'bg-blue-50' : ''
+                }`}
+              >
+                <div className="col-span-6">
+                  <div 
+                    className="flex items-center cursor-pointer group"
+                    onClick={() => navigateToContent(topic.link)}
+                  >
+                    {topic.isDone ? (
+                      <Check size={16} className="mr-2 text-green-500 flex-shrink-0" />
+                    ) : topic.isReviewed ? (
+                      <Clock size={16} className="mr-2 text-blue-500 flex-shrink-0" />
+                    ) : (
+                      <BookOpen size={16} className="mr-2 text-gray-400 flex-shrink-0" />
+                    )}
+                    <span className={`text-sm group-hover:text-primary transition-colors ${
+                      topic.isDone ? 'text-green-700' : 
+                      topic.isReviewed ? 'text-blue-700' : 'text-[#272f3c]'
+                    }`}>
+                      {topic.name}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="col-span-2 text-center">
+                  <ImportanceStars value={topic.importance} max={100} size="sm" />
+                </div>
+                
+                <div className="col-span-2 text-center">
+                  {totalAttempts > 0 ? (
+                    <div className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium" style={{
+                      backgroundColor: hitRate >= 70 ? 'rgba(16, 185, 129, 0.1)' : 
+                                        hitRate >= 50 ? 'rgba(245, 158, 11, 0.1)' : 
+                                        'rgba(239, 68, 68, 0.1)',
+                      color: hitRate >= 70 ? 'rgb(16, 185, 129)' : 
+                             hitRate >= 50 ? 'rgb(245, 158, 11)' : 
+                             'rgb(239, 68, 68)'
+                    }}>
+                      {formatPercentage(hitRate)}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-gray-400">Sem dados</span>
+                  )}
+                </div>
+                
+                <div className="col-span-2 flex justify-center space-x-1">
+                  {!topic.isDone && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-green-600 hover:text-green-800 hover:bg-green-50"
+                      onClick={() => markTopicAsDone(topic.id)}
+                      title="Marcar como concluído"
+                    >
+                      <Check size={16} />
+                    </Button>
+                  )}
+                  
+                  {!topic.isReviewed && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+                      onClick={() => markTopicAsReviewed(topic.id)}
+                      title="Marcar como revisado"
+                    >
+                      <FilePen size={16} />
+                    </Button>
+                  )}
+                  
+                  {topic.link && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-purple-600 hover:text-purple-800 hover:bg-purple-50"
+                      onClick={() => navigateToContent(topic.link)}
+                      title="Visualizar conteúdo"
+                    >
+                      <BookOpen size={16} />
+                    </Button>
+                  )}
+                </div>
               </div>
-            ) : (
-              <>
-                {lessons.length > 0 ? (
-                  <div className="space-y-2">
-                    {lessons.map((lesson) => (
-                      <LessonItem 
-                        key={lesson.id}
-                        title={lesson.titulo}
-                        isCompleted={lesson.concluida}
-                        stats={{
-                          total: lesson.stats.total,
-                          hits: lesson.stats.hits,
-                          errors: lesson.stats.errors
-                        }}
-                        questoesIds={lesson.questoesIds}
-                      />
-                    ))}
+            );
+          })}
+          
+          {/* Resumo de desempenho */}
+          <div className="p-4 bg-gray-50">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white p-3 rounded-lg shadow-sm">
+                <h4 className="text-xs font-medium text-[#67748a] mb-2">Taxa de Acerto</h4>
+                <div className="flex items-center">
+                  <div className="w-full mr-4">
+                    <Progress 
+                      value={performance.hitRate} 
+                      className="h-2.5" 
+                      indicatorClassName={`${
+                        performance.hitRate >= 70 ? 'bg-green-500' : 
+                        performance.hitRate >= 50 ? 'bg-yellow-500' : 
+                        'bg-red-500'
+                      }`} 
+                    />
                   </div>
-                ) : (
-                  <div className="text-center py-3 text-[rgba(38,47,60,0.6)]">
-                    Nenhuma aula encontrada para esta disciplina.
+                  <span className="text-sm font-medium">
+                    {formatPercentage(performance.hitRate)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="bg-white p-3 rounded-lg shadow-sm">
+                <h4 className="text-xs font-medium text-[#67748a] mb-2">Progresso</h4>
+                <div className="flex items-center">
+                  <div className="w-full mr-4">
+                    <Progress 
+                      value={completionPercentage} 
+                      className="h-2.5" 
+                      indicatorClassName="bg-primary" 
+                    />
                   </div>
-                )}
-              </>
-            )}
+                  <span className="text-sm font-medium">
+                    {formatPercentage(completionPercentage)}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
-    </div>;
+    </div>
+  );
 };

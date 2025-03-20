@@ -981,50 +981,124 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      decrement_post_comment_count: {
+      decrement_post_comment_count:
+        | {
+            Args: {
+              post_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              post_id: string
+            }
+            Returns: undefined
+          }
+      handle_comment_created: {
         Args: {
-          post_id: string
+          comment_id: number
         }
         Returns: undefined
       }
-      increment_blog_post_comments: {
+      handle_comment_deleted: {
         Args: {
-          post_id: string
+          comment_id: number
         }
         Returns: undefined
       }
-      increment_blog_post_likes: {
+      handle_new_user: {
         Args: {
-          post_id: string
+          user_id: number
         }
         Returns: undefined
       }
-      increment_comment_likes: {
-        Args: {
-          comment_id: string
-        }
-        Returns: undefined
-      }
-      increment_post_comment_count: {
-        Args: {
-          post_id: string
-        }
-        Returns: undefined
-      }
+      increment_blog_post_comments:
+        | {
+            Args: {
+              post_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              post_id: string
+            }
+            Returns: undefined
+          }
+      increment_blog_post_likes:
+        | {
+            Args: {
+              post_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              post_id: string
+            }
+            Returns: undefined
+          }
+      increment_comment_likes:
+        | {
+            Args: {
+              comment_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              comment_id: string
+            }
+            Returns: undefined
+          }
+      increment_post_comment_count:
+        | {
+            Args: {
+              post_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              post_id: string
+            }
+            Returns: undefined
+          }
       table_exists: {
         Args: {
           table_name: string
         }
         Returns: boolean
       }
-      upsert_user_question_attempt: {
+      update_updated_at_column: {
         Args: {
-          p_user_id: string
-          p_question_id: string
-          p_is_correct: boolean
+          record_id: number
         }
         Returns: undefined
       }
+      update_user_question_attempts_updated_at: {
+        Args: {
+          attempt_id: number
+        }
+        Returns: undefined
+      }
+      upsert_user_question_attempt:
+        | {
+            Args: {
+              p_user_id: string
+              p_question_id: string
+              p_is_correct: boolean
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              user_id: number
+              question_id: number
+              attempt_data: Json
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       user_role: "aluno" | "professor" | "admin"

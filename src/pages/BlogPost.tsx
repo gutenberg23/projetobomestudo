@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
@@ -53,6 +54,14 @@ const GlobalStyle = () => (
   `}} />
 );
 
+// Componente de fallback quando não há conexão com o servidor
+const OfflineNotice = () => (
+  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 text-amber-700">
+    <p className="font-medium">Você está visualizando este conteúdo no modo offline</p>
+    <p className="text-sm">Alguns recursos podem estar limitados até que a conexão seja restaurada.</p>
+  </div>
+);
+
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -64,7 +73,27 @@ const BlogPostPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [commentCount, setCommentCount] = useState(0);
+  const [isOffline, setIsOffline] = useState(false);
   const { user } = useAuth();
+  
+  // Verificar o status da conexão
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    // Verificar estado inicial
+    setIsOffline(!navigator.onLine);
+    
+    // Adicionar event listeners
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
   // Buscar o post com base no slug
   useEffect(() => {
@@ -207,12 +236,25 @@ const BlogPostPage = () => {
     if (!post) return;
     
     try {
+      // Atualizar estado local primeiro para UX instantânea
+      setIsLiked(true);
+      
+      // Atualizar localStorage
+      const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+      if (!likedPosts.includes(post.id)) {
+        likedPosts.push(post.id);
+        localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+      }
+      
+      // Atualizar contador
+      setPost({
+        ...post,
+        likesCount: post.likesCount + 1
+      });
+      
+      // Enviar para o servidor (assíncrono)
       const success = await incrementLikes(post.id);
       if (success) {
-        setPost({
-          ...post,
-          likesCount: post.likesCount + 1
-        });
         toast({
           title: "Artigo curtido!",
           description: "Obrigado por curtir este artigo."
@@ -220,11 +262,7 @@ const BlogPostPage = () => {
       }
     } catch (error) {
       console.error('Erro ao curtir artigo:', error);
-      toast({
-        title: "Erro ao curtir",
-        description: "Não foi possível curtir este artigo. Tente novamente mais tarde.",
-        variant: "destructive"
-      });
+      // Não revertemos a UI mesmo em caso de erro para melhor experiência do usuário
     }
   };
 
@@ -359,6 +397,8 @@ const BlogPostPage = () => {
       <Header />
       <GlobalStyle />
       <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
+        {isOffline && <OfflineNotice />}
+        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             {/* Artigo */}
