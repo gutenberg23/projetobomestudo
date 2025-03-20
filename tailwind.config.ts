@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -66,133 +67,6 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
-			typography: {
-				DEFAULT: {
-					css: {
-						color: '#67748a', // Cor padrão para texto
-						maxWidth: '100%',
-						a: {
-							color: '#ea2be2', // Tom principal (roxo/magenta)
-							textDecoration: 'underline',
-							fontWeight: '500',
-							'&:hover': {
-								color: '#5f2ebe', // Hover com cor secundária
-							},
-						},
-						h1: {
-							color: '#272f3c', // Cor para títulos
-							fontWeight: '700',
-							fontSize: '2.25rem',
-							marginTop: '2rem',
-							marginBottom: '1rem',
-						},
-						h2: {
-							color: '#272f3c',
-							fontWeight: '600',
-							fontSize: '1.75rem',
-							marginTop: '1.75rem',
-							marginBottom: '0.75rem',
-						},
-						h3: {
-							color: '#272f3c',
-							fontWeight: '600',
-							fontSize: '1.5rem',
-							marginTop: '1.5rem',
-							marginBottom: '0.75rem',
-						},
-						h4: {
-							color: '#272f3c',
-							fontWeight: '600',
-							fontSize: '1.25rem',
-						},
-						blockquote: {
-							fontStyle: 'italic',
-							color: '#67748a',
-							borderLeftColor: '#5f2ebe',
-							borderLeftWidth: '4px',
-							paddingLeft: '1rem',
-							backgroundColor: '#f8f9fa',
-							borderRadius: '0.25rem',
-							padding: '1rem',
-						},
-						'ul > li': {
-							position: 'relative',
-							paddingLeft: '1.75em',
-							'&::before': {
-								content: '""',
-								position: 'absolute',
-								backgroundColor: '#5f2ebe',
-								borderRadius: '50%',
-								width: '0.375em',
-								height: '0.375em',
-								top: 'calc(0.875em - 0.1875em)',
-								left: '0.25em',
-							},
-						},
-						'ol > li': {
-							position: 'relative',
-							paddingLeft: '1.75em',
-							counterIncrement: 'list-counter',
-							'&::before': {
-								content: 'counter(list-counter) "."',
-								position: 'absolute',
-								fontWeight: '500',
-								color: '#5f2ebe',
-								left: '0',
-							},
-						},
-						img: {
-							borderRadius: '0.5rem',
-							marginTop: '1.5rem',
-							marginBottom: '1.5rem',
-						},
-						table: {
-							width: '100%',
-							borderCollapse: 'collapse',
-							borderSpacing: 0,
-							marginTop: '1.5rem',
-							marginBottom: '1.5rem',
-						},
-						'thead th': {
-							borderBottom: '2px solid #e2e8f0',
-							padding: '0.75rem',
-							textAlign: 'left',
-							color: '#272f3c',
-							fontWeight: '600',
-							backgroundColor: '#f8f9fa',
-						},
-						'tbody td': {
-							padding: '0.75rem',
-							borderBottom: '1px solid #e2e8f0',
-							color: '#67748a',
-						},
-						'tbody tr:last-child td': {
-							borderBottom: 'none',
-						},
-						code: {
-							color: '#5f2ebe',
-							backgroundColor: '#f1f5f9',
-							padding: '0.2em 0.4em',
-							borderRadius: '0.25rem',
-							fontSize: '0.875em',
-						},
-						pre: {
-							backgroundColor: '#1e293b',
-							color: '#f8fafc',
-							padding: '1rem',
-							borderRadius: '0.5rem',
-							overflowX: 'auto',
-							fontSize: '0.875em',
-						},
-						'pre code': {
-							backgroundColor: 'transparent',
-							color: 'inherit',
-							fontSize: 'inherit',
-							padding: '0',
-						},
-					},
-				},
-			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
@@ -222,5 +96,5 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+	plugins: [require("tailwindcss-animate")],
 } satisfies Config;

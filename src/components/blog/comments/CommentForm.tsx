@@ -53,13 +53,11 @@ export const CommentForm: React.FC<CommentFormProps> = ({
     try {
       const newComment = await createComment({
         postId,
+        userId: user.id,
         content: content.trim(),
-        author: user.user_metadata?.name || 'Usuário',
-        authorId: user.id,
-        authorAvatar: authorAvatar || user.user_metadata?.avatar_url,
-        parentId,
         authorName: authorName || user.user_metadata?.name || 'Usuário',
-        userId: user.id
+        authorAvatar: authorAvatar || user.user_metadata?.avatar_url,
+        parentId
       });
 
       // Se for um comentário principal (não uma resposta), incrementar a contagem de comentários do post

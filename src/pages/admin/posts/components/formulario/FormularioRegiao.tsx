@@ -20,15 +20,8 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
 }) => {
   // Filtrar estados por região selecionada
   const estadosFiltrados = regiao 
-    ? ESTADOS.filter(estado => estado.region.toLowerCase() === regiao) 
+    ? ESTADOS.filter(estado => estado.region === regiao) 
     : ESTADOS;
-
-  // Atualizar a função onde existe o erro de comparação de tipos
-  const canSelectState = (regiao: RegionOrEmpty) => {
-    // Verificar se a região selecionada é uma região brasileira que tem estados
-    // federal e nacional não têm estados específicos
-    return regiao !== '' && regiao !== 'federal' && regiao !== 'nacional' && regiao !== 'internacional';
-  };
 
   return (
     <div className="p-4 border rounded-md bg-gray-50">
@@ -60,7 +53,7 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
           <Select 
             value={estado} 
             onValueChange={onChangeEstado}
-            disabled={!canSelectState(regiao)}
+            disabled={!regiao || regiao === "Federal" || regiao === "Nacional"}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um estado" />

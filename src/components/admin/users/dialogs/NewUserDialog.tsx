@@ -86,7 +86,6 @@ const NewUserDialog: React.FC<NewUserDialogProps> = ({
                 <SelectItem value="aluno">Aluno</SelectItem>
                 <SelectItem value="professor">Professor</SelectItem>
                 <SelectItem value="administrador">Administrador</SelectItem>
-                <SelectItem value="jornalista">Jornalista</SelectItem>
               </SelectContent>
             </Select>
           </div>

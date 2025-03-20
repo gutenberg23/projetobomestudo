@@ -1,5 +1,5 @@
 
-export type UserType = "aluno" | "professor" | "administrador" | "jornalista";
+export type UserType = "aluno" | "professor" | "administrador";
 export type UserStatus = "ativo" | "inativo";
 
 export interface UserData {

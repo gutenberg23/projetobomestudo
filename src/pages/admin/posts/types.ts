@@ -1,5 +1,5 @@
-import { BlogPost, Region } from "@/components/blog/types";
-import { StateFilter } from "@/components/blog/types";
+
+import { BlogPost, Region, RegionOrEmpty, StateFilter } from "@/components/blog/types";
 
 // Enum para controlar o modo da interface
 export enum ModoInterface {
@@ -22,47 +22,46 @@ export const CATEGORIAS = [
   "Notícias"
 ];
 
-// Regiões disponíveis - corrigidas para usar os valores definidos no tipo Region
+// Regiões disponíveis
 export const REGIOES: Region[] = [
-  "norte",
-  "nordeste", 
-  "centro-oeste", 
-  "sudeste", 
-  "sul", 
-  "nacional", 
-  "internacional",
-  "federal"
+  "Norte",
+  "Nordeste", 
+  "Centro-Oeste", 
+  "Sudeste", 
+  "Sul", 
+  "Federal", 
+  "Nacional"
 ];
 
 // Estados disponíveis
 export const ESTADOS: StateFilter[] = [
-  { id: "ac", name: "Acre", value: "AC", region: "norte" },
-  { id: "al", name: "Alagoas", value: "AL", region: "nordeste" },
-  { id: "ap", name: "Amapá", value: "AP", region: "norte" },
-  { id: "am", name: "Amazonas", value: "AM", region: "norte" },
-  { id: "ba", name: "Bahia", value: "BA", region: "nordeste" },
-  { id: "ce", name: "Ceará", value: "CE", region: "nordeste" },
-  { id: "df", name: "Distrito Federal", value: "DF", region: "centro-oeste" },
-  { id: "es", name: "Espírito Santo", value: "ES", region: "sudeste" },
-  { id: "go", name: "Goiás", value: "GO", region: "centro-oeste" },
-  { id: "ma", name: "Maranhão", value: "MA", region: "nordeste" },
-  { id: "mt", name: "Mato Grosso", value: "MT", region: "centro-oeste" },
-  { id: "ms", name: "Mato Grosso do Sul", value: "MS", region: "centro-oeste" },
-  { id: "mg", name: "Minas Gerais", value: "MG", region: "sudeste" },
-  { id: "pa", name: "Pará", value: "PA", region: "norte" },
-  { id: "pb", name: "Paraíba", value: "PB", region: "nordeste" },
-  { id: "pr", name: "Paraná", value: "PR", region: "sul" },
-  { id: "pe", name: "Pernambuco", value: "PE", region: "nordeste" },
-  { id: "pi", name: "Piauí", value: "PI", region: "nordeste" },
-  { id: "rj", name: "Rio de Janeiro", value: "RJ", region: "sudeste" },
-  { id: "rn", name: "Rio Grande do Norte", value: "RN", region: "nordeste" },
-  { id: "rs", name: "Rio Grande do Sul", value: "RS", region: "sul" },
-  { id: "ro", name: "Rondônia", value: "RO", region: "norte" },
-  { id: "rr", name: "Roraima", value: "RR", region: "norte" },
-  { id: "sc", name: "Santa Catarina", value: "SC", region: "sul" },
-  { id: "sp", name: "São Paulo", value: "SP", region: "sudeste" },
-  { id: "se", name: "Sergipe", value: "SE", region: "nordeste" },
-  { id: "to", name: "Tocantins", value: "TO", region: "norte" }
+  { id: "ac", name: "Acre", value: "AC", region: "Norte" },
+  { id: "al", name: "Alagoas", value: "AL", region: "Nordeste" },
+  { id: "ap", name: "Amapá", value: "AP", region: "Norte" },
+  { id: "am", name: "Amazonas", value: "AM", region: "Norte" },
+  { id: "ba", name: "Bahia", value: "BA", region: "Nordeste" },
+  { id: "ce", name: "Ceará", value: "CE", region: "Nordeste" },
+  { id: "df", name: "Distrito Federal", value: "DF", region: "Centro-Oeste" },
+  { id: "es", name: "Espírito Santo", value: "ES", region: "Sudeste" },
+  { id: "go", name: "Goiás", value: "GO", region: "Centro-Oeste" },
+  { id: "ma", name: "Maranhão", value: "MA", region: "Nordeste" },
+  { id: "mt", name: "Mato Grosso", value: "MT", region: "Centro-Oeste" },
+  { id: "ms", name: "Mato Grosso do Sul", value: "MS", region: "Centro-Oeste" },
+  { id: "mg", name: "Minas Gerais", value: "MG", region: "Sudeste" },
+  { id: "pa", name: "Pará", value: "PA", region: "Norte" },
+  { id: "pb", name: "Paraíba", value: "PB", region: "Nordeste" },
+  { id: "pr", name: "Paraná", value: "PR", region: "Sul" },
+  { id: "pe", name: "Pernambuco", value: "PE", region: "Nordeste" },
+  { id: "pi", name: "Piauí", value: "PI", region: "Nordeste" },
+  { id: "rj", name: "Rio de Janeiro", value: "RJ", region: "Sudeste" },
+  { id: "rn", name: "Rio Grande do Norte", value: "RN", region: "Nordeste" },
+  { id: "rs", name: "Rio Grande do Sul", value: "RS", region: "Sul" },
+  { id: "ro", name: "Rondônia", value: "RO", region: "Norte" },
+  { id: "rr", name: "Roraima", value: "RR", region: "Norte" },
+  { id: "sc", name: "Santa Catarina", value: "SC", region: "Sul" },
+  { id: "sp", name: "São Paulo", value: "SP", region: "Sudeste" },
+  { id: "se", name: "Sergipe", value: "SE", region: "Nordeste" },
+  { id: "to", name: "Tocantins", value: "TO", region: "Norte" }
 ];
 
 // Mock de posts para a listagem
@@ -77,8 +76,7 @@ export const MOCK_POSTS: BlogPost[] = [
     likesCount: 32,
     createdAt: "2023-10-15T14:30:00Z",
     slug: "dicas-para-provas-de-portugues",
-    category: "Português",
-    relatedPosts: []
+    category: "Português"
   },
   {
     id: "2",
@@ -90,8 +88,7 @@ export const MOCK_POSTS: BlogPost[] = [
     likesCount: 24,
     createdAt: "2023-10-10T09:45:00Z",
     slug: "como-estudar-para-concursos-juridicos",
-    category: "Direito",
-    relatedPosts: []
+    category: "Direito"
   },
   {
     id: "3",
@@ -103,7 +100,6 @@ export const MOCK_POSTS: BlogPost[] = [
     likesCount: 18,
     createdAt: "2023-09-28T11:20:00Z",
     slug: "matematica-para-concursos-formulas-essenciais",
-    category: "Matemática",
-    relatedPosts: []
+    category: "Matemática"
   },
 ];

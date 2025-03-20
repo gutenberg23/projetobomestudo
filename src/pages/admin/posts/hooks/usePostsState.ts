@@ -1,9 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { BlogPost, Region, RegionOrEmpty } from "@/components/blog/types";
 import { ModoInterface, MOCK_POSTS } from "../types";
 import { fetchBlogPosts } from "@/services/blogService";
-import { toast } from "@/components/ui/use-toast";
 
 export function usePostsState() {
   const [modo, setModo] = useState<ModoInterface>(ModoInterface.LISTAR);
@@ -16,6 +14,8 @@ export function usePostsState() {
   const [titulo, setTitulo] = useState("");
   const [resumo, setResumo] = useState("");
   const [conteudo, setConteudo] = useState("");
+  const [autor, setAutor] = useState("");
+  const [autorAvatar, setAutorAvatar] = useState("");
   const [categoria, setCategoria] = useState("");
   const [destacado, setDestacado] = useState(false);
   const [tags, setTags] = useState("");
@@ -33,23 +33,9 @@ export function usePostsState() {
       setLoading(true);
       try {
         const postsData = await fetchBlogPosts();
-        if (postsData.length > 0) {
-          setPosts(postsData);
-        } else {
-          setPosts(MOCK_POSTS);
-          toast({
-            title: "Utilizando dados de exemplo",
-            description: "Não foi possível encontrar posts no banco de dados, exibindo dados de exemplo.",
-            variant: "default"
-          });
-        }
+        setPosts(postsData.length > 0 ? postsData : MOCK_POSTS);
       } catch (error) {
         console.error("Erro ao carregar posts:", error);
-        toast({
-          title: "Erro ao carregar posts",
-          description: "Utilizando dados de exemplo por enquanto.",
-          variant: "destructive"
-        });
         setPosts(MOCK_POSTS); // Fallback para dados mock em caso de erro
       } finally {
         setLoading(false);
@@ -62,6 +48,7 @@ export function usePostsState() {
   // Filtragem dos posts baseado na busca
   const postsFiltrados = posts.filter(post => 
     post.title.toLowerCase().includes(busca.toLowerCase()) || 
+    post.author.toLowerCase().includes(busca.toLowerCase()) ||
     post.category.toLowerCase().includes(busca.toLowerCase())
   );
 
@@ -83,6 +70,10 @@ export function usePostsState() {
     setResumo,
     conteudo,
     setConteudo,
+    autor,
+    setAutor,
+    autorAvatar,
+    setAutorAvatar,
     categoria,
     setCategoria,
     destacado,

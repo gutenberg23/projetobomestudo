@@ -6,33 +6,20 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "/lovable-uploads/logo.svg";
-import { NetworkStatus } from '../ui/network-status';
-
-export const Header: React.FC = () => {
+export const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const {
     user,
     signOut
   } = useAuth();
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/explore?search=${encodeURIComponent(searchQuery)}`);
     }
   };
-
-  return (
-    <header className="fixed w-full bg-white shadow-sm z-50">
-      <div className="w-full">
-        <NetworkStatus 
-          className="rounded-none text-sm py-1 px-4 text-center" 
-          offlineMessage="Você está offline. Alguns recursos podem não estar disponíveis."
-          showOfflineOnly={true}
-        />
-      </div>
-
+  return <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-0">
       <div className="flex min-h-[88px] flex-col items-stretch justify-center w-[230px] py-[21px]">
         <Link to="/">
           <img loading="lazy" src={logo} alt="Company Logo" className="aspect-[8.06] w-[230px] md:w-[230px] w-[120px] object-contain" />
@@ -118,6 +105,5 @@ export const Header: React.FC = () => {
           </PopoverContent>
         </Popover>
       </div>
-    </header>
-  );
+    </header>;
 };

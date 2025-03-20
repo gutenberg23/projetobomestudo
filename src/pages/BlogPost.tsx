@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
@@ -28,39 +27,6 @@ import { fetchBlogPostBySlug, fetchBlogPosts, incrementLikes } from "@/services/
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-// Importar o CSS do blog
-import "../../styles/blog.css";
-
-// Estilo inline para o caso do CSS não carregar - versão simplificada
-const inlineTableStyles = `
-<style>
-table { font-size:0.65rem; line-height:0.85; border-collapse:collapse; width:100%; }
-th, td { padding:0.2rem 0.3rem; font-size:0.65rem; border:1px solid #ddd; vertical-align:top; }
-td p, th p { margin:0; padding:0; font-size:0.65rem; }
-.overflow-x-auto { width:100%; overflow-x:auto; display:block; }
-@media (max-width:768px) {
-  table { width:100%; }
-  .overflow-x-auto { overflow-x:auto; }
-}
-</style>
-`;
-
-// Estilo global para garantir visibilidade
-const GlobalStyle = () => (
-  <style dangerouslySetInnerHTML={{ __html: `
-    main { display: block !important; visibility: visible !important; }
-    article { display: block !important; visibility: visible !important; }
-    .overflow-x-hidden { overflow-x: visible !important; }
-  `}} />
-);
-
-// Componente de fallback quando não há conexão com o servidor
-const OfflineNotice = () => (
-  <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 text-amber-700">
-    <p className="font-medium">Você está visualizando este conteúdo no modo offline</p>
-    <p className="text-sm">Alguns recursos podem estar limitados até que a conexão seja restaurada.</p>
-  </div>
-);
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -73,27 +39,7 @@ const BlogPostPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
   const [commentCount, setCommentCount] = useState(0);
-  const [isOffline, setIsOffline] = useState(false);
   const { user } = useAuth();
-  
-  // Verificar o status da conexão
-  useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-    
-    // Verificar estado inicial
-    setIsOffline(!navigator.onLine);
-    
-    // Adicionar event listeners
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    // Cleanup
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
   
   // Buscar o post com base no slug
   useEffect(() => {
@@ -236,25 +182,12 @@ const BlogPostPage = () => {
     if (!post) return;
     
     try {
-      // Atualizar estado local primeiro para UX instantânea
-      setIsLiked(true);
-      
-      // Atualizar localStorage
-      const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
-      if (!likedPosts.includes(post.id)) {
-        likedPosts.push(post.id);
-        localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
-      }
-      
-      // Atualizar contador
-      setPost({
-        ...post,
-        likesCount: post.likesCount + 1
-      });
-      
-      // Enviar para o servidor (assíncrono)
       const success = await incrementLikes(post.id);
       if (success) {
+        setPost({
+          ...post,
+          likesCount: post.likesCount + 1
+        });
         toast({
           title: "Artigo curtido!",
           description: "Obrigado por curtir este artigo."
@@ -262,7 +195,11 @@ const BlogPostPage = () => {
       }
     } catch (error) {
       console.error('Erro ao curtir artigo:', error);
-      // Não revertemos a UI mesmo em caso de erro para melhor experiência do usuário
+      toast({
+        title: "Erro ao curtir",
+        description: "Não foi possível curtir este artigo. Tente novamente mais tarde.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -312,56 +249,10 @@ const BlogPostPage = () => {
     }
   };
   
-  const wrapTablesWithContainer = (content: string) => {
-    try {
-      // Verifica se o conteúdo é válido
-      if (!content || typeof content !== 'string') {
-        console.error('Conteúdo inválido:', content);
-        return content || '';
-      }
-      
-      // Adicionar o estilo inline ao conteúdo de forma segura
-      content = inlineTableStyles + content;
-      
-      const tableRegex = /<table[^>]*>[\s\S]*?<\/table>/g;
-      const tables = content.match(tableRegex);
-      
-      if (!tables) return content;
-      
-      // Versão simplificada dos estilos para evitar problemas de parsing
-      const tableStyle = `style="font-size:0.65rem;line-height:0.85;border-collapse:collapse;width:100%"`;
-      const thTdStyle = `style="padding:0.2rem 0.3rem;font-size:0.65rem;border:1px solid #ddd;vertical-align:top"`;
-      
-      let newContent = content;
-      tables.forEach((table) => {
-        try {
-          // Adiciona estilo à tag table (versão mais segura)
-          let modifiedTable = table.replace(/<table/g, `<table ${tableStyle}`);
-          
-          // Adiciona estilo a todas as tags td e th
-          modifiedTable = modifiedTable.replace(/<td/g, `<td ${thTdStyle}`);
-          modifiedTable = modifiedTable.replace(/<th/g, `<th ${thTdStyle}`);
-          
-          // Embrulha a tabela em um contêiner com overflow-x (versão simplificada)
-          const wrapper = `<div class="overflow-x-auto" style="width:100%;overflow-x:auto;display:block">${modifiedTable}</div>`;
-          newContent = newContent.replace(table, wrapper);
-        } catch (err) {
-          console.error('Erro ao processar tabela:', err);
-        }
-      });
-      
-      return newContent;
-    } catch (error) {
-      console.error('Erro ao processar tabelas:', error);
-      return content || '';
-    }
-  };
-  
   if (loading) {
     return (
       <>
         <Header />
-        <GlobalStyle />
         <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Carregando...</h1>
@@ -377,7 +268,6 @@ const BlogPostPage = () => {
     return (
       <>
         <Header />
-        <GlobalStyle />
         <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Artigo não encontrado</h1>
@@ -395,10 +285,7 @@ const BlogPostPage = () => {
   return (
     <>
       <Header />
-      <GlobalStyle />
       <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
-        {isOffline && <OfflineNotice />}
-        
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             {/* Artigo */}
@@ -453,41 +340,43 @@ const BlogPostPage = () => {
               </div>
               
               {/* Conteúdo */}
-              <div className="mb-8">
-                <div 
-                  className="prose prose-lg max-w-none overflow-hidden" 
-                  style={{ overflowX: 'hidden', maxWidth: '100%' }}
-                  dangerouslySetInnerHTML={{ __html: wrapTablesWithContainer(post.content) }}
-                />
-              </div>
+              <div 
+                className="prose max-w-none mb-8" 
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
               
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-6 mb-4">
+                <div className="flex flex-wrap gap-2 mt-6">
                   {post.tags.map((tag, index) => (
-                    <Link 
-                      key={index} 
-                      to={`/blog?tag=${encodeURIComponent(tag)}`}
-                      className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-gradient-to-r from-primary/80 to-primary text-white hover:shadow-md transition-all"
-                    >
-                      <Tag className="w-3.5 h-3.5 mr-1.5" />
+                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                      <Tag className="w-3 h-3 mr-1" />
                       {tag}
-                    </Link>
+                    </span>
                   ))}
                 </div>
               )}
               
               {/* Ações do post */}
-              <div className="flex flex-wrap items-center justify-between pt-4 border-t border-gray-200 mb-4">
+              <div className="flex flex-wrap items-center justify-between pt-4 border-t border-gray-200">
                 <div className="flex items-center space-x-4 mb-4 sm:mb-0">
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={handleLike}
-                    className={`flex items-center transition-all duration-300 ${isLiked ? 'text-red-500 border-red-500' : ''}`}
+                    className={`flex items-center ${isLiked ? 'text-red-500 border-red-500' : ''}`}
                   >
                     <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-red-500' : ''}`} />
                     {isLiked ? 'Curtido' : 'Curtir'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleBookmark}
+                    className={`flex items-center ${isBookmarked ? 'text-primary border-primary' : ''}`}
+                  >
+                    <Bookmark className={`h-4 w-4 mr-2 ${isBookmarked ? 'fill-primary' : ''}`} />
+                    {isBookmarked ? 'Salvo' : 'Salvar'}
                   </Button>
                 </div>
                 <Button 

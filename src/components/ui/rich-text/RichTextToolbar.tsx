@@ -6,7 +6,7 @@ import {
   Bold, Italic, Strikethrough, 
   List, ListOrdered, Image as ImageIcon, 
   Palette, AlignLeft, AlignCenter, AlignRight, 
-  Link, Table, Heading1, Heading2, Heading3
+  Link, Table
 } from "lucide-react";
 import LinkDialog from "./LinkDialog";
 import TableDialog from "./TableDialog";
@@ -64,10 +64,7 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ editor }) => {
   const addLink = (url: string, text: string) => {
     if (editor) {
       // Se tiver texto selecionado, apenas aplique o link
-      const { from, to } = editor.state.selection;
-      const hasSelection = from !== to;
-      
-      if (!hasSelection && text) {
+      if (editor.state.selection.empty && text) {
         // Se não houver seleção, mas temos texto do diálogo, insira-o
         editor
           .chain()
@@ -99,44 +96,6 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ editor }) => {
   return (
     <>
       <div className="flex flex-wrap gap-1 p-1 bg-[#f6f8fa] rounded-t-md border border-input">
-        {/* Headings */}
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={cn(
-            "p-1 hover:bg-gray-200 rounded", 
-            { "bg-gray-200": editor.isActive('heading', { level: 1 }) }
-          )}
-          title="Título H1"
-        >
-          <Heading1 size={16} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={cn(
-            "p-1 hover:bg-gray-200 rounded", 
-            { "bg-gray-200": editor.isActive('heading', { level: 2 }) }
-          )}
-          title="Título H2"
-        >
-          <Heading2 size={16} />
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={cn(
-            "p-1 hover:bg-gray-200 rounded", 
-            { "bg-gray-200": editor.isActive('heading', { level: 3 }) }
-          )}
-          title="Título H3"
-        >
-          <Heading3 size={16} />
-        </button>
-        
-        <div className="h-6 mx-1 border-r border-gray-300"></div>
-        
-        {/* Formatação de texto */}
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -170,10 +129,6 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ editor }) => {
         >
           <Strikethrough size={16} />
         </button>
-        
-        <div className="h-6 mx-1 border-r border-gray-300"></div>
-        
-        {/* Listas */}
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -196,10 +151,6 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ editor }) => {
         >
           <ListOrdered size={16} />
         </button>
-        
-        <div className="h-6 mx-1 border-r border-gray-300"></div>
-        
-        {/* Mídia e Links */}
         <button
           type="button"
           onClick={addImage}
@@ -211,6 +162,7 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ editor }) => {
           <ImageIcon size={16} />
         </button>
         
+        {/* Botão para inserir/editar links */}
         <button
           type="button"
           onClick={openLinkDialog}
@@ -223,6 +175,7 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ editor }) => {
           <Link size={16} />
         </button>
         
+        {/* Botão para inserir tabela */}
         <button
           type="button"
           onClick={() => setIsTableDialogOpen(true)}
@@ -233,8 +186,6 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ editor }) => {
         >
           <Table size={16} />
         </button>
-        
-        <div className="h-6 mx-1 border-r border-gray-300"></div>
         
         {/* Dropdown de cores */}
         <div className="relative inline-block">
@@ -270,8 +221,6 @@ const RichTextToolbar: React.FC<RichTextToolbarProps> = ({ editor }) => {
             ))}
           </div>
         </div>
-        
-        <div className="h-6 mx-1 border-r border-gray-300"></div>
         
         {/* Alinhamento de texto */}
         <button
