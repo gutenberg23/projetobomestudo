@@ -1,93 +1,71 @@
 /* Reset para tabelas em todo o blog */
 table {
-  width: 100% !important;
-  max-width: 100% !important;
-  border-collapse: collapse !important;
-  font-size: 0.65rem !important;
-  line-height: 0.85 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  table-layout: fixed !important;
-  overflow: hidden !important;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.65rem;
+  line-height: 0.85;
+  margin: 0;
+  padding: 0;
 }
 
 th, td {
-  padding: 0.2rem 0.3rem !important;
-  font-size: 0.65rem !important;
-  line-height: 0.85 !important;
-  border: 1px solid #ddd !important;
-  word-break: break-word !important;
-  white-space: normal !important;
-  vertical-align: top !important;
-  max-width: 80px !important; /* Limite máximo para células */
+  padding: 0.2rem 0.3rem;
+  font-size: 0.65rem;
+  line-height: 0.85;
+  border: 1px solid #ddd;
+  vertical-align: top;
 }
 
 /* Forçar texto em células para quebrar linhas */
 td p, th p, td span, th span, td div, th div {
-  margin: 0 !important;
-  padding: 0 !important;
-  font-size: 0.65rem !important;
-  line-height: 0.85 !important;
-  word-break: break-word !important;
-  white-space: normal !important;
-  overflow-wrap: break-word !important;
+  margin: 0;
+  padding: 0;
+  font-size: 0.65rem;
+  line-height: 0.85;
 }
 
 /* Estilos para contêiner de tabela para evitar overflow */
 .overflow-x-auto {
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow-x: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  margin-bottom: 1rem !important;
+  width: 100%;
+  overflow-x: auto;
+  display: block;
+  margin-bottom: 1rem;
 }
 
 /* Estilos para cabeçalhos de tabela */
 th {
-  background-color: #f8f8f8 !important;
-  font-weight: 600 !important;
-  text-align: left !important;
+  background-color: #f8f8f8;
+  font-weight: 600;
+  text-align: left;
 }
 
 /* Estilos específicos para dispositivos móveis */
 @media (max-width: 768px) {
   table {
-    font-size: 0.6rem !important;
-    line-height: 0.8 !important;
-    width: 100% !important;
+    font-size: 0.6rem;
+    line-height: 0.8;
+    width: 100%;
   }
   
   th, td {
-    padding: 0.1rem 0.2rem !important;
-    max-width: 60px !important;
+    padding: 0.1rem 0.2rem;
   }
   
   td p, th p, td span, th span, td div, th div {
-    font-size: 0.6rem !important;
-    line-height: 0.8 !important;
-  }
-  
-  /* Possibilidade de esconder colunas menos importantes em telas pequenas */
-  .hide-on-mobile {
-    display: none !important;
+    font-size: 0.6rem;
+    line-height: 0.8;
   }
 }
 
 /* Sobrescrever estilos do Tailwind Typography */
 .prose table, 
 .prose td, 
-.prose th, 
-.prose-lg table, 
-.prose-lg td, 
-.prose-lg th,
-.prose :where(table):not(:where([class~="not-prose"],[class~="not-prose"] *)),
-.prose :where(td):not(:where([class~="not-prose"],[class~="not-prose"] *)),
-.prose :where(th):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
-  font-size: 0.65rem !important;
-  line-height: 0.85 !important;
-  padding: 0.2rem 0.3rem !important;
-  margin: 0 !important;
-  border: 1px solid #ddd !important;
+.prose th {
+  font-size: 0.65rem;
+  line-height: 0.85;
+  padding: 0.2rem 0.3rem;
+  margin: 0;
+  border: 1px solid #ddd;
 }
 
 /* Estilizar todas as tabelas no conteúdo do artigo */
@@ -118,18 +96,18 @@ div[dangerouslySetInnerHTML] {
 .prose ol > li::marker,
 .prose-lg ol > li::marker,
 .prose :where(ol > li):not(:where([class~="not-prose"],[class~="not-prose"] *))::before {
-  content: none !important;
-  display: none !important;
+  content: none;
+  display: none;
 }
 
 /* Garantir que apenas um marcador apareça em listas ordenadas */
 .prose ol,
 .prose-lg ol {
-  list-style-type: decimal !important;
-  padding-left: 1.5em !important;
+  list-style-type: decimal;
+  padding-left: 1.5em;
 }
 
 .prose ol > li,
 .prose-lg ol > li {
-  padding-left: 0 !important;
+  padding-left: 0;
 } 

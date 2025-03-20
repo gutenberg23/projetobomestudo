@@ -30,42 +30,28 @@ import { useAuth } from "@/hooks/useAuth";
 // Importar o CSS do blog
 import "../../styles/blog.css";
 
-// Estilo inline para o caso do CSS não carregar
+// Estilo inline para o caso do CSS não carregar - versão simplificada
 const inlineTableStyles = `
-  <style>
-    table {
-      width: 100% !important;
-      max-width: 100% !important;
-      border-collapse: collapse !important;
-      font-size: 0.65rem !important;
-      line-height: 0.85 !important;
-      table-layout: fixed !important;
-      overflow: hidden !important;
-    }
-    
-    th, td {
-      padding: 0.2rem 0.3rem !important;
-      font-size: 0.65rem !important;
-      line-height: 0.85 !important;
-      border: 1px solid #ddd !important;
-      word-break: break-word !important;
-      vertical-align: top !important;
-      max-width: 80px !important;
-    }
-    
-    td p, th p {
-      margin: 0 !important;
-      padding: 0 !important;
-      font-size: 0.65rem !important;
-    }
-    
-    .overflow-x-auto {
-      width: 100% !important;
-      max-width: 100% !important;
-      overflow-x: auto !important;
-    }
-  </style>
+<style>
+table { font-size:0.65rem; line-height:0.85; border-collapse:collapse; width:100%; }
+th, td { padding:0.2rem 0.3rem; font-size:0.65rem; border:1px solid #ddd; vertical-align:top; }
+td p, th p { margin:0; padding:0; font-size:0.65rem; }
+.overflow-x-auto { width:100%; overflow-x:auto; display:block; }
+@media (max-width:768px) {
+  table { width:100%; }
+  .overflow-x-auto { overflow-x:auto; }
+}
+</style>
 `;
+
+// Estilo global para garantir visibilidade
+const GlobalStyle = () => (
+  <style dangerouslySetInnerHTML={{ __html: `
+    main { display: block !important; visibility: visible !important; }
+    article { display: block !important; visibility: visible !important; }
+    .overflow-x-hidden { overflow-x: visible !important; }
+  `}} />
+);
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -289,60 +275,55 @@ const BlogPostPage = () => {
   };
   
   const wrapTablesWithContainer = (content: string) => {
-    // Primeiro, adicionar o estilo inline ao conteúdo
-    content = inlineTableStyles + content;
-    
-    const tableRegex = /<table[^>]*>[\s\S]*?<\/table>/g;
-    const tables = content.match(tableRegex);
-    
-    if (!tables) return content;
-    
-    // Adiciona CSS inline para as tabelas
-    const tableStyle = `
-      style="
-        font-size: 0.65rem !important;
-        line-height: 0.85 !important;
-        margin: 0.3rem 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        border-collapse: collapse !important;
-        table-layout: fixed !important;
-      "
-    `;
-    
-    const thTdStyle = `
-      style="
-        padding: 0.2rem 0.3rem !important;
-        margin: 0 !important;
-        border: 1px solid #e0e0e0 !important;
-        font-size: 0.65rem !important;
-        line-height: 0.85 !important;
-        word-break: break-word !important;
-        vertical-align: top !important;
-        max-width: 100px !important;
-      "
-    `;
-    
-    tables.forEach((table) => {
-      // Adiciona estilo à tag table
-      let modifiedTable = table.replace(/<table([^>]*)>/g, `<table$1 ${tableStyle}>`);
+    try {
+      // Verifica se o conteúdo é válido
+      if (!content || typeof content !== 'string') {
+        console.error('Conteúdo inválido:', content);
+        return content || '';
+      }
       
-      // Adiciona estilo a todas as tags td e th
-      modifiedTable = modifiedTable.replace(/<td([^>]*)>/g, `<td$1 ${thTdStyle}>`);
-      modifiedTable = modifiedTable.replace(/<th([^>]*)>/g, `<th$1 ${thTdStyle}>`);
+      // Adicionar o estilo inline ao conteúdo de forma segura
+      content = inlineTableStyles + content;
       
-      // Embrulha a tabela em um contêiner com overflow-x
-      const wrapper = `<div class="overflow-x-auto w-full max-w-full">${modifiedTable}</div>`;
-      content = content.replace(table, wrapper);
-    });
-    
-    return content;
+      const tableRegex = /<table[^>]*>[\s\S]*?<\/table>/g;
+      const tables = content.match(tableRegex);
+      
+      if (!tables) return content;
+      
+      // Versão simplificada dos estilos para evitar problemas de parsing
+      const tableStyle = `style="font-size:0.65rem;line-height:0.85;border-collapse:collapse;width:100%"`;
+      const thTdStyle = `style="padding:0.2rem 0.3rem;font-size:0.65rem;border:1px solid #ddd;vertical-align:top"`;
+      
+      let newContent = content;
+      tables.forEach((table) => {
+        try {
+          // Adiciona estilo à tag table (versão mais segura)
+          let modifiedTable = table.replace(/<table/g, `<table ${tableStyle}`);
+          
+          // Adiciona estilo a todas as tags td e th
+          modifiedTable = modifiedTable.replace(/<td/g, `<td ${thTdStyle}`);
+          modifiedTable = modifiedTable.replace(/<th/g, `<th ${thTdStyle}`);
+          
+          // Embrulha a tabela em um contêiner com overflow-x (versão simplificada)
+          const wrapper = `<div class="overflow-x-auto" style="width:100%;overflow-x:auto;display:block">${modifiedTable}</div>`;
+          newContent = newContent.replace(table, wrapper);
+        } catch (err) {
+          console.error('Erro ao processar tabela:', err);
+        }
+      });
+      
+      return newContent;
+    } catch (error) {
+      console.error('Erro ao processar tabelas:', error);
+      return content || '';
+    }
   };
   
   if (loading) {
     return (
       <>
         <Header />
+        <GlobalStyle />
         <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Carregando...</h1>
@@ -358,6 +339,7 @@ const BlogPostPage = () => {
     return (
       <>
         <Header />
+        <GlobalStyle />
         <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Artigo não encontrado</h1>
@@ -375,6 +357,7 @@ const BlogPostPage = () => {
   return (
     <>
       <Header />
+      <GlobalStyle />
       <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
