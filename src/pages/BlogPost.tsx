@@ -27,6 +27,45 @@ import { fetchBlogPostBySlug, fetchBlogPosts, incrementLikes } from "@/services/
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+// Importar o CSS do blog
+import "../../styles/blog.css";
+
+// Estilo inline para o caso do CSS não carregar
+const inlineTableStyles = `
+  <style>
+    table {
+      width: 100% !important;
+      max-width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 0.65rem !important;
+      line-height: 0.85 !important;
+      table-layout: fixed !important;
+      overflow: hidden !important;
+    }
+    
+    th, td {
+      padding: 0.2rem 0.3rem !important;
+      font-size: 0.65rem !important;
+      line-height: 0.85 !important;
+      border: 1px solid #ddd !important;
+      word-break: break-word !important;
+      vertical-align: top !important;
+      max-width: 80px !important;
+    }
+    
+    td p, th p {
+      margin: 0 !important;
+      padding: 0 !important;
+      font-size: 0.65rem !important;
+    }
+    
+    .overflow-x-auto {
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow-x: auto !important;
+    }
+  </style>
+`;
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -250,13 +289,50 @@ const BlogPostPage = () => {
   };
   
   const wrapTablesWithContainer = (content: string) => {
+    // Primeiro, adicionar o estilo inline ao conteúdo
+    content = inlineTableStyles + content;
+    
     const tableRegex = /<table[^>]*>[\s\S]*?<\/table>/g;
     const tables = content.match(tableRegex);
     
     if (!tables) return content;
     
+    // Adiciona CSS inline para as tabelas
+    const tableStyle = `
+      style="
+        font-size: 0.65rem !important;
+        line-height: 0.85 !important;
+        margin: 0.3rem 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important;
+      "
+    `;
+    
+    const thTdStyle = `
+      style="
+        padding: 0.2rem 0.3rem !important;
+        margin: 0 !important;
+        border: 1px solid #e0e0e0 !important;
+        font-size: 0.65rem !important;
+        line-height: 0.85 !important;
+        word-break: break-word !important;
+        vertical-align: top !important;
+        max-width: 100px !important;
+      "
+    `;
+    
     tables.forEach((table) => {
-      const wrapper = `<div class="overflow-x-auto">${table}</div>`;
+      // Adiciona estilo à tag table
+      let modifiedTable = table.replace(/<table([^>]*)>/g, `<table$1 ${tableStyle}>`);
+      
+      // Adiciona estilo a todas as tags td e th
+      modifiedTable = modifiedTable.replace(/<td([^>]*)>/g, `<td$1 ${thTdStyle}>`);
+      modifiedTable = modifiedTable.replace(/<th([^>]*)>/g, `<th$1 ${thTdStyle}>`);
+      
+      // Embrulha a tabela em um contêiner com overflow-x
+      const wrapper = `<div class="overflow-x-auto w-full max-w-full">${modifiedTable}</div>`;
       content = content.replace(table, wrapper);
     });
     
@@ -357,6 +433,7 @@ const BlogPostPage = () => {
               <div className="mb-8">
                 <div 
                   className="prose prose-lg max-w-none overflow-hidden" 
+                  style={{ overflowX: 'hidden', maxWidth: '100%' }}
                   dangerouslySetInnerHTML={{ __html: wrapTablesWithContainer(post.content) }}
                 />
               </div>

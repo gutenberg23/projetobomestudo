@@ -61,7 +61,26 @@ const Blog = () => {
     if (activeState) {
       const stateObj = STATES.find(state => state.id === activeState);
       if (stateObj) {
-        result = result.filter(post => post.state === activeState);
+        console.log(`Filtrando por estado: ID=${activeState}, Nome=${stateObj.name}, Valor=${stateObj.value}`);
+        console.log(`Posts antes do filtro: ${result.length}`);
+        console.log(`Estados presentes nos posts: ${result.map(post => post.state).filter(Boolean).join(', ')}`);
+        
+        // Filtro flexível que considera diferentes formas de armazenar o estado
+        result = result.filter(post => {
+          if (!post.state) return false;
+          
+          const postState = post.state.toLowerCase();
+          return (
+            postState === activeState.toLowerCase() || // id: "sp"
+            postState === stateObj.name.toLowerCase() || // name: "SP"
+            postState === stateObj.value.toLowerCase() || // value: "São Paulo"
+            // Considerar outras variações possíveis
+            postState.includes(activeState.toLowerCase()) ||
+            stateObj.value.toLowerCase().includes(postState)
+          );
+        });
+        
+        console.log(`Posts após filtro: ${result.length}`);
       }
     }
 

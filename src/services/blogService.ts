@@ -5,7 +5,7 @@ import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
 
 // Função para mapear os dados do banco para o formato da aplicação
 function mapDatabasePostToAppPost(post: Database['public']['Tables']['blog_posts']['Row']): BlogPost {
-  return {
+  const mappedPost = {
     id: post.id,
     title: post.title,
     summary: post.summary,
@@ -27,6 +27,14 @@ function mapDatabasePostToAppPost(post: Database['public']['Tables']['blog_posts
     relatedPosts: Array.isArray(post.related_posts) ? post.related_posts.map(String) : [],
     featured: post.featured
   };
+  
+  console.log('Post mapeado do banco:', { 
+    id: mappedPost.id, 
+    state: mappedPost.state, 
+    original_state: post.state 
+  });
+  
+  return mappedPost;
 }
 
 // Função para mapear os dados da aplicação para o formato do banco
