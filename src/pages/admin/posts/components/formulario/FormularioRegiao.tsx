@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,7 +20,7 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
 }) => {
   // Filtrar estados por região selecionada
   const estadosFiltrados = regiao 
-    ? ESTADOS.filter(estado => estado.region === regiao) 
+    ? ESTADOS.filter(estado => estado.region.toLowerCase() === regiao) 
     : ESTADOS;
 
   // Atualizar a função onde existe o erro de comparação de tipos
@@ -59,7 +60,7 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
           <Select 
             value={estado} 
             onValueChange={onChangeEstado}
-            disabled={!regiao || regiao === "Federal" || regiao === "Nacional"}
+            disabled={!canSelectState(regiao)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um estado" />
