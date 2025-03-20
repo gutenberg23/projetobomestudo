@@ -1,11 +1,9 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPost, Region } from "@/components/blog/types";
 import { Database } from "@/integrations/supabase/types";
 import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
 import { toast } from "@/components/ui/use-toast";
 
-// Função para mapear os dados do banco para o formato da aplicação
 function mapDatabasePostToAppPost(post: Database['public']['Tables']['blog_posts']['Row']): BlogPost {
   const mappedPost = {
     id: post.id,
@@ -33,7 +31,6 @@ function mapDatabasePostToAppPost(post: Database['public']['Tables']['blog_posts
   return mappedPost;
 }
 
-// Função para mapear os dados da aplicação para o formato do banco
 function mapAppPostToDatabasePost(post: Omit<BlogPost, 'id' | 'createdAt'>): Omit<Database['public']['Tables']['blog_posts']['Insert'], 'id' | 'created_at'> {
   return {
     title: post.title,
@@ -57,7 +54,6 @@ function mapAppPostToDatabasePost(post: Omit<BlogPost, 'id' | 'createdAt'>): Omi
   };
 }
 
-// Função de utilidade para verificar a conectividade com o Supabase
 async function checkSupabaseConnection() {
   try {
     const { error } = await supabase.from('blog_posts').select('id').limit(1).maybeSingle();
@@ -68,10 +64,8 @@ async function checkSupabaseConnection() {
   }
 }
 
-// Função para buscar todos os posts do blog
 export async function fetchBlogPosts(): Promise<BlogPost[]> {
   try {
-    // Verificar conectividade com Supabase
     const isConnected = await checkSupabaseConnection();
     
     if (!isConnected) {
@@ -86,7 +80,7 @@ export async function fetchBlogPosts(): Promise<BlogPost[]> {
 
     if (error) {
       console.error('Erro ao buscar posts do blog:', error);
-      return MOCK_BLOG_POSTS; // Retorna posts mockados em caso de erro
+      return MOCK_BLOG_POSTS;
     }
 
     return data && data.length > 0 ? data.map(mapDatabasePostToAppPost) : MOCK_BLOG_POSTS;
@@ -96,10 +90,8 @@ export async function fetchBlogPosts(): Promise<BlogPost[]> {
   }
 }
 
-// Função para buscar um post específico pelo slug
 export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
-    // Verificar conectividade com Supabase
     const isConnected = await checkSupabaseConnection();
     
     if (!isConnected) {
@@ -116,7 +108,6 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
 
     if (error) {
       console.error(`Erro ao buscar post com slug ${slug}:`, error);
-      // Tentar encontrar no mock data
       const mockPost = MOCK_BLOG_POSTS.find(post => post.slug === slug);
       return mockPost || null;
     }
@@ -124,16 +115,13 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
     return data ? mapDatabasePostToAppPost(data) : null;
   } catch (error) {
     console.error(`Exceção ao buscar post com slug ${slug}:`, error);
-    // Tentar encontrar no mock data
     const mockPost = MOCK_BLOG_POSTS.find(post => post.slug === slug);
     return mockPost || null;
   }
 }
 
-// Função para criar um novo post
 export async function createBlogPost(post: Omit<BlogPost, 'id' | 'createdAt'>): Promise<BlogPost | null> {
   try {
-    // Verificar conectividade com Supabase
     const isConnected = await checkSupabaseConnection();
     
     if (!isConnected) {
@@ -180,10 +168,8 @@ export async function createBlogPost(post: Omit<BlogPost, 'id' | 'createdAt'>): 
   }
 }
 
-// Função para atualizar um post existente
 export async function updateBlogPost(id: string, post: Partial<BlogPost>): Promise<BlogPost | null> {
   try {
-    // Verificar conectividade com Supabase
     const isConnected = await checkSupabaseConnection();
     
     if (!isConnected) {
@@ -197,7 +183,6 @@ export async function updateBlogPost(id: string, post: Partial<BlogPost>): Promi
     
     const updateData: Partial<Database['public']['Tables']['blog_posts']['Update']> = {};
     
-    // Mapear campos do modelo da aplicação para o modelo do banco
     if (post.title !== undefined) updateData.title = post.title;
     if (post.summary !== undefined) updateData.summary = post.summary;
     if (post.content !== undefined) updateData.content = post.content;
@@ -249,10 +234,8 @@ export async function updateBlogPost(id: string, post: Partial<BlogPost>): Promi
   }
 }
 
-// Função para excluir um post
 export async function deleteBlogPost(id: string): Promise<boolean> {
   try {
-    // Verificar conectividade com Supabase
     const isConnected = await checkSupabaseConnection();
     
     if (!isConnected) {
@@ -296,12 +279,8 @@ export async function deleteBlogPost(id: string): Promise<boolean> {
   }
 }
 
-/**
- * Incrementa o contador de curtidas de um post
- */
 export const incrementLikes = async (postId: string): Promise<boolean> => {
   try {
-    // Verificar conectividade com Supabase
     const isConnected = await checkSupabaseConnection();
     
     if (!isConnected) {
@@ -309,22 +288,17 @@ export const incrementLikes = async (postId: string): Promise<boolean> => {
       return true;
     }
     
-    // Verificar se estamos usando dados mockados (IDs simples como "1", "2", etc.)
     const isMockId = /^\d+$/.test(postId) || postId.length < 10;
     
     if (isMockId) {
       console.info(`Usando ID mockado: ${postId}, simulando incremento de curtidas`);
-      // Para dados mockados, apenas simular sucesso
       return true;
     }
     
-    // Atualizar diretamente ao invés de usar função RPC para maior compatibilidade
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('blog_posts')
-      .update({ likes_count: supabase.rpc('increment', { value: 1 }) })
-      .eq('id', postId)
-      .select('likes_count')
-      .single();
+      .update({ likes_count: supabase.sql`likes_count + 1` })
+      .eq('id', postId);
 
     if (error) {
       console.error('Erro ao incrementar curtidas:', error);
@@ -338,12 +312,8 @@ export const incrementLikes = async (postId: string): Promise<boolean> => {
   }
 };
 
-/**
- * Incrementa o contador de comentários de um post
- */
 export const incrementComments = async (postId: string): Promise<boolean> => {
   try {
-    // Verificar conectividade com Supabase
     const isConnected = await checkSupabaseConnection();
     
     if (!isConnected) {
@@ -351,22 +321,17 @@ export const incrementComments = async (postId: string): Promise<boolean> => {
       return true;
     }
     
-    // Verificar se estamos usando dados mockados (IDs simples como "1", "2", etc.)
     const isMockId = /^\d+$/.test(postId) || postId.length < 10;
     
     if (isMockId) {
       console.info(`Usando ID mockado: ${postId}, simulando incremento de comentários`);
-      // Para dados mockados, apenas simular sucesso
       return true;
     }
     
-    // Atualizar diretamente ao invés de usar função RPC para maior compatibilidade
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('blog_posts')
-      .update({ comment_count: supabase.rpc('increment', { value: 1 }) })
-      .eq('id', postId)
-      .select('comment_count')
-      .single();
+      .update({ comment_count: supabase.sql`comment_count + 1` })
+      .eq('id', postId);
 
     if (error) {
       console.error('Erro ao incrementar comentários:', error);

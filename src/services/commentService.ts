@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { BlogComment } from '@/components/blog/types';
 import { Database } from '@/integrations/supabase/types';
@@ -11,15 +12,18 @@ const mapCommentFromSupabase = (comment: CommentRow): BlogComment => {
   return {
     id: comment.id,
     postId: comment.post_id,
-    userId: comment.user_id,
     content: comment.content,
+    author: comment.author_name,
+    authorId: comment.user_id,
     authorName: comment.author_name,
     authorAvatar: comment.author_avatar || undefined,
     likesCount: comment.likes_count,
     parentId: comment.parent_id || undefined,
     createdAt: comment.created_at,
     updatedAt: comment.updated_at,
-    replies: []
+    replies: [],
+    userId: comment.user_id,
+    isLiked: false
   };
 };
 
@@ -95,7 +99,16 @@ export const fetchCommentsByPostId = async (postId: string): Promise<BlogComment
 /**
  * Cria um novo comentário
  */
-export const createComment = async (comment: Omit<BlogComment, 'id' | 'createdAt' | 'updatedAt' | 'likesCount' | 'replies'>): Promise<BlogComment> => {
+export const createComment = async (comment: {
+  postId: string;
+  content: string;
+  author: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string;
+  parentId?: string;
+  userId: string;
+}): Promise<BlogComment> => {
   try {
     // Verificar se a tabela existe antes de tentar inserir
     const { error: checkError } = await supabase
@@ -109,15 +122,18 @@ export const createComment = async (comment: Omit<BlogComment, 'id' | 'createdAt
       return {
         id: 'temp-' + Date.now(),
         postId: comment.postId,
-        userId: comment.userId,
         content: comment.content,
+        author: comment.author,
+        authorId: comment.authorId,
         authorName: comment.authorName,
         authorAvatar: comment.authorAvatar,
         likesCount: 0,
         parentId: comment.parentId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        replies: []
+        replies: [],
+        userId: comment.userId,
+        isLiked: false
       };
     }
 
@@ -140,15 +156,18 @@ export const createComment = async (comment: Omit<BlogComment, 'id' | 'createdAt
       return {
         id: 'temp-' + Date.now(),
         postId: comment.postId,
-        userId: comment.userId,
         content: comment.content,
+        author: comment.author,
+        authorId: comment.authorId,
         authorName: comment.authorName,
         authorAvatar: comment.authorAvatar,
         likesCount: 0,
         parentId: comment.parentId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        replies: []
+        replies: [],
+        userId: comment.userId,
+        isLiked: false
       };
     }
 
@@ -159,15 +178,18 @@ export const createComment = async (comment: Omit<BlogComment, 'id' | 'createdAt
     return {
       id: 'temp-' + Date.now(),
       postId: comment.postId,
-      userId: comment.userId,
       content: comment.content,
+      author: comment.author,
+      authorId: comment.authorId,
       authorName: comment.authorName,
       authorAvatar: comment.authorAvatar,
       likesCount: 0,
       parentId: comment.parentId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      replies: []
+      replies: [],
+      userId: comment.userId,
+      isLiked: false
     };
   }
 };

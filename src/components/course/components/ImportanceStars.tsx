@@ -1,27 +1,34 @@
 
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Star } from 'lucide-react';
 
-interface ImportanceStarsProps {
-  level: number;
-  onChange?: (value: number) => void;
+export interface ImportanceStarsProps {
+  value: number;
+  max?: number;
+  size?: string;
+  className?: string;
 }
 
-export const ImportanceStars = ({ level, onChange }: ImportanceStarsProps) => {
+export const ImportanceStars: React.FC<ImportanceStarsProps> = ({
+  value,
+  max = 5,
+  size = 'sm',
+  className = ''
+}) => {
+  // Determinar tamanho com base no prop size
+  const starSize = size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-5 h-5' : 'w-6 h-6';
+  
   return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => onChange?.(star)}
-          className={cn(
-            "text-[#F11CE3] transition-opacity",
-            star <= level ? "opacity-100" : "opacity-20",
-            onChange && "hover:opacity-100"
-          )}
-        >
-          ★
-        </button>
+    <div className={`flex items-center ${className}`}>
+      {Array.from({ length: max }).map((_, index) => (
+        <Star
+          key={index}
+          className={`${starSize} ${
+            index < value
+              ? 'text-yellow-500 fill-yellow-500'
+              : 'text-gray-300'
+          }`}
+        />
       ))}
     </div>
   );

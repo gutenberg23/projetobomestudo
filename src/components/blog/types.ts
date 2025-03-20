@@ -9,6 +9,27 @@ export type Region =
   | 'nacional'
   | 'internacional';
 
+export type RegionOrEmpty = Region | '';
+
+export interface RegionFilter {
+  id: string;
+  name: string;
+  value: Region;
+}
+
+export interface StateFilter {
+  id: string;
+  name: string;
+  value: string;
+  region: string;
+}
+
+export interface CategoryFilter {
+  id: string;
+  name: string;
+  value: string;
+}
+
 export interface BlogPost {
   id: string;
   title: string;
@@ -39,10 +60,14 @@ export interface BlogComment {
   authorId: string;
   authorAvatar?: string;
   createdAt: string;
+  updatedAt: string;
   postId: string;
   likesCount: number;
   replies?: BlogComment[];
   parentId?: string;
+  userId: string;
+  authorName: string;
+  isLiked?: boolean;
 }
 
 export interface BlogCategory {

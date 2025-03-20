@@ -2,6 +2,29 @@
 // Tipos básicos para estruturas simples
 export type AnyObject = Record<string, any>;
 
+// Tipos para análise e estatísticas
+export interface OverallStats {
+  hits: number;
+  errors: number;
+  total: number;
+  hitRate: number;
+  completedTopics: number;
+  totalTopics: number;
+  completionRate: number;
+}
+
+export interface SubjectStats {
+  subjectId: string | number;
+  subjectName: string;
+  hits: number;
+  errors: number;
+  total: number;
+  hitRate: number;
+  completedTopics: number;
+  totalTopics: number;
+  completionRate: number;
+}
+
 // Tipos para tópicos e assuntos
 export interface Topic {
   id: number;

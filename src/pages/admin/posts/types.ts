@@ -1,5 +1,6 @@
 
-import { BlogPost, Region, RegionOrEmpty, StateFilter } from "@/components/blog/types";
+import { BlogPost, Region } from "@/components/blog/types";
+import { StateFilter } from "@/components/blog/types";
 
 // Enum para controlar o modo da interface
 export enum ModoInterface {
@@ -24,13 +25,13 @@ export const CATEGORIAS = [
 
 // Regiões disponíveis
 export const REGIOES: Region[] = [
-  "Norte",
-  "Nordeste", 
-  "Centro-Oeste", 
-  "Sudeste", 
-  "Sul", 
-  "Federal", 
-  "Nacional"
+  "norte",
+  "nordeste", 
+  "centro-oeste", 
+  "sudeste", 
+  "sul", 
+  "nacional", 
+  "internacional"
 ];
 
 // Estados disponíveis
@@ -76,7 +77,8 @@ export const MOCK_POSTS: BlogPost[] = [
     likesCount: 32,
     createdAt: "2023-10-15T14:30:00Z",
     slug: "dicas-para-provas-de-portugues",
-    category: "Português"
+    category: "Português",
+    relatedPosts: []
   },
   {
     id: "2",
@@ -88,7 +90,8 @@ export const MOCK_POSTS: BlogPost[] = [
     likesCount: 24,
     createdAt: "2023-10-10T09:45:00Z",
     slug: "como-estudar-para-concursos-juridicos",
-    category: "Direito"
+    category: "Direito",
+    relatedPosts: []
   },
   {
     id: "3",
@@ -100,6 +103,7 @@ export const MOCK_POSTS: BlogPost[] = [
     likesCount: 18,
     createdAt: "2023-09-28T11:20:00Z",
     slug: "matematica-para-concursos-formulas-essenciais",
-    category: "Matemática"
+    category: "Matemática",
+    relatedPosts: []
   },
 ];
