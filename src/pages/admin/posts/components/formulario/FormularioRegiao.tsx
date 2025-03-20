@@ -26,7 +26,7 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
   // Atualizar a função onde existe o erro de comparação de tipos
   const canSelectState = (regiao: RegionOrEmpty) => {
     // Verificar se a região selecionada é uma região brasileira que tem estados
-    // Federal e Nacional não têm estados específicos
+    // federal e nacional não têm estados específicos
     return regiao !== '' && regiao !== 'federal' && regiao !== 'nacional' && regiao !== 'internacional';
   };
 

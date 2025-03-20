@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPost, Region } from "@/components/blog/types";
 import { Database } from "@/integrations/supabase/types";
@@ -295,10 +296,8 @@ export const incrementLikes = async (postId: string): Promise<boolean> => {
       return true;
     }
     
-    const { error } = await supabase
-      .from('blog_posts')
-      .update({ likes_count: supabase.sql`likes_count + 1` })
-      .eq('id', postId);
+    // Using rpc instead of sql to call the database function
+    const { error } = await supabase.rpc('increment_blog_post_likes', { post_id: postId });
 
     if (error) {
       console.error('Erro ao incrementar curtidas:', error);
@@ -328,10 +327,8 @@ export const incrementComments = async (postId: string): Promise<boolean> => {
       return true;
     }
     
-    const { error } = await supabase
-      .from('blog_posts')
-      .update({ comment_count: supabase.sql`comment_count + 1` })
-      .eq('id', postId);
+    // Using rpc instead of sql to call the database function
+    const { error } = await supabase.rpc('increment_blog_post_comments', { post_id: postId });
 
     if (error) {
       console.error('Erro ao incrementar comentários:', error);
@@ -347,17 +344,20 @@ export const incrementComments = async (postId: string): Promise<boolean> => {
 
 export const incrementLikeCount = async (postId: string): Promise<number> => {
   try {
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .update({ likes_count: supabase.rpc('increment_blog_post_likes', { post_id: postId }) })
-      .eq('id', postId)
-      .select('likes_count')
-      .single();
+    // Instead of using rpc to increment and return in a single call, we'll do it in two steps
+    const { error } = await supabase.rpc('increment_blog_post_likes', { post_id: postId });
 
     if (error) {
       console.error('Erro ao incrementar likes:', error);
       return 0;
     }
+
+    // Then fetch the updated post to get the current count
+    const { data } = await supabase
+      .from('blog_posts')
+      .select('likes_count')
+      .eq('id', postId)
+      .single();
 
     return data?.likes_count || 0;
   } catch (error) {
@@ -368,17 +368,20 @@ export const incrementLikeCount = async (postId: string): Promise<number> => {
 
 export const incrementCommentCount = async (postId: string): Promise<number> => {
   try {
-    const { data, error } = await supabase
-      .from('blog_posts')
-      .update({ comment_count: supabase.rpc('increment_blog_post_comments', { post_id: postId }) })
-      .eq('id', postId)
-      .select('comment_count')
-      .single();
+    // Instead of using rpc to increment and return in a single call, we'll do it in two steps
+    const { error } = await supabase.rpc('increment_blog_post_comments', { post_id: postId });
 
     if (error) {
       console.error('Erro ao incrementar comentários:', error);
       return 0;
     }
+
+    // Then fetch the updated post to get the current count
+    const { data } = await supabase
+      .from('blog_posts')
+      .select('comment_count')
+      .eq('id', postId)
+      .single();
 
     return data?.comment_count || 0;
   } catch (error) {
