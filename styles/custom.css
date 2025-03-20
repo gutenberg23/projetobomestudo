@@ -1,0 +1,41 @@
+/* Redução drástica para tabelas em páginas de blog */
+.prose table, 
+.prose-lg table,
+.prose-xl table,
+.prose :where(table):not(:where([class~="not-prose"],[class~="not-prose"] *)),
+.prose-lg :where(table):not(:where([class~="not-prose"],[class~="not-prose"] *)),
+.prose-xl :where(table):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    font-size: 0.7rem !important;
+    line-height: 0.9 !important;
+    margin-top: 0.5em !important;
+    margin-bottom: 0.5em !important;
+}
+
+/* Células da tabela com padding mínimo */
+.prose td, 
+.prose th,
+.prose-lg td, 
+.prose-lg th,
+.prose-xl td, 
+.prose-xl th,
+.prose :where(td):not(:where([class~="not-prose"],[class~="not-prose"] *)),
+.prose :where(th):not(:where([class~="not-prose"],[class~="not-prose"] *)),
+.prose-lg :where(td):not(:where([class~="not-prose"],[class~="not-prose"] *)),
+.prose-lg :where(th):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    padding: 0.2rem !important;
+    vertical-align: top !important;
+}
+
+/* Texto dentro das células com margens mínimas */
+.prose td p, 
+.prose th p,
+.prose-lg td p, 
+.prose-lg th p,
+.prose :where(td p):not(:where([class~="not-prose"],[class~="not-prose"] *)),
+.prose :where(th p):not(:where([class~="not-prose"],[class~="not-prose"] *)) {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+    font-size: 0.7rem !important;
+}
