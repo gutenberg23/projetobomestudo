@@ -11,6 +11,10 @@ export interface OverallStats {
   completedTopics: number;
   totalTopics: number;
   completionRate: number;
+  // Adicionando campos que estão sendo usados no código
+  totalHits: number;
+  totalErrors: number;
+  totalExercises: number;
 }
 
 export interface SubjectStats {
@@ -23,6 +27,8 @@ export interface SubjectStats {
   completedTopics: number;
   totalTopics: number;
   completionRate: number;
+  // Adicionando campos que estão sendo usados no código
+  exercisesDone: number;
 }
 
 // Tipos para tópicos e assuntos

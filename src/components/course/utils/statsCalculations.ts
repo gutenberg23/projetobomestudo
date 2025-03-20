@@ -11,23 +11,30 @@ export const calculatePerformance = (hits: number, exercisesDone: number) => {
 };
 
 export const calculateSubjectTotals = (topics: Topic[]): SubjectStats => {
-  return topics.reduce((acc, topic) => ({
-    exercisesDone: acc.exercisesDone + topic.exercisesDone,
-    hits: acc.hits + topic.hits,
-    errors: acc.errors + calculateErrors(topic.exercisesDone, topic.hits),
-    completedTopics: acc.completedTopics + (topic.isDone ? 1 : 0),
-    totalTopics: acc.totalTopics + 1
-  }), {
-    exercisesDone: 0,
-    hits: 0,
-    errors: 0,
-    completedTopics: 0,
-    totalTopics: 0
-  });
+  const exercisesDone = topics.reduce((acc, topic) => acc + topic.exercisesDone, 0);
+  const hits = topics.reduce((acc, topic) => acc + topic.hits, 0);
+  const errors = topics.reduce((acc, topic) => acc + calculateErrors(topic.exercisesDone, topic.hits), 0);
+  const completedTopics = topics.filter(topic => topic.isDone).length;
+  const totalTopics = topics.length;
+  const hitRate = exercisesDone > 0 ? Math.round((hits / exercisesDone) * 100) : 0;
+  const completionRate = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
+
+  return {
+    subjectId: '',  // This will be filled by caller if needed
+    subjectName: '', // This will be filled by caller if needed
+    exercisesDone,
+    hits,
+    errors,
+    completedTopics,
+    totalTopics,
+    total: exercisesDone,
+    hitRate,
+    completionRate
+  };
 };
 
 export const calculateOverallStats = (subjects: Subject[]): OverallStats => {
-  return subjects.reduce((acc, subject) => {
+  const stats = subjects.reduce((acc, subject) => {
     const subjectTotals = calculateSubjectTotals(subject.topics);
     return {
       totalExercises: acc.totalExercises + subjectTotals.exercisesDone,
@@ -43,4 +50,25 @@ export const calculateOverallStats = (subjects: Subject[]): OverallStats => {
     completedTopics: 0,
     totalTopics: 0
   });
+
+  const hitRate = stats.totalExercises > 0 
+    ? Math.round((stats.totalHits / stats.totalExercises) * 100) 
+    : 0;
+  
+  const completionRate = stats.totalTopics > 0 
+    ? Math.round((stats.completedTopics / stats.totalTopics) * 100) 
+    : 0;
+
+  return {
+    hits: stats.totalHits,
+    errors: stats.totalErrors,
+    total: stats.totalExercises,
+    hitRate,
+    completedTopics: stats.completedTopics,
+    totalTopics: stats.totalTopics,
+    completionRate,
+    totalHits: stats.totalHits,
+    totalErrors: stats.totalErrors,
+    totalExercises: stats.totalExercises
+  };
 };

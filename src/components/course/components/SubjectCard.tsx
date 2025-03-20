@@ -1,7 +1,8 @@
+
 import React from 'react';
-import { Topic } from '@/components/course/types/editorialized';
+import { Topic, Subject } from '@/components/course/types/editorialized';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Circle, HelpCircle, Link2, Lock, ShieldQuestion, Timer, TrendingDown, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Circle, TrendingDown, TrendingUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { DifficultyBadge } from './DifficultyBadge';

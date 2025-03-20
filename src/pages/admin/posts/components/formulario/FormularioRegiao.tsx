@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +21,13 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
   const estadosFiltrados = regiao 
     ? ESTADOS.filter(estado => estado.region === regiao) 
     : ESTADOS;
+
+  // Atualizar a função onde existe o erro de comparação de tipos
+  const canSelectState = (regiao: RegionOrEmpty) => {
+    // Verificar se a região selecionada é uma região brasileira que tem estados
+    // Federal e Nacional não têm estados específicos
+    return regiao !== '' && regiao !== 'federal' && regiao !== 'nacional' && regiao !== 'internacional';
+  };
 
   return (
     <div className="p-4 border rounded-md bg-gray-50">

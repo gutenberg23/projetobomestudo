@@ -7,7 +7,8 @@ export type Region =
   | 'sudeste' 
   | 'sul' 
   | 'nacional'
-  | 'internacional';
+  | 'internacional'
+  | 'federal'; // Adicionando 'federal' como um valor válido
 
 export type RegionOrEmpty = Region | '';
 

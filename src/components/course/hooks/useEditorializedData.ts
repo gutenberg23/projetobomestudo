@@ -1,11 +1,12 @@
+
 import { useState, useEffect } from 'react';
-import { Subject, StudyConfig, StudyFilter, AnyObject } from '../types/editorialized';
+import { Subject, StudyConfig, StudyFilter, AnyObject, Topic } from '../types/editorialized';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
 
 // Hook para gerenciar dados e configurações de estudo editorializados
-export const useEditorializedData = (courseId: string) => {
+export const useEditorializedData = (courseId?: string) => {
   const { user } = useAuth();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [studyConfig, setStudyConfig] = useState<StudyConfig | null>(null);
@@ -15,12 +16,14 @@ export const useEditorializedData = (courseId: string) => {
 
   // Carrega dados do Supabase ao montar o componente
   useEffect(() => {
-    loadData();
+    if (courseId) {
+      loadData();
+    }
   }, [courseId, user]);
 
   // Função para carregar dados do Supabase
   const loadData = async () => {
-    if (!user) {
+    if (!user || !courseId) {
       setLoading(false);
       return;
     }
@@ -29,7 +32,9 @@ export const useEditorializedData = (courseId: string) => {
       // Carrega progresso do usuário
       const progress = await loadProgressFromSupabase(courseId);
       if (progress && progress.subjects_data) {
-        setSubjects(progress.subjects_data as Subject[]);
+        // Converter o JSON para o tipo Subject[]
+        const subjectsFromJson = progress.subjects_data as unknown as Subject[];
+        setSubjects(subjectsFromJson);
       } else {
         // Se não houver progresso, inicializa com dados padrão
         setSubjects(await initializeDefaultSubjects());
@@ -43,6 +48,12 @@ export const useEditorializedData = (courseId: string) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função para forçar um recarregamento dos dados
+  const forceRefresh = () => {
+    setLoading(true);
+    loadData();
   };
 
   // Função para inicializar dados padrão dos subjects
@@ -105,12 +116,28 @@ export const useEditorializedData = (courseId: string) => {
     );
   };
 
+  // Função mais genérica para atualizar qualquer campo de um tópico
+  const updateTopicProgress = (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => {
+    setSubjects(prevSubjects =>
+      prevSubjects.map(subject =>
+        subject.id === subjectId
+          ? {
+              ...subject,
+              topics: subject.topics.map(topic =>
+                topic.id === topicId ? { ...topic, [field]: value } : topic
+              )
+            }
+          : subject
+      )
+    );
+  };
+
   // Função para atualizar a configuração de estudo
   const updateStudyConfig = (newConfig: Partial<StudyConfig>) => {
     setStudyConfig(prevConfig => ({
       ...prevConfig,
       ...newConfig
-    }));
+    } as StudyConfig));
   };
 
   const applyStudyFilter = (newFilter: Partial<StudyFilter>) => {
@@ -152,11 +179,30 @@ export const useEditorializedData = (courseId: string) => {
     }));
   };
 
+  // Função para salvar todos os dados no banco de dados
+  const saveAllDataToDatabase = async (): Promise<boolean> => {
+    if (!user || !courseId || !studyConfig) return false;
+
+    try {
+      await saveProgressToSupabase(
+        courseId, 
+        subjects, 
+        studyConfig.performanceGoal, 
+        studyConfig.examDate
+      );
+      return true;
+    } catch (error) {
+      console.error('Erro ao salvar todos os dados:', error);
+      return false;
+    }
+  };
+
   // Função para salvar progresso no Supabase
   const saveProgressToSupabase = async (courseId: string, subjects: Subject[], performanceGoal: number, examDate: Date | null) => {
     if (!user) return;
 
     try {
+      // Pré-processar os subjects para um formato que o Supabase aceita
       const processedSubjects = processSubjectsForStorage(subjects);
       
       // Verificar se já existe um registro para este usuário e curso
@@ -169,31 +215,36 @@ export const useEditorializedData = (courseId: string) => {
 
       if (existingProgress) {
         // Update
-        await supabase
+        const { error } = await supabase
           .from('user_course_progress')
           .update({
-            subjects_data: processedSubjects,
+            subjects_data: processedSubjects as unknown as Json,
             performance_goal: performanceGoal,
             exam_date: examDate ? examDate.toISOString() : null,
             updated_at: new Date().toISOString()
           })
           .eq('id', existingProgress.id);
-    } else {
-      // Insert
-      await supabase
-        .from('user_course_progress')
-        .insert({
-          user_id: user.id,
-          course_id: courseId,
-          subjects_data: processedSubjects,
-          performance_goal: performanceGoal,
-          exam_date: examDate ? examDate.toISOString() : null
-        });
+          
+        if (error) throw error;
+      } else {
+        // Insert
+        const { error } = await supabase
+          .from('user_course_progress')
+          .insert({
+            user_id: user.id,
+            course_id: courseId,
+            subjects_data: processedSubjects as unknown as Json,
+            performance_goal: performanceGoal,
+            exam_date: examDate ? examDate.toISOString() : null
+          });
+          
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Erro ao salvar progresso:', error);
+      throw error;
     }
-  } catch (error) {
-    console.error('Erro ao salvar progresso:', error);
-  }
-};
+  };
 
   return {
     subjects,
@@ -202,9 +253,12 @@ export const useEditorializedData = (courseId: string) => {
     loading,
     error,
     updateTopicStatus,
+    updateTopicProgress,
     updateStudyConfig,
     applyStudyFilter,
     getFilteredSubjects,
-    saveProgressToSupabase
+    saveProgressToSupabase,
+    forceRefresh,
+    saveAllDataToDatabase
   };
 };

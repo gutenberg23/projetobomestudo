@@ -1,8 +1,8 @@
 
-import { RegionFilter, StateFilter, CategoryFilter } from "@/components/blog/types";
+import { RegionFilter, StateFilter, CategoryFilter, Region } from "@/components/blog/types";
 
 export const REGIONS: RegionFilter[] = [
-  { id: "federal", name: "Federal", value: "nacional" },
+  { id: "federal", name: "Federal", value: "federal" as Region },
   { id: "nacional", name: "Nacional", value: "nacional" },
   { id: "norte", name: "Norte", value: "norte" },
   { id: "nordeste", name: "Nordeste", value: "nordeste" },

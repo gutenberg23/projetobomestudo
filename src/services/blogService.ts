@@ -344,3 +344,45 @@ export const incrementComments = async (postId: string): Promise<boolean> => {
     return false;
   }
 };
+
+export const incrementLikeCount = async (postId: string): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .update({ likes_count: supabase.rpc('increment_blog_post_likes', { post_id: postId }) })
+      .eq('id', postId)
+      .select('likes_count')
+      .single();
+
+    if (error) {
+      console.error('Erro ao incrementar likes:', error);
+      return 0;
+    }
+
+    return data?.likes_count || 0;
+  } catch (error) {
+    console.error('Erro ao incrementar likes:', error);
+    return 0;
+  }
+};
+
+export const incrementCommentCount = async (postId: string): Promise<number> => {
+  try {
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .update({ comment_count: supabase.rpc('increment_blog_post_comments', { post_id: postId }) })
+      .eq('id', postId)
+      .select('comment_count')
+      .single();
+
+    if (error) {
+      console.error('Erro ao incrementar comentários:', error);
+      return 0;
+    }
+
+    return data?.comment_count || 0;
+  } catch (error) {
+    console.error('Erro ao incrementar comentários:', error);
+    return 0;
+  }
+};
