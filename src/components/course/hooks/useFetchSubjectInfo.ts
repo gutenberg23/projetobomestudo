@@ -19,11 +19,13 @@ export const useFetchSubjectInfo = () => {
       }
 
       // Tentar buscar por disciplina_id
+      type AulaResult = { id: string };
+      
       const { data: aulasData, error: aulasError } = await supabase
         .from('aulas')
         .select('id')
         .eq('disciplina_id', subjectId) as { 
-          data: Array<{id: string}> | null, 
+          data: AulaResult[] | null, 
           error: Error | null 
         };
 
@@ -36,7 +38,7 @@ export const useFetchSubjectInfo = () => {
         .from('aulas')
         .select('id')
         .eq('id_disciplina', subjectId) as { 
-          data: Array<{id: string}> | null, 
+          data: AulaResult[] | null, 
           error: Error | null 
         };
 
@@ -49,7 +51,7 @@ export const useFetchSubjectInfo = () => {
         .from('aulas')
         .select('id')
         .eq('disciplina', subjectId) as { 
-          data: Array<{id: string}> | null, 
+          data: AulaResult[] | null, 
           error: Error | null 
         };
 

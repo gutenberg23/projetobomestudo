@@ -5,12 +5,15 @@ import { LessonStatsData } from '../types/lessonTypes';
 export const useQuestionsStats = () => {
   const fetchQuestionsIds = async (lessonId: string): Promise<string[]> => {
     try {
+      // Define tipo explícito para questões
+      type QuestaoResult = { id: string };
+      
       // Buscar por aula_id
       const { data: questoesData1, error: questoesError1 } = await supabase
         .from('questoes')
         .select('id')
         .eq('aula_id', lessonId) as {
-          data: Array<{id: string}> | null,
+          data: QuestaoResult[] | null,
           error: Error | null
         };
 
@@ -23,7 +26,7 @@ export const useQuestionsStats = () => {
         .from('questoes')
         .select('id')
         .eq('id_aula', lessonId) as {
-          data: Array<{id: string}> | null,
+          data: QuestaoResult[] | null,
           error: Error | null
         };
 
