@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ModoInterface } from "../types";
@@ -8,7 +7,7 @@ import { FormularioRegiao } from "./formulario/FormularioRegiao";
 import { FormularioMetadados } from "./formulario/FormularioMetadados";
 import { FormularioMidia } from "./formulario/FormularioMidia";
 import { FormularioDestaque } from "./formulario/FormularioDestaque";
-import { RegionOrEmpty } from "@/components/blog/types";
+import { Region } from "@/components/blog/types";
 
 interface FormularioPostProps {
   modo: ModoInterface;
@@ -38,8 +37,8 @@ interface FormularioPostProps {
   onChangeTempoLeitura: (value: string) => void;
   imagemDestaque: string;
   onChangeImagemDestaque: (value: string) => void;
-  regiao: RegionOrEmpty;
-  onChangeRegiao: (value: RegionOrEmpty) => void;
+  regiao: Region | "";
+  onChangeRegiao: (value: Region | "") => void;
   estado: string;
   onChangeEstado: (value: string) => void;
   postsRelacionados: string;

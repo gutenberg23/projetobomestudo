@@ -3,11 +3,11 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { REGIOES, ESTADOS } from "../../types";
-import { Region, RegionOrEmpty } from "@/components/blog/types";
+import { Region } from "@/components/blog/types";
 
 interface FormularioRegiaoProps {
-  regiao: RegionOrEmpty;
-  onChangeRegiao: (value: RegionOrEmpty) => void;
+  regiao: Region | "";
+  onChangeRegiao: (value: Region | "") => void;
   estado: string;
   onChangeEstado: (value: string) => void;
 }
@@ -32,7 +32,7 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
           <Select 
             value={regiao} 
             onValueChange={(value) => {
-              onChangeRegiao(value as RegionOrEmpty);
+              onChangeRegiao(value as Region | "");
               onChangeEstado("");
             }}
           >
@@ -40,7 +40,7 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
               <SelectValue placeholder="Selecione uma região" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="_none">Nenhuma</SelectItem>
+              <SelectItem value="">Nenhuma</SelectItem>
               {REGIOES.map(reg => (
                 <SelectItem key={reg} value={reg}>{reg}</SelectItem>
               ))}
@@ -53,13 +53,13 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
           <Select 
             value={estado} 
             onValueChange={onChangeEstado}
-            disabled={!regiao || regiao === "Federal" || regiao === "Nacional"}
+            disabled={!regiao || regiao === "federal" || regiao === "nacional"}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um estado" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="_none">Nenhum</SelectItem>
+              <SelectItem value="">Nenhum</SelectItem>
               {estadosFiltrados.map(estado => (
                 <SelectItem key={estado.id} value={estado.value}>{estado.name}</SelectItem>
               ))}

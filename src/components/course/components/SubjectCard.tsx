@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, CheckCircle, XCircle, PieChart, Award } from "lucide-react";
 import { renderDonutChart } from '../utils/donutChart';
@@ -79,34 +78,26 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   const [loadingLessons, setLoadingLessons] = useState(false);
   const { user } = useAuth();
   
-  // Buscar aulas da disciplina quando o componente for montado ou quando o card for expandido
   useEffect(() => {
     if (subject.id) {
       fetchLessons();
     }
   }, [subject.id]);
   
-  // Função para buscar as aulas da disciplina
   const fetchLessons = async () => {
     if (!subject.id) return;
     
-    // Se já temos aulas carregadas, não precisamos buscar novamente
     if (lessons.length > 0) return;
     
     setLoadingLessons(true);
     try {
       console.log('Buscando aulas para a disciplina:', subject.id);
       
-      // Nota: Estamos usando uma abordagem alternativa, já que a estrutura do banco de dados
-      // pode variar dependendo da implementação
-      
-      // Abordagem 1: Verificar se a disciplina tem um array de IDs de aulas
       if (subject.aulas_ids && Array.isArray(subject.aulas_ids) && subject.aulas_ids.length > 0) {
         await processAulasFromIds(subject.aulas_ids);
         return;
       }
       
-      // Abordagem 2: Buscar a disciplina do banco para obter aulas_ids
       const disciplinaResponse = await supabase
         .from('disciplinas')
         .select('*')
@@ -117,14 +108,12 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       const disciplinaError = disciplinaResponse.error;
       
       if (!disciplinaError && disciplinaData) {
-        // Verificar se existe aulas_ids
         if (disciplinaData.aulas_ids && Array.isArray(disciplinaData.aulas_ids)) {
           await processAulasFromIds(disciplinaData.aulas_ids);
           return;
         }
       }
       
-      // Abordagem 3: Buscar aulas que tenham referência à disciplina
       const aulasResponse = await supabase
         .from('aulas')
         .select('*')
@@ -138,7 +127,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         return;
       }
       
-      // Abordagem 4: Tentar com outro possível nome de coluna
       const aulasResponse2 = await supabase
         .from('aulas')
         .select('*')
@@ -152,7 +140,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         return;
       }
       
-      // Abordagem 5: Tentar com outro possível nome de coluna
       const aulasResponse3 = await supabase
         .from('aulas')
         .select('*')
@@ -166,7 +153,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         return;
       }
       
-      // Não foi possível encontrar aulas para esta disciplina
       console.log('Nenhuma aula encontrada para a disciplina:', subject.id);
       setLessons([]);
     } catch (error) {
@@ -177,7 +163,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     }
   };
   
-  // Processa aulas a partir de um array de IDs
   const processAulasFromIds = async (aulaIds: string[]) => {
     if (!aulaIds || aulaIds.length === 0) {
       setLessons([]);
@@ -201,9 +186,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     await processAulas(aulasData);
   };
   
-  // Processa os dados das aulas e busca estatísticas
   const processAulas = async (aulasData: AulaData[]) => {
-    // Preparar as aulas com dados básicos
     const lessonsWithStats: LessonData[] = aulasData.map((aula) => ({
       id: aula.id,
       titulo: aula.titulo,
@@ -216,10 +199,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
     }));
     
-    // Buscar dados de progresso do usuário
     if (user?.id) {
       try {
-        // Buscar dados do progresso do curso
         const userProgressResponse = await supabase
           .from('user_course_progress')
           .select('subjects_data')
@@ -234,7 +215,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           const subjectData = userProgressData.subjects_data[subject.id];
           
           if (subjectData?.lessons) {
-            // Atualizar status de conclusão das aulas
             for (const lesson of lessonsWithStats) {
               if (subjectData.lessons[lesson.id]?.completed) {
                 lesson.concluida = true;
@@ -243,12 +223,9 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           }
         }
         
-        // Se encontrou questões, buscar respostas do aluno
         for (const lesson of lessonsWithStats) {
-          // Buscar questões da aula
           let questoesIds: string[] = [];
           
-          // Verificar se a aula tem questões diretamente
           const aulaCompleta = aulasData.find(a => a.id === lesson.id);
           if (aulaCompleta) {
             if (aulaCompleta.questoes_ids && Array.isArray(aulaCompleta.questoes_ids)) {
@@ -256,9 +233,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
             }
           }
           
-          // Se não encontrou questões diretamente, buscar na tabela de questões
           if (questoesIds.length === 0) {
-            // Tentar com diferentes nomes de coluna
             const questoesResponse1 = await supabase
               .from('questoes')
               .select('id')
@@ -282,9 +257,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
             }
           }
           
-          // Se encontrou questões, buscar respostas do aluno
           if (questoesIds.length > 0) {
-            // Buscar todas as respostas do aluno para estas questões, incluindo a data de criação
             const respostasResponse = await supabase
               .from('respostas_alunos')
               .select('questao_id, is_correta, created_at')
@@ -295,11 +268,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
             const respostasData = respostasResponse.data;
             
             if (respostasData && respostasData.length > 0) {
-              // Filtrar para considerar apenas a resposta mais recente de cada questão
               const respostasMaisRecentes = new Map<string, boolean>();
               
-              // Percorre as respostas (já ordenadas por data decrescente)
-              // e guarda apenas a primeira ocorrência (mais recente) de cada questão
               respostasData.forEach((resposta: RespostaData) => {
                 if (!respostasMaisRecentes.has(resposta.questao_id)) {
                   respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
@@ -326,21 +296,19 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   };
   
   const getSubjectStats = () => {
-    // Inicializar estatísticas das aulas
     const lessonStats = {
       questionsTotal: 0,
       questionsCorrect: 0,
       questionsWrong: 0
     };
     
-    // Calcular estatísticas das aulas
     lessons.forEach(lesson => {
       if (lesson.stats) {
         lessonStats.questionsTotal += (lesson.stats.total || 0);
         lessonStats.questionsCorrect += (lesson.stats.hits || 0);
         lessonStats.questionsWrong += (lesson.stats.errors || 0);
       }
-      // Verificar se há estatísticas no formato direto
+      
       if ('total' in lesson && 'hits' in lesson && 'errors' in lesson) {
         const total = Number((lesson as any).total) || 0;
         const hits = Number((lesson as any).hits) || 0;
@@ -352,20 +320,16 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
     });
     
-    // Log para depuração das estatísticas das aulas
     console.log(`Estatísticas das aulas para ${subject.name || subject.titulo}:`, lessonStats);
     
-    // Se o subject já tem estatísticas calculadas, usar diretamente
     if (subject.questionsTotal !== undefined && 
         subject.questionsCorrect !== undefined && 
         subject.questionsWrong !== undefined) {
       
-      // Garantir que os valores são números válidos
       const questionsTotal = Number(subject.questionsTotal) || 0;
       const questionsCorrect = Number(subject.questionsCorrect) || 0;
       const questionsWrong = Number(subject.questionsWrong) || 0;
       
-      // Log para depuração
       console.log(`Usando estatísticas do subject para ${subject.name || subject.titulo}:`, {
         questionsTotal,
         questionsCorrect,
@@ -383,18 +347,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       };
     }
     
-    // Verificar se já existem estatísticas definidas no subject
     if (subject.progress !== undefined && 
         subject.questionsTotal !== undefined && 
         subject.questionsCorrect !== undefined && 
         subject.questionsWrong !== undefined) {
       
-      // Garantir que os valores são números válidos
       const questionsTotal = Number(subject.questionsTotal) || 0;
       const questionsCorrect = Number(subject.questionsCorrect) || 0;
       const questionsWrong = Number(subject.questionsWrong) || 0;
       
-      // Log para depuração
       console.log(`Usando estatísticas do subject para ${subject.name || subject.titulo}:`, {
         questionsTotal,
         questionsCorrect,
@@ -415,7 +376,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     if (subject.topics) {
       const stats = calculateSubjectTotals(subject.topics);
       
-      // Combinar estatísticas dos tópicos com as das aulas
       const combinedStats = {
         totalTopics: stats.totalTopics,
         completedTopics: stats.completedTopics,
@@ -438,7 +398,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     }
     
     if (subject.stats) {
-      // Combinar estatísticas do subject com as das aulas
       const combinedStats = {
         totalTopics: subject.stats.totalTopics || 0,
         completedTopics: subject.stats.completedTopics || 0,
@@ -460,10 +419,9 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       };
     }
     
-    // Usar as estatísticas calculadas das aulas se existirem
     if (lessonStats.questionsTotal > 0) {
       return {
-        progress: 0, // Não temos como calcular o progresso apenas com as aulas
+        progress: 0,
         questionsTotal: lessonStats.questionsTotal,
         questionsCorrect: lessonStats.questionsCorrect,
         questionsWrong: lessonStats.questionsWrong,

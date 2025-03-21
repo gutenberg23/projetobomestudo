@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from "react";
-import { BlogPost, Region, RegionOrEmpty } from "@/components/blog/types";
+import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface, MOCK_POSTS } from "../types";
 import { fetchBlogPosts } from "@/services/blogService";
 
@@ -23,7 +24,7 @@ export function usePostsState() {
   const [metaKeywords, setMetaKeywords] = useState("");
   const [tempoLeitura, setTempoLeitura] = useState("");
   const [imagemDestaque, setImagemDestaque] = useState("");
-  const [regiao, setRegiao] = useState<RegionOrEmpty>("");
+  const [regiao, setRegiao] = useState<Region | "">("");
   const [estado, setEstado] = useState("");
   const [postsRelacionados, setPostsRelacionados] = useState("");
 

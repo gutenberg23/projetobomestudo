@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPost, Region } from "@/components/blog/types";
 import { Database } from "@/integrations/supabase/types";
@@ -47,7 +48,7 @@ function mapAppPostToDatabasePost(post: Omit<BlogPost, 'id' | 'createdAt'>): Omi
     meta_description: post.metaDescription,
     meta_keywords: post.metaKeywords || [],
     featured_image: post.featuredImage,
-    reading_time: post.readingTime ? parseInt(post.readingTime, 10) || 0 : 0,
+    reading_time: post.readingTime ? parseInt(String(post.readingTime), 10) || 0 : 0,
     related_posts: post.relatedPosts ? post.relatedPosts.map(String) : [],
     featured: post.featured
   };

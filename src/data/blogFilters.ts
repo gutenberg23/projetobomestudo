@@ -2,13 +2,13 @@
 import { RegionFilter, StateFilter, CategoryFilter } from "@/components/blog/types";
 
 export const REGIONS: RegionFilter[] = [
-  { id: "federal", name: "Federal", value: "Federal" },
-  { id: "nacional", name: "Nacional", value: "Nacional" },
-  { id: "norte", name: "Norte", value: "Norte" },
-  { id: "nordeste", name: "Nordeste", value: "Nordeste" },
-  { id: "centro-oeste", name: "Centro-Oeste", value: "Centro-Oeste" },
-  { id: "sudeste", name: "Sudeste", value: "Sudeste" },
-  { id: "sul", name: "Sul", value: "Sul" },
+  { id: "federal", name: "Federal", value: "federal" },
+  { id: "nacional", name: "Nacional", value: "nacional" },
+  { id: "norte", name: "Norte", value: "norte" },
+  { id: "nordeste", name: "Nordeste", value: "nordeste" },
+  { id: "centro-oeste", name: "Centro-Oeste", value: "centro-oeste" },
+  { id: "sudeste", name: "Sudeste", value: "sudeste" },
+  { id: "sul", name: "Sul", value: "sul" },
 ];
 
 export const STATES: StateFilter[] = [
