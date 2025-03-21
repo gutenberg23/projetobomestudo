@@ -54,12 +54,12 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       
       if (!disciplinaError && disciplinaData) {
         const disciplina: SimpleDisciplina = {
-          id: disciplinaData.id,
-          titulo: disciplinaData.titulo,
-          aulas_ids: Array.isArray(disciplinaData.aulas_ids) ? disciplinaData.aulas_ids : undefined
+          id: String(disciplinaData.id),
+          titulo: String(disciplinaData.titulo),
+          aulas_ids: Array.isArray(disciplinaData.aulas_ids) ? disciplinaData.aulas_ids.map(String) : []
         };
         
-        if (disciplina.aulas_ids && Array.isArray(disciplina.aulas_ids)) {
+        if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
           await processAulasFromIds(disciplina.aulas_ids);
           return;
         }
@@ -72,11 +72,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('disciplina_id', subject.id);
       
       if (!aulasError && aulasData && aulasData.length > 0) {
-        const simpleAulas: SimpleAula[] = aulasData.map(aula => ({
-          id: aula.id,
-          titulo: aula.titulo,
-          questoes_ids: aula.questoes_ids
-        }));
+        const simpleAulas: SimpleAula[] = [];
+        
+        for (const aula of aulasData) {
+          simpleAulas.push({
+            id: String(aula.id),
+            titulo: String(aula.titulo),
+            questoes_ids: aula.questoes_ids ? aula.questoes_ids.map(String) : []
+          });
+        }
         
         await processAulas(simpleAulas);
         return;
@@ -89,11 +93,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('id_disciplina', subject.id);
       
       if (!aulasError2 && aulasData2 && aulasData2.length > 0) {
-        const simpleAulas: SimpleAula[] = aulasData2.map(aula => ({
-          id: aula.id,
-          titulo: aula.titulo,
-          questoes_ids: aula.questoes_ids
-        }));
+        const simpleAulas: SimpleAula[] = [];
+        
+        for (const aula of aulasData2) {
+          simpleAulas.push({
+            id: String(aula.id),
+            titulo: String(aula.titulo),
+            questoes_ids: aula.questoes_ids ? aula.questoes_ids.map(String) : []
+          });
+        }
         
         await processAulas(simpleAulas);
         return;
@@ -106,11 +114,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('disciplina', subject.id);
       
       if (!aulasError3 && aulasData3 && aulasData3.length > 0) {
-        const simpleAulas: SimpleAula[] = aulasData3.map(aula => ({
-          id: aula.id,
-          titulo: aula.titulo,
-          questoes_ids: aula.questoes_ids
-        }));
+        const simpleAulas: SimpleAula[] = [];
+        
+        for (const aula of aulasData3) {
+          simpleAulas.push({
+            id: String(aula.id),
+            titulo: String(aula.titulo),
+            questoes_ids: aula.questoes_ids ? aula.questoes_ids.map(String) : []
+          });
+        }
         
         await processAulas(simpleAulas);
         return;
@@ -143,11 +155,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    const simpleAulas: SimpleAula[] = aulasData.map(aula => ({
-      id: aula.id,
-      titulo: aula.titulo,
-      questoes_ids: aula.questoes_ids
-    }));
+    const simpleAulas: SimpleAula[] = [];
+    
+    for (const aula of aulasData) {
+      simpleAulas.push({
+        id: String(aula.id),
+        titulo: String(aula.titulo),
+        questoes_ids: aula.questoes_ids ? aula.questoes_ids.map(String) : []
+      });
+    }
     
     await processAulas(simpleAulas);
   };
@@ -167,15 +183,19 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     
     if (user?.id) {
       try {
-        const { data: userProgressData, error: progressError } = await supabase
+        // Get user progress
+        const { data: userProgressRaw, error: progressError } = await supabase
           .from('user_course_progress')
           .select('subjects_data')
           .eq('user_id', user.id)
           .eq('course_id', subject.courseId || 'default')
           .single();
         
-        if (!progressError && userProgressData) {
-          const subjects_data = userProgressData.subjects_data || {};
+        if (!progressError && userProgressRaw) {
+          // Explicitly create a simple object with the data we need
+          const subjects_data = userProgressRaw.subjects_data ? 
+            JSON.parse(JSON.stringify(userProgressRaw.subjects_data)) : {};
+          
           const subjectData = subjects_data[subject.id];
           
           if (subjectData?.lessons) {
@@ -187,16 +207,16 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           }
         }
         
+        // Process questoes for each lesson
         for (const lesson of lessonsWithStats) {
           let questoesIds: string[] = [];
           
           const aulaCompleta = aulasData.find(a => a.id === lesson.id);
-          if (aulaCompleta) {
-            if (aulaCompleta.questoes_ids && Array.isArray(aulaCompleta.questoes_ids)) {
-              questoesIds = aulaCompleta.questoes_ids;
-            }
+          if (aulaCompleta && aulaCompleta.questoes_ids && aulaCompleta.questoes_ids.length > 0) {
+            questoesIds = aulaCompleta.questoes_ids.map(String);
           }
           
+          // If no questoes_ids found on aula, try to get them from questoes table
           if (questoesIds.length === 0) {
             const { data: questoesData1 } = await supabase
               .from('questoes')
@@ -204,7 +224,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               .eq('aula_id', lesson.id);
             
             if (questoesData1 && questoesData1.length > 0) {
-              questoesIds = questoesData1.map(q => String(q.id));
+              questoesIds = [];
+              for (const q of questoesData1) {
+                questoesIds.push(String(q.id));
+              }
             } else {
               const { data: questoesData2 } = await supabase
                 .from('questoes')
@@ -212,11 +235,15 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
                 .eq('id_aula', lesson.id);
               
               if (questoesData2 && questoesData2.length > 0) {
-                questoesIds = questoesData2.map(q => String(q.id));
+                questoesIds = [];
+                for (const q of questoesData2) {
+                  questoesIds.push(String(q.id));
+                }
               }
             }
           }
           
+          // If questoesIds found, get respostas data to calculate stats
           if (questoesIds.length > 0) {
             const { data: respostasData } = await supabase
               .from('respostas_alunos')
@@ -230,7 +257,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               
               for (const resposta of respostasData) {
                 if (!respostasMaisRecentes.has(resposta.questao_id)) {
-                  respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
+                  respostasMaisRecentes.set(String(resposta.questao_id), !!resposta.is_correta);
                 }
               }
               
