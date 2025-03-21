@@ -1,8 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { LessonStatsData } from '../types/lessonTypes';
 
-// Tipos explícitos para os dados retornados do Supabase
+// Define explicit types for Supabase results
 interface QuestaoResult {
   id: string;
 }
@@ -16,23 +15,17 @@ interface RespostaAluno {
 export const useQuestionsStats = () => {
   const fetchQuestionsIds = async (lessonId: string): Promise<string[]> => {
     try {
-      // Buscar por diferentes nomes de colunas
-      for (const field of ['aula_id', 'id_aula']) {
+      const campos = ['aula_id', 'id_aula'];
+      for (const campo of campos) {
         const { data, error } = await supabase
           .from('questoes')
           .select('id')
-          .eq(field, lessonId);
+          .eq(campo, lessonId);
 
-        if (error) {
-          console.error(`Erro ao buscar questões por ${field}:`, error);
-          continue;
-        }
-
-        if (data && data.length > 0) {
-          return data.map(q => q.id as string);
+        if (!error && data?.length) {
+          return data.map(q => q.id);
         }
       }
-
       return [];
     } catch (error) {
       console.error('Erro ao buscar IDs de questões:', error);
@@ -53,16 +46,14 @@ export const useQuestionsStats = () => {
         .in('questao_id', questoesIds)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Erro ao buscar respostas:', error);
+      if (error || !data) {
         return { total: 0, hits: 0, errors: 0 };
       }
 
       const respostasMaisRecentes = new Map<string, boolean>();
-
-      for (const resposta of data ?? []) {
+      for (const resposta of data) {
         if (!respostasMaisRecentes.has(resposta.questao_id)) {
-          respostasMaisRecentes.set(resposta.questao_id, !!resposta.is_correta);
+          respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
         }
       }
 
