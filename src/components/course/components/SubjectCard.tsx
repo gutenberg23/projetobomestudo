@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, CheckCircle, XCircle, PieChart, Award } from "lucide-react";
 import { renderDonutChart } from '../utils/donutChart';
@@ -106,11 +107,11 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 2: Buscar a disciplina do banco para obter aulas_ids
-      const disciplinaResponse: PostgrestSingleResponse<DisciplinaData> = await supabase
+      const disciplinaResponse = await supabase
         .from('disciplinas')
         .select('*')
         .eq('id', subject.id)
-        .single();
+        .single() as PostgrestSingleResponse<DisciplinaData>;
       
       const disciplinaData = disciplinaResponse.data;
       const disciplinaError = disciplinaResponse.error;
@@ -124,10 +125,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 3: Buscar aulas que tenham referência à disciplina
-      const aulasResponse: PostgrestResponse<AulaData> = await supabase
+      const aulasResponse = await supabase
         .from('aulas')
         .select('*')
-        .eq('disciplina_id', subject.id);
+        .eq('disciplina_id', subject.id) as PostgrestResponse<AulaData>;
       
       const aulasData = aulasResponse.data;
       const aulasError = aulasResponse.error;
@@ -138,10 +139,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 4: Tentar com outro possível nome de coluna
-      const aulasResponse2: PostgrestResponse<AulaData> = await supabase
+      const aulasResponse2 = await supabase
         .from('aulas')
         .select('*')
-        .eq('id_disciplina', subject.id);
+        .eq('id_disciplina', subject.id) as PostgrestResponse<AulaData>;
       
       const aulasData2 = aulasResponse2.data;
       const aulasError2 = aulasResponse2.error;
@@ -152,10 +153,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       }
       
       // Abordagem 5: Tentar com outro possível nome de coluna
-      const aulasResponse3: PostgrestResponse<AulaData> = await supabase
+      const aulasResponse3 = await supabase
         .from('aulas')
         .select('*')
-        .eq('disciplina', subject.id);
+        .eq('disciplina', subject.id) as PostgrestResponse<AulaData>;
       
       const aulasData3 = aulasResponse3.data;
       const aulasError3 = aulasResponse3.error;
@@ -183,10 +184,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    const aulasResponse: PostgrestResponse<AulaData> = await supabase
+    const aulasResponse = await supabase
       .from('aulas')
       .select('*')
-      .in('id', aulaIds);
+      .in('id', aulaIds) as PostgrestResponse<AulaData>;
     
     const aulasData = aulasResponse.data;
     const aulasError = aulasResponse.error;
@@ -219,12 +220,12 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     if (user?.id) {
       try {
         // Buscar dados do progresso do curso
-        const userProgressResponse: PostgrestSingleResponse<UserProgressData> = await supabase
+        const userProgressResponse = await supabase
           .from('user_course_progress')
           .select('subjects_data')
           .eq('user_id', user.id)
           .eq('course_id', subject.courseId || 'default')
-          .single();
+          .single() as PostgrestSingleResponse<UserProgressData>;
         
         const userProgressData = userProgressResponse.data;
         const progressError = userProgressResponse.error;
@@ -258,20 +259,20 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           // Se não encontrou questões diretamente, buscar na tabela de questões
           if (questoesIds.length === 0) {
             // Tentar com diferentes nomes de coluna
-            const questoesResponse1: PostgrestResponse<QuestaoData> = await supabase
+            const questoesResponse1 = await supabase
               .from('questoes')
               .select('id')
-              .eq('aula_id', lesson.id);
+              .eq('aula_id', lesson.id) as PostgrestResponse<QuestaoData>;
             
             const questoesData1 = questoesResponse1.data;
             
             if (questoesData1 && questoesData1.length > 0) {
               questoesIds = questoesData1.map((q) => q.id);
             } else {
-              const questoesResponse2: PostgrestResponse<QuestaoData> = await supabase
+              const questoesResponse2 = await supabase
                 .from('questoes')
                 .select('id')
-                .eq('id_aula', lesson.id);
+                .eq('id_aula', lesson.id) as PostgrestResponse<QuestaoData>;
               
               const questoesData2 = questoesResponse2.data;
               
@@ -284,12 +285,12 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           // Se encontrou questões, buscar respostas do aluno
           if (questoesIds.length > 0) {
             // Buscar todas as respostas do aluno para estas questões, incluindo a data de criação
-            const respostasResponse: PostgrestResponse<RespostaData> = await supabase
+            const respostasResponse = await supabase
               .from('respostas_alunos')
               .select('questao_id, is_correta, created_at')
               .eq('aluno_id', user.id)
               .in('questao_id', questoesIds)
-              .order('created_at', { ascending: false });
+              .order('created_at', { ascending: false }) as PostgrestResponse<RespostaData>;
             
             const respostasData = respostasResponse.data;
             

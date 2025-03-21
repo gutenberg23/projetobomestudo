@@ -1,4 +1,3 @@
-
 import { BlogPost } from "@/components/blog/types";
 
 // Dados fictícios para demonstração
@@ -15,11 +14,11 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     createdAt: "2023-02-15T14:30:00Z",
     slug: "concursos-previstos-marco-2025",
     category: "Concursos",
-    region: "Nacional",
+    region: "nacional",
     tags: ["concursos", "editais", "2025"],
     metaDescription: "Confira a lista completa dos principais concursos públicos previstos para março de 2025, com vagas para todos os níveis de escolaridade.",
     featuredImage: "/lovable-uploads/1a751e43-0164-4c7d-bcb7-8afe675bfb25.jpg",
-    readingTime: 5,
+    readingTime: "5",
     featured: true
   },
   {
@@ -34,12 +33,12 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     createdAt: "2023-02-14T10:45:00Z",
     slug: "concurso-inss-nivel-medio-2025",
     category: "Concursos",
-    region: "Federal",
+    region: "federal",
     state: "DF",
     tags: ["INSS", "nível médio", "edital"],
     metaDescription: "Confira as informações sobre o possível novo concurso do INSS para cargos de nível médio previsto para 2025.",
     featuredImage: "/lovable-uploads/72f4e3ba-f775-45ec-a63f-d01db14a5b60.jpg",
-    readingTime: 4
+    readingTime: "4"
   },
   {
     id: "3",
@@ -57,7 +56,7 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     tags: ["CNU", "resultado", "aprovados"],
     metaDescription: "Resultado final do Concurso Nacional Unificado foi divulgado. Veja como consultar sua classificação e os próximos passos para os aprovados.",
     featuredImage: "/lovable-uploads/343607f4-044c-4c9f-8cad-1ccc0760d766.jpg",
-    readingTime: 6,
+    readingTime: "6",
     featured: true
   },
   {
@@ -76,7 +75,7 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     tags: ["STM", "judiciário", "analista", "técnico"],
     metaDescription: "Superior Tribunal Militar publica edital para concurso público com vagas para técnicos e analistas judiciários em diversas especialidades.",
     featuredImage: "/lovable-uploads/7f20742a-1d1f-424b-9f56-3cece0204c7b.jpg",
-    readingTime: 5
+    readingTime: "5"
   },
   {
     id: "5",
@@ -93,7 +92,7 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     tags: ["PF", "administrativo", "notas de corte"],
     metaDescription: "Confira as notas de corte preliminares do concurso para Agente Administrativo da Polícia Federal, divididas por estado e modalidade de concorrência.",
     featuredImage: "/lovable-uploads/98b03e84-986d-4ef1-955d-f92b9422fc94.png",
-    readingTime: 7,
+    readingTime: "7",
     featured: true
   },
   {
@@ -111,7 +110,7 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     tags: ["material gratuito", "Banco do Brasil", "PF", "CNU"],
     metaDescription: "Aproveite o feriado de Carnaval para estudar com materiais gratuitos do BomEstudo para os principais concursos do ano.",
     featuredImage: "/lovable-uploads/90c45412-9b3b-40db-b562-ca8dc786ab82.png",
-    readingTime: 3
+    readingTime: "3"
   },
   {
     id: "7",
@@ -129,7 +128,7 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     tags: ["PF", "estratégia de estudos", "matérias"],
     metaDescription: "Confira o ciclo básico de matérias que você deve estudar para se preparar adequadamente para o concurso da Polícia Federal.",
     featuredImage: "/lovable-uploads/94836d04-1225-493e-a113-36572286edcd.png",
-    readingTime: 8
+    readingTime: "8"
   },
   {
     id: "8",
@@ -145,7 +144,7 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     region: "Nacional",
     tags: ["Correios", "cargos vagos", "serviço público"],
     metaDescription: "Mesmo após a realização de concursos, os Correios ainda possuem mais de 10 mil cargos não preenchidos em todo o território brasileiro.",
-    readingTime: 6
+    readingTime: "6"
   },
   {
     id: "9",
@@ -161,7 +160,7 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     region: "Nacional",
     tags: ["Petrobras", "nível superior", "edital"],
     metaDescription: "Aumentam as expectativas para novo concurso da Petrobras com vagas de nível superior em diversas áreas e salários atrativos.",
-    readingTime: 5
+    readingTime: "5"
   },
   {
     id: "10",
@@ -177,7 +176,7 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     region: "Norte",
     tags: ["vagas temporárias", "INAI", "processo seletivo"],
     metaDescription: "INAI Brasil abre mais de mil vagas em processo seletivo simplificado sem necessidade de aprovação em concurso público tradicional.",
-    readingTime: 4
+    readingTime: "4"
   },
   {
     id: "11",
@@ -195,7 +194,7 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     tags: ["CNU", "concurso unificado", "órgãos federais"],
     metaDescription: "Confira a lista de órgãos federais já confirmados para participação no novo Concurso Nacional Unificado (CNU) previsto para 2025.",
     featuredImage: "/lovable-uploads/a19bb9dc-c459-47ab-89f0-7addc6bbed15.jpg",
-    readingTime: 7,
+    readingTime: "7",
     featured: true
   },
   {
@@ -214,6 +213,6 @@ export const MOCK_BLOG_POSTS: BlogPost[] = [
     state: "RJ",
     tags: ["Sefaz", "estratégia", "concursos simultâneos"],
     metaDescription: "Saiba se é possível conciliar a preparação para os concursos das Secretarias de Fazenda do Rio de Janeiro e do Paraná em 2025.",
-    readingTime: 6
+    readingTime: "6"
   }
 ];

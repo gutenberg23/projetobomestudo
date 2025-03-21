@@ -1,3 +1,4 @@
+
 import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
@@ -101,9 +102,10 @@ export function usePostsActions(state: PostsState) {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
       
-      // Parse reading time as number
+      // Parse reading time and convert to string to match BlogPost type
       const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
         Math.ceil(conteudo.split(' ').length / 200);
+      const readingTimeString = readingTimeNumber.toString();
       
       // Convert related posts to array
       const relatedPostsArray = postsRelacionados.split(',')
@@ -129,9 +131,11 @@ export function usePostsActions(state: PostsState) {
         metaDescription: metaDescricao || resumo,
         metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
         featuredImage: imagemDestaque || undefined,
-        readingTime: readingTimeNumber,
+        readingTime: readingTimeString,
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
-        featured: destacado
+        featured: destacado,
+        commentCount: postEditando?.commentCount || 0,
+        likesCount: postEditando?.likesCount || 0
       };
 
       let novoPost: BlogPost | null;
