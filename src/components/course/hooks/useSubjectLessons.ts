@@ -2,11 +2,30 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { LessonData, SimpleAula } from '../types/subjectCard';
+import { LessonData } from '../types/subjectCard';
 
 interface UseSubjectLessonsProps {
   subjectId: string;
   courseId?: string;
+}
+
+// Tipos auxiliares para simplificar
+interface SimpleAula {
+  id: string;
+  titulo: string;
+  questoes_ids?: string[];
+}
+
+interface UserProgressData {
+  subjects_data?: {
+    [key: string]: {
+      lessons?: {
+        [key: string]: {
+          completed: boolean;
+        };
+      };
+    };
+  };
 }
 
 export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjectLessonsProps) => {
@@ -30,62 +49,66 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
       console.log('Buscando aulas para a disciplina:', subjectId);
 
       // Buscar aulas_ids na tabela disciplinas
-      const { data: disciplinaData } = await supabase
+      const { data: disciplinaData, error: disciplinaError } = await supabase
         .from('disciplinas')
         .select('*')
         .eq('id', subjectId)
         .single();
 
-      if (disciplinaData) {
+      if (disciplinaData && !disciplinaError) {
         const aulas_ids = disciplinaData.aulas_ids || [];
         if (Array.isArray(aulas_ids) && aulas_ids.length > 0) {
-          await fetchAulasByIds(aulas_ids.map(String));
+          const aulaIdsAsStrings = aulas_ids.map(id => String(id));
+          await fetchAulasByIds(aulaIdsAsStrings);
           return;
         }
       }
 
       // Tentar buscar por disciplina_id
-      const { data: aulasData } = await supabase
+      const { data: aulasData, error: aulasError } = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina_id', subjectId);
 
-      if (aulasData && aulasData.length > 0) {
-        await processAulas(aulasData.map(aula => ({
+      if (aulasData && aulasData.length > 0 && !aulasError) {
+        const simpleAulas: SimpleAula[] = aulasData.map(aula => ({
           id: String(aula.id),
           titulo: String(aula.titulo),
           questoes_ids: aula.questoes_ids ? aula.questoes_ids.map(String) : []
-        })));
+        }));
+        await processAulas(simpleAulas);
         return;
       }
 
       // Tentar buscar por id_disciplina
-      const { data: aulasData2 } = await supabase
+      const { data: aulasData2, error: aulasError2 } = await supabase
         .from('aulas')
         .select('*')
         .eq('id_disciplina', subjectId);
 
-      if (aulasData2 && aulasData2.length > 0) {
-        await processAulas(aulasData2.map(aula => ({
+      if (aulasData2 && aulasData2.length > 0 && !aulasError2) {
+        const simpleAulas: SimpleAula[] = aulasData2.map(aula => ({
           id: String(aula.id),
           titulo: String(aula.titulo),
           questoes_ids: aula.questoes_ids ? aula.questoes_ids.map(String) : []
-        })));
+        }));
+        await processAulas(simpleAulas);
         return;
       }
 
       // Tentar buscar por disciplina
-      const { data: aulasData3 } = await supabase
+      const { data: aulasData3, error: aulasError3 } = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina', subjectId);
 
-      if (aulasData3 && aulasData3.length > 0) {
-        await processAulas(aulasData3.map(aula => ({
+      if (aulasData3 && aulasData3.length > 0 && !aulasError3) {
+        const simpleAulas: SimpleAula[] = aulasData3.map(aula => ({
           id: String(aula.id),
           titulo: String(aula.titulo),
           questoes_ids: aula.questoes_ids ? aula.questoes_ids.map(String) : []
-        })));
+        }));
+        await processAulas(simpleAulas);
         return;
       }
 
@@ -116,7 +139,7 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
       return;
     }
 
-    const simpleAulas = aulasData.map(aula => ({
+    const simpleAulas: SimpleAula[] = aulasData.map(aula => ({
       id: String(aula.id),
       titulo: String(aula.titulo),
       questoes_ids: aula.questoes_ids ? aula.questoes_ids.map(String) : []
@@ -126,7 +149,8 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
   };
 
   const processAulas = async (aulasData: SimpleAula[]) => {
-    const lessonsWithStats = aulasData.map((aula) => ({
+    // Criar array de lições com estatísticas iniciais
+    const lessonsWithStats: LessonData[] = aulasData.map((aula) => ({
       id: aula.id,
       titulo: aula.titulo,
       concluida: false,
@@ -141,27 +165,28 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
     if (user?.id) {
       try {
         // Buscar progresso do usuário
-        const { data: userProgressRaw } = await supabase
+        const { data: userProgressRaw, error: progressError } = await supabase
           .from('user_course_progress')
           .select('subjects_data')
           .eq('user_id', user.id)
           .eq('course_id', courseId)
           .single();
 
-        if (userProgressRaw?.subjects_data) {
-          let subjects_data;
+        if (userProgressRaw?.subjects_data && !progressError) {
+          let subjectsData: UserProgressData['subjects_data'] = {};
           
           if (typeof userProgressRaw.subjects_data === 'string') {
             try {
-              subjects_data = JSON.parse(userProgressRaw.subjects_data);
+              subjectsData = JSON.parse(userProgressRaw.subjects_data);
             } catch (e) {
-              subjects_data = {};
+              console.error('Erro ao fazer parse do subjects_data:', e);
+              subjectsData = {};
             }
           } else {
-            subjects_data = userProgressRaw.subjects_data;
+            subjectsData = userProgressRaw.subjects_data;
           }
 
-          const subjectData = subjects_data[subjectId];
+          const subjectData = subjectsData?.[subjectId];
 
           if (subjectData?.lessons) {
             for (const lesson of lessonsWithStats) {
@@ -178,25 +203,25 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
 
           const aulaCompleta = aulasData.find(a => a.id === lesson.id);
           if (aulaCompleta && aulaCompleta.questoes_ids && aulaCompleta.questoes_ids.length > 0) {
-            questoesIds = aulaCompleta.questoes_ids.map(String);
+            questoesIds = aulaCompleta.questoes_ids;
           }
 
           // Se não encontrou questoes_ids na aula, tenta buscar na tabela questoes
           if (questoesIds.length === 0) {
-            const { data: questoesData1 } = await supabase
+            const { data: questoesData1, error: questoesError1 } = await supabase
               .from('questoes')
               .select('id')
               .eq('aula_id', lesson.id);
 
-            if (questoesData1 && questoesData1.length > 0) {
+            if (questoesData1 && questoesData1.length > 0 && !questoesError1) {
               questoesIds = questoesData1.map(q => String(q.id));
             } else {
-              const { data: questoesData2 } = await supabase
+              const { data: questoesData2, error: questoesError2 } = await supabase
                 .from('questoes')
                 .select('id')
                 .eq('id_aula', lesson.id);
 
-              if (questoesData2 && questoesData2.length > 0) {
+              if (questoesData2 && questoesData2.length > 0 && !questoesError2) {
                 questoesIds = questoesData2.map(q => String(q.id));
               }
             }
@@ -204,14 +229,14 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
 
           // Se encontrou questoesIds, buscar dados de respostas para calcular estatísticas
           if (questoesIds.length > 0) {
-            const { data: respostasData } = await supabase
+            const { data: respostasData, error: respostasError } = await supabase
               .from('respostas_alunos')
               .select('questao_id, is_correta, created_at')
               .eq('aluno_id', user.id)
               .in('questao_id', questoesIds)
               .order('created_at', { ascending: false });
 
-            if (respostasData && respostasData.length > 0) {
+            if (respostasData && respostasData.length > 0 && !respostasError) {
               const respostasMaisRecentes = new Map<string, boolean>();
 
               for (const resposta of respostasData) {
