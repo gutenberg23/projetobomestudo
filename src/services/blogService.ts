@@ -148,7 +148,7 @@ export async function updateBlogPost(id: string, post: Partial<BlogPost>): Promi
   if (post.metaDescription !== undefined) updateData.meta_description = post.metaDescription;
   if (post.metaKeywords !== undefined) updateData.meta_keywords = post.metaKeywords;
   if (post.featuredImage !== undefined) updateData.featured_image = post.featuredImage;
-  if (post.readingTime !== undefined) updateData.reading_time = post.readingTime ? parseInt(post.readingTime, 10) || 0 : 0;
+  if (post.readingTime !== undefined) updateData.reading_time = typeof post.readingTime === 'string' ? parseInt(post.readingTime, 10) || 0 : post.readingTime || 0;
   if (post.relatedPosts !== undefined) updateData.related_posts = post.relatedPosts.map(String);
   if (post.featured !== undefined) updateData.featured = post.featured;
 

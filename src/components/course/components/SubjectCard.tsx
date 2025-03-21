@@ -5,7 +5,6 @@ import { calculateSubjectTotals } from '../utils/statsCalculations';
 import { LessonItem } from './LessonItem';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { PostgrestSingleResponse, PostgrestResponse } from '@supabase/supabase-js';
 
 interface SubjectCardProps {
   subject: any; 
@@ -98,14 +97,11 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         return;
       }
       
-      const disciplinaResponse = await supabase
+      const { data: disciplinaData, error: disciplinaError } = await supabase
         .from('disciplinas')
         .select('*')
         .eq('id', subject.id)
-        .single() as PostgrestSingleResponse<DisciplinaData>;
-      
-      const disciplinaData = disciplinaResponse.data;
-      const disciplinaError = disciplinaResponse.error;
+        .single();
       
       if (!disciplinaError && disciplinaData) {
         if (disciplinaData.aulas_ids && Array.isArray(disciplinaData.aulas_ids)) {
@@ -114,42 +110,33 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         }
       }
       
-      const aulasResponse = await supabase
+      const { data: aulasData, error: aulasError } = await supabase
         .from('aulas')
         .select('*')
-        .eq('disciplina_id', subject.id) as PostgrestResponse<AulaData>;
-      
-      const aulasData = aulasResponse.data;
-      const aulasError = aulasResponse.error;
+        .eq('disciplina_id', subject.id);
       
       if (!aulasError && aulasData && aulasData.length > 0) {
-        await processAulas(aulasData);
+        await processAulas(aulasData as AulaData[]);
         return;
       }
       
-      const aulasResponse2 = await supabase
+      const { data: aulasData2, error: aulasError2 } = await supabase
         .from('aulas')
         .select('*')
-        .eq('id_disciplina', subject.id) as PostgrestResponse<AulaData>;
-      
-      const aulasData2 = aulasResponse2.data;
-      const aulasError2 = aulasResponse2.error;
+        .eq('id_disciplina', subject.id);
       
       if (!aulasError2 && aulasData2 && aulasData2.length > 0) {
-        await processAulas(aulasData2);
+        await processAulas(aulasData2 as AulaData[]);
         return;
       }
       
-      const aulasResponse3 = await supabase
+      const { data: aulasData3, error: aulasError3 } = await supabase
         .from('aulas')
         .select('*')
-        .eq('disciplina', subject.id) as PostgrestResponse<AulaData>;
-      
-      const aulasData3 = aulasResponse3.data;
-      const aulasError3 = aulasResponse3.error;
+        .eq('disciplina', subject.id);
       
       if (!aulasError3 && aulasData3 && aulasData3.length > 0) {
-        await processAulas(aulasData3);
+        await processAulas(aulasData3 as AulaData[]);
         return;
       }
       
@@ -169,13 +156,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    const aulasResponse = await supabase
+    const { data: aulasData, error: aulasError } = await supabase
       .from('aulas')
       .select('*')
-      .in('id', aulaIds) as PostgrestResponse<AulaData>;
-    
-    const aulasData = aulasResponse.data;
-    const aulasError = aulasResponse.error;
+      .in('id', aulaIds);
     
     if (aulasError || !aulasData || aulasData.length === 0) {
       console.error('Erro ao buscar aulas por IDs:', aulasError);
@@ -183,7 +167,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    await processAulas(aulasData);
+    await processAulas(aulasData as AulaData[]);
   };
   
   const processAulas = async (aulasData: AulaData[]) => {
@@ -201,15 +185,12 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     
     if (user?.id) {
       try {
-        const userProgressResponse = await supabase
+        const { data: userProgressData, error: progressError } = await supabase
           .from('user_course_progress')
           .select('subjects_data')
           .eq('user_id', user.id)
           .eq('course_id', subject.courseId || 'default')
-          .single() as PostgrestSingleResponse<UserProgressData>;
-        
-        const userProgressData = userProgressResponse.data;
-        const progressError = userProgressResponse.error;
+          .single();
         
         if (!progressError && userProgressData && userProgressData.subjects_data) {
           const subjectData = userProgressData.subjects_data[subject.id];
@@ -234,38 +215,32 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           }
           
           if (questoesIds.length === 0) {
-            const questoesResponse1 = await supabase
+            const { data: questoesData1 } = await supabase
               .from('questoes')
               .select('id')
-              .eq('aula_id', lesson.id) as PostgrestResponse<QuestaoData>;
-            
-            const questoesData1 = questoesResponse1.data;
+              .eq('aula_id', lesson.id);
             
             if (questoesData1 && questoesData1.length > 0) {
-              questoesIds = questoesData1.map((q) => q.id);
+              questoesIds = questoesData1.map((q: QuestaoData) => q.id);
             } else {
-              const questoesResponse2 = await supabase
+              const { data: questoesData2 } = await supabase
                 .from('questoes')
                 .select('id')
-                .eq('id_aula', lesson.id) as PostgrestResponse<QuestaoData>;
-              
-              const questoesData2 = questoesResponse2.data;
+                .eq('id_aula', lesson.id);
               
               if (questoesData2 && questoesData2.length > 0) {
-                questoesIds = questoesData2.map((q) => q.id);
+                questoesIds = questoesData2.map((q: QuestaoData) => q.id);
               }
             }
           }
           
           if (questoesIds.length > 0) {
-            const respostasResponse = await supabase
+            const { data: respostasData } = await supabase
               .from('respostas_alunos')
               .select('questao_id, is_correta, created_at')
               .eq('aluno_id', user.id)
               .in('questao_id', questoesIds)
-              .order('created_at', { ascending: false }) as PostgrestResponse<RespostaData>;
-            
-            const respostasData = respostasResponse.data;
+              .order('created_at', { ascending: false });
             
             if (respostasData && respostasData.length > 0) {
               const respostasMaisRecentes = new Map<string, boolean>();
