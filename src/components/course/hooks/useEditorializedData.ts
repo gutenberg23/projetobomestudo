@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -14,19 +15,13 @@ export const useEditorializedData = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
 
   // Efeito para carregar os dados do edital verticalizado
   useEffect(() => {
     if (!courseId) return;
     
-    // Evitar carregamentos desnecessários se não houver mudança real
     const loadData = async () => {
-      // Verificar se já carregamos os dados anteriormente
-      if (subjects.length > 0 && refreshTrigger === 0) {
-        console.log("Dados já carregados, ignorando carregamento duplicado");
-        return;
-      }
-      
       console.log(`Carregando dados do edital. Trigger: ${refreshTrigger}`);
       await fetchEditorializedData();
     };
@@ -45,7 +40,7 @@ export const useEditorializedData = () => {
       try {
         // Verificar se o usuário está logado e a sessão é válida
         let sessionValid = false;
-        let userId = 'guest';
+        let currentUserId = 'guest';
         
         try {
           const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
@@ -55,7 +50,7 @@ export const useEditorializedData = () => {
             sessionValid = false;
           } else if (sessionData.session) {
             sessionValid = true;
-            userId = sessionData.session.user.id;
+            currentUserId = sessionData.session.user.id;
           } else {
             console.log("Nenhuma sessão ativa encontrada");
             sessionValid = false;
@@ -65,206 +60,152 @@ export const useEditorializedData = () => {
           sessionValid = false;
         }
         
-        console.log("Usuário atual:", userId);
+        console.log("Usuário atual:", currentUserId);
+        
+        // ABORDAGEM COMPLETAMENTE NOVA: Sempre buscar dados diretos da fonte
+        console.log('Buscando dados do edital verticalizado diretamente da fonte');
         
         try {
-          // Verificar se a sessão é válida
-          let sessionValid = false;
-          if (userId !== 'guest') {
-            try {
-              const { data: sessionData } = await supabase.auth.getSession();
-              if (sessionData.session) {
-                console.log("Sessão válida encontrada");
-                sessionValid = true;
-              } else {
-                console.log("Sessão não encontrada, tentando renovar");
-                // Tentar renovar a sessão
-                const { data, error } = await supabase.auth.refreshSession();
-                if (error) {
-                  console.error("Erro ao renovar sessão:", error);
-                } else {
-                  console.log("Sessão renovada com sucesso");
-                  sessionValid = true;
-                }
-              }
-            } catch (connectionError) {
-              console.error("Erro de conexão com o Supabase:", connectionError);
-            }
-          }
-          
-          // LIMPAR COMPLETAMENTE o localStorage para este edital para garantir dados atualizados
-          try {
-            localStorage.removeItem(`edital_${realId}`);
-            console.log(`Cache do localStorage para edital_${realId} removido forçadamente`);
-          } catch (e) {
-            console.error("Erro ao remover dados do localStorage:", e);
-          }
-          
-          // ABORDAGEM COMPLETAMENTE NOVA: Sempre buscar dados diretos da fonte
-          // Ignorar completamente o localStorage para usuários logados
-          
-          // Buscar dados do edital verticalizado diretamente
-          console.log('Buscando dados do edital verticalizado diretamente da fonte');
-          
-          try {
-            // Buscar o edital verticalizado
-            const { data: editalData, error: editalError } = await supabase
-              .from('cursoverticalizado')
-              .select('*')
-              .eq('curso_id', realId)
-              .maybeSingle();
+          // Buscar o edital verticalizado
+          const { data: editalData, error: editalError } = await supabase
+            .from('cursoverticalizado')
+            .select('*')
+            .eq('curso_id', realId)
+            .maybeSingle();
 
-            if (editalError) {
-              console.error('Erro ao buscar dados do edital:', editalError);
-              throw editalError;
-            }
-            
-            if (!editalData) {
-              console.log('Nenhum edital verticalizado encontrado para este curso');
-              setSubjects([]);
-              setLoading(false);
-              return;
-            }
-            
-            console.log('Dados do edital encontrados:', editalData);
-            
-            // Buscar as disciplinas associadas ao edital
-            let disciplinasData: any[] = [];
-            
-            if (editalData.disciplinas_ids && Array.isArray(editalData.disciplinas_ids)) {
-              // Buscar disciplinas verticalizadas
-              const { data: disciplinas, error: disciplinasError } = await supabase
-                .from('disciplinaverticalizada')
-                .select('*')
-                .in('id', editalData.disciplinas_ids);
-                
-              if (disciplinasError) {
-                console.error('Erro ao buscar disciplinas:', disciplinasError);
-                throw disciplinasError;
-              }
+          if (editalError) {
+            console.error('Erro ao buscar dados do edital:', editalError);
+            throw editalError;
+          }
+          
+          if (!editalData) {
+            console.log('Nenhum edital verticalizado encontrado para este curso');
+            setSubjects([]);
+            setLoading(false);
+            return;
+          }
+          
+          console.log('Dados do edital encontrados:', editalData);
+          
+          // Buscar as disciplinas associadas ao edital
+          let disciplinasData: any[] = [];
+          
+          if (editalData.disciplinas_ids && Array.isArray(editalData.disciplinas_ids)) {
+            // Buscar disciplinas verticalizadas
+            const { data: disciplinas, error: disciplinasError } = await supabase
+              .from('disciplinaverticalizada')
+              .select('*')
+              .in('id', editalData.disciplinas_ids);
               
-              if (disciplinas && disciplinas.length > 0) {
-                disciplinasData = disciplinas;
-                console.log('Disciplinas encontradas:', disciplinas.length);
-              } else {
-                console.log('Nenhuma disciplina encontrada para o edital');
-              }
+            if (disciplinasError) {
+              console.error('Erro ao buscar disciplinas:', disciplinasError);
+              throw disciplinasError;
             }
             
-            // Converter os dados para o formato esperado
-            const formattedSubjects = formatSubjectsFromEdital(disciplinasData);
-            console.log('Total de disciplinas formatadas:', formattedSubjects.length);
-            
-            // Se o usuário estiver logado, verificar se há dados de progresso
-            if (userId !== 'guest' && sessionValid) {
-              try {
-                // Buscar dados do progresso por disciplina através da tabela user_course_progress
-                const { data: progressData, error: progressError } = await supabase
-                  .from('user_course_progress')
-                  .select('*')
-                  .eq('user_id', userId)
-                  .eq('course_id', realId)
-                  .maybeSingle();
-                
-                if (progressError) {
-                  console.error('Erro ao buscar dados de progresso:', progressError);
-                } else if (progressData && progressData.subjects_data) {
-                  // Mesclar os dados de progresso com os dados do edital
-                  try {
-                    const savedProgress = JSON.parse(JSON.stringify(progressData.subjects_data));
+            if (disciplinas && disciplinas.length > 0) {
+              disciplinasData = disciplinas;
+              console.log('Disciplinas encontradas:', disciplinas.length);
+            } else {
+              console.log('Nenhuma disciplina encontrada para o edital');
+            }
+          }
+          
+          // Converter os dados para o formato esperado
+          const formattedSubjects = formatSubjectsFromEdital(disciplinasData);
+          console.log('Total de disciplinas formatadas:', formattedSubjects.length);
+          
+          // Se o usuário estiver logado, verificar se há dados de progresso
+          if (currentUserId !== 'guest' && sessionValid) {
+            try {
+              // Buscar dados do progresso por disciplina através da tabela user_course_progress
+              const { data: progressData, error: progressError } = await supabase
+                .from('user_course_progress')
+                .select('*')
+                .eq('user_id', currentUserId)
+                .eq('course_id', realId)
+                .maybeSingle();
+              
+              if (progressError) {
+                console.error('Erro ao buscar dados de progresso:', progressError);
+              } else if (progressData && progressData.subjects_data) {
+                // Mesclar os dados de progresso com os dados do edital
+                try {
+                  // Usar uma cópia profunda para evitar referências
+                  const savedProgress = JSON.parse(JSON.stringify(progressData.subjects_data));
+                  
+                  if (Array.isArray(savedProgress) && savedProgress.length > 0) {
+                    console.log('Mesclando dados de progresso com dados do edital');
                     
-                    if (Array.isArray(savedProgress) && savedProgress.length > 0) {
-                      console.log('Mesclando dados de progresso com dados do edital');
-                      
-                      // Mesclar os dados de progresso com os dados do edital
-                      const mergedSubjects = formattedSubjects.map(subject => {
-                        const savedSubject = savedProgress.find(s => s.id === subject.id);
-                        if (savedSubject) {
-                          // Mesclar tópicos
-                          const mergedTopics = subject.topics.map(topic => {
-                            const savedTopic = savedSubject.topics.find(t => t.name === topic.name);
-                            return savedTopic ? { ...topic, ...savedTopic } : topic;
-                          });
-                          
-                          return { ...subject, ...savedSubject, topics: mergedTopics };
-                        }
-                        return subject;
-                      });
-                      
-                      console.log('Dados mesclados com sucesso');
-                      setSubjects(mergedSubjects);
-                      setLoading(false);
-                      
-                      // Salvar os dados mesclados no banco
-                      await saveUserDataToDatabase(realId, mergedSubjects);
-                      return;
-                    }
-                  } catch (e) {
-                    console.error('Erro ao mesclar dados de progresso:', e);
+                    // Mesclar os dados de progresso com os dados do edital
+                    const mergedSubjects = formattedSubjects.map(subject => {
+                      const savedSubject = savedProgress.find((s: any) => s.id === subject.id);
+                      if (savedSubject) {
+                        // Mesclar tópicos
+                        const mergedTopics = subject.topics.map(topic => {
+                          const savedTopic = savedSubject.topics.find((t: any) => t.name === topic.name);
+                          return savedTopic ? { ...topic, ...savedTopic } : topic;
+                        });
+                        
+                        return { ...subject, ...savedSubject, topics: mergedTopics };
+                      }
+                      return subject;
+                    });
+                    
+                    console.log('Dados mesclados com sucesso');
+                    setSubjects(mergedSubjects);
+                    setUnsavedChanges(false);
+                    setLoading(false);
+                    return;
                   }
+                } catch (e) {
+                  console.error('Erro ao mesclar dados de progresso:', e);
                 }
-              } catch (e) {
-                console.error('Erro ao buscar dados de progresso:', e);
               }
+            } catch (e) {
+              console.error('Erro ao buscar dados de progresso:', e);
             }
-            
-            // Se não houver dados de progresso ou o usuário não estiver logado
-            setSubjects(formattedSubjects);
-            
-            // Salvar no localStorage APENAS para usuários não logados
-            if (userId === 'guest') {
-              try {
-                localStorage.setItem(`edital_${realId}`, JSON.stringify(formattedSubjects));
-                console.log('Dados salvos no localStorage para usuário não logado');
-              } catch (localStorageError) {
-                console.error('Erro ao salvar no localStorage:', localStorageError);
-              }
+          }
+          
+          // Se não houver dados de progresso ou o usuário não estiver logado
+          setSubjects(formattedSubjects);
+          setUnsavedChanges(false);
+          
+          // Salvar no localStorage APENAS para usuários não logados
+          if (currentUserId === 'guest') {
+            try {
+              localStorage.setItem(`edital_${realId}`, JSON.stringify(formattedSubjects));
+              console.log('Dados salvos no localStorage para usuário não logado');
+            } catch (localStorageError) {
+              console.error('Erro ao salvar no localStorage:', localStorageError);
             }
-            
-            // Se o usuário estiver logado e a sessão for válida, salvar também no banco de dados
-            if (userId !== 'guest' && sessionValid) {
-              try {
-                await saveUserDataToDatabase(realId, formattedSubjects);
-              } catch (error) {
-                console.error("Erro ao salvar dados no banco:", error);
-              }
-            }
-          } catch (error) {
-            console.error('Erro ao buscar dados do edital:', error);
-            
-            // Apenas para usuários não logados, tentar carregar do localStorage como último recurso
-            if (userId === 'guest') {
-              try {
-                const savedData = localStorage.getItem(`edital_${realId}`);
-                if (savedData) {
-                  const parsedData = JSON.parse(savedData);
-                  console.log('Dados carregados do localStorage para usuário não logado após erro:', parsedData);
-                  setSubjects(parsedData);
-                } else {
-                  console.log('Nenhum dado encontrado no localStorage');
-                  setSubjects([]);
-                }
-              } catch (localStorageError) {
-                console.error('Erro ao carregar dados do localStorage:', localStorageError);
+          }
+          
+        } catch (error) {
+          console.error('Erro ao buscar dados do edital:', error);
+          
+          // Apenas para usuários não logados, tentar carregar do localStorage como último recurso
+          if (currentUserId === 'guest') {
+            try {
+              const savedData = localStorage.getItem(`edital_${realId}`);
+              if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                console.log('Dados carregados do localStorage para usuário não logado após erro:', parsedData);
+                setSubjects(parsedData);
+              } else {
+                console.log('Nenhum dado encontrado no localStorage');
                 setSubjects([]);
               }
-            } else {
-              // Para usuários logados, não usar localStorage
+            } catch (localStorageError) {
+              console.error('Erro ao carregar dados do localStorage:', localStorageError);
               setSubjects([]);
             }
+          } else {
+            // Para usuários logados, não usar localStorage
+            setSubjects([]);
           }
-          
-          setLoading(false);
-        } catch (error) {
-          console.error('Erro ao carregar dados do edital:', error);
-          toast({
-            title: "Erro ao carregar dados",
-            description: "Não foi possível carregar os dados do edital. Tente novamente mais tarde.",
-            variant: "destructive"
-          });
-          setLoading(false);
-          setSubjects([]);
         }
+        
+        setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar dados do edital:', error);
         toast({
@@ -330,7 +271,7 @@ export const useEditorializedData = () => {
 
   // Função para salvar os dados do usuário no banco de dados
   const saveUserDataToDatabase = async (courseRealId: string, subjectsData: Subject[]) => {
-    if (userId === 'guest') return;
+    if (userId === 'guest') return false;
     
     console.log("Tentando salvar dados no banco de dados");
     
@@ -340,12 +281,12 @@ export const useEditorializedData = () => {
       
       if (sessionError) {
         console.error("Erro ao verificar sessão:", sessionError);
-        return;
+        return false;
       }
       
       if (!sessionData.session) {
         console.log("Sessão inválida, não é possível salvar dados no banco");
-        return;
+        return false;
       }
       
       // Verificar se já existe um registro para este usuário e curso
@@ -358,7 +299,7 @@ export const useEditorializedData = () => {
       
       if (existingError && existingError.code !== 'PGRST116') {
         console.error("Erro ao verificar dados existentes:", existingError);
-        return;
+        return false;
       }
       
       let result;
@@ -394,7 +335,7 @@ export const useEditorializedData = () => {
       
       if (result.error) {
         console.error("Erro ao salvar dados no banco:", result.error);
-        return;
+        return false;
       }
       
       // Remover dados do localStorage para evitar inconsistências
@@ -406,8 +347,11 @@ export const useEditorializedData = () => {
       }
       
       console.log("Dados salvos com sucesso no banco de dados");
+      setUnsavedChanges(false);
+      return true;
     } catch (error) {
       console.error("Erro ao salvar dados no banco:", error);
+      return false;
     }
   };
 
@@ -460,8 +404,7 @@ export const useEditorializedData = () => {
           return subject;
         });
         
-        // Salvar apenas no localStorage para usuários não logados
-        // Não salvar no banco de dados até que o botão "Salvar dados" seja clicado
+        // Para usuários não logados, salvar temporariamente no localStorage
         if (userId === 'guest' && courseId) {
           const realId = extractIdFromFriendlyUrl(courseId);
           try {
@@ -469,6 +412,9 @@ export const useEditorializedData = () => {
           } catch (error) {
             console.error('Erro ao salvar no localStorage:', error);
           }
+        } else {
+          // Para usuários logados, marcar que há alterações não salvas
+          setUnsavedChanges(true);
         }
         
         return updatedSubjects;
@@ -483,17 +429,24 @@ export const useEditorializedData = () => {
     }
   };
 
-  // Nova função para salvar todos os dados no banco de dados
-  // Esta função será chamada quando o botão "Salvar dados" for clicado
+  // Função para salvar todos os dados no banco de dados
   const saveAllDataToDatabase = async () => {
     if (userId === 'guest' || !courseId) return false;
     
     try {
+      setLoading(true);
       const realId = extractIdFromFriendlyUrl(courseId);
-      await saveUserDataToDatabase(realId, subjects);
-      return true;
+      const result = await saveUserDataToDatabase(realId, subjects);
+      setLoading(false);
+      
+      if (result) {
+        setUnsavedChanges(false);
+      }
+      
+      return result;
     } catch (error) {
       console.error('Erro ao salvar todos os dados:', error);
+      setLoading(false);
       toast({
         title: "Erro",
         description: "Não foi possível salvar os dados no banco de dados.",
@@ -508,6 +461,7 @@ export const useEditorializedData = () => {
     loading,
     updateTopicProgress,
     forceRefresh,
-    saveAllDataToDatabase
+    saveAllDataToDatabase,
+    unsavedChanges
   };
 };

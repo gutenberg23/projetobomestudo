@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -5,7 +6,7 @@ import { OverallStats, Subject } from "../types/editorialized";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, CheckIcon, XIcon, PencilIcon, RefreshCw, Loader2 } from "lucide-react";
+import { CalendarIcon, CheckIcon, XIcon, PencilIcon, RefreshCw, Loader2, Save } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,7 @@ export const DashboardSummary = ({
   const [isEditing, setIsEditing] = useState(false);
   const [tempGoal, setTempGoal] = useState(performanceGoal);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!courseId) return;
@@ -221,7 +223,55 @@ export const DashboardSummary = ({
     return Math.round(simuladosStats.hits / simuladosStats.questionsCount * 100);
   };
 
-  const { saveAllDataToDatabase } = useEditorializedData();
+  const { saveAllDataToDatabase, unsavedChanges } = useEditorializedData();
+
+  const handleSaveData = async () => {
+    if (userId !== 'guest' && courseId) {
+      setIsSaving(true);
+      
+      try {
+        const realId = extractIdFromFriendlyUrl(courseId);
+        
+        // Salvar a meta de aproveitamento e a data da prova
+        await saveUserDataToDatabase('performance_goal', performanceGoal);
+        if (examDate) {
+          await saveUserDataToDatabase('exam_date', examDate.toISOString());
+        }
+        
+        // Salvar todos os dados de progresso dos tópicos
+        const success = await saveAllDataToDatabase();
+        
+        if (success) {
+          toast({
+            title: "Sucesso",
+            description: "Seus dados foram salvos com sucesso!",
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Erro",
+            description: "Não foi possível salvar seus dados. Tente novamente.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao salvar dados:", error);
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao salvar seus dados. Tente novamente.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsSaving(false);
+      }
+    } else if (userId === 'guest') {
+      toast({
+        title: "Atenção",
+        description: "Você precisa estar logado para salvar seus dados.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <div className="mb-8 p-5 bg-white rounded-[10px]">
@@ -230,40 +280,17 @@ export const DashboardSummary = ({
           <h3 className="text-2xl font-bold">Resumo Geral</h3>
           <div className="flex gap-2">
             <Button
-              variant="outline"
+              variant={unsavedChanges ? "default" : "outline"}
               size="sm"
-              onClick={async () => {
-                if (userId !== 'guest' && courseId) {
-                  const realId = extractIdFromFriendlyUrl(courseId);
-                  
-                  // Salvar a meta de aproveitamento e a data da prova
-                  await saveUserDataToDatabase('performance_goal', performanceGoal);
-                  if (examDate) {
-                    await saveUserDataToDatabase('exam_date', examDate.toISOString());
-                  }
-                  
-                  // Salvar todos os dados de progresso dos tópicos
-                  const success = await saveAllDataToDatabase();
-                  
-                  if (success) {
-                    toast({
-                      title: "Sucesso",
-                      description: "Seus dados foram salvos com sucesso!",
-                      variant: "default"
-                    });
-                  }
-                } else if (userId === 'guest') {
-                  toast({
-                    title: "Atenção",
-                    description: "Você precisa estar logado para salvar seus dados.",
-                    variant: "destructive"
-                  });
-                }
-              }}
-              disabled={loading || userId === 'guest'}
+              onClick={handleSaveData}
+              disabled={loading || userId === 'guest' || isSaving || !unsavedChanges}
             >
-              <CheckIcon className="h-4 w-4 mr-2" />
-              Salvar dados
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {unsavedChanges ? "Salvar alterações" : "Salvar dados"}
             </Button>
             <Button
               variant="outline"
@@ -273,7 +300,7 @@ export const DashboardSummary = ({
                   window.forceRefreshEdital();
                 }
               }}
-              disabled={loading}
+              disabled={loading || isSaving}
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />

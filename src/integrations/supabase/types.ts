@@ -113,40 +113,40 @@ export type Database = {
       }
       blog_comments: {
         Row: {
-          id: string
-          post_id: string
-          user_id: string
-          content: string
-          author_name: string
           author_avatar: string | null
+          author_name: string
+          content: string
+          created_at: string
+          id: string
           likes_count: number
           parent_id: string | null
-          created_at: string
+          post_id: string
           updated_at: string
+          user_id: string
         }
         Insert: {
-          id?: string
-          post_id: string
-          user_id: string
-          content: string
-          author_name: string
           author_avatar?: string | null
+          author_name: string
+          content: string
+          created_at?: string
+          id?: string
           likes_count?: number
           parent_id?: string | null
-          created_at?: string
+          post_id: string
           updated_at?: string
+          user_id: string
         }
         Update: {
-          id?: string
-          post_id?: string
-          user_id?: string
-          content?: string
-          author_name?: string
           author_avatar?: string | null
+          author_name?: string
+          content?: string
+          created_at?: string
+          id?: string
           likes_count?: number
           parent_id?: string | null
-          created_at?: string
+          post_id?: string
           updated_at?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -163,83 +163,76 @@ export type Database = {
             referencedRelation: "blog_posts"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "blog_comments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
         ]
       }
       blog_posts: {
         Row: {
-          id: string
-          title: string
-          summary: string
-          content: string
           author: string
           author_avatar: string | null
-          comment_count: number
-          likes_count: number
-          created_at: string
-          slug: string
           category: string
-          region: string | null
-          state: string | null
-          tags: string[] | null
+          comment_count: number
+          content: string
+          created_at: string
+          featured: boolean | null
+          featured_image: string | null
+          id: string
+          likes_count: number
           meta_description: string | null
           meta_keywords: string[] | null
-          featured_image: string | null
           reading_time: number | null
+          region: string | null
           related_posts: string[] | null
-          featured: boolean | null
+          slug: string
+          state: string | null
+          summary: string
+          tags: string[] | null
+          title: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          title: string
-          summary: string
-          content: string
           author: string
           author_avatar?: string | null
-          comment_count?: number
-          likes_count?: number
-          created_at?: string
-          slug: string
           category: string
-          region?: string | null
-          state?: string | null
-          tags?: string[] | null
+          comment_count?: number
+          content: string
+          created_at?: string
+          featured?: boolean | null
+          featured_image?: string | null
+          id?: string
+          likes_count?: number
           meta_description?: string | null
           meta_keywords?: string[] | null
-          featured_image?: string | null
           reading_time?: number | null
+          region?: string | null
           related_posts?: string[] | null
-          featured?: boolean | null
+          slug: string
+          state?: string | null
+          summary: string
+          tags?: string[] | null
+          title: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          title?: string
-          summary?: string
-          content?: string
           author?: string
           author_avatar?: string | null
-          comment_count?: number
-          likes_count?: number
-          created_at?: string
-          slug?: string
           category?: string
-          region?: string | null
-          state?: string | null
-          tags?: string[] | null
+          comment_count?: number
+          content?: string
+          created_at?: string
+          featured?: boolean | null
+          featured_image?: string | null
+          id?: string
+          likes_count?: number
           meta_description?: string | null
           meta_keywords?: string[] | null
-          featured_image?: string | null
           reading_time?: number | null
+          region?: string | null
           related_posts?: string[] | null
-          featured?: boolean | null
+          slug?: string
+          state?: string | null
+          summary?: string
+          tags?: string[] | null
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -433,6 +426,7 @@ export type Database = {
           descricao: string | null
           id: string
           importancia: number[] | null
+          links: string[] | null
           titulo: string
           topicos: string[] | null
         }
@@ -441,6 +435,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           importancia?: number[] | null
+          links?: string[] | null
           titulo: string
           topicos?: string[] | null
         }
@@ -449,6 +444,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           importancia?: number[] | null
+          links?: string[] | null
           titulo?: string
           topicos?: string[] | null
         }
@@ -985,40 +981,124 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      increment_blog_post_comments: {
+      decrement_post_comment_count:
+        | {
+            Args: {
+              post_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              post_id: string
+            }
+            Returns: undefined
+          }
+      handle_comment_created: {
         Args: {
-          post_id: string
+          comment_id: number
         }
         Returns: undefined
       }
-      increment_blog_post_likes: {
+      handle_comment_deleted: {
         Args: {
-          post_id: string
+          comment_id: number
         }
         Returns: undefined
       }
-      increment_comment_likes: {
+      handle_new_user: {
         Args: {
-          comment_id: string
+          user_id: number
         }
         Returns: undefined
       }
+      increment_blog_post_comments:
+        | {
+            Args: {
+              post_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              post_id: string
+            }
+            Returns: undefined
+          }
+      increment_blog_post_likes:
+        | {
+            Args: {
+              post_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              post_id: string
+            }
+            Returns: undefined
+          }
+      increment_comment_likes:
+        | {
+            Args: {
+              comment_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              comment_id: string
+            }
+            Returns: undefined
+          }
+      increment_post_comment_count:
+        | {
+            Args: {
+              post_id: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              post_id: string
+            }
+            Returns: undefined
+          }
       table_exists: {
         Args: {
           table_name: string
         }
         Returns: boolean
       }
-      upsert_user_question_attempt: {
+      update_updated_at_column: {
         Args: {
-          p_user_id: string
-          p_question_id: string
-          p_is_correct: boolean
-          p_answer_text: string
-          p_time_spent_seconds: number
+          record_id: number
         }
         Returns: undefined
       }
+      update_user_question_attempts_updated_at: {
+        Args: {
+          attempt_id: number
+        }
+        Returns: undefined
+      }
+      upsert_user_question_attempt:
+        | {
+            Args: {
+              p_user_id: string
+              p_question_id: string
+              p_is_correct: boolean
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              user_id: number
+              question_id: number
+              attempt_data: Json
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       user_role: "aluno" | "professor" | "admin"

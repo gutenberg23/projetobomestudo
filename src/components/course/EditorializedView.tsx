@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardSummary } from "./components/DashboardSummary";
 import { SubjectTable } from "./components/SubjectTable";
@@ -56,7 +57,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
 
 export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewProps) => {
   const [performanceGoal, setPerformanceGoal] = useState<number>(70);
-  const { subjects, loading, updateTopicProgress, forceRefresh } = useEditorializedData();
+  const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges } = useEditorializedData();
   const [simuladosStats, setSimuladosStats] = useState({
     total: 0,
     realizados: 0,
@@ -89,8 +90,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
             const realId = extractIdFromFriendlyUrl(courseId);
             localStorage.removeItem(`edital_${realId}`);
             console.log(`Cache do localStorage para edital_${realId} removido`);
-            
-            // NÃO chamar forceRefresh() aqui para evitar loop infinito
           }
           
           if (user) {
@@ -102,15 +101,12 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
               const { data, error } = await supabase.auth.refreshSession();
               if (error) {
                 console.error("Erro ao renovar sessão:", error);
-                // Não redirecionar, apenas mostrar mensagem
                 console.log("Usuário continuará com funcionalidade limitada");
               } else {
                 console.log("Sessão renovada com sucesso");
-                // NÃO chamar forceRefresh() aqui para evitar loop infinito
               }
             } else {
               console.log("Sessão válida encontrada");
-              // NÃO chamar forceRefresh() aqui para evitar loop infinito
             }
           }
         } catch (error) {
@@ -125,7 +121,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         delete window.forceRefreshEdital;
       };
     }
-  }, [user, courseId]); // Remover forceRefresh das dependências para evitar loop infinito
+  }, [user, courseId]);
 
   useEffect(() => {
     if (activeTab === 'simulados' && courseId && user) {
@@ -143,7 +139,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
     if (!courseId) return;
     
     setIsLoadingEdital(true);
-    setHasEdital(null); // Resetar o estado para garantir uma nova verificação
+    setHasEdital(null);
     
     try {
       const realId = extractIdFromFriendlyUrl(courseId);
