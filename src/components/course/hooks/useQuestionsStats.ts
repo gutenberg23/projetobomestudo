@@ -1,8 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { LessonStatsData } from '../types/lessonTypes';
 
-// Define explicit types for Supabase results
+// Tipos explícitos para os dados retornados do Supabase
 interface QuestaoResult {
   id: string;
 }
@@ -16,30 +15,21 @@ interface RespostaAluno {
 export const useQuestionsStats = () => {
   const fetchQuestionsIds = async (lessonId: string): Promise<string[]> => {
     try {
-      // Buscar por aula_id
-      const { data: questoesData1, error: questoesError1 } = await supabase
-        .from('questoes')
-        .select('id')
-        .eq('aula_id', lessonId) as {
-          data: QuestaoResult[] | null;
-          error: Error | null;
-        };
+      // Buscar por diferentes nomes de colunas
+      for (const field of ['aula_id', 'id_aula']) {
+        const { data, error } = await supabase
+          .from('questoes')
+          .select<QuestaoResult[]>('id')
+          .eq(field, lessonId);
 
-      if (questoesData1 && questoesData1.length > 0 && !questoesError1) {
-        return questoesData1.map(q => String(q.id));
-      }
+        if (error) {
+          console.error(`Erro ao buscar questões por ${field}:`, error);
+          continue;
+        }
 
-      // Buscar por id_aula
-      const { data: questoesData2, error: questoesError2 } = await supabase
-        .from('questoes')
-        .select('id')
-        .eq('id_aula', lessonId) as {
-          data: QuestaoResult[] | null;
-          error: Error | null;
-        };
-
-      if (questoesData2 && questoesData2.length > 0 && !questoesError2) {
-        return questoesData2.map(q => String(q.id));
+        if (data && data.length > 0) {
+          return data.map(q => q.id);
+        }
       }
 
       return [];
@@ -55,25 +45,23 @@ export const useQuestionsStats = () => {
     }
 
     try {
-      const { data: respostasData, error: respostasError } = await supabase
+      const { data, error } = await supabase
         .from('respostas_alunos')
-        .select('questao_id, is_correta, created_at')
+        .select<RespostaAluno[]>('questao_id, is_correta, created_at')
         .eq('aluno_id', userId)
         .in('questao_id', questoesIds)
-        .order('created_at', { ascending: false }) as {
-          data: RespostaAluno[] | null;
-          error: Error | null;
-        };
+        .order('created_at', { ascending: false });
 
-      if (!respostasData || respostasError) {
+      if (error) {
+        console.error('Erro ao buscar respostas:', error);
         return { total: 0, hits: 0, errors: 0 };
       }
 
       const respostasMaisRecentes = new Map<string, boolean>();
 
-      for (const resposta of respostasData) {
-        if (!respostasMaisRecentes.has(String(resposta.questao_id))) {
-          respostasMaisRecentes.set(String(resposta.questao_id), !!resposta.is_correta);
+      for (const resposta of data ?? []) {
+        if (!respostasMaisRecentes.has(resposta.questao_id)) {
+          respostasMaisRecentes.set(resposta.questao_id, !!resposta.is_correta);
         }
       }
 
