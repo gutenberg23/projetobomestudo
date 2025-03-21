@@ -26,15 +26,19 @@ export interface SimpleResposta {
 }
 
 export interface SimpleUserProgress {
-  subjects_data: Record<string, {
-    lessons?: Record<string, {
-      completed: boolean;
-    }>;
-    stats?: {
-      hits: number;
-      errors: number;
+  subjects_data: {
+    [key: string]: {
+      lessons?: {
+        [key: string]: {
+          completed: boolean;
+        };
+      };
+      stats?: {
+        hits: number;
+        errors: number;
+      };
     };
-  }>;
+  };
 }
 
 export interface LessonData {
@@ -50,7 +54,32 @@ export interface LessonData {
 }
 
 export interface SubjectCardProps {
-  subject: any;
+  subject: {
+    id: string | number;
+    name?: string;
+    titulo?: string;
+    courseId?: string;
+    progress?: number;
+    questionsTotal?: number;
+    questionsCorrect?: number;
+    questionsWrong?: number;
+    topics?: any[];
+    stats?: {
+      totalTopics?: number;
+      completedTopics?: number;
+      exercisesDone?: number;
+      hits?: number;
+      errors?: number;
+    };
+  };
   isExpanded: boolean;
   onToggle: () => void;
+}
+
+export interface SubjectStatsResult {
+  progress: number;
+  questionsTotal: number;
+  questionsCorrect: number;
+  questionsWrong: number;
+  aproveitamento: number;
 }
