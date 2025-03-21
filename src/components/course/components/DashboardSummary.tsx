@@ -107,7 +107,6 @@ export const DashboardSummary = ({
     const realId = extractIdFromFriendlyUrl(courseId);
     
     try {
-      // Verificar se a sessão é válida antes de tentar salvar
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -190,22 +189,39 @@ export const DashboardSummary = ({
 
   const handlePerformanceGoalChange = (value: number) => {
     const newValue = Math.max(1, Math.min(100, value || 1));
-    setPerformanceGoal(newValue);
     
-    if (courseId && userId !== 'guest') {
-      saveUserDataToDatabase('performance_goal', newValue);
+    if (newValue !== performanceGoal) {
+      setPerformanceGoal(newValue);
+      
+      const { saveAllDataToDatabase, unsavedChanges, setUnsavedChanges } = useEditorializedData();
+      if (setUnsavedChanges) {
+        setUnsavedChanges(true);
+        console.log("Meta modificada, marcando unsavedChanges como true");
+      }
+      
+      if (courseId && userId !== 'guest') {
+        saveUserDataToDatabase('performance_goal', newValue);
+      }
     }
   };
 
   const handleExamDateChange = (date: Date | undefined) => {
-    setExamDate(date);
-    
-    if (courseId && userId !== 'guest') {
-      if (date) {
-        const dateString = date.toISOString();
-        saveUserDataToDatabase('exam_date', dateString);
-      } else {
-        saveUserDataToDatabase('exam_date', null);
+    if (date?.toISOString() !== examDate?.toISOString()) {
+      setExamDate(date);
+      
+      const { saveAllDataToDatabase, unsavedChanges, setUnsavedChanges } = useEditorializedData();
+      if (setUnsavedChanges) {
+        setUnsavedChanges(true);
+        console.log("Data modificada, marcando unsavedChanges como true");
+      }
+      
+      if (courseId && userId !== 'guest') {
+        if (date) {
+          const dateString = date.toISOString();
+          saveUserDataToDatabase('exam_date', dateString);
+        } else {
+          saveUserDataToDatabase('exam_date', null);
+        }
       }
     }
   };
@@ -231,13 +247,11 @@ export const DashboardSummary = ({
       try {
         const realId = extractIdFromFriendlyUrl(courseId);
         
-        // Salvar a meta de aproveitamento e a data da prova
         await saveUserDataToDatabase('performance_goal', performanceGoal);
         if (examDate) {
           await saveUserDataToDatabase('exam_date', examDate.toISOString());
         }
         
-        // Salvar todos os dados de progresso dos tópicos
         const success = await saveAllDataToDatabase();
         
         if (success) {

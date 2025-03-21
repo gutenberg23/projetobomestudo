@@ -377,9 +377,10 @@ export const useEditorializedData = () => {
           } catch (error) {
             console.error('Erro ao salvar no localStorage:', error);
           }
-        } else {
-          setUnsavedChanges(true);
         }
+        
+        setUnsavedChanges(true);
+        console.log("Mudanças detectadas, setUnsavedChanges(true)");
         
         return updatedSubjects;
       });
@@ -425,6 +426,7 @@ export const useEditorializedData = () => {
     updateTopicProgress,
     forceRefresh,
     saveAllDataToDatabase,
-    unsavedChanges
+    unsavedChanges,
+    setUnsavedChanges
   };
 };

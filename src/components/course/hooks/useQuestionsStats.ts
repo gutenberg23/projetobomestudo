@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { LessonStatsData } from '../types/lessonTypes';
 
@@ -19,7 +20,7 @@ export const useQuestionsStats = () => {
       for (const field of ['aula_id', 'id_aula']) {
         const { data, error } = await supabase
           .from('questoes')
-          .select<QuestaoResult[]>('id')
+          .select('id')
           .eq(field, lessonId);
 
         if (error) {
@@ -28,7 +29,7 @@ export const useQuestionsStats = () => {
         }
 
         if (data && data.length > 0) {
-          return data.map(q => q.id);
+          return data.map(q => q.id as string);
         }
       }
 
@@ -47,7 +48,7 @@ export const useQuestionsStats = () => {
     try {
       const { data, error } = await supabase
         .from('respostas_alunos')
-        .select<RespostaAluno[]>('questao_id, is_correta, created_at')
+        .select('questao_id, is_correta, created_at')
         .eq('aluno_id', userId)
         .in('questao_id', questoesIds)
         .order('created_at', { ascending: false });
