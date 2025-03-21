@@ -9,23 +9,27 @@ interface UseSubjectLessonsProps {
   courseId?: string;
 }
 
-// Tipos auxiliares para simplificar
+// Tipos simplificados para evitar problemas de tipagem recursiva
 interface SimpleAula {
   id: string;
   titulo: string;
   questoes_ids?: string[];
 }
 
+interface LessonProgressData {
+  completed: boolean;
+}
+
+interface SubjectLessonsData {
+  [lessonId: string]: LessonProgressData;
+}
+
+interface SubjectProgressData {
+  lessons?: SubjectLessonsData;
+}
+
 interface UserProgressData {
-  subjects_data?: {
-    [key: string]: {
-      lessons?: {
-        [key: string]: {
-          completed: boolean;
-        };
-      };
-    };
-  };
+  [subjectId: string]: SubjectProgressData;
 }
 
 export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjectLessonsProps) => {
@@ -173,8 +177,9 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
           .single();
 
         if (userProgressRaw?.subjects_data && !progressError) {
-          let subjectsData: UserProgressData['subjects_data'] = {};
+          let subjectsData: Record<string, SubjectProgressData> = {};
           
+          // Verificar se subjects_data é uma string JSON e fazer parse se necessário
           if (typeof userProgressRaw.subjects_data === 'string') {
             try {
               subjectsData = JSON.parse(userProgressRaw.subjects_data);
@@ -182,15 +187,16 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
               console.error('Erro ao fazer parse do subjects_data:', e);
               subjectsData = {};
             }
-          } else {
-            subjectsData = userProgressRaw.subjects_data;
+          } else if (typeof userProgressRaw.subjects_data === 'object') {
+            // Se já é um objeto, usamos diretamente
+            subjectsData = userProgressRaw.subjects_data as Record<string, SubjectProgressData>;
           }
 
-          const subjectData = subjectsData?.[subjectId];
-
-          if (subjectData?.lessons) {
+          // Verificar se o subject existe nos dados
+          if (subjectsData[subjectId]?.lessons) {
             for (const lesson of lessonsWithStats) {
-              if (subjectData.lessons[lesson.id]?.completed) {
+              const lessonProgress = subjectsData[subjectId]?.lessons?.[lesson.id];
+              if (lessonProgress?.completed) {
                 lesson.concluida = true;
               }
             }

@@ -25,20 +25,21 @@ export interface SimpleResposta {
   created_at: string;
 }
 
-export interface SimpleUserProgress {
-  subjects_data: {
-    [key: string]: {
-      lessons?: {
-        [key: string]: {
-          completed: boolean;
-        };
-      };
-      stats?: {
-        hits: number;
-        errors: number;
-      };
-    };
+// Estrutura simplificada para dados de progresso do usuário
+export interface LessonProgress {
+  completed: boolean;
+}
+
+export interface SubjectProgress {
+  lessons?: Record<string, LessonProgress>;
+  stats?: {
+    hits: number;
+    errors: number;
   };
+}
+
+export interface UserProgress {
+  subjects_data: Record<string, SubjectProgress>;
 }
 
 export interface LessonData {
