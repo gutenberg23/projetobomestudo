@@ -1,13 +1,24 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
-type AulaResult = { id: string };
+// Define explicit types for Supabase results
+interface AulaResult {
+  id: string;
+}
+
+interface DisciplinaResult {
+  aulas_ids: string[];
+}
 
 // Função auxiliar para buscar aulas por diferentes campos
 const fetchAulasByField = async (field: string, value: string): Promise<string[]> => {
   const { data, error } = await supabase
     .from('aulas')
     .select('id')
-    .eq(field, value);
+    .eq(field, value) as {
+      data: AulaResult[] | null;
+      error: Error | null;
+    };
 
   if (error) {
     console.error(`Erro ao buscar aulas por ${field}:`, error);
@@ -25,7 +36,10 @@ export const useFetchSubjectInfo = () => {
         .from('disciplinas')
         .select('aulas_ids')
         .eq('id', subjectId)
-        .single();
+        .single() as {
+          data: DisciplinaResult | null;
+          error: Error | null;
+        };
 
       if (disciplinaError) {
         console.error('Erro ao buscar disciplina:', disciplinaError);

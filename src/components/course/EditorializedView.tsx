@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardSummary } from "./components/DashboardSummary";
 import { SubjectTable } from "./components/SubjectTable";
@@ -15,7 +14,6 @@ import { RefreshCw, FileX, Loader2 } from "lucide-react";
 import { calculateOverallStats } from "./utils/statsCalculations";
 import { toast } from "@/components/ui/use-toast";
 
-// Declaração para o TypeScript reconhecer a propriedade global
 declare global {
   interface Window {
     forceRefreshEdital?: () => void;
@@ -26,7 +24,6 @@ interface EditorializedViewProps {
   activeTab?: string;
 }
 
-// Interface para os resultados do simulado do usuário
 interface UserSimuladoResult {
   id: string;
   user_id: string;
@@ -37,7 +34,6 @@ interface UserSimuladoResult {
   updated_at: string;
 }
 
-// Interface para os simulados
 interface Simulado {
   id: string;
   titulo: string;
@@ -50,7 +46,6 @@ interface Simulado {
   quantidade_questoes?: number;
 }
 
-// Tipo para o Supabase Client estendido
 type SupabaseClientWithCustomTables = typeof supabase & {
   from(table: 'user_simulado_results'): any;
 };
@@ -70,11 +65,8 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
   const [hasEdital, setHasEdital] = useState<boolean | null>(null);
   const [isLoadingEdital, setIsLoadingEdital] = useState<boolean>(false);
 
-  // Efeito para limpar o cache do navegador relacionado ao edital
   useEffect(() => {
-    // Limpar qualquer cache do navegador relacionado ao edital
     if (typeof window !== 'undefined') {
-      // Expor a função forceRefresh globalmente para que o DashboardSummary possa acessá-la
       window.forceRefreshEdital = () => {
         if (forceRefresh) {
           forceRefresh();
@@ -82,10 +74,8 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         }
       };
       
-      // Forçar recarregamento dos dados do Supabase
       const clearCacheAndReload = async () => {
         try {
-          // Limpar TODOS os dados do localStorage relacionados ao edital
           if (courseId) {
             const realId = extractIdFromFriendlyUrl(courseId);
             localStorage.removeItem(`edital_${realId}`);
@@ -93,11 +83,9 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
           }
           
           if (user) {
-            // Verificar se a sessão ainda é válida
             const { data: sessionData } = await supabase.auth.getSession();
             if (!sessionData.session) {
               console.log("Sessão expirada, tentando renovar");
-              // Tentar renovar a sessão
               const { data, error } = await supabase.auth.refreshSession();
               if (error) {
                 console.error("Erro ao renovar sessão:", error);
@@ -116,7 +104,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
       
       clearCacheAndReload();
       
-      // Limpar a função global quando o componente for desmontado
       return () => {
         delete window.forceRefreshEdital;
       };
@@ -144,7 +131,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
     try {
       const realId = extractIdFromFriendlyUrl(courseId);
       
-      // Adicionar um timestamp para evitar cache
       const timestamp = new Date().getTime();
       console.log(`Verificando existência do edital (timestamp: ${timestamp})`);
       
@@ -158,12 +144,10 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         console.error('Erro ao verificar existência do edital:', error);
       }
       
-      // Verificação mais rigorosa
       const editalExists = !!data && !!data.id && data.curso_id === realId;
       setHasEdital(editalExists);
       console.log('Edital existe?', editalExists, 'Dados:', data);
       
-      // Se não existir, forçar atualização dos dados
       if (!editalExists && forceRefresh) {
         forceRefresh();
       }
@@ -181,7 +165,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
 
       const realId = extractIdFromFriendlyUrl(courseId);
       
-      // Buscar todos os simulados do curso
       const { data: simuladosData, error: simuladosError } = await supabase
         .from("simulados")
         .select("*")
@@ -195,7 +178,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
 
       const simulados = simuladosData as Simulado[];
 
-      // Buscar resultados do usuário usando type assertion
       const supabaseWithCustomTables = supabase as SupabaseClientWithCustomTables;
       const { data: resultsData, error: resultsError } = await supabaseWithCustomTables
         .from("user_simulado_results")
@@ -209,13 +191,11 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
 
       const userResults = resultsData as UserSimuladoResult[];
 
-      // Calcular estatísticas
       const total = simulados.length;
       const realizados = userResults.filter(result => 
         simulados.some(simulado => simulado.id === result.simulado_id)
       ).length;
 
-      // Somar questões, acertos e erros
       let questionsCount = 0;
       let hits = 0;
       let errors = 0;
@@ -241,7 +221,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
     }
   };
 
-  // Mostra o loading apenas na aba de edital quando estiver carregando o edital
   if ((loading && activeTab === 'edital') || (isLoadingEdital && activeTab === 'edital')) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
@@ -251,7 +230,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
     );
   }
 
-  // Só verificamos a existência do edital se estivermos na aba 'edital'
   if (hasEdital === false && activeTab === 'edital') {
     return (
       <div className="flex flex-col items-center justify-center h-full">
@@ -266,7 +244,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
 
   return (
     <div className="bg-[#f6f8fa] rounded-[10px] pb-5 px-[10px] md:px-5">
-      {/* Só renderiza o DashboardSummary na aba de edital se houver edital */}
       {(activeTab !== 'edital' || (activeTab === 'edital' && hasEdital)) && (
         <DashboardSummary 
           overallStats={calculateOverallStats(subjects)} 

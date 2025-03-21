@@ -2,19 +2,27 @@
 import { supabase } from '@/integrations/supabase/client';
 import { LessonStatsData } from '../types/lessonTypes';
 
+// Define explicit types for Supabase results
+interface QuestaoResult {
+  id: string;
+}
+
+interface RespostaAluno {
+  questao_id: string;
+  is_correta: boolean;
+  created_at: string;
+}
+
 export const useQuestionsStats = () => {
   const fetchQuestionsIds = async (lessonId: string): Promise<string[]> => {
     try {
-      // Define tipo explícito para questões
-      type QuestaoResult = { id: string };
-      
       // Buscar por aula_id
       const { data: questoesData1, error: questoesError1 } = await supabase
         .from('questoes')
         .select('id')
         .eq('aula_id', lessonId) as {
-          data: QuestaoResult[] | null,
-          error: Error | null
+          data: QuestaoResult[] | null;
+          error: Error | null;
         };
 
       if (questoesData1 && questoesData1.length > 0 && !questoesError1) {
@@ -26,8 +34,8 @@ export const useQuestionsStats = () => {
         .from('questoes')
         .select('id')
         .eq('id_aula', lessonId) as {
-          data: QuestaoResult[] | null,
-          error: Error | null
+          data: QuestaoResult[] | null;
+          error: Error | null;
         };
 
       if (questoesData2 && questoesData2.length > 0 && !questoesError2) {
@@ -47,20 +55,13 @@ export const useQuestionsStats = () => {
     }
 
     try {
-      // Use explicit type casting to avoid deep type instantiation
-      type RespostaData = {
-        questao_id: string;
-        is_correta: boolean;
-        created_at: string;
-      };
-      
       const { data: respostasData, error: respostasError } = await supabase
         .from('respostas_alunos')
         .select('questao_id, is_correta, created_at')
         .eq('aluno_id', userId)
         .in('questao_id', questoesIds)
         .order('created_at', { ascending: false }) as {
-          data: RespostaData[] | null;
+          data: RespostaAluno[] | null;
           error: Error | null;
         };
 

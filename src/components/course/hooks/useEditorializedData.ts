@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +16,6 @@ export const useEditorializedData = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
 
-  // Efeito para carregar os dados do edital verticalizado
   useEffect(() => {
     if (!courseId) return;
     
@@ -29,7 +27,6 @@ export const useEditorializedData = () => {
     loadData();
   }, [courseId, userId, refreshTrigger]);
 
-  // Função para buscar e salvar dados do edital
   const fetchEditorializedData = async () => {
     if (!courseId) return;
     
@@ -38,7 +35,6 @@ export const useEditorializedData = () => {
       const realId = extractIdFromFriendlyUrl(courseId);
       
       try {
-        // Verificar se o usuário está logado e a sessão é válida
         let sessionValid = false;
         let currentUserId = 'guest';
         
@@ -62,11 +58,9 @@ export const useEditorializedData = () => {
         
         console.log("Usuário atual:", currentUserId);
         
-        // ABORDAGEM COMPLETAMENTE NOVA: Sempre buscar dados diretos da fonte
         console.log('Buscando dados do edital verticalizado diretamente da fonte');
         
         try {
-          // Buscar o edital verticalizado
           const { data: editalData, error: editalError } = await supabase
             .from('cursoverticalizado')
             .select('*')
@@ -87,11 +81,9 @@ export const useEditorializedData = () => {
           
           console.log('Dados do edital encontrados:', editalData);
           
-          // Buscar as disciplinas associadas ao edital
           let disciplinasData: any[] = [];
           
           if (editalData.disciplinas_ids && Array.isArray(editalData.disciplinas_ids)) {
-            // Buscar disciplinas verticalizadas
             const { data: disciplinas, error: disciplinasError } = await supabase
               .from('disciplinaverticalizada')
               .select('*')
@@ -110,14 +102,11 @@ export const useEditorializedData = () => {
             }
           }
           
-          // Converter os dados para o formato esperado
           const formattedSubjects = formatSubjectsFromEdital(disciplinasData);
           console.log('Total de disciplinas formatadas:', formattedSubjects.length);
           
-          // Se o usuário estiver logado, verificar se há dados de progresso
           if (currentUserId !== 'guest' && sessionValid) {
             try {
-              // Buscar dados do progresso por disciplina através da tabela user_course_progress
               const { data: progressData, error: progressError } = await supabase
                 .from('user_course_progress')
                 .select('*')
@@ -128,19 +117,15 @@ export const useEditorializedData = () => {
               if (progressError) {
                 console.error('Erro ao buscar dados de progresso:', progressError);
               } else if (progressData && progressData.subjects_data) {
-                // Mesclar os dados de progresso com os dados do edital
                 try {
-                  // Usar uma cópia profunda para evitar referências
                   const savedProgress = JSON.parse(JSON.stringify(progressData.subjects_data));
                   
                   if (Array.isArray(savedProgress) && savedProgress.length > 0) {
                     console.log('Mesclando dados de progresso com dados do edital');
                     
-                    // Mesclar os dados de progresso com os dados do edital
                     const mergedSubjects = formattedSubjects.map(subject => {
                       const savedSubject = savedProgress.find((s: any) => s.id === subject.id);
                       if (savedSubject) {
-                        // Mesclar tópicos
                         const mergedTopics = subject.topics.map(topic => {
                           const savedTopic = savedSubject.topics.find((t: any) => t.name === topic.name);
                           return savedTopic ? { ...topic, ...savedTopic } : topic;
@@ -166,11 +151,9 @@ export const useEditorializedData = () => {
             }
           }
           
-          // Se não houver dados de progresso ou o usuário não estiver logado
           setSubjects(formattedSubjects);
           setUnsavedChanges(false);
           
-          // Salvar no localStorage APENAS para usuários não logados
           if (currentUserId === 'guest') {
             try {
               localStorage.setItem(`edital_${realId}`, JSON.stringify(formattedSubjects));
@@ -179,11 +162,9 @@ export const useEditorializedData = () => {
               console.error('Erro ao salvar no localStorage:', localStorageError);
             }
           }
-          
         } catch (error) {
           console.error('Erro ao buscar dados do edital:', error);
           
-          // Apenas para usuários não logados, tentar carregar do localStorage como último recurso
           if (currentUserId === 'guest') {
             try {
               const savedData = localStorage.getItem(`edital_${realId}`);
@@ -200,7 +181,6 @@ export const useEditorializedData = () => {
               setSubjects([]);
             }
           } else {
-            // Para usuários logados, não usar localStorage
             setSubjects([]);
           }
         }
@@ -228,7 +208,6 @@ export const useEditorializedData = () => {
     }
   };
 
-  // Função para formatar os dados do edital para o formato Subject[]
   const formatSubjectsFromEdital = (disciplinas: any[]): Subject[] => {
     if (!Array.isArray(disciplinas)) {
       console.error('Dados de disciplinas não são um array:', disciplinas);
@@ -236,13 +215,12 @@ export const useEditorializedData = () => {
     }
     
     return disciplinas.map((disciplina) => {
-      // Determinar se é uma disciplina verticalizada ou normal
       const isVerticalizada = 'topicos' in disciplina;
       
       return {
         id: disciplina.id,
         name: disciplina.titulo,
-        rating: disciplina.descricao || "", // Adicionando o valor de rating (antigo campo descrição)
+        rating: disciplina.descricao || "",
         topics: isVerticalizada && Array.isArray(disciplina.topicos) 
           ? disciplina.topicos.map((topico: string, topicIndex: number) => {
               return {
@@ -264,19 +242,17 @@ export const useEditorializedData = () => {
                 performance: 0
               };
             }) 
-          : [] // Se não for disciplina verticalizada ou não tiver tópicos, retornar array vazio
+          : []
       };
     });
   };
 
-  // Função para salvar os dados do usuário no banco de dados
-  const saveUserDataToDatabase = async (courseRealId: string, subjectsData: Subject[]) => {
+  const saveUserDataToDatabase = async (courseRealId: string, subjectsData: Subject[]): Promise<boolean> => {
     if (userId === 'guest') return false;
     
     console.log("Tentando salvar dados no banco de dados");
     
     try {
-      // Verificar se a sessão é válida
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
@@ -289,7 +265,6 @@ export const useEditorializedData = () => {
         return false;
       }
       
-      // Verificar se já existe um registro para este usuário e curso
       const { data: existingData, error: existingError } = await supabase
         .from('user_course_progress')
         .select('*')
@@ -305,7 +280,6 @@ export const useEditorializedData = () => {
       let result;
       
       if (existingData) {
-        // Atualizar registro existente
         result = await supabase
           .from('user_course_progress')
           .update({
@@ -317,14 +291,13 @@ export const useEditorializedData = () => {
           
         console.log("Dados atualizados no banco de dados");
       } else {
-        // Criar novo registro
         result = await supabase
           .from('user_course_progress')
           .insert({
             user_id: userId,
             course_id: courseRealId,
             subjects_data: subjectsData,
-            performance_goal: 85, // Valor padrão
+            performance_goal: 85,
             exam_date: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
@@ -338,7 +311,6 @@ export const useEditorializedData = () => {
         return false;
       }
       
-      // Remover dados do localStorage para evitar inconsistências
       try {
         localStorage.removeItem(`edital_${courseRealId}`);
         console.log("Dados do localStorage removidos após salvar no banco");
@@ -355,14 +327,11 @@ export const useEditorializedData = () => {
     }
   };
 
-  // Função para forçar o recarregamento dos dados
   const forceRefresh = async () => {
     console.log("Forçando recarregamento dos dados do edital verticalizado");
     
-    // Limpar o estado atual
     setSubjects([]);
     
-    // Limpar completamente o localStorage para este edital
     if (courseId) {
       const realId = extractIdFromFriendlyUrl(courseId);
       try {
@@ -373,11 +342,8 @@ export const useEditorializedData = () => {
       }
     }
     
-    // Incrementar o trigger para forçar o recarregamento
     setRefreshTrigger(prev => prev + 1);
     
-    // Não chamar fetchEditorializedData diretamente para evitar loops
-    // O useEffect com dependência em refreshTrigger vai cuidar disso
     setLoading(true);
   };
 
@@ -404,7 +370,6 @@ export const useEditorializedData = () => {
           return subject;
         });
         
-        // Para usuários não logados, salvar temporariamente no localStorage
         if (userId === 'guest' && courseId) {
           const realId = extractIdFromFriendlyUrl(courseId);
           try {
@@ -413,7 +378,6 @@ export const useEditorializedData = () => {
             console.error('Erro ao salvar no localStorage:', error);
           }
         } else {
-          // Para usuários logados, marcar que há alterações não salvas
           setUnsavedChanges(true);
         }
         
@@ -429,7 +393,6 @@ export const useEditorializedData = () => {
     }
   };
 
-  // Função para salvar todos os dados no banco de dados
   const saveAllDataToDatabase = async () => {
     if (userId === 'guest' || !courseId) return false;
     
