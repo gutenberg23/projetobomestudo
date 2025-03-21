@@ -45,62 +45,51 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         return;
       }
       
-      // Use explicit type annotations for Supabase queries
-      const disciplinaResult = await supabase
+      // Use explicit type casting for Supabase queries
+      const { data: disciplinaData, error: disciplinaError } = await supabase
         .from('disciplinas')
         .select('*')
         .eq('id', subject.id)
         .single();
       
-      const disciplinaData = disciplinaResult.data as SimpleDisciplina | null;
-      const disciplinaError = disciplinaResult.error;
-      
       if (!disciplinaError && disciplinaData) {
-        if (disciplinaData.aulas_ids && Array.isArray(disciplinaData.aulas_ids)) {
-          await processAulasFromIds(disciplinaData.aulas_ids);
+        const disciplina = disciplinaData as SimpleDisciplina;
+        if (disciplina.aulas_ids && Array.isArray(disciplina.aulas_ids)) {
+          await processAulasFromIds(disciplina.aulas_ids);
           return;
         }
       }
       
-      // Use explicit type annotations for Supabase queries
-      const aulasResult = await supabase
+      // Use explicit type casting for Supabase queries
+      const { data: aulasData, error: aulasError } = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina_id', subject.id);
       
-      const aulasData = aulasResult.data as SimpleAula[] | null;
-      const aulasError = aulasResult.error;
-      
       if (!aulasError && aulasData && aulasData.length > 0) {
-        await processAulas(aulasData);
+        await processAulas(aulasData as SimpleAula[]);
         return;
       }
       
-      // Use explicit type annotations for Supabase queries
-      const aulasResult2 = await supabase
+      // Use explicit type casting for Supabase queries
+      const { data: aulasData2, error: aulasError2 } = await supabase
         .from('aulas')
         .select('*')
         .eq('id_disciplina', subject.id);
       
-      const aulasData2 = aulasResult2.data as SimpleAula[] | null;
-      const aulasError2 = aulasResult2.error;
-      
       if (!aulasError2 && aulasData2 && aulasData2.length > 0) {
-        await processAulas(aulasData2);
+        await processAulas(aulasData2 as SimpleAula[]);
         return;
       }
       
-      // Use explicit type annotations for Supabase queries
-      const aulasResult3 = await supabase
+      // Use explicit type casting for Supabase queries
+      const { data: aulasData3, error: aulasError3 } = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina', subject.id);
       
-      const aulasData3 = aulasResult3.data as SimpleAula[] | null;
-      const aulasError3 = aulasResult3.error;
-      
       if (!aulasError3 && aulasData3 && aulasData3.length > 0) {
-        await processAulas(aulasData3);
+        await processAulas(aulasData3 as SimpleAula[]);
         return;
       }
       
@@ -120,13 +109,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    const aulasResult = await supabase
+    const { data: aulasData, error: aulasError } = await supabase
       .from('aulas')
       .select('*')
       .in('id', aulaIds);
-    
-    const aulasData = aulasResult.data as SimpleAula[] | null;
-    const aulasError = aulasResult.error;
     
     if (aulasError || !aulasData || aulasData.length === 0) {
       console.error('Erro ao buscar aulas por IDs:', aulasError);
@@ -134,7 +120,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    await processAulas(aulasData);
+    await processAulas(aulasData as SimpleAula[]);
   };
   
   const processAulas = async (aulasData: SimpleAula[]) => {
@@ -152,18 +138,16 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
     
     if (user?.id) {
       try {
-        const userProgressResult = await supabase
+        const { data: userProgressData, error: progressError } = await supabase
           .from('user_course_progress')
           .select('subjects_data')
           .eq('user_id', user.id)
           .eq('course_id', subject.courseId || 'default')
           .single();
         
-        const userProgressData = userProgressResult.data as SimpleUserProgress | null;
-        const progressError = userProgressResult.error;
-        
-        if (!progressError && userProgressData && userProgressData.subjects_data) {
-          const subjectData = userProgressData.subjects_data[subject.id];
+        if (!progressError && userProgressData) {
+          const progress = userProgressData as { subjects_data: SimpleUserProgress['subjects_data'] };
+          const subjectData = progress.subjects_data[subject.id];
           
           if (subjectData?.lessons) {
             for (const lesson of lessonsWithStats) {
@@ -185,43 +169,37 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           }
           
           if (questoesIds.length === 0) {
-            const questoesResult1 = await supabase
+            const { data: questoesData1 } = await supabase
               .from('questoes')
               .select('id')
               .eq('aula_id', lesson.id);
             
-            const questoesData1 = questoesResult1.data as SimpleQuestao[] | null;
-            
             if (questoesData1 && questoesData1.length > 0) {
-              questoesIds = questoesData1.map((q) => q.id);
+              questoesIds = questoesData1.map((q: SimpleQuestao) => q.id);
             } else {
-              const questoesResult2 = await supabase
+              const { data: questoesData2 } = await supabase
                 .from('questoes')
                 .select('id')
                 .eq('id_aula', lesson.id);
               
-              const questoesData2 = questoesResult2.data as SimpleQuestao[] | null;
-              
               if (questoesData2 && questoesData2.length > 0) {
-                questoesIds = questoesData2.map((q) => q.id);
+                questoesIds = questoesData2.map((q: SimpleQuestao) => q.id);
               }
             }
           }
           
           if (questoesIds.length > 0) {
-            const respostasResult = await supabase
+            const { data: respostasData } = await supabase
               .from('respostas_alunos')
               .select('questao_id, is_correta, created_at')
               .eq('aluno_id', user.id)
               .in('questao_id', questoesIds)
               .order('created_at', { ascending: false });
             
-            const respostasData = respostasResult.data as SimpleResposta[] | null;
-            
             if (respostasData && respostasData.length > 0) {
               const respostasMaisRecentes = new Map<string, boolean>();
               
-              respostasData.forEach((resposta) => {
+              respostasData.forEach((resposta: SimpleResposta) => {
                 if (!respostasMaisRecentes.has(resposta.questao_id)) {
                   respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
                 }
