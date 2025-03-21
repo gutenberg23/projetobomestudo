@@ -22,7 +22,10 @@ export const useFetchSubjectInfo = () => {
       const { data: aulasData, error: aulasError } = await supabase
         .from('aulas')
         .select('id')
-        .eq('disciplina_id', subjectId);
+        .eq('disciplina_id', subjectId) as { 
+          data: Array<{id: string}> | null, 
+          error: Error | null 
+        };
 
       if (aulasData && aulasData.length > 0 && !aulasError) {
         return aulasData.map(aula => String(aula.id));
@@ -32,7 +35,10 @@ export const useFetchSubjectInfo = () => {
       const { data: aulasData2, error: aulasError2 } = await supabase
         .from('aulas')
         .select('id')
-        .eq('id_disciplina', subjectId);
+        .eq('id_disciplina', subjectId) as { 
+          data: Array<{id: string}> | null, 
+          error: Error | null 
+        };
 
       if (aulasData2 && aulasData2.length > 0 && !aulasError2) {
         return aulasData2.map(aula => String(aula.id));
@@ -42,7 +48,10 @@ export const useFetchSubjectInfo = () => {
       const { data: aulasData3, error: aulasError3 } = await supabase
         .from('aulas')
         .select('id')
-        .eq('disciplina', subjectId);
+        .eq('disciplina', subjectId) as { 
+          data: Array<{id: string}> | null, 
+          error: Error | null 
+        };
 
       if (aulasData3 && aulasData3.length > 0 && !aulasError3) {
         return aulasData3.map(aula => String(aula.id));

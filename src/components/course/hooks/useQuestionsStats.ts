@@ -9,7 +9,10 @@ export const useQuestionsStats = () => {
       const { data: questoesData1, error: questoesError1 } = await supabase
         .from('questoes')
         .select('id')
-        .eq('aula_id', lessonId);
+        .eq('aula_id', lessonId) as {
+          data: Array<{id: string}> | null,
+          error: Error | null
+        };
 
       if (questoesData1 && questoesData1.length > 0 && !questoesError1) {
         return questoesData1.map(q => String(q.id));
@@ -19,7 +22,10 @@ export const useQuestionsStats = () => {
       const { data: questoesData2, error: questoesError2 } = await supabase
         .from('questoes')
         .select('id')
-        .eq('id_aula', lessonId);
+        .eq('id_aula', lessonId) as {
+          data: Array<{id: string}> | null,
+          error: Error | null
+        };
 
       if (questoesData2 && questoesData2.length > 0 && !questoesError2) {
         return questoesData2.map(q => String(q.id));
@@ -38,12 +44,22 @@ export const useQuestionsStats = () => {
     }
 
     try {
+      // Use explicit type casting to avoid deep type instantiation
+      type RespostaData = {
+        questao_id: string;
+        is_correta: boolean;
+        created_at: string;
+      };
+      
       const { data: respostasData, error: respostasError } = await supabase
         .from('respostas_alunos')
         .select('questao_id, is_correta, created_at')
         .eq('aluno_id', userId)
         .in('questao_id', questoesIds)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }) as {
+          data: RespostaData[] | null;
+          error: Error | null;
+        };
 
       if (!respostasData || respostasError) {
         return { total: 0, hits: 0, errors: 0 };
