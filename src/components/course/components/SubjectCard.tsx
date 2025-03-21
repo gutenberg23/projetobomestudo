@@ -53,8 +53,12 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .single();
       
       if (!disciplinaError && disciplinaData) {
-        // Explicitly cast using a simpler approach
-        const disciplina = { ...disciplinaData } as SimpleDisciplina;
+        const disciplina: SimpleDisciplina = {
+          id: disciplinaData.id,
+          titulo: disciplinaData.titulo,
+          aulas_ids: Array.isArray(disciplinaData.aulas_ids) ? disciplinaData.aulas_ids : undefined
+        };
+        
         if (disciplina.aulas_ids && Array.isArray(disciplina.aulas_ids)) {
           await processAulasFromIds(disciplina.aulas_ids);
           return;
@@ -68,8 +72,13 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('disciplina_id', subject.id);
       
       if (!aulasError && aulasData && aulasData.length > 0) {
-        // Explicitly cast using a simpler approach
-        await processAulas(aulasData.map(aula => ({ ...aula })) as SimpleAula[]);
+        const simpleAulas: SimpleAula[] = aulasData.map(aula => ({
+          id: aula.id,
+          titulo: aula.titulo,
+          questoes_ids: aula.questoes_ids
+        }));
+        
+        await processAulas(simpleAulas);
         return;
       }
       
@@ -80,8 +89,13 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('id_disciplina', subject.id);
       
       if (!aulasError2 && aulasData2 && aulasData2.length > 0) {
-        // Explicitly cast using a simpler approach
-        await processAulas(aulasData2.map(aula => ({ ...aula })) as SimpleAula[]);
+        const simpleAulas: SimpleAula[] = aulasData2.map(aula => ({
+          id: aula.id,
+          titulo: aula.titulo,
+          questoes_ids: aula.questoes_ids
+        }));
+        
+        await processAulas(simpleAulas);
         return;
       }
       
@@ -92,8 +106,13 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('disciplina', subject.id);
       
       if (!aulasError3 && aulasData3 && aulasData3.length > 0) {
-        // Explicitly cast using a simpler approach
-        await processAulas(aulasData3.map(aula => ({ ...aula })) as SimpleAula[]);
+        const simpleAulas: SimpleAula[] = aulasData3.map(aula => ({
+          id: aula.id,
+          titulo: aula.titulo,
+          questoes_ids: aula.questoes_ids
+        }));
+        
+        await processAulas(simpleAulas);
         return;
       }
       
@@ -124,8 +143,13 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    // Explicitly cast using a simpler approach
-    await processAulas(aulasData.map(aula => ({ ...aula })) as SimpleAula[]);
+    const simpleAulas: SimpleAula[] = aulasData.map(aula => ({
+      id: aula.id,
+      titulo: aula.titulo,
+      questoes_ids: aula.questoes_ids
+    }));
+    
+    await processAulas(simpleAulas);
   };
   
   const processAulas = async (aulasData: SimpleAula[]) => {
@@ -151,9 +175,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           .single();
         
         if (!progressError && userProgressData) {
-          // Use a simple spread to avoid complex type inference
-          const progress = { subjects_data: userProgressData.subjects_data || {} };
-          const subjectData = progress.subjects_data[subject.id];
+          const subjects_data = userProgressData.subjects_data || {};
+          const subjectData = subjects_data[subject.id];
           
           if (subjectData?.lessons) {
             for (const lesson of lessonsWithStats) {
@@ -181,8 +204,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               .eq('aula_id', lesson.id);
             
             if (questoesData1 && questoesData1.length > 0) {
-              // Use a simple string mapping instead of complex object mapping
-              questoesIds = questoesData1.map((q) => q.id as string);
+              questoesIds = questoesData1.map(q => String(q.id));
             } else {
               const { data: questoesData2 } = await supabase
                 .from('questoes')
@@ -190,8 +212,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
                 .eq('id_aula', lesson.id);
               
               if (questoesData2 && questoesData2.length > 0) {
-                // Use a simple string mapping instead of complex object mapping
-                questoesIds = questoesData2.map((q) => q.id as string);
+                questoesIds = questoesData2.map(q => String(q.id));
               }
             }
           }
@@ -207,7 +228,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
             if (respostasData && respostasData.length > 0) {
               const respostasMaisRecentes = new Map<string, boolean>();
               
-              // Use a simple loop with basic property access
               for (const resposta of respostasData) {
                 if (!respostasMaisRecentes.has(resposta.questao_id)) {
                   respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
