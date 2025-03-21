@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPost, Region } from "@/components/blog/types";
 import { Database } from "@/integrations/supabase/types";
@@ -148,7 +147,16 @@ export async function updateBlogPost(id: string, post: Partial<BlogPost>): Promi
   if (post.metaDescription !== undefined) updateData.meta_description = post.metaDescription;
   if (post.metaKeywords !== undefined) updateData.meta_keywords = post.metaKeywords;
   if (post.featuredImage !== undefined) updateData.featured_image = post.featuredImage;
-  if (post.readingTime !== undefined) updateData.reading_time = typeof post.readingTime === 'string' ? parseInt(post.readingTime, 10) || 0 : post.readingTime || 0;
+  if (post.readingTime !== undefined) {
+    if (typeof post.readingTime === 'string') {
+      const parsedValue = parseInt(post.readingTime, 10);
+      updateData.reading_time = !isNaN(parsedValue) ? parsedValue : 0;
+    } else if (typeof post.readingTime === 'number') {
+      updateData.reading_time = post.readingTime;
+    } else {
+      updateData.reading_time = 0;
+    }
+  }
   if (post.relatedPosts !== undefined) updateData.related_posts = post.relatedPosts.map(String);
   if (post.featured !== undefined) updateData.featured = post.featured;
 

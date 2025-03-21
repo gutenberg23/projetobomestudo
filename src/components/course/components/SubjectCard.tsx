@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, CheckCircle, XCircle, PieChart, Award } from "lucide-react";
 import { renderDonutChart } from '../utils/donutChart';
@@ -24,48 +25,42 @@ interface LessonData {
   };
 }
 
-interface DisciplinaData {
+// Define simpler types to avoid deep type instantiation issues
+interface SimpleDisciplina {
   id: string;
   titulo: string;
   aulas_ids?: string[];
-  [key: string]: any;
 }
 
-interface AulaData {
+interface SimpleAula {
   id: string;
   titulo: string;
   disciplina_id?: string;
   id_disciplina?: string;
   disciplina?: string;
   questoes_ids?: string[];
-  [key: string]: any;
 }
 
-interface QuestaoData {
+interface SimpleQuestao {
   id: string;
-  [key: string]: any;
 }
 
-interface RespostaData {
+interface SimpleResposta {
   questao_id: string;
   is_correta: boolean;
   created_at: string;
-  [key: string]: any;
 }
 
-interface UserProgressData {
-  subjects_data: {
-    [subjectId: string]: {
-      lessons?: {
-        [lessonId: string]: {
-          completed: boolean;
-          [key: string]: any;
-        };
-      };
-      [key: string]: any;
+interface SimpleUserProgress {
+  subjects_data: Record<string, {
+    lessons?: Record<string, {
+      completed: boolean;
+    }>;
+    stats?: {
+      hits: number;
+      errors: number;
     };
-  };
-  [key: string]: any;
+  }>;
 }
 
 export const SubjectCard: React.FC<SubjectCardProps> = ({
@@ -97,6 +92,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         return;
       }
       
+      // Use explicit type casting to avoid deep instantiation
       const { data: disciplinaData, error: disciplinaError } = await supabase
         .from('disciplinas')
         .select('*')
@@ -104,39 +100,43 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .single();
       
       if (!disciplinaError && disciplinaData) {
-        if (disciplinaData.aulas_ids && Array.isArray(disciplinaData.aulas_ids)) {
-          await processAulasFromIds(disciplinaData.aulas_ids);
+        const disciplina = disciplinaData as SimpleDisciplina;
+        if (disciplina.aulas_ids && Array.isArray(disciplina.aulas_ids)) {
+          await processAulasFromIds(disciplina.aulas_ids);
           return;
         }
       }
       
+      // Use explicit type casting to avoid deep instantiation
       const { data: aulasData, error: aulasError } = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina_id', subject.id);
       
       if (!aulasError && aulasData && aulasData.length > 0) {
-        await processAulas(aulasData as AulaData[]);
+        await processAulas(aulasData as SimpleAula[]);
         return;
       }
       
+      // Use explicit type casting to avoid deep instantiation
       const { data: aulasData2, error: aulasError2 } = await supabase
         .from('aulas')
         .select('*')
         .eq('id_disciplina', subject.id);
       
       if (!aulasError2 && aulasData2 && aulasData2.length > 0) {
-        await processAulas(aulasData2 as AulaData[]);
+        await processAulas(aulasData2 as SimpleAula[]);
         return;
       }
       
+      // Use explicit type casting to avoid deep instantiation
       const { data: aulasData3, error: aulasError3 } = await supabase
         .from('aulas')
         .select('*')
         .eq('disciplina', subject.id);
       
       if (!aulasError3 && aulasData3 && aulasData3.length > 0) {
-        await processAulas(aulasData3 as AulaData[]);
+        await processAulas(aulasData3 as SimpleAula[]);
         return;
       }
       
@@ -167,10 +167,10 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    await processAulas(aulasData as AulaData[]);
+    await processAulas(aulasData as SimpleAula[]);
   };
   
-  const processAulas = async (aulasData: AulaData[]) => {
+  const processAulas = async (aulasData: SimpleAula[]) => {
     const lessonsWithStats: LessonData[] = aulasData.map((aula) => ({
       id: aula.id,
       titulo: aula.titulo,
@@ -193,7 +193,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           .single();
         
         if (!progressError && userProgressData && userProgressData.subjects_data) {
-          const subjectData = userProgressData.subjects_data[subject.id];
+          const progress = userProgressData as SimpleUserProgress;
+          const subjectData = progress.subjects_data[subject.id];
           
           if (subjectData?.lessons) {
             for (const lesson of lessonsWithStats) {
@@ -221,7 +222,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               .eq('aula_id', lesson.id);
             
             if (questoesData1 && questoesData1.length > 0) {
-              questoesIds = questoesData1.map((q: QuestaoData) => q.id);
+              questoesIds = questoesData1.map((q: SimpleQuestao) => q.id);
             } else {
               const { data: questoesData2 } = await supabase
                 .from('questoes')
@@ -229,7 +230,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
                 .eq('id_aula', lesson.id);
               
               if (questoesData2 && questoesData2.length > 0) {
-                questoesIds = questoesData2.map((q: QuestaoData) => q.id);
+                questoesIds = questoesData2.map((q: SimpleQuestao) => q.id);
               }
             }
           }
@@ -243,9 +244,11 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               .order('created_at', { ascending: false });
             
             if (respostasData && respostasData.length > 0) {
+              // Explicitly type the responses array
+              const typedRespostas = respostasData as SimpleResposta[];
               const respostasMaisRecentes = new Map<string, boolean>();
               
-              respostasData.forEach((resposta: RespostaData) => {
+              typedRespostas.forEach((resposta) => {
                 if (!respostasMaisRecentes.has(resposta.questao_id)) {
                   respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
                 }
