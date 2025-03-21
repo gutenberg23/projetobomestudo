@@ -53,7 +53,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .single();
       
       if (!disciplinaError && disciplinaData) {
-        const disciplina = disciplinaData as unknown as SimpleDisciplina;
+        // Explicitly cast using a simpler approach
+        const disciplina = { ...disciplinaData } as SimpleDisciplina;
         if (disciplina.aulas_ids && Array.isArray(disciplina.aulas_ids)) {
           await processAulasFromIds(disciplina.aulas_ids);
           return;
@@ -67,7 +68,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('disciplina_id', subject.id);
       
       if (!aulasError && aulasData && aulasData.length > 0) {
-        await processAulas(aulasData as unknown as SimpleAula[]);
+        // Explicitly cast using a simpler approach
+        await processAulas(aulasData.map(aula => ({ ...aula })) as SimpleAula[]);
         return;
       }
       
@@ -78,7 +80,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('id_disciplina', subject.id);
       
       if (!aulasError2 && aulasData2 && aulasData2.length > 0) {
-        await processAulas(aulasData2 as unknown as SimpleAula[]);
+        // Explicitly cast using a simpler approach
+        await processAulas(aulasData2.map(aula => ({ ...aula })) as SimpleAula[]);
         return;
       }
       
@@ -89,7 +92,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
         .eq('disciplina', subject.id);
       
       if (!aulasError3 && aulasData3 && aulasData3.length > 0) {
-        await processAulas(aulasData3 as unknown as SimpleAula[]);
+        // Explicitly cast using a simpler approach
+        await processAulas(aulasData3.map(aula => ({ ...aula })) as SimpleAula[]);
         return;
       }
       
@@ -120,7 +124,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
       return;
     }
     
-    await processAulas(aulasData as unknown as SimpleAula[]);
+    // Explicitly cast using a simpler approach
+    await processAulas(aulasData.map(aula => ({ ...aula })) as SimpleAula[]);
   };
   
   const processAulas = async (aulasData: SimpleAula[]) => {
@@ -146,7 +151,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           .single();
         
         if (!progressError && userProgressData) {
-          const progress = userProgressData as unknown as { subjects_data: SimpleUserProgress['subjects_data'] };
+          // Use a simple spread to avoid complex type inference
+          const progress = { subjects_data: userProgressData.subjects_data || {} };
           const subjectData = progress.subjects_data[subject.id];
           
           if (subjectData?.lessons) {
@@ -175,7 +181,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
               .eq('aula_id', lesson.id);
             
             if (questoesData1 && questoesData1.length > 0) {
-              questoesIds = questoesData1.map((q: any) => q.id);
+              // Use a simple string mapping instead of complex object mapping
+              questoesIds = questoesData1.map((q) => q.id as string);
             } else {
               const { data: questoesData2 } = await supabase
                 .from('questoes')
@@ -183,7 +190,8 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
                 .eq('id_aula', lesson.id);
               
               if (questoesData2 && questoesData2.length > 0) {
-                questoesIds = questoesData2.map((q: any) => q.id);
+                // Use a simple string mapping instead of complex object mapping
+                questoesIds = questoesData2.map((q) => q.id as string);
               }
             }
           }
@@ -199,11 +207,12 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
             if (respostasData && respostasData.length > 0) {
               const respostasMaisRecentes = new Map<string, boolean>();
               
-              respostasData.forEach((resposta: any) => {
+              // Use a simple loop with basic property access
+              for (const resposta of respostasData) {
                 if (!respostasMaisRecentes.has(resposta.questao_id)) {
                   respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
                 }
-              });
+              }
               
               const total = respostasMaisRecentes.size;
               const hits = Array.from(respostasMaisRecentes.values()).filter(Boolean).length;
