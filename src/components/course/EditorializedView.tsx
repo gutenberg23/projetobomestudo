@@ -8,9 +8,8 @@ import { useParams } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { RefreshCw, FileX, Loader2 } from "lucide-react";
+import { Loader2, FileX } from "lucide-react";
 import { calculateOverallStats } from "./utils/statsCalculations";
 import { toast } from "@/components/ui/use-toast";
 
@@ -52,7 +51,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
 
 export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewProps) => {
   const [performanceGoal, setPerformanceGoal] = useState<number>(70);
-  const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges } = useEditorializedData();
+  const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase } = useEditorializedData();
   const [simuladosStats, setSimuladosStats] = useState({
     total: 0,
     realizados: 0,
@@ -64,6 +63,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
   const { user } = useAuth();
   const [hasEdital, setHasEdital] = useState<boolean | null>(null);
   const [isLoadingEdital, setIsLoadingEdital] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -108,7 +108,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         delete window.forceRefreshEdital;
       };
     }
-  }, [user, courseId]);
+  }, [user, courseId, forceRefresh]);
 
   useEffect(() => {
     if (activeTab === 'simulados' && courseId && user) {
@@ -266,6 +266,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
               subject={subject}
               performanceGoal={performanceGoal}
               onTopicChange={updateTopicProgress}
+              isEditing={isEditing}
             />
           ))}
           
