@@ -12,17 +12,22 @@ interface DisciplinaResult {
 
 // Função auxiliar para buscar aulas por diferentes campos
 const fetchAulasByField = async (field: string, value: string): Promise<string[]> => {
-  const { data, error } = await supabase
-    .from('aulas')
-    .select('id')
-    .eq(field, value);
+  try {
+    const { data, error } = await supabase
+      .from('aulas')
+      .select('id')
+      .eq(field, value);
 
-  if (error) {
-    console.error(`Erro ao buscar aulas por ${field}:`, error);
+    if (error) {
+      console.error(`Erro ao buscar aulas por ${field}:`, error);
+      return [];
+    }
+
+    return (data as AulaResult[])?.map(aula => aula.id) ?? [];
+  } catch (err) {
+    console.error(`Erro ao buscar aulas por ${field}:`, err);
     return [];
   }
-
-  return (data as AulaResult[])?.map(aula => aula.id) ?? [];
 };
 
 export const useFetchSubjectInfo = () => {

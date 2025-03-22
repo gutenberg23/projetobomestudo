@@ -1,12 +1,12 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { OverallStats, Subject } from "../types/editorialized";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, CheckIcon, XIcon, PencilIcon, Loader2, Save } from "lucide-react";
+import { CalendarIcon, PencilIcon, Loader2, Save } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,8 @@ interface DashboardSummaryProps {
   unsavedChanges: boolean;
   setUnsavedChanges: (value: boolean) => void;
   saveAllDataToDatabase: () => Promise<boolean>;
+  examDate?: Date;
+  updateExamDate: (date: Date | undefined) => void;
 }
 
 export const DashboardSummary = ({
@@ -57,7 +59,9 @@ export const DashboardSummary = ({
   isSaving,
   unsavedChanges,
   setUnsavedChanges,
-  saveAllDataToDatabase
+  saveAllDataToDatabase,
+  examDate,
+  updateExamDate
 }: DashboardSummaryProps) => {
   const {
     courseId
@@ -73,130 +77,6 @@ export const DashboardSummary = ({
   const userId = user?.id || 'guest';
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
-  const [examDate, setExamDate] = React.useState<Date | undefined>();
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempGoal, setTempGoal] = useState(performanceGoal);
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-
-  useEffect(() => {
-    if (!courseId) return;
-    const loadUserData = async () => {
-      const realId = extractIdFromFriendlyUrl(courseId);
-      if (userId !== 'guest') {
-        try {
-          const { data, error } = await supabase
-            .from('user_course_progress')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('course_id', realId)
-            .maybeSingle();
-            
-          if (!error && data) {
-            if (data.performance_goal) {
-              const goalValue = parseInt(data.performance_goal.toString());
-              setPerformanceGoal(goalValue);
-            }
-            if (data.exam_date) {
-              const examDateValue = new Date(data.exam_date);
-              setExamDate(examDateValue);
-            }
-            return;
-          }
-        } catch (e) {
-          console.error('Erro ao buscar dados do usuário:', e);
-        }
-      } else {
-        setPerformanceGoal(70);
-        setExamDate(undefined);
-      }
-    };
-    loadUserData();
-  }, [courseId, setPerformanceGoal, userId]);
-
-  const saveUserDataToDatabase = async (field: string, value: string | number | null) => {
-    if (!courseId || userId === 'guest') return;
-    const realId = extractIdFromFriendlyUrl(courseId);
-    
-    try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError) {
-        console.log("Erro ao verificar sessão:", sessionError);
-        toast({
-          title: "Erro",
-          description: "Não foi possível verificar sua sessão. Tente fazer login novamente.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (!sessionData.session) {
-        console.log("Nenhuma sessão ativa encontrada");
-        toast({
-          title: "Sessão expirada",
-          description: "Sua sessão expirou. Por favor, faça login novamente.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const { data: existingData, error: checkError } = await supabase
-        .from('user_course_progress')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('course_id', realId)
-        .maybeSingle();
-        
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error('Erro ao verificar dados existentes:', checkError);
-        return;
-      }
-      
-      const updateData: any = {
-        updated_at: new Date().toISOString()
-      };
-      updateData[field] = value;
-      
-      if (existingData) {
-        const { error: updateError } = await supabase
-          .from('user_course_progress')
-          .update(updateData)
-          .eq('id', existingData.id);
-          
-        if (updateError) {
-          console.error(`Erro ao atualizar ${field}:`, updateError);
-          toast({
-            title: "Erro",
-            description: `Não foi possível salvar ${field === 'performance_goal' ? 'a meta de aproveitamento' : 'a data da prova'}.`,
-            variant: "destructive"
-          });
-        }
-      } else {
-        const insertData: any = {
-          user_id: userId,
-          course_id: realId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        insertData[field] = value;
-        
-        const { error: insertError } = await supabase
-          .from('user_course_progress')
-          .insert(insertData);
-          
-        if (insertError) {
-          console.error(`Erro ao inserir ${field}:`, insertError);
-          toast({
-            title: "Erro",
-            description: `Não foi possível salvar ${field === 'performance_goal' ? 'a meta de aproveitamento' : 'a data da prova'}.`,
-            variant: "destructive"
-          });
-        }
-      }
-    } catch (error) {
-      console.error(`Erro ao salvar ${field}:`, error);
-    }
-  };
 
   const handlePerformanceGoalChange = (value: number) => {
     const newValue = Math.max(1, Math.min(100, value || 1));
@@ -205,28 +85,11 @@ export const DashboardSummary = ({
       setPerformanceGoal(newValue);
       setUnsavedChanges(true);
       console.log("Meta modificada, marcando unsavedChanges como true");
-      
-      if (courseId && userId !== 'guest' && !isEditMode) {
-        saveUserDataToDatabase('performance_goal', newValue);
-      }
     }
   };
 
   const handleExamDateChange = (date: Date | undefined) => {
-    if (date?.toISOString() !== examDate?.toISOString()) {
-      setExamDate(date);
-      setUnsavedChanges(true);
-      console.log("Data modificada, marcando unsavedChanges como true");
-      
-      if (courseId && userId !== 'guest' && !isEditMode) {
-        if (date) {
-          const dateString = date.toISOString();
-          saveUserDataToDatabase('exam_date', dateString);
-        } else {
-          saveUserDataToDatabase('exam_date', null);
-        }
-      }
-    }
+    updateExamDate(date);
   };
 
   const daysUntilExam = React.useMemo(() => {

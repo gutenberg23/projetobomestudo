@@ -52,8 +52,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
 };
 
 export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewProps) => {
-  const [performanceGoal, setPerformanceGoal] = useState<number>(70);
-  const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase } = useEditorializedData();
+  const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase, performanceGoal, updatePerformanceGoal, examDate, updateExamDate } = useEditorializedData();
   const [simuladosStats, setSimuladosStats] = useState({
     total: 0,
     realizados: 0,
@@ -291,7 +290,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         <DashboardSummary 
           overallStats={calculateOverallStats(subjects)} 
           performanceGoal={performanceGoal} 
-          setPerformanceGoal={setPerformanceGoal}
+          setPerformanceGoal={updatePerformanceGoal}
           activeTab={activeTab}
           subjects={subjects}
           simuladosStats={simuladosStats}
@@ -302,6 +301,8 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
           unsavedChanges={unsavedChanges}
           setUnsavedChanges={setUnsavedChanges}
           saveAllDataToDatabase={saveAllDataToDatabase}
+          examDate={examDate}
+          updateExamDate={updateExamDate}
         />
       )}
 

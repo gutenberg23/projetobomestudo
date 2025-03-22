@@ -16,6 +16,8 @@ export const useEditorializedData = () => {
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [performanceGoal, setPerformanceGoal] = useState<number>(70);
+  const [examDate, setExamDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     if (!courseId) return;
@@ -139,6 +141,18 @@ export const useEditorializedData = () => {
                     
                     console.log('Dados mesclados com sucesso');
                     setSubjects(mergedSubjects);
+                    
+                    // Carregar meta de aproveitamento e data da prova do banco de dados
+                    if (progressData.performance_goal) {
+                      const goalValue = parseInt(progressData.performance_goal.toString());
+                      setPerformanceGoal(goalValue);
+                    }
+                    
+                    if (progressData.exam_date) {
+                      const examDateValue = new Date(progressData.exam_date);
+                      setExamDate(examDateValue);
+                    }
+                    
                     setUnsavedChanges(false);
                     setLoading(false);
                     return;
@@ -248,7 +262,7 @@ export const useEditorializedData = () => {
     });
   };
 
-  const saveUserDataToDatabase = async (courseRealId: string, subjectsData: Subject[]): Promise<boolean> => {
+  const saveUserDataToDatabase = async (courseRealId: string, subjectsData: Subject[], goal: number, date?: Date): Promise<boolean> => {
     if (userId === 'guest') return false;
     
     console.log("Tentando salvar dados no banco de dados");
@@ -285,6 +299,8 @@ export const useEditorializedData = () => {
           .from('user_course_progress')
           .update({
             subjects_data: subjectsData,
+            performance_goal: goal,
+            exam_date: date ? date.toISOString() : null,
             updated_at: new Date().toISOString()
           })
           .eq('user_id', userId)
@@ -298,8 +314,8 @@ export const useEditorializedData = () => {
             user_id: userId,
             course_id: courseRealId,
             subjects_data: subjectsData,
-            performance_goal: 85,
-            exam_date: null,
+            performance_goal: goal,
+            exam_date: date ? date.toISOString() : null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
@@ -395,13 +411,29 @@ export const useEditorializedData = () => {
     }
   };
 
+  const updatePerformanceGoal = (value: number) => {
+    if (value !== performanceGoal) {
+      setPerformanceGoal(value);
+      setUnsavedChanges(true);
+      console.log("Meta de aproveitamento modificada, marcando unsavedChanges como true");
+    }
+  };
+
+  const updateExamDate = (date: Date | undefined) => {
+    if (date?.toISOString() !== examDate?.toISOString()) {
+      setExamDate(date);
+      setUnsavedChanges(true);
+      console.log("Data da prova modificada, marcando unsavedChanges como true");
+    }
+  };
+
   const saveAllDataToDatabase = async () => {
     if (userId === 'guest' || !courseId) return false;
     
     try {
       setLoading(true);
       const realId = extractIdFromFriendlyUrl(courseId);
-      const result = await saveUserDataToDatabase(realId, subjects);
+      const result = await saveUserDataToDatabase(realId, subjects, performanceGoal, examDate);
       setLoading(false);
       
       if (result) {
@@ -428,6 +460,10 @@ export const useEditorializedData = () => {
     forceRefresh,
     saveAllDataToDatabase,
     unsavedChanges,
-    setUnsavedChanges
+    setUnsavedChanges,
+    performanceGoal,
+    updatePerformanceGoal,
+    examDate,
+    updateExamDate
   };
 };

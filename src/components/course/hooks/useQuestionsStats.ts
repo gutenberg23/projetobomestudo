@@ -18,13 +18,17 @@ export const useQuestionsStats = () => {
     try {
       const campos = ['aula_id', 'id_aula'];
       for (const campo of campos) {
-        const { data, error } = await supabase
-          .from('questoes')
-          .select('id')
-          .eq(campo, lessonId);
+        try {
+          const { data, error } = await supabase
+            .from('questoes')
+            .select('id')
+            .eq(campo, lessonId);
 
-        if (!error && data?.length) {
-          return (data as QuestaoResult[]).map(q => q.id);
+          if (!error && data?.length) {
+            return (data as QuestaoResult[]).map(q => q.id);
+          }
+        } catch (err) {
+          console.error(`Erro ao buscar IDs por ${campo}:`, err);
         }
       }
       return [];
