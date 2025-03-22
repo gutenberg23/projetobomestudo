@@ -38,6 +38,7 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
     let totalTopicsCount = 0;
     let completedTopicsCount = 0;
     
+    // Primeiro, tentamos contar usando a nova estrutura (disciplinas -> lessons -> sections)
     for (const subject of subjectsData) {
       if (subject.lessons && Array.isArray(subject.lessons)) {
         for (const lesson of subject.lessons) {
@@ -51,6 +52,45 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
             ).length;
           }
         }
+      }
+    }
+    
+    // Se não encontramos tópicos na estrutura nova, tentamos a estrutura antiga
+    if (totalTopicsCount === 0) {
+      // Tentar a estrutura de edital verticalizado (disciplinas -> topics)
+      for (const subject of subjectsData) {
+        if (subject.topics && Array.isArray(subject.topics)) {
+          totalTopicsCount += subject.topics.length;
+          completedTopicsCount += subject.topics.filter((topic: any) => topic.isDone).length;
+        }
+      }
+    }
+    
+    // Verificar se temos dados no progresso do usuário
+    if (user && user.id) {
+      try {
+        const { data: userProgress, error } = await supabase
+          .from('user_course_progress')
+          .select('subjects_data')
+          .eq('user_id', user.id)
+          .maybeSingle();
+          
+        if (!error && userProgress?.subjects_data) {
+          // Verificar se temos informações sobre seções completadas
+          const subjectsData = userProgress.subjects_data;
+          if (subjectsData.completed_sections) {
+            // Somar todas as seções completadas em todas as aulas
+            let sectionsCount = 0;
+            for (const lessonId in subjectsData.completed_sections) {
+              sectionsCount += subjectsData.completed_sections[lessonId].length;
+            }
+            if (sectionsCount > 0) {
+              completedTopicsCount = Math.max(completedTopicsCount, sectionsCount);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao buscar progresso do usuário:', error);
       }
     }
     
@@ -130,6 +170,12 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
               console.log('Dados de progresso do usuário carregados do Supabase:', data[0]);
               // Disponibilizar os dados para uso global - usar o registro mais recente
               (window as any).userCourseProgress = data[0];
+              
+              // Atualizar as estatísticas de tópicos
+              if (subjectsFromCourse && subjectsFromCourse.length > 0) {
+                const stats = await countTopicsInSubjects(subjectsFromCourse);
+                setTopicsStats(stats);
+              }
             } else if (error) {
               console.error('Erro ao carregar progresso do usuário:', error);
             }
@@ -152,14 +198,27 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
       loadUserData();
     };
     
+    // Atualizar quando um tópico for marcado como concluído
+    const handleTopicCompleted = () => {
+      console.log("Evento de tópico concluído detectado, atualizando estatísticas...");
+      if (subjectsFromCourse && subjectsFromCourse.length > 0) {
+        (async () => {
+          const stats = await countTopicsInSubjects(subjectsFromCourse);
+          setTopicsStats(stats);
+        })();
+      }
+    };
+    
     // Adicionar evento personalizado para quando uma questão for respondida
     window.addEventListener('questionAnswered', handleQuestionAnswered);
+    window.addEventListener('topicCompleted', handleTopicCompleted);
     
     // Limpar o listener quando o componente for desmontado
     return () => {
       window.removeEventListener('questionAnswered', handleQuestionAnswered);
+      window.removeEventListener('topicCompleted', handleTopicCompleted);
     };
-  }, [userId]);
+  }, [userId, subjectsFromCourse]);
   
   if (loading || statsLoading) {
     return (

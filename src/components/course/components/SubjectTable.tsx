@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportanceStars } from "./ImportanceStars";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,10 @@ import { Subject, Topic } from "../types/editorialized";
 import { calculateErrors, calculatePerformance, calculateSubjectTotals } from "../utils/statsCalculations";
 import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 
 interface SubjectTableProps {
   subject: Subject;
@@ -25,11 +29,124 @@ export const SubjectTable = ({
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
   const subjectPerformance = calculatePerformance(subjectTotals.hits, subjectTotals.exercisesDone);
+  const { user } = useAuth();
+  const { courseId } = useParams<{ courseId: string }>();
 
   const handleIsReviewedChange = (subjectId: string | number, topicId: number) => {
     const topic = subject.topics.find(t => t.id === topicId);
     if (topic) {
       onTopicChange(subjectId, topicId, 'isReviewed', !topic.isReviewed);
+    }
+  };
+
+  // Função para processar alteração da marcação "concluído" e salvar no banco
+  const handleIsDoneChange = async (subjectId: string | number, topicId: number) => {
+    // Primeiro atualiza o estado localmente
+    const topic = subject.topics.find(t => t.id === topicId);
+    if (topic) {
+      const newValue = !topic.isDone;
+      onTopicChange(subjectId, topicId, 'isDone', newValue);
+      
+      // Salvar no banco de dados caso o usuário esteja logado
+      if (user && courseId) {
+        try {
+          const realCourseId = extractIdFromFriendlyUrl(courseId);
+          
+          // Buscar dados de progresso
+          const { data: progress, error: fetchError } = await supabase
+            .from('user_course_progress')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('course_id', realCourseId)
+            .maybeSingle();
+            
+          if (fetchError && fetchError.code !== 'PGRST116') {
+            console.error('Erro ao buscar progresso:', fetchError);
+            return;
+          }
+          
+          // Preparar dados para salvar
+          let subjectsData = progress?.subjects_data || {};
+          
+          // Garantir que subjectsData é um objeto
+          if (typeof subjectsData !== 'object' || Array.isArray(subjectsData)) {
+            subjectsData = {};
+          }
+          
+          // Garantir que há um objeto para a disciplina atual
+          if (!subjectsData[String(subjectId)]) {
+            subjectsData[String(subjectId)] = { 
+              topics: [] 
+            };
+          }
+          
+          // Atualizar tópico específico
+          const subjectData = subjectsData[String(subjectId)];
+          
+          if (!Array.isArray(subjectData.topics)) {
+            subjectData.topics = [];
+          }
+          
+          // Procurar o tópico nos dados salvos
+          const existingTopicIndex = subjectData.topics.findIndex((t: any) => t.id === topicId);
+          
+          if (existingTopicIndex >= 0) {
+            // Atualizar tópico existente
+            subjectData.topics[existingTopicIndex] = {
+              ...subjectData.topics[existingTopicIndex],
+              isDone: newValue
+            };
+          } else {
+            // Adicionar novo tópico
+            subjectData.topics.push({
+              id: topicId,
+              isDone: newValue
+            });
+          }
+          
+          // Salvar dados atualizados
+          if (progress) {
+            const { error: updateError } = await supabase
+              .from('user_course_progress')
+              .update({
+                subjects_data: subjectsData,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', progress.id);
+              
+            if (updateError) {
+              console.error('Erro ao atualizar progresso:', updateError);
+            } else {
+              console.log('Tópico atualizado com sucesso:', { subjectId, topicId, isDone: newValue });
+              
+              // Disparar evento para atualizar a contagem de tópicos
+              window.dispatchEvent(new CustomEvent('topicCompleted'));
+            }
+          } else {
+            // Criar novo registro de progresso
+            const { error: insertError } = await supabase
+              .from('user_course_progress')
+              .insert({
+                user_id: user.id,
+                course_id: realCourseId,
+                subjects_data: subjectsData,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+              
+            if (insertError) {
+              console.error('Erro ao inserir progresso:', insertError);
+            } else {
+              console.log('Progresso criado com sucesso');
+              
+              // Disparar evento para atualizar a contagem de tópicos
+              window.dispatchEvent(new CustomEvent('topicCompleted'));
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao processar alteração do tópico:', error);
+        }
+      }
     }
   };
 
@@ -77,7 +194,7 @@ export const SubjectTable = ({
                       {isEditMode ? (
                         <div onClick={e => {
                           e.stopPropagation();
-                          onTopicChange(subject.id, topic.id, 'isDone', !topic.isDone);
+                          handleIsDoneChange(subject.id, topic.id);
                         }} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isDone ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
                           {topic.isDone && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
                               <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
