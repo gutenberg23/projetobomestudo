@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Define explicit types for Supabase results
@@ -21,7 +22,7 @@ const fetchAulasByField = async (field: string, value: string): Promise<string[]
     return [];
   }
 
-  return data?.map(aula => aula.id) ?? [];
+  return (data as AulaResult[])?.map(aula => aula.id) ?? [];
 };
 
 export const useFetchSubjectInfo = () => {

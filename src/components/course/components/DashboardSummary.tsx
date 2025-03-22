@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -5,7 +6,7 @@ import { OverallStats, Subject } from "../types/editorialized";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, CheckIcon, XIcon, PencilIcon, RefreshCw, Loader2, Save } from "lucide-react";
+import { CalendarIcon, CheckIcon, XIcon, PencilIcon, Loader2, Save } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
 import { useToast } from "@/hooks/use-toast";
-import { useEditorializedData } from "../hooks/useEditorializedData";
 
 interface DashboardSummaryProps {
   overallStats: OverallStats;
@@ -30,6 +30,12 @@ interface DashboardSummaryProps {
     hits: number;
     errors: number;
   };
+  isEditMode: boolean;
+  onToggleEditMode: () => void;
+  isSaving: boolean;
+  unsavedChanges: boolean;
+  setUnsavedChanges: (value: boolean) => void;
+  saveAllDataToDatabase: () => Promise<boolean>;
 }
 
 export const DashboardSummary = ({
@@ -45,7 +51,13 @@ export const DashboardSummary = ({
     questionsCount: 0,
     hits: 0,
     errors: 0
-  }
+  },
+  isEditMode,
+  onToggleEditMode,
+  isSaving,
+  unsavedChanges,
+  setUnsavedChanges,
+  saveAllDataToDatabase
 }: DashboardSummaryProps) => {
   const {
     courseId
@@ -65,7 +77,6 @@ export const DashboardSummary = ({
   const [isEditing, setIsEditing] = useState(false);
   const [tempGoal, setTempGoal] = useState(performanceGoal);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!courseId) return;
@@ -192,14 +203,10 @@ export const DashboardSummary = ({
     
     if (newValue !== performanceGoal) {
       setPerformanceGoal(newValue);
+      setUnsavedChanges(true);
+      console.log("Meta modificada, marcando unsavedChanges como true");
       
-      const { saveAllDataToDatabase, unsavedChanges, setUnsavedChanges } = useEditorializedData();
-      if (setUnsavedChanges) {
-        setUnsavedChanges(true);
-        console.log("Meta modificada, marcando unsavedChanges como true");
-      }
-      
-      if (courseId && userId !== 'guest') {
+      if (courseId && userId !== 'guest' && !isEditMode) {
         saveUserDataToDatabase('performance_goal', newValue);
       }
     }
@@ -208,14 +215,10 @@ export const DashboardSummary = ({
   const handleExamDateChange = (date: Date | undefined) => {
     if (date?.toISOString() !== examDate?.toISOString()) {
       setExamDate(date);
+      setUnsavedChanges(true);
+      console.log("Data modificada, marcando unsavedChanges como true");
       
-      const { saveAllDataToDatabase, unsavedChanges, setUnsavedChanges } = useEditorializedData();
-      if (setUnsavedChanges) {
-        setUnsavedChanges(true);
-        console.log("Data modificada, marcando unsavedChanges como true");
-      }
-      
-      if (courseId && userId !== 'guest') {
+      if (courseId && userId !== 'guest' && !isEditMode) {
         if (date) {
           const dateString = date.toISOString();
           saveUserDataToDatabase('exam_date', dateString);
@@ -238,45 +241,9 @@ export const DashboardSummary = ({
     return Math.round(simuladosStats.hits / simuladosStats.questionsCount * 100);
   };
 
-  const { saveAllDataToDatabase, unsavedChanges } = useEditorializedData();
-
   const handleSaveData = async () => {
     if (userId !== 'guest' && courseId) {
-      setIsSaving(true);
-      
-      try {
-        const realId = extractIdFromFriendlyUrl(courseId);
-        
-        await saveUserDataToDatabase('performance_goal', performanceGoal);
-        if (examDate) {
-          await saveUserDataToDatabase('exam_date', examDate.toISOString());
-        }
-        
-        const success = await saveAllDataToDatabase();
-        
-        if (success) {
-          toast({
-            title: "Sucesso",
-            description: "Seus dados foram salvos com sucesso!",
-            variant: "default"
-          });
-        } else {
-          toast({
-            title: "Erro",
-            description: "Não foi possível salvar seus dados. Tente novamente.",
-            variant: "destructive"
-          });
-        }
-      } catch (error) {
-        console.error("Erro ao salvar dados:", error);
-        toast({
-          title: "Erro",
-          description: "Ocorreu um erro ao salvar seus dados. Tente novamente.",
-          variant: "destructive"
-        });
-      } finally {
-        setIsSaving(false);
-      }
+      onToggleEditMode();
     } else if (userId === 'guest') {
       toast({
         title: "Atenção",
@@ -293,109 +260,74 @@ export const DashboardSummary = ({
           <h3 className="text-2xl font-bold">Resumo Geral</h3>
           <div className="flex gap-2">
             <Button
-              variant={unsavedChanges ? "default" : "outline"}
+              variant={isEditMode ? "default" : "outline"}
               size="sm"
               onClick={handleSaveData}
-              disabled={loading || userId === 'guest' || isSaving || !unsavedChanges}
+              disabled={loading || userId === 'guest' || isSaving}
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
+              ) : isEditMode ? (
                 <Save className="h-4 w-4 mr-2" />
-              )}
-              {unsavedChanges ? "Salvar alterações" : "Salvar dados"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (window.forceRefreshEdital) {
-                  window.forceRefreshEdital();
-                }
-              }}
-              disabled={loading || isSaving}
-            >
-              {loading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
-                <RefreshCw className="h-4 w-4 mr-2" />
+                <PencilIcon className="h-4 w-4 mr-2" />
               )}
-              Atualizar dados
+              {isEditMode ? "Salvar dados" : "Editar dados"}
             </Button>
           </div>
         </div>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Meta de Aproveitamento:</span>
-            {isEditing ? (
+            {isEditMode ? (
               <div className="flex items-center">
                 <Input
                   type="number"
                   min="1"
                   max="100"
-                  value={tempGoal}
-                  onChange={(e) => setTempGoal(parseInt(e.target.value))}
+                  value={performanceGoal}
+                  onChange={(e) => handlePerformanceGoalChange(parseInt(e.target.value))}
                   className="w-20 text-center"
                 />
-                <button
-                  onClick={() => {
-                    setPerformanceGoal(tempGoal);
-                    saveUserDataToDatabase('performance_goal', tempGoal);
-                    setIsEditing(false);
-                  }}
-                  className="text-green-600 hover:text-green-800 mr-1"
-                >
-                  <CheckIcon className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => {
-                    setTempGoal(performanceGoal);
-                    setIsEditing(false);
-                  }}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <XIcon className="h-5 w-5" />
-                </button>
+                <span className="ml-1">%</span>
               </div>
             ) : (
-              <div className="flex items-center">
-                <span className="font-bold text-lg">{performanceGoal}%</span>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="ml-2 text-gray-500 hover:text-gray-700"
-                >
-                  <PencilIcon className="h-4 w-4" />
-                </button>
-              </div>
+              <span className="font-bold text-lg">{performanceGoal}%</span>
             )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Data da Prova:</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-[200px] justify-start text-left font-normal",
-                    !examDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {examDate
-                    ? format(examDate, "PPP", { locale: ptBR })
-                    : "Selecione uma data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={examDate}
-                  onSelect={handleExamDateChange}
-                  initialFocus
-                  locale={ptBR}
-                />
-              </PopoverContent>
-            </Popover>
+            {isEditMode ? (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[200px] justify-start text-left font-normal",
+                      !examDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {examDate
+                      ? format(examDate, "PPP", { locale: ptBR })
+                      : "Selecione uma data"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={examDate}
+                    onSelect={handleExamDateChange}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <span className="font-bold text-lg">
+                {examDate ? format(examDate, "PPP", { locale: ptBR }) : "Não definida"}
+              </span>
+            )}
           </div>
         </div>
       </div>

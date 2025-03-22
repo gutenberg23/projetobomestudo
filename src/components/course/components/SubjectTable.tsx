@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImportanceStars } from "./ImportanceStars";
@@ -11,12 +12,14 @@ interface SubjectTableProps {
   subject: Subject;
   performanceGoal: number;
   onTopicChange: (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => void;
+  isEditMode: boolean;
 }
 
 export const SubjectTable = ({
   subject,
   performanceGoal,
-  onTopicChange
+  onTopicChange,
+  isEditMode
 }: SubjectTableProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const subjectTotals = calculateSubjectTotals(subject.topics);
@@ -71,14 +74,22 @@ export const SubjectTable = ({
                   <td className="py-3 px-4">{topic.id}</td>
                   <td className="py-3 px-4">
                     <div className="flex items-center">
-                      <div onClick={e => {
-                    e.stopPropagation();
-                    onTopicChange(subject.id, topic.id, 'isDone', !topic.isDone);
-                  }} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isDone ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
-                        {topic.isDone && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
-                            <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>}
-                      </div>
+                      {isEditMode ? (
+                        <div onClick={e => {
+                          e.stopPropagation();
+                          onTopicChange(subject.id, topic.id, 'isDone', !topic.isDone);
+                        }} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isDone ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
+                          {topic.isDone && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
+                              <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>}
+                        </div>
+                      ) : (
+                        <div className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded ${topic.isDone ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
+                          {topic.isDone && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
+                              <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>}
+                        </div>
+                      )}
                     </div>
                   </td>
                   <td className="py-3 px-4 max-w-xs">
@@ -103,40 +114,52 @@ export const SubjectTable = ({
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <Select 
-                      value={topic.difficulty} 
-                      onValueChange={value => onTopicChange(subject.id, topic.id, 'difficulty', value)}
-                    >
-                      <SelectTrigger className="w-[140px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Muito Fácil">Muito Fácil</SelectItem>
-                        <SelectItem value="Fácil">Fácil</SelectItem>
-                        <SelectItem value="Médio">Médio</SelectItem>
-                        <SelectItem value="Difícil">Difícil</SelectItem>
-                        <SelectItem value="Muito Difícil">Muito Difícil</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {isEditMode ? (
+                      <Select 
+                        value={topic.difficulty} 
+                        onValueChange={value => onTopicChange(subject.id, topic.id, 'difficulty', value)}
+                      >
+                        <SelectTrigger className="w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Muito Fácil">Muito Fácil</SelectItem>
+                          <SelectItem value="Fácil">Fácil</SelectItem>
+                          <SelectItem value="Médio">Médio</SelectItem>
+                          <SelectItem value="Difícil">Difícil</SelectItem>
+                          <SelectItem value="Muito Difícil">Muito Difícil</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span>{topic.difficulty}</span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <input 
-                      type="number" 
-                      min="0" 
-                      value={topic.exercisesDone} 
-                      onChange={e => onTopicChange(subject.id, topic.id, 'exercisesDone', parseInt(e.target.value) || 0)} 
-                      className="w-20 text-center border rounded p-1" 
-                    />
+                    {isEditMode ? (
+                      <input 
+                        type="number" 
+                        min="0" 
+                        value={topic.exercisesDone} 
+                        onChange={e => onTopicChange(subject.id, topic.id, 'exercisesDone', parseInt(e.target.value) || 0)} 
+                        className="w-20 text-center border rounded p-1" 
+                      />
+                    ) : (
+                      <span>{topic.exercisesDone}</span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <input 
-                      type="number" 
-                      min="0" 
-                      max={topic.exercisesDone} 
-                      value={topic.hits} 
-                      onChange={e => onTopicChange(subject.id, topic.id, 'hits', parseInt(e.target.value) || 0)} 
-                      className="w-20 text-center border rounded p-1" 
-                    />
+                    {isEditMode ? (
+                      <input 
+                        type="number" 
+                        min="0" 
+                        max={topic.exercisesDone} 
+                        value={topic.hits} 
+                        onChange={e => onTopicChange(subject.id, topic.id, 'hits', parseInt(e.target.value) || 0)} 
+                        className="w-20 text-center border rounded p-1" 
+                      />
+                    ) : (
+                      <span>{topic.hits}</span>
+                    )}
                   </td>
                   <td className="py-3 px-4 text-center">{calculateErrors(topic.exercisesDone, topic.hits)}</td>
                   <td className={cn(
@@ -151,14 +174,24 @@ export const SubjectTable = ({
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-center gap-2">
-                      <div 
-                        onClick={() => handleIsReviewedChange(subject.id, topic.id)} 
-                        className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isReviewed ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}
-                      >
-                        {topic.isReviewed && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
-                            <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>}
-                      </div>
+                      {isEditMode ? (
+                        <div 
+                          onClick={() => handleIsReviewedChange(subject.id, topic.id)} 
+                          className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isReviewed ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}
+                        >
+                          {topic.isReviewed && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
+                              <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>}
+                        </div>
+                      ) : (
+                        <div 
+                          className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded ${topic.isReviewed ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}
+                        >
+                          {topic.isReviewed && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
+                              <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>}
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>)}

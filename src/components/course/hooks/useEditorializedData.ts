@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -127,7 +128,7 @@ export const useEditorializedData = () => {
                       const savedSubject = savedProgress.find((s: any) => s.id === subject.id);
                       if (savedSubject) {
                         const mergedTopics = subject.topics.map(topic => {
-                          const savedTopic = savedSubject.topics.find((t: any) => t.name === topic.name);
+                          const savedTopic = savedSubject.topics.find((t: any) => t.id === topic.id);
                           return savedTopic ? { ...topic, ...savedTopic } : topic;
                         });
                         

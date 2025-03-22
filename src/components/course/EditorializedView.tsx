@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { DashboardSummary } from "./components/DashboardSummary";
 import { SubjectTable } from "./components/SubjectTable";
@@ -10,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { RefreshCw, FileX, Loader2 } from "lucide-react";
+import { RefreshCw, FileX, Loader2, PencilIcon, Save } from "lucide-react";
 import { calculateOverallStats } from "./utils/statsCalculations";
 import { toast } from "@/components/ui/use-toast";
 
@@ -52,7 +53,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
 
 export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewProps) => {
   const [performanceGoal, setPerformanceGoal] = useState<number>(70);
-  const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges } = useEditorializedData();
+  const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase } = useEditorializedData();
   const [simuladosStats, setSimuladosStats] = useState({
     total: 0,
     realizados: 0,
@@ -64,6 +65,8 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
   const { user } = useAuth();
   const [hasEdital, setHasEdital] = useState<boolean | null>(null);
   const [isLoadingEdital, setIsLoadingEdital] = useState<boolean>(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -221,6 +224,46 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
     }
   };
 
+  const handleSaveData = async () => {
+    setIsSaving(true);
+    
+    try {
+      if (await saveAllDataToDatabase()) {
+        toast({
+          title: "Sucesso",
+          description: "Dados salvos com sucesso!",
+          variant: "default"
+        });
+        setIsEditMode(false);
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível salvar os dados. Tente novamente.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao salvar dados:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar os dados. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEditModeToggle = () => {
+    if (isEditMode) {
+      // Se estamos no modo de edição, iremos salvar e sair
+      handleSaveData();
+    } else {
+      // Se não estamos no modo de edição, iremos entrar
+      setIsEditMode(true);
+    }
+  };
+
   if ((loading && activeTab === 'edital') || (isLoadingEdital && activeTab === 'edital')) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
@@ -253,6 +296,12 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
           subjects={subjects}
           simuladosStats={simuladosStats}
           loading={loading}
+          isEditMode={isEditMode}
+          onToggleEditMode={handleEditModeToggle}
+          isSaving={isSaving}
+          unsavedChanges={unsavedChanges}
+          setUnsavedChanges={setUnsavedChanges}
+          saveAllDataToDatabase={saveAllDataToDatabase}
         />
       )}
 
@@ -266,6 +315,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
               subject={subject}
               performanceGoal={performanceGoal}
               onTopicChange={updateTopicProgress}
+              isEditMode={isEditMode}
             />
           ))}
           

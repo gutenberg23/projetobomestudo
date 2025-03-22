@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { LessonStatsData } from '../types/lessonTypes';
 
@@ -23,7 +24,7 @@ export const useQuestionsStats = () => {
           .eq(campo, lessonId);
 
         if (!error && data?.length) {
-          return data.map(q => q.id);
+          return (data as QuestaoResult[]).map(q => q.id);
         }
       }
       return [];
@@ -51,7 +52,9 @@ export const useQuestionsStats = () => {
       }
 
       const respostasMaisRecentes = new Map<string, boolean>();
-      for (const resposta of data) {
+      const respostas = data as RespostaAluno[];
+      
+      for (const resposta of respostas) {
         if (!respostasMaisRecentes.has(resposta.questao_id)) {
           respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
         }
