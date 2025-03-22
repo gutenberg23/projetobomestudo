@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -23,6 +24,39 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   const [questionAttempts, setQuestionAttempts] = useState<UserQuestionAttempt[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [combinedSubjects, setCombinedSubjects] = useState<any[]>([]);
+  const [topicsStats, setTopicsStats] = useState({
+    totalTopics: 0,
+    completedTopics: 0
+  });
+  
+  // Função para contar os tópicos das aulas
+  const countTopicsInSubjects = async (subjectsData: any[]) => {
+    if (!subjectsData || !Array.isArray(subjectsData) || subjectsData.length === 0) {
+      return { totalTopics: 0, completedTopics: 0 };
+    }
+    
+    let totalTopicsCount = 0;
+    let completedTopicsCount = 0;
+    
+    for (const subject of subjectsData) {
+      if (subject.lessons && Array.isArray(subject.lessons)) {
+        for (const lesson of subject.lessons) {
+          if (lesson.sections && Array.isArray(lesson.sections)) {
+            // Cada seção é um tópico
+            totalTopicsCount += lesson.sections.length;
+            
+            // Contar tópicos completados
+            completedTopicsCount += lesson.sections.filter((section: any) => 
+              section.isActive === true
+            ).length;
+          }
+        }
+      }
+    }
+    
+    console.log(`Contagem de tópicos: Total=${totalTopicsCount}, Completados=${completedTopicsCount}`);
+    return { totalTopics: totalTopicsCount, completedTopics: completedTopicsCount };
+  };
   
   // Combinar as disciplinas do hook com as disciplinas recebidas do CourseLayout
   useEffect(() => {
@@ -55,6 +89,12 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
       });
       
       setCombinedSubjects(mappedSubjects);
+      
+      // Contar tópicos quando os subjects mudam
+      (async () => {
+        const stats = await countTopicsInSubjects(subjectsFromCourse);
+        setTopicsStats(stats);
+      })();
     } else {
       // Se não temos disciplinas do CourseLayout, usar apenas as do hook
       setCombinedSubjects(subjects);
@@ -136,13 +176,14 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   const overallStats = calculateOverallStats(displaySubjects);
   const questionStats = calculateUserQuestionStats(questionAttempts);
   
-  // Calcular o percentual de progresso
-  const progressPercentage = overallStats.totalTopics > 0
-    ? Math.round((overallStats.completedTopics / overallStats.totalTopics) * 100)
+  // Calcular o percentual de progresso usando a contagem de tópicos
+  const progressPercentage = topicsStats.totalTopics > 0
+    ? Math.round((topicsStats.completedTopics / topicsStats.totalTopics) * 100)
     : 0;
   
   // Adicionar um log para verificar a estrutura dos subjects
   console.log("Estrutura dos subjects:", displaySubjects);
+  console.log("Estatísticas de tópicos:", topicsStats);
   
   // Função para garantir que estamos usando números válidos para os cálculos
   const ensureValidNumber = (value: any): number => {
@@ -276,8 +317,8 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
       <h2 className="text-xl font-semibold text-[rgba(38,47,60,1)]">Seu progresso</h2>
       
       <ProgressSummary
-        totalCompletedSections={overallStats.completedTopics}
-        totalSections={overallStats.totalTopics}
+        totalCompletedSections={topicsStats.completedTopics}
+        totalSections={topicsStats.totalTopics}
         progressPercentage={progressPercentage}
         totalQuestions={totalQuestions}
         totalCorrectAnswers={totalCorrectAnswers}

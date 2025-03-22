@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { CheckCircle, XCircle, BookOpenIcon, BarChart2, Award } from 'lucide-react';
+import { CheckCircle, XCircle, BookOpenIcon, BarChart2, Award, ListChecks } from 'lucide-react';
 
 interface ProgressSummaryProps {
   totalCompletedSections: number;
@@ -53,8 +54,8 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
       <div className="flex-1">
         <div className="flex justify-between text-xs text-[rgba(38,47,60,0.7)] mb-1">
           <span className="flex items-center gap-1">
-            <BookOpenIcon className="w-3.5 h-3.5" />
-            Aulas: {totalCompletedSections}/{totalSections}
+            <ListChecks className="w-3.5 h-3.5" />
+            Tópicos: {totalCompletedSections}/{totalSections}
           </span>
         </div>
         <div className="h-2 rounded-full bg-[rgba(38,47,60,0.1)]">
