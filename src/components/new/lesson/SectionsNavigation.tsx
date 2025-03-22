@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -150,9 +149,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             console.error('Error updating user progress:', updateError);
           } else {
             console.log('Progress updated successfully in SectionsNavigation');
-            
-            // Disparar evento para atualizar outros componentes
-            window.dispatchEvent(new CustomEvent('topicCompleted'));
           }
         } else {
           const { error: insertError } = await supabase
@@ -169,9 +165,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             console.error('Error inserting user progress:', insertError);
           } else {
             console.log('Progress inserted successfully in SectionsNavigation');
-            
-            // Disparar evento para atualizar outros componentes
-            window.dispatchEvent(new CustomEvent('topicCompleted'));
           }
         }
       } catch (error) {

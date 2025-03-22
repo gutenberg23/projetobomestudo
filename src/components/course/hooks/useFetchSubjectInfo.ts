@@ -23,7 +23,7 @@ const fetchAulasByField = async (field: string, value: string): Promise<string[]
       return [];
     }
 
-    return data ? data.map((aula: AulaResult) => aula.id) : [];
+    return (data as AulaResult[])?.map(aula => aula.id) ?? [];
   } catch (err) {
     console.error(`Erro ao buscar aulas por ${field}:`, err);
     return [];
