@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 // Define explicit types for Supabase results
@@ -22,7 +21,7 @@ const fetchAulasByField = async (field: string, value: string): Promise<string[]
     return [];
   }
 
-  return (data as AulaResult[] || []).map(aula => aula.id);
+  return data?.map(aula => aula.id) ?? [];
 };
 
 export const useFetchSubjectInfo = () => {
@@ -39,9 +38,8 @@ export const useFetchSubjectInfo = () => {
         console.error('Erro ao buscar disciplina:', disciplinaError);
       }
 
-      const typedData = disciplinaData as DisciplinaResult | null;
-      if (typedData?.aulas_ids?.length) {
-        return typedData.aulas_ids;
+      if (disciplinaData?.aulas_ids?.length) {
+        return disciplinaData.aulas_ids;
       }
 
       // Buscar aulas por diferentes campos
