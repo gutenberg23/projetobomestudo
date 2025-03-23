@@ -52,7 +52,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
 };
 
 export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewProps) => {
-  const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase, performanceGoal, updatePerformanceGoal, examDate, updateExamDate } = useEditorializedData();
+  const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase, performanceGoal, updatePerformanceGoal, examDate, updateExamDate, lastSaveTime } = useEditorializedData();
   const [simuladosStats, setSimuladosStats] = useState({
     total: 0,
     realizados: 0,
@@ -67,10 +67,21 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
+  // Função para log com timestamp
+  const logWithTimestamp = (message: string, data?: any) => {
+    const timestamp = new Date().toISOString();
+    if (data) {
+      console.log(`[${timestamp}] EditorializedView: ${message}:`, data);
+    } else {
+      console.log(`[${timestamp}] EditorializedView: ${message}`);
+    }
+  };
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.forceRefreshEdital = () => {
         if (forceRefresh) {
+          logWithTimestamp("forceRefreshEdital chamado pela janela global");
           forceRefresh();
           checkEditalExists();
         }
@@ -81,36 +92,80 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
           if (courseId) {
             const realId = extractIdFromFriendlyUrl(courseId);
             localStorage.removeItem(`edital_${realId}`);
-            console.log(`Cache do localStorage para edital_${realId} removido`);
+            logWithTimestamp(`Cache do localStorage para edital_${realId} removido`);
           }
           
           if (user) {
             const { data: sessionData } = await supabase.auth.getSession();
             if (!sessionData.session) {
-              console.log("Sessão expirada, tentando renovar");
+              logWithTimestamp("Sessão expirada, tentando renovar");
               const { data, error } = await supabase.auth.refreshSession();
               if (error) {
-                console.error("Erro ao renovar sessão:", error);
-                console.log("Usuário continuará com funcionalidade limitada");
+                logWithTimestamp("Erro ao renovar sessão", error);
+                logWithTimestamp("Usuário continuará com funcionalidade limitada");
               } else {
-                console.log("Sessão renovada com sucesso");
+                logWithTimestamp("Sessão renovada com sucesso", {
+                  userId: data.session?.user.id,
+                  expiresAt: data.session?.expires_at
+                });
               }
             } else {
-              console.log("Sessão válida encontrada");
+              logWithTimestamp("Sessão válida encontrada", {
+                userId: sessionData.session.user.id,
+                expiresAt: sessionData.session.expires_at
+              });
             }
           }
         } catch (error) {
-          console.error("Erro ao atualizar sessão:", error);
+          logWithTimestamp("Erro ao atualizar sessão", error);
         }
       };
       
       clearCacheAndReload();
       
+      // Verificar sessão a cada 10 minutos
+      const sessionCheckInterval = setInterval(async () => {
+        if (user) {
+          try {
+            const { data, error } = await supabase.auth.getSession();
+            if (error) {
+              logWithTimestamp("Erro ao verificar sessão no intervalo", error);
+            } else if (!data.session) {
+              logWithTimestamp("Sessão expirada em verificação de intervalo, tentando renovar");
+              const refreshResult = await supabase.auth.refreshSession();
+              logWithTimestamp("Resultado da renovação de sessão", refreshResult);
+            } else {
+              logWithTimestamp("Verificação de intervalo: sessão válida", {
+                userId: data.session.user.id,
+                expiresAt: data.session.expires_at
+              });
+            }
+          } catch (error) {
+            logWithTimestamp("Erro na verificação de intervalo da sessão", error);
+          }
+        }
+      }, 10 * 60 * 1000);
+      
       return () => {
         delete window.forceRefreshEdital;
+        clearInterval(sessionCheckInterval);
       };
     }
   }, [user, courseId]);
+
+  // Auto-salvar dados se houver alterações não salvas
+  useEffect(() => {
+    if (!unsavedChanges || !user || !courseId) return;
+    
+    logWithTimestamp("Detectadas alterações não salvas, configurando auto-save");
+    
+    const autoSaveTimer = setTimeout(() => {
+      logWithTimestamp("Executando auto-save após timeout");
+      handleSaveData();
+    }, 2 * 60 * 1000); // Auto-save após 2 minutos
+    
+    return () => clearTimeout(autoSaveTimer);
+  }, [unsavedChanges, user, courseId]);
 
   useEffect(() => {
     if (activeTab === 'simulados' && courseId && user) {
@@ -134,7 +189,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
       const realId = extractIdFromFriendlyUrl(courseId);
       
       const timestamp = new Date().getTime();
-      console.log(`Verificando existência do edital (timestamp: ${timestamp})`);
+      logWithTimestamp(`Verificando existência do edital (timestamp: ${timestamp})`);
       
       const { data, error } = await supabase
         .from('cursoverticalizado')
@@ -143,18 +198,19 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         .maybeSingle();
         
       if (error && error.code !== 'PGRST116') {
-        console.error('Erro ao verificar existência do edital:', error);
+        logWithTimestamp('Erro ao verificar existência do edital', error);
       }
       
       const editalExists = !!data && !!data.id && data.curso_id === realId;
       setHasEdital(editalExists);
-      console.log('Edital existe?', editalExists, 'Dados:', data);
+      logWithTimestamp('Edital existe?', { exists: editalExists, data });
       
       if (!editalExists && forceRefresh) {
+        logWithTimestamp('Edital não existe, forçando refresh');
         forceRefresh();
       }
     } catch (error) {
-      console.error('Erro ao verificar existência do edital:', error);
+      logWithTimestamp('Erro ao verificar existência do edital', error);
       setHasEdital(false);
     } finally {
       setIsLoadingEdital(false);
@@ -166,6 +222,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
       if (!courseId || !user) return;
 
       const realId = extractIdFromFriendlyUrl(courseId);
+      logWithTimestamp('Buscando estatísticas de simulados', { courseId: realId, userId: user.id });
       
       const { data: simuladosData, error: simuladosError } = await supabase
         .from("simulados")
@@ -174,11 +231,12 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         .eq("ativo", true);
 
       if (simuladosError) {
-        console.error("Erro ao buscar simulados:", simuladosError);
+        logWithTimestamp("Erro ao buscar simulados", simuladosError);
         return;
       }
 
       const simulados = simuladosData as Simulado[];
+      logWithTimestamp("Simulados encontrados", { count: simulados.length });
 
       const supabaseWithCustomTables = supabase as SupabaseClientWithCustomTables;
       const { data: resultsData, error: resultsError } = await supabaseWithCustomTables
@@ -187,11 +245,12 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         .eq("user_id", user.id);
 
       if (resultsError) {
-        console.error("Erro ao buscar resultados:", resultsError);
+        logWithTimestamp("Erro ao buscar resultados de simulados", resultsError);
         return;
       }
 
       const userResults = resultsData as UserSimuladoResult[];
+      logWithTimestamp("Resultados de simulados encontrados", { count: userResults.length });
 
       const total = simulados.length;
       const realizados = userResults.filter(result => 
@@ -211,23 +270,28 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         }
       });
 
-      setSimuladosStats({
+      const newStats = {
         total,
         realizados,
         questionsCount,
         hits,
         errors
-      });
+      };
+      
+      logWithTimestamp("Estatísticas de simulados calculadas", newStats);
+      setSimuladosStats(newStats);
     } catch (error) {
-      console.error("Erro ao calcular estatísticas de simulados:", error);
+      logWithTimestamp("Erro ao calcular estatísticas de simulados", error);
     }
   };
 
   const handleSaveData = async () => {
     setIsSaving(true);
+    logWithTimestamp("Iniciando salvamento de dados");
     
     try {
       if (await saveAllDataToDatabase()) {
+        logWithTimestamp("Dados salvos com sucesso");
         toast({
           title: "Sucesso",
           description: "Dados salvos com sucesso!",
@@ -235,35 +299,64 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         });
         setIsEditMode(false);
       } else {
+        logWithTimestamp("Falha ao salvar dados");
         toast({
           title: "Erro",
-          description: "Não foi possível salvar os dados. Tente novamente.",
+          description: "Não foi possível salvar os dados. Tentando novamente...",
           variant: "destructive"
         });
+        
+        // Tentar uma segunda vez após um curto delay
+        setTimeout(async () => {
+          logWithTimestamp("Segunda tentativa de salvamento");
+          if (await saveAllDataToDatabase()) {
+            logWithTimestamp("Segunda tentativa bem sucedida");
+            toast({
+              title: "Sucesso",
+              description: "Dados salvos com sucesso na segunda tentativa!",
+              variant: "default"
+            });
+            setIsEditMode(false);
+          } else {
+            logWithTimestamp("Segunda tentativa falhou");
+            toast({
+              title: "Erro",
+              description: "Não foi possível salvar os dados mesmo após nova tentativa. Por favor, tente novamente mais tarde.",
+              variant: "destructive"
+            });
+          }
+          setIsSaving(false);
+        }, 3000);
       }
     } catch (error) {
-      console.error("Erro ao salvar dados:", error);
+      logWithTimestamp("Erro ao salvar dados", error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao salvar os dados. Tente novamente.",
         variant: "destructive"
       });
-    } finally {
       setIsSaving(false);
+    } finally {
+      if (!isSaving) {
+        setIsSaving(false);
+      }
     }
   };
 
   const handleEditModeToggle = () => {
     if (isEditMode) {
       // Se estamos no modo de edição, iremos salvar e sair
+      logWithTimestamp("Saindo do modo de edição e salvando dados");
       handleSaveData();
     } else {
       // Se não estamos no modo de edição, iremos entrar
+      logWithTimestamp("Entrando no modo de edição");
       setIsEditMode(true);
     }
   };
 
   if ((loading && activeTab === 'edital') || (isLoadingEdital && activeTab === 'edital')) {
+    logWithTimestamp("Renderizando tela de carregamento");
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -273,6 +366,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
   }
 
   if (hasEdital === false && activeTab === 'edital') {
+    logWithTimestamp("Renderizando tela de edital não encontrado");
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <FileX className="h-16 w-16 text-muted-foreground mb-4" />
@@ -284,6 +378,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
     );
   }
 
+  logWithTimestamp("Renderizando view principal");
   return (
     <div className="bg-[#f6f8fa] rounded-[10px] pb-5 px-[10px] md:px-5">
       {(activeTab !== 'edital' || (activeTab === 'edital' && hasEdital)) && (
@@ -303,6 +398,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
           saveAllDataToDatabase={saveAllDataToDatabase}
           examDate={examDate}
           updateExamDate={updateExamDate}
+          lastSaveTime={lastSaveTime}
         />
       )}
 

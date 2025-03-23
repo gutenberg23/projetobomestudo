@@ -6,8 +6,8 @@ import { OverallStats, Subject } from "../types/editorialized";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, PencilIcon, Loader2, Save } from "lucide-react";
-import { format, differenceInDays } from "date-fns";
+import { CalendarIcon, PencilIcon, Loader2, Save, Clock } from "lucide-react";
+import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
@@ -38,6 +38,7 @@ interface DashboardSummaryProps {
   saveAllDataToDatabase: () => Promise<boolean>;
   examDate?: Date;
   updateExamDate: (date: Date | undefined) => void;
+  lastSaveTime?: string | null;
 }
 
 export const DashboardSummary = ({
@@ -61,19 +62,12 @@ export const DashboardSummary = ({
   setUnsavedChanges,
   saveAllDataToDatabase,
   examDate,
-  updateExamDate
+  updateExamDate,
+  lastSaveTime
 }: DashboardSummaryProps) => {
-  const {
-    courseId
-  } = useParams<{
-    courseId: string;
-  }>();
-  const {
-    user
-  } = useAuth();
-  const {
-    toast
-  } = useToast();
+  const { courseId } = useParams<{ courseId: string }>();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const userId = user?.id || 'guest';
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
@@ -116,6 +110,20 @@ export const DashboardSummary = ({
     }
   };
 
+  const formatLastSaveTime = () => {
+    if (!lastSaveTime) return null;
+    
+    try {
+      const date = parseISO(lastSaveTime);
+      return format(date, "'Último salvamento:' dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR });
+    } catch (error) {
+      console.error("Erro ao formatar último salvamento:", error);
+      return null;
+    }
+  };
+
+  const lastSaveFormatted = formatLastSaveTime();
+
   return (
     <div className="mb-8 p-5 bg-white rounded-[10px]">
       <div className="flex flex-col gap-4 mb-4 text-[#272f3c]">
@@ -139,6 +147,14 @@ export const DashboardSummary = ({
             </Button>
           </div>
         </div>
+        
+        {lastSaveFormatted && (
+          <div className="flex items-center text-xs text-gray-500 mt-[-8px]">
+            <Clock className="h-3 w-3 mr-1" />
+            <span>{lastSaveFormatted}</span>
+          </div>
+        )}
+        
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-gray-600">Meta de Aproveitamento:</span>
@@ -193,6 +209,13 @@ export const DashboardSummary = ({
             )}
           </div>
         </div>
+        
+        {unsavedChanges && userId !== 'guest' && (
+          <div className="text-amber-600 text-xs flex items-center">
+            <span className="animate-pulse mr-1">●</span>
+            Há alterações não salvas. Clique em "Salvar dados" para não perder seu progresso.
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

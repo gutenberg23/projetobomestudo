@@ -1,5 +1,8 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { CheckIcon, XIcon } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/components/ui/use-toast';
 
 interface LessonItemProps {
   title: string;
@@ -20,19 +23,51 @@ export const LessonItem: React.FC<LessonItemProps> = ({
   questoesIds = [],
   onToggleComplete
 }) => {
+  const { user } = useAuth();
+  const [localCompleted, setLocalCompleted] = useState(isCompleted);
   const aproveitamento = stats.total > 0 
     ? Math.round((stats.hits / stats.total) * 100) 
     : 0;
+
+  useEffect(() => {
+    setLocalCompleted(isCompleted);
+  }, [isCompleted]);
+
+  const handleToggleComplete = () => {
+    if (!user) {
+      toast({
+        title: "Atenção",
+        description: "Você precisa estar logado para marcar aulas como concluídas.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLocalCompleted(!localCompleted);
+    
+    // Log para acompanhamento
+    console.log(`[${new Date().toISOString()}] Toggling lesson completion: ${title}, new state: ${!localCompleted}`);
+    
+    if (onToggleComplete) {
+      onToggleComplete();
+      
+      // Emitir um evento que pode ser capturado por componentes pais
+      const topicCompletedEvent = new CustomEvent('topicCompleted', {
+        detail: { title, completed: !localCompleted }
+      });
+      document.dispatchEvent(topicCompletedEvent);
+    }
+  };
 
   return (
     <div className="bg-gray-50 rounded-md p-3 mb-2">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div 
-            className={`w-4 h-4 rounded-full flex items-center justify-center cursor-pointer ${isCompleted ? 'bg-[#5f2ebe]' : 'bg-[rgba(38,47,60,0.2)]'}`}
-            onClick={onToggleComplete}
+            className={`w-4 h-4 rounded-full flex items-center justify-center cursor-pointer ${localCompleted ? 'bg-[#5f2ebe]' : 'bg-[rgba(38,47,60,0.2)]'}`}
+            onClick={handleToggleComplete}
           >
-            {isCompleted && <CheckIcon className="w-3 h-3 text-white" />}
+            {localCompleted && <CheckIcon className="w-3 h-3 text-white" />}
           </div>
           <span className="font-medium text-sm text-[rgba(38,47,60,1)]">{title}</span>
         </div>
