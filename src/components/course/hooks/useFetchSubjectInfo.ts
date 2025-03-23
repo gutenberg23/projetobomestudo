@@ -23,7 +23,7 @@ const fetchAulasByField = async (field: string, value: string): Promise<string[]
       return [];
     }
 
-    return data ? data.map((aula: AulaResult) => aula.id) : [];
+    return (data as AulaResult[] | null) ? (data as AulaResult[]).map((aula) => aula.id) : [];
   } catch (err) {
     console.error(`Erro ao buscar aulas por ${field}:`, err);
     return [];
@@ -44,8 +44,10 @@ export const useFetchSubjectInfo = () => {
         console.error('Erro ao buscar disciplina:', disciplinaError);
       }
 
-      if (disciplinaData?.aulas_ids?.length) {
-        return disciplinaData.aulas_ids;
+      const typedData = disciplinaData as DisciplinaResult | null;
+      
+      if (typedData?.aulas_ids?.length) {
+        return typedData.aulas_ids;
       }
 
       // Buscar aulas por diferentes campos

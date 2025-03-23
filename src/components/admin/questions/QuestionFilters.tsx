@@ -1,6 +1,5 @@
-
 import React from "react";
-import { ChevronDown, ChevronUp, Filter, ClearAll, Eraser } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter, XCircle, Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -118,7 +117,7 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
             onClick={resetFilters}
             className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
           >
-            <ClearAll className="h-4 w-4" />
+            <XCircle className="h-4 w-4" />
             Limpar Filtros
           </Button>
         )}

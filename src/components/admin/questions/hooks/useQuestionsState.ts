@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { QuestionItemType, QuestionOption } from "../types";
+import { Filters } from "./actions/useFilterActions";
 
 export const useQuestionsState = () => {
   // Estado para informações da questão
@@ -26,18 +27,17 @@ export const useQuestionsState = () => {
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [isEditQuestionCardOpen, setIsEditQuestionCardOpen] = useState<boolean>(false);
   
-  // Estado para os filtros
+  // Estado para os filtros com a estrutura correta
   const [showFilters, setShowFilters] = useState<boolean>(false);
-  const [filters, setFilters] = useState({
-    id: "",
-    year: "",
-    institution: "",
-    organization: "",
-    role: "",
-    discipline: "",
-    level: "",
-    difficulty: "",
-    questionType: ""
+  const [filters, setFilters] = useState<Filters>({
+    disciplina: { key: 'disciplina', isActive: false, value: '' },
+    nivel: { key: 'nivel', isActive: false, value: '' },
+    institution: { key: 'institution', isActive: false, value: '' },
+    organization: { key: 'organization', isActive: false, value: '' },
+    role: { key: 'role', isActive: false, value: '' },
+    ano: { key: 'ano', isActive: false, value: '' },
+    dificuldade: { key: 'dificuldade', isActive: false, value: '' },
+    questionType: { key: 'questionType', isActive: false, value: '' }
   });
   
   // Estado para o modal de criar simulado

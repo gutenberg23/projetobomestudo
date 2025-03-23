@@ -3,6 +3,24 @@ import { FiltersType } from "../../types";
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
 
+// Interface para o estado de filtros usado no componente QuestionFilters
+export interface FilterItem {
+  key: string;
+  isActive: boolean;
+  value: string;
+}
+
+export interface Filters {
+  disciplina: FilterItem;
+  nivel: FilterItem;
+  institution: FilterItem;
+  organization: FilterItem;
+  role: FilterItem;
+  ano: FilterItem;
+  dificuldade: FilterItem;
+  questionType: FilterItem;
+}
+
 export const useFilterActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -30,35 +48,54 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
     const { questions, filters } = state;
     
     return questions.filter(question => {
-      return (
-        (filters.id === "" || question.id.toLowerCase().includes(filters.id.toLowerCase())) &&
-        (filters.year === "" || question.year.toLowerCase().includes(filters.year.toLowerCase())) &&
-        (filters.institution === "" || question.institution.toLowerCase().includes(filters.institution.toLowerCase())) &&
-        (filters.organization === "" || question.organization.toLowerCase().includes(filters.organization.toLowerCase())) &&
-        (filters.role === "" || question.role.toLowerCase().includes(filters.role.toLowerCase())) &&
-        (filters.discipline === "" || question.discipline.toLowerCase().includes(filters.discipline.toLowerCase())) &&
-        (filters.level === "" || question.level.toLowerCase().includes(filters.level.toLowerCase())) &&
-        (filters.difficulty === "" || question.difficulty.toLowerCase().includes(filters.difficulty.toLowerCase())) &&
-        (filters.questionType === "" || question.questionType.toLowerCase().includes(filters.questionType.toLowerCase()))
-      );
+      // Verificar se filtros estão ativos antes de aplicá-los
+      const disciplinaMatch = !filters.disciplina.isActive || 
+        (question.discipline.toLowerCase().includes(filters.disciplina.value.toLowerCase()));
+      
+      const nivelMatch = !filters.nivel.isActive || 
+        (question.level.toLowerCase().includes(filters.nivel.value.toLowerCase()));
+      
+      const institutionMatch = !filters.institution.isActive || 
+        (question.institution.toLowerCase().includes(filters.institution.value.toLowerCase()));
+      
+      const organizationMatch = !filters.organization.isActive || 
+        (question.organization.toLowerCase().includes(filters.organization.value.toLowerCase()));
+      
+      const roleMatch = !filters.role.isActive || 
+        (question.role.toLowerCase().includes(filters.role.value.toLowerCase()));
+      
+      const anoMatch = !filters.ano.isActive || 
+        (question.year.toLowerCase().includes(filters.ano.value.toLowerCase()));
+      
+      const dificuldadeMatch = !filters.dificuldade.isActive || 
+        (question.difficulty.toLowerCase().includes(filters.dificuldade.value.toLowerCase()));
+      
+      const typeMatch = !filters.questionType.isActive || 
+        (question.questionType.toLowerCase().includes(filters.questionType.value.toLowerCase()));
+      
+      return disciplinaMatch && nivelMatch && institutionMatch && 
+             organizationMatch && roleMatch && anoMatch && 
+             dificuldadeMatch && typeMatch;
     });
   };
 
   const resetFilters = () => {
     const { setFilters } = state;
     
+    // Criar um objeto de filtros limpo
+    const emptyFilters: Filters = {
+      disciplina: { key: 'disciplina', isActive: false, value: '' },
+      nivel: { key: 'nivel', isActive: false, value: '' },
+      institution: { key: 'institution', isActive: false, value: '' },
+      organization: { key: 'organization', isActive: false, value: '' },
+      role: { key: 'role', isActive: false, value: '' },
+      ano: { key: 'ano', isActive: false, value: '' },
+      dificuldade: { key: 'dificuldade', isActive: false, value: '' },
+      questionType: { key: 'questionType', isActive: false, value: '' }
+    };
+    
     // Limpar filtros no estado
-    setFilters({
-      id: "",
-      year: "",
-      institution: "",
-      organization: "",
-      role: "",
-      discipline: "",
-      level: "",
-      difficulty: "",
-      questionType: ""
-    });
+    setFilters(emptyFilters);
     
     // Limpar parâmetros da URL
     setSearchParams(new URLSearchParams());
@@ -68,10 +105,10 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
   const updateUrlWithFilters = () => {
     const params = new URLSearchParams();
     
-    // Adicionar apenas filtros não vazios
-    Object.entries(state.filters).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
+    // Adicionar apenas filtros ativos e não vazios
+    Object.entries(state.filters).forEach(([key, filterItem]) => {
+      if (filterItem.isActive && filterItem.value) {
+        params.set(key, filterItem.value);
       }
     });
     

@@ -24,8 +24,8 @@ export const useQuestionsStats = () => {
             .select('id')
             .eq(campo, lessonId);
 
-          if (!error && data?.length) {
-            return data.map((q: QuestaoResult) => q.id);
+          if (!error && data && data.length > 0) {
+            return (data as QuestaoResult[]).map((q) => q.id);
           }
         } catch (err) {
           console.error(`Erro ao buscar IDs por ${campo}:`, err);
