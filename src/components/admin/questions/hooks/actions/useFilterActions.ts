@@ -26,21 +26,34 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
   
   // Carregar filtros da URL quando o componente é montado
   useEffect(() => {
-    const urlFilters: Partial<FiltersType> = {};
+    const urlFilters: Partial<Record<keyof Filters, string>> = {};
     
     // Verificar cada parâmetro na URL
     Array.from(searchParams.entries()).forEach(([key, value]) => {
-      if (Object.keys(state.filters).includes(key)) {
-        urlFilters[key as keyof FiltersType] = value;
+      if (key in state.filters) {
+        urlFilters[key as keyof Filters] = value;
       }
     });
     
     // Atualizar o estado apenas se houver filtros na URL
     if (Object.keys(urlFilters).length > 0) {
-      state.setFilters(prevFilters => ({
-        ...prevFilters,
-        ...urlFilters
-      }));
+      state.setFilters(prevFilters => {
+        const newFilters = { ...prevFilters };
+        
+        // Atualizar apenas os filtros encontrados na URL
+        Object.entries(urlFilters).forEach(([key, value]) => {
+          const filterKey = key as keyof Filters;
+          if (filterKey in newFilters) {
+            newFilters[filterKey] = {
+              ...newFilters[filterKey],
+              isActive: true,
+              value: value
+            };
+          }
+        });
+        
+        return newFilters;
+      });
     }
   }, []);
 

@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { LessonStatsData } from '../types/lessonTypes';
 
-// Define explicit types for Supabase results
+// Definição de tipos explícitos
 interface QuestaoResult {
   id: string;
 }
@@ -24,8 +24,14 @@ export const useQuestionsStats = () => {
             .select('id')
             .eq(campo, lessonId);
 
-          if (!error && data && data.length > 0) {
-            return (data as QuestaoResult[]).map((q) => q.id);
+          if (error) {
+            console.error(`Erro ao buscar IDs por ${campo}:`, error);
+            continue;
+          }
+
+          // Verificar se data existe e é um array antes de mapear
+          if (data && Array.isArray(data) && data.length > 0) {
+            return data.map((q: QuestaoResult) => q.id);
           }
         } catch (err) {
           console.error(`Erro ao buscar IDs por ${campo}:`, err);
@@ -51,11 +57,13 @@ export const useQuestionsStats = () => {
         .in('questao_id', questoesIds)
         .order('created_at', { ascending: false });
 
-      if (error || !data) {
+      if (error || !data || !Array.isArray(data) || data.length === 0) {
         return { total: 0, hits: 0, errors: 0 };
       }
 
       const respostasMaisRecentes = new Map<string, boolean>();
+      
+      // Garantir que data é tratado como um array de RespostaAluno
       const respostas = data as RespostaAluno[];
       
       for (const resposta of respostas) {

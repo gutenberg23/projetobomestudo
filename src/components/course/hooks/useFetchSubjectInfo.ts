@@ -1,13 +1,13 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Define explicit types for Supabase results
+// Definição de tipos explícitos
 interface AulaResult {
   id: string;
 }
 
 interface DisciplinaResult {
-  aulas_ids?: string[];
+  aulas_ids?: string[] | null;
 }
 
 // Função auxiliar para buscar aulas por diferentes campos
@@ -23,7 +23,12 @@ const fetchAulasByField = async (field: string, value: string): Promise<string[]
       return [];
     }
 
-    return (data as AulaResult[] | null) ? (data as AulaResult[]).map((aula) => aula.id) : [];
+    // Verificar se data existe e é um array antes de mapear
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return [];
+    }
+
+    return data.map((aula: AulaResult) => aula.id);
   } catch (err) {
     console.error(`Erro ao buscar aulas por ${field}:`, err);
     return [];
@@ -44,10 +49,9 @@ export const useFetchSubjectInfo = () => {
         console.error('Erro ao buscar disciplina:', disciplinaError);
       }
 
-      const typedData = disciplinaData as DisciplinaResult | null;
-      
-      if (typedData?.aulas_ids?.length) {
-        return typedData.aulas_ids;
+      // Verificar se disciplinaData existe e se aulas_ids existe e é um array
+      if (disciplinaData && disciplinaData.aulas_ids && Array.isArray(disciplinaData.aulas_ids) && disciplinaData.aulas_ids.length > 0) {
+        return disciplinaData.aulas_ids;
       }
 
       // Buscar aulas por diferentes campos
