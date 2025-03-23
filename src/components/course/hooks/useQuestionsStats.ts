@@ -1,90 +1,86 @@
 
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { LessonStatsData } from '../types/lessonTypes';
 
-// Definição de tipos explícitos
-interface QuestaoResult {
-  id: string;
-}
+type QuestionStat = {
+  questionId: string;
+  correct: number;
+  incorrect: number;
+  total: number;
+};
 
-interface RespostaAluno {
-  questao_id: string;
-  is_correta: boolean;
-  created_at: string;
-}
+export const useQuestionsStats = (questionIds: string[] = []) => {
+  const [stats, setStats] = useState<QuestionStat[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [totalStats, setTotalStats] = useState({
+    total: 0,
+    hits: 0,
+    errors: 0
+  });
 
-export const useQuestionsStats = () => {
-  const fetchQuestionsIds = async (lessonId: string): Promise<string[]> => {
-    try {
-      const campos = ['aula_id', 'id_aula'];
-      for (const campo of campos) {
-        try {
-          const { data, error } = await supabase
-            .from('questoes')
-            .select('id')
-            .eq(campo, lessonId);
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!questionIds || questionIds.length === 0) {
+        setStats([]);
+        setTotalStats({ total: 0, hits: 0, errors: 0 });
+        setLoading(false);
+        return;
+      }
 
-          if (error) {
-            console.error(`Erro ao buscar IDs por ${campo}:`, error);
-            continue;
-          }
+      try {
+        // Buscar estatísticas das questões
+        const { data: respostasData, error: respostasError } = await supabase
+          .from('respostas_alunos')
+          .select('questao_id, is_correta')
+          .in('questao_id', questionIds);
 
-          // Verificar se data existe e é um array antes de mapear
-          if (data && Array.isArray(data) && data.length > 0) {
-            return data.map((q: QuestaoResult) => q.id);
-          }
-        } catch (err) {
-          console.error(`Erro ao buscar IDs por ${campo}:`, err);
+        if (respostasError) {
+          throw respostasError;
         }
+
+        // Agrupar as respostas por questão
+        const statsMap = new Map<string, { correct: number; incorrect: number }>();
+        
+        questionIds.forEach(id => {
+          statsMap.set(id, { correct: 0, incorrect: 0 });
+        });
+
+        (respostasData || []).forEach(resposta => {
+          const current = statsMap.get(resposta.questao_id) || { correct: 0, incorrect: 0 };
+          
+          if (resposta.is_correta) {
+            current.correct += 1;
+          } else {
+            current.incorrect += 1;
+          }
+          
+          statsMap.set(resposta.questao_id, current);
+        });
+
+        // Converter o mapa em um array
+        const statsArray = Array.from(statsMap.entries()).map(([questionId, data]) => ({
+          questionId,
+          correct: data.correct,
+          incorrect: data.incorrect,
+          total: data.correct + data.incorrect
+        }));
+
+        // Calcular totais
+        const hits = statsArray.reduce((sum, stat) => sum + stat.correct, 0);
+        const errors = statsArray.reduce((sum, stat) => sum + stat.incorrect, 0);
+        const total = hits + errors;
+
+        setStats(statsArray);
+        setTotalStats({ total, hits, errors });
+      } catch (error) {
+        console.error('Erro ao buscar estatísticas das questões:', error);
+      } finally {
+        setLoading(false);
       }
-      return [];
-    } catch (error) {
-      console.error('Erro ao buscar IDs de questões:', error);
-      return [];
-    }
-  };
+    };
 
-  const calculateLessonStats = async (questoesIds: string[], userId: string): Promise<LessonStatsData> => {
-    if (!questoesIds.length || !userId) {
-      return { total: 0, hits: 0, errors: 0 };
-    }
+    fetchStats();
+  }, [questionIds]);
 
-    try {
-      const { data, error } = await supabase
-        .from('respostas_alunos')
-        .select('questao_id, is_correta, created_at')
-        .eq('aluno_id', userId)
-        .in('questao_id', questoesIds)
-        .order('created_at', { ascending: false });
-
-      if (error || !data || !Array.isArray(data) || data.length === 0) {
-        return { total: 0, hits: 0, errors: 0 };
-      }
-
-      const respostasMaisRecentes = new Map<string, boolean>();
-      
-      // Garantir que data é tratado como um array de RespostaAluno
-      const respostas = data as RespostaAluno[];
-      
-      for (const resposta of respostas) {
-        if (!respostasMaisRecentes.has(resposta.questao_id)) {
-          respostasMaisRecentes.set(resposta.questao_id, resposta.is_correta);
-        }
-      }
-
-      const total = respostasMaisRecentes.size;
-      const hits = Array.from(respostasMaisRecentes.values()).filter(Boolean).length;
-
-      return {
-        total,
-        hits,
-        errors: total - hits
-      };
-    } catch (error) {
-      console.error('Erro ao calcular estatísticas da aula:', error);
-      return { total: 0, hits: 0, errors: 0 };
-    }
-  };
-
-  return { fetchQuestionsIds, calculateLessonStats };
+  return { stats, totalStats, loading };
 };

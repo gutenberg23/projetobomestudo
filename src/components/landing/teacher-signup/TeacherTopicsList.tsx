@@ -23,29 +23,29 @@ export const TeacherTopicsList: React.FC<TeacherTopicsListProps> = ({
   
   return (
     <div className="space-y-2">
-      <Label htmlFor="topicos" className="text-[#022731]">Tópicos da Disciplina</Label>
-      <div className="border rounded-md border-[#2a8e9e]/30 p-4 max-h-[250px] overflow-y-auto">
+      <Label htmlFor="topicos" className="text-[#272f3c]">Tópicos da Disciplina</Label>
+      <div className="border rounded-md border-[#5f2ebe]/30 p-4 max-h-[250px] overflow-y-auto">
         <table className="w-full">
           <thead>
             <tr>
-              <th className="text-left pb-2 text-[#022731] w-1/2">Tópico</th>
-              <th className="text-left pb-2 text-[#022731] w-1/2">Link do Vídeo</th>
+              <th className="text-left pb-2 text-[#272f3c] w-1/2">Tópico</th>
+              <th className="text-left pb-2 text-[#272f3c] w-1/2">Link do Vídeo</th>
             </tr>
           </thead>
           <tbody>
             {topicosDisponiveis.map((topico) => (
-              <tr key={topico} className="border-t border-[#2a8e9e]/10">
+              <tr key={topico} className="border-t border-[#5f2ebe]/10">
                 <td className="py-2">
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id={`topico-${topico}`}
                       checked={topicosSelecionados.includes(topico)}
                       onCheckedChange={() => handleTopicoToggle(topico)}
-                      className="data-[state=checked]:bg-[#2a8e9e] data-[state=checked]:border-[#2a8e9e]"
+                      className="data-[state=checked]:bg-[#5f2ebe] data-[state=checked]:border-[#5f2ebe]"
                     />
                     <Label 
                       htmlFor={`topico-${topico}`}
-                      className="text-sm text-[#022731] cursor-pointer"
+                      className="text-sm text-[#272f3c] cursor-pointer"
                     >
                       {topico}
                     </Label>
@@ -58,7 +58,7 @@ export const TeacherTopicsList: React.FC<TeacherTopicsListProps> = ({
                     disabled={!topicosSelecionados.includes(topico)}
                     value={linksVideos[topico] || ''}
                     onChange={(e) => handleLinkVideoChange(topico, e.target.value)}
-                    className="border-[#2a8e9e]/30 focus-visible:ring-[#2a8e9e]"
+                    className="border-[#5f2ebe]/30 focus-visible:ring-[#5f2ebe]"
                   />
                 </td>
               </tr>
@@ -66,7 +66,7 @@ export const TeacherTopicsList: React.FC<TeacherTopicsListProps> = ({
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-[#022731]/60">
+      <p className="text-xs text-[#67748a]">
         Selecione os tópicos que você leciona e adicione links para seus vídeos sobre cada um.
       </p>
     </div>

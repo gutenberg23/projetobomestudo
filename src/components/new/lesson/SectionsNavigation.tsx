@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -6,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
+import { toast } from "@/components/ui/use-toast";
 
 // Definindo a interface para a estrutura de dados subjects_data
 interface SubjectsData {
@@ -50,6 +52,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
   const { user } = useAuth();
   const { courseId } = useParams<{ courseId: string }>();
   const [localCompletedSections, setLocalCompletedSections] = React.useState<string[]>(completedSections);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Carregar os tópicos concluídos do banco de dados quando o componente for montado
   useEffect(() => {
@@ -67,7 +70,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
           .maybeSingle();
 
         if (fetchError && fetchError.code !== 'PGRST116') {
-          console.error('Error fetching user progress:', fetchError);
+          console.error('Erro ao buscar progresso do usuário:', fetchError);
           return;
         }
 
@@ -81,17 +84,43 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             const savedCompletedSections = subjectsData.completed_sections[lessonId];
             if (Array.isArray(savedCompletedSections) && savedCompletedSections.length > 0) {
               setLocalCompletedSections(savedCompletedSections);
-              console.log('Loaded completed sections from database:', savedCompletedSections);
+              console.log('Tópicos concluídos carregados do banco de dados:', savedCompletedSections);
+              
+              // Disparar evento para atualizar os componentes que exibem o progresso
+              document.dispatchEvent(new CustomEvent('sectionsUpdated', {
+                detail: { 
+                  courseId: realCourseId,
+                  totalCompleted: getTotalCompletedSections(progress.subjects_data),
+                  totalSections: getTotalSections()
+                }
+              }));
             }
           }
         }
       } catch (error) {
-        console.error('Error loading completed sections:', error);
+        console.error('Erro ao carregar tópicos concluídos:', error);
       }
     };
 
     loadCompletedSections();
   }, [user, courseId, lessonId]);
+
+  // Função para obter o total de seções para todas as aulas
+  const getTotalSections = (): number => {
+    if (!courseId) return 0;
+    
+    // Nesse caso estamos retornando o total apenas das seções carregadas
+    // em uma implementação mais completa, isso poderia ser buscado do banco de dados
+    return sections.length;
+  };
+
+  // Função para obter o total de seções concluídas para todas as aulas
+  const getTotalCompletedSections = (subjectsData: SubjectsData): number => {
+    if (!subjectsData.completed_sections) return 0;
+    
+    return Object.values(subjectsData.completed_sections)
+      .reduce((total, sectionIds) => total + sectionIds.length, 0);
+  };
 
   // Atualizar o estado local quando as props mudarem
   useEffect(() => {
@@ -102,10 +131,13 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
 
   // Salvar os tópicos concluídos no banco de dados quando o estado local mudar
   useEffect(() => {
-    if (!user || !courseId || !lessonId) return;
+    if (!user || !courseId || !lessonId || localCompletedSections.length === 0) return;
 
     const saveCompletedSections = async () => {
+      if (isSaving) return;
+      
       try {
+        setIsSaving(true);
         const realCourseId = extractIdFromFriendlyUrl(courseId);
 
         const { data: existingProgress, error: fetchError } = await supabase
@@ -116,7 +148,8 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
           .maybeSingle();
 
         if (fetchError && fetchError.code !== 'PGRST116') {
-          console.error('Error fetching user progress:', fetchError);
+          console.error('Erro ao buscar progresso do usuário:', fetchError);
+          setIsSaving(false);
           return;
         }
 
@@ -146,9 +179,18 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             .eq('id', progress.id);
 
           if (updateError) {
-            console.error('Error updating user progress:', updateError);
+            console.error('Erro ao atualizar progresso do usuário:', updateError);
           } else {
-            console.log('Progress updated successfully in SectionsNavigation');
+            console.log('Progresso atualizado com sucesso em SectionsNavigation');
+            
+            // Disparar evento para atualizar os componentes que exibem o progresso
+            document.dispatchEvent(new CustomEvent('sectionsUpdated', {
+              detail: { 
+                courseId: realCourseId,
+                totalCompleted: getTotalCompletedSections(subjectsData),
+                totalSections: getTotalSections()
+              }
+            }));
           }
         } else {
           const { error: insertError } = await supabase
@@ -162,27 +204,47 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             });
 
           if (insertError) {
-            console.error('Error inserting user progress:', insertError);
+            console.error('Erro ao inserir progresso do usuário:', insertError);
           } else {
-            console.log('Progress inserted successfully in SectionsNavigation');
+            console.log('Progresso inserido com sucesso em SectionsNavigation');
+            
+            // Disparar evento para atualizar os componentes que exibem o progresso
+            document.dispatchEvent(new CustomEvent('sectionsUpdated', {
+              detail: { 
+                courseId: realCourseId,
+                totalCompleted: getTotalCompletedSections(subjectsData),
+                totalSections: getTotalSections()
+              }
+            }));
           }
         }
       } catch (error) {
-        console.error('Error saving completed sections:', error);
+        console.error('Erro ao salvar tópicos concluídos:', error);
+      } finally {
+        setIsSaving(false);
       }
     };
 
-    // Use a debounce to avoid too many database calls
+    // Use um debounce para evitar muitas chamadas ao banco de dados
     const timeoutId = setTimeout(() => {
       saveCompletedSections();
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [localCompletedSections, user, courseId, lessonId]);
+  }, [localCompletedSections, user, courseId, lessonId, isSaving]);
 
   // Função para alternar o estado de conclusão de um tópico
   const handleToggleCompletion = (sectionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "Atenção",
+        description: "Você precisa estar logado para marcar tópicos como concluídos.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setLocalCompletedSections(prev => {
       if (prev.includes(sectionId)) {

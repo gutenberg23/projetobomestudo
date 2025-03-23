@@ -3,6 +3,9 @@ import React, { useEffect, useState } from 'react';
 import { CheckIcon, XIcon } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useParams } from 'react-router-dom';
+import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
 
 interface LessonItemProps {
   title: string;
@@ -14,6 +17,7 @@ interface LessonItemProps {
   };
   questoesIds?: string[];
   onToggleComplete?: () => void;
+  lessonId?: string;
 }
 
 export const LessonItem: React.FC<LessonItemProps> = ({
@@ -21,10 +25,13 @@ export const LessonItem: React.FC<LessonItemProps> = ({
   isCompleted = false,
   stats = { total: 0, hits: 0, errors: 0 },
   questoesIds = [],
-  onToggleComplete
+  onToggleComplete,
+  lessonId
 }) => {
   const { user } = useAuth();
+  const { courseId } = useParams<{ courseId: string }>();
   const [localCompleted, setLocalCompleted] = useState(isCompleted);
+  const [isSaving, setIsSaving] = useState(false);
   const aproveitamento = stats.total > 0 
     ? Math.round((stats.hits / stats.total) * 100) 
     : 0;
@@ -33,7 +40,7 @@ export const LessonItem: React.FC<LessonItemProps> = ({
     setLocalCompleted(isCompleted);
   }, [isCompleted]);
 
-  const handleToggleComplete = () => {
+  const handleToggleComplete = async () => {
     if (!user) {
       toast({
         title: "Atenção",
@@ -43,19 +50,89 @@ export const LessonItem: React.FC<LessonItemProps> = ({
       return;
     }
 
-    setLocalCompleted(!localCompleted);
-    
-    // Log para acompanhamento
-    console.log(`[${new Date().toISOString()}] Toggling lesson completion: ${title}, new state: ${!localCompleted}`);
-    
-    if (onToggleComplete) {
-      onToggleComplete();
+    if (isSaving || !courseId || !lessonId) return;
+
+    try {
+      setIsSaving(true);
+      setLocalCompleted(!localCompleted);
+      
+      // Log para acompanhamento
+      console.log(`[${new Date().toISOString()}] Alternando conclusão da aula: ${title}, novo estado: ${!localCompleted}`);
+      
+      // Salvar estado no banco de dados
+      if (courseId && lessonId) {
+        const realCourseId = extractIdFromFriendlyUrl(courseId);
+        
+        const { data: existingProgress, error: fetchError } = await supabase
+          .from('user_course_progress')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('course_id', realCourseId)
+          .maybeSingle();
+          
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          console.error('Erro ao buscar progresso do usuário:', fetchError);
+          setIsSaving(false);
+          return;
+        }
+        
+        let subjectsData = existingProgress?.subjects_data || {};
+        
+        // Garantir que a estrutura existe
+        if (!subjectsData.completed_lessons) {
+          subjectsData.completed_lessons = {};
+        }
+        
+        if (!localCompleted) {
+          // Marcar como concluída
+          subjectsData.completed_lessons[lessonId] = true;
+        } else {
+          // Marcar como não concluída
+          delete subjectsData.completed_lessons[lessonId];
+        }
+        
+        if (existingProgress) {
+          const { error: updateError } = await supabase
+            .from('user_course_progress')
+            .update({
+              subjects_data: subjectsData,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingProgress.id);
+            
+          if (updateError) {
+            console.error('Erro ao atualizar progresso do usuário:', updateError);
+          }
+        } else {
+          const { error: insertError } = await supabase
+            .from('user_course_progress')
+            .insert({
+              user_id: user.id,
+              course_id: realCourseId,
+              subjects_data: subjectsData,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            
+          if (insertError) {
+            console.error('Erro ao inserir progresso do usuário:', insertError);
+          }
+        }
+      }
+      
+      if (onToggleComplete) {
+        onToggleComplete();
+      }
       
       // Emitir um evento que pode ser capturado por componentes pais
       const topicCompletedEvent = new CustomEvent('topicCompleted', {
         detail: { title, completed: !localCompleted }
       });
       document.dispatchEvent(topicCompletedEvent);
+    } catch (error) {
+      console.error('Erro ao alterar estado de conclusão:', error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
