@@ -3,7 +3,7 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Copy, Edit, Trash, BarChart } from "lucide-react";
+import { Copy, Edit, Trash, BarChart, Eraser } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QuestionStats } from "@/components/new/question/QuestionStats";
@@ -17,6 +17,7 @@ interface QuestionListProps {
   handleRemoveQuestion: (id: string) => void;
   handleEditQuestion: (question: QuestionItemType) => void;
   copyToClipboard: (text: string) => void;
+  handleClearQuestionStats: (id: string) => void;
 }
 
 const QuestionList: React.FC<QuestionListProps> = ({
@@ -27,6 +28,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
   handleRemoveQuestion,
   handleEditQuestion,
   copyToClipboard,
+  handleClearQuestionStats,
 }) => {
   return (
     <div>
@@ -112,6 +114,23 @@ const QuestionList: React.FC<QuestionListProps> = ({
                       <Button variant="outline" size="sm" onClick={() => handleRemoveQuestion(question.id)}>
                         <Trash className="h-4 w-4" />
                       </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleClearQuestionStats(question.id)}
+                              className="border-amber-500 text-amber-500 hover:bg-amber-50"
+                            >
+                              <Eraser className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Limpar estatísticas</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </TableCell>
                 </TableRow>

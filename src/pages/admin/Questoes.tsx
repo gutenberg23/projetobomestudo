@@ -167,6 +167,7 @@ const Questoes: React.FC = () => {
           showFilters={state.showFilters}
           setShowFilters={state.setShowFilters}
           resetFilters={actions.resetFilters}
+          handleClearAllQuestionStats={actions.handleClearAllQuestionStats}
         />
         
         <QuestionList
@@ -177,6 +178,7 @@ const Questoes: React.FC = () => {
           handleRemoveQuestion={actions.handleRemoveQuestion}
           handleEditQuestion={actions.handleEditQuestion}
           copyToClipboard={actions.copyToClipboard}
+          handleClearQuestionStats={actions.handleClearQuestionStats}
         />
       </Card>
 

@@ -1,29 +1,46 @@
 
 import React from "react";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { ChevronDown, ChevronUp, Filter, ClearAll, Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FilterIcon, X } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-interface FiltersType {
-  id: string;
-  year: string;
-  institution: string;
-  organization: string;
-  role: string;
-  discipline: string;
-  level: string;
-  difficulty: string;
-  questionType: string;
+interface FilterItem {
+  key: string;
+  isActive: boolean;
+  value: string;
+}
+
+interface Filters {
+  disciplina: FilterItem;
+  nivel: FilterItem;
+  institution: FilterItem;
+  organization: FilterItem;
+  role: FilterItem;
+  ano: FilterItem;
+  dificuldade: FilterItem;
+  questionType: FilterItem;
 }
 
 interface QuestionFiltersProps {
-  filters: FiltersType;
-  setFilters: React.Dispatch<React.SetStateAction<FiltersType>>;
+  filters: Filters;
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   showFilters: boolean;
   setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
   resetFilters: () => void;
+  handleClearAllQuestionStats?: () => Promise<void>;
 }
 
 const QuestionFilters: React.FC<QuestionFiltersProps> = ({
@@ -32,150 +49,278 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
   showFilters,
   setShowFilters,
   resetFilters,
+  handleClearAllQuestionStats
 }) => {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Função para atualizar a URL com os filtros
-  const updateUrlWithFilters = () => {
-    const params = new URLSearchParams();
-    
-    // Adicionar filtros não vazios à URL
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value);
-      }
-    });
-    
-    // Atualizar a URL sem recarregar a página
-    setSearchParams(params);
-  };
-
-  // Aplicar filtros na URL
-  const applyFilters = () => {
-    updateUrlWithFilters();
-  };
-
-  // Limpar filtros e URL
-  const handleResetFilters = () => {
-    resetFilters();
-    setSearchParams(new URLSearchParams());
+  const handleChangeFilter = (
+    filterKey: keyof Filters,
+    changes: Partial<FilterItem>
+  ) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterKey]: {
+        ...prev[filterKey],
+        ...changes,
+      },
+    }));
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-6">
       <div className="flex justify-between mb-4">
-        <div className="flex items-center">
-          <Button 
-            variant="outline" 
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-2"
           >
-            <FilterIcon className="h-4 w-4" />
+            <Filter className="h-4 w-4" />
             {showFilters ? "Ocultar Filtros" : "Mostrar Filtros"}
+            {showFilters ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </Button>
-          {showFilters && (
-            <Button 
-              variant="ghost" 
-              onClick={handleResetFilters}
-              className="ml-2"
-            >
-              Limpar Filtros
-            </Button>
+          
+          {handleClearAllQuestionStats && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 border-amber-500 text-amber-500 hover:bg-amber-50"
+                >
+                  <Eraser className="h-4 w-4" />
+                  Limpar Todas Estatísticas
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Limpar estatísticas de todas as questões</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação irá remover permanentemente todas as estatísticas de respostas dos usuários para todas as questões. 
+                    Essa ação não pode ser desfeita. Tem certeza que deseja continuar?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClearAllQuestionStats} className="bg-amber-500 hover:bg-amber-600">
+                    Sim, limpar tudo
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
         </div>
+        
         {showFilters && (
-          <Button 
-            variant="default" 
-            onClick={applyFilters}
-            className="ml-2 bg-[#5f2ebe] text-white"
+          <Button
+            variant="ghost"
+            onClick={resetFilters}
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
           >
-            Aplicar Filtros
+            <ClearAll className="h-4 w-4" />
+            Limpar Filtros
           </Button>
         )}
       </div>
 
       {showFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+          {/* Disciplina */}
           <div>
-            <Label htmlFor="filter-id">ID</Label>
-            <Input 
-              id="filter-id" 
-              value={filters.id} 
-              onChange={(e) => setFilters({...filters, id: e.target.value})} 
-              placeholder="Filtrar por ID" 
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Disciplina</label>
+              <Switch
+                checked={filters.disciplina.isActive}
+                onCheckedChange={(checked) =>
+                  handleChangeFilter("disciplina", { isActive: checked })
+                }
+              />
+            </div>
+            <Input
+              value={filters.disciplina.value}
+              onChange={(e) =>
+                handleChangeFilter("disciplina", { value: e.target.value })
+              }
+              disabled={!filters.disciplina.isActive}
+              placeholder="Ex: Direito Administrativo"
+              className="w-full"
             />
           </div>
+
+          {/* Nível */}
           <div>
-            <Label htmlFor="filter-year">Ano</Label>
-            <Input 
-              id="filter-year" 
-              value={filters.year} 
-              onChange={(e) => setFilters({...filters, year: e.target.value})} 
-              placeholder="Filtrar por Ano" 
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Nível</label>
+              <Switch
+                checked={filters.nivel.isActive}
+                onCheckedChange={(checked) =>
+                  handleChangeFilter("nivel", { isActive: checked })
+                }
+              />
+            </div>
+            <Select
+              value={filters.nivel.value}
+              onValueChange={(value) =>
+                handleChangeFilter("nivel", { value })
+              }
+              disabled={!filters.nivel.isActive}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o nível" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Médio">Médio</SelectItem>
+                <SelectItem value="Superior">Superior</SelectItem>
+                <SelectItem value="Pós-graduação">Pós-graduação</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Instituição */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Instituição</label>
+              <Switch
+                checked={filters.institution.isActive}
+                onCheckedChange={(checked) =>
+                  handleChangeFilter("institution", { isActive: checked })
+                }
+              />
+            </div>
+            <Input
+              value={filters.institution.value}
+              onChange={(e) =>
+                handleChangeFilter("institution", { value: e.target.value })
+              }
+              disabled={!filters.institution.isActive}
+              placeholder="Ex: CESPE"
+              className="w-full"
             />
           </div>
+
+          {/* Organização */}
           <div>
-            <Label htmlFor="filter-institution">Banca</Label>
-            <Input 
-              id="filter-institution" 
-              value={filters.institution} 
-              onChange={(e) => setFilters({...filters, institution: e.target.value})} 
-              placeholder="Filtrar por Banca" 
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Organização</label>
+              <Switch
+                checked={filters.organization.isActive}
+                onCheckedChange={(checked) =>
+                  handleChangeFilter("organization", { isActive: checked })
+                }
+              />
+            </div>
+            <Input
+              value={filters.organization.value}
+              onChange={(e) =>
+                handleChangeFilter("organization", { value: e.target.value })
+              }
+              disabled={!filters.organization.isActive}
+              placeholder="Ex: TRT"
+              className="w-full"
             />
           </div>
+
+          {/* Cargo */}
           <div>
-            <Label htmlFor="filter-organization">Instituição</Label>
-            <Input 
-              id="filter-organization" 
-              value={filters.organization} 
-              onChange={(e) => setFilters({...filters, organization: e.target.value})} 
-              placeholder="Filtrar por Instituição" 
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Cargo</label>
+              <Switch
+                checked={filters.role.isActive}
+                onCheckedChange={(checked) =>
+                  handleChangeFilter("role", { isActive: checked })
+                }
+              />
+            </div>
+            <Input
+              value={filters.role.value}
+              onChange={(e) =>
+                handleChangeFilter("role", { value: e.target.value })
+              }
+              disabled={!filters.role.isActive}
+              placeholder="Ex: Analista Judiciário"
+              className="w-full"
             />
           </div>
+
+          {/* Ano */}
           <div>
-            <Label htmlFor="filter-role">Cargo</Label>
-            <Input 
-              id="filter-role" 
-              value={filters.role} 
-              onChange={(e) => setFilters({...filters, role: e.target.value})} 
-              placeholder="Filtrar por Cargo" 
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Ano</label>
+              <Switch
+                checked={filters.ano.isActive}
+                onCheckedChange={(checked) =>
+                  handleChangeFilter("ano", { isActive: checked })
+                }
+              />
+            </div>
+            <Input
+              value={filters.ano.value}
+              onChange={(e) =>
+                handleChangeFilter("ano", { value: e.target.value })
+              }
+              disabled={!filters.ano.isActive}
+              placeholder="Ex: 2022"
+              className="w-full"
             />
           </div>
+
+          {/* Dificuldade */}
           <div>
-            <Label htmlFor="filter-discipline">Disciplina</Label>
-            <Input 
-              id="filter-discipline" 
-              value={filters.discipline} 
-              onChange={(e) => setFilters({...filters, discipline: e.target.value})} 
-              placeholder="Filtrar por Disciplina" 
-            />
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Dificuldade</label>
+              <Switch
+                checked={filters.dificuldade.isActive}
+                onCheckedChange={(checked) =>
+                  handleChangeFilter("dificuldade", { isActive: checked })
+                }
+              />
+            </div>
+            <Select
+              value={filters.dificuldade.value}
+              onValueChange={(value) =>
+                handleChangeFilter("dificuldade", { value })
+              }
+              disabled={!filters.dificuldade.isActive}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a dificuldade" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Fácil">Fácil</SelectItem>
+                <SelectItem value="Média">Média</SelectItem>
+                <SelectItem value="Difícil">Difícil</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
+          {/* Tipo de Questão */}
           <div>
-            <Label htmlFor="filter-level">Nível</Label>
-            <Input 
-              id="filter-level" 
-              value={filters.level} 
-              onChange={(e) => setFilters({...filters, level: e.target.value})} 
-              placeholder="Filtrar por Nível" 
-            />
-          </div>
-          <div>
-            <Label htmlFor="filter-difficulty">Dificuldade</Label>
-            <Input 
-              id="filter-difficulty" 
-              value={filters.difficulty} 
-              onChange={(e) => setFilters({...filters, difficulty: e.target.value})} 
-              placeholder="Filtrar por Dificuldade" 
-            />
-          </div>
-          <div>
-            <Label htmlFor="filter-questionType">Tipo de Questão</Label>
-            <Input 
-              id="filter-questionType" 
-              value={filters.questionType} 
-              onChange={(e) => setFilters({...filters, questionType: e.target.value})} 
-              placeholder="Filtrar por Tipo" 
-            />
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium">Tipo de Questão</label>
+              <Switch
+                checked={filters.questionType.isActive}
+                onCheckedChange={(checked) =>
+                  handleChangeFilter("questionType", { isActive: checked })
+                }
+              />
+            </div>
+            <Select
+              value={filters.questionType.value}
+              onValueChange={(value) =>
+                handleChangeFilter("questionType", { value })
+              }
+              disabled={!filters.questionType.isActive}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Múltipla escolha">Múltipla escolha</SelectItem>
+                <SelectItem value="Verdadeiro ou falso">Verdadeiro ou falso</SelectItem>
+                <SelectItem value="Discursiva">Discursiva</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       )}

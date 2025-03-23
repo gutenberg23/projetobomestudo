@@ -33,6 +33,48 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
     }
   };
 
+  const handleClearQuestionStats = async (id: string) => {
+    try {
+      console.log(`Iniciando limpeza de estatísticas para questão ${id}`);
+      
+      // Chamar a função RPC que limpa as estatísticas da questão
+      const { error } = await supabase
+        .rpc('clear_question_stats', { question_id: id });
+
+      if (error) {
+        console.error("Erro ao limpar estatísticas:", error);
+        throw error;
+      }
+
+      toast.success("Estatísticas da questão removidas com sucesso!");
+      console.log(`Estatísticas da questão ${id} removidas com sucesso`);
+    } catch (error) {
+      console.error("Erro ao limpar estatísticas da questão:", error);
+      toast.error("Erro ao limpar estatísticas. Tente novamente.");
+    }
+  };
+
+  const handleClearAllQuestionStats = async () => {
+    try {
+      console.log("Iniciando limpeza de todas as estatísticas");
+      
+      // Chamar a função RPC que limpa todas as estatísticas
+      const { error } = await supabase
+        .rpc('clear_all_question_stats');
+
+      if (error) {
+        console.error("Erro ao limpar todas as estatísticas:", error);
+        throw error;
+      }
+
+      toast.success("Todas as estatísticas de questões foram removidas com sucesso!");
+      console.log("Todas as estatísticas de questões foram removidas com sucesso");
+    } catch (error) {
+      console.error("Erro ao limpar todas as estatísticas:", error);
+      toast.error("Erro ao limpar todas as estatísticas. Tente novamente.");
+    }
+  };
+
   const handleEditQuestion = async (question: QuestionItemType) => {
     try {
       const {
@@ -85,5 +127,7 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
   return {
     handleRemoveQuestion,
     handleEditQuestion,
+    handleClearQuestionStats,
+    handleClearAllQuestionStats
   };
 };

@@ -691,6 +691,30 @@ export type Database = {
         }
         Relationships: []
       }
+      question_stats_clearing_log: {
+        Row: {
+          cleared_at: string
+          cleared_by: string | null
+          id: string
+          is_bulk_clear: boolean | null
+          question_id: string
+        }
+        Insert: {
+          cleared_at?: string
+          cleared_by?: string | null
+          id?: string
+          is_bulk_clear?: boolean | null
+          question_id: string
+        }
+        Update: {
+          cleared_at?: string
+          cleared_by?: string | null
+          id?: string
+          is_bulk_clear?: boolean | null
+          question_id?: string
+        }
+        Relationships: []
+      }
       questoes: {
         Row: {
           aiexplanation: string | null
@@ -981,6 +1005,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clear_all_question_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      clear_question_stats: {
+        Args: {
+          question_id: string
+        }
+        Returns: undefined
+      }
       decrement_post_comment_count:
         | {
             Args: {

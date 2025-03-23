@@ -13,7 +13,12 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
   const { handleSearchQuestion } = useSearchQuestionActions(state);
   const { handleUpdateQuestion } = useUpdateQuestionActions(state);
   const { toggleQuestionSelection, handleCreateSimulado } = useQuestionSelectionActions(state);
-  const { handleRemoveQuestion, handleEditQuestion } = useQuestionManagementActions(state);
+  const { 
+    handleRemoveQuestion, 
+    handleEditQuestion, 
+    handleClearQuestionStats,
+    handleClearAllQuestionStats
+  } = useQuestionManagementActions(state);
   const { getFilteredQuestions, resetFilters } = useFilterActions(state);
 
   return {
@@ -26,6 +31,8 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     handleRemoveQuestion,
     handleEditQuestion,
     getFilteredQuestions,
-    resetFilters
+    resetFilters,
+    handleClearQuestionStats,
+    handleClearAllQuestionStats
   };
 };
