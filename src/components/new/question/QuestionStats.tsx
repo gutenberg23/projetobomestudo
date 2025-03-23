@@ -11,14 +11,39 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
   const [isLoading, setIsLoading] = useState(true);
   const [performanceData, setPerformanceData] = useState<Array<any>>([]);
   const [alternativesData, setAlternativesData] = useState<Array<any>>([]);
-  // Add a key to force re-render when stats are cleared
   const [statsVersion, setStatsVersion] = useState(0);
+  const [statsCleared, setStatsCleared] = useState(false);
 
   useEffect(() => {
-    // Criar um evento personalizado para atualizar as estatísticas quando forem limpas
-    const handleStatsClearedEvent = () => {
-      console.log('Evento de limpeza de estatísticas detectado');
-      setStatsVersion(prev => prev + 1);
+    // Função para lidar com o evento de limpeza de estatísticas
+    const handleStatsClearedEvent = (event: Event) => {
+      console.log('Evento de limpeza de estatísticas detectado', event);
+      const customEvent = event as CustomEvent;
+      
+      // Verificar se o evento afeta esta questão específica
+      if (
+        !questionId || 
+        customEvent.detail?.questionId === 'all' || 
+        customEvent.detail?.questionId === questionId
+      ) {
+        console.log(`Limpando estatísticas para a questão ${questionId}`);
+        setStatsCleared(true);
+        setStatsVersion(prev => prev + 1);
+        
+        // Resetar os dados imediatamente para zero
+        setPerformanceData([
+          { name: "Acertos", value: 0, color: "#4ade80" },
+          { name: "Erros", value: 0, color: "#ef4444" },
+        ]);
+        
+        setAlternativesData([
+          { name: "A", value: 0, color: "#F8C471" },
+          { name: "B", value: 0, color: "#5DADE2" },
+          { name: "C", value: 0, color: "#F4D03F" },
+          { name: "D", value: 0, color: "#ABEBC6" },
+          { name: "E", value: 0, color: "#E59866" },
+        ]);
+      }
     };
 
     // Registrar para o evento 'questionStatsCleared'
@@ -28,12 +53,19 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
     return () => {
       window.removeEventListener('questionStatsCleared', handleStatsClearedEvent);
     };
-  }, []);
+  }, [questionId]);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setIsLoading(true);
+        
+        // Se as estatísticas foram limpas, não precisamos buscar novos dados
+        if (statsCleared) {
+          console.log("Estatísticas foram limpas, usando dados zerados");
+          setIsLoading(false);
+          return;
+        }
         
         if (!questionId) {
           // Dados de exemplo para quando não há ID de questão
@@ -54,6 +86,8 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
           return;
         }
         
+        console.log(`Buscando estatísticas para questão ${questionId}, versão ${statsVersion}`);
+        
         // Obter estatísticas de acertos e erros
         const { data: respostasData, error: respostasError } = await supabase
           .from('respostas_alunos')
@@ -70,6 +104,8 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
           acertos = respostasData.filter(r => r.is_correta).length;
           erros = respostasData.filter(r => !r.is_correta).length;
         }
+        
+        console.log(`Estatísticas encontradas: ${acertos} acertos, ${erros} erros`);
         
         setPerformanceData([
           { name: "Acertos", value: acertos || 0, color: "#4ade80" },
@@ -138,6 +174,9 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
         }
         
         setAlternativesData(alternativas);
+        
+        // Resetar o estado de limpeza
+        setStatsCleared(false);
       } catch (error) {
         console.error("Erro ao buscar estatísticas:", error);
         
@@ -160,7 +199,7 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
     };
     
     fetchStats();
-  }, [questionId, statsVersion]); // Adicionamos statsVersion como dependência para forçar a atualização
+  }, [questionId, statsVersion, statsCleared]); // Adicionamos statsCleared como dependência
   
   const getAlternativaColor = (index: number) => {
     const colors = ["#F8C471", "#5DADE2", "#F4D03F", "#ABEBC6", "#E59866"];

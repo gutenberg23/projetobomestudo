@@ -48,6 +48,7 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
 
       // Disparar evento para atualizar os componentes que exibem estatísticas
       if (typeof window !== 'undefined') {
+        console.log(`Disparando evento questionStatsCleared para questão ${id}`);
         window.dispatchEvent(new CustomEvent('questionStatsCleared', { 
           detail: { questionId: id } 
         }));
@@ -76,6 +77,7 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
 
       // Disparar evento para atualizar os componentes que exibem estatísticas
       if (typeof window !== 'undefined') {
+        console.log("Disparando evento questionStatsCleared para todas as questões");
         window.dispatchEvent(new CustomEvent('questionStatsCleared', { 
           detail: { questionId: 'all' } 
         }));
