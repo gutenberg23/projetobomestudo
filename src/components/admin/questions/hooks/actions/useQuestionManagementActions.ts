@@ -46,6 +46,13 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
         throw error;
       }
 
+      // Disparar evento para atualizar os componentes que exibem estatísticas
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('questionStatsCleared', { 
+          detail: { questionId: id } 
+        }));
+      }
+
       toast.success("Estatísticas da questão removidas com sucesso!");
       console.log(`Estatísticas da questão ${id} removidas com sucesso`);
     } catch (error) {
@@ -65,6 +72,13 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
       if (error) {
         console.error("Erro ao limpar todas as estatísticas:", error);
         throw error;
+      }
+
+      // Disparar evento para atualizar os componentes que exibem estatísticas
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('questionStatsCleared', { 
+          detail: { questionId: 'all' } 
+        }));
       }
 
       toast.success("Todas as estatísticas de questões foram removidas com sucesso!");

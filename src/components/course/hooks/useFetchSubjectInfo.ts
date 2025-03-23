@@ -50,8 +50,9 @@ export const useFetchSubjectInfo = () => {
       }
 
       // Verificar se disciplinaData existe e se aulas_ids existe e é um array
-      if (disciplinaData && disciplinaData.aulas_ids && Array.isArray(disciplinaData.aulas_ids) && disciplinaData.aulas_ids.length > 0) {
-        return disciplinaData.aulas_ids;
+      const typedData = disciplinaData as DisciplinaResult | null;
+      if (typedData && Array.isArray(typedData.aulas_ids) && typedData.aulas_ids.length > 0) {
+        return typedData.aulas_ids;
       }
 
       // Buscar aulas por diferentes campos

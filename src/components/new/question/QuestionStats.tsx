@@ -11,6 +11,24 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
   const [isLoading, setIsLoading] = useState(true);
   const [performanceData, setPerformanceData] = useState<Array<any>>([]);
   const [alternativesData, setAlternativesData] = useState<Array<any>>([]);
+  // Add a key to force re-render when stats are cleared
+  const [statsVersion, setStatsVersion] = useState(0);
+
+  useEffect(() => {
+    // Criar um evento personalizado para atualizar as estatísticas quando forem limpas
+    const handleStatsClearedEvent = () => {
+      console.log('Evento de limpeza de estatísticas detectado');
+      setStatsVersion(prev => prev + 1);
+    };
+
+    // Registrar para o evento 'questionStatsCleared'
+    window.addEventListener('questionStatsCleared', handleStatsClearedEvent);
+
+    // Limpar o event listener quando o componente for desmontado
+    return () => {
+      window.removeEventListener('questionStatsCleared', handleStatsClearedEvent);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -142,7 +160,7 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
     };
     
     fetchStats();
-  }, [questionId]);
+  }, [questionId, statsVersion]); // Adicionamos statsVersion como dependência para forçar a atualização
   
   const getAlternativaColor = (index: number) => {
     const colors = ["#F8C471", "#5DADE2", "#F4D03F", "#ABEBC6", "#E59866"];
