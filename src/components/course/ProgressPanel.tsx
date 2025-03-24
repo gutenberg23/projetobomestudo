@@ -85,11 +85,23 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
           let totalCompleted = 0;
           let totalTopics = 0;
           
-          // Verificar se completed_sections existe
-          if (subjectsData.completed_sections) {
-            // Contar todos os tópicos concluídos em todas as aulas
-            totalCompleted = Object.values(subjectsData.completed_sections)
-              .reduce((sum, sections) => sum + (Array.isArray(sections) ? sections.length : 0), 0);
+          // Verificar se completed_sections existe e se subjects_data é um objeto
+          if (subjectsData && typeof subjectsData === 'object' && !Array.isArray(subjectsData)) {
+            if ('completed_sections' in subjectsData) {
+              // Verificamos se completed_sections é um objeto antes de contabilizar
+              const completedSections = subjectsData.completed_sections;
+              if (completedSections && typeof completedSections === 'object' && !Array.isArray(completedSections)) {
+                // Contar todos os tópicos concluídos em todas as aulas
+                totalCompleted = Object.values(completedSections)
+                  .reduce((sum, sections) => {
+                    // Verificar se sections é um array
+                    if (Array.isArray(sections)) {
+                      return sum + sections.length;
+                    }
+                    return sum;
+                  }, 0);
+              }
+            }
           }
           
           // Buscar o curso para obter as aulas
