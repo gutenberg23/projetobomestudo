@@ -14,8 +14,13 @@ export interface SubjectLessonsData {
   [lessonId: string]: LessonProgressData;
 }
 
+export interface CompletedLessons {
+  [lessonId: string]: boolean;
+}
+
 export interface SubjectProgressData {
   lessons?: SubjectLessonsData;
+  completed_lessons?: CompletedLessons;
   stats?: {
     hits: number;
     errors: number;

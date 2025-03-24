@@ -77,13 +77,17 @@ export const LessonItem: React.FC<LessonItemProps> = ({
         }
         
         // Garantir que subjects_data é um objeto
-        let subjectsData = typeof existingProgress?.subjects_data === 'object' ? 
-          existingProgress?.subjects_data || {} : 
-          {};
+        let subjectsData: Record<string, any> = {};
         
-        // Garantir que a estrutura existe
-        if (!subjectsData || typeof subjectsData !== 'object') {
-          subjectsData = {};
+        if (existingProgress?.subjects_data) {
+          // Verificar se subjects_data é um objeto ou um array
+          if (Array.isArray(existingProgress.subjects_data)) {
+            // Se for um array, criar um objeto vazio
+            subjectsData = {};
+          } else if (typeof existingProgress.subjects_data === 'object') {
+            // Se for um objeto, usar diretamente
+            subjectsData = existingProgress.subjects_data as Record<string, any>;
+          }
         }
         
         // Garantir que completed_lessons existe dentro de subjectsData

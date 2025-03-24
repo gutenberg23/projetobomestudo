@@ -20,7 +20,7 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
   const { fetchLessonsByIds, setLoading: setLessonLoading } = useFetchLessonsByIds();
   const { fetchSubjectInfo } = useFetchSubjectInfo();
   const { fetchUserProgress } = useFetchUserProgress();
-  const { fetchQuestionsIds, calculateLessonStats } = useQuestionsStats([]);
+  const { fetchQuestionsIds, calculateLessonStats } = useQuestionsStats();
 
   useEffect(() => {
     if (subjectId) {
@@ -71,10 +71,22 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
         const subjectProgress = await fetchUserProgress(user.id, courseId, subjectId);
         
         // 4.2 Atualizar dados de conclusão das aulas
-        if (subjectProgress?.lessons) {
-          for (const lesson of processedLessons) {
-            if (subjectProgress.lessons[lesson.id]?.completed) {
-              lesson.concluida = true;
+        if (subjectProgress) {
+          // Verificar se temos dados no formato antigo (lessons)
+          if (subjectProgress.lessons) {
+            for (const lesson of processedLessons) {
+              if (subjectProgress.lessons[lesson.id]?.completed) {
+                lesson.concluida = true;
+              }
+            }
+          }
+          
+          // Verificar se temos dados no formato novo (completed_lessons)
+          if (subjectProgress.completed_lessons) {
+            for (const lesson of processedLessons) {
+              if (subjectProgress.completed_lessons[lesson.id]) {
+                lesson.concluida = true;
+              }
             }
           }
         }

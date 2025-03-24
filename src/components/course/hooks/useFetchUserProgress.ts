@@ -33,7 +33,21 @@ export const useFetchUserProgress = () => {
         subjectsData = userProgressRaw.subjects_data as Record<string, SubjectProgressData>;
       }
 
-      return subjectsData[subjectId] || null;
+      // Verificar se temos dados para este subjectId
+      if (!subjectsData[subjectId]) {
+        return {
+          lessons: {},
+          completed_lessons: {},
+          stats: { hits: 0, errors: 0 }
+        };
+      }
+
+      // Garantir que a estrutura de dados inclui completed_lessons
+      if (!subjectsData[subjectId].completed_lessons) {
+        subjectsData[subjectId].completed_lessons = {};
+      }
+
+      return subjectsData[subjectId];
     } catch (error) {
       console.error('Erro ao buscar progresso do usuário:', error);
       return null;
