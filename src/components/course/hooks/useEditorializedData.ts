@@ -19,6 +19,7 @@ export const useEditorializedData = () => {
   const [performanceGoal, setPerformanceGoal] = useState<number>(70);
   const [examDate, setExamDate] = useState<Date | undefined>(undefined);
   const [lastSaveTime, setLastSaveTime] = useState<string | null>(null);
+  const [saveAttempts, setSaveAttempts] = useState(0);
 
   // Função para registrar logs com timestamp
   const logWithTimestamp = useCallback((message: string, data?: any) => {
@@ -41,7 +42,7 @@ export const useEditorializedData = () => {
     loadData();
   }, [courseId, userId, refreshTrigger, logWithTimestamp]);
 
-  // Verificar status da sessão periodicamente
+  // Verificar status da sessão periodicamente e recarregar dados se necessário
   useEffect(() => {
     if (!user) return;
 
@@ -55,29 +56,51 @@ export const useEditorializedData = () => {
             userId: data.session.user.id,
             expiresAt: data.session.expires_at
           });
+          
+          // Se a sessão estiver válida e não tivermos dados carregados, tentar carregar novamente
+          if (subjects.length === 0 && !loading) {
+            logWithTimestamp('Tentando recarregar dados devido à sessão válida mas dados vazios');
+            setRefreshTrigger(prev => prev + 1);
+          }
         } else {
           logWithTimestamp('Nenhuma sessão ativa encontrada');
+          
+          // Tentar renovar a sessão
+          try {
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError) {
+              logWithTimestamp('Erro ao renovar sessão', refreshError);
+            } else if (refreshData.session) {
+              logWithTimestamp('Sessão renovada com sucesso');
+              if (subjects.length === 0 && !loading) {
+                logWithTimestamp('Tentando recarregar dados após renovação da sessão');
+                setRefreshTrigger(prev => prev + 1);
+              }
+            }
+          } catch (refreshError) {
+            logWithTimestamp('Exceção ao renovar sessão', refreshError);
+          }
         }
       } catch (error) {
         logWithTimestamp('Exceção ao verificar sessão', error);
       }
     };
 
-    // Verificar imediatamente e depois a cada 5 minutos
+    // Verificar imediatamente e depois a cada 3 minutos
     checkSession();
-    const interval = setInterval(checkSession, 5 * 60 * 1000);
+    const interval = setInterval(checkSession, 3 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [user, logWithTimestamp]);
+  }, [user, subjects.length, loading, logWithTimestamp]);
 
-  // Auto-salvar mudanças periodicamente se houver alterações não salvas
+  // Auto-salvar mudanças mais frequentemente se houver alterações não salvas
   useEffect(() => {
     if (userId === 'guest' || !unsavedChanges || !courseId) return;
 
     const autoSaveTimeout = setTimeout(() => {
       logWithTimestamp('Iniciando auto-save de alterações não salvas');
       saveAllDataToDatabase();
-    }, 60000); // Auto-save a cada 1 minuto se houver mudanças
+    }, 30000); // Auto-save a cada 30 segundos se houver mudanças
 
     return () => clearTimeout(autoSaveTimeout);
   }, [unsavedChanges, userId, courseId]);
@@ -91,6 +114,19 @@ export const useEditorializedData = () => {
       logWithTimestamp('ID do curso extraído', realId);
       
       try {
+        // Verificar estado de cache no localStorage para evitar dados fantasmas
+        const cacheTimestampKey = `edital_${realId}_timestamp`;
+        const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
+        const currentTime = new Date().getTime();
+        const cacheMaxAge = 24 * 60 * 60 * 1000; // 24 horas em milissegundos
+        
+        // Se o cache for muito antigo, limpe-o
+        if (cachedTimestamp && (currentTime - parseInt(cachedTimestamp)) > cacheMaxAge) {
+          logWithTimestamp('Cache antigo detectado, limpando');
+          localStorage.removeItem(`edital_${realId}`);
+          localStorage.removeItem(cacheTimestampKey);
+        }
+        
         let sessionValid = false;
         let currentUserId = 'guest';
         
@@ -167,67 +203,92 @@ export const useEditorializedData = () => {
           
           if (currentUserId !== 'guest' && sessionValid) {
             try {
+              // Buscar múltiplos registros e ordenar por data de criação/atualização
               const { data: progressData, error: progressError } = await supabase
                 .from('user_course_progress')
                 .select('*')
                 .eq('user_id', currentUserId)
                 .eq('course_id', realId)
-                .maybeSingle();
-              
-              logWithTimestamp('Dados de progresso do usuário recebidos', progressData);
+                .order('updated_at', { ascending: false })
+                .limit(5); // Buscar os 5 registros mais recentes para análise
               
               if (progressError) {
                 logWithTimestamp('Erro ao buscar dados de progresso', progressError);
-              } else if (progressData && progressData.subjects_data) {
+              } else if (progressData && progressData.length > 0) {
+                // Usar o registro mais recente
+                const latestProgress = progressData[0];
+                logWithTimestamp('Múltiplos registros de progresso encontrados', {
+                  count: progressData.length,
+                  latestUpdated: latestProgress.updated_at
+                });
+                
                 try {
                   // Obtenha a data e hora da última atualização
-                  const lastUpdated = progressData.updated_at;
+                  const lastUpdated = latestProgress.updated_at;
                   logWithTimestamp('Última atualização dos dados no servidor', lastUpdated);
                   setLastSaveTime(lastUpdated);
                   
-                  // Converter para string JSON e de volta para evitar referências
-                  const savedProgress = JSON.parse(JSON.stringify(progressData.subjects_data));
-                  
-                  if (Array.isArray(savedProgress) && savedProgress.length > 0) {
-                    logWithTimestamp('Mesclando dados de progresso com dados do edital');
-                    
-                    const mergedSubjects = formattedSubjects.map(subject => {
-                      const savedSubject = savedProgress.find((s: any) => s.id === subject.id);
-                      if (savedSubject) {
-                        const mergedTopics = subject.topics.map(topic => {
-                          const savedTopic = savedSubject.topics?.find((t: any) => t.id === topic.id);
-                          return savedTopic ? { ...topic, ...savedTopic } : topic;
+                  if (latestProgress.subjects_data) {
+                    // Garantir que os dados são válidos antes de tentar mesclar
+                    try {
+                      // Converter para string JSON e de volta para evitar referências
+                      const savedProgress = JSON.parse(JSON.stringify(latestProgress.subjects_data));
+                      
+                      if (Array.isArray(savedProgress) && savedProgress.length > 0) {
+                        logWithTimestamp('Mesclando dados de progresso com dados do edital');
+                        
+                        const mergedSubjects = formattedSubjects.map(subject => {
+                          const savedSubject = savedProgress.find((s: any) => s.id === subject.id);
+                          if (savedSubject) {
+                            const mergedTopics = subject.topics.map(topic => {
+                              const savedTopic = savedSubject.topics?.find((t: any) => t.id === topic.id);
+                              return savedTopic ? { ...topic, ...savedTopic } : topic;
+                            });
+                            
+                            return { ...subject, ...savedSubject, topics: mergedTopics };
+                          }
+                          return subject;
                         });
                         
-                        return { ...subject, ...savedSubject, topics: mergedTopics };
+                        logWithTimestamp('Dados mesclados com sucesso');
+                        setSubjects(mergedSubjects);
+                        
+                        // Carregar meta de aproveitamento e data da prova do banco de dados
+                        if (latestProgress.performance_goal) {
+                          const goalValue = parseInt(latestProgress.performance_goal.toString());
+                          logWithTimestamp('Meta de aproveitamento carregada', goalValue);
+                          setPerformanceGoal(goalValue);
+                        }
+                        
+                        if (latestProgress.exam_date) {
+                          const examDateValue = new Date(latestProgress.exam_date);
+                          logWithTimestamp('Data da prova carregada', examDateValue);
+                          setExamDate(examDateValue);
+                        }
+                        
+                        // Atualizar cache local com marcação de tempo para validação futura
+                        try {
+                          localStorage.setItem(`edital_${realId}`, JSON.stringify(mergedSubjects));
+                          localStorage.setItem(cacheTimestampKey, currentTime.toString());
+                          logWithTimestamp('Cache local atualizado com dados mesclados e timestamp');
+                        } catch (cacheError) {
+                          logWithTimestamp('Erro ao atualizar cache local', cacheError);
+                        }
+                        
+                        setUnsavedChanges(false);
+                        setLoading(false);
+                        return;
+                      } else {
+                        logWithTimestamp('Dados de progresso vazios ou em formato inválido', savedProgress);
                       }
-                      return subject;
-                    });
-                    
-                    logWithTimestamp('Dados mesclados com sucesso');
-                    setSubjects(mergedSubjects);
-                    
-                    // Carregar meta de aproveitamento e data da prova do banco de dados
-                    if (progressData.performance_goal) {
-                      const goalValue = parseInt(progressData.performance_goal.toString());
-                      logWithTimestamp('Meta de aproveitamento carregada', goalValue);
-                      setPerformanceGoal(goalValue);
+                    } catch (e) {
+                      logWithTimestamp('Erro ao mesclar dados de progresso', e);
                     }
-                    
-                    if (progressData.exam_date) {
-                      const examDateValue = new Date(progressData.exam_date);
-                      logWithTimestamp('Data da prova carregada', examDateValue);
-                      setExamDate(examDateValue);
-                    }
-                    
-                    setUnsavedChanges(false);
-                    setLoading(false);
-                    return;
                   } else {
-                    logWithTimestamp('Dados de progresso vazios ou em formato inválido', savedProgress);
+                    logWithTimestamp('Nenhum dado de subjects_data encontrado no registro de progresso');
                   }
                 } catch (e) {
-                  logWithTimestamp('Erro ao mesclar dados de progresso', e);
+                  logWithTimestamp('Erro ao processar dados de progresso', e);
                 }
               } else {
                 logWithTimestamp('Nenhum dado de progresso encontrado para este usuário e curso');
@@ -243,6 +304,7 @@ export const useEditorializedData = () => {
           if (currentUserId === 'guest') {
             try {
               localStorage.setItem(`edital_${realId}`, JSON.stringify(formattedSubjects));
+              localStorage.setItem(cacheTimestampKey, currentTime.toString());
               logWithTimestamp('Dados salvos no localStorage para usuário não logado');
             } catch (localStorageError) {
               logWithTimestamp('Erro ao salvar no localStorage', localStorageError);
@@ -344,7 +406,8 @@ export const useEditorializedData = () => {
       userId,
       subjectsCount: subjectsData.length,
       goal,
-      date: date?.toISOString()
+      date: date?.toISOString(),
+      saveAttempt: saveAttempts + 1
     });
     
     try {
@@ -378,17 +441,27 @@ export const useEditorializedData = () => {
         }
       }
       
-      if (!sessionData?.session) {
-        logWithTimestamp("Sessão inválida, não é possível salvar dados no banco");
+      // Verificar novamente a sessão após tentativa de renovação
+      const { data: verifiedSession } = await supabase.auth.getSession();
+      
+      if (!verifiedSession?.session) {
+        logWithTimestamp("Sessão inválida após verificação/renovação");
+        toast({
+          title: "Erro de sessão",
+          description: "Sua sessão expirou. Por favor, faça login novamente.",
+          variant: "destructive"
+        });
         return false;
       }
       
+      // Verificar registros existentes
       const { data: existingData, error: existingError } = await supabase
         .from('user_course_progress')
-        .select('*')
+        .select('id, updated_at')
         .eq('user_id', userId)
         .eq('course_id', courseRealId)
-        .maybeSingle();
+        .order('updated_at', { ascending: false })
+        .limit(1);
       
       if (existingError && existingError.code !== 'PGRST116') {
         logWithTimestamp("Erro ao verificar dados existentes", existingError);
@@ -398,22 +471,34 @@ export const useEditorializedData = () => {
       const currentTime = new Date().toISOString();
       let result;
       
-      if (existingData) {
+      // Validar dados antes de salvar
+      if (!Array.isArray(subjectsData) || subjectsData.length === 0) {
+        logWithTimestamp("Dados de subjects inválidos para salvar", subjectsData);
+        return false;
+      }
+      
+      // Garantir que os subjects tenham um formato consistente antes de salvar
+      const validatedSubjectsData = subjectsData.map(subject => ({
+        ...subject,
+        topics: Array.isArray(subject.topics) ? subject.topics : []
+      }));
+      
+      if (existingData && existingData.length > 0) {
+        const existingRecord = existingData[0];
         logWithTimestamp("Atualizando registro existente", {
-          recordId: existingData.id,
-          lastUpdate: existingData.updated_at
+          recordId: existingRecord.id,
+          lastUpdate: existingRecord.updated_at
         });
         
         result = await supabase
           .from('user_course_progress')
           .update({
-            subjects_data: subjectsData,
+            subjects_data: validatedSubjectsData,
             performance_goal: goal,
             exam_date: date ? date.toISOString() : null,
             updated_at: currentTime
           })
-          .eq('user_id', userId)
-          .eq('course_id', courseRealId);
+          .eq('id', existingRecord.id);
           
         logWithTimestamp("Resultado da atualização", result);
       } else {
@@ -424,7 +509,7 @@ export const useEditorializedData = () => {
           .insert({
             user_id: userId,
             course_id: courseRealId,
-            subjects_data: subjectsData,
+            subjects_data: validatedSubjectsData,
             performance_goal: goal,
             exam_date: date ? date.toISOString() : null,
             created_at: currentTime,
@@ -436,7 +521,35 @@ export const useEditorializedData = () => {
       
       if (result.error) {
         logWithTimestamp("Erro ao salvar dados no banco", result.error);
-        return false;
+        
+        // Incrementar contador de tentativas para análise de problemas
+        setSaveAttempts(prev => prev + 1);
+        
+        // Tentar novamente com um approach diferente se o erro for de violação de integridade
+        if (result.error.code === '23505' && existingData && existingData.length > 0) {
+          logWithTimestamp("Tentando abordagem alternativa para atualização devido a erro de integridade");
+          
+          const altResult = await supabase
+            .from('user_course_progress')
+            .upsert({
+              id: existingData[0].id,
+              user_id: userId,
+              course_id: courseRealId,
+              subjects_data: validatedSubjectsData,
+              performance_goal: goal,
+              exam_date: date ? date.toISOString() : null,
+              updated_at: currentTime
+            });
+            
+          if (altResult.error) {
+            logWithTimestamp("Erro também na abordagem alternativa", altResult.error);
+            return false;
+          } else {
+            logWithTimestamp("Abordagem alternativa bem sucedida");
+          }
+        } else {
+          return false;
+        }
       }
       
       // Verificar se os dados foram realmente salvos
@@ -446,30 +559,39 @@ export const useEditorializedData = () => {
           .select('updated_at')
           .eq('user_id', userId)
           .eq('course_id', courseRealId)
-          .maybeSingle();
+          .order('updated_at', { ascending: false })
+          .limit(1);
           
         if (verifyError) {
           logWithTimestamp("Erro ao verificar se os dados foram salvos", verifyError);
-        } else if (verifyData) {
-          logWithTimestamp("Verificação de salvamento bem sucedida", verifyData);
-          setLastSaveTime(verifyData.updated_at);
+        } else if (verifyData && verifyData.length > 0) {
+          logWithTimestamp("Verificação de salvamento bem sucedida", verifyData[0]);
+          setLastSaveTime(verifyData[0].updated_at);
+          
+          // Atualizar cache local
+          try {
+            localStorage.setItem(`edital_${courseRealId}`, JSON.stringify(validatedSubjectsData));
+            localStorage.setItem(`edital_${courseRealId}_timestamp`, new Date().getTime().toString());
+            logWithTimestamp("Cache local atualizado após salvamento bem-sucedido");
+          } catch (e) {
+            logWithTimestamp("Erro ao atualizar cache local após salvamento", e);
+          }
+        } else {
+          logWithTimestamp("Verificação não encontrou dados salvos");
         }
       } catch (verifyError) {
         logWithTimestamp("Exceção ao verificar salvamento", verifyError);
       }
       
-      try {
-        localStorage.removeItem(`edital_${courseRealId}`);
-        logWithTimestamp("Dados do localStorage removidos após salvar no banco");
-      } catch (e) {
-        logWithTimestamp("Erro ao remover dados do localStorage", e);
-      }
-      
       logWithTimestamp("Dados salvos com sucesso no banco de dados");
       setUnsavedChanges(false);
+      // Resetar contador de tentativas após sucesso
+      setSaveAttempts(0);
       return true;
     } catch (error) {
       logWithTimestamp("Erro ao salvar dados no banco", error);
+      // Incrementar contador de tentativas
+      setSaveAttempts(prev => prev + 1);
       return false;
     }
   };
@@ -483,6 +605,7 @@ export const useEditorializedData = () => {
       const realId = extractIdFromFriendlyUrl(courseId);
       try {
         localStorage.removeItem(`edital_${realId}`);
+        localStorage.removeItem(`edital_${realId}_timestamp`);
         logWithTimestamp(`Cache do localStorage para edital_${realId} removido durante forceRefresh`);
       } catch (e) {
         logWithTimestamp("Erro ao remover dados do localStorage", e);
@@ -527,6 +650,7 @@ export const useEditorializedData = () => {
           const realId = extractIdFromFriendlyUrl(courseId);
           try {
             localStorage.setItem(`edital_${realId}`, JSON.stringify(updatedSubjects));
+            localStorage.setItem(`edital_${realId}_timestamp`, new Date().getTime().toString());
             logWithTimestamp("Dados atualizados salvos no localStorage");
           } catch (error) {
             logWithTimestamp("Erro ao salvar no localStorage", error);
@@ -540,8 +664,19 @@ export const useEditorializedData = () => {
               if (courseId) {
                 const realId = extractIdFromFriendlyUrl(courseId);
                 saveUserDataToDatabase(realId, updatedSubjects, performanceGoal, examDate);
+                
+                // Enviar evento personalizado para notificar outros componentes sobre a mudança
+                const event = new CustomEvent('topicCompleted', { 
+                  detail: { 
+                    subjectId, 
+                    topicId, 
+                    value,
+                    timestamp: new Date().toISOString() 
+                  } 
+                });
+                document.dispatchEvent(event);
               }
-            }, 500);
+            }, 300);
           }
         }
         
@@ -617,6 +752,15 @@ export const useEditorializedData = () => {
           description: `Dados salvos com sucesso às ${new Date().toLocaleTimeString()}`,
           variant: "default"
         });
+        
+        // Disparar evento para atualizar outros componentes
+        const event = new CustomEvent('dataSaved', { 
+          detail: { 
+            timestamp: now,
+            success: true
+          } 
+        });
+        document.dispatchEvent(event);
       } else {
         logWithTimestamp("Falha ao salvar todos os dados");
         
@@ -634,9 +778,29 @@ export const useEditorializedData = () => {
             if (secondAttempt) {
               logWithTimestamp("Segunda tentativa de salvamento bem sucedida");
               setUnsavedChanges(false);
+              
+              // Disparar evento para atualizar outros componentes
+              const event = new CustomEvent('dataSaved', { 
+                detail: { 
+                  timestamp: new Date().toISOString(),
+                  success: true,
+                  wasRetry: true
+                } 
+              });
+              document.dispatchEvent(event);
+              
               return true;
             } else {
               logWithTimestamp("Segunda tentativa de salvamento falhou");
+              
+              // Disparar evento de falha
+              const event = new CustomEvent('dataSaved', { 
+                detail: { 
+                  timestamp: new Date().toISOString(),
+                  success: false
+                } 
+              });
+              document.dispatchEvent(event);
             }
           }
         } catch (refreshError) {
