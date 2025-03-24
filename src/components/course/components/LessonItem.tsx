@@ -143,6 +143,12 @@ export const LessonItem: React.FC<LessonItemProps> = ({
         detail: { title, completed: !localCompleted }
       });
       document.dispatchEvent(topicCompletedEvent);
+      
+      // Emitir evento para atualizar o progresso global
+      const event = new CustomEvent('questionAnswered', {
+        detail: { courseId, lessonId, completed: !localCompleted }
+      });
+      window.dispatchEvent(event);
     } catch (error) {
       console.error('Erro ao alterar estado de conclusão:', error);
     } finally {

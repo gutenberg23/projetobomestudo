@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 type QuestionStat = {
@@ -9,9 +9,9 @@ type QuestionStat = {
   total: number;
 };
 
-export const useQuestionsStats = (questionIds: string[] = []) => {
+export const useQuestionsStats = (initialQuestionIds: string[] = []) => {
   const [stats, setStats] = useState<QuestionStat[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
   const [totalStats, setTotalStats] = useState({
     total: 0,
     hits: 0,
@@ -19,7 +19,7 @@ export const useQuestionsStats = (questionIds: string[] = []) => {
   });
 
   // Função para buscar IDs de questões relacionadas a uma aula
-  const fetchQuestionsIds = async (lessonId: string): Promise<string[]> => {
+  const fetchQuestionsIds = useCallback(async (lessonId: string): Promise<string[]> => {
     try {
       const { data, error } = await supabase
         .from('aulas')
@@ -37,10 +37,10 @@ export const useQuestionsStats = (questionIds: string[] = []) => {
       console.error('Erro ao buscar IDs de questões:', error);
       return [];
     }
-  };
+  }, []);
 
   // Função para calcular estatísticas de uma aula com base nos IDs de questões
-  const calculateLessonStats = async (qIds: string[], userId?: string): Promise<{total: number; hits: number; errors: number}> => {
+  const calculateLessonStats = useCallback(async (qIds: string[], userId?: string): Promise<{total: number; hits: number; errors: number}> => {
     if (!qIds.length) {
       return { total: 0, hits: 0, errors: 0 };
     }
@@ -75,71 +75,74 @@ export const useQuestionsStats = (questionIds: string[] = []) => {
       console.error('Erro ao calcular estatísticas da aula:', error);
       return { total: 0, hits: 0, errors: 0 };
     }
-  };
+  }, []);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      if (!questionIds || questionIds.length === 0) {
-        setStats([]);
-        setTotalStats({ total: 0, hits: 0, errors: 0 });
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // Buscar estatísticas das questões
-        const { data: respostasData, error: respostasError } = await supabase
-          .from('respostas_alunos')
-          .select('questao_id, is_correta')
-          .in('questao_id', questionIds);
-
-        if (respostasError) {
-          throw respostasError;
-        }
-
-        // Agrupar as respostas por questão
-        const statsMap = new Map<string, { correct: number; incorrect: number }>();
+    // Só executamos se realmente tivermos IDs de questões iniciais para evitar consultas desnecessárias
+    if (initialQuestionIds && initialQuestionIds.length > 0) {
+      const fetchStats = async () => {
+        setLoading(true);
         
-        questionIds.forEach(id => {
-          statsMap.set(id, { correct: 0, incorrect: 0 });
-        });
+        try {
+          // Buscar estatísticas das questões
+          const { data: respostasData, error: respostasError } = await supabase
+            .from('respostas_alunos')
+            .select('questao_id, is_correta')
+            .in('questao_id', initialQuestionIds);
 
-        (respostasData || []).forEach(resposta => {
-          const current = statsMap.get(resposta.questao_id) || { correct: 0, incorrect: 0 };
-          
-          if (resposta.is_correta) {
-            current.correct += 1;
-          } else {
-            current.incorrect += 1;
+          if (respostasError) {
+            throw respostasError;
           }
+
+          // Agrupar as respostas por questão
+          const statsMap = new Map<string, { correct: number; incorrect: number }>();
           
-          statsMap.set(resposta.questao_id, current);
-        });
+          initialQuestionIds.forEach(id => {
+            statsMap.set(id, { correct: 0, incorrect: 0 });
+          });
 
-        // Converter o mapa em um array
-        const statsArray = Array.from(statsMap.entries()).map(([questionId, data]) => ({
-          questionId,
-          correct: data.correct,
-          incorrect: data.incorrect,
-          total: data.correct + data.incorrect
-        }));
+          (respostasData || []).forEach(resposta => {
+            const current = statsMap.get(resposta.questao_id) || { correct: 0, incorrect: 0 };
+            
+            if (resposta.is_correta) {
+              current.correct += 1;
+            } else {
+              current.incorrect += 1;
+            }
+            
+            statsMap.set(resposta.questao_id, current);
+          });
 
-        // Calcular totais
-        const hits = statsArray.reduce((sum, stat) => sum + stat.correct, 0);
-        const errors = statsArray.reduce((sum, stat) => sum + stat.incorrect, 0);
-        const total = hits + errors;
+          // Converter o mapa em um array
+          const statsArray = Array.from(statsMap.entries()).map(([questionId, data]) => ({
+            questionId,
+            correct: data.correct,
+            incorrect: data.incorrect,
+            total: data.correct + data.incorrect
+          }));
 
-        setStats(statsArray);
-        setTotalStats({ total, hits, errors });
-      } catch (error) {
-        console.error('Erro ao buscar estatísticas das questões:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+          // Calcular totais
+          const hits = statsArray.reduce((sum, stat) => sum + stat.correct, 0);
+          const errors = statsArray.reduce((sum, stat) => sum + stat.incorrect, 0);
+          const total = hits + errors;
 
-    fetchStats();
-  }, [questionIds]);
+          setStats(statsArray);
+          setTotalStats({ total, hits, errors });
+        } catch (error) {
+          console.error('Erro ao buscar estatísticas das questões:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchStats();
+    } else {
+      // Se não houver questões, apenas resetamos os estados para evitar dados desatualizados
+      setStats([]);
+      setTotalStats({ total: 0, hits: 0, errors: 0 });
+      setLoading(false);
+    }
+  }, [initialQuestionIds.join(',')]); // Usando join para evitar dependência profunda que causa re-renders excessivos
 
   return { 
     stats, 

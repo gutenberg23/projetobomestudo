@@ -26,11 +26,11 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
     if (subjectId) {
       fetchLessons();
     }
-  }, [subjectId]);
+  }, [subjectId, user?.id]); // Adicionamos user?.id como dependência para carregar corretamente quando o usuário mudar
 
   const fetchLessons = async () => {
     if (!subjectId) return;
-    if (lessons.length > 0) return;
+    if (lessons.length > 0) return; // Evita fetch duplicado
 
     setLoading(true);
     setLessonLoading(true);

@@ -155,9 +155,13 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
     // Adicionar evento personalizado para quando uma questão for respondida
     window.addEventListener('questionAnswered', handleQuestionAnswered);
     
+    // Adicionar evento personalizado para conclusão de tópicos
+    document.addEventListener('topicCompleted', handleQuestionAnswered);
+    
     // Limpar o listener quando o componente for desmontado
     return () => {
       window.removeEventListener('questionAnswered', handleQuestionAnswered);
+      document.removeEventListener('topicCompleted', handleQuestionAnswered);
     };
   }, [userId]);
   
