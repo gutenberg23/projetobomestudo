@@ -11,6 +11,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { fetchUserQuestionAttempts, calculateUserQuestionStats, UserQuestionAttempt } from "./utils/userQuestionStats";
 import { supabase } from "@/integrations/supabase/client";
 import { BookOpenIcon } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 
 interface ProgressPanelProps {
   subjectsFromCourse?: any[];
@@ -20,6 +22,7 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   const [expandedSubject, setExpandedSubject] = React.useState<string | number | null>(null);
   const { subjects, loading } = useEditorializedData();
   const { user } = useAuth();
+  const { courseId } = useParams<{ courseId: string }>();
   const userId = user?.id || 'guest';
   const [questionAttempts, setQuestionAttempts] = useState<UserQuestionAttempt[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -54,9 +57,82 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
       }
     }
     
-    console.log(`Contagem de tópicos: Total=${totalTopicsCount}, Completados=${completedTopicsCount}`);
     return { totalTopics: totalTopicsCount, completedTopics: completedTopicsCount };
   };
+  
+  // Buscar o progresso do curso quando componente é montado
+  useEffect(() => {
+    const loadProgress = async () => {
+      if (!user || !courseId) return;
+      
+      try {
+        const realCourseId = extractIdFromFriendlyUrl(courseId);
+        
+        const { data: progress, error } = await supabase
+          .from('user_course_progress')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('course_id', realCourseId)
+          .maybeSingle();
+          
+        if (error) {
+          console.error('Erro ao buscar progresso do curso:', error);
+          return;
+        }
+        
+        if (progress && progress.subjects_data) {
+          const subjectsData = progress.subjects_data;
+          let totalCompleted = 0;
+          let totalTopics = 0;
+          
+          // Verificar se completed_sections existe
+          if (subjectsData.completed_sections) {
+            // Contar todos os tópicos concluídos em todas as aulas
+            totalCompleted = Object.values(subjectsData.completed_sections)
+              .reduce((sum, sections) => sum + (Array.isArray(sections) ? sections.length : 0), 0);
+          }
+          
+          // Buscar o curso para obter as aulas
+          const { data: cursoData, error: cursoError } = await supabase
+            .from('cursos')
+            .select('aulas_ids')
+            .eq('id', realCourseId)
+            .single();
+            
+          if (cursoError) {
+            console.error('Erro ao buscar aulas do curso:', cursoError);
+          } else if (cursoData?.aulas_ids && cursoData.aulas_ids.length > 0) {
+            // Buscar todas as aulas do curso para contar seus tópicos
+            const { data: aulasData, error: aulasError } = await supabase
+              .from('aulas')
+              .select('topicos_ids')
+              .in('id', cursoData.aulas_ids);
+              
+            if (aulasError) {
+              console.error('Erro ao buscar detalhes das aulas:', aulasError);
+            } else {
+              // Contar o total de tópicos em todas as aulas
+              totalTopics = (aulasData || []).reduce((sum, aula) => {
+                return sum + (Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0);
+              }, 0);
+            }
+          }
+          
+          // Atualizar as estatísticas de tópicos
+          setTopicsStats({
+            totalTopics: totalTopics || 0,
+            completedTopics: totalCompleted || 0
+          });
+          
+          console.log('Estatísticas atualizadas:', { totalTopics, totalCompleted });
+        }
+      } catch (error) {
+        console.error('Erro ao processar progresso do curso:', error);
+      }
+    };
+    
+    loadProgress();
+  }, [user, courseId]);
   
   // Combinar as disciplinas do hook com as disciplinas recebidas do CourseLayout
   useEffect(() => {
@@ -93,7 +169,10 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
       // Contar tópicos quando os subjects mudam
       (async () => {
         const stats = await countTopicsInSubjects(subjectsFromCourse);
-        setTopicsStats(stats);
+        setTopicsStats(prev => ({
+          ...prev,
+          ...stats
+        }));
       })();
     } else {
       // Se não temos disciplinas do CourseLayout, usar apenas as do hook
@@ -164,6 +243,31 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
       document.removeEventListener('topicCompleted', handleQuestionAnswered);
     };
   }, [userId]);
+  
+  // Escutar eventos de atualização de seções
+  useEffect(() => {
+    const handleSectionsUpdated = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail) {
+        console.log("Evento sectionsUpdated recebido:", detail);
+        
+        if (detail.totalCompleted !== undefined && detail.totalSections !== undefined) {
+          setTopicsStats({
+            completedTopics: detail.totalCompleted,
+            totalTopics: detail.totalSections
+          });
+          
+          console.log(`Progresso atualizado: ${detail.totalCompleted}/${detail.totalSections}`);
+        }
+      }
+    };
+    
+    document.addEventListener('sectionsUpdated', handleSectionsUpdated);
+    
+    return () => {
+      document.removeEventListener('sectionsUpdated', handleSectionsUpdated);
+    };
+  }, []);
   
   if (loading || statsLoading) {
     return (

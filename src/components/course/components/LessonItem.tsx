@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { CheckIcon, XIcon } from "lucide-react";
+import { CheckIcon } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,11 +80,7 @@ export const LessonItem: React.FC<LessonItemProps> = ({
         let subjectsData: Record<string, any> = {};
         
         if (existingProgress?.subjects_data) {
-          // Verificar se subjects_data é um objeto ou um array
-          if (Array.isArray(existingProgress.subjects_data)) {
-            // Se for um array, criar um objeto vazio
-            subjectsData = {};
-          } else if (typeof existingProgress.subjects_data === 'object') {
+          if (typeof existingProgress.subjects_data === 'object' && !Array.isArray(existingProgress.subjects_data)) {
             // Se for um objeto, usar diretamente
             subjectsData = existingProgress.subjects_data as Record<string, any>;
           }
@@ -105,6 +101,30 @@ export const LessonItem: React.FC<LessonItemProps> = ({
           }
         }
         
+        // Lógica adicional para contar o total de lições e lições completadas para atualizar o progresso
+        let totalCompletedLessons = 0;
+        let totalLessons = 0;
+        
+        // Contar lições concluídas
+        if (subjectsData.completed_lessons) {
+          totalCompletedLessons = Object.keys(subjectsData.completed_lessons).length;
+        }
+        
+        // Buscar total de lições no curso
+        try {
+          const { data: courseData, error: courseError } = await supabase
+            .from('cursos')
+            .select('aulas_ids')
+            .eq('id', realCourseId)
+            .single();
+            
+          if (!courseError && courseData?.aulas_ids) {
+            totalLessons = Array.isArray(courseData.aulas_ids) ? courseData.aulas_ids.length : 0;
+          }
+        } catch (error) {
+          console.error('Erro ao buscar total de lições:', error);
+        }
+        
         if (existingProgress) {
           const { error: updateError } = await supabase
             .from('user_course_progress')
@@ -116,6 +136,8 @@ export const LessonItem: React.FC<LessonItemProps> = ({
             
           if (updateError) {
             console.error('Erro ao atualizar progresso do usuário:', updateError);
+          } else {
+            console.log('Progresso atualizado com sucesso');
           }
         } else {
           const { error: insertError } = await supabase
@@ -130,25 +152,38 @@ export const LessonItem: React.FC<LessonItemProps> = ({
             
           if (insertError) {
             console.error('Erro ao inserir progresso do usuário:', insertError);
+          } else {
+            console.log('Progresso inserido com sucesso');
           }
         }
+        
+        // Disparar evento para atualizar o progresso global no painel
+        const topicCompletedEvent = new CustomEvent('topicCompleted', {
+          detail: { 
+            title, 
+            completed: !localCompleted,
+            totalCompletedLessons,
+            totalLessons
+          }
+        });
+        document.dispatchEvent(topicCompletedEvent);
+        
+        // Emitir evento para atualizar o progresso global
+        const event = new CustomEvent('questionAnswered', {
+          detail: { 
+            courseId, 
+            lessonId, 
+            completed: !localCompleted,
+            totalCompletedLessons,
+            totalLessons
+          }
+        });
+        window.dispatchEvent(event);
       }
       
       if (onToggleComplete) {
         onToggleComplete();
       }
-      
-      // Emitir um evento que pode ser capturado por componentes pais
-      const topicCompletedEvent = new CustomEvent('topicCompleted', {
-        detail: { title, completed: !localCompleted }
-      });
-      document.dispatchEvent(topicCompletedEvent);
-      
-      // Emitir evento para atualizar o progresso global
-      const event = new CustomEvent('questionAnswered', {
-        detail: { courseId, lessonId, completed: !localCompleted }
-      });
-      window.dispatchEvent(event);
     } catch (error) {
       console.error('Erro ao alterar estado de conclusão:', error);
     } finally {

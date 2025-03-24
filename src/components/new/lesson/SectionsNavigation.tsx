@@ -91,7 +91,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
                 detail: { 
                   courseId: realCourseId,
                   totalCompleted: getTotalCompletedSections(progress.subjects_data),
-                  totalSections: getTotalSections()
+                  totalSections: getTotalSectionsForCourse(realCourseId)
                 }
               }));
             }
@@ -105,13 +105,61 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     loadCompletedSections();
   }, [user, courseId, lessonId]);
 
-  // Função para obter o total de seções para todas as aulas
-  const getTotalSections = (): number => {
-    if (!courseId) return 0;
-    
-    // Nesse caso estamos retornando o total apenas das seções carregadas
-    // em uma implementação mais completa, isso poderia ser buscado do banco de dados
-    return sections.length;
+  // Função para obter o total de seções para todas as aulas do curso
+  const getTotalSectionsForCourse = async (realCourseId: string): Promise<number> => {
+    try {
+      // Buscar o curso pelo ID
+      const { data: cursoData, error: cursoError } = await supabase
+        .from('cursos')
+        .select('aulas_ids')
+        .eq('id', realCourseId)
+        .single();
+      
+      if (cursoError) {
+        console.error('Erro ao buscar aulas do curso:', cursoError);
+        return sections.length; // Fallback para o número atual de seções
+      }
+      
+      // Se não houver aulas, retorna apenas o número atual de seções
+      if (!cursoData?.aulas_ids || !cursoData.aulas_ids.length) {
+        return sections.length;
+      }
+      
+      // Buscar todas as aulas do curso para contar suas seções
+      const { data: aulasData, error: aulasError } = await supabase
+        .from('aulas')
+        .select('id, topicos_ids')
+        .in('id', cursoData.aulas_ids);
+      
+      if (aulasError) {
+        console.error('Erro ao buscar detalhes das aulas:', aulasError);
+        return sections.length;
+      }
+      
+      // Contar o total de tópicos em todas as aulas
+      let totalTopicos = 0;
+      
+      // Para a aula atual, usamos o número de seções fornecido
+      if (lessonId) {
+        totalTopicos += sections.length;
+      }
+      
+      // Para as outras aulas, precisamos contar os tópicos
+      for (const aula of aulasData || []) {
+        // Se for a aula atual, pulamos pois já contamos acima
+        if (aula.id === lessonId) continue;
+        
+        if (aula.topicos_ids && Array.isArray(aula.topicos_ids)) {
+          totalTopicos += aula.topicos_ids.length;
+        }
+      }
+      
+      console.log(`Total de tópicos para o curso ${realCourseId}: ${totalTopicos}`);
+      return totalTopicos > 0 ? totalTopicos : sections.length;
+    } catch (error) {
+      console.error('Erro ao calcular o total de seções:', error);
+      return sections.length; // Fallback para o número atual de seções
+    }
   };
 
   // Função para obter o total de seções concluídas para todas as aulas
@@ -119,7 +167,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     if (!subjectsData.completed_sections) return 0;
     
     return Object.values(subjectsData.completed_sections)
-      .reduce((total, sectionIds) => total + sectionIds.length, 0);
+      .reduce((total, sectionIds) => total + (Array.isArray(sectionIds) ? sectionIds.length : 0), 0);
   };
 
   // Atualizar o estado local quando as props mudarem
@@ -131,13 +179,13 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
 
   // Salvar os tópicos concluídos no banco de dados quando o estado local mudar
   useEffect(() => {
-    if (!user || !courseId || !lessonId || localCompletedSections.length === 0) return;
+    if (!user || !courseId || !lessonId || isSaving) return;
+    if (localCompletedSections.length === 0 && completedSections.length === 0) return;
 
     const saveCompletedSections = async () => {
-      if (isSaving) return;
+      setIsSaving(true);
       
       try {
-        setIsSaving(true);
         const realCourseId = extractIdFromFriendlyUrl(courseId);
 
         const { data: existingProgress, error: fetchError } = await supabase
@@ -169,6 +217,9 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         // Salvar os tópicos concluídos
         subjectsData.completed_sections[lessonId] = localCompletedSections;
 
+        const totalSections = await getTotalSectionsForCourse(realCourseId);
+        const totalCompleted = getTotalCompletedSections(subjectsData);
+
         if (progress) {
           const { error: updateError } = await supabase
             .from('user_course_progress')
@@ -187,8 +238,8 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             document.dispatchEvent(new CustomEvent('sectionsUpdated', {
               detail: { 
                 courseId: realCourseId,
-                totalCompleted: getTotalCompletedSections(subjectsData),
-                totalSections: getTotalSections()
+                totalCompleted,
+                totalSections
               }
             }));
           }
@@ -212,8 +263,8 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             document.dispatchEvent(new CustomEvent('sectionsUpdated', {
               detail: { 
                 courseId: realCourseId,
-                totalCompleted: getTotalCompletedSections(subjectsData),
-                totalSections: getTotalSections()
+                totalCompleted,
+                totalSections
               }
             }));
           }
@@ -231,7 +282,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     }, 500);
     
     return () => clearTimeout(timeoutId);
-  }, [localCompletedSections, user, courseId, lessonId, isSaving]);
+  }, [localCompletedSections, user, courseId, lessonId, isSaving, completedSections]);
 
   // Função para alternar o estado de conclusão de um tópico
   const handleToggleCompletion = (sectionId: string, event: React.MouseEvent) => {
