@@ -87,11 +87,14 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
               console.log('Tópicos concluídos carregados do banco de dados:', savedCompletedSections);
               
               // Disparar evento para atualizar os componentes que exibem o progresso
+              const totalSections = await getTotalSectionsForCourse(realCourseId);
+              const totalCompleted = getTotalCompletedSections(progress.subjects_data);
+              
               document.dispatchEvent(new CustomEvent('sectionsUpdated', {
                 detail: { 
                   courseId: realCourseId,
-                  totalCompleted: getTotalCompletedSections(progress.subjects_data),
-                  totalSections: getTotalSectionsForCourse(realCourseId)
+                  totalCompleted,
+                  totalSections
                 }
               }));
             }
@@ -166,8 +169,17 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
   const getTotalCompletedSections = (subjectsData: SubjectsData): number => {
     if (!subjectsData.completed_sections) return 0;
     
-    return Object.values(subjectsData.completed_sections)
-      .reduce((total, sectionIds) => total + (Array.isArray(sectionIds) ? sectionIds.length : 0), 0);
+    let total = 0;
+    
+    // Percorrer todas as aulas com seções concluídas
+    Object.values(subjectsData.completed_sections).forEach(sectionIds => {
+      // Verificar se sectionIds é um array antes de usar o length
+      if (Array.isArray(sectionIds)) {
+        total += sectionIds.length;
+      }
+    });
+    
+    return total;
   };
 
   // Atualizar o estado local quando as props mudarem
@@ -219,6 +231,12 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
 
         const totalSections = await getTotalSectionsForCourse(realCourseId);
         const totalCompleted = getTotalCompletedSections(subjectsData);
+
+        console.log('Salvando progresso:', { 
+          totalCompleted, 
+          totalSections, 
+          localCompletedSections 
+        });
 
         if (progress) {
           const { error: updateError } = await supabase
@@ -298,11 +316,14 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     }
     
     setLocalCompletedSections(prev => {
-      if (prev.includes(sectionId)) {
-        return prev.filter(id => id !== sectionId);
-      } else {
-        return [...prev, sectionId];
-      }
+      const newSections = prev.includes(sectionId)
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId];
+        
+      console.log(`Tópico ${sectionId} ${prev.includes(sectionId) ? 'desmarcado' : 'marcado'}, 
+        total: ${newSections.length}`);
+        
+      return newSections;
     });
     
     // Chamar a função de callback original

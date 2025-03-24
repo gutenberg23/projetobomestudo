@@ -97,14 +97,14 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
               const completedSections = subjectsData.completed_sections;
               if (completedSections && typeof completedSections === 'object' && !Array.isArray(completedSections)) {
                 // Contar todos os tópicos concluídos em todas as aulas
-                totalCompleted = Object.values(completedSections)
-                  .reduce((sum: number, sections) => {
-                    // Verificar se sections é um array e converter para número
-                    if (Array.isArray(sections)) {
-                      return ensureValidNumber(sum) + ensureValidNumber(sections.length);
-                    }
-                    return ensureValidNumber(sum);
-                  }, 0);
+                totalCompleted = Object.values(completedSections).reduce((sum: number, sections) => {
+                  // Verificar se sections é um array e converter para número
+                  if (Array.isArray(sections)) {
+                    // Converter explicitamente para número
+                    return sum + Number(sections.length);
+                  }
+                  return sum;
+                }, 0);
               }
             }
           }
@@ -134,6 +134,8 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
               }, 0);
             }
           }
+          
+          console.log('Contagem de tópicos do curso:', { totalTopics, totalCompleted });
           
           // Atualizar as estatísticas de tópicos
           setTopicsStats({
@@ -226,6 +228,28 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
               console.log('Dados de progresso do usuário carregados do Supabase:', data[0]);
               // Disponibilizar os dados para uso global - usar o registro mais recente
               (window as any).userCourseProgress = data[0];
+              
+              // Verificar se temos dados de tópicos completados
+              if (data[0].subjects_data) {
+                let totalCompleted = 0;
+                
+                // Iterar sobre todas as aulas que possuem seções concluídas
+                if (data[0].subjects_data.completed_sections) {
+                  Object.values(data[0].subjects_data.completed_sections).forEach((sections: any) => {
+                    if (Array.isArray(sections)) {
+                      totalCompleted += sections.length;
+                    }
+                  });
+                }
+                
+                // Atualizar o estado apenas se houver dados válidos
+                if (totalCompleted > 0) {
+                  setTopicsStats(prev => ({
+                    ...prev,
+                    completedTopics: totalCompleted
+                  }));
+                }
+              }
             } else if (error) {
               console.error('Erro ao carregar progresso do usuário:', error);
             }
@@ -269,12 +293,16 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
         console.log("Evento sectionsUpdated recebido:", detail);
         
         if (detail.totalCompleted !== undefined && detail.totalSections !== undefined) {
+          // Garantir que os valores são números
+          const totalCompleted = Number(detail.totalCompleted);
+          const totalSections = Number(detail.totalSections);
+          
           setTopicsStats({
-            completedTopics: detail.totalCompleted,
-            totalTopics: detail.totalSections
+            completedTopics: totalCompleted,
+            totalTopics: totalSections
           });
           
-          console.log(`Progresso atualizado: ${detail.totalCompleted}/${detail.totalSections}`);
+          console.log(`Progresso atualizado: ${totalCompleted}/${totalSections}`);
         }
       }
     };
