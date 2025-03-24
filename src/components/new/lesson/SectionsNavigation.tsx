@@ -8,12 +8,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useParams } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { toast } from "@/components/ui/use-toast";
+import { Json } from "@/integrations/supabase/types";
 
 // Definindo a interface para a estrutura de dados subjects_data
+interface CompletedSections {
+  [lessonId: string]: string[];
+}
+
 interface SubjectsData {
-  completed_sections?: {
-    [lessonId: string]: string[];
-  };
+  completed_sections?: CompletedSections;
   [key: string]: any;
 }
 
@@ -54,6 +57,14 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
   const [localCompletedSections, setLocalCompletedSections] = React.useState<string[]>(completedSections);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Função para garantir que estamos usando números válidos para os cálculos
+  const ensureValidNumber = (value: any): number => {
+    // Se o valor for undefined, null ou NaN, retornar 0
+    if (value === undefined || value === null) return 0;
+    const num = Number(value);
+    return !isNaN(num) ? num : 0;
+  };
+
   // Carregar os tópicos concluídos do banco de dados quando o componente for montado
   useEffect(() => {
     if (!user || !courseId || !lessonId) return;
@@ -77,7 +88,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         // Verificar se existingProgress existe e tem a estrutura esperada
         const progress = existingProgress as UserCourseProgress | null;
         
-        if (progress?.subjects_data && typeof progress.subjects_data === 'object') {
+        if (progress?.subjects_data) {
           const subjectsData = progress.subjects_data as SubjectsData;
           
           if (subjectsData.completed_sections && subjectsData.completed_sections[lessonId]) {
@@ -88,7 +99,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
               
               // Disparar evento para atualizar os componentes que exibem o progresso
               const totalSections = await getTotalSectionsForCourse(realCourseId);
-              const totalCompleted = getTotalCompletedSections(progress.subjects_data);
+              const totalCompleted = getTotalCompletedSections(subjectsData);
               
               document.dispatchEvent(new CustomEvent('sectionsUpdated', {
                 detail: { 

@@ -13,6 +13,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { BookOpenIcon } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
+import { Json } from "@/integrations/supabase/types";
+
+// Interface para a estrutura de dados de subjects_data
+interface CompletedSections {
+  [lessonId: string]: string[];
+}
+
+interface SubjectsData {
+  completed_sections?: CompletedSections;
+  [key: string]: any;
+}
 
 interface ProgressPanelProps {
   subjectsFromCourse?: any[];
@@ -86,25 +97,28 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
         }
         
         if (progress && progress.subjects_data) {
-          const subjectsData = progress.subjects_data;
+          console.log('Dados completos do progresso:', progress.subjects_data);
+          
           let totalCompleted = 0;
           let totalTopics = 0;
           
-          // Verificar se completed_sections existe e se subjects_data é um objeto
+          // Verificar se subjects_data é um objeto e possui completed_sections
+          const subjectsData = progress.subjects_data as SubjectsData;
+          
           if (subjectsData && typeof subjectsData === 'object' && !Array.isArray(subjectsData)) {
-            if ('completed_sections' in subjectsData) {
-              // Verificamos se completed_sections é um objeto antes de contabilizar
+            if (subjectsData.completed_sections) {
+              // Verificar se completed_sections é um objeto antes de contabilizar
               const completedSections = subjectsData.completed_sections;
-              if (completedSections && typeof completedSections === 'object' && !Array.isArray(completedSections)) {
+              
+              if (completedSections && typeof completedSections === 'object') {
                 // Contar todos os tópicos concluídos em todas as aulas
-                totalCompleted = Object.values(completedSections).reduce((sum: number, sections) => {
-                  // Verificar se sections é um array e converter para número
+                Object.values(completedSections).forEach(sections => {
                   if (Array.isArray(sections)) {
-                    // Converter explicitamente para número
-                    return sum + Number(sections.length);
+                    totalCompleted += sections.length;
                   }
-                  return sum;
-                }, 0);
+                });
+                
+                console.log('Total de tópicos concluídos contabilizados:', totalCompleted);
               }
             }
           }
@@ -129,13 +143,16 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
               console.error('Erro ao buscar detalhes das aulas:', aulasError);
             } else {
               // Contar o total de tópicos em todas as aulas
-              totalTopics = (aulasData || []).reduce((sum, aula) => {
-                return sum + (Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0);
-              }, 0);
+              if (aulasData && Array.isArray(aulasData)) {
+                totalTopics = aulasData.reduce((sum, aula) => {
+                  const topicoCount = Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0;
+                  return sum + topicoCount;
+                }, 0);
+                
+                console.log('Total de tópicos encontrados:', totalTopics);
+              }
             }
           }
-          
-          console.log('Contagem de tópicos do curso:', { totalTopics, totalCompleted });
           
           // Atualizar as estatísticas de tópicos
           setTopicsStats({
@@ -226,28 +243,36 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
               
             if (data && data.length > 0 && !error) {
               console.log('Dados de progresso do usuário carregados do Supabase:', data[0]);
-              // Disponibilizar os dados para uso global - usar o registro mais recente
-              (window as any).userCourseProgress = data[0];
               
-              // Verificar se temos dados de tópicos completados
+              // Verificar e processar os dados de progresso
               if (data[0].subjects_data) {
-                let totalCompleted = 0;
+                const subjectsData = data[0].subjects_data as SubjectsData;
                 
-                // Iterar sobre todas as aulas que possuem seções concluídas
-                if (data[0].subjects_data.completed_sections) {
-                  Object.values(data[0].subjects_data.completed_sections).forEach((sections: any) => {
-                    if (Array.isArray(sections)) {
-                      totalCompleted += sections.length;
+                // Disponibilizar os dados para uso global - usar o registro mais recente
+                (window as any).userCourseProgress = data[0];
+                
+                // Verificar se temos dados de tópicos completados
+                if (typeof subjectsData === 'object' && !Array.isArray(subjectsData)) {
+                  if (subjectsData.completed_sections) {
+                    let totalCompleted = 0;
+                    
+                    // Iterar sobre todas as aulas que possuem seções concluídas
+                    Object.values(subjectsData.completed_sections).forEach((sections: any) => {
+                      if (Array.isArray(sections)) {
+                        totalCompleted += sections.length;
+                      }
+                    });
+                    
+                    // Atualizar o estado apenas se houver dados válidos
+                    if (totalCompleted > 0) {
+                      setTopicsStats(prev => ({
+                        ...prev,
+                        completedTopics: totalCompleted
+                      }));
+                      
+                      console.log('Total de tópicos concluídos atualizado:', totalCompleted);
                     }
-                  });
-                }
-                
-                // Atualizar o estado apenas se houver dados válidos
-                if (totalCompleted > 0) {
-                  setTopicsStats(prev => ({
-                    ...prev,
-                    completedTopics: totalCompleted
-                  }));
+                  }
                 }
               }
             } else if (error) {
@@ -294,8 +319,8 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
         
         if (detail.totalCompleted !== undefined && detail.totalSections !== undefined) {
           // Garantir que os valores são números
-          const totalCompleted = Number(detail.totalCompleted);
-          const totalSections = Number(detail.totalSections);
+          const totalCompleted = ensureValidNumber(detail.totalCompleted);
+          const totalSections = ensureValidNumber(detail.totalSections);
           
           setTopicsStats({
             completedTopics: totalCompleted,
@@ -391,22 +416,27 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
           // Verificar se temos dados de progresso do usuário
           const userCourseProgress = (window as any).userCourseProgress;
           
-          if (userCourseProgress && userCourseProgress.subjects_data && userCourseProgress.subjects_data[subject.id]) {
-            const subjectData = userCourseProgress.subjects_data[subject.id];
-            console.log(`Dados do progresso para disciplina ${subject.name || subject.titulo}:`, subjectData);
+          if (userCourseProgress && userCourseProgress.subjects_data) {
+            const subjectsData = userCourseProgress.subjects_data as SubjectsData;
             
-            // Tentar extrair estatísticas dos dados de progresso
-            if (subjectData.stats) {
-              const hits = ensureValidNumber(subjectData.stats.hits);
-              const errors = ensureValidNumber(subjectData.stats.errors);
+            if (typeof subjectsData === 'object' && !Array.isArray(subjectsData) && 
+                subjectsData[subject.id]) {
+              const subjectData = subjectsData[subject.id];
+              console.log(`Dados do progresso para disciplina ${subject.name || subject.titulo}:`, subjectData);
               
-              console.log(`Estatísticas do progresso para ${subject.name || subject.titulo}:`, {
-                hits,
-                errors
-              });
-              
-              totalCorrectFromSubjects += hits;
-              totalWrongFromSubjects += errors;
+              // Tentar extrair estatísticas dos dados de progresso
+              if (subjectData && typeof subjectData === 'object' && subjectData.stats) {
+                const hits = ensureValidNumber(subjectData.stats.hits);
+                const errors = ensureValidNumber(subjectData.stats.errors);
+                
+                console.log(`Estatísticas do progresso para ${subject.name || subject.titulo}:`, {
+                  hits,
+                  errors
+                });
+                
+                totalCorrectFromSubjects += hits;
+                totalWrongFromSubjects += errors;
+              }
             }
           }
         } catch (error) {
