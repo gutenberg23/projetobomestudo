@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -38,6 +39,7 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   const [questionAttempts, setQuestionAttempts] = useState<UserQuestionAttempt[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [combinedSubjects, setCombinedSubjects] = useState<any[]>([]);
+  const [topicsStats, setTopicsStats] = useState({ totalTopics: 0, completedTopics: 0 });
   
   // Usar o hook personalizado para obter o progresso
   const { totalTopics, completedTopics, progressPercentage, loading: progressLoading } = 
@@ -341,10 +343,8 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   const overallStats = calculateOverallStats(displaySubjects);
   const questionStats = calculateUserQuestionStats(questionAttempts);
   
-  // Calcular o percentual de progresso usando a contagem de tópicos
-  const progressPercentage = totalTopics > 0
-    ? Math.round((completedTopics / totalTopics) * 100)
-    : 0;
+  // Usar diretamente os valores do hook de progresso
+  console.log("Estatísticas de tópicos do hook:", {totalTopics, completedTopics, progressPercentage});
   
   // Adicionar um log para verificar a estrutura dos subjects
   console.log("Estrutura dos subjects:", displaySubjects);
