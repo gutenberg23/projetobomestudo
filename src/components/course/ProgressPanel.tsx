@@ -309,14 +309,6 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   console.log("Estrutura dos subjects:", displaySubjects);
   console.log("Estatísticas de tópicos:", topicsStats);
   
-  // Função para garantir que estamos usando números válidos para os cálculos
-  const ensureValidNumber = (value: any): number => {
-    // Se o valor for undefined, null ou NaN, retornar 0
-    if (value === undefined || value === null) return 0;
-    const num = Number(value);
-    return !isNaN(num) ? num : 0;
-  };
-  
   // Inicializar variáveis para armazenar os totais
   let totalCorrectFromSubjects = 0;
   let totalWrongFromSubjects = 0;
@@ -473,4 +465,3 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
     </div>
   );
 };
-
