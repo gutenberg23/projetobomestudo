@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -14,6 +13,7 @@ import { BookOpenIcon } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { Json } from "@/integrations/supabase/types";
+import { useUserProgress } from "./hooks/useUserProgress";
 
 // Interface para a estrutura de dados de subjects_data
 interface CompletedSections {
@@ -38,10 +38,10 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   const [questionAttempts, setQuestionAttempts] = useState<UserQuestionAttempt[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
   const [combinedSubjects, setCombinedSubjects] = useState<any[]>([]);
-  const [topicsStats, setTopicsStats] = useState({
-    totalTopics: 0,
-    completedTopics: 0
-  });
+  
+  // Usar o hook personalizado para obter o progresso
+  const { totalTopics, completedTopics, progressPercentage, loading: progressLoading } = 
+    useUserProgress(user?.id, courseId);
   
   // Função para garantir que estamos usando números válidos para os cálculos
   const ensureValidNumber = (value: any): number => {
@@ -315,20 +315,7 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
     const handleSectionsUpdated = (event: Event) => {
       const detail = (event as CustomEvent).detail;
       if (detail) {
-        console.log("Evento sectionsUpdated recebido:", detail);
-        
-        if (detail.totalCompleted !== undefined && detail.totalSections !== undefined) {
-          // Garantir que os valores são números
-          const totalCompleted = ensureValidNumber(detail.totalCompleted);
-          const totalSections = ensureValidNumber(detail.totalSections);
-          
-          setTopicsStats({
-            completedTopics: totalCompleted,
-            totalTopics: totalSections
-          });
-          
-          console.log(`Progresso atualizado: ${totalCompleted}/${totalSections}`);
-        }
+        console.log("Evento sectionsUpdated recebido no ProgressPanel:", detail);
       }
     };
     
@@ -339,7 +326,7 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
     };
   }, []);
   
-  if (loading || statsLoading) {
+  if (loading || statsLoading || progressLoading) {
     return (
       <div className="bg-white rounded-[10px] space-y-4 p-5">
         <Skeleton className="h-8 w-48" />
@@ -355,13 +342,13 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   const questionStats = calculateUserQuestionStats(questionAttempts);
   
   // Calcular o percentual de progresso usando a contagem de tópicos
-  const progressPercentage = topicsStats.totalTopics > 0
-    ? Math.round((topicsStats.completedTopics / topicsStats.totalTopics) * 100)
+  const progressPercentage = totalTopics > 0
+    ? Math.round((completedTopics / totalTopics) * 100)
     : 0;
   
   // Adicionar um log para verificar a estrutura dos subjects
   console.log("Estrutura dos subjects:", displaySubjects);
-  console.log("Estatísticas de tópicos:", topicsStats);
+  console.log("Estatísticas de tópicos:", {totalTopics, completedTopics});
   
   // Inicializar variáveis para armazenar os totais
   let totalCorrectFromSubjects = 0;
@@ -475,25 +462,37 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   // O total de questões é a soma de acertos e erros
   const totalQuestions = totalCorrectAnswers + totalWrongAnswers;
   
-  // Log adicional para verificar os valores finais que serão passados para o ProgressSummary
-  console.log("Valores finais para ProgressSummary:", {
+  // Log para verificar os valores que serão passados
+  console.log("Valores finais para ProgressSummary no ProgressPanel:", {
     totalQuestions,
     totalCorrectAnswers,
     totalWrongAnswers,
-    questionStats
+    completedTopics,
+    totalTopics,
+    progressPercentage
   });
   
   const toggleExpand = (subjectId: string | number) => {
     setExpandedSubject(expandedSubject === subjectId ? null : subjectId);
   };
   
+  if (loading || statsLoading || progressLoading) {
+    return (
+      <div className="bg-white rounded-[10px] space-y-4 p-5">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+  
   return (
     <div className="bg-white rounded-[10px] p-5 space-y-5">
       <h2 className="text-xl font-semibold text-[rgba(38,47,60,1)]">Seu progresso</h2>
       
       <ProgressSummary
-        totalCompletedSections={topicsStats.completedTopics}
-        totalSections={topicsStats.totalTopics}
+        totalCompletedSections={completedTopics}
+        totalSections={totalTopics}
         progressPercentage={progressPercentage}
         totalQuestions={totalQuestions}
         totalCorrectAnswers={totalCorrectAnswers}

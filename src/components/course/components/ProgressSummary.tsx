@@ -39,6 +39,14 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
     ? Math.round((validTotalCorrect / validTotalQuestions) * 100) 
     : 0;
 
+  console.log("ProgressSummary recebeu:", {
+    completedSections: totalCompletedSections,
+    totalSections,
+    progressPercentage,
+    validCompletedSections: validTotalCompletedSections,
+    validTotalSections
+  });
+
   return <>
     <div className="flex items-center gap-4">
       <div className="bg-[rgba(246,248,250,1)] flex items-center gap-2.5 px-4 py-3 rounded-[10px]">

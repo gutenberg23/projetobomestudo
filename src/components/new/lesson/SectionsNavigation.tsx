@@ -249,6 +249,16 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
           localCompletedSections 
         });
 
+        // Disparar evento antes de salvar no banco
+        document.dispatchEvent(new CustomEvent('sectionsUpdated', {
+          detail: { 
+            courseId: realCourseId,
+            totalCompleted,
+            totalSections,
+            timestamp: new Date().getTime()
+          }
+        }));
+
         if (progress) {
           const { error: updateError } = await supabase
             .from('user_course_progress')
@@ -262,15 +272,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             console.error('Erro ao atualizar progresso do usuário:', updateError);
           } else {
             console.log('Progresso atualizado com sucesso em SectionsNavigation');
-            
-            // Disparar evento para atualizar os componentes que exibem o progresso
-            document.dispatchEvent(new CustomEvent('sectionsUpdated', {
-              detail: { 
-                courseId: realCourseId,
-                totalCompleted,
-                totalSections
-              }
-            }));
           }
         } else {
           const { error: insertError } = await supabase
@@ -287,15 +288,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             console.error('Erro ao inserir progresso do usuário:', insertError);
           } else {
             console.log('Progresso inserido com sucesso em SectionsNavigation');
-            
-            // Disparar evento para atualizar os componentes que exibem o progresso
-            document.dispatchEvent(new CustomEvent('sectionsUpdated', {
-              detail: { 
-                courseId: realCourseId,
-                totalCompleted,
-                totalSections
-              }
-            }));
           }
         }
       } catch (error) {
@@ -308,7 +300,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     // Use um debounce para evitar muitas chamadas ao banco de dados
     const timeoutId = setTimeout(() => {
       saveCompletedSections();
-    }, 500);
+    }, 300); // Reduzido para 300ms para atualização mais rápida
     
     return () => clearTimeout(timeoutId);
   }, [localCompletedSections, user, courseId, lessonId, isSaving, completedSections]);
@@ -333,6 +325,45 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         
       console.log(`Tópico ${sectionId} ${prev.includes(sectionId) ? 'desmarcado' : 'marcado'}, 
         total: ${newSections.length}`);
+      
+      // Disparar evento imediatamente para atualização rápida da UI
+      if (user && courseId && lessonId) {
+        setTimeout(async () => {
+          const realCourseId = extractIdFromFriendlyUrl(courseId);
+          
+          // Buscar os dados atuais para realizar a contagem
+          const { data: progress } = await supabase
+            .from('user_course_progress')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('course_id', realCourseId)
+            .maybeSingle();
+            
+          if (progress?.subjects_data) {
+            const subjectsData = progress.subjects_data as SubjectsData;
+            
+            // Atualizar temporariamente para contar
+            if (typeof subjectsData === 'object' && !Array.isArray(subjectsData)) {
+              if (!subjectsData.completed_sections) {
+                subjectsData.completed_sections = {};
+              }
+              subjectsData.completed_sections[lessonId] = newSections;
+              
+              const totalSections = await getTotalSectionsForCourse(realCourseId);
+              const totalCompleted = getTotalCompletedSections(subjectsData);
+              
+              document.dispatchEvent(new CustomEvent('sectionsUpdated', {
+                detail: { 
+                  courseId: realCourseId,
+                  totalCompleted,
+                  totalSections,
+                  timestamp: new Date().getTime()
+                }
+              }));
+            }
+          }
+        }, 100);
+      }
         
       return newSections;
     });
