@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -32,6 +31,14 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
     completedTopics: 0
   });
   
+  // Função para garantir que estamos usando números válidos para os cálculos
+  const ensureValidNumber = (value: any): number => {
+    // Se o valor for undefined, null ou NaN, retornar 0
+    if (value === undefined || value === null) return 0;
+    const num = Number(value);
+    return !isNaN(num) ? num : 0;
+  };
+
   // Função para contar os tópicos das aulas
   const countTopicsInSubjects = async (subjectsData: any[]) => {
     if (!subjectsData || !Array.isArray(subjectsData) || subjectsData.length === 0) {
@@ -45,10 +52,7 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
       if (subject.lessons && Array.isArray(subject.lessons)) {
         for (const lesson of subject.lessons) {
           if (lesson.sections && Array.isArray(lesson.sections)) {
-            // Cada seção é um tópico
             totalTopicsCount += lesson.sections.length;
-            
-            // Contar tópicos completados
             completedTopicsCount += lesson.sections.filter((section: any) => 
               section.isActive === true
             ).length;
@@ -93,12 +97,12 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
               if (completedSections && typeof completedSections === 'object' && !Array.isArray(completedSections)) {
                 // Contar todos os tópicos concluídos em todas as aulas
                 totalCompleted = Object.values(completedSections)
-                  .reduce((sum, sections) => {
-                    // Verificar se sections é um array
+                  .reduce((sum: number, sections) => {
+                    // Verificar se sections é um array e converter para número
                     if (Array.isArray(sections)) {
-                      return sum + sections.length;
+                      return ensureValidNumber(sum) + sections.length;
                     }
-                    return sum;
+                    return ensureValidNumber(sum);
                   }, 0);
               }
             }
@@ -469,3 +473,4 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
     </div>
   );
 };
+
