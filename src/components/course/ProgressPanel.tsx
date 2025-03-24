@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -100,7 +101,7 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
                   .reduce((sum: number, sections) => {
                     // Verificar se sections é um array e converter para número
                     if (Array.isArray(sections)) {
-                      return ensureValidNumber(sum) + sections.length;
+                      return ensureValidNumber(sum) + ensureValidNumber(sections.length);
                     }
                     return ensureValidNumber(sum);
                   }, 0);
