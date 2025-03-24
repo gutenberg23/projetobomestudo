@@ -76,9 +76,17 @@ export const LessonItem: React.FC<LessonItemProps> = ({
           return;
         }
         
-        let subjectsData = existingProgress?.subjects_data || {};
+        // Garantir que subjects_data é um objeto
+        let subjectsData = typeof existingProgress?.subjects_data === 'object' ? 
+          existingProgress?.subjects_data || {} : 
+          {};
         
         // Garantir que a estrutura existe
+        if (!subjectsData || typeof subjectsData !== 'object') {
+          subjectsData = {};
+        }
+        
+        // Garantir que completed_lessons existe dentro de subjectsData
         if (!subjectsData.completed_lessons) {
           subjectsData.completed_lessons = {};
         }
@@ -88,7 +96,9 @@ export const LessonItem: React.FC<LessonItemProps> = ({
           subjectsData.completed_lessons[lessonId] = true;
         } else {
           // Marcar como não concluída
-          delete subjectsData.completed_lessons[lessonId];
+          if (subjectsData.completed_lessons) {
+            delete subjectsData.completed_lessons[lessonId];
+          }
         }
         
         if (existingProgress) {

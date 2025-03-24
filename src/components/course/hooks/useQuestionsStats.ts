@@ -18,6 +18,65 @@ export const useQuestionsStats = (questionIds: string[] = []) => {
     errors: 0
   });
 
+  // Função para buscar IDs de questões relacionadas a uma aula
+  const fetchQuestionsIds = async (lessonId: string): Promise<string[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('aulas')
+        .select('questoes_ids')
+        .eq('id', lessonId)
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar IDs de questões:', error);
+        return [];
+      }
+
+      return Array.isArray(data?.questoes_ids) ? data.questoes_ids : [];
+    } catch (error) {
+      console.error('Erro ao buscar IDs de questões:', error);
+      return [];
+    }
+  };
+
+  // Função para calcular estatísticas de uma aula com base nos IDs de questões
+  const calculateLessonStats = async (qIds: string[], userId?: string): Promise<{total: number; hits: number; errors: number}> => {
+    if (!qIds.length) {
+      return { total: 0, hits: 0, errors: 0 };
+    }
+
+    try {
+      // Se tiver userId, buscar apenas as respostas desse usuário
+      let query = supabase
+        .from('respostas_alunos')
+        .select('questao_id, is_correta');
+      
+      if (userId) {
+        query = query.eq('aluno_id', userId);
+      }
+      
+      const { data, error } = await query.in('questao_id', qIds);
+
+      if (error) {
+        console.error('Erro ao buscar respostas para as questões:', error);
+        return { total: 0, hits: 0, errors: 0 };
+      }
+
+      if (!data || data.length === 0) {
+        return { total: 0, hits: 0, errors: 0 };
+      }
+
+      const hits = data.filter(r => r.is_correta).length;
+      const errors = data.filter(r => !r.is_correta).length;
+      const total = hits + errors;
+
+      return { total, hits, errors };
+    } catch (error) {
+      console.error('Erro ao calcular estatísticas da aula:', error);
+      return { total: 0, hits: 0, errors: 0 };
+    }
+  };
+
   useEffect(() => {
     const fetchStats = async () => {
       if (!questionIds || questionIds.length === 0) {
@@ -82,5 +141,11 @@ export const useQuestionsStats = (questionIds: string[] = []) => {
     fetchStats();
   }, [questionIds]);
 
-  return { stats, totalStats, loading };
+  return { 
+    stats, 
+    totalStats, 
+    loading, 
+    fetchQuestionsIds, 
+    calculateLessonStats 
+  };
 };

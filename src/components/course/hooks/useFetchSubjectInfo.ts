@@ -22,8 +22,34 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Extrair a função fetchSubjectInfo para ser exportada
+  const fetchSubjectInfo = async (subjId: string): Promise<string[]> => {
+    try {
+      if (!subjId) {
+        return [];
+      }
+      
+      // Buscar aulas relacionadas ao assunto
+      const { data, error } = await supabase
+        .from('disciplinas')
+        .select('aulas_ids')
+        .eq('id', subjId)
+        .single();
+        
+      if (error) {
+        console.error('Erro ao buscar aulas da disciplina:', error);
+        return [];
+      }
+      
+      return Array.isArray(data?.aulas_ids) ? data.aulas_ids : [];
+    } catch (error) {
+      console.error('Erro ao buscar informações do assunto:', error);
+      return [];
+    }
+  };
+
   useEffect(() => {
-    const fetchSubjectInfo = async () => {
+    const loadSubjectInfo = async () => {
       if (!subjectId) {
         setLoading(false);
         setLessons([]);
@@ -33,18 +59,10 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
       try {
         setLoading(true);
         
-        // Buscar aulas relacionadas ao assunto
-        const { data: disciplinaData, error: disciplinaError } = await supabase
-          .from('disciplinas')
-          .select('aulas_ids, titulo')
-          .eq('id', subjectId)
-          .single();
-          
-        if (disciplinaError) {
-          throw disciplinaError;
-        }
+        // Buscar aulas relacionadas ao assunto usando a função extraída
+        const aulasIds = await fetchSubjectInfo(subjectId);
         
-        if (!disciplinaData?.aulas_ids || disciplinaData.aulas_ids.length === 0) {
+        if (aulasIds.length === 0) {
           setLessons([]);
           setLoading(false);
           return;
@@ -54,7 +72,7 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
         const { data: aulasData, error: aulasError } = await supabase
           .from('aulas')
           .select('*')
-          .in('id', disciplinaData.aulas_ids);
+          .in('id', aulasIds);
           
         if (aulasError) {
           throw aulasError;
@@ -99,8 +117,13 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
       }
     };
     
-    fetchSubjectInfo();
+    loadSubjectInfo();
   }, [subjectId]);
 
-  return { lessons, loading, error };
+  return { 
+    lessons, 
+    loading, 
+    error,
+    fetchSubjectInfo // Exportar a função
+  };
 };

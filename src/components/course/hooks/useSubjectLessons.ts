@@ -20,7 +20,7 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
   const { fetchLessonsByIds, setLoading: setLessonLoading } = useFetchLessonsByIds();
   const { fetchSubjectInfo } = useFetchSubjectInfo();
   const { fetchUserProgress } = useFetchUserProgress();
-  const { fetchQuestionsIds, calculateLessonStats } = useQuestionsStats();
+  const { fetchQuestionsIds, calculateLessonStats } = useQuestionsStats([]);
 
   useEffect(() => {
     if (subjectId) {
