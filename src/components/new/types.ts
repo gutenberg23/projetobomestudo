@@ -1,4 +1,3 @@
-
 export interface Question {
   id: string;
   content: string;
@@ -40,7 +39,6 @@ export interface Section {
   isActive?: boolean;
   professorId?: string;
   professorNome?: string;
-  locked?: boolean;
 }
 
 export interface Lesson {

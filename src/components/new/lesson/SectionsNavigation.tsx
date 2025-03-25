@@ -38,7 +38,7 @@ interface SectionsNavigationProps {
   hasHorizontalScroll?: boolean;
   videoHeight?: number;
   onSectionClick: (sectionId: string) => void;
-  onToggleCompletion?: (sectionId: string, e: React.MouseEvent) => void;
+  onToggleCompletion?: (sectionId: string, event: React.MouseEvent) => void;
   lessonId?: string;
 }
 
@@ -56,7 +56,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
   const { courseId } = useParams<{ courseId: string }>();
   const [localCompletedSections, setLocalCompletedSections] = React.useState<string[]>(completedSections);
   const [isSaving, setIsSaving] = useState(false);
-  const [totalSectionsCount, setTotalSectionsCount] = useState(0);
 
   // Função para garantir que estamos usando números válidos para os cálculos
   const ensureValidNumber = (value: any): number => {
@@ -64,175 +63,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     if (value === undefined || value === null) return 0;
     const num = Number(value);
     return !isNaN(num) ? num : 0;
-  };
-
-  // Função otimizada para obter o total de seções para todas as aulas do curso
-  const getTotalSectionsForCourse = async (realCourseId: string): Promise<number> => {
-    try {
-      console.log(`Calculando total de tópicos para o curso ${realCourseId}`);
-      
-      // Buscar o curso pelo ID
-      const { data: cursoData, error: cursoError } = await supabase
-        .from('cursos')
-        .select('aulas_ids')
-        .eq('id', realCourseId)
-        .single();
-      
-      if (cursoError) {
-        console.error('Erro ao buscar aulas do curso:', cursoError);
-        return sections.length; // Fallback para o número atual de seções
-      }
-      
-      // Se não houver aulas, retorna apenas o número atual de seções
-      if (!cursoData?.aulas_ids || !cursoData.aulas_ids.length) {
-        console.log('Curso não tem aulas, usando apenas seções atuais:', sections.length);
-        return sections.length;
-      }
-      
-      // Buscar todas as aulas do curso para contar suas seções
-      const { data: aulasData, error: aulasError } = await supabase
-        .from('aulas')
-        .select('id, topicos_ids')
-        .in('id', cursoData.aulas_ids);
-      
-      if (aulasError) {
-        console.error('Erro ao buscar detalhes das aulas:', aulasError);
-        return sections.length;
-      }
-      
-      // Contar o total de tópicos em todas as aulas
-      let totalTopicos = 0;
-      
-      if (aulasData && aulasData.length > 0) {
-        for (const aula of aulasData) {
-          // Se for a aula atual e temos as seções diretamente, usamos elas
-          if (aula.id === lessonId) {
-            totalTopicos += sections.length;
-            console.log(`Aula atual (${lessonId}): ${sections.length} tópicos`);
-          } 
-          // Para as outras aulas, precisamos contar os tópicos
-          else if (aula.topicos_ids && Array.isArray(aula.topicos_ids)) {
-            totalTopicos += aula.topicos_ids.length;
-            console.log(`Aula ${aula.id}: ${aula.topicos_ids.length} tópicos`);
-          }
-        }
-      }
-      
-      console.log(`Total de tópicos calculado para o curso ${realCourseId}: ${totalTopicos}`);
-      setTotalSectionsCount(totalTopicos);
-      return totalTopicos > 0 ? totalTopicos : sections.length;
-    } catch (error) {
-      console.error('Erro ao calcular o total de seções:', error);
-      return sections.length; // Fallback para o número atual de seções
-    }
-  };
-
-  // Função para obter o total de seções concluídas para todas as aulas
-  const getTotalCompletedSections = (subjectsData: SubjectsData): number => {
-    if (!subjectsData.completed_sections) return 0;
-    
-    let total = 0;
-    
-    // Percorrer todas as aulas com seções concluídas
-    Object.values(subjectsData.completed_sections).forEach(sectionIds => {
-      // Verificar se sectionIds é um array antes de usar o length
-      if (Array.isArray(sectionIds)) {
-        total += sectionIds.length;
-      }
-    });
-    
-    return total;
-  };
-
-  // Configurar um listener de eventos para detectar mudanças no curso
-  useEffect(() => {
-    if (!user || !courseId) return;
-    
-    const realCourseId = extractIdFromFriendlyUrl(courseId);
-    
-    // Subscrever para mudanças nas tabelas relevantes
-    const setupRealtimeListener = async () => {
-      const channel = supabase
-        .channel('course-topics-changes')
-        .on('postgres_changes', {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'topicos'
-        }, () => {
-          console.log('Novo tópico adicionado, recalculando total...');
-          refreshTotalTopics(realCourseId);
-        })
-        .on('postgres_changes', {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'topicos'
-        }, () => {
-          console.log('Tópico removido, recalculando total...');
-          refreshTotalTopics(realCourseId);
-        })
-        .on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'aulas'
-        }, () => {
-          console.log('Aula atualizada, recalculando total...');
-          refreshTotalTopics(realCourseId);
-        })
-        .on('postgres_changes', {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'cursos'
-        }, () => {
-          console.log('Curso atualizado, recalculando total...');
-          refreshTotalTopics(realCourseId);
-        })
-        .subscribe();
-      
-      // Calcular o total inicial
-      await refreshTotalTopics(realCourseId);
-      
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    };
-    
-    const cleanup = setupRealtimeListener();
-    
-    return () => {
-      cleanup.then(fn => fn && fn());
-    };
-  }, [user, courseId, lessonId, sections.length]);
-
-  // Função para atualizar a contagem total de tópicos
-  const refreshTotalTopics = async (realCourseId: string) => {
-    const totalSections = await getTotalSectionsForCourse(realCourseId);
-    
-    // Carregar progresso do usuário para obter tópicos concluídos
-    if (user) {
-      const { data: existingProgress } = await supabase
-        .from('user_course_progress')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('course_id', realCourseId)
-        .maybeSingle();
-        
-      if (existingProgress) {
-        const progress = existingProgress as UserCourseProgress;
-        const totalCompleted = getTotalCompletedSections(progress.subjects_data);
-        
-        // Disparar evento para atualizar os componentes que mostram o progresso
-        document.dispatchEvent(new CustomEvent('sectionsUpdated', {
-          detail: { 
-            courseId: realCourseId,
-            totalCompleted,
-            totalSections,
-            timestamp: new Date().getTime()
-          }
-        }));
-      }
-    }
-    
-    return totalSections;
   };
 
   // Carregar os tópicos concluídos do banco de dados quando o componente for montado
@@ -289,6 +119,80 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     loadCompletedSections();
   }, [user, courseId, lessonId]);
 
+  // Função para obter o total de seções para todas as aulas do curso
+  const getTotalSectionsForCourse = async (realCourseId: string): Promise<number> => {
+    try {
+      // Buscar o curso pelo ID
+      const { data: cursoData, error: cursoError } = await supabase
+        .from('cursos')
+        .select('aulas_ids')
+        .eq('id', realCourseId)
+        .single();
+      
+      if (cursoError) {
+        console.error('Erro ao buscar aulas do curso:', cursoError);
+        return sections.length; // Fallback para o número atual de seções
+      }
+      
+      // Se não houver aulas, retorna apenas o número atual de seções
+      if (!cursoData?.aulas_ids || !cursoData.aulas_ids.length) {
+        return sections.length;
+      }
+      
+      // Buscar todas as aulas do curso para contar suas seções
+      const { data: aulasData, error: aulasError } = await supabase
+        .from('aulas')
+        .select('id, topicos_ids')
+        .in('id', cursoData.aulas_ids);
+      
+      if (aulasError) {
+        console.error('Erro ao buscar detalhes das aulas:', aulasError);
+        return sections.length;
+      }
+      
+      // Contar o total de tópicos em todas as aulas
+      let totalTopicos = 0;
+      
+      // Para a aula atual, usamos o número de seções fornecido
+      if (lessonId) {
+        totalTopicos += sections.length;
+      }
+      
+      // Para as outras aulas, precisamos contar os tópicos
+      for (const aula of aulasData || []) {
+        // Se for a aula atual, pulamos pois já contamos acima
+        if (aula.id === lessonId) continue;
+        
+        if (aula.topicos_ids && Array.isArray(aula.topicos_ids)) {
+          totalTopicos += aula.topicos_ids.length;
+        }
+      }
+      
+      console.log(`Total de tópicos para o curso ${realCourseId}: ${totalTopicos}`);
+      return totalTopicos > 0 ? totalTopicos : sections.length;
+    } catch (error) {
+      console.error('Erro ao calcular o total de seções:', error);
+      return sections.length; // Fallback para o número atual de seções
+    }
+  };
+
+  // Função para obter o total de seções concluídas para todas as aulas
+  const getTotalCompletedSections = (subjectsData: SubjectsData): number => {
+    if (!subjectsData.completed_sections) return 0;
+    
+    let total = 0;
+    
+    // Percorrer todas as aulas com seções concluídas
+    Object.values(subjectsData.completed_sections).forEach(sectionIds => {
+      // Verificar se sectionIds é um array antes de usar o length
+      if (Array.isArray(sectionIds)) {
+        total += sectionIds.length;
+      }
+    });
+    
+    return total;
+  };
+
   // Atualizar o estado local quando as props mudarem
   useEffect(() => {
     if (completedSections.length > 0 && JSON.stringify(completedSections) !== JSON.stringify(localCompletedSections)) {
@@ -336,7 +240,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         // Salvar os tópicos concluídos
         subjectsData.completed_sections[lessonId] = localCompletedSections;
 
-        const totalSections = await refreshTotalTopics(realCourseId);
+        const totalSections = await getTotalSectionsForCourse(realCourseId);
         const totalCompleted = getTotalCompletedSections(subjectsData);
 
         console.log('Salvando progresso:', { 
@@ -344,6 +248,16 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
           totalSections, 
           localCompletedSections 
         });
+
+        // Disparar evento antes de salvar no banco
+        document.dispatchEvent(new CustomEvent('sectionsUpdated', {
+          detail: { 
+            courseId: realCourseId,
+            totalCompleted,
+            totalSections,
+            timestamp: new Date().getTime()
+          }
+        }));
 
         if (progress) {
           const { error: updateError } = await supabase
