@@ -24,8 +24,8 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
   onToggleCompletion = () => {}
 }) => {
   // Dispara evento de atualização quando um tópico é marcado como concluído
-  const handleToggleCompletion = (sectionId: string, event: React.MouseEvent) => {
-    onToggleCompletion(sectionId, event);
+  const handleToggleCompletion = (sectionId: string, evt: React.MouseEvent) => {
+    onToggleCompletion(sectionId, evt);
     
     // Após marcar a conclusão, disparar evento customizado para atualizar o painel de progresso
     const completedCount = sections.filter(section => 
@@ -37,13 +37,13 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
     const adjustedCount = isRemoving ? completedCount - 1 : completedCount + 1;
     
     // Disparar evento
-    const event = new CustomEvent('sectionsUpdated', {
+    const customEvent = new CustomEvent('sectionsUpdated', {
       detail: {
         totalCompleted: adjustedCount,
         totalSections: sections.length
       }
     });
-    document.dispatchEvent(event);
+    document.dispatchEvent(customEvent);
     console.log(`Evento sectionsUpdated disparado: ${adjustedCount}/${sections.length}`);
     
     // Disparar também evento para a conclusão de tópicos individual
@@ -72,7 +72,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
           {sections.map((section, index) => {
             const isActive = section.id === selectedSection;
             const isCompleted = completedSections.includes(section.id);
-            const isLocked = section.locked;
+            const isLocked = section.locked || false;
             
             return (
               <div
