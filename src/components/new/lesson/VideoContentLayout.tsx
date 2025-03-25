@@ -78,7 +78,6 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
       
       <VideoSection
         section={currentSection}
-        setVideoHeight={setVideoHeight}
         videoHeight={videoHeight}
       />
     </div>

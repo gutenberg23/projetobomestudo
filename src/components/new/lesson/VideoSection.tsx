@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -20,15 +21,17 @@ interface TeacherInfo {
 }
 
 interface VideoSectionProps {
-  selectedSection: string;
-  sections: Section[];
+  sections?: Section[];
+  selectedSection?: string;
+  section?: Section;
   videoHeight: number;
   teacher?: TeacherInfo;
 }
 
 export const VideoSection: React.FC<VideoSectionProps> = ({
-  selectedSection,
   sections,
+  selectedSection,
+  section: sectionProp,
   videoHeight,
   teacher = {
     name: "Professor(a)",
@@ -36,7 +39,10 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
     socialMedia: {}
   }
 }) => {
-  const currentSection = sections.find(s => s.id === selectedSection);
+  // Determinar a seção atual usando os parâmetros fornecidos
+  const currentSection = sectionProp || (sections && selectedSection ? 
+    sections.find(s => s.id === selectedSection) : undefined);
+    
   const [responsiveHeight, setResponsiveHeight] = useState(videoHeight);
   const [professorData, setProfessorData] = useState<TeacherInfo | null>(null);
 
@@ -145,7 +151,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
             <Twitter className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
         {teacherData.socialMedia.website && <a href={teacherData.socialMedia.website} target="_blank" rel="noopener noreferrer" aria-label="Website">
-            <Globe className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
+            <Globe className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
           </a>}
       </div>;
   };
