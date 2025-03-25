@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -352,12 +351,22 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
               const totalSections = await getTotalSectionsForCourse(realCourseId);
               const totalCompleted = getTotalCompletedSections(subjectsData);
               
+              // Disparar eventos para atualização em tempo real da UI
               document.dispatchEvent(new CustomEvent('sectionsUpdated', {
                 detail: { 
                   courseId: realCourseId,
                   totalCompleted,
                   totalSections,
                   timestamp: new Date().getTime()
+                }
+              }));
+              
+              // Disparar outro evento mais genérico para outros componentes que precisam atualizar
+              document.dispatchEvent(new CustomEvent('topicCompleted', {
+                detail: {
+                  courseId: realCourseId,
+                  sectionId,
+                  isCompleted: newSections.includes(sectionId)
                 }
               }));
             }

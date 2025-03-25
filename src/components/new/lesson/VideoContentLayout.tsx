@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useRef, useEffect, useState } from "react";
@@ -29,19 +30,6 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
   const videoRef = useRef<HTMLDivElement>(null);
   const [currentVideoHeight, setCurrentVideoHeight] = useState(videoHeight);
 
-  // Dados de exemplo do professor - em um caso real, isso viria de uma API ou props
-  const teacherExample = {
-    name: "Ana Maria Silva",
-    photoUrl: "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg", // Usando imagem de exemplo do projeto
-    socialMedia: {
-      youtube: "https://youtube.com/usuario",
-      instagram: "https://instagram.com/usuario",
-      telegram: "https://t.me/usuario",
-      facebook: "https://facebook.com/usuario",
-      twitter: "https://twitter.com/usuario"
-    }
-  };
-
   useEffect(() => {
     const updateVideoHeight = () => {
       if (videoRef.current) {
@@ -62,15 +50,17 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
     };
   }, [setVideoHeight]);
 
+  // Encontrar a seção atual com base no ID selecionado
+  const currentSection = sections.find(s => s.id === selectedSection);
+
   return (
     <div className={`flex flex-col md:flex-row px-3 sm:px-5 mt-3 sm:mt-5`}>
       <div className={`w-full md:w-2/3 md:pr-5`}>
         <div ref={videoRef}>
           <VideoSection 
-            selectedSection={selectedSection} 
             sections={sections}
+            selectedSection={selectedSection}
             videoHeight={currentVideoHeight}
-            teacher={teacherExample}
           />
         </div>
       </div>
