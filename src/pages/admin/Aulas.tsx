@@ -1,4 +1,3 @@
-
 import React from "react";
 import { 
   AulasFilter, 
@@ -41,7 +40,8 @@ const Aulas = () => {
     isOpenDelete,
     setIsOpenDelete,
     currentAula,
-    temAulasSelecionadas
+    temAulasSelecionadas,
+    handleDuplicarAula
   } = useAulasActions();
 
   return (
@@ -71,6 +71,7 @@ const Aulas = () => {
             handleSelecaoAula={handleSelecaoAula}
             openEditModal={openEditModal}
             openDeleteModal={openDeleteModal}
+            handleDuplicarAula={handleDuplicarAula}
           />
           
           {/* Paginação */}

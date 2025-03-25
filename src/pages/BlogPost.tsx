@@ -27,6 +27,7 @@ import { fetchBlogPostBySlug, fetchBlogPosts, incrementLikes } from "@/services/
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -51,8 +52,10 @@ const BlogPostPage = () => {
 
       setLoading(true);
       try {
+        console.log('Carregando post com slug:', slug);
         // Buscar o post específico
         const fetchedPost = await fetchBlogPostBySlug(slug);
+        console.log('Post carregado:', fetchedPost);
         
         if (!fetchedPost) {
           setError('Post não encontrado');
@@ -76,7 +79,9 @@ const BlogPostPage = () => {
         
         // Verificar se o post está curtido
         const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
-        setIsLiked(likedPosts.includes(fetchedPost.id));
+        const hasLiked = likedPosts.includes(fetchedPost.id);
+        console.log('Verificação de curtida:', { postId: fetchedPost.id, likedPosts, hasLiked });
+        setIsLiked(hasLiked);
         
         // Verificar se o post está nos favoritos
         const bookmarkedPosts = JSON.parse(localStorage.getItem('bookmarkedPosts') || '[]');
@@ -179,25 +184,104 @@ const BlogPostPage = () => {
   }, [post]);
   
   const handleLike = async () => {
-    if (!post) return;
-    
     try {
-      const success = await incrementLikes(post.id);
-      if (success) {
-        setPost({
-          ...post,
-          likesCount: post.likesCount + 1
-        });
+      // Verificar a sessão atual
+      const session = await supabase.auth.getSession();
+      console.log('Estado da sessão:', {
+        hasSession: !!session.data.session,
+        userId: session.data.session?.user?.id,
+        isExpired: session.data.session?.expires_at ? new Date(session.data.session.expires_at * 1000) < new Date() : true
+      });
+
+      // Verificar se o usuário está autenticado
+      if (!session.data.session?.user) {
+        console.error('Usuário não está autenticado');
         toast({
-          title: "Artigo curtido!",
-          description: "Obrigado por curtir este artigo."
+          title: "Login necessário",
+          description: "Você precisa estar logado para curtir um post.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar se o post existe e tem ID válido
+      if (!post?.id) {
+        console.error('Post inválido ou sem ID');
+        toast({
+          title: "Erro ao curtir",
+          description: "Não foi possível curtir o post: post inválido",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Verificar se já curtiu
+      const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
+      if (likedPosts.includes(post.id)) {
+        console.log('Post já foi curtido');
+        toast({
+          title: "Post já curtido",
+          description: "Você já curtiu este post anteriormente.",
+          variant: "default"
+        });
+        return;
+      }
+
+      console.log('Detalhes do post antes de curtir:', {
+        postId: post.id,
+        currentLikes: post.likesCount,
+        title: post.title
+      });
+
+      // Tentar incrementar as curtidas
+      const success = await incrementLikes(post.id);
+      console.log('Resultado da curtida:', success);
+
+      if (success) {
+        // Atualizar o estado local
+        setPost(prev => prev ? {
+          ...prev,
+          likesCount: (prev.likesCount || 0) + 1
+        } : null);
+        
+        // Atualizar o localStorage
+        likedPosts.push(post.id);
+        localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+        setIsLiked(true);
+
+        toast({
+          title: "Post curtido!",
+          description: "Post curtido com sucesso!",
+          variant: "default"
+        });
+      } else {
+        console.error('Falha ao curtir post - verificando motivos:');
+        
+        // Verificar novamente a sessão para ter certeza que não expirou durante a operação
+        const currentSession = await supabase.auth.getSession();
+        if (!currentSession.data.session) {
+          console.error('Sessão expirou durante a operação');
+          toast({
+            title: "Sessão expirada",
+            description: "Sua sessão expirou. Por favor, faça login novamente.",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        // Se chegou aqui, é um erro genérico
+        console.error('Falha ao curtir post - erro desconhecido');
+        toast({
+          title: "Erro ao curtir",
+          description: "Não foi possível curtir o post. Tente novamente mais tarde.",
+          variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('Erro ao curtir artigo:', error);
+      console.error('Erro ao processar curtida:', error);
       toast({
         title: "Erro ao curtir",
-        description: "Não foi possível curtir este artigo. Tente novamente mais tarde.",
+        description: "Ocorreu um erro ao curtir o post",
         variant: "destructive"
       });
     }
@@ -339,20 +423,133 @@ const BlogPostPage = () => {
                 {post.summary}
               </div>
               
-              {/* Conteúdo */}
-              <div 
-                className="prose max-w-none mb-8" 
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
+              {/* Conteúdo do post */}
+              <div className="prose prose-lg max-w-none mt-8">
+                <style>
+                  {`
+                    .prose h1 { font-size: 2.5em; margin-top: 1.5em; margin-bottom: 0.8em; }
+                    .prose h2 { font-size: 2em; margin-top: 1.4em; margin-bottom: 0.7em; }
+                    .prose h3 { font-size: 1.7em; margin-top: 1.3em; margin-bottom: 0.6em; }
+                    .prose h4 { font-size: 1.4em; margin-top: 1.2em; margin-bottom: 0.5em; }
+                    .prose h5 { font-size: 1.2em; margin-top: 1.1em; margin-bottom: 0.4em; }
+                    
+                    .prose ul {
+                      list-style-type: disc;
+                      margin-top: 1.25em;
+                      margin-bottom: 1.25em;
+                      padding-left: 1.625em;
+                    }
+                    
+                    .prose ul li {
+                      margin-top: 0.5em;
+                      margin-bottom: 0.5em;
+                      padding-left: 0.375em;
+                    }
+                    
+                    .prose ol {
+                      list-style-type: decimal;
+                      margin-top: 1.25em;
+                      margin-bottom: 1.25em;
+                      padding-left: 1.625em;
+                    }
+                    
+                    .prose ol li {
+                      margin-top: 0.5em;
+                      margin-bottom: 0.5em;
+                      padding-left: 0.375em;
+                    }
+                    
+                    .prose table {
+                      display: table;
+                      width: 100%;
+                      table-layout: auto;
+                      overflow-x: auto;
+                      font-size: 0.9em;
+                      margin: 1em 0;
+                      border-collapse: collapse;
+                    }
+
+                    /* Wrapper para scroll horizontal */
+                    .prose table:not(.no-wrap) {
+                      display: block;
+                      max-width: 100%;
+                      overflow-x: auto;
+                      -webkit-overflow-scrolling: touch;
+                    }
+                    
+                    .prose table td {
+                      padding: 0.75em 1em;
+                      border: 1px solid #e2e8f0;
+                      min-width: 80px;
+                      max-width: 300px;
+                      word-wrap: break-word;
+                      overflow-wrap: break-word;
+                      hyphens: auto;
+                    }
+                    
+                    .prose table th {
+                      padding: 0.75em 1em;
+                      border: 1px solid #e2e8f0;
+                      background-color: #f8fafc;
+                      font-weight: 600;
+                      text-align: left;
+                      white-space: normal;
+                      min-width: 80px;
+                      max-width: 300px;
+                    }
+
+                    /* Tenta fazer células se ajustarem ao conteúdo */
+                    .prose table td, .prose table th {
+                      width: 1%;
+                      white-space: normal;
+                    }
+
+                    /* Se a tabela tiver muitas colunas, permite scroll */
+                    .prose table.wide {
+                      white-space: nowrap;
+                    }
+                    
+                    .prose table::-webkit-scrollbar {
+                      height: 8px;
+                    }
+                    
+                    .prose table::-webkit-scrollbar-track {
+                      background: #f1f1f1;
+                      border-radius: 4px;
+                    }
+                    
+                    .prose table::-webkit-scrollbar-thumb {
+                      background: #888;
+                      border-radius: 4px;
+                    }
+                    
+                    .prose table::-webkit-scrollbar-thumb:hover {
+                      background: #555;
+                    }
+                    
+                    .prose table tr:nth-child(even) {
+                      background-color: #fafafa;
+                    }
+                    
+                    .prose table tr:hover {
+                      background-color: #f1f5f9;
+                    }
+                  `}
+                </style>
+                <div dangerouslySetInnerHTML={{ __html: post.content }} />
+              </div>
               
               {/* Tags */}
               {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-6">
+                <div className="flex flex-wrap gap-2 mt-8 mb-6">
                   {post.tags.map((tag, index) => (
-                    <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                      <Tag className="w-3 h-3 mr-1" />
-                      {tag}
-                    </span>
+                    <Link
+                      key={index}
+                      to={`/blog/tag/${encodeURIComponent(tag.toLowerCase())}`}
+                      className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-200 transition-colors"
+                    >
+                      #{tag}
+                    </Link>
                   ))}
                 </div>
               )}
@@ -361,33 +558,29 @@ const BlogPostPage = () => {
               <div className="flex flex-wrap items-center justify-between pt-4 border-t border-gray-200">
                 <div className="flex items-center space-x-4 mb-4 sm:mb-0">
                   <Button 
-                    variant="outline" 
+                    variant={isLiked ? "default" : "outline"}
                     size="sm" 
                     onClick={handleLike}
-                    className={`flex items-center ${isLiked ? 'text-red-500 border-red-500' : ''}`}
+                    className={`flex items-center transition-all duration-200 ${
+                      isLiked 
+                        ? 'bg-red-500 hover:bg-red-500 text-white border-red-500 cursor-not-allowed' 
+                        : 'hover:text-red-500 hover:border-red-500'
+                    }`}
+                    disabled={!user || isLiked}
                   >
-                    <Heart className={`h-4 w-4 mr-2 ${isLiked ? 'fill-red-500' : ''}`} />
-                    {isLiked ? 'Curtido' : 'Curtir'}
+                    <Heart className={`h-4 w-4 mr-2 transition-all ${isLiked ? 'fill-white' : 'fill-none'}`} />
+                    {isLiked ? 'Você curtiu' : 'Curtir'}
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    onClick={handleBookmark}
-                    className={`flex items-center ${isBookmarked ? 'text-primary border-primary' : ''}`}
+                    onClick={handleShare}
+                    className="flex items-center"
                   >
-                    <Bookmark className={`h-4 w-4 mr-2 ${isBookmarked ? 'fill-primary' : ''}`} />
-                    {isBookmarked ? 'Salvo' : 'Salvar'}
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Compartilhar
                   </Button>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleShare}
-                  className="flex items-center"
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Compartilhar
-                </Button>
               </div>
             </article>
             

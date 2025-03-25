@@ -1,4 +1,3 @@
-
 import React from "react";
 import { usePostsState } from "./hooks/usePostsState";
 import { usePostsActions } from "./hooks/usePostsActions";
@@ -43,7 +42,8 @@ const Posts = () => {
     estado,
     setEstado,
     postsRelacionados,
-    setPostsRelacionados
+    setPostsRelacionados,
+    postEditando
   } = state;
 
   const { 
@@ -107,6 +107,7 @@ const Posts = () => {
           onChangeEstado={setEstado}
           postsRelacionados={postsRelacionados}
           onChangePostsRelacionados={setPostsRelacionados}
+          postId={postEditando?.id}
         />
       )}
     </div>

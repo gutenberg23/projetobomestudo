@@ -1,6 +1,5 @@
-
 export type Region = "nacional" | "norte" | "nordeste" | "centro-oeste" | "sudeste" | "sul" | "federal";
-export type RegionOrEmpty = Region | "";
+export type RegionOrEmpty = Region | "none";
 
 export interface BlogPost {
   id: string;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Aula } from "../AulasTypes";
 import { supabase } from "@/integrations/supabase/client";
@@ -153,6 +152,45 @@ export const useAulasActions = () => {
     }
   };
 
+  // Função para duplicar aula
+  const handleDuplicarAula = async (aula: Aula) => {
+    try {
+      // Criar uma nova aula com os mesmos dados, mas sem o ID
+      const novaAula = {
+        titulo: `${aula.titulo} (Cópia)`,
+        descricao: aula.descricao,
+        topicos_ids: aula.topicosIds,
+        questoes_ids: aula.questoesIds
+      };
+
+      const { data, error } = await supabase
+        .from('aulas')
+        .insert([novaAula])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Formatar a nova aula para o formato usado na aplicação
+      const aulaFormatada: Aula = {
+        id: data.id,
+        titulo: data.titulo,
+        descricao: data.descricao || "",
+        topicosIds: data.topicos_ids || [],
+        questoesIds: data.questoes_ids || [],
+        selecionada: false,
+        totalQuestoes: aula.totalQuestoes
+      };
+
+      // Adicionar a nova aula à lista
+      setAulas([...aulas, aulaFormatada]);
+      toast.success("Aula duplicada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao duplicar aula:", error);
+      toast.error("Erro ao duplicar a aula. Tente novamente.");
+    }
+  };
+
   // Função para adicionar disciplina
   const handleAdicionarDisciplina = async () => {
     if (!tituloNovaDisciplina.trim()) {
@@ -220,6 +258,7 @@ export const useAulasActions = () => {
     openDeleteModal,
     handleSaveAula,
     handleDeleteAula,
+    handleDuplicarAula,
     tituloNovaDisciplina,
     setTituloNovaDisciplina,
     descricaoNovaDisciplina,

@@ -2,7 +2,7 @@ import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pencil, Trash } from "lucide-react";
+import { Pencil, Trash, Copy } from "lucide-react";
 import { AulasTableProps } from "./AulasTypes";
 
 export const AulasTable: React.FC<AulasTableProps> = ({
@@ -11,7 +11,8 @@ export const AulasTable: React.FC<AulasTableProps> = ({
   handleSelecaoTodas,
   handleSelecaoAula,
   openEditModal,
-  openDeleteModal
+  openDeleteModal,
+  handleDuplicarAula
 }) => {
   return (
     <div className="rounded-md border bg-white">
@@ -28,7 +29,7 @@ export const AulasTable: React.FC<AulasTableProps> = ({
             <TableHead className="w-[200px]">No Edital</TableHead>
             <TableHead className="w-[120px]">Nº de Tópicos</TableHead>
             <TableHead className="w-[120px]">Nº de Questões</TableHead>
-            <TableHead className="w-[150px]">Ações</TableHead>
+            <TableHead className="w-[200px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -47,6 +48,9 @@ export const AulasTable: React.FC<AulasTableProps> = ({
                   <div className="flex space-x-2">
                     <Button onClick={() => openEditModal(aula)} variant="outline" size="sm" className="w-auto">
                       <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button onClick={() => handleDuplicarAula(aula)} variant="outline" size="sm" className="w-auto">
+                      <Copy className="h-4 w-4" />
                     </Button>
                     <Button onClick={() => openDeleteModal(aula)} variant="outline" size="sm" className="text-red-500 hover:text-red-700 w-auto">
                       <Trash className="h-4 w-4" />

@@ -37,25 +37,22 @@ export const CourseLayout = () => {
     }
   };
 
-  const showNavigation = subjectsCount > 1;
-  const showProgress = showNavigation && isProgressVisible;
+  const showProgress = isProgressVisible;
 
   return (
     <div className="min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="pt-[88px]">
         <CourseHeader courseId={courseId || ''} />
-        {showNavigation && (
-          <CourseNavigation
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            onProgressClick={handleProgressClick}
-            isProgressVisible={isProgressVisible}
-          />
-        )}
+        <CourseNavigation
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onProgressClick={handleProgressClick}
+          isProgressVisible={isProgressVisible}
+        />
         {activeTab === 'disciplinas' && (
           <div className="bg-[rgba(246,248,250,1)] flex w-full gap-5 py-0 flex-col xl:flex-row px-[10px] md:px-[32px]">
-            <div className={`flex-1 ${!showNavigation ? 'mt-5' : ''}`}>
+            <div className="flex-1">
               <SubjectsList onSubjectsCountChange={handleSubjectsCountChange} />
             </div>
             {showProgress && (

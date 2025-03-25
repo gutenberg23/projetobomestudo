@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface, MOCK_POSTS } from "../types";
@@ -24,8 +23,8 @@ export function usePostsState() {
   const [metaKeywords, setMetaKeywords] = useState("");
   const [tempoLeitura, setTempoLeitura] = useState("");
   const [imagemDestaque, setImagemDestaque] = useState("");
-  const [regiao, setRegiao] = useState<Region | "">("");
-  const [estado, setEstado] = useState("");
+  const [regiao, setRegiao] = useState<Region | "none">("none");
+  const [estado, setEstado] = useState("none");
   const [postsRelacionados, setPostsRelacionados] = useState("");
 
   // Buscar posts do banco de dados ao carregar o componente

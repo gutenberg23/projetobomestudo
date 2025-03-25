@@ -76,6 +76,8 @@ export async function fetchBlogPosts(): Promise<BlogPost[]> {
 // Função para buscar um post específico pelo slug
 export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
+    console.log('Buscando post com slug:', slug);
+    
     // Primeiro, verificar se a tabela existe
     const { error: checkError } = await supabase
       .from('blog_posts')
@@ -86,6 +88,7 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
       console.info('Tabela de posts do blog não existe, usando dados mockados');
       // Tabela não existe, usar mock data
       const mockPost = MOCK_BLOG_POSTS.find(post => post.slug === slug);
+      console.log('Post mockado encontrado:', mockPost);
       return mockPost || null;
     }
 
@@ -99,14 +102,17 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
       console.error(`Erro ao buscar post com slug ${slug}:`, error);
       // Tentar encontrar no mock data
       const mockPost = MOCK_BLOG_POSTS.find(post => post.slug === slug);
+      console.log('Post mockado encontrado após erro:', mockPost);
       return mockPost || null;
     }
 
+    console.log('Post encontrado no banco:', data);
     return data ? mapDatabasePostToAppPost(data) : null;
   } catch (error) {
     console.error(`Exceção ao buscar post com slug ${slug}:`, error);
     // Tentar encontrar no mock data
     const mockPost = MOCK_BLOG_POSTS.find(post => post.slug === slug);
+    console.log('Post mockado encontrado após exceção:', mockPost);
     return mockPost || null;
   }
 }
@@ -195,6 +201,8 @@ export async function deleteBlogPost(id: string): Promise<boolean> {
  */
 export const incrementLikes = async (postId: string): Promise<boolean> => {
   try {
+    console.log('Iniciando incremento de curtidas para o post:', postId);
+    
     // Verificar se estamos usando dados mockados (IDs simples como "1", "2", etc.)
     const isMockId = /^\d+$/.test(postId) || postId.length < 10;
     
@@ -205,21 +213,39 @@ export const incrementLikes = async (postId: string): Promise<boolean> => {
     }
     
     // Para IDs reais, verificar se é um UUID válido
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(postId)) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(postId)) {
       console.error(`ID inválido para incrementar curtidas: ${postId}`);
       return false;
     }
 
-    const { data, error } = await supabase.rpc('increment_blog_post_likes', {
+    console.log('Chamando RPC increment_blog_post_likes com post_id:', postId);
+    const { data, error, status } = await supabase.rpc('increment_blog_post_likes', {
       post_id: postId
     });
 
     if (error) {
-      console.error('Erro ao incrementar curtidas:', error);
+      console.error('Erro ao incrementar curtidas:', {
+        error,
+        status,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+
+      // Se o erro for de autenticação, retornar false
+      if (error.message.includes('não autenticado') || error.code === 'PGRST301') {
+        console.error('Usuário não está autenticado');
+        return false;
+      }
+
+      // Para outros erros, também retornar false
       return false;
     }
 
-    return true;
+    console.log('Resultado da RPC increment_blog_post_likes:', { data, status });
+    return data === true;
   } catch (error) {
     console.error('Exceção ao incrementar curtidas:', error);
     return false;
@@ -258,6 +284,53 @@ export const incrementComments = async (postId: string): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Exceção ao incrementar comentários:', error);
+    return false;
+  }
+};
+
+export const resetAllLikes = async (): Promise<boolean> => {
+  try {
+    console.log('Iniciando reset de todas as curtidas');
+    
+    const { data, error } = await supabase.rpc('reset_all_blog_post_likes');
+
+    if (error) {
+      console.error('Erro ao resetar curtidas:', error);
+      return false;
+    }
+
+    console.log('Curtidas resetadas com sucesso');
+    return true;
+  } catch (error) {
+    console.error('Exceção ao resetar curtidas:', error);
+    return false;
+  }
+};
+
+export const resetBlogPostLikes = async (postId: string): Promise<boolean> => {
+  try {
+    console.log('Iniciando reset de curtidas para o post:', postId);
+    
+    // Verificar se é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(postId)) {
+      console.error(`ID inválido para resetar curtidas: ${postId}`);
+      return false;
+    }
+
+    const { data, error } = await supabase.rpc('reset_blog_post_likes', {
+      post_id: postId
+    });
+
+    if (error) {
+      console.error('Erro ao resetar curtidas:', error);
+      return false;
+    }
+
+    console.log('Curtidas resetadas com sucesso para o post:', postId);
+    return true;
+  } catch (error) {
+    console.error('Exceção ao resetar curtidas:', error);
     return false;
   }
 };

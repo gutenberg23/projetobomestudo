@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,8 +5,8 @@ import { REGIOES, ESTADOS } from "../../types";
 import { Region } from "@/components/blog/types";
 
 interface FormularioRegiaoProps {
-  regiao: Region | "";
-  onChangeRegiao: (value: Region | "") => void;
+  regiao: Region | "none";
+  onChangeRegiao: (value: Region | "none") => void;
   estado: string;
   onChangeEstado: (value: string) => void;
 }
@@ -19,7 +18,7 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
   onChangeEstado
 }) => {
   // Filtrar estados por região selecionada
-  const estadosFiltrados = regiao 
+  const estadosFiltrados = regiao && regiao !== "none"
     ? ESTADOS.filter(estado => estado.region === regiao) 
     : ESTADOS;
 
@@ -32,15 +31,15 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
           <Select 
             value={regiao} 
             onValueChange={(value) => {
-              onChangeRegiao(value as Region | "");
-              onChangeEstado("");
+              onChangeRegiao(value as Region | "none");
+              onChangeEstado("none");
             }}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma região" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhuma</SelectItem>
+              <SelectItem value="none">Nenhuma</SelectItem>
               {REGIOES.map(reg => (
                 <SelectItem key={reg} value={reg}>{reg}</SelectItem>
               ))}
@@ -53,13 +52,13 @@ export const FormularioRegiao: React.FC<FormularioRegiaoProps> = ({
           <Select 
             value={estado} 
             onValueChange={onChangeEstado}
-            disabled={!regiao || regiao === "federal" || regiao === "nacional"}
+            disabled={!regiao || regiao === "none" || regiao === "federal" || regiao === "nacional"}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um estado" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Nenhum</SelectItem>
+              <SelectItem value="none">Nenhum</SelectItem>
               {estadosFiltrados.map(estado => (
                 <SelectItem key={estado.id} value={estado.value}>{estado.name}</SelectItem>
               ))}

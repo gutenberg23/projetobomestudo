@@ -8,6 +8,9 @@ import { FormularioMetadados } from "./formulario/FormularioMetadados";
 import { FormularioMidia } from "./formulario/FormularioMidia";
 import { FormularioDestaque } from "./formulario/FormularioDestaque";
 import { Region } from "@/components/blog/types";
+import { resetBlogPostLikes } from "@/services/blogService";
+import { toast } from "@/components/ui/use-toast";
+import { Trash2 } from "lucide-react";
 
 interface FormularioPostProps {
   modo: ModoInterface;
@@ -37,12 +40,13 @@ interface FormularioPostProps {
   onChangeTempoLeitura: (value: string) => void;
   imagemDestaque: string;
   onChangeImagemDestaque: (value: string) => void;
-  regiao: Region | "";
-  onChangeRegiao: (value: Region | "") => void;
+  regiao: Region | "none";
+  onChangeRegiao: (value: Region | "none") => void;
   estado: string;
   onChangeEstado: (value: string) => void;
   postsRelacionados: string;
   onChangePostsRelacionados: (value: string) => void;
+  postId?: string;
 }
 
 export const FormularioPost: React.FC<FormularioPostProps> = ({
@@ -78,20 +82,64 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
   estado,
   onChangeEstado,
   postsRelacionados,
-  onChangePostsRelacionados
+  onChangePostsRelacionados,
+  postId
 }) => {
+  const handleResetLikes = async () => {
+    if (!postId) return;
+    
+    if (window.confirm("Tem certeza que deseja resetar as curtidas deste post?")) {
+      try {
+        const success = await resetBlogPostLikes(postId);
+        if (success) {
+          toast({
+            title: "Curtidas resetadas",
+            description: "As curtidas do post foram resetadas com sucesso.",
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Erro",
+            description: "Ocorreu um erro ao resetar as curtidas. Tente novamente.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao resetar curtidas:", error);
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao resetar as curtidas. Tente novamente.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[#272f3c]">
           {modo === ModoInterface.CRIAR ? "Novo Post" : "Editar Post"}
         </h1>
-        <Button 
-          variant="outline" 
-          onClick={onVoltar}
-        >
-          Voltar
-        </Button>
+        <div className="flex items-center space-x-2">
+          {modo === ModoInterface.EDITAR && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleResetLikes}
+              className="text-red-500 hover:text-red-600"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Resetar Curtidas
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            onClick={onVoltar}
+          >
+            Voltar
+          </Button>
+        </div>
       </div>
       
       <div className="bg-white p-6 rounded-lg shadow-sm">

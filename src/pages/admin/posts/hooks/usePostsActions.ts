@@ -1,4 +1,3 @@
-
 import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
@@ -60,8 +59,8 @@ export function usePostsActions(state: PostsState) {
     setMetaKeywords("");
     setTempoLeitura("");
     setImagemDestaque("");
-    setRegiao("");
-    setEstado("");
+    setRegiao("none");
+    setEstado("none");
     setPostsRelacionados("");
     setPostEditando(null);
     setModo(ModoInterface.CRIAR);
@@ -81,8 +80,8 @@ export function usePostsActions(state: PostsState) {
     setMetaKeywords(post.metaKeywords ? post.metaKeywords.join(", ") : "");
     setTempoLeitura(post.readingTime ? post.readingTime.toString() : "");
     setImagemDestaque(post.featuredImage || "");
-    setRegiao(post.region || "");
-    setEstado(post.state || "");
+    setRegiao(post.region || "none");
+    setEstado(post.state || "none");
     setPostsRelacionados(post.relatedPosts ? post.relatedPosts.join(", ") : "");
     setPostEditando(post);
     setModo(ModoInterface.EDITAR);
@@ -125,8 +124,8 @@ export function usePostsActions(state: PostsState) {
         authorAvatar: autorAvatar || undefined,
         slug: slug,
         category: categoria,
-        region: regiao as Region || undefined,
-        state: estado || undefined,
+        region: regiao === "none" ? undefined : regiao as Region,
+        state: estado === "none" ? undefined : estado,
         tags: tagsArray.length > 0 ? tagsArray : undefined,
         metaDescription: metaDescricao || resumo,
         metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,

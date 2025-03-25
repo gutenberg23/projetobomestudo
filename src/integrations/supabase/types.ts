@@ -1171,6 +1171,22 @@ export type Database = {
             }
             Returns: undefined
           }
+      increment_post_likes_v2: {
+        Args: {
+          post_id: string
+        }
+        Returns: boolean
+      }
+      reset_all_blog_post_likes: {
+        Args: Record<string, never>
+        Returns: void
+      }
+      reset_blog_post_likes: {
+        Args: {
+          post_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "aluno" | "professor" | "admin"

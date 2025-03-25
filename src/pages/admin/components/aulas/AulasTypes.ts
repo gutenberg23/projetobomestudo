@@ -22,6 +22,7 @@ export interface AulasTableProps {
   handleSelecaoAula: (id: string) => void;
   openEditModal: (aula: Aula) => void;
   openDeleteModal: (aula: Aula) => void;
+  handleDuplicarAula: (aula: Aula) => void;
 }
 
 export interface AulasPageProps {
