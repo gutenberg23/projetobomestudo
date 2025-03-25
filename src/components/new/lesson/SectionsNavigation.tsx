@@ -153,18 +153,18 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
       // Contar o total de tópicos em todas as aulas
       let totalTopicos = 0;
       
-      // Para as aulas, contamos os tópicos
-      if (aulasData && Array.isArray(aulasData)) {
-        for (const aula of aulasData) {
-          // Se for a aula atual, usamos o número de seções fornecido
-          if (aula.id === lessonId) {
-            totalTopicos += sections.length;
-          } else {
-            // Para as outras aulas, contamos os tópicos da lista topicos_ids
-            if (aula.topicos_ids && Array.isArray(aula.topicos_ids)) {
-              totalTopicos += aula.topicos_ids.length;
-            }
-          }
+      // Para a aula atual, usamos o número de seções fornecido
+      if (lessonId) {
+        totalTopicos += sections.length;
+      }
+      
+      // Para as outras aulas, precisamos contar os tópicos
+      for (const aula of aulasData || []) {
+        // Se for a aula atual, pulamos pois já contamos acima
+        if (aula.id === lessonId) continue;
+        
+        if (aula.topicos_ids && Array.isArray(aula.topicos_ids)) {
+          totalTopicos += aula.topicos_ids.length;
         }
       }
       

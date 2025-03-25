@@ -64,53 +64,6 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
     return total;
   };
 
-  // Função para calcular o total de tópicos em um curso, buscando informações atualizadas do banco
-  const calculateTotalTopics = async (realCourseId: string): Promise<number> => {
-    try {
-      // Buscar o curso para obter as aulas atualizadas
-      const { data: cursoData, error: cursoError } = await supabase
-        .from('cursos')
-        .select('aulas_ids')
-        .eq('id', realCourseId)
-        .single();
-        
-      if (cursoError) {
-        console.error('Erro ao buscar aulas do curso:', cursoError);
-        return 0;
-      }
-
-      if (!cursoData?.aulas_ids || !Array.isArray(cursoData.aulas_ids) || cursoData.aulas_ids.length === 0) {
-        return 0;
-      }
-
-      // Buscar todas as aulas do curso para contar seus tópicos
-      const { data: aulasData, error: aulasError } = await supabase
-        .from('aulas')
-        .select('topicos_ids')
-        .in('id', cursoData.aulas_ids);
-        
-      if (aulasError) {
-        console.error('Erro ao buscar detalhes das aulas:', aulasError);
-        return 0;
-      }
-      
-      // Contar o total de tópicos em todas as aulas
-      let totalTopics = 0;
-      if (aulasData && Array.isArray(aulasData)) {
-        totalTopics = aulasData.reduce((sum, aula) => {
-          return sum + (Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0);
-        }, 0);
-        
-        console.log('Total de tópicos encontrados (cálculo dinâmico):', totalTopics);
-      }
-      
-      return totalTopics;
-    } catch (error) {
-      console.error('Erro ao calcular o total de tópicos:', error);
-      return 0;
-    }
-  };
-
   // Função para carregar o progresso do usuário no curso
   const loadUserProgress = async () => {
     if (!userId || !courseId) {
@@ -123,7 +76,6 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
       
       const realCourseId = extractIdFromFriendlyUrl(courseId);
       
-      // Buscar o progresso do usuário
       const { data: progress, error } = await supabase
         .from('user_course_progress')
         .select('*')
@@ -137,8 +89,8 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
         return;
       }
       
-      // Calcular tópicos concluídos
       let totalCompleted = 0;
+      let totalTopics = 0;
       
       // Verificar se temos dados de progresso do usuário
       if (progress?.subjects_data) {
@@ -148,10 +100,37 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
         if (typeof subjectsData === 'object' && !Array.isArray(subjectsData)) {
           totalCompleted = getTotalCompletedSections(subjectsData);
         }
+        
+        // Buscar o curso para obter as aulas
+        const { data: cursoData, error: cursoError } = await supabase
+          .from('cursos')
+          .select('aulas_ids')
+          .eq('id', realCourseId)
+          .single();
+          
+        if (cursoError) {
+          console.error('Erro ao buscar aulas do curso:', cursoError);
+        } else if (cursoData?.aulas_ids && cursoData.aulas_ids.length > 0) {
+          // Buscar todas as aulas do curso para contar seus tópicos
+          const { data: aulasData, error: aulasError } = await supabase
+            .from('aulas')
+            .select('topicos_ids')
+            .in('id', cursoData.aulas_ids);
+            
+          if (aulasError) {
+            console.error('Erro ao buscar detalhes das aulas:', aulasError);
+          } else {
+            // Contar o total de tópicos em todas as aulas
+            if (aulasData && Array.isArray(aulasData)) {
+              totalTopics = aulasData.reduce((sum, aula) => {
+                return sum + (Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0);
+              }, 0);
+              
+              console.log('Total de tópicos encontrados:', totalTopics);
+            }
+          }
+        }
       }
-      
-      // Obter o total de tópicos diretamente do banco de dados (sempre atualizado)
-      const totalTopics = await calculateTotalTopics(realCourseId);
       
       // Calcular percentual de progresso
       const progressPercentage = totalTopics > 0
@@ -176,54 +155,9 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
     }
   };
 
-  // Configurar listeners para atualizações de curso, aulas e tópicos
-  const setupDatabaseListeners = (realCourseId: string) => {
-    // Canal para escutar atualizações no curso, aulas ou tópicos
-    const channel = supabase
-      .channel('course-updates')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'cursos',
-        filter: `id=eq.${realCourseId}`
-      }, () => {
-        console.log('Curso atualizado, recarregando progresso...');
-        loadUserProgress();
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'aulas'
-      }, () => {
-        console.log('Aula atualizada, recarregando progresso...');
-        loadUserProgress();
-      })
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'aulas'
-      }, () => {
-        console.log('Nova aula adicionada, recarregando progresso...');
-        loadUserProgress();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  };
-
   // Atualizar o progresso quando o usuário ou curso mudar
   useEffect(() => {
     loadUserProgress();
-    
-    // Configurar listeners somente se tivermos courseId
-    if (courseId) {
-      const realCourseId = extractIdFromFriendlyUrl(courseId);
-      const cleanup = setupDatabaseListeners(realCourseId);
-      
-      return cleanup;
-    }
     
     // Escutar eventos de atualização de seções
     const handleSectionsUpdated = (event: Event) => {

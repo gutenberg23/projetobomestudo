@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { Json } from "@/integrations/supabase/types";
 import { useUserProgress } from "./hooks/useUserProgress";
 
+// Interface para a estrutura de dados de subjects_data
 interface CompletedSections {
   [lessonId: string]: string[];
 }
@@ -40,16 +42,8 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   const [topicsStats, setTopicsStats] = useState({ totalTopics: 0, completedTopics: 0 });
   
   // Usar o hook personalizado para obter o progresso
-  const { totalTopics, completedTopics, progressPercentage, loading: progressLoading, reloadProgress } = 
+  const { totalTopics, completedTopics, progressPercentage, loading: progressLoading } = 
     useUserProgress(user?.id, courseId);
-    
-  // Adicionar um efeito para recarregar o progresso quando o painel for montado
-  useEffect(() => {
-    // Recarregar progresso para obter a contagem mais recente de tópicos
-    if (reloadProgress) {
-      reloadProgress();
-    }
-  }, [reloadProgress]);
   
   // Função para garantir que estamos usando números válidos para os cálculos
   const ensureValidNumber = (value: any): number => {
