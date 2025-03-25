@@ -20,17 +20,15 @@ interface TeacherInfo {
 }
 
 interface VideoSectionProps {
-  sections?: Section[];
-  selectedSection?: string;
-  section?: Section;
+  selectedSection: string;
+  sections: Section[];
   videoHeight: number;
   teacher?: TeacherInfo;
 }
 
 export const VideoSection: React.FC<VideoSectionProps> = ({
-  sections,
   selectedSection,
-  section: propSection,
+  sections,
   videoHeight,
   teacher = {
     name: "Professor(a)",
@@ -38,7 +36,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
     socialMedia: {}
   }
 }) => {
-  const currentSection = propSection || (sections && selectedSection ? sections.find(s => s.id === selectedSection) : undefined);
+  const currentSection = sections.find(s => s.id === selectedSection);
   const [responsiveHeight, setResponsiveHeight] = useState(videoHeight);
   const [professorData, setProfessorData] = useState<TeacherInfo | null>(null);
 
@@ -58,6 +56,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
     };
   }, []);
 
+  // Buscar informações do professor quando o tópico mudar
   useEffect(() => {
     const fetchProfessorData = async () => {
       if (!currentSection || !currentSection.professorId) {
@@ -85,6 +84,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
             }
           });
         } else {
+          // Se não encontrar o professor pelo ID, tenta pelo nome
           if (currentSection.professorNome) {
             const { data: nameData, error: nameError } = await supabase
               .from('professores')
@@ -105,6 +105,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
                 }
               });
             } else {
+              // Usa o nome do professor mesmo sem dados adicionais
               setProfessorData({
                 name: currentSection.professorNome,
                 photoUrl: "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg",
@@ -158,6 +159,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
       );
     }
 
+    // Verificar se é um URL do YouTube
     const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
     const match = currentSection.videoUrl.match(youtubeRegex);
     
@@ -173,6 +175,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
         ></iframe>
       );
     } else {
+      // Se não for um URL do YouTube, tenta exibir como vídeo normal
       return (
         <video 
           src={currentSection.videoUrl} 
@@ -187,6 +190,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
 
   const teacherData = professorData || teacher;
 
+  // Estado para controlar a visibilidade das informações do professor
   const [showTeacherInfo, setShowTeacherInfo] = useState(false);
 
   return <div className="video-container w-full">
@@ -196,8 +200,10 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
         onMouseEnter={() => setShowTeacherInfo(true)}
         onMouseLeave={() => setShowTeacherInfo(false)}
       >
+        {/* Removendo a div de informações do professor do topo */}
         {renderVideoContent()}
         
+        {/* Informações do professor na parte inferior, visíveis apenas ao passar o mouse */}
         <div 
           className={`absolute bottom-0 left-0 right-0 p-3 z-10 bg-gradient-to-t from-black/70 to-transparent flex flex-col sm:flex-row sm:justify-between sm:items-center w-full rounded-b-xl transition-opacity duration-300 ${showTeacherInfo ? 'opacity-100' : 'opacity-0'}`}
         >
