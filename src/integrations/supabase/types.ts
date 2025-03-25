@@ -1000,6 +1000,59 @@ export type Database = {
         }
         Relationships: []
       }
+      edital_verticalizado_data: {
+        Row: {
+          id: string
+          user_id: string
+          course_id: string
+          disciplina_id: string
+          topicos: Json
+          importancia: number
+          dificuldade: string
+          total_exercicios: number
+          acertos: number
+          revisado: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          course_id: string
+          disciplina_id: string
+          topicos?: Json
+          importancia?: number
+          dificuldade?: string
+          total_exercicios?: number
+          acertos?: number
+          revisado?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          course_id?: string
+          disciplina_id?: string
+          topicos?: Json
+          importancia?: number
+          dificuldade?: string
+          total_exercicios?: number
+          acertos?: number
+          revisado?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "edital_verticalizado_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
