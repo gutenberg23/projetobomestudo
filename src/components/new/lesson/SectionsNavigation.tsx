@@ -11,7 +11,7 @@ interface SectionsNavigationProps {
   hasHorizontalScroll?: boolean;
   videoHeight?: number;
   onSectionClick: (sectionId: string) => void;
-  onToggleCompletion?: (sectionId: string, event: React.MouseEvent) => void;
+  onToggleCompletion?: (sectionId: string, evt: React.MouseEvent) => void;
 }
 
 export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
