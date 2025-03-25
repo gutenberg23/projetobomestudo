@@ -20,8 +20,9 @@ interface TeacherInfo {
 }
 
 interface VideoSectionProps {
-  sections: Section[];
-  selectedSection: string;
+  sections?: Section[];
+  selectedSection?: string;
+  section?: Section;
   videoHeight: number;
   teacher?: TeacherInfo;
 }
@@ -29,6 +30,7 @@ interface VideoSectionProps {
 export const VideoSection: React.FC<VideoSectionProps> = ({
   sections,
   selectedSection,
+  section: propSection,
   videoHeight,
   teacher = {
     name: "Professor(a)",
@@ -36,7 +38,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
     socialMedia: {}
   }
 }) => {
-  const currentSection = sections.find(s => s.id === selectedSection);
+  const currentSection = propSection || (sections && selectedSection ? sections.find(s => s.id === selectedSection) : undefined);
   const [responsiveHeight, setResponsiveHeight] = useState(videoHeight);
   const [professorData, setProfessorData] = useState<TeacherInfo | null>(null);
 

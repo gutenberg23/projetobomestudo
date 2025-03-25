@@ -70,18 +70,27 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
       // Buscar todas as aulas do curso
       const { data: cursoData, error: cursoError } = await supabase
         .from('cursos')
-        .select('aulas_ids')
+        .select('aulas_ids, topicos_ids')
         .eq('id', realCourseId)
         .single();
         
-      if (cursoError || !cursoData?.aulas_ids) {
+      if (cursoError || !cursoData) {
         console.error('Erro ao buscar aulas do curso:', cursoError);
         return 0;
       }
       
-      // Se não houver aulas, retorna 0
-      if (!cursoData.aulas_ids.length) {
-        return 0;
+      let totalTopics = 0;
+      
+      // Se o curso tiver topicos_ids diretamente, contar eles primeiro
+      if (cursoData.topicos_ids && Array.isArray(cursoData.topicos_ids)) {
+        totalTopics += cursoData.topicos_ids.length;
+        console.log(`Curso tem ${cursoData.topicos_ids.length} tópicos diretos`);
+      }
+      
+      // Se não houver aulas, retornar apenas a contagem de tópicos diretos
+      if (!cursoData.aulas_ids || !cursoData.aulas_ids.length) {
+        console.log(`Total final: ${totalTopics} tópicos (apenas diretos do curso)`);
+        return totalTopics;
       }
       
       // Buscar todas as aulas para contar seus tópicos
@@ -92,18 +101,18 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
         
       if (aulasError || !aulasData) {
         console.error('Erro ao buscar detalhes das aulas:', aulasError);
-        return 0;
+        return totalTopics; // Retornar ao menos os tópicos diretos
       }
       
       // Contar o total de tópicos em todas as aulas
-      let totalTopics = 0;
       aulasData.forEach(aula => {
         if (Array.isArray(aula.topicos_ids)) {
           totalTopics += aula.topicos_ids.length;
+          console.log(`Aula com ${aula.topicos_ids.length} tópicos`);
         }
       });
       
-      console.log(`Total de tópicos encontrados no curso ${realCourseId}:`, totalTopics);
+      console.log(`Total final: ${totalTopics} tópicos encontrados no curso ${realCourseId}`);
       return totalTopics;
     } catch (error) {
       console.error('Erro ao contar tópicos do curso:', error);
@@ -122,6 +131,7 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
       setStats(prev => ({ ...prev, loading: true }));
       
       const realCourseId = extractIdFromFriendlyUrl(courseId);
+      console.log('Buscando progresso para curso:', realCourseId);
       
       // Buscar o progresso do usuário no curso
       const { data: progress, error } = await supabase
@@ -181,33 +191,8 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
     
     // Escutar eventos de atualização de seções
     const handleSectionsUpdated = (event: Event) => {
-      const detail = (event as CustomEvent).detail;
-      if (detail) {
-        console.log("Evento sectionsUpdated recebido em useUserProgress:", detail);
-        
-        if (detail.totalCompleted !== undefined && detail.totalSections !== undefined) {
-          // Garantir que os valores são números
-          const totalCompleted = ensureValidNumber(detail.totalCompleted);
-          const totalSections = ensureValidNumber(detail.totalSections);
-          
-          // Calcular percentual de progresso
-          const progressPercentage = totalSections > 0
-            ? Math.round((totalCompleted / totalSections) * 100)
-            : 0;
-          
-          setStats({
-            totalTopics: totalSections,
-            completedTopics: totalCompleted,
-            progressPercentage,
-            loading: false
-          });
-          
-          console.log(`Progresso atualizado em useUserProgress: ${totalCompleted}/${totalSections} (${progressPercentage}%)`);
-        } else {
-          // Se não tiver detalhes completos, atualizar todos os dados
-          loadUserProgress();
-        }
-      }
+      console.log("Evento sectionsUpdated recebido em useUserProgress");
+      loadUserProgress();
     };
     
     // Escutar também eventos topicCompleted para atualização em tempo real

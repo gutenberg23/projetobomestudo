@@ -12,7 +12,6 @@ interface VideoContentLayoutProps {
   completedSections?: string[];
   hasHorizontalScroll?: boolean;
   videoHeight?: number;
-  setVideoHeight?: (height: number) => void;
   onSectionClick: (sectionId: string) => void;
   onToggleCompletion?: (sectionId: string, event: React.MouseEvent) => void;
 }
@@ -23,7 +22,6 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
   completedSections = [],
   hasHorizontalScroll = false,
   videoHeight = 400,
-  setVideoHeight = () => {},
   onSectionClick,
   onToggleCompletion = () => {}
 }) => {
@@ -35,7 +33,6 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
       if (videoRef.current) {
         const height = videoRef.current.offsetHeight;
         setCurrentVideoHeight(height);
-        setVideoHeight(height);
       }
     };
 
@@ -48,7 +45,7 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
     return () => {
       window.removeEventListener('resize', updateVideoHeight);
     };
-  }, [setVideoHeight]);
+  }, []);
 
   // Encontrar a seção atual com base no ID selecionado
   const currentSection = sections.find(s => s.id === selectedSection);
@@ -58,8 +55,7 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
       <div className={`w-full md:w-2/3 md:pr-5`}>
         <div ref={videoRef}>
           <VideoSection 
-            sections={sections}
-            selectedSection={selectedSection}
+            section={currentSection}
             videoHeight={currentVideoHeight}
           />
         </div>
