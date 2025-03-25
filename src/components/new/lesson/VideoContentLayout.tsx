@@ -1,85 +1,91 @@
+"use client";
 
-import React, { useRef, useEffect } from "react";
-import { SectionsNavigation } from "./SectionsNavigation";
+import React, { useRef, useEffect, useState } from "react";
+import type { Section } from "../types";
 import { VideoSection } from "./VideoSection";
-
-interface Section {
-  id: string;
-  title: string;
-  videoUrl?: string;
-  content?: string;
-  isActive?: boolean;
-}
+import { SectionsNavigation } from "./SectionsNavigation";
 
 interface VideoContentLayoutProps {
-  sections: Section[];
   selectedSection: string;
-  completedSections: string[];
-  hasHorizontalScroll: boolean;
-  videoHeight: number;
-  setVideoHeight: (height: number) => void;
+  sections: Section[];
+  completedSections?: string[];
+  hasHorizontalScroll?: boolean;
+  videoHeight?: number;
+  setVideoHeight?: (height: number) => void;
   onSectionClick: (sectionId: string) => void;
-  onToggleCompletion: (sectionId: string, event: React.MouseEvent) => void;
+  onToggleCompletion?: (sectionId: string, event: React.MouseEvent) => void;
 }
 
 export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
-  sections,
   selectedSection,
-  completedSections,
-  hasHorizontalScroll,
-  videoHeight,
-  setVideoHeight,
+  sections,
+  completedSections = [],
+  hasHorizontalScroll = false,
+  videoHeight = 400,
+  setVideoHeight = () => {},
   onSectionClick,
-  onToggleCompletion
+  onToggleCompletion = () => {}
 }) => {
-  const sectionsContainerRef = useRef<HTMLDivElement>(null);
-  const selectedSectionRef = useRef<HTMLLIElement>(null);
-  
-  // Efeito para rolar para a seção selecionada quando mudar
-  useEffect(() => {
-    if (selectedSectionRef.current && sectionsContainerRef.current) {
-      const container = sectionsContainerRef.current;
-      const selectedElement = selectedSectionRef.current;
-      
-      const containerRect = container.getBoundingClientRect();
-      const selectedRect = selectedElement.getBoundingClientRect();
-      
-      // Verificar se o elemento selecionado está visível
-      const isVisible = 
-        selectedRect.left >= containerRect.left &&
-        selectedRect.right <= containerRect.right;
-      
-      if (!isVisible) {
-        // Calcular a posição para centralizar o elemento
-        const scrollTo = selectedElement.offsetLeft - (container.clientWidth / 2) + (selectedElement.clientWidth / 2);
-        container.scrollTo({
-          left: scrollTo,
-          behavior: 'smooth'
-        });
-      }
+  const videoRef = useRef<HTMLDivElement>(null);
+  const [currentVideoHeight, setCurrentVideoHeight] = useState(videoHeight);
+
+  // Dados de exemplo do professor - em um caso real, isso viria de uma API ou props
+  const teacherExample = {
+    name: "Ana Maria Silva",
+    photoUrl: "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg", // Usando imagem de exemplo do projeto
+    socialMedia: {
+      youtube: "https://youtube.com/usuario",
+      instagram: "https://instagram.com/usuario",
+      telegram: "https://t.me/usuario",
+      facebook: "https://facebook.com/usuario",
+      twitter: "https://twitter.com/usuario"
     }
-  }, [selectedSection]);
-  
-  // Encontre a seção selecionada para exibir no vídeo
-  const currentSection = sections.find(section => section.id === selectedSection) || sections[0];
-  
+  };
+
+  useEffect(() => {
+    const updateVideoHeight = () => {
+      if (videoRef.current) {
+        const height = videoRef.current.offsetHeight;
+        setCurrentVideoHeight(height);
+        setVideoHeight(height);
+      }
+    };
+
+    updateVideoHeight();
+    
+    // Adicionar listener para quando a janela for redimensionada
+    window.addEventListener('resize', updateVideoHeight);
+    
+    // Cleanup function
+    return () => {
+      window.removeEventListener('resize', updateVideoHeight);
+    };
+  }, [setVideoHeight]);
+
   return (
-    <div className="px-[20px]">
-      <SectionsNavigation
-        sections={sections}
-        selectedSection={selectedSection}
-        completedSections={completedSections}
-        hasHorizontalScroll={hasHorizontalScroll}
-        onSectionClick={onSectionClick}
-        onToggleCompletion={onToggleCompletion}
-        sectionsContainerRef={sectionsContainerRef}
-        selectedSectionRef={selectedSectionRef}
-      />
-      
-      <VideoSection
-        section={currentSection}
-        videoHeight={videoHeight}
-      />
+    <div className={`flex flex-col md:flex-row px-3 sm:px-5 mt-3 sm:mt-5`}>
+      <div className={`w-full md:w-2/3 md:pr-5`}>
+        <div ref={videoRef}>
+          <VideoSection 
+            selectedSection={selectedSection} 
+            sections={sections}
+            videoHeight={currentVideoHeight}
+            teacher={teacherExample}
+          />
+        </div>
+      </div>
+
+      <div className={`w-full md:w-1/3 mt-3 sm:mt-4 md:mt-0`}>
+        <SectionsNavigation
+          sections={sections}
+          selectedSection={selectedSection}
+          completedSections={completedSections}
+          hasHorizontalScroll={hasHorizontalScroll}
+          videoHeight={currentVideoHeight}
+          onSectionClick={onSectionClick}
+          onToggleCompletion={onToggleCompletion}
+        />
+      </div>
     </div>
   );
 };
