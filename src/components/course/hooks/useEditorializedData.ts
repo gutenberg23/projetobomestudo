@@ -139,6 +139,7 @@ export const useEditorializedData = () => {
           logWithTimestamp('Erro ao buscar dados do usuário', userDataError);
         } else {
           userData = editalUserData;
+          logWithTimestamp('Dados do usuário carregados', userData);
         }
 
         // Buscar meta de aproveitamento e data da prova
@@ -165,33 +166,38 @@ export const useEditorializedData = () => {
         
         const topics = disciplina.topicos.map((topico: string, index: number) => {
           const userTopicoData = userDisciplinaData?.topicos[index];
-          return {
+          logWithTimestamp(`Carregando dados do tópico ${index + 1}`, userTopicoData);
+          
+          const topic = {
             id: index + 1,
             name: topico,
             topic: topico,
             isDone: userTopicoData?.isDone || false,
-            importance: userTopicoData?.importance || 1,
+            importance: 1,
             difficulty: userTopicoData?.difficulty || 'normal',
-            exercisesDone: userTopicoData?.totalExercises || 0,
-            hits: userTopicoData?.correctAnswers || 0,
-            errors: userTopicoData?.totalExercises ? userTopicoData.totalExercises - (userTopicoData.correctAnswers || 0) : 0,
-            performance: userTopicoData?.correctAnswers && userTopicoData?.totalExercises ? 
-              (userTopicoData.correctAnswers / userTopicoData.totalExercises) * 100 : 0,
-            isReviewed: userTopicoData?.isReviewed || false,
-            totalExercises: userTopicoData?.totalExercises || 0,
-            correctAnswers: userTopicoData?.correctAnswers || 0
+            exercisesDone: userTopicoData?.exercisesDone || userTopicoData?.totalExercises || 0,
+            hits: userTopicoData?.hits || userTopicoData?.correctAnswers || 0,
+            errors: userTopicoData?.exercisesDone ? userTopicoData.exercisesDone - (userTopicoData.hits || 0) : 0,
+            performance: userTopicoData?.hits && userTopicoData?.exercisesDone ? 
+              (userTopicoData.hits / userTopicoData.exercisesDone) * 100 : 0,
+            totalExercises: userTopicoData?.exercisesDone || userTopicoData?.totalExercises || 0,
+            correctAnswers: userTopicoData?.hits || userTopicoData?.correctAnswers || 0,
+            isReviewed: userTopicoData?.isReviewed || false
           };
+          
+          logWithTimestamp(`Tópico ${index + 1} formatado`, topic);
+          return topic;
         });
 
         return {
           id: disciplina.id,
           name: disciplina.titulo,
           topics,
-          importance: userDisciplinaData?.importancia || 1,
-          difficulty: userDisciplinaData?.dificuldade || 'normal',
+          importance: 1,
+          difficulty: 'normal',
           totalExercises: userDisciplinaData?.total_exercicios || 0,
           correctAnswers: userDisciplinaData?.acertos || 0,
-          isReviewed: userDisciplinaData?.revisado || false
+          isReviewed: false
         };
       });
 
@@ -248,17 +254,25 @@ export const useEditorializedData = () => {
 
       // Agora, salvar os dados detalhados de cada disciplina
       for (const subject of subjectsData) {
-        const topicosData = subject.topics.map(topic => ({
-          id: topic.id,
-          name: topic.name,
-          topic: topic.topic,
-          isDone: topic.isDone || false,
-          importance: topic.importance || 1,
-          difficulty: topic.difficulty || 'normal',
-          totalExercises: topic.totalExercises || 0,
-          correctAnswers: topic.correctAnswers || 0,
-          isReviewed: topic.isReviewed || false
-        }));
+        const topicosData = subject.topics.map(topic => {
+          const data = {
+            id: topic.id,
+            isDone: topic.isDone || false,
+            difficulty: topic.difficulty || 'normal',
+            totalExercises: topic.exercisesDone || 0,
+            correctAnswers: topic.hits || 0,
+            exercisesDone: topic.exercisesDone || 0,
+            hits: topic.hits || 0,
+            isReviewed: topic.isReviewed || false
+          };
+          logWithTimestamp(`Salvando dados do tópico ${topic.id}`, data);
+          return data;
+        });
+
+        logWithTimestamp(`Salvando dados da disciplina ${subject.id}`, {
+          topicosData,
+          disciplinaId: subject.id.toString()
+        });
 
         const { error: editalError } = await supabase
           .from('edital_verticalizado_data')
@@ -267,11 +281,6 @@ export const useEditorializedData = () => {
             course_id: courseRealId,
             disciplina_id: subject.id.toString(),
             topicos: topicosData,
-            importancia: subject.importance || 1,
-            dificuldade: subject.difficulty || 'normal',
-            total_exercicios: subject.totalExercises || 0,
-            acertos: subject.correctAnswers || 0,
-            revisado: subject.isReviewed || false,
             updated_at: new Date().toISOString()
           }, {
             onConflict: 'user_id,course_id,disciplina_id'
@@ -332,7 +341,25 @@ export const useEditorializedData = () => {
               ...subject,
               topics: subject.topics.map(topic => {
                 if (topic.id === topicId) {
-                  return { ...topic, [field]: value };
+                  switch (field) {
+                    case 'exercisesDone':
+                      return {
+                        ...topic,
+                        exercisesDone: value,
+                        totalExercises: value
+                      };
+                    case 'hits':
+                      return {
+                        ...topic,
+                        hits: value,
+                        correctAnswers: value
+                      };
+                    default:
+                      return {
+                        ...topic,
+                        [field]: value
+                      };
+                  }
                 }
                 return topic;
               })
@@ -350,9 +377,9 @@ export const useEditorializedData = () => {
             logWithTimestamp("Erro ao salvar no localStorage", error);
           }
         } else {
-          // Se mudou o valor de isDone, salvamos automaticamente
-          if (field === 'isDone') {
-            logWithTimestamp("Campo isDone modificado, salvando automaticamente");
+          // Se mudou o valor de isDone, exercisesDone ou hits, salvamos automaticamente
+          if (field === 'isDone' || field === 'exercisesDone' || field === 'hits') {
+            logWithTimestamp(`Campo ${field} modificado, salvando automaticamente`);
             // Vamos salvar com um pequeno delay para permitir que a UI seja atualizada primeiro
             setTimeout(() => {
               if (courseId) {

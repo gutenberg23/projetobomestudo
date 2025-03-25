@@ -5,11 +5,6 @@ CREATE TABLE IF NOT EXISTS edital_verticalizado_data (
   course_id TEXT NOT NULL,
   disciplina_id TEXT NOT NULL,
   topicos JSONB NOT NULL DEFAULT '[]',
-  importancia INTEGER NOT NULL DEFAULT 1,
-  dificuldade TEXT NOT NULL DEFAULT 'normal',
-  total_exercicios INTEGER NOT NULL DEFAULT 0,
-  acertos INTEGER NOT NULL DEFAULT 0,
-  revisado BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   UNIQUE(user_id, course_id, disciplina_id)

@@ -1007,11 +1007,6 @@ export type Database = {
           course_id: string
           disciplina_id: string
           topicos: Json
-          importancia: number
-          dificuldade: string
-          total_exercicios: number
-          acertos: number
-          revisado: boolean
           created_at: string
           updated_at: string
         }
@@ -1021,11 +1016,6 @@ export type Database = {
           course_id: string
           disciplina_id: string
           topicos?: Json
-          importancia?: number
-          dificuldade?: string
-          total_exercicios?: number
-          acertos?: number
-          revisado?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -1035,11 +1025,6 @@ export type Database = {
           course_id?: string
           disciplina_id?: string
           topicos?: Json
-          importancia?: number
-          dificuldade?: string
-          total_exercicios?: number
-          acertos?: number
-          revisado?: boolean
           created_at?: string
           updated_at?: string
         }
