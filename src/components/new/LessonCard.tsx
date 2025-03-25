@@ -8,7 +8,7 @@ import { LessonHeader } from "./lesson/LessonHeader";
 import { VideoContentLayout } from "./lesson/VideoContentLayout";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from '@/integrations/supabase/client';
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { Json } from "@/integrations/supabase/types";
 import { Spinner } from "@/components/ui/spinner";
@@ -42,7 +42,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
 
-  // Usar o novo hook useQuestions
   const { 
     questions: currentSectionQuestions, 
     isLoading: isLoadingQuestions, 
@@ -80,7 +79,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       try {
         const realCourseId = extractIdFromFriendlyUrl(courseId);
         
-        // Buscar progresso do usuário
         const { data: userProgress, error: progressError } = await supabase
           .from('user_course_progress')
           .select('subjects_data')
@@ -96,19 +94,16 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         if (userProgress?.subjects_data) {
           const subjectsData = userProgress.subjects_data;
           
-          // Verificar se há seções completadas para esta aula
           if (
             typeof subjectsData === 'object' && 
             !Array.isArray(subjectsData) && 
             subjectsData.completed_sections && 
             subjectsData.completed_sections[lesson.id]
           ) {
-            // Carregar as seções completadas
             const savedCompletedSections = subjectsData.completed_sections[lesson.id];
             if (Array.isArray(savedCompletedSections)) {
               setCompletedSections(savedCompletedSections);
               
-              // Verificar se todas as seções estão completas
               const allSectionsCompleted = lesson.sections.every(section => 
                 savedCompletedSections.includes(section.id)
               );
@@ -131,7 +126,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       try {
         const realCourseId = extractIdFromFriendlyUrl(courseId);
         
-        // Fetch existing progress
         const { data: existingProgress, error: fetchError } = await supabase
           .from('user_course_progress')
           .select('*')
@@ -144,7 +138,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           return;
         }
         
-        // Prepare the subjects_data object
         let subjectsData = existingProgress?.subjects_data || {};
         
         if (typeof subjectsData !== 'object' || Array.isArray(subjectsData)) {
@@ -155,12 +148,39 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           subjectsData.completed_sections = {};
         }
         
-        // Update the completed sections for this lesson
         subjectsData.completed_sections[lesson.id] = completedSections;
         
-        // Save to database
+        const { data: cursoData, error: cursoError } = await supabase
+          .from('cursos')
+          .select('aulas_ids')
+          .eq('id', realCourseId)
+          .single();
+          
+        let totalTopics = 0;
+        
+        if (!cursoError && cursoData?.aulas_ids && cursoData.aulas_ids.length > 0) {
+          const { data: aulasData, error: aulasError } = await supabase
+            .from('aulas')
+            .select('topicos_ids')
+            .in('id', cursoData.aulas_ids);
+            
+          if (!aulasError && aulasData && Array.isArray(aulasData)) {
+            totalTopics = aulasData.reduce((sum, aula) => {
+              return sum + (Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0);
+            }, 0);
+          }
+        }
+        
+        let totalCompleted = 0;
+        if (subjectsData.completed_sections) {
+          Object.values(subjectsData.completed_sections).forEach((sections: any) => {
+            if (Array.isArray(sections)) {
+              totalCompleted += sections.length;
+            }
+          });
+        }
+        
         if (existingProgress) {
-          // Update existing record
           const { error: updateError } = await supabase
             .from('user_course_progress')
             .update({
@@ -174,9 +194,18 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             toast.error('Erro ao salvar progresso');
           } else {
             console.log('Progress updated successfully');
+            
+            document.dispatchEvent(new CustomEvent('sectionsUpdated', {
+              detail: {
+                totalCompleted,
+                totalSections: totalTopics,
+                timestamp: new Date().toISOString()
+              }
+            }));
+            
+            document.dispatchEvent(new CustomEvent('topicCompleted'));
           }
         } else {
-          // Insert new record
           const { error: insertError } = await supabase
             .from('user_course_progress')
             .insert({
@@ -192,6 +221,16 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             toast.error('Erro ao salvar progresso');
           } else {
             console.log('Progress inserted successfully');
+            
+            document.dispatchEvent(new CustomEvent('sectionsUpdated', {
+              detail: {
+                totalCompleted,
+                totalSections: totalTopics,
+                timestamp: new Date().toISOString()
+              }
+            }));
+            
+            document.dispatchEvent(new CustomEvent('topicCompleted'));
           }
         }
       } catch (error) {
@@ -200,10 +239,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       }
     };
     
-    // Debounce the save operation to avoid too many database calls
     const timeoutId = setTimeout(() => {
       saveCompletedSectionsToDatabase();
-    }, 500);
+    }, 300);
     
     return () => clearTimeout(timeoutId);
   }, [completedSections, user, courseId, lesson.id]);
@@ -304,7 +342,11 @@ export const LessonCard: React.FC<LessonCardProps> = ({
 
   const toggleCompletion = (sectionId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    setCompletedSections(prev => prev.includes(sectionId) ? prev.filter(id => id !== sectionId) : [...prev, sectionId]);
+    const newCompletedSections = completedSections.includes(sectionId) 
+      ? completedSections.filter(id => id !== sectionId) 
+      : [...completedSections, sectionId];
+    
+    setCompletedSections(newCompletedSections);
   };
 
   const toggleLessonCompletion = (event: React.MouseEvent) => {

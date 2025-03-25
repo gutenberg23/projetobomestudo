@@ -13,17 +13,6 @@ interface SubjectsData {
   [key: string]: any;
 }
 
-interface UserCourseProgress {
-  id: string;
-  user_id: string;
-  course_id: string;
-  subjects_data: SubjectsData;
-  performance_goal?: number;
-  exam_date?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface ProgressStats {
   totalTopics: number;
   completedTopics: number;
@@ -90,7 +79,6 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
       }
       
       let totalCompleted = 0;
-      let totalTopics = 0;
       
       // Verificar se temos dados de progresso do usuário
       if (progress?.subjects_data) {
@@ -100,41 +88,45 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
         if (typeof subjectsData === 'object' && !Array.isArray(subjectsData)) {
           totalCompleted = getTotalCompletedSections(subjectsData);
         }
+      }
+      
+      // Buscar o curso para obter as aulas e calcular o total de tópicos
+      const { data: cursoData, error: cursoError } = await supabase
+        .from('cursos')
+        .select('aulas_ids')
+        .eq('id', realCourseId)
+        .single();
         
-        // Buscar o curso para obter as aulas
-        const { data: cursoData, error: cursoError } = await supabase
-          .from('cursos')
-          .select('aulas_ids')
-          .eq('id', realCourseId)
-          .single();
+      if (cursoError) {
+        console.error('Erro ao buscar aulas do curso:', cursoError);
+        setStats(prev => ({ ...prev, loading: false }));
+        return;
+      }
+      
+      let totalTopics = 0;
+      
+      if (cursoData?.aulas_ids && cursoData.aulas_ids.length > 0) {
+        // Buscar todas as aulas do curso para contar seus tópicos
+        const { data: aulasData, error: aulasError } = await supabase
+          .from('aulas')
+          .select('topicos_ids')
+          .in('id', cursoData.aulas_ids);
           
-        if (cursoError) {
-          console.error('Erro ao buscar aulas do curso:', cursoError);
-        } else if (cursoData?.aulas_ids && cursoData.aulas_ids.length > 0) {
-          // Buscar todas as aulas do curso para contar seus tópicos
-          const { data: aulasData, error: aulasError } = await supabase
-            .from('aulas')
-            .select('topicos_ids')
-            .in('id', cursoData.aulas_ids);
-            
-          if (aulasError) {
-            console.error('Erro ao buscar detalhes das aulas:', aulasError);
-          } else {
-            // Contar o total de tópicos em todas as aulas
-            if (aulasData && Array.isArray(aulasData)) {
-              totalTopics = aulasData.reduce((sum, aula) => {
-                return sum + (Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0);
-              }, 0);
-              
-              console.log('Total de tópicos encontrados:', totalTopics);
-            }
-          }
+        if (aulasError) {
+          console.error('Erro ao buscar detalhes das aulas:', aulasError);
+        } else if (aulasData && Array.isArray(aulasData)) {
+          // Contar o total de tópicos em todas as aulas
+          totalTopics = aulasData.reduce((sum, aula) => {
+            return sum + (Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0);
+          }, 0);
+          
+          console.log('Total de tópicos encontrados:', totalTopics);
         }
       }
       
       // Calcular percentual de progresso
       const progressPercentage = totalTopics > 0
-        ? Math.round((totalCompleted / totalTopics) * 100)
+        ? Math.min(100, Math.round((totalCompleted / totalTopics) * 100))
         : 0;
       
       setStats({
@@ -165,6 +157,7 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
       if (detail) {
         console.log("Evento sectionsUpdated recebido em useUserProgress:", detail);
         
+        // Se o evento contiver dados completos, usar esses dados
         if (detail.totalCompleted !== undefined && detail.totalSections !== undefined) {
           // Garantir que os valores são números
           const totalCompleted = ensureValidNumber(detail.totalCompleted);
@@ -172,7 +165,7 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
           
           // Calcular percentual de progresso
           const progressPercentage = totalSections > 0
-            ? Math.round((totalCompleted / totalSections) * 100)
+            ? Math.min(100, Math.round((totalCompleted / totalSections) * 100))
             : 0;
           
           setStats({
@@ -183,14 +176,33 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
           });
           
           console.log(`Progresso atualizado em useUserProgress: ${totalCompleted}/${totalSections} (${progressPercentage}%)`);
+        } else {
+          // Se não tiver dados completos, recarregar tudo
+          loadUserProgress();
         }
       }
     };
     
+    // Escutar eventos de conclusão de tópicos
+    const handleTopicCompleted = () => {
+      console.log("Evento topicCompleted recebido em useUserProgress");
+      loadUserProgress();
+    };
+    
+    // Escutar eventos de resposta a questões
+    const handleQuestionAnswered = () => {
+      console.log("Evento questionAnswered recebido em useUserProgress");
+      loadUserProgress();
+    };
+    
     document.addEventListener('sectionsUpdated', handleSectionsUpdated);
+    document.addEventListener('topicCompleted', handleTopicCompleted);
+    window.addEventListener('questionAnswered', handleQuestionAnswered);
     
     return () => {
       document.removeEventListener('sectionsUpdated', handleSectionsUpdated);
+      document.removeEventListener('topicCompleted', handleTopicCompleted);
+      window.removeEventListener('questionAnswered', handleQuestionAnswered);
     };
   }, [userId, courseId]);
 
