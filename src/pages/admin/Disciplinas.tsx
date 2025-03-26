@@ -242,6 +242,7 @@ const Disciplinas = () => {
         .update({
           titulo: updatedDisciplina.titulo,
           descricao: updatedDisciplina.descricao, // This now contains the rating value
+          banca: updatedDisciplina.banca,
           aulas_ids: updatedDisciplina.aulasIds
         })
         .eq('id', updatedDisciplina.id);

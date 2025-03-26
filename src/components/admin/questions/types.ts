@@ -66,6 +66,7 @@ export interface DisciplinaItemType {
   topics: number;
   lessons: number;
   friendlyUrl?: string;
+  banca?: string;
 }
 
 export interface Assunto {

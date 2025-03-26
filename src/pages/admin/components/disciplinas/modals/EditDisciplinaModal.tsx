@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -20,6 +21,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({
 }) => {
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
+  const [banca, setBanca] = useState("");
   const [aulaId, setAulaId] = useState("");
   const [aulasIds, setAulasIds] = useState<string[]>([]);
   const [rating, setRating] = useState("");
@@ -28,6 +30,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({
     if (disciplina) {
       setTitulo(disciplina.titulo);
       setDescricao(disciplina.descricao);
+      setBanca(disciplina.banca || "");
       setAulasIds([...disciplina.aulasIds]);
       setRating(disciplina.descricao || "");
     }
@@ -61,6 +64,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({
         ...disciplina,
         titulo,
         descricao: rating, // Use rating as descricao
+        banca,
         aulasIds,
       });
       onClose();
@@ -86,7 +90,19 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="descricao" className="text-right">
+            <Label htmlFor="banca" className="text-right">
+              Banca
+            </Label>
+            <Input
+              id="banca"
+              value={banca}
+              onChange={(e) => setBanca(e.target.value)}
+              placeholder="Nome da banca"
+              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="rating" className="text-right">
               Nota de rating
             </Label>
             <Input

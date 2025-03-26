@@ -1,4 +1,3 @@
-
 export interface Disciplina {
   id: string;
   titulo: string;
