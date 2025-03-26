@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { PieChart, BarChart, Cell, XAxis, YAxis, Bar, Pie, Legend, ResponsiveContainer, Tooltip } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,24 +87,26 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
         
         console.log(`Buscando estatísticas para questão ${questionId}, versão ${statsVersion}`);
         
-        // Obter estatísticas de acertos e erros
+        // Buscar estatísticas de acertos e erros
         const { data: respostasData, error: respostasError } = await supabase
           .from('respostas_alunos')
-          .select('is_correta')
-          .eq('questao_id', questionId);
+          .select('questao_id, aluno_id, is_correta, created_at')
+          .eq('questao_id', questionId)
+          .order('created_at', { ascending: false });
           
         if (respostasError) throw respostasError;
         
+        // Usar apenas a resposta mais recente de cada aluno
+        const respostasPorAluno = new Map<string, boolean>();
+        respostasData?.forEach(resposta => {
+          if (!respostasPorAluno.has(resposta.aluno_id)) {
+            respostasPorAluno.set(resposta.aluno_id, resposta.is_correta);
+          }
+        });
+        
         // Calcular acertos e erros
-        let acertos = 0;
-        let erros = 0;
-        
-        if (respostasData && respostasData.length > 0) {
-          acertos = respostasData.filter(r => r.is_correta).length;
-          erros = respostasData.filter(r => !r.is_correta).length;
-        }
-        
-        console.log(`Estatísticas encontradas: ${acertos} acertos, ${erros} erros`);
+        const acertos = Array.from(respostasPorAluno.values()).filter(r => r).length;
+        const erros = respostasPorAluno.size - acertos;
         
         setPerformanceData([
           { name: "Acertos", value: acertos || 0, color: "#4ade80" },
@@ -115,24 +116,29 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
         // Obter estatísticas de alternativas mais respondidas
         const { data: alternativasData, error: alternativasError } = await supabase
           .from('respostas_alunos')
-          .select('opcao_id')
-          .eq('questao_id', questionId);
+          .select('aluno_id, opcao_id, created_at')
+          .eq('questao_id', questionId)
+          .order('created_at', { ascending: false });
           
         if (alternativasError) throw alternativasError;
         
-        // Contar respostas por alternativa
-        const alternativasCounts: Record<string, number> = {};
+        // Contar respostas por alternativa (apenas a mais recente de cada aluno)
+        const alternativasPorAluno = new Map<string, string>();
+        alternativasData?.forEach(resposta => {
+          if (!alternativasPorAluno.has(resposta.aluno_id)) {
+            alternativasPorAluno.set(resposta.aluno_id, resposta.opcao_id);
+          }
+        });
         
-        if (alternativasData && alternativasData.length > 0) {
-          alternativasData.forEach(resposta => {
-            const alternativaId = resposta.opcao_id;
-            if (alternativasCounts[alternativaId]) {
-              alternativasCounts[alternativaId]++;
-            } else {
-              alternativasCounts[alternativaId] = 1;
-            }
-          });
-        }
+        // Contar frequência de cada alternativa
+        const alternativasCounts: Record<string, number> = {};
+        alternativasPorAluno.forEach((opcaoId) => {
+          if (alternativasCounts[opcaoId]) {
+            alternativasCounts[opcaoId]++;
+          } else {
+            alternativasCounts[opcaoId] = 1;
+          }
+        });
         
         // Buscar informações das alternativas disponíveis
         let alternativas = [];

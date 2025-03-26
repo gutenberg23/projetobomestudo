@@ -1,9 +1,9 @@
-
 // Tipos para aulas e progresso do usuário
 export interface SimpleAula {
   id: string;
   titulo: string;
   questoes_ids?: string[];
+  topicos_ids?: string[];
 }
 
 export interface LessonProgressData {
@@ -42,6 +42,7 @@ export interface ProcessedLesson {
   titulo: string;
   concluida: boolean;
   questoesIds: string[];
+  topicosIds?: string[];
   stats: LessonStatsData;
 }
 

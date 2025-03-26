@@ -1,4 +1,3 @@
-
 // Define simplified types to avoid deep instantiation issues
 export interface SimpleDisciplina {
   id: string;
@@ -47,6 +46,7 @@ export interface LessonData {
   titulo: string;
   concluida: boolean;
   questoesIds: string[];
+  topicosIds?: string[];
   stats: {
     total: number;
     hits: number;

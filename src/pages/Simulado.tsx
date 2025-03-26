@@ -209,7 +209,8 @@ const Simulado = () => {
         .from("respostas_alunos")
         .select("questao_id, is_correta, created_at")
         .eq("aluno_id", userData.user.id)
-        .in("questao_id", formattedQuestions.map(q => q.id));
+        .in("questao_id", formattedQuestions.map(q => q.id))
+        .order('created_at', { ascending: false });
 
       if (respostasError) {
         console.error("Erro ao buscar respostas:", respostasError);
@@ -221,27 +222,11 @@ const Simulado = () => {
       const questoesMap = new Map<string, boolean>();
       
       if (respostasData && respostasData.length > 0) {
-        // Agrupar respostas por questão
-        const respostasPorQuestao = respostasData.reduce((acc, resposta) => {
-          const questaoId = resposta.questao_id;
-          if (!acc[questaoId]) {
-            acc[questaoId] = [];
+        // Usar apenas a primeira resposta (mais recente) de cada questão
+        respostasData.forEach(resposta => {
+          if (!questoesMap.has(resposta.questao_id)) {
+            questoesMap.set(resposta.questao_id, resposta.is_correta);
           }
-          acc[questaoId].push(resposta);
-          return acc;
-        }, {} as Record<string, any[]>);
-        
-        // Para cada questão, pegar apenas a resposta mais recente
-        Object.keys(respostasPorQuestao).forEach(questaoId => {
-          const respostasQuestao = respostasPorQuestao[questaoId];
-          // Ordenar por data de criação (mais recente primeiro)
-          respostasQuestao.sort((a, b) => {
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          });
-          
-          // Usar apenas a resposta mais recente
-          const respostaMaisRecente = respostasQuestao[0];
-          questoesMap.set(questaoId, respostaMaisRecente.is_correta);
         });
       }
 

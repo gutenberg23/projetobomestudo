@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProcessedLesson, FetchLessonsResult } from '../types/lessonTypes';
@@ -58,6 +57,7 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
         titulo: aula.titulo,
         concluida: false,
         questoesIds: aula.questoes_ids || [],
+        topicosIds: aula.topicos_ids || [],
         stats: {
           total: 0,
           hits: 0,

@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSubjectLessons } from '../hooks/useSubjectLessons';
 import { useSubjectStats } from '../hooks/useSubjectStats';
 import { SubjectCardHeader } from './SubjectCardHeader';
@@ -14,6 +13,21 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
 }) => {
   const subjectId = String(subject.id);
   const courseId = String(subject.courseId || 'default');
+  const [stats, setStats] = useState<{
+    progress: number;
+    questionsTotal: number;
+    questionsCorrect: number;
+    questionsWrong: number;
+    aproveitamento: number;
+    topicoStats: Record<string, { correct: number; wrong: number }>;
+  }>({
+    progress: 0,
+    questionsTotal: 0,
+    questionsCorrect: 0,
+    questionsWrong: 0,
+    aproveitamento: 0,
+    topicoStats: {}
+  });
   
   const { lessons, loading } = useSubjectLessons({ 
     subjectId, 
@@ -21,7 +35,16 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   });
   
   const { getSubjectStats } = useSubjectStats(subject, lessons);
-  const stats = getSubjectStats();
+  
+  useEffect(() => {
+    const loadStats = async () => {
+      const newStats = await getSubjectStats();
+      console.log('Estatísticas carregadas:', newStats);
+      setStats(newStats);
+    };
+    
+    loadStats();
+  }, [lessons, subject]);
   
   const subjectName = subject.name || subject.titulo || '';
   
@@ -45,6 +68,7 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
           <SubjectLessonsList 
             lessons={lessons}
             loading={loading}
+            topicoStats={stats.topicoStats}
           />
         </div>
       )}

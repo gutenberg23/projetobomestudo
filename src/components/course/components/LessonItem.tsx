@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { CheckIcon } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,6 +5,7 @@ import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useParams } from 'react-router-dom';
 import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
+import { Percent, CheckCircle, XCircle } from 'lucide-react';
 
 interface LessonItemProps {
   title: string;
@@ -207,16 +207,22 @@ export const LessonItem: React.FC<LessonItemProps> = ({
       
       <div className="grid grid-cols-3 gap-2 text-xs mt-2">
         <div className="bg-white p-1.5 rounded text-center">
-          <div className="text-[#5f2ebe]">Aprov. (%)</div>
-          <div className="font-semibold text-[#5f2ebe]">{aproveitamento}%</div>
+          <div className="flex items-center justify-center gap-1">
+            <Percent className="w-4 h-4 text-[#5f2ebe]" />
+            <div className="font-semibold text-[#5f2ebe]">{aproveitamento}%</div>
+          </div>
         </div>
         <div className="bg-white p-1.5 rounded text-center">
-          <div className="text-[#5f2ebe]">Acertos</div>
-          <div className="font-semibold text-[#5f2ebe]">{stats.hits}</div>
+          <div className="flex items-center justify-center gap-1">
+            <CheckCircle className="w-4 h-4 text-[#5f2ebe]" />
+            <div className="font-semibold text-[#5f2ebe]">{stats.hits}</div>
+          </div>
         </div>
         <div className="bg-white p-1.5 rounded text-center">
-          <div className="text-[#ffac33]">Erros</div>
-          <div className="font-semibold text-[#ffac33]">{stats.errors}</div>
+          <div className="flex items-center justify-center gap-1">
+            <XCircle className="w-4 h-4 text-[#ffac33]" />
+            <div className="font-semibold text-[#ffac33]">{stats.errors}</div>
+          </div>
         </div>
       </div>
     </div>

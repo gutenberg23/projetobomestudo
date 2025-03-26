@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LessonItem } from './LessonItem';
 import { LessonData } from '../types/subjectCard';
@@ -6,11 +5,13 @@ import { LessonData } from '../types/subjectCard';
 interface SubjectLessonsListProps {
   lessons: LessonData[];
   loading: boolean;
+  topicoStats: Record<string, { correct: number; wrong: number }>;
 }
 
 export const SubjectLessonsList: React.FC<SubjectLessonsListProps> = ({
   lessons,
-  loading
+  loading,
+  topicoStats
 }) => {
   if (loading) {
     return (
@@ -31,19 +32,46 @@ export const SubjectLessonsList: React.FC<SubjectLessonsListProps> = ({
 
   return (
     <div className="space-y-2">
-      {lessons.map((lesson) => (
-        <LessonItem 
-          key={lesson.id}
-          title={lesson.titulo}
-          isCompleted={lesson.concluida}
-          stats={{
-            total: lesson.stats.total,
-            hits: lesson.stats.hits,
-            errors: lesson.stats.errors
-          }}
-          questoesIds={lesson.questoesIds}
-        />
-      ))}
+      {lessons.map((lesson) => {
+        // Calcular estatísticas dos tópicos desta aula
+        let totalHits = 0;
+        let totalErrors = 0;
+        
+        console.log('Calculando estatísticas para aula:', lesson.titulo);
+        console.log('Tópicos da aula:', lesson.topicosIds);
+        console.log('Estatísticas disponíveis:', topicoStats);
+        
+        if (lesson.topicosIds) {
+          lesson.topicosIds.forEach(topicoId => {
+            const stats = topicoStats[topicoId];
+            console.log('Estatísticas do tópico', topicoId, ':', stats);
+            if (stats) {
+              totalHits += stats.correct;
+              totalErrors += stats.wrong;
+            }
+          });
+        }
+        
+        console.log('Totais calculados:', {
+          aula: lesson.titulo,
+          hits: totalHits,
+          errors: totalErrors
+        });
+        
+        return (
+          <LessonItem 
+            key={lesson.id}
+            title={lesson.titulo}
+            isCompleted={lesson.concluida}
+            stats={{
+              total: totalHits + totalErrors,
+              hits: totalHits,
+              errors: totalErrors
+            }}
+            questoesIds={lesson.questoesIds}
+          />
+        );
+      })}
     </div>
   );
 };

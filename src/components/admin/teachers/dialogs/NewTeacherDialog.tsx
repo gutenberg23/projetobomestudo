@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -33,7 +32,7 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
     twitter: "",
     facebook: "",
     website: "",
-    fotoPerfil: "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70), // Placeholder temporário
+    fotoPerfil: "",
     status: "pendente" as TeacherStatus,
     ativo: true,
     rating: 0
@@ -51,11 +50,9 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
     setFormData(prev => ({ ...prev, disciplina: value }));
   };
   
-  const handleFileSelect = () => {
-    // Simulação de upload de arquivo (em produção, usaríamos um sistema real de upload)
-    const randomAvatar = "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70);
-    setFormData(prev => ({ ...prev, fotoPerfil: randomAvatar }));
-    setFotoPreview(randomAvatar);
+  const handleFileSelect = (url: string) => {
+    setFormData(prev => ({ ...prev, fotoPerfil: url }));
+    setFotoPreview(url);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,7 +124,7 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
         twitter: "",
         facebook: "",
         website: "",
-        fotoPerfil: "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70),
+        fotoPerfil: "",
         status: "pendente",
         ativo: true,
         rating: 0

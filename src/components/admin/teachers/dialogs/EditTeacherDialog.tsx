@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { TeacherData } from "../types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -51,11 +50,9 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
     setFormData(prev => ({ ...prev, status: value as TeacherData["status"] }));
   };
   
-  const handleFileSelect = () => {
-    // Simulação de upload de arquivo (em produção, usaríamos um sistema real de upload)
-    const randomAvatar = "https://i.pravatar.cc/150?img=" + Math.floor(Math.random() * 70);
-    setFormData(prev => ({ ...prev, fotoPerfil: randomAvatar }));
-    setFotoPreview(randomAvatar);
+  const handleFileSelect = (url: string) => {
+    setFormData(prev => ({ ...prev, fotoPerfil: url }));
+    setFotoPreview(url);
   };
   
   const handleSubmit = async (e: React.FormEvent) => {

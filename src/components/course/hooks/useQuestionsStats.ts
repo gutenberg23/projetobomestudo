@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -49,13 +48,14 @@ export const useQuestionsStats = (initialQuestionIds: string[] = []) => {
       // Se tiver userId, buscar apenas as respostas desse usuário
       let query = supabase
         .from('respostas_alunos')
-        .select('questao_id, is_correta');
+        .select('questao_id, is_correta, created_at')
+        .in('questao_id', qIds);
       
       if (userId) {
         query = query.eq('aluno_id', userId);
       }
       
-      const { data, error } = await query.in('questao_id', qIds);
+      const { data, error } = await query;
 
       if (error) {
         console.error('Erro ao buscar respostas para as questões:', error);
@@ -66,8 +66,19 @@ export const useQuestionsStats = (initialQuestionIds: string[] = []) => {
         return { total: 0, hits: 0, errors: 0 };
       }
 
-      const hits = data.filter(r => r.is_correta).length;
-      const errors = data.filter(r => !r.is_correta).length;
+      // Agrupar respostas por questão e pegar apenas a mais recente
+      const respostasPorQuestao = data.reduce((acc, resposta) => {
+        const questaoId = resposta.questao_id;
+        if (!acc[questaoId] || new Date(resposta.created_at) > new Date(acc[questaoId].created_at)) {
+          acc[questaoId] = resposta;
+        }
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Contar acertos e erros apenas das respostas mais recentes
+      const respostasMaisRecentes = Object.values(respostasPorQuestao);
+      const hits = respostasMaisRecentes.filter(r => r.is_correta).length;
+      const errors = respostasMaisRecentes.filter(r => !r.is_correta).length;
       const total = hits + errors;
 
       return { total, hits, errors };
