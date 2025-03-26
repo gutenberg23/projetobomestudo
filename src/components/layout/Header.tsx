@@ -33,7 +33,7 @@ export const Header = () => {
         </Link>
         <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
           <Trophy className="w-4 h-4" />
-          <span className="font-extralight">Todos os cursos</span>
+          <span className="font-extralight">Estude Grátis</span>
         </Link>
       </div>
 
