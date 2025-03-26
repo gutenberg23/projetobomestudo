@@ -1,130 +1,91 @@
+
 import React from "react";
-import { Instagram, Facebook, Twitter, Youtube, Mail, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "/lovable-uploads/logo-footer.svg";
 
 export const Footer = () => {
   return (
-    <footer className="w-full pt-[50px] pb-[30px] px-4 text-white mt-10 bg-[#2a2438]">
-      {/* Footer Top Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-        {/* Column 1 - Logo and About */}
-        <div className="space-y-4">
-          <img src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/d4f7b31dd1bc48e16547963f6b0cd0adc76ffe16e180c12ccfce3d8a912308a0" alt="BomEstudo Logo" className="w-[194px] mb-4" />
-          <p className="text-gray-300 text-sm">
-            Plataforma de estudos online para candidatos de concursos públicos com cursos, questões comentadas e estatísticas de desempenho.
+    <footer className="bg-gray-900 text-white py-12 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="col-span-1 md:col-span-1">
+          <img src={logo} alt="BomEstudo" className="h-12 mb-4" />
+          <p className="text-gray-400 text-sm">
+            A sua plataforma de estudos para concursos públicos com conteúdo de qualidade.
           </p>
-          <div className="flex space-x-4 pt-2">
-            <a href="#" className="text-white hover:text-[#5f2ebe] transition-colors">
-              <Instagram size={20} />
-            </a>
-            <a href="#" className="text-white hover:text-[#5f2ebe] transition-colors">
-              <Facebook size={20} />
-            </a>
-            <a href="#" className="text-white hover:text-[#5f2ebe] transition-colors">
-              <Twitter size={20} />
-            </a>
-            <a href="#" className="text-white hover:text-[#5f2ebe] transition-colors">
-              <Youtube size={20} />
-            </a>
-          </div>
         </div>
-
-        {/* Column 2 - Links de Navegação */}
+        
         <div>
-          <h3 className="text-lg font-bold mb-4">Navegação</h3>
+          <h3 className="text-lg font-semibold mb-4">Links Rápidos</h3>
           <ul className="space-y-2">
             <li>
-              <Link to="/" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Home</span>
+              <Link to="/" className="text-gray-400 hover:text-white transition-colors">
+                Página Inicial
               </Link>
             </li>
             <li>
-              <Link to="/explore" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Explorar</span>
+              <Link to="/explore" className="text-gray-400 hover:text-white transition-colors">
+                Estude Grátis
               </Link>
             </li>
             <li>
-              <Link to="/my-courses" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Meus Cursos</span>
+              <Link to="/questions" className="text-gray-400 hover:text-white transition-colors">
+                Questões
               </Link>
             </li>
             <li>
-              <Link to="/questions" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Questões</span>
+              <Link to="/blog" className="text-gray-400 hover:text-white transition-colors">
+                Blog
               </Link>
             </li>
           </ul>
         </div>
-
-        {/* Column 3 - Concursos */}
+        
         <div>
-          <h3 className="text-lg font-bold mb-4">Concursos</h3>
+          <h3 className="text-lg font-semibold mb-4">Suporte</h3>
           <ul className="space-y-2">
             <li>
-              <a href="#" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Banco do Brasil</span>
-              </a>
+              <Link to="/termos-e-politicas" className="text-gray-400 hover:text-white transition-colors">
+                Termos de Uso
+              </Link>
             </li>
             <li>
-              <a href="#" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Concurso INSS</span>
-              </a>
+              <Link to="/termos-e-politicas" className="text-gray-400 hover:text-white transition-colors">
+                Política de Privacidade
+              </Link>
             </li>
             <li>
-              <a href="#" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Concurso Receita Federal</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Concurso Caixa</span>
+              <a href="mailto:contato@bomestudo.com.br" className="text-gray-400 hover:text-white transition-colors">
+                Contato
               </a>
             </li>
           </ul>
         </div>
-
-        {/* Column 4 - Contato */}
+        
         <div>
-          <h3 className="text-lg font-bold mb-4">Contato</h3>
-          <div className="flex items-start space-x-3">
-            <Mail size={20} className="text-[#5f2ebe] mt-1 flex-shrink-0" />
-            <span className="text-gray-300">contato@bomestudo.com.br</span>
-          </div>
-          <div className="mt-6">
-            <h4 className="text-sm font-bold mb-2">Receba Novidades</h4>
-            <div className="flex mt-2">
-              <input type="email" placeholder="Seu e-mail" className="px-3 py-2 text-sm rounded-l-md text-gray-800 w-full focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]/50 focus:border-[#5f2ebe]" />
-              <button className="px-4 py-2 rounded-r-md hover:bg-opacity-90 transition-colors bg-[#5f2ebe] text-white">
-                Enviar
-              </button>
-            </div>
+          <h3 className="text-lg font-semibold mb-4">Redes Sociais</h3>
+          <div className="flex space-x-4">
+            <a 
+              href="https://instagram.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Instagram
+            </a>
+            <a 
+              href="https://youtube.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              YouTube
+            </a>
           </div>
         </div>
       </div>
-
-      {/* Footer Bottom */}
-      <div className="border-t border-gray-700 pt-8">
-        <div className="flex flex-col md:flex-row justify-between items-center">
-          <p className="text-sm text-gray-400 mb-4 md:mb-0">
-            © {new Date().getFullYear()} BomEstudo. Todos os direitos reservados.
-          </p>
-          <div className="flex space-x-6">
-            <a href="#" className="text-sm text-gray-400 hover:text-[#5f2ebe] transition-colors">
-              Termos de Uso
-            </a>
-            <a href="#" className="text-sm text-gray-400 hover:text-[#5f2ebe] transition-colors">
-              Política de Privacidade
-            </a>
-          </div>
-        </div>
+      
+      <div className="max-w-7xl mx-auto border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
+        <p>&copy; {new Date().getFullYear()} BomEstudo. Todos os direitos reservados.</p>
       </div>
     </footer>
   );

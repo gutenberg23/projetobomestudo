@@ -92,15 +92,44 @@ const MyCourses = () => {
           } = await supabase.from('cursos').select('*').in('id', cursosFavoritos);
           console.log("Dados de cursos obtidos:", cursosData);
           if (cursosData) {
-            const formattedCourses: CourseItemType[] = cursosData.map(course => ({
-              id: course.id,
-              titulo: course.titulo,
-              descricao: course.descricao || 'Sem descrição',
-              isFavorite: true,
-              topics: course.topicos_ids?.length || 0,
-              lessons: course.aulas_ids?.length || 0,
-              informacoes_curso: course.informacoes_curso
-            }));
+            // Processar cada curso para obter contagem de tópicos
+            const formattedCourses: CourseItemType[] = await Promise.all(
+              cursosData.map(async (course) => {
+                // Contagem de aulas
+                const lessonsCount = course.aulas_ids?.length || 0;
+                
+                // Contagem de tópicos - precisamos buscar os tópicos das aulas relacionadas
+                let topicsCount = 0;
+                
+                if (course.topicos_ids && course.topicos_ids.length > 0) {
+                  // Se o curso tem tópicos diretamente associados
+                  topicsCount = course.topicos_ids.length;
+                } else if (course.aulas_ids && course.aulas_ids.length > 0) {
+                  // Buscar informações das aulas para contar os tópicos
+                  const { data: aulasData } = await supabase
+                    .from('aulas')
+                    .select('topicos_ids')
+                    .in('id', course.aulas_ids);
+                  
+                  // Contar tópicos de todas as aulas
+                  if (aulasData) {
+                    topicsCount = aulasData.reduce((count, aula) => 
+                      count + (aula.topicos_ids?.length || 0), 0);
+                  }
+                }
+                
+                return {
+                  id: course.id,
+                  titulo: course.titulo,
+                  descricao: course.descricao || 'Sem descrição',
+                  isFavorite: true,
+                  topics: topicsCount,
+                  lessons: lessonsCount,
+                  informacoes_curso: course.informacoes_curso
+                };
+              })
+            );
+            
             setFavoriteCourses(formattedCourses);
             console.log("Cursos formatados:", formattedCourses);
           }
