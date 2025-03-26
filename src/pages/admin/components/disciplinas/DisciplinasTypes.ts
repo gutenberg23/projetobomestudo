@@ -1,7 +1,9 @@
+
 export interface Disciplina {
   id: string;
   titulo: string;
   descricao: string;
+  banca?: string;
   aulasIds: string[];
   topicosIds?: string[];
   questoesIds?: string[];

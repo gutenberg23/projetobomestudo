@@ -1,3 +1,4 @@
+
 import React from "react";
 import { 
   AulasFilter, 
@@ -34,6 +35,8 @@ const Aulas = () => {
     setTituloNovaDisciplina,
     descricaoNovaDisciplina,
     setDescricaoNovaDisciplina,
+    bancaNovaDisciplina,
+    setBancaNovaDisciplina,
     handleAdicionarDisciplina,
     isOpenEdit,
     setIsOpenEdit,
@@ -91,6 +94,8 @@ const Aulas = () => {
         setTituloNovaDisciplina={setTituloNovaDisciplina}
         descricaoNovaDisciplina={descricaoNovaDisciplina}
         setDescricaoNovaDisciplina={setDescricaoNovaDisciplina}
+        bancaNovaDisciplina={bancaNovaDisciplina}
+        setBancaNovaDisciplina={setBancaNovaDisciplina}
         handleAdicionarDisciplina={handleAdicionarDisciplina}
         todasSelecionadas={todasSelecionadas}
         aulas={aulas}

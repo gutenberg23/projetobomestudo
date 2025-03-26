@@ -375,6 +375,7 @@ export type Database = {
       disciplinas: {
         Row: {
           aulas_ids: string[] | null
+          banca: string | null
           created_at: string | null
           descricao: string | null
           id: string
@@ -383,6 +384,7 @@ export type Database = {
         }
         Insert: {
           aulas_ids?: string[] | null
+          banca?: string | null
           created_at?: string | null
           descricao?: string | null
           id?: string
@@ -391,6 +393,7 @@ export type Database = {
         }
         Update: {
           aulas_ids?: string[] | null
+          banca?: string | null
           created_at?: string | null
           descricao?: string | null
           id?: string
@@ -447,6 +450,51 @@ export type Database = {
           links?: string[] | null
           titulo?: string
           topicos?: string[] | null
+        }
+        Relationships: []
+      }
+      edital_verticalizado_data: {
+        Row: {
+          acertos: number
+          course_id: string
+          created_at: string
+          dificuldade: string
+          disciplina_id: string
+          id: string
+          importancia: number
+          revisado: boolean
+          topicos: Json
+          total_exercicios: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          acertos?: number
+          course_id: string
+          created_at?: string
+          dificuldade?: string
+          disciplina_id: string
+          id?: string
+          importancia?: number
+          revisado?: boolean
+          topicos?: Json
+          total_exercicios?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          acertos?: number
+          course_id?: string
+          created_at?: string
+          dificuldade?: string
+          disciplina_id?: string
+          id?: string
+          importancia?: number
+          revisado?: boolean
+          topicos?: Json
+          total_exercicios?: number
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -1000,44 +1048,6 @@ export type Database = {
         }
         Relationships: []
       }
-      edital_verticalizado_data: {
-        Row: {
-          id: string
-          user_id: string
-          course_id: string
-          disciplina_id: string
-          topicos: Json
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          course_id: string
-          disciplina_id: string
-          topicos?: Json
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          course_id?: string
-          disciplina_id?: string
-          topicos?: Json
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "edital_verticalizado_data_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
     }
     Views: {
       [_ in never]: never
@@ -1097,19 +1107,12 @@ export type Database = {
             }
             Returns: undefined
           }
-      increment_blog_post_likes:
-        | {
-            Args: {
-              post_id: number
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              post_id: string
-            }
-            Returns: undefined
-          }
+      increment_blog_post_likes: {
+        Args: {
+          post_id: string
+        }
+        Returns: boolean
+      }
       increment_comment_likes:
         | {
             Args: {
@@ -1136,6 +1139,12 @@ export type Database = {
             }
             Returns: undefined
           }
+      reset_blog_post_likes: {
+        Args: {
+          post_id: string
+        }
+        Returns: boolean
+      }
       table_exists: {
         Args: {
           table_name: string
@@ -1171,22 +1180,6 @@ export type Database = {
             }
             Returns: undefined
           }
-      increment_post_likes_v2: {
-        Args: {
-          post_id: string
-        }
-        Returns: boolean
-      }
-      reset_all_blog_post_likes: {
-        Args: Record<string, never>
-        Returns: void
-      }
-      reset_blog_post_likes: {
-        Args: {
-          post_id: string
-        }
-        Returns: boolean
-      }
     }
     Enums: {
       user_role: "aluno" | "professor" | "admin"

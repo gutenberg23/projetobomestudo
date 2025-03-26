@@ -1,3 +1,4 @@
+
 export interface Aula {
   id: string;
   titulo: string;
@@ -30,6 +31,8 @@ export interface AulasPageProps {
   setTituloNovaDisciplina: (titulo: string) => void;
   descricaoNovaDisciplina: string;
   setDescricaoNovaDisciplina: (descricao: string) => void;
+  bancaNovaDisciplina: string;
+  setBancaNovaDisciplina: (banca: string) => void;
   handleAdicionarDisciplina: () => void;
   todasSelecionadas: boolean;
   aulas: Aula[];

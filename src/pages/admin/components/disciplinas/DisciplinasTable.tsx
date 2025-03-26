@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -23,8 +24,8 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
             </TableHead>
             <TableHead className="w-[50px]">ID</TableHead>
             <TableHead className="w-[200px]">Título</TableHead>
-            <TableHead className="w-[200px]">Nota de rating
-          </TableHead>
+            <TableHead className="w-[200px]">Nota de rating</TableHead>
+            <TableHead className="w-[200px]">Banca</TableHead>
             <TableHead className="w-[120px]">Nº de Aulas</TableHead>
             <TableHead className="w-[120px]">Nº de Tópicos</TableHead>
             <TableHead className="w-[120px]">Nº de Questões</TableHead>
@@ -45,6 +46,7 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                 <TableCell className="font-medium">{disciplina.id}</TableCell>
                 <TableCell>{disciplina.titulo}</TableCell>
                 <TableCell>{disciplina.descricao}</TableCell>
+                <TableCell>{disciplina.banca || "Não informada"}</TableCell>
                 <TableCell>{disciplina.aulasIds.length} aulas</TableCell>
                 <TableCell>{disciplina.topicosIds?.length || 0} tópicos</TableCell>
                 <TableCell>{disciplina.questoesIds?.length || 0} questões</TableCell>
@@ -60,7 +62,7 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                   </div>
                 </TableCell>
               </TableRow>) : <TableRow>
-              <TableCell colSpan={9} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={10} className="text-center py-4 text-[#67748a]">
                 Nenhuma disciplina encontrada com os filtros aplicados.
               </TableCell>
             </TableRow>}

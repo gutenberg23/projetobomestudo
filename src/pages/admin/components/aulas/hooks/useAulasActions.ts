@@ -12,13 +12,13 @@ export const useAulasActions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [tituloNovaDisciplina, setTituloNovaDisciplina] = useState("");
   const [descricaoNovaDisciplina, setDescricaoNovaDisciplina] = useState("");
+  const [bancaNovaDisciplina, setBancaNovaDisciplina] = useState("");
   const [isOpenEdit, setIsOpenEdit] = useState(false);
   const [isOpenDelete, setIsOpenDelete] = useState(false);
   const [currentAula, setCurrentAula] = useState<Aula | null>(null);
 
   const itemsPerPage = 5;
 
-  // Buscar todas as aulas do banco de dados
   const fetchAulas = async () => {
     try {
       setLoading(true);
@@ -28,9 +28,7 @@ export const useAulasActions = () => {
       
       if (error) throw error;
       
-      // Transformar os dados do Supabase para o formato usado na aplicação
       const formattedAulas: Aula[] = await Promise.all((data || []).map(async (item) => {
-        // Calcular o total de questões para cada aula (incluindo questões dos tópicos)
         const totalQuestoes = await calcularTotalQuestoes({
           id: item.id,
           titulo: item.titulo,
@@ -61,12 +59,10 @@ export const useAulasActions = () => {
     }
   };
 
-  // Carregar aulas quando o componente monta
   useEffect(() => {
     fetchAulas();
   }, []);
 
-  // Utilizar o hook para filtrar e paginar as aulas
   const { 
     aulasFiltradas: paginatedAulas, 
     todasSelecionadas, 
@@ -80,7 +76,6 @@ export const useAulasActions = () => {
     itemsPerPage
   );
 
-  // Funções para manipulação de seleção
   const handleSelecaoTodas = () => {
     setAulas(aulas.map(aula => {
       if (paginatedAulas.some(aulaFiltrada => aulaFiltrada.id === aula.id)) {
@@ -96,7 +91,6 @@ export const useAulasActions = () => {
     ));
   };
 
-  // Funções para abrir modais
   const openEditModal = (aula: Aula) => {
     setCurrentAula(aula);
     setIsOpenEdit(true);
@@ -107,7 +101,6 @@ export const useAulasActions = () => {
     setIsOpenDelete(true);
   };
 
-  // Função para salvar aula editada
   const handleSaveAula = async (updatedAula: Aula) => {
     try {
       const { error } = await supabase
@@ -133,7 +126,6 @@ export const useAulasActions = () => {
     }
   };
 
-  // Função para excluir aula
   const handleDeleteAula = async (id: string) => {
     try {
       const { error } = await supabase
@@ -152,10 +144,8 @@ export const useAulasActions = () => {
     }
   };
 
-  // Função para duplicar aula
   const handleDuplicarAula = async (aula: Aula) => {
     try {
-      // Criar uma nova aula com os mesmos dados, mas sem o ID
       const novaAula = {
         titulo: `${aula.titulo} (Cópia)`,
         descricao: aula.descricao,
@@ -171,7 +161,6 @@ export const useAulasActions = () => {
 
       if (error) throw error;
 
-      // Formatar a nova aula para o formato usado na aplicação
       const aulaFormatada: Aula = {
         id: data.id,
         titulo: data.titulo,
@@ -182,7 +171,6 @@ export const useAulasActions = () => {
         totalQuestoes: aula.totalQuestoes
       };
 
-      // Adicionar a nova aula à lista
       setAulas([...aulas, aulaFormatada]);
       toast.success("Aula duplicada com sucesso!");
     } catch (error) {
@@ -191,14 +179,12 @@ export const useAulasActions = () => {
     }
   };
 
-  // Função para adicionar disciplina
   const handleAdicionarDisciplina = async () => {
     if (!tituloNovaDisciplina.trim()) {
       toast.error("O título da disciplina é obrigatório");
       return;
     }
     
-    // Obter as aulas selecionadas
     const aulasSelecionadas = aulas
       .filter(aula => aula.selecionada)
       .map(aula => aula.id);
@@ -209,13 +195,13 @@ export const useAulasActions = () => {
     }
 
     try {
-      // Cadastrar a disciplina no banco de dados
       const { data, error } = await supabase
         .from('disciplinas')
         .insert([
           {
             titulo: tituloNovaDisciplina,
             descricao: descricaoNovaDisciplina,
+            banca: bancaNovaDisciplina,
             aulas_ids: aulasSelecionadas,
             created_at: new Date().toISOString()
           }
@@ -224,14 +210,12 @@ export const useAulasActions = () => {
       
       if (error) throw error;
       
-      // Sucesso ao adicionar a disciplina
       toast.success("Disciplina adicionada com sucesso!");
       
-      // Resetar campos após adicionar
       setTituloNovaDisciplina("");
       setDescricaoNovaDisciplina("");
+      setBancaNovaDisciplina("");
       
-      // Desmarcar todas as aulas após adicionar
       setAulas(aulas.map(aula => ({...aula, selecionada: false})));
     } catch (error: any) {
       console.error("Erro ao adicionar disciplina:", error);
@@ -263,6 +247,8 @@ export const useAulasActions = () => {
     setTituloNovaDisciplina,
     descricaoNovaDisciplina,
     setDescricaoNovaDisciplina,
+    bancaNovaDisciplina,
+    setBancaNovaDisciplina,
     handleAdicionarDisciplina,
     isOpenEdit,
     setIsOpenEdit,
