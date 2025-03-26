@@ -7,6 +7,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
+
 interface ItemProps {
   id: string;
   title: string;
@@ -14,19 +15,24 @@ interface ItemProps {
   topics: number;
   lessons: number;
   onRemove: (id: string) => void;
+  banca?: string;
 }
+
 const FavoriteItem: React.FC<ItemProps> = ({
   id,
   title,
   description,
   topics,
   lessons,
-  onRemove
+  onRemove,
+  banca
 }) => {
+  const displayTitle = banca ? `${title} - ${banca}` : title;
+  
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
         <Link to={`/course/${id}`} className="hover:text-[#5f2ebe] transition-colors">
-          <h3 className="text-[#272f3c] mb-0 leading-none font-light text-sm">{title}</h3>
+          <h3 className="text-[#272f3c] mb-0 leading-none font-light text-sm">{displayTitle}</h3>
         </Link>
       </div>
       <div className="flex items-center">
@@ -40,6 +46,7 @@ const FavoriteItem: React.FC<ItemProps> = ({
       </div>
     </div>;
 };
+
 const MyCourses = () => {
   const [favoriteCourses, setFavoriteCourses] = useState<CourseItemType[]>([]);
   const [favoriteSubjects, setFavoriteSubjects] = useState<DisciplinaItemType[]>([]);
@@ -108,16 +115,40 @@ const MyCourses = () => {
             data: disciplinasData
           } = await supabase.from('disciplinas').select('*').in('id', disciplinasFavoritos);
           console.log("Dados de disciplinas obtidos:", disciplinasData);
+          
           if (disciplinasData) {
-            const formattedDisciplinas: DisciplinaItemType[] = disciplinasData.map(disciplina => ({
-              id: disciplina.id,
-              titulo: disciplina.titulo,
-              descricao: disciplina.descricao || 'Sem descrição',
-              isFavorite: true,
-              topics: 0,
-              // Valor padrão
-              lessons: disciplina.aulas_ids?.length || 0
-            }));
+            // Processar cada disciplina para obter contagem de tópicos
+            const formattedDisciplinas: DisciplinaItemType[] = await Promise.all(
+              disciplinasData.map(async (disciplina) => {
+                // Contar tópicos para esta disciplina
+                let topicsCount = 0;
+                
+                if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
+                  // Buscar informações das aulas
+                  const { data: aulasData } = await supabase
+                    .from('aulas')
+                    .select('topicos_ids')
+                    .in('id', disciplina.aulas_ids);
+                  
+                  // Contar tópicos de todas as aulas
+                  if (aulasData) {
+                    topicsCount = aulasData.reduce((count, aula) => 
+                      count + (aula.topicos_ids?.length || 0), 0);
+                  }
+                }
+                
+                return {
+                  id: disciplina.id,
+                  titulo: disciplina.titulo,
+                  descricao: disciplina.descricao || 'Sem descrição',
+                  isFavorite: true,
+                  topics: topicsCount,
+                  lessons: disciplina.aulas_ids?.length || 0,
+                  banca: disciplina.banca
+                };
+              })
+            );
+            
             setFavoriteSubjects(formattedDisciplinas);
             console.log("Disciplinas formatadas:", formattedDisciplinas);
           }
@@ -135,6 +166,7 @@ const MyCourses = () => {
     console.log("Buscando favoritos...");
     fetchFavorites();
   }, [navigate, location]);
+
   const handleRemoveCourse = async (id: string) => {
     try {
       const {
@@ -171,6 +203,7 @@ const MyCourses = () => {
       toast.error("Erro ao remover favorito. Por favor, tente novamente.");
     }
   };
+
   const handleRemoveSubject = async (id: string) => {
     try {
       const {
@@ -207,6 +240,7 @@ const MyCourses = () => {
       toast.error("Erro ao remover favorito. Por favor, tente novamente.");
     }
   };
+
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
@@ -232,7 +266,16 @@ const MyCourses = () => {
               <h2 className="text-2xl mb-4 text-[#272f3c] font-bold">Disciplinas</h2>
               <div className="bg-white rounded-lg overflow-hidden">
                 <div className="divide-y divide-gray-100">
-                  {favoriteSubjects.length > 0 ? favoriteSubjects.map(subject => <FavoriteItem key={subject.id} id={subject.id} title={subject.titulo} description={subject.descricao || ""} topics={subject.topics} lessons={subject.lessons} onRemove={handleRemoveSubject} />) : <div className="p-8 text-center text-gray-500">
+                  {favoriteSubjects.length > 0 ? favoriteSubjects.map(subject => <FavoriteItem 
+                    key={subject.id} 
+                    id={subject.id} 
+                    title={subject.titulo} 
+                    description={subject.descricao || ""} 
+                    topics={subject.topics} 
+                    lessons={subject.lessons} 
+                    onRemove={handleRemoveSubject}
+                    banca={subject.banca} 
+                  />) : <div className="p-8 text-center text-gray-500">
                       Você ainda não adicionou nenhuma disciplina aos favoritos.
                     </div>}
                 </div>
@@ -243,4 +286,5 @@ const MyCourses = () => {
       <Footer />
     </div>;
 };
+
 export default MyCourses;

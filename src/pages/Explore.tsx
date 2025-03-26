@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
 import { generateFriendlyUrl } from "@/utils/slug-utils";
+
 interface ItemProps {
   id: string;
   title: string;
@@ -19,7 +20,9 @@ interface ItemProps {
   lessons: number;
   onToggleFavorite: (id: string) => void;
   friendlyUrl: string;
+  banca?: string;
 }
+
 const ResultItem: React.FC<ItemProps> = ({
   id,
   title,
@@ -28,12 +31,15 @@ const ResultItem: React.FC<ItemProps> = ({
   topics,
   lessons,
   onToggleFavorite,
-  friendlyUrl
+  friendlyUrl,
+  banca
 }) => {
+  const displayTitle = banca ? `${title} - ${banca}` : title;
+  
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1 pr-10">
         <Link to={`/course/${friendlyUrl}`} className="hover:text-[#5f2ebe] transition-colors">
-          <h3 className="text-[#272f3c] mb-0 leading-none text-sm font-light">{title}</h3>
+          <h3 className="text-[#272f3c] mb-0 leading-none text-sm font-light">{displayTitle}</h3>
         </Link>
       </div>
       <div className="flex items-center">
@@ -47,6 +53,7 @@ const ResultItem: React.FC<ItemProps> = ({
       </div>
     </div>;
 };
+
 const Explore = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSubjects, setShowSubjects] = useState(false);
@@ -120,23 +127,45 @@ const Explore = () => {
         } = await supabase.from('disciplinas').select('*');
         if (disciplinasError) throw disciplinasError;
 
-        // Transformar dados de disciplinas
-        const formattedDisciplinas: DisciplinaItemType[] = disciplinasData.map(disciplina => {
-          // Gerar URL amigável para a disciplina
-          const friendlyUrl = generateFriendlyUrl(disciplina.titulo, disciplina.id);
+        // Para cada disciplina, precisamos buscar as aulas e contar os tópicos
+        const formattedDisciplinas: DisciplinaItemType[] = await Promise.all(
+          disciplinasData.map(async (disciplina) => {
+            // Gerar URL amigável para a disciplina
+            const friendlyUrl = generateFriendlyUrl(disciplina.titulo, disciplina.id);
 
-          // Verificar se a disciplina está nos favoritos usando o ID direto
-          const isFavorite = user ? userDisciplinasFavorites.includes(disciplina.id) : false;
-          return {
-            id: disciplina.id,
-            titulo: disciplina.titulo,
-            descricao: disciplina.descricao || 'Sem descrição',
-            isFavorite,
-            topics: 0,
-            lessons: disciplina.aulas_ids?.length || 0,
-            friendlyUrl
-          };
-        });
+            // Verificar se a disciplina está nos favoritos usando o ID direto
+            const isFavorite = user ? userDisciplinasFavorites.includes(disciplina.id) : false;
+            
+            // Contar tópicos para esta disciplina
+            let topicsCount = 0;
+            
+            if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
+              // Buscar informações das aulas
+              const { data: aulasData } = await supabase
+                .from('aulas')
+                .select('topicos_ids')
+                .in('id', disciplina.aulas_ids);
+              
+              // Contar tópicos de todas as aulas
+              if (aulasData) {
+                topicsCount = aulasData.reduce((count, aula) => 
+                  count + (aula.topicos_ids?.length || 0), 0);
+              }
+            }
+
+            return {
+              id: disciplina.id,
+              titulo: disciplina.titulo,
+              descricao: disciplina.descricao || 'Sem descrição',
+              isFavorite,
+              topics: topicsCount,
+              lessons: disciplina.aulas_ids?.length || 0,
+              friendlyUrl,
+              banca: disciplina.banca
+            };
+          })
+        );
+        
         setSubjects(formattedDisciplinas);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
@@ -147,6 +176,7 @@ const Explore = () => {
     };
     fetchData();
   }, []);
+
   const handleToggleFavorite = async (friendlyUrl: string) => {
     // Verificar se o usuário está logado
     const {
@@ -270,13 +300,16 @@ const Explore = () => {
       toast.error("Erro ao atualizar favoritos. Por favor, tente novamente.");
     }
   };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       navigate(`/explore?search=${encodeURIComponent(searchTerm)}`);
     }
   };
+
   const filteredData = showSubjects ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase())) : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
+
   return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
@@ -307,7 +340,18 @@ const Explore = () => {
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
               <p className="mt-3 text-gray-500">Carregando dados...</p>
             </div> : <div className="divide-y divide-gray-100">
-              {filteredData.length > 0 ? filteredData.map(item => <ResultItem key={item.id} id={item.id} title={item.titulo} description={item.descricao || ""} isFavorite={item.isFavorite} topics={item.topics} lessons={item.lessons} onToggleFavorite={handleToggleFavorite} friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} />) : <div className="p-8 text-center text-gray-500">
+              {filteredData.length > 0 ? filteredData.map(item => <ResultItem 
+                key={item.id} 
+                id={item.id} 
+                title={item.titulo} 
+                description={item.descricao || ""} 
+                isFavorite={item.isFavorite} 
+                topics={item.topics} 
+                lessons={item.lessons} 
+                onToggleFavorite={handleToggleFavorite} 
+                friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} 
+                banca={showSubjects ? (item as DisciplinaItemType).banca : undefined}
+              />) : <div className="p-8 text-center text-gray-500">
                   Nenhum resultado encontrado para "{searchTerm}"
                 </div>}
             </div>}
@@ -316,4 +360,5 @@ const Explore = () => {
       <Footer />
     </div>;
 };
+
 export default Explore;

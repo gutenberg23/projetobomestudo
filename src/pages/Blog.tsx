@@ -59,10 +59,7 @@ const Blog = () => {
 
     // Filtrar por estado
     if (activeState) {
-      const stateObj = STATES.find(state => state.id === activeState);
-      if (stateObj) {
-        result = result.filter(post => post.state === activeState);
-      }
+      result = result.filter(post => post.state === activeState);
     }
 
     // Filtrar por categoria
