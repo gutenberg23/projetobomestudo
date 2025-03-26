@@ -29,11 +29,11 @@ export const Header = () => {
       <div className="hidden md:flex items-center space-x-6 mr-6">
         <Link to="/blog" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
           <Newspaper className="w-4 h-4 px-px" />
-          <span className="font-extralight">Notícias</span>
+          <span className="font-extralight">Blog</span>
         </Link>
         <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
           <Trophy className="w-4 h-4" />
-          <span className="font-extralight">Concursos</span>
+          <span className="font-extralight">Todos os cursos</span>
         </Link>
       </div>
 
