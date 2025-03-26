@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPost, Region } from "@/components/blog/types";
 import { Database } from "@/integrations/supabase/types";
@@ -292,7 +293,11 @@ export const resetAllLikes = async (): Promise<boolean> => {
   try {
     console.log('Iniciando reset de todas as curtidas');
     
-    const { data, error } = await supabase.rpc('reset_all_blog_post_likes');
+    // Usando consulta SQL direta em vez de RPC
+    const { error } = await supabase
+      .from('blog_posts')
+      .update({ likes_count: 0 })
+      .neq('id', ''); // Condição que afetará todas as linhas
 
     if (error) {
       console.error('Erro ao resetar curtidas:', error);
@@ -318,9 +323,11 @@ export const resetBlogPostLikes = async (postId: string): Promise<boolean> => {
       return false;
     }
 
-    const { data, error } = await supabase.rpc('reset_blog_post_likes', {
-      post_id: postId
-    });
+    // Usando consulta SQL direta em vez de RPC
+    const { error } = await supabase
+      .from('blog_posts')
+      .update({ likes_count: 0 })
+      .eq('id', postId);
 
     if (error) {
       console.error('Erro ao resetar curtidas:', error);
