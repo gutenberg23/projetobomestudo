@@ -1,11 +1,13 @@
+
 import React, { useState } from "react";
-import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy } from "lucide-react";
+import { Search, Menu, User, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "/lovable-uploads/logo.svg";
+
 export const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -13,13 +15,16 @@ export const Header = () => {
     user,
     signOut
   } = useAuth();
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/explore?search=${encodeURIComponent(searchQuery)}`);
     }
   };
-  return <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-0">
+
+  return (
+    <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-0">
       <div className="flex min-h-[88px] flex-col items-stretch justify-center w-[230px] py-[21px]">
         <Link to="/">
           <img loading="lazy" src={logo} alt="Company Logo" className="aspect-[8.06] w-[230px] md:w-[230px] w-[120px] object-contain" />
@@ -31,7 +36,11 @@ export const Header = () => {
           <Newspaper className="w-4 h-4 px-px" />
           <span className="font-extralight">Blog</span>
         </Link>
-        <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+        <Link to="/questions" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+          <FileText className="w-4 h-4" />
+          <span className="font-extralight">Questões</span>
+        </Link>
+        <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] bg-gray-100 px-3 py-1.5 rounded-md transition-colors">
           <Trophy className="w-4 h-4" />
           <span className="font-extralight">Estude Grátis</span>
         </Link>
@@ -39,7 +48,13 @@ export const Header = () => {
 
       <div className="flex items-center gap-2.5">
         <form onSubmit={handleSearch} className="bg-slate-50 border flex items-center gap-2 max-w-[400px] w-auto px-5 py-[11px] rounded-[5px] border-[rgba(237,240,245,1)] mr-4 hidden md:flex">
-          <input type="text" placeholder="Pesquisar" className="flex-1 bg-transparent text-[15px] text-[#262f3c] outline-none min-w-[200px]" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+          <input 
+            type="text" 
+            placeholder="Pesquisar Concurso" 
+            className="flex-1 bg-transparent text-[15px] text-[#262f3c] outline-none min-w-[200px]" 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)} 
+          />
           <button type="submit" className="bg-white border flex items-center justify-center w-7 h-7 rounded-[3px] border-[rgba(238,241,246,1)]">
             <Search className="w-4 h-4" />
           </button>
@@ -69,18 +84,17 @@ export const Header = () => {
                 </div>
               </div> : null}
             <nav className="flex flex-col">
-              <Link to="/explore" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
-                <Compass className="w-4 h-4" />
-                Explorar
-              </Link>
               <Link to="/my-courses" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
                 Meus Cursos
               </Link>
-              <Link to="/questions" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Questões
-              </Link>
+              {/* Link "Questões" visível apenas na versão mobile */}
+              <div className="md:hidden">
+                <Link to="/questions" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Questões
+                </Link>
+              </div>
               <Link to="/settings" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <Settings className="w-4 h-4" />
                 Configurações
@@ -88,12 +102,27 @@ export const Header = () => {
               <div className="md:hidden border-t border-gray-100">
                 <Link to="/blog" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                   <Newspaper className="w-4 h-4" />
-                  Notícias
+                  Blog
                 </Link>
                 <Link to="/explore" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                   <Trophy className="w-4 h-4" />
-                  Concursos
+                  Estude Grátis
                 </Link>
+                {/* Adicionar campo de pesquisa na versão mobile */}
+                <div className="px-4 py-3">
+                  <form onSubmit={handleSearch} className="bg-slate-50 border flex items-center gap-2 w-full px-3 py-2 rounded-[5px] border-[rgba(237,240,245,1)]">
+                    <input 
+                      type="text" 
+                      placeholder="Pesquisar Concurso" 
+                      className="flex-1 bg-transparent text-[15px] text-[#262f3c] outline-none" 
+                      value={searchQuery} 
+                      onChange={e => setSearchQuery(e.target.value)} 
+                    />
+                    <button type="submit" className="bg-white border flex items-center justify-center w-7 h-7 rounded-[3px] border-[rgba(238,241,246,1)]">
+                      <Search className="w-4 h-4" />
+                    </button>
+                  </form>
+                </div>
               </div>
               {user ? <div className="border-t border-gray-100">
                   <button onClick={signOut} className="w-full text-left px-4 py-3 text-sm font-light text-red-600 hover:bg-slate-50 flex items-center gap-2">
@@ -105,5 +134,6 @@ export const Header = () => {
           </PopoverContent>
         </Popover>
       </div>
-    </header>;
+    </header>
+  );
 };

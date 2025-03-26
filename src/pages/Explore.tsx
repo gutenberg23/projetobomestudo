@@ -1,364 +1,680 @@
+
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Search, Star } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useLocation, useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
-import { generateFriendlyUrl } from "@/utils/slug-utils";
-
-interface ItemProps {
-  id: string;
-  title: string;
-  description: string;
-  isFavorite: boolean;
-  topics: number;
-  lessons: number;
-  onToggleFavorite: (id: string) => void;
-  friendlyUrl: string;
-  banca?: string;
-}
-
-const ResultItem: React.FC<ItemProps> = ({
-  id,
-  title,
-  description,
-  isFavorite,
-  topics,
-  lessons,
-  onToggleFavorite,
-  friendlyUrl,
-  banca
-}) => {
-  const displayTitle = banca ? `${title} - ${banca}` : title;
-  
-  return <div className="flex justify-between items-center p-4 border-b border-gray-100">
-      <div className="flex-1 pr-10">
-        <Link to={`/course/${friendlyUrl}`} className="hover:text-[#5f2ebe] transition-colors">
-          <h3 className="text-[#272f3c] mb-0 leading-none text-sm font-light">{displayTitle}</h3>
-        </Link>
-      </div>
-      <div className="flex items-center">
-        <div className="text-right mr-4">
-          <p className="font-bold text-[#262f3c] text-xs">Tópicos: <span className="text-gray-600 font-normal">{topics}</span></p>
-          <p className="font-bold text-[#262f3c] text-xs">Aulas: <span className="text-gray-600 font-normal">{lessons}</span></p>
-        </div>
-        <Button variant="ghost" size="icon" onClick={() => onToggleFavorite(friendlyUrl)} aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
-          <Star className={`h-5 w-5 ${isFavorite ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-gray-400"}`} />
-        </Button>
-      </div>
-    </div>;
-};
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, Filter, Clock, BookOpen, ChevronRight, Users } from "lucide-react";
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate, useLocation } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Explore = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showSubjects, setShowSubjects] = useState(false);
-  const [courses, setCourses] = useState<CourseItemType[]>([]);
-  const [subjects, setSubjects] = useState<DisciplinaItemType[]>([]);
+  const [activeTab, setActiveTab] = useState("todos");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filters, setFilters] = useState({
+    nivel: [] as string[],
+    disciplina: [] as string[],
+    banca: [] as string[]
+  });
+  const [cursos, setCursos] = useState<any[]>([]);
+  const [disciplinas, setDisciplinas] = useState<any[]>([]);
+  const [bancas, setBancas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const location = useLocation();
+  const [niveis] = useState(["Médio", "Superior", "Fundamental"]);
+  
   const navigate = useNavigate();
-
-  // Extrair parâmetro de pesquisa da URL quando a página carrega
+  const location = useLocation();
+  const { toast } = useToast();
+  
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const searchQuery = searchParams.get('search');
-    if (searchQuery) {
-      setSearchTerm(searchQuery);
+    const query = new URLSearchParams(location.search);
+    const searchParam = query.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
     }
-  }, [location.search]);
-
-  // Buscar cursos e disciplinas do banco de dados
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Buscar cursos
-        const {
-          data: coursesData,
-          error: coursesError
-        } = await supabase.from('cursos').select('*');
-        if (coursesError) throw coursesError;
-
-        // Buscar favoritos do usuário logado
-        const {
-          data: {
-            user
+    
+    loadData();
+  }, [location]);
+  
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Buscar cursos
+      const { data: cursosData, error: cursosError } = await supabase
+        .from('cursos')
+        .select('*, professores:professor_id(nome)');
+      
+      if (cursosError) throw cursosError;
+      
+      const cursoProcessados = await processarCursos(cursosData || []);
+      setCursos(cursoProcessados);
+      
+      // Buscar disciplinas
+      const { data: disciplinasData, error: disciplinasError } = await supabase
+        .from('disciplinas')
+        .select('*');
+      
+      if (disciplinasError) throw disciplinasError;
+      setDisciplinas(disciplinasData || []);
+      
+      // Buscar bancas
+      const { data: bancasData, error: bancasError } = await supabase
+        .from('bancas')
+        .select('*');
+      
+      if (bancasError) throw bancasError;
+      setBancas(bancasData || []);
+      
+    } catch (error: any) {
+      console.error('Erro ao carregar dados:', error);
+      toast({
+        title: "Erro ao carregar dados",
+        description: error.message || "Ocorreu um erro ao buscar os cursos e filtros.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Função para processar cursos e contar tópicos
+  const processarCursos = async (cursosData: any[]) => {
+    // Mapear todas as disciplinas IDs e aulas IDs para busca
+    const todasDisciplinasIds = new Set<string>();
+    const todasAulasIds = new Set<string>();
+    
+    cursosData.forEach(curso => {
+      if (curso.disciplinas_ids && Array.isArray(curso.disciplinas_ids)) {
+        curso.disciplinas_ids.forEach((id: string) => todasDisciplinasIds.add(id));
+      }
+      if (curso.aulas_ids && Array.isArray(curso.aulas_ids)) {
+        curso.aulas_ids.forEach((id: string) => todasAulasIds.add(id));
+      }
+    });
+    
+    // Buscar todas as disciplinas relacionadas para obter suas aulas
+    let disciplinasAulas: Record<string, string[]> = {};
+    if (todasDisciplinasIds.size > 0) {
+      const { data: disciplinasData } = await supabase
+        .from('disciplinas')
+        .select('id, aulas_ids')
+        .in('id', Array.from(todasDisciplinasIds));
+      
+      if (disciplinasData) {
+        disciplinasData.forEach(disc => {
+          disciplinasAulas[disc.id] = disc.aulas_ids || [];
+          if (disc.aulas_ids && Array.isArray(disc.aulas_ids)) {
+            disc.aulas_ids.forEach(aulaId => todasAulasIds.add(aulaId));
           }
-        } = await supabase.auth.getUser();
-        let userFavorites: string[] = [];
-        let userDisciplinasFavorites: string[] = [];
-        if (user) {
-          const {
-            data: favoritesData
-          } = await supabase.from('profiles').select('cursos_favoritos, disciplinas_favoritos').eq('id', user.id).single();
-          userFavorites = favoritesData?.cursos_favoritos || [];
-          userDisciplinasFavorites = favoritesData?.disciplinas_favoritos || [];
-        }
-
-        // Transformar dados de cursos
-        const formattedCourses: CourseItemType[] = coursesData.map(course => {
-          // Gerar URL amigável para o curso
-          const friendlyUrl = generateFriendlyUrl(course.titulo, course.id);
-
-          // Verificar se o curso está nos favoritos usando o ID direto
-          const isFavorite = user ? userFavorites.includes(course.id) : false;
-          return {
-            id: course.id,
-            titulo: course.titulo,
-            descricao: course.descricao || 'Sem descrição',
-            isFavorite,
-            topics: course.topicos_ids?.length || 0,
-            lessons: course.aulas_ids?.length || 0,
-            informacoes_curso: course.informacoes_curso,
-            friendlyUrl
-          };
         });
-        setCourses(formattedCourses);
+      }
+    }
+    
+    // Buscar todas as aulas para obter seus tópicos
+    let aulasTopicos: Record<string, number> = {};
+    if (todasAulasIds.size > 0) {
+      const { data: aulasData } = await supabase
+        .from('aulas')
+        .select('id, topicos_ids')
+        .in('id', Array.from(todasAulasIds));
+      
+      if (aulasData) {
+        aulasData.forEach(aula => {
+          aulasTopicos[aula.id] = Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0;
+        });
+      }
+    }
+    
+    // Processar cada curso para adicionar contagem de tópicos
+    return cursosData.map(curso => {
+      let totalTopicos = 0;
+      
+      // Contar tópicos das aulas diretamente ligadas ao curso
+      if (curso.aulas_ids && Array.isArray(curso.aulas_ids)) {
+        curso.aulas_ids.forEach((aulaId: string) => {
+          totalTopicos += aulasTopicos[aulaId] || 0;
+        });
+      }
+      
+      // Contar tópicos das aulas ligadas às disciplinas do curso
+      if (curso.disciplinas_ids && Array.isArray(curso.disciplinas_ids)) {
+        curso.disciplinas_ids.forEach((discId: string) => {
+          const aulasIds = disciplinasAulas[discId] || [];
+          aulasIds.forEach(aulaId => {
+            totalTopicos += aulasTopicos[aulaId] || 0;
+          });
+        });
+      }
+      
+      return {
+        ...curso,
+        total_topicos: totalTopicos
+      };
+    });
+  };
+  
+  // Funções para processamento de disciplinas e contagem de tópicos
+  const processarDisciplinas = async (disciplinasData: any[]) => {
+    // Extrair todos os IDs de aulas
+    const todasAulasIds = new Set<string>();
+    disciplinasData.forEach(disc => {
+      if (disc.aulas_ids && Array.isArray(disc.aulas_ids)) {
+        disc.aulas_ids.forEach((id: string) => todasAulasIds.add(id));
+      }
+    });
+    
+    // Buscar todas as aulas para obter seus tópicos
+    let aulasTopicos: Record<string, number> = {};
+    if (todasAulasIds.size > 0) {
+      const { data: aulasData } = await supabase
+        .from('aulas')
+        .select('id, topicos_ids')
+        .in('id', Array.from(todasAulasIds));
+      
+      if (aulasData) {
+        aulasData.forEach(aula => {
+          aulasTopicos[aula.id] = Array.isArray(aula.topicos_ids) ? aula.topicos_ids.length : 0;
+        });
+      }
+    }
+    
+    // Adicionar contagem de tópicos a cada disciplina
+    return disciplinasData.map(disc => {
+      let totalTopicos = 0;
+      
+      if (disc.aulas_ids && Array.isArray(disc.aulas_ids)) {
+        disc.aulas_ids.forEach((aulaId: string) => {
+          totalTopicos += aulasTopicos[aulaId] || 0;
+        });
+      }
+      
+      return {
+        ...disc,
+        total_topicos: totalTopicos
+      };
+    });
+  };
 
-        // Buscar disciplinas
-        const {
-          data: disciplinasData,
-          error: disciplinasError
-        } = await supabase.from('disciplinas').select('*');
-        if (disciplinasError) throw disciplinasError;
-
-        // Para cada disciplina, precisamos buscar as aulas e contar os tópicos
-        const formattedDisciplinas: DisciplinaItemType[] = await Promise.all(
-          disciplinasData.map(async (disciplina) => {
-            // Gerar URL amigável para a disciplina
-            const friendlyUrl = generateFriendlyUrl(disciplina.titulo, disciplina.id);
-
-            // Verificar se a disciplina está nos favoritos usando o ID direto
-            const isFavorite = user ? userDisciplinasFavorites.includes(disciplina.id) : false;
-            
-            // Contar tópicos para esta disciplina
-            let topicsCount = 0;
-            
-            if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-              // Buscar informações das aulas
-              const { data: aulasData } = await supabase
-                .from('aulas')
-                .select('topicos_ids')
-                .in('id', disciplina.aulas_ids);
-              
-              // Contar tópicos de todas as aulas
-              if (aulasData) {
-                topicsCount = aulasData.reduce((count, aula) => 
-                  count + (aula.topicos_ids?.length || 0), 0);
-              }
-            }
-
-            return {
-              id: disciplina.id,
-              titulo: disciplina.titulo,
-              descricao: disciplina.descricao || 'Sem descrição',
-              isFavorite,
-              topics: topicsCount,
-              lessons: disciplina.aulas_ids?.length || 0,
-              friendlyUrl,
-              banca: disciplina.banca
-            };
-          })
-        );
-        
-        setSubjects(formattedDisciplinas);
-      } catch (error) {
-        console.error("Erro ao buscar dados:", error);
-        toast.error("Erro ao carregar dados. Por favor, tente novamente.");
-      } finally {
-        setLoading(false);
+  useEffect(() => {
+    const processAndUpdateDisciplinas = async () => {
+      if (disciplinas.length > 0) {
+        const processedDisciplinas = await processarDisciplinas(disciplinas);
+        setDisciplinas(processedDisciplinas);
       }
     };
-    fetchData();
-  }, []);
-
-  const handleToggleFavorite = async (friendlyUrl: string) => {
-    // Verificar se o usuário está logado
-    const {
-      data: {
-        user
-      }
-    } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error("Você precisa estar logado para adicionar favoritos.");
-      navigate('/login');
-      return;
-    }
-    try {
-      if (showSubjects) {
-        // Encontrar a disciplina correspondente ao friendlyUrl
-        const subject = subjects.find(s => s.friendlyUrl === friendlyUrl);
-        if (!subject) {
-          console.error("Disciplina não encontrada:", friendlyUrl);
-          return;
-        }
-
-        // Usar o ID direto da disciplina
-        const disciplinaId = subject.id;
-        console.log("ID da disciplina:", disciplinaId);
-
-        // Atualizar estado local
-        setSubjects(subjects.map(s => s.id === subject.id ? {
-          ...s,
-          isFavorite: !s.isFavorite
-        } : s));
-
-        // Buscar favoritos atuais
-        const {
-          data: profile
-        } = await supabase.from('profiles').select('disciplinas_favoritos').eq('id', user.id).single();
-        if (!profile) {
-          console.error("Perfil não encontrado");
-          return;
-        }
-        let disciplinasFavoritos = profile.disciplinas_favoritos || [];
-        console.log("Favoritos atuais:", disciplinasFavoritos);
-
-        // Verificar se já está nos favoritos
-        const isAlreadyFavorite = disciplinasFavoritos.includes(disciplinaId);
-        if (isAlreadyFavorite) {
-          // Remover dos favoritos
-          disciplinasFavoritos = disciplinasFavoritos.filter(id => id !== disciplinaId);
-          toast.success("Disciplina removida dos favoritos");
-        } else {
-          // Adicionar aos favoritos
-          disciplinasFavoritos.push(disciplinaId);
-          toast.success("Disciplina adicionada aos favoritos");
-        }
-        console.log("Favoritos atualizados:", disciplinasFavoritos);
-
-        // Atualizar no banco de dados
-        const {
-          error
-        } = await supabase.from('profiles').update({
-          disciplinas_favoritos: disciplinasFavoritos
-        }).eq('id', user.id);
-        if (error) {
-          console.error("Erro ao atualizar favoritos:", error);
-          toast.error("Erro ao atualizar favoritos");
-        }
+    
+    processAndUpdateDisciplinas();
+  }, [disciplinas.length]);
+  
+  const toggleFilter = (type: 'nivel' | 'disciplina' | 'banca', value: string) => {
+    setFilters(prev => {
+      const currentFilters = [...prev[type]];
+      const index = currentFilters.indexOf(value);
+      
+      if (index === -1) {
+        currentFilters.push(value);
       } else {
-        // Encontrar o curso correspondente ao friendlyUrl
-        const course = courses.find(c => c.friendlyUrl === friendlyUrl);
-        if (!course) {
-          console.error("Curso não encontrado:", friendlyUrl);
-          return;
-        }
-
-        // Usar o ID direto do curso
-        const cursoId = course.id;
-        console.log("ID do curso:", cursoId);
-
-        // Atualizar estado local
-        setCourses(courses.map(c => c.id === course.id ? {
-          ...c,
-          isFavorite: !c.isFavorite
-        } : c));
-
-        // Buscar favoritos atuais
-        const {
-          data: profile
-        } = await supabase.from('profiles').select('cursos_favoritos').eq('id', user.id).single();
-        if (!profile) {
-          console.error("Perfil não encontrado");
-          return;
-        }
-        let cursosFavoritos = profile.cursos_favoritos || [];
-        console.log("Favoritos atuais:", cursosFavoritos);
-
-        // Verificar se já está nos favoritos
-        const isAlreadyFavorite = cursosFavoritos.includes(cursoId);
-        if (isAlreadyFavorite) {
-          // Remover dos favoritos
-          cursosFavoritos = cursosFavoritos.filter(id => id !== cursoId);
-          toast.success("Curso removido dos favoritos");
-        } else {
-          // Adicionar aos favoritos
-          cursosFavoritos.push(cursoId);
-          toast.success("Curso adicionado aos favoritos");
-        }
-        console.log("Favoritos atualizados:", cursosFavoritos);
-
-        // Atualizar no banco de dados
-        const {
-          error
-        } = await supabase.from('profiles').update({
-          cursos_favoritos: cursosFavoritos
-        }).eq('id', user.id);
-        if (error) {
-          console.error("Erro ao atualizar favoritos:", error);
-          toast.error("Erro ao atualizar favoritos");
-        }
+        currentFilters.splice(index, 1);
       }
-    } catch (error) {
-      console.error("Erro ao atualizar favoritos:", error);
-      toast.error("Erro ao atualizar favoritos. Por favor, tente novamente.");
-    }
+      
+      return {
+        ...prev,
+        [type]: currentFilters
+      };
+    });
+  };
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+  
+  const handleViewCourse = (course: any) => {
+    navigate(`/course/${course.id}`);
+  };
+  
+  const filteredCursos = cursos.filter(curso => {
+    // Filtrar por pesquisa
+    const matchesSearch = 
+      searchQuery === "" || 
+      curso.nome?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      curso.descricao?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      curso.categoria?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Filtrar por nível
+    const matchesNivel = 
+      filters.nivel.length === 0 || 
+      filters.nivel.includes(curso.nivel || "");
+    
+    // Filtrar por disciplina
+    const matchesDisciplina = 
+      filters.disciplina.length === 0 || 
+      (curso.disciplinas_ids && curso.disciplinas_ids.some((id: string) => 
+        filters.disciplina.includes(id)
+      ));
+    
+    // Filtrar por banca
+    const matchesBanca = 
+      filters.banca.length === 0 || 
+      filters.banca.includes(curso.banca_id || "");
+    
+    return matchesSearch && matchesNivel && matchesDisciplina && matchesBanca;
+  });
+  
+  const filteredDisciplinas = disciplinas.filter(disciplina => {
+    const matchesSearch = 
+      searchQuery === "" || 
+      disciplina.titulo?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      disciplina.descricao?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesSearch;
+  });
+  
+  const getBancaNome = (bancaId: string) => {
+    const banca = bancas.find(b => b.id === bancaId);
+    return banca ? banca.nome : '';
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/explore?search=${encodeURIComponent(searchTerm)}`);
-    }
-  };
-
-  const filteredData = showSubjects ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase())) : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
-
-  return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+  return (
+    <div className="min-h-screen bg-[#f6f8fa]">
       <Header />
-      <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
-        <h1 className="text-3xl mb-2 md:text-3xl font-extrabold text-[#272f3c]">Explorar</h1>
-        <p className="text-[#67748a] mb-6">Pesquise por concursos ou disciplinas do seu interesse</p>
-
-        <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-          <div className="flex items-center flex-1 relative">
-            <form onSubmit={handleSearch} className="w-full flex">
-              <Input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pr-10 w-full" />
-              <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
-                <Search className="h-4 w-4" />
-              </button>
-            </form>
+      <main className="pt-[88px] px-4 py-8 container mx-auto">
+        <h1 className="text-3xl font-bold text-[#272f3c] mb-8">Explorar Cursos e Disciplinas</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-[300px,1fr] gap-6">
+          {/* Filtros */}
+          <div className="space-y-6">
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold flex items-center">
+                    <Filter className="mr-2 h-5 w-5" /> Filtros
+                  </h3>
+                  {(filters.nivel.length > 0 || filters.disciplina.length > 0 || filters.banca.length > 0) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFilters({ nivel: [], disciplina: [], banca: [] })}
+                    >
+                      Limpar
+                    </Button>
+                  )}
+                </div>
+                
+                <div className="mb-5">
+                  <h4 className="text-sm font-semibold mb-2">Nível</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {niveis.map(nivel => (
+                      <Badge 
+                        key={nivel}
+                        variant={filters.nivel.includes(nivel) ? "default" : "outline"}
+                        className="cursor-pointer hover:bg-muted-foreground/20"
+                        onClick={() => toggleFilter('nivel', nivel)}
+                      >
+                        {nivel}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="mb-5">
+                  <h4 className="text-sm font-semibold mb-2">Disciplinas</h4>
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                    {loading ? (
+                      Array(5).fill(0).map((_, i) => (
+                        <Skeleton key={i} className="h-6 w-20" />
+                      ))
+                    ) : (
+                      disciplinas.map(disciplina => (
+                        <Badge 
+                          key={disciplina.id}
+                          variant={filters.disciplina.includes(disciplina.id) ? "default" : "outline"}
+                          className="cursor-pointer hover:bg-muted-foreground/20"
+                          onClick={() => toggleFilter('disciplina', disciplina.id)}
+                        >
+                          {disciplina.titulo}
+                          {disciplina.banca_id && ` - ${getBancaNome(disciplina.banca_id)}`}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-semibold mb-2">Bancas</h4>
+                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                    {loading ? (
+                      Array(5).fill(0).map((_, i) => (
+                        <Skeleton key={i} className="h-6 w-20" />
+                      ))
+                    ) : (
+                      bancas.map(banca => (
+                        <Badge 
+                          key={banca.id}
+                          variant={filters.banca.includes(banca.id) ? "default" : "outline"}
+                          className="cursor-pointer hover:bg-muted-foreground/20"
+                          onClick={() => toggleFilter('banca', banca.id)}
+                        >
+                          {banca.nome}
+                        </Badge>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-
-          <div className="flex items-center gap-2">
-            <span className={`text-sm ${!showSubjects ? "font-medium" : ""}`}>Concursos</span>
-            <Switch checked={showSubjects} onCheckedChange={setShowSubjects} aria-label="Alternar entre cursos e disciplinas" />
-            <span className={`text-sm ${showSubjects ? "font-medium" : ""}`}>
-              Disciplinas
-            </span>
+          
+          {/* Conteúdo Principal */}
+          <div className="space-y-6">
+            <div className="flex items-center mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Buscar cursos e disciplinas"
+                  className="pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+            
+            <Tabs defaultValue="todos" value={activeTab} onValueChange={handleTabChange}>
+              <TabsList className="mb-6">
+                <TabsTrigger value="todos">Todos</TabsTrigger>
+                <TabsTrigger value="cursos">Cursos</TabsTrigger>
+                <TabsTrigger value="disciplinas">Disciplinas</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="todos" className="space-y-6">
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array(4).fill(0).map((_, i) => (
+                      <Card key={i}>
+                        <CardContent className="p-0">
+                          <Skeleton className="h-32 w-full" />
+                          <div className="p-5 space-y-2">
+                            <Skeleton className="h-6 w-3/4" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-full" />
+                            <div className="flex gap-2 mt-2">
+                              <Skeleton className="h-8 w-20" />
+                              <Skeleton className="h-8 w-20" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {filteredCursos.length > 0 && (
+                      <div>
+                        <h2 className="text-xl font-bold mb-4 text-[#272f3c]">Cursos</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {filteredCursos.slice(0, 4).map((curso) => (
+                            <Card key={curso.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                              <CardContent className="p-0">
+                                <div 
+                                  className="h-32 bg-cover bg-center" 
+                                  style={{ 
+                                    backgroundImage: `url(${curso.foto_capa || 'https://placehold.co/600x400/5f2ebe/FFF?text=BomEstudo'})` 
+                                  }}
+                                />
+                                <div className="p-5">
+                                  <h3 className="font-bold text-lg text-[#272f3c] mb-2">{curso.nome}</h3>
+                                  <p className="text-[#67748a] text-sm mb-4 line-clamp-2">{curso.descricao}</p>
+                                  <div className="flex justify-between items-center">
+                                    <div className="flex items-center space-x-4 text-sm text-[#67748a]">
+                                      <div className="flex items-center">
+                                        <Clock className="h-4 w-4 mr-1" />
+                                        <span>{curso.duracao || "N/A"}</span>
+                                      </div>
+                                      <div className="flex items-center">
+                                        <BookOpen className="h-4 w-4 mr-1" />
+                                        <span>{curso.total_topicos || 0} tópicos</span>
+                                      </div>
+                                    </div>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="text-[#5f2ebe]"
+                                      onClick={() => handleViewCourse(curso)}
+                                    >
+                                      Ver curso
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                        {filteredCursos.length > 4 && (
+                          <div className="mt-4 text-center">
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setActiveTab("cursos")}
+                              className="text-[#5f2ebe]"
+                            >
+                              Ver todos os cursos
+                              <ChevronRight className="ml-1 h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {filteredDisciplinas.length > 0 && (
+                      <div className="mt-8">
+                        <h2 className="text-xl font-bold mb-4 text-[#272f3c]">Disciplinas</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {filteredDisciplinas.slice(0, 6).map((disciplina) => (
+                            <Card key={disciplina.id} className="hover:shadow-md transition-shadow">
+                              <CardContent className="p-5">
+                                <h3 className="font-bold text-lg text-[#272f3c] mb-2">
+                                  {disciplina.titulo}
+                                  {disciplina.banca_id && ` - ${getBancaNome(disciplina.banca_id)}`}
+                                </h3>
+                                <p className="text-[#67748a] text-sm mb-4 line-clamp-2">{disciplina.descricao}</p>
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center space-x-4 text-sm text-[#67748a]">
+                                    <div className="flex items-center">
+                                      <BookOpen className="h-4 w-4 mr-1" />
+                                      <span>{disciplina.total_topicos || 0} tópicos</span>
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-[#5f2ebe]"
+                                    onClick={() => navigate(`/explore?disciplina=${disciplina.id}`)}
+                                  >
+                                    Ver aulas
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                        {filteredDisciplinas.length > 6 && (
+                          <div className="mt-4 text-center">
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setActiveTab("disciplinas")}
+                              className="text-[#5f2ebe]"
+                            >
+                              Ver todas as disciplinas
+                              <ChevronRight className="ml-1 h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {filteredCursos.length === 0 && filteredDisciplinas.length === 0 && (
+                      <div className="text-center py-10">
+                        <h3 className="text-xl font-semibold text-[#272f3c] mb-2">Nenhum resultado encontrado</h3>
+                        <p className="text-[#67748a]">Tente ajustar seus filtros ou termos de busca.</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="cursos" className="space-y-6">
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array(6).fill(0).map((_, i) => (
+                      <Card key={i}>
+                        <CardContent className="p-0">
+                          <Skeleton className="h-32 w-full" />
+                          <div className="p-5 space-y-2">
+                            <Skeleton className="h-6 w-3/4" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-full" />
+                            <div className="flex gap-2 mt-2">
+                              <Skeleton className="h-8 w-20" />
+                              <Skeleton className="h-8 w-20" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {filteredCursos.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {filteredCursos.map((curso) => (
+                          <Card key={curso.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                            <CardContent className="p-0">
+                              <div 
+                                className="h-32 bg-cover bg-center" 
+                                style={{ 
+                                  backgroundImage: `url(${curso.foto_capa || 'https://placehold.co/600x400/5f2ebe/FFF?text=BomEstudo'})` 
+                                }}
+                              />
+                              <div className="p-5">
+                                <h3 className="font-bold text-lg text-[#272f3c] mb-2">{curso.nome}</h3>
+                                <p className="text-[#67748a] text-sm mb-4 line-clamp-2">{curso.descricao}</p>
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                  {curso.nivel && (
+                                    <Badge variant="outline">{curso.nivel}</Badge>
+                                  )}
+                                  {curso.categoria && (
+                                    <Badge variant="outline">{curso.categoria}</Badge>
+                                  )}
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center space-x-4 text-sm text-[#67748a]">
+                                    <div className="flex items-center">
+                                      <Clock className="h-4 w-4 mr-1" />
+                                      <span>{curso.duracao || "N/A"}</span>
+                                    </div>
+                                    <div className="flex items-center">
+                                      <BookOpen className="h-4 w-4 mr-1" />
+                                      <span>{curso.total_topicos || 0} tópicos</span>
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="text-[#5f2ebe]"
+                                    onClick={() => handleViewCourse(curso)}
+                                  >
+                                    Ver curso
+                                  </Button>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10">
+                        <h3 className="text-xl font-semibold text-[#272f3c] mb-2">Nenhum curso encontrado</h3>
+                        <p className="text-[#67748a]">Tente ajustar seus filtros ou termos de busca.</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="disciplinas" className="space-y-6">
+                {loading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array(9).fill(0).map((_, i) => (
+                      <Card key={i}>
+                        <CardContent className="p-5 space-y-2">
+                          <Skeleton className="h-6 w-3/4" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-full" />
+                          <div className="flex gap-2 mt-2">
+                            <Skeleton className="h-8 w-20" />
+                            <Skeleton className="h-8 w-20" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    {filteredDisciplinas.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredDisciplinas.map((disciplina) => (
+                          <Card key={disciplina.id} className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-5">
+                              <h3 className="font-bold text-lg text-[#272f3c] mb-2">
+                                {disciplina.titulo}
+                                {disciplina.banca_id && ` - ${getBancaNome(disciplina.banca_id)}`}
+                              </h3>
+                              <p className="text-[#67748a] text-sm mb-4 line-clamp-2">{disciplina.descricao}</p>
+                              <div className="flex justify-between items-center">
+                                <div className="flex items-center space-x-4 text-sm text-[#67748a]">
+                                  <div className="flex items-center">
+                                    <BookOpen className="h-4 w-4 mr-1" />
+                                    <span>{disciplina.total_topicos || 0} tópicos</span>
+                                  </div>
+                                  {disciplina.professores && (
+                                    <div className="flex items-center">
+                                      <Users className="h-4 w-4 mr-1" />
+                                      <span>{disciplina.professores}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-[#5f2ebe]"
+                                  onClick={() => navigate(`/explore?disciplina=${disciplina.id}`)}
+                                >
+                                  Ver aulas
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10">
+                        <h3 className="text-xl font-semibold text-[#272f3c] mb-2">Nenhuma disciplina encontrada</h3>
+                        <p className="text-[#67748a]">Tente ajustar seus filtros ou termos de busca.</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg overflow-hidden">
-          {loading ? <div className="p-8 text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-              <p className="mt-3 text-gray-500">Carregando dados...</p>
-            </div> : <div className="divide-y divide-gray-100">
-              {filteredData.length > 0 ? filteredData.map(item => <ResultItem 
-                key={item.id} 
-                id={item.id} 
-                title={item.titulo} 
-                description={item.descricao || ""} 
-                isFavorite={item.isFavorite} 
-                topics={item.topics} 
-                lessons={item.lessons} 
-                onToggleFavorite={handleToggleFavorite} 
-                friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} 
-                banca={showSubjects ? (item as DisciplinaItemType).banca : undefined}
-              />) : <div className="p-8 text-center text-gray-500">
-                  Nenhum resultado encontrado para "{searchTerm}"
-                </div>}
-            </div>}
         </div>
       </main>
       <Footer />
-    </div>;
+    </div>
+  );
 };
 
 export default Explore;
