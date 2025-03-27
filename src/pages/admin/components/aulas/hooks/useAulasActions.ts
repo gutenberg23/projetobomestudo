@@ -33,8 +33,8 @@ export const useAulasActions = () => {
           id: item.id,
           titulo: item.titulo,
           descricao: item.descricao || "",
-          topicosIds: item.topicos_ids || [],
-          questoesIds: item.questoes_ids || [],
+          topicosIds: Array.isArray(item.topicos_ids) ? item.topicos_ids : [],
+          questoesIds: Array.isArray(item.questoes_ids) ? item.questoes_ids : [],
           selecionada: false,
           totalQuestoes: 0
         });
@@ -43,8 +43,8 @@ export const useAulasActions = () => {
           id: item.id,
           titulo: item.titulo,
           descricao: item.descricao || "",
-          topicosIds: item.topicos_ids || [],
-          questoesIds: item.questoes_ids || [],
+          topicosIds: Array.isArray(item.topicos_ids) ? item.topicos_ids : [],
+          questoesIds: Array.isArray(item.questoes_ids) ? item.questoes_ids : [],
           selecionada: false,
           totalQuestoes: totalQuestoes
         };
@@ -108,8 +108,8 @@ export const useAulasActions = () => {
         .update({ 
           titulo: updatedAula.titulo,
           descricao: updatedAula.descricao,
-          topicos_ids: updatedAula.topicosIds,
-          questoes_ids: updatedAula.questoesIds
+          topicos_ids: Array.isArray(updatedAula.topicosIds) ? updatedAula.topicosIds : [],
+          questoes_ids: Array.isArray(updatedAula.questoesIds) ? updatedAula.questoesIds : []
         })
         .eq('id', updatedAula.id);
 

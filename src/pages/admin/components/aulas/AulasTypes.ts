@@ -1,4 +1,3 @@
-
 export interface Aula {
   id: string;
   titulo: string;

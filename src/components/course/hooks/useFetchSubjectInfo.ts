@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -91,12 +90,16 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
             if (topicosError) {
               console.error('Erro ao buscar tópicos:', topicosError);
             } else {
-              sections = (topicosData || []).map(topico => ({
-                id: topico.id,
-                title: topico.nome,
-                videoUrl: topico.video_url || '',
-                isActive: false // Será atualizado pelo progresso do usuário
-              }));
+              // Ordenar os tópicos de acordo com a ordem em topicos_ids
+              sections = aula.topicos_ids
+                .map(id => topicosData?.find(topico => topico.id === id))
+                .filter((topico): topico is NonNullable<typeof topico> => topico != null)
+                .map(topico => ({
+                  id: topico.id,
+                  title: topico.nome,
+                  videoUrl: topico.video_url || '',
+                  isActive: false // Será atualizado pelo progresso do usuário
+                }));
             }
           }
           

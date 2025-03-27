@@ -98,7 +98,10 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                               console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
                               
                               if (topicosData && !topicosError) {
-                                topicos = topicosData;
+                                // Ordenar os tópicos de acordo com a ordem em topicos_ids
+                                topicos = aula.topicos_ids.map(id => 
+                                  topicosData.find(topico => topico.id === id)
+                                ).filter(Boolean);
                               }
                             } catch (topicosError) {
                               console.error("Erro ao buscar tópicos:", topicosError);
@@ -256,8 +259,13 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                             .select('*')
                             .in('id', aula.topicos_ids);
                             
+                          console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
+                          
                           if (topicosData && !topicosError) {
-                            topicos = topicosData;
+                            // Ordenar os tópicos de acordo com a ordem em topicos_ids
+                            topicos = aula.topicos_ids.map(id => 
+                              topicosData.find(topico => topico.id === id)
+                            ).filter(Boolean);
                           }
                         } catch (topicosError) {
                           console.error("Erro ao buscar tópicos:", topicosError);
