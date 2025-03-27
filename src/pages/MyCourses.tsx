@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -18,6 +17,11 @@ import { Search, BookOpen, Clock, Calendar, ChevronRight } from "lucide-react";
 interface CourseEnrollment {
   id: string;
   user_id: string;
+  course_id: string;
+  created_at: string;
+}
+
+interface UserCourseResult {
   course_id: string;
   created_at: string;
 }
@@ -55,7 +59,6 @@ const MyCourses = () => {
   };
   
   const processarCursos = async (cursosData: any[]) => {
-    // Mapear todas as disciplinas IDs e aulas IDs para busca
     const todasDisciplinasIds = new Set<string>();
     const todasAulasIds = new Set<string>();
     
@@ -68,7 +71,6 @@ const MyCourses = () => {
       }
     });
     
-    // Buscar todas as disciplinas relacionadas para obter suas aulas
     let disciplinasAulas: Record<string, string[]> = {};
     if (todasDisciplinasIds.size > 0) {
       const { data: disciplinasData } = await supabase
@@ -86,7 +88,6 @@ const MyCourses = () => {
       }
     }
     
-    // Buscar todas as aulas para obter seus tópicos
     let aulasTopicos: Record<string, number> = {};
     if (todasAulasIds.size > 0) {
       const { data: aulasData } = await supabase
@@ -101,18 +102,15 @@ const MyCourses = () => {
       }
     }
     
-    // Processar cada curso para adicionar contagem de tópicos
     return cursosData.map(curso => {
       let totalTopicos = 0;
       
-      // Contar tópicos das aulas diretamente ligadas ao curso
       if (curso.aulas_ids && Array.isArray(curso.aulas_ids)) {
         curso.aulas_ids.forEach((aulaId: string) => {
           totalTopicos += aulasTopicos[aulaId] || 0;
         });
       }
       
-      // Contar tópicos das aulas ligadas às disciplinas do curso
       if (curso.disciplinas_ids && Array.isArray(curso.disciplinas_ids)) {
         curso.disciplinas_ids.forEach((discId: string) => {
           const aulasIds = disciplinasAulas[discId] || [];
@@ -129,9 +127,7 @@ const MyCourses = () => {
     });
   };
   
-  // Funções para processamento de disciplinas e contagem de tópicos
   const processarDisciplinas = async (disciplinasData: any[]) => {
-    // Extrair todos os IDs de aulas
     const todasAulasIds = new Set<string>();
     disciplinasData.forEach(disc => {
       if (disc.aulas_ids && Array.isArray(disc.aulas_ids)) {
@@ -139,7 +135,6 @@ const MyCourses = () => {
       }
     });
     
-    // Buscar todas as aulas para obter seus tópicos
     let aulasTopicos: Record<string, number> = {};
     if (todasAulasIds.size > 0) {
       const { data: aulasData } = await supabase
@@ -154,7 +149,6 @@ const MyCourses = () => {
       }
     }
     
-    // Adicionar contagem de tópicos a cada disciplina
     return disciplinasData.map(disc => {
       let totalTopicos = 0;
       
@@ -176,74 +170,34 @@ const MyCourses = () => {
     
     setLoading(true);
     try {
-      // Consultar diretamente os IDs dos cursos matriculados via SQL RPC
-      const { data: matriculasCursos, error: matriculasError } = await supabase
+      const { data: matriculasCursos, error: rpcError } = await supabase
         .rpc('get_user_courses', { user_id_param: user.id });
+      
+      if (rpcError) {
+        console.error('Erro ao buscar matrículas via RPC:', rpcError);
         
-      if (matriculasError) {
-        console.error('Erro ao buscar matrículas via RPC:', matriculasError);
-        
-        // Fallback: buscar direto das matrículas se o RPC falhar
-        const { data: matriculasData, error: fallbackError } = await supabase
+        const { data: fallbackData, error: fallbackError } = await supabase
           .from('user_course_enrollments')
           .select('course_id, created_at')
           .eq('user_id', user.id);
           
         if (fallbackError) throw fallbackError;
         
-        if (!matriculasData || matriculasData.length === 0) {
+        if (!fallbackData || fallbackData.length === 0) {
           setMyCourses([]);
           setMyDisciplinas([]);
           setLoading(false);
           return;
         }
         
-        const courseIds = matriculasData.map(m => m.course_id);
-        
-        // Buscar dados dos cursos
-        const { data: cursosData, error: cursosError } = await supabase
-          .from('cursos')
-          .select('*, professores:professor_id(nome)')
-          .in('id', courseIds);
-          
-        if (cursosError) throw cursosError;
-        
-        // Processar cursos para obter progresso e tópicos
-        const cursosProcessados = await processarCursos(cursosData || []);
-        
-        // Adicionar data de matrícula
-        const cursosComMatricula = cursosProcessados.map(curso => {
-          const matricula = matriculasData.find(m => m.course_id === curso.id);
-          return {
-            ...curso,
-            data_matricula: matricula?.created_at
-          };
+        const courseIds = fallbackData.map(m => m.course_id);
+        const matriculasMap = new Map();
+        fallbackData.forEach(m => {
+          matriculasMap.set(m.course_id, m.created_at);
         });
         
-        setMyCourses(cursosComMatricula);
-        
-        // Buscar disciplinas relacionadas aos cursos
-        const disciplinasIds = new Set<string>();
-        cursosData?.forEach(curso => {
-          if (curso.disciplinas_ids && Array.isArray(curso.disciplinas_ids)) {
-            curso.disciplinas_ids.forEach((id: string) => disciplinasIds.add(id));
-          }
-        });
-        
-        if (disciplinasIds.size > 0) {
-          const { data: disciplinasData, error: disciplinasError } = await supabase
-            .from('disciplinas')
-            .select('*')
-            .in('id', Array.from(disciplinasIds));
-            
-          if (disciplinasError) throw disciplinasError;
-          
-          // Processar disciplinas para adicionar contagem de tópicos
-          const disciplinasProcessadas = await processarDisciplinas(disciplinasData || []);
-          setMyDisciplinas(disciplinasProcessadas);
-        }
+        await processCourseData(courseIds, matriculasMap);
       } else {
-        // Se o RPC funcionou, processar os dados retornados
         if (!matriculasCursos || matriculasCursos.length === 0) {
           setMyCourses([]);
           setMyDisciplinas([]);
@@ -251,53 +205,13 @@ const MyCourses = () => {
           return;
         }
         
-        const courseIds = matriculasCursos.map(m => m.course_id);
+        const courseIds = matriculasCursos.map((m: UserCourseResult) => m.course_id);
         const matriculasMap = new Map();
-        matriculasCursos.forEach(m => {
+        matriculasCursos.forEach((m: UserCourseResult) => {
           matriculasMap.set(m.course_id, m.created_at);
         });
         
-        // Buscar dados dos cursos
-        const { data: cursosData, error: cursosError } = await supabase
-          .from('cursos')
-          .select('*, professores:professor_id(nome)')
-          .in('id', courseIds);
-        
-        if (cursosError) throw cursosError;
-        
-        // Processar cursos para obter progresso e tópicos
-        const cursosProcessados = await processarCursos(cursosData || []);
-        
-        // Adicionar data de matrícula
-        const cursosComMatricula = cursosProcessados.map(curso => {
-          return {
-            ...curso,
-            data_matricula: matriculasMap.get(curso.id)
-          };
-        });
-        
-        setMyCourses(cursosComMatricula);
-        
-        // Buscar disciplinas relacionadas aos cursos
-        const disciplinasIds = new Set<string>();
-        cursosData?.forEach(curso => {
-          if (curso.disciplinas_ids && Array.isArray(curso.disciplinas_ids)) {
-            curso.disciplinas_ids.forEach((id: string) => disciplinasIds.add(id));
-          }
-        });
-        
-        if (disciplinasIds.size > 0) {
-          const { data: disciplinasData, error: disciplinasError } = await supabase
-            .from('disciplinas')
-            .select('*')
-            .in('id', Array.from(disciplinasIds));
-            
-          if (disciplinasError) throw disciplinasError;
-          
-          // Processar disciplinas para adicionar contagem de tópicos
-          const disciplinasProcessadas = await processarDisciplinas(disciplinasData || []);
-          setMyDisciplinas(disciplinasProcessadas);
-        }
+        await processCourseData(courseIds, matriculasMap);
       }
     } catch (error: any) {
       console.error('Erro ao carregar cursos:', error);
@@ -306,6 +220,58 @@ const MyCourses = () => {
         description: error.message || "Ocorreu um erro ao buscar seus cursos.",
         variant: "destructive"
       });
+      setLoading(false);
+    }
+  };
+  
+  const processCourseData = async (courseIds: string[], matriculasMap: Map<string, string>) => {
+    try {
+      const { data: cursosData, error: cursosError } = await supabase
+        .from('cursos')
+        .select('*, professores:professor_id(nome)')
+        .in('id', courseIds);
+      
+      if (cursosError) throw cursosError;
+      
+      if (!cursosData || cursosData.length === 0) {
+        setMyCourses([]);
+        setMyDisciplinas([]);
+        setLoading(false);
+        return;
+      }
+      
+      const cursosProcessados = await processarCursos(cursosData || []);
+      
+      const cursosComMatricula = cursosProcessados.map(curso => {
+        return {
+          ...curso,
+          data_matricula: matriculasMap.get(curso.id)
+        };
+      });
+      
+      setMyCourses(cursosComMatricula);
+      
+      const disciplinasIds = new Set<string>();
+      cursosData?.forEach(curso => {
+        if (curso.disciplinas_ids && Array.isArray(curso.disciplinas_ids)) {
+          curso.disciplinas_ids.forEach((id: string) => disciplinasIds.add(id));
+        }
+      });
+      
+      if (disciplinasIds.size > 0) {
+        const { data: disciplinasData, error: disciplinasError } = await supabase
+          .from('disciplinas')
+          .select('*')
+          .in('id', Array.from(disciplinasIds));
+          
+        if (disciplinasError) throw disciplinasError;
+        
+        const disciplinasProcessadas = await processarDisciplinas(disciplinasData || []);
+        setMyDisciplinas(disciplinasProcessadas);
+      }
+    } catch (error: any) {
+      console.error('Erro ao processar dados dos cursos:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
