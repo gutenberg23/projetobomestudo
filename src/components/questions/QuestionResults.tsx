@@ -1,6 +1,4 @@
-
 import React from "react";
-import { QuestionCard } from "@/components/new/QuestionCard";
 import QuestionListSummary from "./QuestionListSummary";
 import QuestionPagination from "./QuestionPagination";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,9 +9,21 @@ interface QuestionResultsProps {
   onToggleDisabled: (optionId: string, event: React.MouseEvent) => void;
   currentPage: number;
   totalPages: number;
-  handlePageChange: (page: number) => void;
+  handlePageChange: (newPage: number) => void;
   hasFilters: boolean;
-  loading?: boolean;
+  loading: boolean;
+  selectedFilters: {
+    disciplines: string[];
+    topics: string[];
+    institutions: string[];
+    organizations: string[];
+    roles: string[];
+    years: string[];
+    educationLevels: string[];
+  };
+  onRemoveFilter: (category: string, value: string) => void;
+  searchQuery?: string;
+  onClearSearchQuery?: () => void;
 }
 
 const QuestionResults: React.FC<QuestionResultsProps> = ({
@@ -24,7 +34,11 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
   totalPages,
   handlePageChange,
   hasFilters,
-  loading = false
+  loading,
+  selectedFilters,
+  onRemoveFilter,
+  searchQuery,
+  onClearSearchQuery
 }) => {
   if (loading) {
     return (
@@ -69,8 +83,15 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
   }
 
   return (
-    <div className="space-y-8 mt-8">
-      <QuestionListSummary count={questions.length} hasFilters={hasFilters} />
+    <div className="bg-white rounded-lg shadow p-6">
+      <QuestionListSummary 
+        count={questions.length} 
+        hasFilters={hasFilters}
+        selectedFilters={selectedFilters}
+        onRemoveFilter={onRemoveFilter}
+        searchQuery={searchQuery}
+        onClearSearchQuery={onClearSearchQuery}
+      />
       
       {questions.map(question => (
         <QuestionCard

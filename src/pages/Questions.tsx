@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -38,11 +37,9 @@ const Questions = () => {
   
   const totalQuestions = questions.length;
   
-  // Função para converter options do banco para o formato esperado
   const parseOptions = (options: Json | null): any[] => {
     if (!options) return [];
     
-    // Verificar se options é um array
     if (Array.isArray(options)) {
       return options.map((option: any) => ({
         id: option.id || `option-${Math.random().toString(36).substr(2, 9)}`,
@@ -54,21 +51,16 @@ const Questions = () => {
     return [];
   };
 
-  // Carregar filtros a partir da URL
   useEffect(() => {
-    // Função para analisar parâmetros da URL
     const parseUrlParams = () => {
-      // Obter filtros da URL
       const querySearch = searchParams.get('q') || '';
       setSearchQuery(querySearch);
       
-      // Configurar número de questões por página
       const perPage = searchParams.get('perPage');
       if (perPage && ['5', '10', '20', '50', '100'].includes(perPage)) {
         setQuestionsPerPage(perPage);
       }
       
-      // Configurar filtros selecionados
       const newFilters = { ...selectedFilters };
       
       Object.keys(selectedFilters).forEach(key => {
@@ -86,13 +78,11 @@ const Questions = () => {
     parseUrlParams();
   }, [searchParams]);
 
-  // Buscar questões do banco de dados
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
         setLoading(true);
         
-        // Buscar todas as questões
         const { data, error } = await supabase
           .from('questoes')
           .select('*');
@@ -101,7 +91,6 @@ const Questions = () => {
           throw error;
         }
         
-        // Transformar os dados para o formato esperado pelo componente
         const formattedQuestions = data.map(q => ({
           id: q.id,
           year: q.year,
@@ -122,7 +111,6 @@ const Questions = () => {
         
         setQuestions(formattedQuestions);
         
-        // Extrair valores únicos para cada dropdown
         const institutions = [...new Set(data.map(q => q.institution).filter(Boolean))].sort();
         const organizations = [...new Set(data.map(q => q.organization).filter(Boolean))].sort();
         const roles = [...new Set(data.map(q => q.role).filter(Boolean))].sort();
@@ -130,13 +118,11 @@ const Questions = () => {
         const levels = [...new Set(data.map(q => q.level).filter(Boolean))].sort();
         const years = [...new Set(data.map(q => q.year).filter(Boolean))].sort((a, b) => b.localeCompare(a));
         
-        // Coletar todos os tópicos únicos
         const allTopics = data.flatMap(q => q.topicos || [])
           .filter(Boolean)
           .filter((value, index, self) => self.indexOf(value) === index)
           .sort();
         
-        // Atualizar as opções de filtro
         setFilterOptions({
           disciplines,
           topics: allTopics,
@@ -144,9 +130,8 @@ const Questions = () => {
           organizations,
           roles,
           years,
-          educationLevels: ['Médio', 'Superior', 'Pós-graduação'] // Mantém esses valores padrão pois não estão no banco
+          educationLevels: ['Médio', 'Superior', 'Pós-graduação']
         });
-        
       } catch (error) {
         console.error('Erro ao carregar questões:', error);
         toast.error('Erro ao carregar questões. Tente novamente.');
@@ -187,14 +172,52 @@ const Questions = () => {
     setCurrentPage(newPage);
   };
 
-  // Filtrar as questões com base nos filtros selecionados
+  const handleRemoveFilter = (category: string, value: string) => {
+    setSelectedFilters(prev => {
+      const updatedFilters = { ...prev };
+      updatedFilters[category as keyof typeof selectedFilters] = 
+        updatedFilters[category as keyof typeof selectedFilters].filter(item => item !== value);
+      return updatedFilters;
+    });
+    
+    setTimeout(() => {
+      updateUrlWithFilters();
+      handleApplyFilters();
+    }, 0);
+  };
+  
+  const handleClearSearchQuery = () => {
+    setSearchQuery("");
+    
+    setTimeout(() => {
+      updateUrlWithFilters();
+      handleApplyFilters();
+    }, 0);
+  };
+  
+  const updateUrlWithFilters = () => {
+    const params = new URLSearchParams();
+    
+    if (searchQuery) {
+      params.set('q', searchQuery);
+    }
+    
+    Object.entries(selectedFilters).forEach(([key, values]) => {
+      if (values.length) {
+        params.set(key, values.join(','));
+      }
+    });
+    
+    params.set('perPage', questionsPerPage);
+    
+    setSearchParams(params);
+  };
+
   const filteredQuestions = questions.filter(question => {
-    // Filtrar por texto de pesquisa
     if (searchQuery && !question.content.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
     
-    // Aplicar filtros de seleção
     if (selectedFilters.disciplines.length > 0 && !selectedFilters.disciplines.includes(question.discipline)) {
       return false;
     }
@@ -219,7 +242,6 @@ const Questions = () => {
       return false;
     }
     
-    // Filtrar por tópicos
     if (selectedFilters.topics.length > 0) {
       const hasMatchingTopic = question.topicos.some((topico: string) => 
         selectedFilters.topics.includes(topico)
@@ -232,10 +254,8 @@ const Questions = () => {
     return true;
   });
 
-  // Cálculo para paginação
   const totalPages = Math.ceil(filteredQuestions.length / parseInt(questionsPerPage));
   
-  // Paginação
   const paginatedQuestions = filteredQuestions.slice(
     (currentPage - 1) * parseInt(questionsPerPage),
     currentPage * parseInt(questionsPerPage)
@@ -269,6 +289,10 @@ const Questions = () => {
           handlePageChange={handlePageChange}
           hasFilters={hasFilters}
           loading={loading}
+          selectedFilters={selectedFilters}
+          onRemoveFilter={handleRemoveFilter}
+          searchQuery={searchQuery}
+          onClearSearchQuery={handleClearSearchQuery}
         />
       </main>
       <Footer />
