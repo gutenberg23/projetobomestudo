@@ -43,12 +43,8 @@ const ResultItem: React.FC<ItemProps> = ({
         </Link>
       </div>
       <div className="flex items-center">
-        <div className="text-right mr-4">
-          <p className="font-bold text-[#262f3c] text-xs">Tópicos: <span className="text-gray-600 font-normal">{topics}</span></p>
-          <p className="font-bold text-[#262f3c] text-xs">Aulas: <span className="text-gray-600 font-normal">{lessons}</span></p>
-        </div>
         <Button variant="ghost" size="icon" onClick={() => onToggleFavorite(friendlyUrl)} aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
-          <Star className={`h-5 w-5 ${isFavorite ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-gray-400"}`} />
+          <Star className={`h-5 w-5 ${isFavorite ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-[#5f2ebe]"}`} />
         </Button>
       </div>
     </div>;
@@ -63,7 +59,6 @@ const Explore = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Extrair parâmetro de pesquisa da URL quando a página carrega
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const searchQuery = searchParams.get('search');
@@ -72,19 +67,16 @@ const Explore = () => {
     }
   }, [location.search]);
 
-  // Buscar cursos e disciplinas do banco de dados
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Buscar cursos
         const {
           data: coursesData,
           error: coursesError
         } = await supabase.from('cursos').select('*');
         if (coursesError) throw coursesError;
 
-        // Buscar favoritos do usuário logado
         const {
           data: {
             user
@@ -100,12 +92,8 @@ const Explore = () => {
           userDisciplinasFavorites = favoritesData?.disciplinas_favoritos || [];
         }
 
-        // Transformar dados de cursos
         const formattedCourses: CourseItemType[] = coursesData.map(course => {
-          // Gerar URL amigável para o curso
           const friendlyUrl = generateFriendlyUrl(course.titulo, course.id);
-
-          // Verificar se o curso está nos favoritos usando o ID direto
           const isFavorite = user ? userFavorites.includes(course.id) : false;
           return {
             id: course.id,
@@ -120,39 +108,27 @@ const Explore = () => {
         });
         setCourses(formattedCourses);
 
-        // Buscar disciplinas
         const {
           data: disciplinasData,
           error: disciplinasError
         } = await supabase.from('disciplinas').select('*');
         if (disciplinasError) throw disciplinasError;
 
-        // Para cada disciplina, precisamos buscar as aulas e contar os tópicos
         const formattedDisciplinas: DisciplinaItemType[] = await Promise.all(
           disciplinasData.map(async (disciplina) => {
-            // Gerar URL amigável para a disciplina
             const friendlyUrl = generateFriendlyUrl(disciplina.titulo, disciplina.id);
-
-            // Verificar se a disciplina está nos favoritos usando o ID direto
             const isFavorite = user ? userDisciplinasFavorites.includes(disciplina.id) : false;
-            
-            // Contar tópicos para esta disciplina
             let topicsCount = 0;
-            
             if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-              // Buscar informações das aulas
               const { data: aulasData } = await supabase
                 .from('aulas')
                 .select('topicos_ids')
                 .in('id', disciplina.aulas_ids);
-              
-              // Contar tópicos de todas as aulas
               if (aulasData) {
                 topicsCount = aulasData.reduce((count, aula) => 
                   count + (aula.topicos_ids?.length || 0), 0);
               }
             }
-
             return {
               id: disciplina.id,
               titulo: disciplina.titulo,
@@ -178,7 +154,6 @@ const Explore = () => {
   }, []);
 
   const handleToggleFavorite = async (friendlyUrl: string) => {
-    // Verificar se o usuário está logado
     const {
       data: {
         user
@@ -191,24 +166,17 @@ const Explore = () => {
     }
     try {
       if (showSubjects) {
-        // Encontrar a disciplina correspondente ao friendlyUrl
         const subject = subjects.find(s => s.friendlyUrl === friendlyUrl);
         if (!subject) {
           console.error("Disciplina não encontrada:", friendlyUrl);
           return;
         }
-
-        // Usar o ID direto da disciplina
         const disciplinaId = subject.id;
         console.log("ID da disciplina:", disciplinaId);
-
-        // Atualizar estado local
         setSubjects(subjects.map(s => s.id === subject.id ? {
           ...s,
           isFavorite: !s.isFavorite
         } : s));
-
-        // Buscar favoritos atuais
         const {
           data: profile
         } = await supabase.from('profiles').select('disciplinas_favoritos').eq('id', user.id).single();
@@ -218,21 +186,15 @@ const Explore = () => {
         }
         let disciplinasFavoritos = profile.disciplinas_favoritos || [];
         console.log("Favoritos atuais:", disciplinasFavoritos);
-
-        // Verificar se já está nos favoritos
         const isAlreadyFavorite = disciplinasFavoritos.includes(disciplinaId);
         if (isAlreadyFavorite) {
-          // Remover dos favoritos
           disciplinasFavoritos = disciplinasFavoritos.filter(id => id !== disciplinaId);
           toast.success("Disciplina removida dos favoritos");
         } else {
-          // Adicionar aos favoritos
           disciplinasFavoritos.push(disciplinaId);
           toast.success("Disciplina adicionada aos favoritos");
         }
         console.log("Favoritos atualizados:", disciplinasFavoritos);
-
-        // Atualizar no banco de dados
         const {
           error
         } = await supabase.from('profiles').update({
@@ -243,24 +205,17 @@ const Explore = () => {
           toast.error("Erro ao atualizar favoritos");
         }
       } else {
-        // Encontrar o curso correspondente ao friendlyUrl
         const course = courses.find(c => c.friendlyUrl === friendlyUrl);
         if (!course) {
           console.error("Curso não encontrado:", friendlyUrl);
           return;
         }
-
-        // Usar o ID direto do curso
         const cursoId = course.id;
         console.log("ID do curso:", cursoId);
-
-        // Atualizar estado local
         setCourses(courses.map(c => c.id === course.id ? {
           ...c,
           isFavorite: !c.isFavorite
         } : c));
-
-        // Buscar favoritos atuais
         const {
           data: profile
         } = await supabase.from('profiles').select('cursos_favoritos').eq('id', user.id).single();
@@ -270,21 +225,15 @@ const Explore = () => {
         }
         let cursosFavoritos = profile.cursos_favoritos || [];
         console.log("Favoritos atuais:", cursosFavoritos);
-
-        // Verificar se já está nos favoritos
         const isAlreadyFavorite = cursosFavoritos.includes(cursoId);
         if (isAlreadyFavorite) {
-          // Remover dos favoritos
           cursosFavoritos = cursosFavoritos.filter(id => id !== cursoId);
           toast.success("Curso removido dos favoritos");
         } else {
-          // Adicionar aos favoritos
           cursosFavoritos.push(cursoId);
           toast.success("Curso adicionado aos favoritos");
         }
         console.log("Favoritos atualizados:", cursosFavoritos);
-
-        // Atualizar no banco de dados
         const {
           error
         } = await supabase.from('profiles').update({

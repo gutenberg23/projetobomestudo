@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -37,12 +36,8 @@ const FavoriteItem: React.FC<ItemProps> = ({
         </Link>
       </div>
       <div className="flex items-center">
-        <div className="text-right mr-4">
-          <p className="text-sm font-bold text-[#262f3c]">Tópicos: <span className="text-gray-600 font-normal">{topics}</span></p>
-          <p className="text-sm font-bold text-[#262f3c]">Aulas: <span className="text-gray-600 font-normal">{lessons}</span></p>
-        </div>
         <Button variant="ghost" size="icon" onClick={() => onRemove(id)} aria-label="Remover dos favoritos">
-          <Star className="h-5 w-5 fill-[#ea2be2] text-[#ea2be2]" />
+          <Star className="h-5 w-5 fill-[#5f2ebe] text-[#5f2ebe]" />
         </Button>
       </div>
     </div>;
@@ -55,7 +50,6 @@ const MyCourses = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Função auxiliar para contar tópicos de um curso
   const countTopics = async (course: any): Promise<number> => {
     if (!course.topicos_ids || course.topicos_ids.length === 0) {
       return 0;
@@ -63,18 +57,15 @@ const MyCourses = () => {
     return course.topicos_ids.length;
   };
 
-  // Função auxiliar para contar tópicos de uma disciplina
   const countDisciplineTopics = async (disciplina: any): Promise<number> => {
     let topicsCount = 0;
     
     if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-      // Buscar informações das aulas
       const { data: aulasData } = await supabase
         .from('aulas')
         .select('topicos_ids')
         .in('id', disciplina.aulas_ids);
       
-      // Contar tópicos de todas as aulas
       if (aulasData) {
         for (const aula of aulasData) {
           if (aula.topicos_ids) {
@@ -87,12 +78,10 @@ const MyCourses = () => {
     return topicsCount;
   };
 
-  // Buscar favoritos do usuário
   useEffect(() => {
     const fetchFavorites = async () => {
       setLoading(true);
       try {
-        // Verificar se o usuário está logado
         const {
           data: {
             user
@@ -104,7 +93,6 @@ const MyCourses = () => {
           return;
         }
 
-        // Buscar perfil do usuário com os favoritos
         const {
           data: profile
         } = await supabase.from('profiles').select('cursos_favoritos, disciplinas_favoritos').eq('id', user.id).single();
@@ -118,14 +106,12 @@ const MyCourses = () => {
         console.log("Cursos favoritos brutos:", cursosFavoritos);
         console.log("Disciplinas favoritas brutas:", disciplinasFavoritos);
 
-        // Se tiver cursos favoritos, buscar detalhes
         if (cursosFavoritos.length > 0) {
           const {
             data: cursosData
           } = await supabase.from('cursos').select('*').in('id', cursosFavoritos);
           console.log("Dados de cursos obtidos:", cursosData);
           if (cursosData) {
-            // Processar cada curso para obter a contagem correta de tópicos
             const formattedCourses: CourseItemType[] = await Promise.all(
               cursosData.map(async (course) => {
                 const topicsCount = await countTopics(course);
@@ -150,7 +136,6 @@ const MyCourses = () => {
           console.log("Nenhum curso favorito encontrado");
         }
 
-        // Se tiver disciplinas favoritas, buscar detalhes
         if (disciplinasFavoritos.length > 0) {
           const {
             data: disciplinasData
@@ -158,10 +143,8 @@ const MyCourses = () => {
           console.log("Dados de disciplinas obtidos:", disciplinasData);
           
           if (disciplinasData) {
-            // Processar cada disciplina para obter contagem de tópicos
             const formattedDisciplinas: DisciplinaItemType[] = await Promise.all(
               disciplinasData.map(async (disciplina) => {
-                // Contar tópicos para esta disciplina
                 const topicsCount = await countDisciplineTopics(disciplina);
                 
                 return {
@@ -207,22 +190,18 @@ const MyCourses = () => {
         return;
       }
 
-      // Buscar favoritos atuais
       const {
         data: profile
       } = await supabase.from('profiles').select('cursos_favoritos').eq('id', user.id).single();
       if (!profile) return;
 
-      // Remover o curso dos favoritos
       const cursosFavoritos = profile.cursos_favoritos || [];
       const updatedFavorites = cursosFavoritos.filter(favId => favId !== id);
 
-      // Atualizar no banco de dados
       await supabase.from('profiles').update({
         cursos_favoritos: updatedFavorites
       }).eq('id', user.id);
 
-      // Atualizar estado local
       setFavoriteCourses(favoriteCourses.filter(course => course.id !== id));
       toast.success("Curso removido dos favoritos");
     } catch (error) {
@@ -244,22 +223,18 @@ const MyCourses = () => {
         return;
       }
 
-      // Buscar favoritos atuais
       const {
         data: profile
       } = await supabase.from('profiles').select('disciplinas_favoritos').eq('id', user.id).single();
       if (!profile) return;
 
-      // Remover a disciplina dos favoritos
       const disciplinasFavoritos = profile.disciplinas_favoritos || [];
       const updatedFavorites = disciplinasFavoritos.filter(favId => favId !== id);
 
-      // Atualizar no banco de dados
       await supabase.from('profiles').update({
         disciplinas_favoritos: updatedFavorites
       }).eq('id', user.id);
 
-      // Atualizar estado local
       setFavoriteSubjects(favoriteSubjects.filter(subject => subject.id !== id));
       toast.success("Disciplina removida dos favoritos");
     } catch (error) {
