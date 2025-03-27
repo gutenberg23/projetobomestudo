@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Instagram, Facebook, Twitter, Youtube, Mail, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -10,7 +9,7 @@ export const Footer = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
         {/* Column 1 - Logo and About */}
         <div className="space-y-4">
-          <img src="/lovable-uploads/logo-footer.svg" alt="BomEstudo Logo" className="w-[194px] mb-4" />
+          <img src="https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/d4f7b31dd1bc48e16547963f6b0cd0adc76ffe16e180c12ccfce3d8a912308a0" alt="BomEstudo Logo" className="w-[194px] mb-4" />
           <p className="text-gray-300 text-sm">
             Plataforma de estudos online para candidatos de concursos públicos com cursos, questões comentadas e estatísticas de desempenho.
           </p>

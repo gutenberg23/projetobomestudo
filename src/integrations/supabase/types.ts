@@ -958,30 +958,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_course_enrollments: {
-        Row: {
-          course_id: string
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          course_id: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          course_id?: string
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_course_progress: {
         Row: {
           course_id: string
@@ -1100,15 +1076,6 @@ export type Database = {
             }
             Returns: undefined
           }
-      get_user_courses: {
-        Args: {
-          user_id_param: string
-        }
-        Returns: {
-          course_id: string
-          created_at: string
-        }[]
-      }
       handle_comment_created: {
         Args: {
           comment_id: number
