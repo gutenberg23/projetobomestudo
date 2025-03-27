@@ -1,11 +1,13 @@
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Search } from "lucide-react";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QuestionFiltersPanelProps {
   searchQuery: string;
@@ -46,6 +48,8 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [isOpen, setIsOpen] = useState(!isMobile);
 
   // Ordenar todas as listas de opções em ordem alfabética
   const sortedOptions = {
@@ -85,10 +89,20 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   const applyFiltersWithUrl = () => {
     updateUrlWithFilters();
     handleApplyFilters();
+    if (isMobile) {
+      setIsOpen(false);
+    }
   };
 
-  return (
-    <div className="bg-white rounded-lg p-6 mb-8">
+  // Contar quantos filtros estão ativos
+  const countActiveFilters = () => {
+    return Object.values(selectedFilters).reduce((count, filters) => count + filters.length, 0);
+  };
+
+  const activeFiltersCount = countActiveFilters();
+  
+  const filtersContent = (
+    <>
       <div className="grid grid-cols-1 gap-6 mb-6">
         <div className="relative w-full">
           <Input 
@@ -172,6 +186,37 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       <Button onClick={applyFiltersWithUrl} className="w-full text-white bg-[#5f2ebe]">
         Filtrar Questões
       </Button>
+    </>
+  );
+
+  return (
+    <div className="bg-white rounded-lg p-6 mb-8">
+      {isMobile ? (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+          <CollapsibleTrigger asChild>
+            <div className="flex items-center justify-between cursor-pointer pb-2 mb-4 border-b border-gray-100">
+              <div className="flex items-center">
+                <h3 className="text-lg font-medium text-[#272f3c]">Filtros</h3>
+                {activeFiltersCount > 0 && (
+                  <span className="ml-2 bg-[#5f2ebe] text-white text-xs px-2 py-1 rounded-full">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </div>
+              {isOpen ? (
+                <ChevronUp className="h-5 w-5 text-[#5f2ebe]" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-[#5f2ebe]" />
+              )}
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            {filtersContent}
+          </CollapsibleContent>
+        </Collapsible>
+      ) : (
+        filtersContent
+      )}
     </div>
   );
 };
