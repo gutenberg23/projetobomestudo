@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -54,6 +55,38 @@ const MyCourses = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Função auxiliar para contar tópicos de um curso
+  const countTopics = async (course: any): Promise<number> => {
+    if (!course.topicos_ids || course.topicos_ids.length === 0) {
+      return 0;
+    }
+    return course.topicos_ids.length;
+  };
+
+  // Função auxiliar para contar tópicos de uma disciplina
+  const countDisciplineTopics = async (disciplina: any): Promise<number> => {
+    let topicsCount = 0;
+    
+    if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
+      // Buscar informações das aulas
+      const { data: aulasData } = await supabase
+        .from('aulas')
+        .select('topicos_ids')
+        .in('id', disciplina.aulas_ids);
+      
+      // Contar tópicos de todas as aulas
+      if (aulasData) {
+        for (const aula of aulasData) {
+          if (aula.topicos_ids) {
+            topicsCount += aula.topicos_ids.length;
+          }
+        }
+      }
+    }
+    
+    return topicsCount;
+  };
+
   // Buscar favoritos do usuário
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -92,15 +125,23 @@ const MyCourses = () => {
           } = await supabase.from('cursos').select('*').in('id', cursosFavoritos);
           console.log("Dados de cursos obtidos:", cursosData);
           if (cursosData) {
-            const formattedCourses: CourseItemType[] = cursosData.map(course => ({
-              id: course.id,
-              titulo: course.titulo,
-              descricao: course.descricao || 'Sem descrição',
-              isFavorite: true,
-              topics: course.topicos_ids?.length || 0,
-              lessons: course.aulas_ids?.length || 0,
-              informacoes_curso: course.informacoes_curso
-            }));
+            // Processar cada curso para obter a contagem correta de tópicos
+            const formattedCourses: CourseItemType[] = await Promise.all(
+              cursosData.map(async (course) => {
+                const topicsCount = await countTopics(course);
+                
+                return {
+                  id: course.id,
+                  titulo: course.titulo,
+                  descricao: course.descricao || 'Sem descrição',
+                  isFavorite: true,
+                  topics: topicsCount,
+                  lessons: course.aulas_ids?.length || 0,
+                  informacoes_curso: course.informacoes_curso
+                };
+              })
+            );
+            
             setFavoriteCourses(formattedCourses);
             console.log("Cursos formatados:", formattedCourses);
           }
@@ -121,21 +162,7 @@ const MyCourses = () => {
             const formattedDisciplinas: DisciplinaItemType[] = await Promise.all(
               disciplinasData.map(async (disciplina) => {
                 // Contar tópicos para esta disciplina
-                let topicsCount = 0;
-                
-                if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-                  // Buscar informações das aulas
-                  const { data: aulasData } = await supabase
-                    .from('aulas')
-                    .select('topicos_ids')
-                    .in('id', disciplina.aulas_ids);
-                  
-                  // Contar tópicos de todas as aulas
-                  if (aulasData) {
-                    topicsCount = aulasData.reduce((count, aula) => 
-                      count + (aula.topicos_ids?.length || 0), 0);
-                  }
-                }
+                const topicsCount = await countDisciplineTopics(disciplina);
                 
                 return {
                   id: disciplina.id,

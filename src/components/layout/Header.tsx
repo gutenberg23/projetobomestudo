@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
@@ -30,6 +31,10 @@ export const Header = () => {
         <Link to="/blog" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
           <Newspaper className="w-4 h-4 px-px" />
           <span className="font-extralight">Blog</span>
+        </Link>
+        <Link to="/questions" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+          <FileText className="w-4 h-4" />
+          <span className="font-extralight">Questões</span>
         </Link>
         <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
           <Trophy className="w-4 h-4" />
@@ -69,17 +74,9 @@ export const Header = () => {
                 </div>
               </div> : null}
             <nav className="flex flex-col">
-              <Link to="/explore" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
-                <Compass className="w-4 h-4" />
-                Explorar
-              </Link>
               <Link to="/my-courses" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
                 Meus Cursos
-              </Link>
-              <Link to="/questions" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Questões
               </Link>
               <Link to="/settings" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <Settings className="w-4 h-4" />
@@ -88,11 +85,15 @@ export const Header = () => {
               <div className="md:hidden border-t border-gray-100">
                 <Link to="/blog" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                   <Newspaper className="w-4 h-4" />
-                  Notícias
+                  Blog
+                </Link>
+                <Link to="/questions" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Questões
                 </Link>
                 <Link to="/explore" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                   <Trophy className="w-4 h-4" />
-                  Concursos
+                  Estude Grátis
                 </Link>
               </div>
               {user ? <div className="border-t border-gray-100">
