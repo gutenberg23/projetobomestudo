@@ -26,7 +26,7 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
   const handleExcluirPost = async (post: BlogPost) => {
     if (window.confirm(`Tem certeza que deseja excluir o post "${post.title}"?`)) {
       try {
-        onExcluirPost(post.id);
+        await onExcluirPost(post.id);
         toast({
           title: "Post excluído",
           description: "O post foi excluído com sucesso.",

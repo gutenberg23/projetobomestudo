@@ -193,26 +193,18 @@ export function usePostsActions(state: PostsState) {
 
   // Excluir um post
   const excluirPost = async (id: string) => {
-    if (window.confirm("Tem certeza que deseja excluir este post?")) {
-      setLoading(true);
-      try {
-        await deleteBlogPost(id);
-        setPosts(posts.filter(post => post.id !== id));
-        toast({
-          title: "Post excluído",
-          description: "O post foi excluído com sucesso.",
-          variant: "default"
-        });
-      } catch (error) {
-        console.error("Erro ao excluir post:", error);
-        toast({
-          title: "Erro",
-          description: "Ocorreu um erro ao excluir o post. Tente novamente.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    try {
+      const deleted = await deleteBlogPost(id);
+      if (!deleted) {
+        throw new Error("Falha ao excluir o post");
       }
+      setPosts(posts.filter(post => post.id !== id));
+    } catch (error) {
+      console.error("Erro ao excluir post:", error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
