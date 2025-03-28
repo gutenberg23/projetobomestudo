@@ -1,10 +1,10 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Edit, Plus, Search, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { BlogPost } from "@/components/blog/types";
+import { toast } from "@/components/ui/use-toast";
 
 interface ListagemPostsProps {
   postsFiltrados: BlogPost[];
@@ -23,6 +23,25 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
   onIniciarEdicaoPost,
   onExcluirPost
 }) => {
+  const handleExcluirPost = async (post: BlogPost) => {
+    if (window.confirm(`Tem certeza que deseja excluir o post "${post.title}"?`)) {
+      try {
+        onExcluirPost(post.id);
+        toast({
+          title: "Post excluído",
+          description: "O post foi excluído com sucesso.",
+          variant: "default",
+        });
+      } catch (error) {
+        toast({
+          title: "Erro ao excluir",
+          description: "Ocorreu um erro ao excluir o post. Tente novamente.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -60,46 +79,46 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y">
-              {postsFiltrados.map(post => (
-                <tr key={post.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{post.title}</td>
-                  <td className="px-4 py-3">{post.author}</td>
-                  <td className="px-4 py-3">{post.category}</td>
-                  <td className="px-4 py-3">{post.region || '—'}</td>
-                  <td className="px-4 py-3">{format(new Date(post.createdAt), "dd/MM/yyyy")}</td>
-                  <td className="px-4 py-3">{post.commentCount}</td>
-                  <td className="px-4 py-3">{post.likesCount}</td>
-                  <td className="px-4 py-3">
-                    {post.featured ? (
-                      <span className="bg-[#fce7fc] text-[#ea2be2] text-xs px-2 py-1 rounded-full">
-                        Destaque
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => onIniciarEdicaoPost(post)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => onExcluirPost(post.id)}
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              
-              {postsFiltrados.length === 0 && (
+              {postsFiltrados.length > 0 ? (
+                postsFiltrados.map((post) => (
+                  <tr key={post.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium">{post.title}</td>
+                    <td className="px-4 py-3">{post.author}</td>
+                    <td className="px-4 py-3">{post.category}</td>
+                    <td className="px-4 py-3">{post.region || '—'}</td>
+                    <td className="px-4 py-3">{format(new Date(post.createdAt), "dd/MM/yyyy")}</td>
+                    <td className="px-4 py-3">{post.commentCount}</td>
+                    <td className="px-4 py-3">{post.likesCount}</td>
+                    <td className="px-4 py-3">
+                      {post.featured ? (
+                        <span className="bg-[#fce7fc] text-[#ea2be2] text-xs px-2 py-1 rounded-full">
+                          Destaque
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => onIniciarEdicaoPost(post)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleExcluirPost(post)}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
                   <td colSpan={9} className="px-4 py-8 text-center text-[#67748a]">
                     Nenhum post encontrado.
