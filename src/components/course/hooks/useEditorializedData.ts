@@ -161,58 +161,46 @@ export const useEditorializedData = () => {
       }
 
       // Formatar disciplinas com dados do usuário
-      const formattedSubjects = await Promise.all(disciplinas.map(async (disciplina) => {
+      const formattedSubjects = disciplinas.map(disciplina => {
         const userDisciplinaData = userData?.find(d => d.disciplina_id === disciplina.id);
         
-        // Garantir que os tópicos estejam na ordem correta
-        const topics = disciplina.topicos
-          ? await Promise.all(disciplina.topicos.map(async (topicoId: string, index: number) => {
-              const { data: topico } = await supabase
-                .from('topicos')
-                .select('*')
-                .eq('id', topicoId)
-                .single();
+        const topics = disciplina.topicos.map((topico: string, index: number) => {
+          const userTopicoData = userDisciplinaData?.topicos[index];
+          logWithTimestamp(`Carregando dados do tópico ${index + 1}`, userTopicoData);
+          
+          const topic = {
+            id: index + 1,
+            name: topico,
+            topic: topico,
+            isDone: userTopicoData?.isDone || false,
+            importance: 1,
+            difficulty: userTopicoData?.difficulty || 'normal',
+            exercisesDone: userTopicoData?.exercisesDone || userTopicoData?.totalExercises || 0,
+            hits: userTopicoData?.hits || userTopicoData?.correctAnswers || 0,
+            errors: userTopicoData?.exercisesDone ? userTopicoData.exercisesDone - (userTopicoData.hits || 0) : 0,
+            performance: userTopicoData?.hits && userTopicoData?.exercisesDone ? 
+              (userTopicoData.hits / userTopicoData.exercisesDone) * 100 : 0,
+            totalExercises: userTopicoData?.exercisesDone || userTopicoData?.totalExercises || 0,
+            correctAnswers: userTopicoData?.hits || userTopicoData?.correctAnswers || 0,
+            isReviewed: userTopicoData?.isReviewed || false
+          };
+          
+          logWithTimestamp(`Tópico ${index + 1} formatado`, topic);
+          return topic;
+        });
 
-              const userTopicoData = userDisciplinaData?.topicos[index];
-              logWithTimestamp(`Carregando dados do tópico ${index + 1}`, userTopicoData);
-              
-              const topic: Topic = {
-                id: index + 1,
-                name: topico.nome,
-                topic: topicoId,
-                isDone: userTopicoData?.isDone || false,
-                importance: 1,
-                difficulty: userTopicoData?.difficulty || 'normal',
-                exercisesDone: userTopicoData?.exercisesDone || userTopicoData?.totalExercises || 0,
-                hits: userTopicoData?.hits || userTopicoData?.correctAnswers || 0,
-                errors: userTopicoData?.exercisesDone ? userTopicoData.exercisesDone - (userTopicoData.hits || 0) : 0,
-                performance: userTopicoData?.hits && userTopicoData?.exercisesDone ? 
-                  (userTopicoData.hits / userTopicoData.exercisesDone) * 100 : 0,
-                totalExercises: userTopicoData?.exercisesDone || userTopicoData?.totalExercises || 0,
-                correctAnswers: userTopicoData?.hits || userTopicoData?.correctAnswers || 0,
-                isReviewed: userTopicoData?.isReviewed || false
-              };
-              
-              logWithTimestamp(`Tópico ${index + 1} formatado`, topic);
-              return topic;
-            }))
-          : [];
-
-        const subject: Subject = {
+        return {
           id: disciplina.id,
           name: disciplina.titulo,
           topics,
           importance: 1,
           difficulty: 'normal',
-          totalExercises: topics.reduce((sum, topic) => sum + (topic.totalExercises || 0), 0),
-          correctAnswers: topics.reduce((sum, topic) => sum + (topic.correctAnswers || 0), 0),
-          isReviewed: topics.every(topic => topic.isReviewed)
+          totalExercises: userDisciplinaData?.total_exercicios || 0,
+          correctAnswers: userDisciplinaData?.acertos || 0,
+          isReviewed: false
         };
+      });
 
-        return subject;
-      }));
-
-      // Atualizar o estado com os dados formatados
       setSubjects(formattedSubjects);
       setUnsavedChanges(false);
       
