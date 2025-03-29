@@ -2,6 +2,7 @@ import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
@@ -44,6 +45,8 @@ export function usePostsActions(state: PostsState) {
     postEditando,
     setLoading
   } = state;
+
+  const { user } = useAuth();
 
   // Iniciar criação de um novo post
   const iniciarCriacaoPost = () => {
@@ -120,8 +123,8 @@ export function usePostsActions(state: PostsState) {
         title: titulo,
         summary: resumo,
         content: conteudo,
-        author: autor,
-        authorAvatar: autorAvatar || undefined,
+        author: user?.email?.split('@')[0] || 'Anônimo',
+        authorAvatar: user?.user_metadata?.avatar_url,
         slug: slug,
         category: categoria,
         region: regiao === "none" ? undefined : regiao as Region,

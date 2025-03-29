@@ -1,0 +1,175 @@
+.ProseMirror {
+  padding: 1rem;
+  outline: none;
+  min-height: 400px;
+  background-color: white;
+}
+
+.ProseMirror p {
+  margin: 0.5em 0;
+}
+
+.ProseMirror h1 {
+  font-size: 2em;
+  margin: 0.5em 0;
+  font-weight: bold;
+}
+
+.ProseMirror h2 {
+  font-size: 1.5em;
+  margin: 0.5em 0;
+  font-weight: bold;
+}
+
+.ProseMirror h3 {
+  font-size: 1.17em;
+  margin: 0.5em 0;
+  font-weight: bold;
+}
+
+.ProseMirror h4 {
+  font-size: 1em;
+  margin: 0.5em 0;
+  font-weight: bold;
+}
+
+.ProseMirror h5 {
+  font-size: 0.83em;
+  margin: 0.5em 0;
+  font-weight: bold;
+}
+
+.ProseMirror ul {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+  list-style-type: disc;
+}
+
+.ProseMirror ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+  list-style-type: decimal;
+}
+
+.ProseMirror li {
+  margin: 0.25em 0;
+  position: relative;
+}
+
+.ProseMirror li::marker {
+  color: #666;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid #ccc;
+  margin: 0.5em 0;
+  padding-left: 1em;
+  color: #666;
+}
+
+.ProseMirror pre {
+  background: #f4f4f4;
+  border-radius: 0.5em;
+  padding: 1em;
+  margin: 0.5em 0;
+  overflow-x: auto;
+}
+
+.ProseMirror code {
+  background: #f4f4f4;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25em;
+  font-family: monospace;
+}
+
+.ProseMirror table {
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  width: 100%;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+  border: 1px solid #ccc;
+  padding: 0.5em;
+}
+
+.ProseMirror th {
+  background: #f4f4f4;
+}
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  margin: 0.5em 0;
+  border-radius: 0.5em;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ProseMirror a {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+.ProseMirror a:hover {
+  color: #004499;
+}
+
+.ProseMirror .highlight {
+  background-color: #ffeb3b;
+}
+
+.ProseMirror .placeholder {
+  color: #999;
+}
+
+.ProseMirror .selected {
+  background-color: #e3f2fd;
+}
+
+.ProseMirror .focused {
+  outline: 2px solid #2196f3;
+}
+
+/* Container do editor */
+.border.rounded-lg.overflow-hidden {
+  position: relative;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Barra de ferramentas */
+.border-b.p-2.flex.flex-wrap.gap-2.bg-gray-50 {
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.5rem;
+}
+
+/* Container do conteúdo */
+.editor-content {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 450px;
+}
+
+/* Área de conteúdo do editor */
+.ProseMirror {
+  padding: 1rem;
+  min-height: 200px;
+  height: auto;
+  background-color: white;
+}
+
+/* Remover scrollbars extras */
+.tiptap {
+  overflow: visible;
+}
+
+/* Ajuste do container principal do formulário */
+.p-4.border.rounded-md.bg-gray-50 {
+  margin-bottom: 2rem;
+  overflow: visible;
+} 

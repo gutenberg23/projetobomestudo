@@ -4,6 +4,19 @@
 
 **URL**: https://lovable.dev/projects/3b2748fe-92f8-4127-b236-d58173b6010d
 
+## Configuração do Supabase
+
+Este projeto utiliza o Supabase para armazenamento de imagens. Para configurar:
+
+1. Crie uma conta no [Supabase](https://supabase.com)
+2. Crie um novo projeto
+3. No painel de controle do projeto, vá em Project Settings > API
+4. Copie a URL do projeto e a chave anônima
+5. Crie um arquivo `.env` na raiz do projeto baseado no `.env.example`
+6. Substitua os valores das variáveis de ambiente com suas credenciais
+7. No Supabase, crie um bucket chamado 'blog-images' em Storage > New Bucket
+8. Configure as permissões do bucket para permitir uploads públicos
+
 ## How can I edit this code?
 
 There are several ways of editing your application.

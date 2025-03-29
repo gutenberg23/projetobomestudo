@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -10,8 +9,6 @@ interface FormularioMetadadosProps {
   onChangeMetaDescricao: (value: string) => void;
   metaKeywords: string;
   onChangeMetaKeywords: (value: string) => void;
-  postsRelacionados: string;
-  onChangePostsRelacionados: (value: string) => void;
 }
 
 export const FormularioMetadados: React.FC<FormularioMetadadosProps> = ({
@@ -20,9 +17,7 @@ export const FormularioMetadados: React.FC<FormularioMetadadosProps> = ({
   metaDescricao,
   onChangeMetaDescricao,
   metaKeywords,
-  onChangeMetaKeywords,
-  postsRelacionados,
-  onChangePostsRelacionados
+  onChangeMetaKeywords
 }) => {
   return (
     <div className="p-4 border rounded-md bg-gray-50">
@@ -55,16 +50,6 @@ export const FormularioMetadados: React.FC<FormularioMetadadosProps> = ({
             value={metaKeywords} 
             onChange={(e) => onChangeMetaKeywords(e.target.value)} 
             placeholder="Ex: concursos, português, estudos"
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="postsRelacionados">IDs dos Posts Relacionados (separados por vírgula)</Label>
-          <Input 
-            id="postsRelacionados" 
-            value={postsRelacionados} 
-            onChange={(e) => onChangePostsRelacionados(e.target.value)} 
-            placeholder="Ex: 1, 5, 12"
           />
         </div>
       </div>

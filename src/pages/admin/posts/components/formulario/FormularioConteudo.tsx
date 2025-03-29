@@ -1,7 +1,5 @@
-
 import React from "react";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { TiptapEditor } from "../editor/TiptapEditor";
 
 interface FormularioConteudoProps {
   conteudo: string;
@@ -15,16 +13,10 @@ export const FormularioConteudo: React.FC<FormularioConteudoProps> = ({
   return (
     <div className="p-4 border rounded-md bg-gray-50">
       <h3 className="text-lg font-semibold text-[#272f3c] mb-4">Conteúdo</h3>
-      <div className="space-y-2">
-        <Label htmlFor="conteudo">Conteúdo Completo</Label>
-        <Textarea 
-          id="conteudo" 
-          value={conteudo} 
-          onChange={(e) => onChangeConteudo(e.target.value)} 
-          placeholder="Conteúdo completo do post"
-          required
-          className="h-48"
-          richText={true}
+      <div className="bg-white rounded-lg">
+        <TiptapEditor 
+          content={conteudo}
+          onChange={onChangeConteudo}
         />
       </div>
     </div>
