@@ -100,11 +100,14 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId, progress =
             .single();
 
           if (profile) {
-            if (isCurso) {
-              setIsFavorite((profile.cursos_favoritos || []).some(id => id === extractedId || id.includes(extractedId)));
-            } else {
-              setIsFavorite((profile.disciplinas_favoritos || []).some(id => id === extractedId || id.includes(extractedId)));
-            }
+            const cursosFavoritos = profile.cursos_favoritos || [];
+            const disciplinasFavoritos = profile.disciplinas_favoritos || [];
+            
+            // Verificar em ambos os arrays
+            const isFavoriteCurso = cursosFavoritos.some(id => id === extractedId || id === courseId);
+            const isFavoriteDisciplina = disciplinasFavoritos.some(id => id === extractedId || id === courseId);
+            
+            setIsFavorite(isFavoriteCurso || isFavoriteDisciplina);
           }
         }
       } catch (error) {

@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from "react";
-import { SimuladosTable } from "./components/simulados/SimuladosTable";
+import { SimuladosTable } from "./components/simulados";
 import { Simulado } from "./components/simulados/SimuladosTypes";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useQuestionSelectionActions } from "@/components/admin/questions/hooks/actions/useQuestionSelectionActions";
 import { useQuestionsState } from "@/components/admin/questions/hooks/useQuestionsState";
-import { VincularCursoModal } from "./components/simulados/VincularCursoModal";
 
 const Simulados = () => {
   const questionsState = useQuestionsState();
@@ -14,8 +14,6 @@ const Simulados = () => {
   // Estado para os simulados
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isVincularModalOpen, setIsVincularModalOpen] = useState(false);
-  const [selectedSimuladoId, setSelectedSimuladoId] = useState<string | null>(null);
   
   // Buscar simulados do banco de dados ao carregar a página
   useEffect(() => {
@@ -48,12 +46,12 @@ const Simulados = () => {
     };
     
     fetchSimulados();
-  }, [isVincularModalOpen]); // Recarrega quando o modal é fechado
+  }, []);
 
   // Vincular simulado a um curso
-  const handleVincularCurso = (simuladoId: string) => {
-    setSelectedSimuladoId(simuladoId);
-    setIsVincularModalOpen(true);
+  const handleVincularCurso = async (simuladoId: string) => {
+    // Aqui iria a lógica para abrir um modal e vincular o simulado a um novo curso
+    toast.info("Funcionalidade de vincular curso em desenvolvimento");
   };
 
   // Ativar/desativar simulado
@@ -128,25 +126,12 @@ const Simulados = () => {
           <p className="text-[#67748a]">Carregando simulados...</p>
         </div>
       ) : (
-        <>
-          <SimuladosTable 
-            simulados={simulados}
-            handleVincularCurso={handleVincularCurso}
-            handleToggleAtivo={handleToggleAtivo}
-            handleExcluir={handleExcluir}
-          />
-
-          {selectedSimuladoId && (
-            <VincularCursoModal
-              isOpen={isVincularModalOpen}
-              onClose={() => {
-                setIsVincularModalOpen(false);
-                setSelectedSimuladoId(null);
-              }}
-              simuladoId={selectedSimuladoId}
-            />
-          )}
-        </>
+        <SimuladosTable 
+          simulados={simulados}
+          handleVincularCurso={handleVincularCurso}
+          handleToggleAtivo={handleToggleAtivo}
+          handleExcluir={handleExcluir}
+        />
       )}
     </div>
   );

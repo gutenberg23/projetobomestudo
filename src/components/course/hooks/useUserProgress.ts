@@ -74,7 +74,7 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
       setStats(prev => ({ ...prev, loading: true }));
       
       const realCourseId = extractIdFromFriendlyUrl(courseId);
-      console.log('Buscando progresso para curso:', realCourseId);
+      console.log('Buscando progresso para curso/disciplina:', realCourseId);
       
       const { data: progress, error } = await supabase
         .from('user_course_progress')
@@ -84,7 +84,7 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
         .maybeSingle();
         
       if (error && error.code !== 'PGRST116') {
-        console.error('Erro ao buscar progresso do curso:', error);
+        console.error('Erro ao buscar progresso:', error);
         setStats(prev => ({ ...prev, loading: false }));
         return;
       }
@@ -103,47 +103,23 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
           console.log('Total de tópicos completados:', totalCompleted);
         }
         
-        // Buscar o curso para obter as aulas
-        const { data: cursoData, error: cursoError } = await supabase
-          .from('cursos')
-          .select('disciplinas_ids, aulas_ids')
+        // Primeiro tentar buscar como disciplina
+        const { data: disciplinaData, error: disciplinaError } = await supabase
+          .from('disciplinas')
+          .select('aulas_ids')
           .eq('id', realCourseId)
           .single();
           
-        if (cursoError) {
-          console.error('Erro ao buscar aulas do curso:', cursoError);
-        } else {
-          console.log('Dados do curso encontrados:', cursoData);
+        if (!disciplinaError && disciplinaData) {
+          console.log('Dados da disciplina encontrados:', disciplinaData);
           
           // Array para armazenar todos os IDs de aulas
           let todasAulasIds: string[] = [];
           
-          // Adicionar aulas diretamente associadas ao curso
-          if (cursoData?.aulas_ids && Array.isArray(cursoData.aulas_ids)) {
-            todasAulasIds = [...cursoData.aulas_ids];
+          // Adicionar aulas da disciplina
+          if (disciplinaData?.aulas_ids && Array.isArray(disciplinaData.aulas_ids)) {
+            todasAulasIds = [...disciplinaData.aulas_ids];
           }
-          
-          // Buscar aulas das disciplinas
-          if (cursoData?.disciplinas_ids && Array.isArray(cursoData.disciplinas_ids)) {
-            // Buscar todas as disciplinas de uma vez
-            const { data: disciplinasData, error: disciplinasError } = await supabase
-              .from('disciplinas')
-              .select('aulas_ids')
-              .in('id', cursoData.disciplinas_ids);
-              
-            if (!disciplinasError && disciplinasData) {
-              // Adicionar aulas de cada disciplina
-              disciplinasData.forEach(disciplina => {
-                if (disciplina.aulas_ids && Array.isArray(disciplina.aulas_ids)) {
-                  todasAulasIds = [...todasAulasIds, ...disciplina.aulas_ids];
-                }
-              });
-            }
-          }
-          
-          // Remover duplicatas de IDs de aulas
-          todasAulasIds = Array.from(new Set(todasAulasIds));
-          console.log('Total de aulas encontradas:', todasAulasIds.length);
           
           if (todasAulasIds.length > 0) {
             // Buscar todas as aulas para contar seus tópicos
@@ -173,7 +149,83 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
                 });
                 
                 totalTopics = topicosUnicos.size;
-                console.log('Total de tópicos únicos encontrados:', totalTopics, 'Lista de tópicos:', Array.from(topicosUnicos));
+                console.log('Total de tópicos únicos encontrados na disciplina:', totalTopics);
+              }
+            }
+          }
+        } else {
+          // Se não encontrou como disciplina, buscar como curso
+          const { data: cursoData, error: cursoError } = await supabase
+            .from('cursos')
+            .select('disciplinas_ids, aulas_ids')
+            .eq('id', realCourseId)
+            .single();
+            
+          if (cursoError) {
+            console.error('Erro ao buscar aulas do curso:', cursoError);
+          } else {
+            console.log('Dados do curso encontrados:', cursoData);
+            
+            // Array para armazenar todos os IDs de aulas
+            let todasAulasIds: string[] = [];
+            
+            // Adicionar aulas diretamente associadas ao curso
+            if (cursoData?.aulas_ids && Array.isArray(cursoData.aulas_ids)) {
+              todasAulasIds = [...cursoData.aulas_ids];
+            }
+            
+            // Buscar aulas das disciplinas
+            if (cursoData?.disciplinas_ids && Array.isArray(cursoData.disciplinas_ids)) {
+              // Buscar todas as disciplinas de uma vez
+              const { data: disciplinasData, error: disciplinasError } = await supabase
+                .from('disciplinas')
+                .select('aulas_ids')
+                .in('id', cursoData.disciplinas_ids);
+                
+              if (!disciplinasError && disciplinasData) {
+                // Adicionar aulas de cada disciplina
+                disciplinasData.forEach(disciplina => {
+                  if (disciplina.aulas_ids && Array.isArray(disciplina.aulas_ids)) {
+                    todasAulasIds = [...todasAulasIds, ...disciplina.aulas_ids];
+                  }
+                });
+              }
+            }
+            
+            // Remover duplicatas de IDs de aulas
+            todasAulasIds = Array.from(new Set(todasAulasIds));
+            console.log('Total de aulas encontradas:', todasAulasIds.length);
+            
+            if (todasAulasIds.length > 0) {
+              // Buscar todas as aulas para contar seus tópicos
+              const { data: aulasData, error: aulasError } = await supabase
+                .from('aulas')
+                .select('topicos_ids')
+                .in('id', todasAulasIds);
+                
+              if (aulasError) {
+                console.error('Erro ao buscar detalhes das aulas:', aulasError);
+              } else {
+                console.log('Dados das aulas encontrados:', aulasData);
+                
+                // Contar o total de tópicos em todas as aulas
+                if (aulasData && Array.isArray(aulasData)) {
+                  // Usar um Set para evitar duplicatas de tópicos
+                  const topicosUnicos = new Set<string>();
+                  
+                  aulasData.forEach(aula => {
+                    if (aula.topicos_ids && Array.isArray(aula.topicos_ids)) {
+                      aula.topicos_ids.forEach(topicoId => {
+                        if (topicoId && topicoId.trim() !== '') {
+                          topicosUnicos.add(topicoId);
+                        }
+                      });
+                    }
+                  });
+                  
+                  totalTopics = topicosUnicos.size;
+                  console.log('Total de tópicos únicos encontrados no curso:', totalTopics);
+                }
               }
             }
           }
@@ -198,7 +250,7 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
         progressPercentage
       });
     } catch (error) {
-      console.error('Erro ao processar progresso do curso:', error);
+      console.error('Erro ao processar progresso:', error);
       setStats(prev => ({ ...prev, loading: false }));
     }
   };
