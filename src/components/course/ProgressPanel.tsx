@@ -487,7 +487,7 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   
   return (
     <div className="bg-white rounded-[10px] p-5 space-y-5 border-l border-[#efefef]">
-      <h2 className="text-xl font-semibold text-[rgba(38,47,60,1)]">Seu progresso</h2>
+      <h2 className="text-xl font-semibold text-[rgba(38,47,60,1)]">Meu progresso</h2>
       
       <ProgressSummary
         totalCompletedSections={completedTopics}
@@ -509,7 +509,16 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
             Nenhuma disciplina disponível.
           </div>
         ) : (
-          <div className="max-h-[400px] overflow-y-auto pr-2">
+          <div className="max-h-[400px] overflow-y-auto pr-2 
+            [&::-webkit-scrollbar]:w-2
+            [&::-webkit-scrollbar-track]:bg-[#f6f8fa]
+            [&::-webkit-scrollbar-track]:rounded-full
+            [&::-webkit-scrollbar-thumb]:bg-[#5f2ebe]/30
+            [&::-webkit-scrollbar-thumb]:rounded-full
+            [&::-webkit-scrollbar-thumb]:hover:bg-[#5f2ebe]/50
+            [&::-webkit-scrollbar-thumb]:transition-colors
+            [&::-webkit-scrollbar-thumb]:duration-200
+          ">
             {displaySubjects.map((subject) => (
               <SubjectCard
                 key={subject.id}

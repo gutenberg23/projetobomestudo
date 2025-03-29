@@ -12,16 +12,18 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { useUserProgress } from "./hooks/useUserProgress";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const CourseLayout = () => {
   const { courseId } = useParams<{ courseId: string }>();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados'>('disciplinas');
   const [isProgressVisible, setIsProgressVisible] = useState(false);
   const [subjectsCount, setSubjectsCount] = useState<number>(0);
   const [subjectsData, setSubjectsData] = useState<any[]>([]);
   
-  // Usar o hook de progresso
-  const { progressPercentage } = useUserProgress(undefined, courseId);
+  // Usar o hook de progresso com o ID do usuário atual
+  const { progressPercentage } = useUserProgress(user?.id, courseId);
 
   // Carregar dados das disciplinas quando o componente montar
   useEffect(() => {

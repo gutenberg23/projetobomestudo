@@ -47,15 +47,15 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
   };
 
   // Função para obter o total de seções concluídas para todas as aulas
-  const getTotalCompletedSections = (subjectsData: SubjectsData): number => {
+  const getTotalCompletedSections = (subjectsData: SubjectsData, lessonIds: string[]): number => {
     if (!subjectsData.completed_sections) return 0;
     
     let total = 0;
     
     // Percorrer todas as aulas com seções concluídas
-    Object.values(subjectsData.completed_sections).forEach(sectionIds => {
-      // Verificar se sectionIds é um array antes de usar o length
-      if (Array.isArray(sectionIds)) {
+    Object.entries(subjectsData.completed_sections).forEach(([lessonId, sectionIds]) => {
+      // Verificar se a aula pertence ao curso/disciplina atual
+      if (lessonIds.includes(lessonId) && Array.isArray(sectionIds)) {
         total += sectionIds.length;
       }
     });
@@ -96,12 +96,6 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
       if (progress?.subjects_data) {
         const subjectsData = progress.subjects_data as SubjectsData;
         console.log('Dados de progresso encontrados:', subjectsData);
-        
-        // Contar tópicos concluídos
-        if (typeof subjectsData === 'object' && !Array.isArray(subjectsData)) {
-          totalCompleted = getTotalCompletedSections(subjectsData);
-          console.log('Total de tópicos completados:', totalCompleted);
-        }
         
         // Primeiro tentar buscar como disciplina
         const { data: disciplinaData, error: disciplinaError } = await supabase
@@ -150,6 +144,12 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
                 
                 totalTopics = topicosUnicos.size;
                 console.log('Total de tópicos únicos encontrados na disciplina:', totalTopics);
+                
+                // Contar tópicos concluídos apenas das aulas da disciplina atual
+                if (typeof subjectsData === 'object' && !Array.isArray(subjectsData)) {
+                  totalCompleted = getTotalCompletedSections(subjectsData, todasAulasIds);
+                  console.log('Total de tópicos completados na disciplina:', totalCompleted);
+                }
               }
             }
           }
@@ -225,6 +225,12 @@ export const useUserProgress = (userId: string | undefined, courseId: string | u
                   
                   totalTopics = topicosUnicos.size;
                   console.log('Total de tópicos únicos encontrados no curso:', totalTopics);
+                  
+                  // Contar tópicos concluídos apenas das aulas do curso atual
+                  if (typeof subjectsData === 'object' && !Array.isArray(subjectsData)) {
+                    totalCompleted = getTotalCompletedSections(subjectsData, todasAulasIds);
+                    console.log('Total de tópicos completados no curso:', totalCompleted);
+                  }
                 }
               }
             }
