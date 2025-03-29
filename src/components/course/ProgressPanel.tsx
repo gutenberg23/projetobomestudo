@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -487,7 +486,7 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
   }
   
   return (
-    <div className="bg-white rounded-[10px] p-5 space-y-5">
+    <div className="bg-white rounded-[10px] p-5 space-y-5 border-l border-[#efefef]">
       <h2 className="text-xl font-semibold text-[rgba(38,47,60,1)]">Seu progresso</h2>
       
       <ProgressSummary
@@ -510,14 +509,16 @@ export const ProgressPanel = ({ subjectsFromCourse }: ProgressPanelProps) => {
             Nenhuma disciplina disponível.
           </div>
         ) : (
-          displaySubjects.map((subject) => (
-            <SubjectCard
-              key={subject.id}
-              subject={subject}
-              isExpanded={expandedSubject === subject.id}
-              onToggle={() => toggleExpand(subject.id)}
-            />
-          ))
+          <div className="max-h-[400px] overflow-y-auto pr-2">
+            {displaySubjects.map((subject) => (
+              <SubjectCard
+                key={subject.id}
+                subject={subject}
+                isExpanded={expandedSubject === subject.id}
+                onToggle={() => toggleExpand(subject.id)}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

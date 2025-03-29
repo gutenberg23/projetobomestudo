@@ -127,7 +127,6 @@ const Disciplinas = () => {
         profiles.forEach(profile => {
           if (profile.disciplinas_favoritos && Array.isArray(profile.disciplinas_favoritos)) {
             profile.disciplinas_favoritos.forEach(favorito => {
-              // Usar o ID diretamente, já que agora estamos armazenando apenas IDs
               favoritosCount[favorito] = (favoritosCount[favorito] || 0) + 1;
             });
           }
@@ -170,16 +169,21 @@ const Disciplinas = () => {
           }
         }
         
-        disciplinasProcessadas.push({
+        // Criar objeto da disciplina com todos os campos necessários
+        const disciplinaProcessada: Disciplina = {
           id: disciplina.id,
           titulo: disciplina.titulo,
           descricao: disciplina.descricao || "",
+          banca: disciplina.banca || null,
           aulasIds: disciplina.aulas_ids || [],
           topicosIds: topicosIds,
-          questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)), // Criar array com o tamanho correto
+          questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)),
           selecionada: false,
           favoritos: favoritosCount[disciplina.id] || 0
-        });
+        };
+        
+        console.log("Disciplina processada:", disciplinaProcessada);
+        disciplinasProcessadas.push(disciplinaProcessada);
       }
       
       setDisciplinas(disciplinasProcessadas);
@@ -237,12 +241,13 @@ const Disciplinas = () => {
   // Função para salvar disciplina editada
   const handleSaveDisciplina = async (updatedDisciplina: Disciplina) => {
     try {
+      // Atualizar no banco de dados
       const { error } = await supabase
         .from('disciplinas')
         .update({
           titulo: updatedDisciplina.titulo,
-          descricao: updatedDisciplina.descricao, // This now contains the rating value
-          banca: updatedDisciplina.banca,
+          descricao: updatedDisciplina.descricao,
+          banca: updatedDisciplina.banca || null,
           aulas_ids: updatedDisciplina.aulasIds
         })
         .eq('id', updatedDisciplina.id);
@@ -252,15 +257,21 @@ const Disciplinas = () => {
       // Atualizar a disciplina com totais recalculados
       const totalQuestoes = await calcularTotalQuestoesDisciplina(updatedDisciplina.aulasIds);
       
-      // Atualizar o estado local
-      setDisciplinas(disciplinas.map(disciplina => 
-        disciplina.id === updatedDisciplina.id 
-          ? { 
-              ...updatedDisciplina, 
-              questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)) 
-            } 
-          : disciplina
-      ));
+      // Atualizar o estado local com todos os dados necessários
+      setDisciplinas(prevDisciplinas => 
+        prevDisciplinas.map(disciplina => 
+          disciplina.id === updatedDisciplina.id 
+            ? { 
+                ...disciplina,
+                titulo: updatedDisciplina.titulo,
+                descricao: updatedDisciplina.descricao,
+                banca: updatedDisciplina.banca || null,
+                aulasIds: updatedDisciplina.aulasIds,
+                questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i))
+              } 
+            : disciplina
+        )
+      );
       
       setIsOpenEdit(false);
       toast.success("Disciplina atualizada com sucesso!");

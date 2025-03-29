@@ -1,7 +1,7 @@
-
 "use client";
 
 import * as React from "react";
+import { cn } from "@/lib/utils";
 
 interface ActionButtonProps {
   icon: string;
@@ -18,13 +18,26 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
   isActive = false,
   onClick
 }) => {
-  const baseStyles = "flex overflow-hidden gap-2.5 justify-center items-center p-2.5 bg-white rounded-md border w-auto";
-  const variantStyles = isActive && variant === "highlight" ? "text-[#5f2ebe] border-[#5f2ebe]" : "border-gray-100";
-  
   return (
-    <button onClick={onClick} className={`${baseStyles} ${variantStyles} border-solid hover:bg-gray-50 transition-colors`}>
-      <img src={icon} alt="" className="object-contain shrink-0 my-auto w-5 aspect-square text-[#5f2ebe]" />
-      <span className="whitespace-nowrap text-xs text-[#5f2ebe]">{label}</span>
+    <button 
+      onClick={onClick} 
+      className={cn(
+        "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200",
+        "text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe]",
+        "bg-white hover:bg-[#f8f5ff]",
+        "border border-[#efefef] hover:border-[#5f2ebe]/20",
+        isActive && variant === "highlight" && "text-[#5f2ebe] bg-[#f8f5ff] border-[#5f2ebe]/20"
+      )}
+    >
+      <img 
+        src={icon} 
+        alt="" 
+        className={cn(
+          "w-4 h-4 object-contain",
+          isActive && variant === "highlight" ? "opacity-100" : "opacity-70"
+        )} 
+      />
+      <span className="text-sm font-medium">{label}</span>
     </button>
   );
 };

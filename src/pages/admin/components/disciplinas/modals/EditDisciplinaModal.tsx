@@ -116,18 +116,6 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="descricao" className="text-right">
-              Cargo
-            </Label>
-            <Input
-              id="descricao"
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Digite o cargo"
-              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="aulas" className="text-right">
               IDs das Aulas
             </Label>
