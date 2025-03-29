@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -34,11 +33,6 @@ const AdminLayout = () => {
       path: "/admin/posts", 
       label: "Posts", 
       icon: <FileText className="w-5 h-5" /> 
-    },
-    { 
-      path: "/admin/anuncios", 
-      label: "Anúncios", 
-      icon: <MessageSquare className="w-5 h-5" /> 
     },
     { 
       path: "/admin/usuarios", 

@@ -1,143 +1,127 @@
 import React, { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import DisciplinaForm from "./DisciplinaForm";
 import DisciplinasTable from "./DisciplinasTable";
-import CriarEditalCard from "./CriarEditalCard";
-import { Disciplina, Edital } from "./types";
+import DisciplinaForm from "./DisciplinaForm";
+import { Disciplina } from "@/types/edital";
 import { useEditalActions } from "./hooks/useEditalActions";
 
-interface DisciplinasTabProps {
-  disciplinas: Disciplina[];
-  setDisciplinas: React.Dispatch<React.SetStateAction<Disciplina[]>>;
-  editais: Edital[];
-  setEditais: React.Dispatch<React.SetStateAction<Edital[]>>;
-}
-
-const DisciplinasTab: React.FC<DisciplinasTabProps> = ({ 
-  disciplinas, 
-  setDisciplinas,
-  editais,
-  setEditais
-}) => {
-  const { cadastrarDisciplina, listarDisciplinas, cadastrarEdital, excluirDisciplina } = useEditalActions();
-  const { toast } = useToast();
-  const [showCriarEditalCard, setShowCriarEditalCard] = useState(false);
+const DisciplinasTab: React.FC = () => {
+  const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredDisciplinas, setFilteredDisciplinas] = useState<Disciplina[]>(disciplinas);
-  
+  const [filteredDisciplinas, setFilteredDisciplinas] = useState<Disciplina[]>([]);
+  const [todasSelecionadas, setTodasSelecionadas] = useState(false);
+  const [disciplinaParaEditar, setDisciplinaParaEditar] = useState<Disciplina | null>(null);
+
+  const {
+    isLoading,
+    cadastrarDisciplina,
+    listarDisciplinas,
+    atualizarDisciplina,
+    excluirDisciplina,
+    cadastrarEdital
+  } = useEditalActions();
+
   useEffect(() => {
-    const carregarDisciplinas = async () => {
-      const data = await listarDisciplinas();
-      setDisciplinas(data);
-    };
-    
-    carregarDisciplinas();
+    fetchDisciplinas();
   }, []);
-  
+
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredDisciplinas(disciplinas);
-    } else {
-      const lowerCaseSearch = searchTerm.toLowerCase();
-      setFilteredDisciplinas(
-        disciplinas.filter(
-          (disciplina) => 
-            disciplina.titulo.toLowerCase().includes(lowerCaseSearch) || 
-            disciplina.topicos.some(topico => topico.toLowerCase().includes(lowerCaseSearch))
-        )
-      );
-    }
+    const filtered = disciplinas.filter(disciplina =>
+      disciplina.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      disciplina.topicos.some(topico => 
+        topico.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+    setFilteredDisciplinas(filtered);
   }, [searchTerm, disciplinas]);
-  
-  const todasDisciplinasSelecionadas = filteredDisciplinas.length > 0 && filteredDisciplinas.every(d => d.selecionada);
-  
-  const handleToggleSelecaoTodas = () => {
-    setDisciplinas(disciplinas.map(d => {
-      if (filteredDisciplinas.some(fd => fd.id === d.id)) {
-        return {...d, selecionada: !todasDisciplinasSelecionadas};
-      }
-      return d;
-    }));
+
+  const fetchDisciplinas = async () => {
+    const data = await listarDisciplinas();
+    setDisciplinas(data);
   };
-  
-  const handleToggleSelecaoDisciplina = (id: string) => {
+
+  const toggleSelecaoTodas = () => {
+    const novoEstado = !todasSelecionadas;
+    setTodasSelecionadas(novoEstado);
+    setDisciplinas(disciplinas.map(d => ({
+      ...d,
+      selecionada: novoEstado
+    })));
+  };
+
+  const toggleSelecao = (id: string) => {
     setDisciplinas(disciplinas.map(d => 
       d.id === id ? {...d, selecionada: !d.selecionada} : d
     ));
   };
-  
-  const adicionarDisciplina = async (disciplina: Disciplina) => {
-    const { id, selecionada, ...disciplinaData } = disciplina;
-    const novaDisciplina = await cadastrarDisciplina(disciplinaData);
+
+  const handleAddDisciplina = async (disciplina: Omit<Disciplina, 'id' | 'selecionada'>) => {
+    const novaDisciplina = await cadastrarDisciplina(disciplina);
     if (novaDisciplina) {
-      setDisciplinas([...disciplinas, { ...novaDisciplina, selecionada: false }]);
+      setDisciplinas(prev => [...prev, { ...novaDisciplina, selecionada: false }]);
     }
   };
-  
-  const excluirDisciplinaHandler = async (id: string) => {
-    const success = await excluirDisciplina(id);
-    if (success) {
-      setDisciplinas(disciplinas.filter(d => d.id !== id));
-      toast({
-        title: "Sucesso",
-        description: "Disciplina excluída com sucesso!",
-      });
+
+  const handleEditDisciplina = async (disciplina: Disciplina) => {
+    const disciplinaAtualizada = await atualizarDisciplina(disciplina.id, disciplina);
+    if (disciplinaAtualizada) {
+      setDisciplinas(prev => 
+        prev.map(d => d.id === disciplina.id ? { ...disciplinaAtualizada, selecionada: d.selecionada } : d)
+      );
+      setDisciplinaParaEditar(null);
     }
   };
-  
-  const criarEdital = () => {
+
+  const handleExcluirDisciplina = async (id: string) => {
+    const sucesso = await excluirDisciplina(id);
+    if (sucesso) {
+      setDisciplinas(prev => prev.filter(d => d.id !== id));
+    }
+  };
+
+  const handleCriarEdital = async () => {
     const disciplinasSelecionadas = disciplinas.filter(d => d.selecionada);
-    
     if (disciplinasSelecionadas.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Selecione pelo menos uma disciplina para criar o edital.",
-        variant: "destructive"
-      });
       return;
     }
-    
-    setShowCriarEditalCard(true);
-  };
-  
-  const salvarEdital = async (titulo: string, cursoId: string) => {
-    const disciplinasSelecionadas = disciplinas.filter(d => d.selecionada);
-    
-    const novoEdital = await cadastrarEdital({
-      titulo,
-      curso_id: cursoId,
+
+    const edital = await cadastrarEdital({
+      titulo: 'Novo Edital',
+      curso_id: '',
       disciplinas_ids: disciplinasSelecionadas.map(d => d.id),
       ativo: true
     });
 
-    if (novoEdital) {
-      setEditais([...editais, novoEdital]);
-      setDisciplinas(disciplinas.map(d => ({...d, selecionada: false})));
-      setShowCriarEditalCard(false);
+    if (edital) {
+      // Limpar seleções após criar o edital
+      setDisciplinas(prev => prev.map(d => ({ ...d, selecionada: false })));
+      setTodasSelecionadas(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      <DisciplinaForm onAddDisciplina={adicionarDisciplina} />
-      
-      <DisciplinasTable 
+      <DisciplinasTable
         disciplinas={disciplinas}
         filteredDisciplinas={filteredDisciplinas}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
-        todasSelecionadas={todasDisciplinasSelecionadas}
-        onToggleSelecaoTodas={handleToggleSelecaoTodas}
-        onToggleSelecao={handleToggleSelecaoDisciplina}
-        onExcluir={excluirDisciplinaHandler}
-        onCriarEdital={criarEdital}
+        todasSelecionadas={todasSelecionadas}
+        onToggleSelecaoTodas={toggleSelecaoTodas}
+        onToggleSelecao={toggleSelecao}
+        onExcluir={handleExcluirDisciplina}
+        onCriarEdital={handleCriarEdital}
+        onEditDisciplina={setDisciplinaParaEditar}
       />
-      
-      {showCriarEditalCard && (
-        <CriarEditalCard 
-          disciplinasSelecionadas={disciplinas.filter(d => d.selecionada)}
-          onSalvar={salvarEdital}
-          onCancelar={() => setShowCriarEditalCard(false)}
+
+      {!disciplinaParaEditar ? (
+        <DisciplinaForm
+          onAddDisciplina={handleAddDisciplina}
+        />
+      ) : (
+        <DisciplinaForm
+          onAddDisciplina={handleAddDisciplina}
+          onEditDisciplina={handleEditDisciplina}
+          disciplinaParaEditar={disciplinaParaEditar}
         />
       )}
     </div>

@@ -1,6 +1,5 @@
-
 import React from "react";
-import { Textarea } from "@/components/ui/textarea";
+import { QuestionTiptapEditor } from "./QuestionTiptapEditor";
 
 interface QuestionTextFieldsProps {
   questionText: string | null;
@@ -30,13 +29,10 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
           <label htmlFor="expandable-content" className="block text-sm font-medium text-[#67748a] mb-1">
             Conteúdo Expansível
           </label>
-          <Textarea
-            id="expandable-content"
+          <QuestionTiptapEditor
+            content={expandableContent}
+            onChange={setExpandableContent}
             placeholder="Digite textos ou adicione imagens que serão exibidos ao expandir..."
-            value={expandableContent}
-            onChange={(e) => setExpandableContent(e.target.value)}
-            className="min-h-[150px] md:min-h-[200px]"
-            richText={true}
           />
         </div>
       )}
@@ -46,13 +42,10 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
           <label htmlFor="question-text" className="block text-sm font-medium text-[#67748a] mb-1">
             Texto da Questão
           </label>
-          <Textarea
-            id="question-text"
+          <QuestionTiptapEditor
+            content={questionText}
+            onChange={setQuestionText}
             placeholder="Digite o texto da questão..."
-            value={questionText}
-            onChange={(e) => setQuestionText(e.target.value)}
-            className="min-h-[150px] md:min-h-[200px]"
-            richText={true}
           />
         </div>
       )}
@@ -62,13 +55,10 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
           <label htmlFor="teacher-explanation" className="block text-sm font-medium text-[#67748a] mb-1">
             Explicação do Professor
           </label>
-          <Textarea
-            id="teacher-explanation"
+          <QuestionTiptapEditor
+            content={teacherExplanation}
+            onChange={setTeacherExplanation}
             placeholder="Digite a explicação do professor..."
-            value={teacherExplanation}
-            onChange={(e) => setTeacherExplanation(e.target.value)}
-            className="min-h-[150px] md:min-h-[200px]"
-            richText={true}
           />
         </div>
       )}
@@ -78,13 +68,10 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
           <label htmlFor="ai-explanation" className="block text-sm font-medium text-[#67748a] mb-1">
             Resposta da BIA (BomEstudo IA)
           </label>
-          <Textarea
-            id="ai-explanation"
+          <QuestionTiptapEditor
+            content={aiExplanation}
+            onChange={setAIExplanation}
             placeholder="Digite a resposta da BIA..."
-            value={aiExplanation}
-            onChange={(e) => setAIExplanation(e.target.value)}
-            className="min-h-[150px] md:min-h-[200px]"
-            richText={true}
           />
         </div>
       )}

@@ -1,9 +1,9 @@
-
 import React, { useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { QuestionOption } from "../types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { QuestionTiptapEditor } from "./QuestionTiptapEditor";
 
 interface QuestionOptionsProps {
   questionType: string;
@@ -106,10 +106,9 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
               <Label htmlFor={`option-text-${option.id}`}>
                 Alternativa {String.fromCharCode(65 + index)}
               </Label>
-              <Input
-                id={`option-text-${option.id}`}
-                value={option.text}
-                onChange={(e) => handleOptionTextChange(option.id, e.target.value)}
+              <QuestionTiptapEditor
+                content={option.text}
+                onChange={(text) => handleOptionTextChange(option.id, text)}
                 placeholder={`Digite o texto da alternativa ${String.fromCharCode(65 + index)}`}
               />
             </div>

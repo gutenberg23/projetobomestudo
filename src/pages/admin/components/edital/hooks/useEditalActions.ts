@@ -41,6 +41,41 @@ export const useEditalActions = () => {
     }
   };
 
+  const atualizarDisciplina = async (id: string, disciplina: Omit<Disciplina, 'id' | 'selecionada'>) => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('disciplinaverticalizada')
+        .update({
+          titulo: disciplina.titulo,
+          descricao: disciplina.descricao,
+          topicos: disciplina.topicos,
+          importancia: disciplina.importancia
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Disciplina atualizada com sucesso!",
+      });
+
+      return data;
+    } catch (error) {
+      console.error('Erro ao atualizar disciplina:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar disciplina. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const listarDisciplinas = async () => {
     try {
       setIsLoading(true);
@@ -72,8 +107,8 @@ export const useEditalActions = () => {
         .from('cursoverticalizado')
         .insert({
           titulo: edital.titulo,
-          disciplinas_ids: edital.disciplinas_ids,
           curso_id: edital.curso_id,
+          disciplinas_ids: edital.disciplinas_ids,
           ativo: edital.ativo
         })
         .select()
@@ -128,14 +163,14 @@ export const useEditalActions = () => {
       setIsLoading(true);
       const { error } = await supabase
         .from('cursoverticalizado')
-        .update({ ativo: !ativo })
+        .update({ ativo })
         .eq('id', id);
 
       if (error) throw error;
 
       toast({
         title: "Sucesso",
-        description: "Status do edital alterado com sucesso!",
+        description: `Edital ${ativo ? 'ativado' : 'desativado'} com sucesso!`,
       });
     } catch (error) {
       console.error('Erro ao alterar status do edital:', error);
@@ -152,20 +187,6 @@ export const useEditalActions = () => {
   const excluirEdital = async (id: string) => {
     try {
       setIsLoading(true);
-      
-      // Primeiro, obter o curso_id associado a este edital
-      const { data: editalData, error: getEditalError } = await supabase
-        .from('cursoverticalizado')
-        .select('curso_id')
-        .eq('id', id)
-        .single();
-        
-      if (getEditalError) {
-        console.error('Erro ao obter dados do edital:', getEditalError);
-        throw getEditalError;
-      }
-      
-      // Agora excluir o edital
       const { error } = await supabase
         .from('cursoverticalizado')
         .delete()
@@ -177,6 +198,8 @@ export const useEditalActions = () => {
         title: "Sucesso",
         description: "Edital excluído com sucesso!",
       });
+      
+      return true;
     } catch (error) {
       console.error('Erro ao excluir edital:', error);
       toast({
@@ -184,6 +207,7 @@ export const useEditalActions = () => {
         description: "Erro ao excluir edital. Tente novamente.",
         variant: "destructive"
       });
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -226,6 +250,7 @@ export const useEditalActions = () => {
     listarEditais,
     toggleAtivoEdital,
     excluirEdital,
-    excluirDisciplina
+    excluirDisciplina,
+    atualizarDisciplina
   };
 };

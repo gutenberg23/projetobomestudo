@@ -1,12 +1,10 @@
-
 import React, { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DisciplinasTab, EditaisTab } from "./components/edital";
-import { Disciplina, Edital } from "./components/edital/types";
+import { Edital } from "./components/edital/types";
 
 const EditalPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("disciplinas");
-  const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
   const [editais, setEditais] = useState<Edital[]>([]);
 
   return (
@@ -21,12 +19,7 @@ const EditalPage: React.FC = () => {
         </TabsList>
         
         <TabsContent value="disciplinas">
-          <DisciplinasTab 
-            disciplinas={disciplinas}
-            setDisciplinas={setDisciplinas}
-            editais={editais}
-            setEditais={setEditais}
-          />
+          <DisciplinasTab />
         </TabsContent>
         
         <TabsContent value="editais">

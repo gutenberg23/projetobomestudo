@@ -1,10 +1,10 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Trash, Power } from "lucide-react";
 import { Edital } from "./types";
+import { Pagination } from "@/components/ui/pagination";
 
 interface EditaisTableProps {
   editais: Edital[];
@@ -12,11 +12,23 @@ interface EditaisTableProps {
   onExcluir: (id: string) => void;
 }
 
+const ITEMS_PER_PAGE = 20;
+
 const EditaisTable: React.FC<EditaisTableProps> = ({ 
   editais, 
   onToggleAtivo, 
   onExcluir 
 }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.ceil(editais.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentEditais = editais.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -36,8 +48,8 @@ const EditaisTable: React.FC<EditaisTableProps> = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {editais.length > 0 ? (
-                editais.map((edital) => (
+              {currentEditais.length > 0 ? (
+                currentEditais.map((edital) => (
                   <TableRow key={edital.id}>
                     <TableCell>{edital.id}</TableCell>
                     <TableCell>{edital.titulo}</TableCell>
@@ -81,6 +93,16 @@ const EditaisTable: React.FC<EditaisTableProps> = ({
             </TableBody>
           </Table>
         </div>
+
+        {editais.length > 0 && (
+          <div className="mt-4">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );

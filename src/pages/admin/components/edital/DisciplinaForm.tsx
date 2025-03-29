@@ -1,102 +1,100 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Trash, ClipboardPaste } from "lucide-react";
-import { Disciplina } from "./types";
+import { Disciplina } from "@/types/edital";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 
 interface DisciplinaFormProps {
-  onAddDisciplina: (disciplina: Disciplina) => void;
+  onAddDisciplina: (disciplina: Omit<Disciplina, 'id' | 'selecionada'>) => void;
+  onEditDisciplina?: (disciplina: Disciplina) => void;
+  disciplinaParaEditar?: Disciplina;
 }
 
-const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
+const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
+  onAddDisciplina,
+  onEditDisciplina,
+  disciplinaParaEditar
+}) => {
   const { toast } = useToast();
-  const [disciplinaId, setDisciplinaId] = useState("");
-  const [disciplinaTitulo, setDisciplinaTitulo] = useState("");
-  const [disciplinaDescricao, setDisciplinaDescricao] = useState("");
-  const [topicos, setTopicos] = useState<string[]>([""]);
-  const [links, setLinks] = useState<string[]>([""]);
+  const [titulo, setTitulo] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [topicos, setTopicos] = useState<string[]>([]);
+  const [links, setLinks] = useState<string[]>([]);
+  const [importancia, setImportancia] = useState<number[]>([]);
+  const [novoTopico, setNovoTopico] = useState("");
+  const [novoLink, setNovoLink] = useState("");
   const [isTopicoDialogOpen, setIsTopicoDialogOpen] = useState(false);
   const [topicosBulk, setTopicosBulk] = useState("");
 
-  const adicionarTopico = () => {
-    setTopicos([...topicos, ""]);
-    setLinks([...links, ""]);
-  };
-  
-  const atualizarTopico = (index: number, valor: string) => {
-    const novosTopicos = [...topicos];
-    novosTopicos[index] = valor;
-    setTopicos(novosTopicos);
-  };
-  
-  const atualizarLink = (index: number, valor: string) => {
-    const novosLinks = [...links];
-    novosLinks[index] = valor;
-    setLinks(novosLinks);
-  };
-  
-  const removerTopico = (index: number) => {
-    if (topicos.length > 1) {
-      const novosTopicos = [...topicos];
-      const novosLinks = [...links];
-      novosTopicos.splice(index, 1);
-      novosLinks.splice(index, 1);
-      setTopicos(novosTopicos);
-      setLinks(novosLinks);
+  useEffect(() => {
+    if (disciplinaParaEditar) {
+      setTitulo(disciplinaParaEditar.titulo);
+      setDescricao(disciplinaParaEditar.descricao);
+      setTopicos(disciplinaParaEditar.topicos);
+      setLinks(disciplinaParaEditar.links);
+      setImportancia(disciplinaParaEditar.importancia);
     }
-  };
-  
-  const limparFormulario = () => {
-    setDisciplinaId("");
-    setDisciplinaTitulo("");
-    setDisciplinaDescricao("");
-    setTopicos([""]);
-    setLinks([""]);
+  }, [disciplinaParaEditar]);
+
+  const handleAddTopico = () => {
+    if (novoTopico.trim()) {
+      setTopicos([...topicos, novoTopico.trim()]);
+      setLinks([...links, novoLink.trim()]);
+      setImportancia([...importancia, 50]);
+      setNovoTopico("");
+      setNovoLink("");
+    }
   };
 
-  const adicionarDisciplina = () => {
-    if (!disciplinaId || !disciplinaTitulo) {
-      toast({
-        title: "Erro",
-        description: "ID e Disciplina são campos obrigatórios.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Filtrar tópicos vazios e suas respectivas importâncias
-    const topicosFiltrados: string[] = [];
-    const linksFiltrados: string[] = [];
-    
-    topicos.forEach((topico, index) => {
-      if (topico.trim() !== "") {
-        topicosFiltrados.push(topico.trim());
-        linksFiltrados.push(links[index]);
-      }
-    });
-    
-    const novaDisciplina: Disciplina = {
-      id: disciplinaId || crypto.randomUUID?.() || Date.now().toString(),
-      titulo: disciplinaTitulo,
-      descricao: disciplinaDescricao,
-      topicos: topicosFiltrados,
-      links: linksFiltrados,
-      importancia: Array(topicosFiltrados.length).fill(50), // Mantemos o campo importancia com valor padrão 50
-      selecionada: false
+  const handleRemoveTopico = (index: number) => {
+    setTopicos(topicos.filter((_, i) => i !== index));
+    setLinks(links.filter((_, i) => i !== index));
+    setImportancia(importancia.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const disciplinaData = {
+      titulo,
+      descricao,
+      topicos,
+      links,
+      importancia
     };
-    
-    onAddDisciplina(novaDisciplina);
-    limparFormulario();
-    
-    toast({
-      title: "Sucesso",
-      description: "Disciplina adicionada com sucesso!",
-    });
+
+    if (disciplinaParaEditar && onEditDisciplina) {
+      onEditDisciplina({
+        ...disciplinaParaEditar,
+        ...disciplinaData
+      });
+      toast({
+        title: "Sucesso",
+        description: "Disciplina atualizada com sucesso!",
+      });
+    } else {
+      onAddDisciplina(disciplinaData);
+      toast({
+        title: "Sucesso",
+        description: "Disciplina adicionada com sucesso!",
+      });
+    }
+
+    // Limpar o formulário apenas se não estiver editando
+    if (!disciplinaParaEditar) {
+      setTitulo("");
+      setDescricao("");
+      setTopicos([]);
+      setLinks([]);
+      setImportancia([]);
+      setNovoTopico("");
+      setNovoLink("");
+    }
   };
 
   // Função para distribuir os tópicos do texto colado
@@ -132,7 +130,6 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
       // Se encontrou tópicos com o padrão de numeração
       if (topicosEncontrados.length > 0) {
         setTopicos(topicosEncontrados);
-        setLinks(Array(topicosEncontrados.length).fill(""));
         
         toast({
           title: "Concluído",
@@ -156,7 +153,6 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
       
       if (topicosSeparados.length > 0) {
         setTopicos(topicosSeparados);
-        setLinks(Array(topicosSeparados.length).fill(""));
         
         toast({
           title: "Concluído",
@@ -173,7 +169,6 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
       if (partes.length > 1) {
         const topicosFiltrados = partes.filter(parte => parte.trim());
         setTopicos(topicosFiltrados);
-        setLinks(Array(topicosFiltrados.length).fill(""));
         
         toast({
           title: "Concluído",
@@ -189,7 +184,6 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
       
       if (linhasPorQuebraDeLinha.length > 0) {
         setTopicos(linhasPorQuebraDeLinha);
-        setLinks(Array(linhasPorQuebraDeLinha.length).fill(""));
         
         toast({
           title: "Concluído",
@@ -215,138 +209,86 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Adicionar Disciplina</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="disciplina-id">ID</Label>
-              <Input 
-                id="disciplina-id" 
-                value={disciplinaId} 
-                onChange={(e) => setDisciplinaId(e.target.value)}
-                placeholder="Digite o ID da disciplina"
-              />
-            </div>
-            <div>
-              <Label htmlFor="disciplina-titulo">Disciplina</Label>
-              <Input 
-                id="disciplina-titulo" 
-                value={disciplinaTitulo} 
-                onChange={(e) => setDisciplinaTitulo(e.target.value)}
-                placeholder="Digite o nome da disciplina"
-              />
-            </div>
-            <div>
-              <Label htmlFor="disciplina-descricao">Descrição</Label>
-              <Input 
-                id="disciplina-descricao" 
-                value={disciplinaDescricao} 
-                onChange={(e) => setDisciplinaDescricao(e.target.value)}
-                placeholder="Digite a descrição da disciplina"
-              />
-            </div>
-          </div>
-          
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          {disciplinaParaEditar ? "Editar Disciplina" : "Adicionar Disciplina"}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <div className="flex justify-between">
-              <Label>Tópicos</Label>
-              <Label>Links</Label>
-            </div>
-            {topicos.map((topico, index) => (
-              <div key={index} className="flex items-center mt-2 gap-2">
-                <Input 
-                  value={topico} 
-                  onChange={(e) => atualizarTopico(index, e.target.value)}
-                  placeholder={`Tópico ${index + 1}`}
-                  className="flex-1"
-                />
-                <Input 
-                  value={links[index]} 
-                  onChange={(e) => atualizarLink(index, e.target.value)}
-                  placeholder="Link"
-                  className="flex-1"
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => removerTopico(index)}
-                  title="Remover tópico"
-                  disabled={topicos.length <= 1}
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-                {index === topicos.length - 1 && (
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="icon"
-                    onClick={adicionarTopico}
-                    title="Adicionar novo tópico"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
+            <Label htmlFor="titulo">Título</Label>
+            <Input
+              id="titulo"
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              required
+            />
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button 
-            variant="outline"
-            onClick={() => setIsTopicoDialogOpen(true)}
-            className="gap-2"
-          >
-            <ClipboardPaste className="h-4 w-4" />
-            Colar Tópicos
-          </Button>
-          <Button 
-            onClick={adicionarDisciplina}
-            className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 text-white"
-          >
-            Adicionar Disciplina
-          </Button>
-        </CardFooter>
-      </Card>
 
-      {/* Dialog para colar múltiplos tópicos */}
-      <Dialog open={isTopicoDialogOpen} onOpenChange={setIsTopicoDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Colar Tópicos</DialogTitle>
-            <DialogDescription>
-              Cole abaixo os tópicos do edital. O sistema tentará identificar automaticamente cada tópico.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Textarea 
-            value={topicosBulk}
-            onChange={(e) => setTopicosBulk(e.target.value)}
-            placeholder="Cole aqui os tópicos do edital, por exemplo:&#10;1. DIREITO PENAL: Código Penal - artigos 293 a 305...&#10;2. DIREITO PROCESSUAL PENAL: Código de Processo Penal..."
-            className="min-h-[200px]"
-          />
-          
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsTopicoDialogOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              onClick={distribuirTopicos}
-              className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 text-white"
-            >
-              Distribuir Tópicos
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          <div>
+            <Label htmlFor="descricao">Órgão-Cargo</Label>
+            <Input
+              id="descricao"
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <Label>Tópicos</Label>
+            <div className="flex gap-2 mb-2">
+              <Input
+                value={novoTopico}
+                onChange={(e) => setNovoTopico(e.target.value)}
+                placeholder="Adicionar tópico"
+              />
+              <Input
+                value={novoLink}
+                onChange={(e) => setNovoLink(e.target.value)}
+                placeholder="Link (opcional)"
+              />
+              <Button
+                type="button"
+                onClick={handleAddTopico}
+                disabled={!novoTopico.trim()}
+              >
+                Adicionar
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {topicos.map((topico, index) => (
+                <div key={index} className="flex items-center gap-2 bg-gray-100 p-2 rounded">
+                  <div className="flex-1">
+                    <div>{topico}</div>
+                    {links[index] && (
+                      <div className="text-sm text-gray-500">
+                        Link: {links[index]}
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveTopico(index)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Remover
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Button type="submit" className="w-full">
+            {disciplinaParaEditar ? "Salvar Modificações" : "Adicionar Disciplina"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

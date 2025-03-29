@@ -1,4 +1,3 @@
-
 export interface Simulado {
   id: string;
   titulo: string;
@@ -19,5 +18,4 @@ export interface VincularCursoModalProps {
   isOpen: boolean;
   onClose: () => void;
   simuladoId: string;
-  onVincular: (simuladoId: string, cursoId: string) => void;
 }
