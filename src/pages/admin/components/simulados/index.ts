@@ -1,4 +1,3 @@
-
-export * from './SimuladosTable';
-export * from './VincularCursoModal';
+export { SimuladosTable } from './SimuladosTable';
+export { VincularCursoModal } from './VincularCursoModal';
 export * from './SimuladosTypes';

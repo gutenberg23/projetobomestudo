@@ -15,7 +15,7 @@ import { Pagination } from "@/components/ui/pagination";
 
 const ITEMS_PER_PAGE = 20;
 
-export const SimuladosTable: React.FC<SimuladosTableProps> = ({
+const SimuladosTable: React.FC<SimuladosTableProps> = ({
   simulados,
   handleVincularCurso,
   handleToggleAtivo,
@@ -144,3 +144,5 @@ export const SimuladosTable: React.FC<SimuladosTableProps> = ({
     </div>
   );
 };
+
+export { SimuladosTable };

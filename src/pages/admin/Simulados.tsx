@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { SimuladosTable } from "./components/simulados";
+import { SimuladosTable } from "./components/simulados/SimuladosTable";
 import { Simulado } from "./components/simulados/SimuladosTypes";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
