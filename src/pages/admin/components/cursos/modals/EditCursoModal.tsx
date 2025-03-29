@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   Dialog,
@@ -102,7 +101,7 @@ export const EditCursoModal: React.FC<EditCursoModalProps> = ({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="descricao" className="text-right">
-              Descrição
+              Cargo
             </Label>
             <Input
               id="descricao"

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,10 +32,10 @@ export const AdicionarCurso: React.FC<CursosPageProps> = ({
         </div>
         
         <div>
-          <Label htmlFor="descricao-curso" className="mb-1 block text-[#67748a]">Descrição</Label>
+          <Label htmlFor="descricao-curso" className="mb-1 block text-[#67748a]">Cargo</Label>
           <Input
             id="descricao-curso"
-            placeholder="Digite uma breve descrição"
+            placeholder="Digite o cargo"
             value={descricaoNovoCurso}
             onChange={(e) => setDescricaoNovoCurso(e.target.value)}
             className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"

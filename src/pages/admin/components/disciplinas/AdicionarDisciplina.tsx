@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,10 +35,10 @@ export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
               />
             </div>
             <div>
-              <Label htmlFor="descricao-disciplina" className="mb-1 block">Descrição</Label>
+              <Label htmlFor="descricao-disciplina" className="mb-1 block">Cargo</Label>
               <Input
                 id="descricao-disciplina"
-                placeholder="Digite a descrição"
+                placeholder="Digite o cargo"
                 value={descricaoNovaDisciplina}
                 onChange={(e) => setDescricaoNovaDisciplina(e.target.value)}
                 className="border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"

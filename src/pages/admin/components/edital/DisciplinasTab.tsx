@@ -19,12 +19,11 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
   editais,
   setEditais
 }) => {
-  const { cadastrarDisciplina, listarDisciplinas, cadastrarEdital, excluirDisciplina, atualizarDisciplina } = useEditalActions();
+  const { cadastrarDisciplina, listarDisciplinas, cadastrarEdital, excluirDisciplina } = useEditalActions();
   const { toast } = useToast();
   const [showCriarEditalCard, setShowCriarEditalCard] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredDisciplinas, setFilteredDisciplinas] = useState<Disciplina[]>(disciplinas);
-  const [disciplinaEmEdicao, setDisciplinaEmEdicao] = useState<Disciplina | null>(null);
   
   useEffect(() => {
     const carregarDisciplinas = async () => {
@@ -68,30 +67,10 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
   };
   
   const adicionarDisciplina = async (disciplina: Disciplina) => {
-    if (disciplinaEmEdicao) {
-      // Atualizar disciplina existente
-      const disciplinaAtualizada = await atualizarDisciplina({
-        ...disciplina,
-        id: disciplinaEmEdicao.id
-      });
-      
-      if (disciplinaAtualizada) {
-        setDisciplinas(disciplinas.map(d => 
-          d.id === disciplinaEmEdicao.id ? { ...disciplinaAtualizada, selecionada: false } : d
-        ));
-        setDisciplinaEmEdicao(null);
-        toast({
-          title: "Sucesso",
-          description: "Disciplina atualizada com sucesso!",
-        });
-      }
-    } else {
-      // Adicionar nova disciplina
-      const { id, selecionada, ...disciplinaData } = disciplina;
-      const novaDisciplina = await cadastrarDisciplina(disciplinaData);
-      if (novaDisciplina) {
-        setDisciplinas([...disciplinas, { ...novaDisciplina, selecionada: false }]);
-      }
+    const { id, selecionada, ...disciplinaData } = disciplina;
+    const novaDisciplina = await cadastrarDisciplina(disciplinaData);
+    if (novaDisciplina) {
+      setDisciplinas([...disciplinas, { ...novaDisciplina, selecionada: false }]);
     }
   };
   
@@ -104,10 +83,6 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
         description: "Disciplina excluída com sucesso!",
       });
     }
-  };
-  
-  const editarDisciplinaHandler = (disciplina: Disciplina) => {
-    setDisciplinaEmEdicao(disciplina);
   };
   
   const criarEdital = () => {
@@ -144,10 +119,7 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
 
   return (
     <div className="space-y-6">
-      <DisciplinaForm 
-        onAddDisciplina={adicionarDisciplina} 
-        disciplinaEmEdicao={disciplinaEmEdicao}
-      />
+      <DisciplinaForm onAddDisciplina={adicionarDisciplina} />
       
       <DisciplinasTable 
         disciplinas={disciplinas}
@@ -158,7 +130,6 @@ const DisciplinasTab: React.FC<DisciplinasTabProps> = ({
         onToggleSelecaoTodas={handleToggleSelecaoTodas}
         onToggleSelecao={handleToggleSelecaoDisciplina}
         onExcluir={excluirDisciplinaHandler}
-        onEditar={editarDisciplinaHandler}
         onCriarEdital={criarEdital}
       />
       

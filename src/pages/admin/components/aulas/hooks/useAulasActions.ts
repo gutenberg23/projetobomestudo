@@ -20,40 +20,49 @@ export const useAulasActions = () => {
   const itemsPerPage = 5;
 
   const fetchAulas = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const { data, error } = await supabase
         .from('aulas')
-        .select('*');
-      
+        .select('*')
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
-      
-      const formattedAulas: Aula[] = await Promise.all((data || []).map(async (item) => {
-        const totalQuestoes = await calcularTotalQuestoes({
-          id: item.id,
-          titulo: item.titulo,
-          descricao: item.descricao || "",
-          topicosIds: Array.isArray(item.topicos_ids) ? item.topicos_ids : [],
-          questoesIds: Array.isArray(item.questoes_ids) ? item.questoes_ids : [],
-          selecionada: false,
-          totalQuestoes: 0
-        });
-        
+
+      const aulasFormatadas = await Promise.all(data.map(async aula => {
+        // Buscar tópicos para cada aula
+        const { data: topicosData } = await supabase
+          .from('topicos')
+          .select('*')
+          .in('id', aula.topicos_ids || []);
+
+        // Ordenar os tópicos de acordo com a ordem salva
+        const topicosOrdenados = (aula.topicos_ids || [])
+          .map(id => topicosData?.find(t => t.id === id))
+          .filter(Boolean);
+
         return {
-          id: item.id,
-          titulo: item.titulo,
-          descricao: item.descricao || "",
-          topicosIds: Array.isArray(item.topicos_ids) ? item.topicos_ids : [],
-          questoesIds: Array.isArray(item.questoes_ids) ? item.questoes_ids : [],
+          id: aula.id,
+          titulo: aula.titulo,
+          descricao: aula.descricao || "",
+          topicosIds: aula.topicos_ids || [],
+          questoesIds: aula.questoes_ids || [],
           selecionada: false,
-          totalQuestoes: totalQuestoes
+          totalQuestoes: await calcularTotalQuestoes({
+            id: aula.id,
+            titulo: aula.titulo,
+            descricao: aula.descricao || "",
+            topicosIds: aula.topicos_ids || [],
+            questoesIds: aula.questoes_ids || [],
+            selecionada: false
+          })
         };
       }));
-      
-      setAulas(formattedAulas);
+
+      setAulas(aulasFormatadas);
     } catch (error) {
-      console.error("Erro ao buscar aulas:", error);
-      toast.error("Erro ao carregar as aulas. Tente novamente.");
+      console.error("Erro ao carregar aulas:", error);
+      toast.error("Erro ao carregar aulas");
     } finally {
       setLoading(false);
     }

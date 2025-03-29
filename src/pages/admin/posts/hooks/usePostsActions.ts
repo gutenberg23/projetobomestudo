@@ -2,19 +2,19 @@ import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
 export function usePostsActions(state: PostsState) {
   const {
-    setModo,
     posts,
     setPosts,
-    setLoading,
+    setModo,
     setTitulo,
     setResumo,
     setConteudo,
+    setAutor,
+    setAutorAvatar,
     setCategoria,
     setDestacado,
     setTags,
@@ -29,6 +29,8 @@ export function usePostsActions(state: PostsState) {
     titulo,
     resumo,
     conteudo,
+    autor,
+    autorAvatar,
     categoria,
     destacado,
     tags,
@@ -39,7 +41,8 @@ export function usePostsActions(state: PostsState) {
     regiao,
     estado,
     postsRelacionados,
-    postEditando
+    postEditando,
+    setLoading
   } = state;
 
   // Iniciar criação de um novo post
@@ -47,6 +50,8 @@ export function usePostsActions(state: PostsState) {
     setTitulo("");
     setResumo("");
     setConteudo("");
+    setAutor("");
+    setAutorAvatar("");
     setCategoria("");
     setDestacado(false);
     setTags("");
@@ -66,6 +71,8 @@ export function usePostsActions(state: PostsState) {
     setTitulo(post.title);
     setResumo(post.summary);
     setConteudo(post.content);
+    setAutor(post.author);
+    setAutorAvatar(post.authorAvatar || "");
     setCategoria(post.category);
     setDestacado(post.featured || false);
     setTags(post.tags ? post.tags.join(", ") : "");
@@ -84,16 +91,6 @@ export function usePostsActions(state: PostsState) {
   const salvarPost = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error("Usuário não autenticado");
-      }
-
-      // Usar o email do usuário como autor
-      const authorName = user.email?.split('@')[0] || 'Usuário';
-      const authorAvatar = user.user_metadata?.avatar_url;
-
       const slug = titulo
         .toLowerCase()
         .replace(/[^\w\s]/gi, '')
@@ -123,8 +120,8 @@ export function usePostsActions(state: PostsState) {
         title: titulo,
         summary: resumo,
         content: conteudo,
-        author: authorName,
-        authorAvatar: authorAvatar || undefined,
+        author: autor,
+        authorAvatar: autorAvatar || undefined,
         slug: slug,
         category: categoria,
         region: regiao === "none" ? undefined : regiao as Region,
@@ -137,8 +134,7 @@ export function usePostsActions(state: PostsState) {
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
         featured: destacado,
         commentCount: postEditando?.commentCount || 0,
-        likesCount: postEditando?.likesCount || 0,
-        userId: user.id
+        likesCount: postEditando?.likesCount || 0
       };
 
       let novoPost: BlogPost | null;
@@ -193,18 +189,34 @@ export function usePostsActions(state: PostsState) {
 
   // Excluir um post
   const excluirPost = async (id: string) => {
-    setLoading(true);
-    try {
-      const deleted = await deleteBlogPost(id);
-      if (!deleted) {
-        throw new Error("Falha ao excluir o post");
+    if (window.confirm("Tem certeza que deseja excluir este post?")) {
+      setLoading(true);
+      try {
+        const success = await deleteBlogPost(id);
+        if (success) {
+          setPosts(posts.filter(post => post.id !== id));
+          toast({
+            title: "Post excluído",
+            description: "O post foi excluído com sucesso.",
+            variant: "default"
+          });
+        } else {
+          toast({
+            title: "Erro",
+            description: "Ocorreu um erro ao excluir o post. Tente novamente.",
+            variant: "destructive"
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao excluir post:", error);
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao excluir o post. Tente novamente.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
-      setPosts(posts.filter(post => post.id !== id));
-    } catch (error) {
-      console.error("Erro ao excluir post:", error);
-      throw error;
-    } finally {
-      setLoading(false);
     }
   };
 

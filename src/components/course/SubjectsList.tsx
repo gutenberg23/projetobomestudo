@@ -81,13 +81,12 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                         
                       console.log("Aulas da disciplina:", aulasData, "Erro:", aulasError);
                       
-                      if (aulasData && !aulasError) {
-                        // Ordenar as aulas de acordo com aulas_ids
+                      if (!aulasError && aulasData) {
+                        // Ordenar as aulas de acordo com a ordem em aulas_ids
                         const aulasOrdenadas = disciplina.aulas_ids
                           .map(id => aulasData.find(aula => aula.id === id))
-                          .filter(Boolean);
+                          .filter(aula => aula !== undefined);
 
-                        // Para cada aula, buscar os tópicos associados
                         const aulasComTopicos = await Promise.all(aulasOrdenadas.map(async aula => {
                           let topicos = [];
                           
@@ -103,7 +102,10 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                               console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
                               
                               if (topicosData && !topicosError) {
-                                topicos = topicosData;
+                                // Ordenar os tópicos de acordo com a ordem em topicos_ids
+                                topicos = aula.topicos_ids
+                                  .map(id => topicosData.find(t => t.id === id))
+                                  .filter(Boolean);
                               }
                             } catch (topicosError) {
                               console.error("Erro ao buscar tópicos:", topicosError);
@@ -248,13 +250,12 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                     .select('*')
                     .in('id', disciplinaData.aulas_ids);
                     
-                  if (aulasData && !aulasError) {
-                    // Ordenar as aulas de acordo com aulas_ids
+                  if (!aulasError && aulasData) {
+                    // Ordenar as aulas de acordo com a ordem em aulas_ids
                     const aulasOrdenadas = disciplinaData.aulas_ids
                       .map(id => aulasData.find(aula => aula.id === id))
-                      .filter(Boolean);
+                      .filter(aula => aula !== undefined);
 
-                    // Para cada aula, buscar os tópicos associados
                     const aulasComTopicos = await Promise.all(aulasOrdenadas.map(async aula => {
                       let topicos = [];
                       
@@ -267,7 +268,10 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
                             .in('id', aula.topicos_ids);
                             
                           if (topicosData && !topicosError) {
-                            topicos = topicosData;
+                            // Ordenar os tópicos de acordo com a ordem em topicos_ids
+                            topicos = aula.topicos_ids
+                              .map(id => topicosData.find(t => t.id === id))
+                              .filter(Boolean);
                           }
                         } catch (topicosError) {
                           console.error("Erro ao buscar tópicos:", topicosError);

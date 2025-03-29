@@ -218,42 +218,6 @@ export const useEditalActions = () => {
     }
   };
 
-  const atualizarDisciplina = async (disciplina: Disciplina) => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('disciplinaverticalizada')
-        .update({
-          titulo: disciplina.titulo,
-          descricao: disciplina.descricao,
-          topicos: disciplina.topicos,
-          links: disciplina.links,
-          importancia: disciplina.importancia
-        })
-        .eq('id', disciplina.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Disciplina atualizada com sucesso!",
-      });
-
-      return data;
-    } catch (error) {
-      console.error('Erro ao atualizar disciplina:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar disciplina. Tente novamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return {
     isLoading,
     cadastrarDisciplina,
@@ -262,7 +226,6 @@ export const useEditalActions = () => {
     listarEditais,
     toggleAtivoEdital,
     excluirEdital,
-    excluirDisciplina,
-    atualizarDisciplina
+    excluirDisciplina
   };
 };

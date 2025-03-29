@@ -51,8 +51,13 @@ export const useSubjectLessons = ({ subjectId, courseId = 'default' }: UseSubjec
         return;
       }
       
+      // Ordenar as aulas de acordo com a ordem em aulaIds
+      const aulasOrdenadas = aulaIds
+        .map(id => aulasData.find(aula => aula.id === id))
+        .filter((aula): aula is NonNullable<typeof aula> => aula != null);
+
       // 3. Preparar dados iniciais das aulas
-      const processedLessons: ProcessedLesson[] = aulasData.map(aula => ({
+      const processedLessons: ProcessedLesson[] = aulasOrdenadas.map(aula => ({
         id: aula.id,
         titulo: aula.titulo,
         concluida: false,

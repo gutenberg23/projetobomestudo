@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,10 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 
 interface DisciplinaFormProps {
   onAddDisciplina: (disciplina: Disciplina) => void;
-  disciplinaEmEdicao?: Disciplina | null;
 }
 
-const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina, disciplinaEmEdicao }) => {
+const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina }) => {
   const { toast } = useToast();
   const [disciplinaId, setDisciplinaId] = useState("");
   const [disciplinaTitulo, setDisciplinaTitulo] = useState("");
@@ -23,19 +22,6 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina, discip
   const [links, setLinks] = useState<string[]>([""]);
   const [isTopicoDialogOpen, setIsTopicoDialogOpen] = useState(false);
   const [topicosBulk, setTopicosBulk] = useState("");
-
-  // Carregar dados da disciplina em edição
-  useEffect(() => {
-    if (disciplinaEmEdicao) {
-      setDisciplinaId(disciplinaEmEdicao.id);
-      setDisciplinaTitulo(disciplinaEmEdicao.titulo);
-      setDisciplinaDescricao(disciplinaEmEdicao.descricao);
-      setTopicos(disciplinaEmEdicao.topicos.length > 0 ? disciplinaEmEdicao.topicos : [""]);
-      setLinks(disciplinaEmEdicao.links.length > 0 ? disciplinaEmEdicao.links : [""]);
-    } else {
-      limparFormulario();
-    }
-  }, [disciplinaEmEdicao]);
 
   const adicionarTopico = () => {
     setTopicos([...topicos, ""]);
@@ -74,10 +60,10 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina, discip
   };
 
   const adicionarDisciplina = () => {
-    if (!disciplinaTitulo) {
+    if (!disciplinaId || !disciplinaTitulo) {
       toast({
         title: "Erro",
-        description: "O título da disciplina é obrigatório.",
+        description: "ID e Disciplina são campos obrigatórios.",
         variant: "destructive"
       });
       return;
@@ -94,21 +80,23 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina, discip
       }
     });
     
-    const disciplina: Disciplina = {
+    const novaDisciplina: Disciplina = {
       id: disciplinaId || crypto.randomUUID?.() || Date.now().toString(),
       titulo: disciplinaTitulo,
       descricao: disciplinaDescricao,
       topicos: topicosFiltrados,
       links: linksFiltrados,
-      importancia: Array(topicosFiltrados.length).fill(50),
+      importancia: Array(topicosFiltrados.length).fill(50), // Mantemos o campo importancia com valor padrão 50
       selecionada: false
     };
     
-    onAddDisciplina(disciplina);
+    onAddDisciplina(novaDisciplina);
+    limparFormulario();
     
-    if (!disciplinaEmEdicao) {
-      limparFormulario();
-    }
+    toast({
+      title: "Sucesso",
+      description: "Disciplina adicionada com sucesso!",
+    });
   };
 
   // Função para distribuir os tópicos do texto colado
@@ -230,10 +218,19 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina, discip
     <>
       <Card>
         <CardHeader>
-          <CardTitle>{disciplinaEmEdicao ? "Editar Disciplina" : "Adicionar Disciplina"}</CardTitle>
+          <CardTitle>Adicionar Disciplina</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="disciplina-id">ID</Label>
+              <Input 
+                id="disciplina-id" 
+                value={disciplinaId} 
+                onChange={(e) => setDisciplinaId(e.target.value)}
+                placeholder="Digite o ID da disciplina"
+              />
+            </div>
             <div>
               <Label htmlFor="disciplina-titulo">Disciplina</Label>
               <Input 
@@ -244,12 +241,12 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina, discip
               />
             </div>
             <div>
-              <Label htmlFor="disciplina-descricao">Banca - Cargo</Label>
+              <Label htmlFor="disciplina-descricao">Descrição</Label>
               <Input 
                 id="disciplina-descricao" 
                 value={disciplinaDescricao} 
                 onChange={(e) => setDisciplinaDescricao(e.target.value)}
-                placeholder="Digite a banca e o cargo"
+                placeholder="Digite a descrição da disciplina"
               />
             </div>
           </div>
@@ -309,9 +306,9 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({ onAddDisciplina, discip
           </Button>
           <Button 
             onClick={adicionarDisciplina}
-            className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-white"
+            className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 text-white"
           >
-            {disciplinaEmEdicao ? "Salvar Alterações" : "Adicionar Disciplina"}
+            Adicionar Disciplina
           </Button>
         </CardFooter>
       </Card>

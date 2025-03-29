@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pencil, Trash, Heart, ChevronDown, ChevronUp } from "lucide-react";
+import { Pencil, Trash, Heart, List } from "lucide-react";
 import { DisciplinasTableProps } from "./DisciplinasTypes";
 import { AulasExpandidas } from "./AulasExpandidas";
 
@@ -14,11 +14,7 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
   openEditModal,
   openDeleteModal
 }) => {
-  const [expandedDisciplina, setExpandedDisciplina] = useState<string | null>(null);
-
-  const toggleExpand = (disciplinaId: string) => {
-    setExpandedDisciplina(expandedDisciplina === disciplinaId ? null : disciplinaId);
-  };
+  const [disciplinaExpandida, setDisciplinaExpandida] = useState<string | null>(null);
 
   return <div className="rounded-md border bg-white">
       <Table>
@@ -46,15 +42,10 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {disciplinas.length > 0 ? (
-            disciplinas.map(disciplina => (
-              <React.Fragment key={disciplina.id}>
+          {disciplinas.length > 0 ? disciplinas.map(disciplina => <React.Fragment key={disciplina.id}>
                 <TableRow>
                   <TableCell>
-                    <Checkbox
-                      checked={disciplina.selecionada}
-                      onCheckedChange={() => handleSelecaoDisciplina(disciplina.id)}
-                    />
+                    <Checkbox checked={disciplina.selecionada} onCheckedChange={() => handleSelecaoDisciplina(disciplina.id)} />
                   </TableCell>
                   <TableCell className="font-medium">{disciplina.id}</TableCell>
                   <TableCell>{disciplina.titulo}</TableCell>
@@ -66,54 +57,38 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                   <TableCell>{disciplina.favoritos || 0}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button
-                        onClick={() => toggleExpand(disciplina.id)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        {expandedDisciplina === disciplina.id ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        onClick={() => openEditModal(disciplina)}
-                        variant="outline"
-                        size="sm"
-                      >
+                      <Button onClick={() => openEditModal(disciplina)} variant="outline" size="sm">
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        onClick={() => openDeleteModal(disciplina)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700"
-                      >
+                      <Button onClick={() => openDeleteModal(disciplina)} variant="outline" size="sm" className="text-red-500 hover:text-red-700">
                         <Trash className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        onClick={() => setDisciplinaExpandida(disciplina.id)} 
+                        variant="outline" 
+                        size="sm"
+                      >
+                        <List className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
                 </TableRow>
-                {expandedDisciplina === disciplina.id && (
+                {disciplinaExpandida === disciplina.id && (
                   <TableRow>
                     <TableCell colSpan={10} className="p-0">
                       <AulasExpandidas
                         disciplinaId={disciplina.id}
                         aulasIds={disciplina.aulasIds}
+                        onClose={() => setDisciplinaExpandida(null)}
                       />
                     </TableCell>
                   </TableRow>
                 )}
-              </React.Fragment>
-            ))
-          ) : (
-            <TableRow>
+              </React.Fragment>) : <TableRow>
               <TableCell colSpan={10} className="text-center py-4 text-[#67748a]">
                 Nenhuma disciplina encontrada com os filtros aplicados.
               </TableCell>
-            </TableRow>
-          )}
+            </TableRow>}
         </TableBody>
       </Table>
     </div>;

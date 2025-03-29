@@ -1,20 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export type Lesson = {
+export interface Lesson {
   id: string;
   title: string;
   description?: string;
   sections: Section[];
-};
+}
 
-export type Section = {
+export interface Section {
   id: string;
   title: string;
-  content?: string;
-  isActive?: boolean;
-  videoUrl?: string;
-};
+  videoUrl: string;
+  isActive: boolean;
+}
 
 export const useFetchSubjectInfo = (subjectId?: string) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -40,6 +39,7 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
         return [];
       }
       
+      // Retornar o array de IDs na ordem correta
       return Array.isArray(data?.aulas_ids) ? data.aulas_ids : [];
     } catch (error) {
       console.error('Erro ao buscar informações do assunto:', error);
@@ -47,87 +47,82 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
     }
   };
 
-  useEffect(() => {
-    const loadSubjectInfo = async () => {
-      if (!subjectId) {
-        setLoading(false);
+  const fetchLessons = async () => {
+    if (!subjectId) {
+      setLoading(false);
+      setLessons([]);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Buscar aulas relacionadas ao assunto usando a função extraída
+      const aulasIds = await fetchSubjectInfo(subjectId);
+      
+      if (aulasIds.length === 0) {
         setLessons([]);
+        setLoading(false);
         return;
       }
+      
+      // Buscar detalhes das aulas
+      const { data: aulasData, error: aulasError } = await supabase
+        .from('aulas')
+        .select('*')
+        .in('id', aulasIds);
+        
+      if (aulasError) {
+        throw aulasError;
+      }
 
-      try {
-        setLoading(true);
+      // Ordenar as aulas de acordo com a ordem em aulasIds
+      const aulasOrdenadas = aulasIds
+        .map(id => aulasData?.find(aula => aula.id === id))
+        .filter((aula): aula is NonNullable<typeof aula> => aula != null);
+      
+      // Transformar os dados em um formato adequado para o componente
+      const formattedLessons = await Promise.all(aulasOrdenadas.map(async (aula) => {
+        let sections: Section[] = [];
         
-        // Buscar aulas relacionadas ao assunto usando a função extraída
-        const aulasIds = await fetchSubjectInfo(subjectId);
-        
-        if (aulasIds.length === 0) {
-          setLessons([]);
-          setLoading(false);
-          return;
-        }
-        
-        // Buscar detalhes das aulas
-        const { data: aulasData, error: aulasError } = await supabase
-          .from('aulas')
-          .select('*')
-          .in('id', aulasIds);
-          
-        if (aulasError) {
-          throw aulasError;
-        }
-        
-        // Ordenar as aulas de acordo com aulas_ids
-        const aulasOrdenadas = aulasIds
-          .map(id => aulasData?.find(aula => aula.id === id))
-          .filter((aula): aula is NonNullable<typeof aulasData[0]> => aula !== undefined);
-        
-        // Transformar os dados em um formato adequado para o componente
-        const formattedLessons = await Promise.all(aulasOrdenadas.map(async (aula) => {
-          let sections: Section[] = [];
-          
-          if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-            const { data: topicosData, error: topicosError } = await supabase
-              .from('topicos')
-              .select('*')
-              .in('id', aula.topicos_ids);
-              
-            if (topicosError) {
-              console.error('Erro ao buscar tópicos:', topicosError);
-            } else {
-              sections = (topicosData || []).map(topico => ({
+        if (aula.topicos_ids && aula.topicos_ids.length > 0) {
+          const { data: topicosData, error: topicosError } = await supabase
+            .from('topicos')
+            .select('*')
+            .in('id', aula.topicos_ids);
+            
+          if (topicosError) {
+            console.error('Erro ao buscar tópicos:', topicosError);
+          } else {
+            sections = aula.topicos_ids
+              .map(id => topicosData?.find(topico => topico.id === id))
+              .filter((topico): topico is NonNullable<typeof topico> => topico != null)
+              .map(topico => ({
                 id: topico.id,
                 title: topico.nome,
                 videoUrl: topico.video_url || '',
                 isActive: false // Será atualizado pelo progresso do usuário
               }));
-            }
           }
-          
-          return {
-            id: aula.id,
-            title: aula.titulo,
-            description: aula.descricao,
-            sections: sections
-          };
-        }));
+        }
         
-        setLessons(formattedLessons);
-      } catch (error) {
-        console.error('Erro ao buscar informações do assunto:', error);
-        setError('Não foi possível carregar as informações do assunto.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadSubjectInfo();
-  }, [subjectId]);
-
-  return { 
-    lessons, 
-    loading, 
-    error,
-    fetchSubjectInfo // Exportar a função
+        return {
+          id: aula.id,
+          title: aula.titulo,
+          description: aula.descricao,
+          sections: sections
+        };
+      }));
+      
+      setLessons(formattedLessons);
+    } catch (error) {
+      console.error('Erro ao buscar aulas:', error);
+      setError(error instanceof Error ? error.message : 'Erro desconhecido');
+      setLessons([]);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  return { lessons, loading, error, fetchSubjectInfo };
 };

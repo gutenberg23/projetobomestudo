@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Table,
@@ -24,7 +23,7 @@ export const CursosTable: React.FC<CursosTableProps> = ({
           <TableRow>
             <TableHead className="w-[50px]">ID</TableHead>
             <TableHead className="w-[200px]">Título</TableHead>
-            <TableHead className="w-[200px]">Descrição</TableHead>
+            <TableHead className="w-[200px]">Cargo</TableHead>
             <TableHead className="w-[120px]">Nº de Disciplinas</TableHead>
             <TableHead className="w-[120px]">Nº de Aulas</TableHead>
             <TableHead className="w-[120px]">Nº de Tópicos</TableHead>

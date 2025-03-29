@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -149,11 +150,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         return sections.length;
       }
       
-      // Ordenar as aulas de acordo com aulas_ids
-      const aulasOrdenadas = cursoData.aulas_ids
-        .map(id => aulasData?.find(aula => aula.id === id))
-        .filter((aula): aula is NonNullable<typeof aulasData[0]> => aula !== undefined);
-      
       // Contar o total de tópicos em todas as aulas
       let totalTopicos = 0;
       
@@ -163,7 +159,7 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
       }
       
       // Para as outras aulas, precisamos contar os tópicos
-      for (const aula of aulasOrdenadas || []) {
+      for (const aula of aulasData || []) {
         // Se for a aula atual, pulamos pois já contamos acima
         if (aula.id === lessonId) continue;
         

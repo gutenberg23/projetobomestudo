@@ -25,7 +25,12 @@ export const useFetchLessonsByIds = () => {
 
       console.log('Aulas encontradas:', aulasData);
 
-      return aulasData.map(aula => ({
+      // Ordenar as aulas de acordo com a ordem em aulaIds
+      const aulasOrdenadas = aulaIds
+        .map(id => aulasData.find(aula => aula.id === id))
+        .filter((aula): aula is NonNullable<typeof aula> => aula != null);
+
+      return aulasOrdenadas.map(aula => ({
         id: String(aula.id),
         titulo: String(aula.titulo),
         questoes_ids: aula.questoes_ids ? aula.questoes_ids.map(String) : [],
