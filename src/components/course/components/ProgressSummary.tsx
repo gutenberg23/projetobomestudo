@@ -99,7 +99,7 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
                 : '(0%)'}
             </span>
           </div>
-          <div className="text-xs text-[rgba(38,47,60,0.7)]">questões corretas/erradas</div>
+          <div className="text-xs text-[rgba(38,47,60,0.7)]">corretas/erradas</div>
         </div>
       </div>
     </div>
