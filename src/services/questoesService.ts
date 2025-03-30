@@ -2,6 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { QuestionItemType, QuestionOption } from "@/components/admin/questions/types";
 import { Json } from "@/integrations/supabase/types";
 
+const ITEMS_PER_PAGE = 20;
+
 const parseOptions = (options: Json | null): QuestionOption[] => {
   if (!options) return [];
   
@@ -16,10 +18,13 @@ const parseOptions = (options: Json | null): QuestionOption[] => {
   return [];
 };
 
-export const fetchQuestionsData = async () => {
+export const fetchQuestionsData = async (page: number = 1) => {
   try {
-    // Buscar todas as questões com seus dados
-    const { data: questionsData, error: questionsError } = await supabase
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE - 1;
+
+    // Buscar questões com paginação
+    const { data: questionsData, error: questionsError, count } = await supabase
       .from('questoes')
       .select(`
         id,
@@ -37,9 +42,24 @@ export const fetchQuestionsData = async () => {
         expandablecontent,
         options,
         topicos
-      `);
+      `, { count: 'exact' })
+      .range(start, end)
+      .order('created_at', { ascending: false });
 
-    if (questionsError) throw questionsError;
+    if (questionsError) {
+      console.error('Erro ao buscar questões:', questionsError);
+      throw questionsError;
+    }
+
+    // Buscar todos os dados para os dropdowns em uma única consulta
+    const { data: allQuestionsData, error: dropdownError } = await supabase
+      .from('questoes')
+      .select('year, institution, organization, role, discipline, level, difficulty, questiontype, topicos');
+
+    if (dropdownError) {
+      console.error('Erro ao buscar dados para dropdowns:', dropdownError);
+      throw dropdownError;
+    }
 
     // Formatar as questões
     const formattedQuestions: QuestionItemType[] = questionsData.map(q => ({
@@ -62,20 +82,22 @@ export const fetchQuestionsData = async () => {
 
     // Extrair valores únicos para os dropdowns
     const dropdownData = {
-      years: [...new Set(questionsData.map(q => q.year))].filter(Boolean).sort((a, b) => b.localeCompare(a)),
-      institutions: [...new Set(questionsData.map(q => q.institution))].filter(Boolean).sort(),
-      organizations: [...new Set(questionsData.map(q => q.organization))].filter(Boolean).sort(),
-      roles: [...new Set(questionsData.map(q => q.role))].filter(Boolean).sort(),
-      disciplines: [...new Set(questionsData.map(q => q.discipline))].filter(Boolean).sort(),
-      levels: [...new Set(questionsData.map(q => q.level))].filter(Boolean).sort(),
-      difficulties: [...new Set(questionsData.map(q => q.difficulty))].filter(Boolean).sort(),
-      questionTypes: [...new Set(questionsData.map(q => q.questiontype))].filter(Boolean).sort(),
-      topicos: [...new Set(questionsData.flatMap(q => q.topicos || []))].filter(Boolean).sort()
+      years: Array.from(new Set(allQuestionsData.map(q => q.year).filter(Boolean))).sort((a, b) => b.localeCompare(a)),
+      institutions: Array.from(new Set(allQuestionsData.map(q => q.institution).filter(Boolean))).sort(),
+      organizations: Array.from(new Set(allQuestionsData.map(q => q.organization).filter(Boolean))).sort(),
+      roles: Array.from(new Set(allQuestionsData.map(q => q.role).filter(Boolean))).sort(),
+      disciplines: Array.from(new Set(allQuestionsData.map(q => q.discipline).filter(Boolean))).sort(),
+      levels: Array.from(new Set(allQuestionsData.map(q => q.level).filter(Boolean))).sort(),
+      difficulties: Array.from(new Set(allQuestionsData.map(q => q.difficulty).filter(Boolean))).sort(),
+      questionTypes: Array.from(new Set(allQuestionsData.map(q => q.questiontype).filter(Boolean))).sort(),
+      topicos: Array.from(new Set(allQuestionsData.flatMap(q => (Array.isArray(q.topicos) ? q.topicos : []).filter(Boolean)))).sort()
     };
 
     return {
       questions: formattedQuestions,
-      dropdownData
+      dropdownData,
+      totalCount: count || 0,
+      totalPages: Math.ceil((count || 0) / ITEMS_PER_PAGE)
     };
   } catch (error) {
     console.error('Erro ao buscar dados das questões:', error);

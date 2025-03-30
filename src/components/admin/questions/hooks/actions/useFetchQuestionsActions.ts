@@ -24,14 +24,15 @@ export const useFetchQuestionsActions = () => {
     return [];
   };
 
-  const fetchQuestionsAndRelatedData = async () => {
+  const fetchQuestionsAndRelatedData = async (page: number = 1) => {
     try {
-      const { questions, dropdownData } = await fetchQuestionsData();
+      const { questions, dropdownData } = await fetchQuestionsData(page);
       
       setQuestions(questions);
       setDropdownData(dropdownData);
     } catch (error) {
       console.error('Erro ao buscar questões e dados relacionados:', error);
+      toast.error('Erro ao carregar questões. Tente novamente.');
       throw error;
     }
   };

@@ -30,15 +30,12 @@ const Questoes: React.FC = () => {
   const dropdownData = useQuestionManagementStore((state) => state.dropdownData);
   
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const { filters, setFilters, showFilters, setShowFilters, resetFilters, getFilteredQuestions } = useFilterActions(state);
   
   // Calcular paginação
   const filteredQuestions = getFilteredQuestions(questions);
-  const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
-  const paginatedQuestions = filteredQuestions.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
-  );
+  const paginatedQuestions = filteredQuestions;
 
   // Função para converter options do banco para o formato esperado
   const parseOptions = (options: Json | null): QuestionOption[] => {
@@ -58,11 +55,15 @@ const Questoes: React.FC = () => {
 
   // Buscar questões e dados relacionados do banco de dados
   useEffect(() => {
-    fetchQuestionsAndRelatedData();
-  }, []);
+    fetchQuestionsAndRelatedData(currentPage);
+  }, [currentPage]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
 
   const handleQuestionsImported = () => {
-    fetchQuestionsAndRelatedData();
+    fetchQuestionsAndRelatedData(currentPage);
   };
 
   const handleEditFromError = async (questionId: string) => {
@@ -106,7 +107,6 @@ const Questoes: React.FC = () => {
       {state.isEditQuestionCardOpen && (
         <Card title="Editar Questão" description="Edite os dados da questão" defaultOpen={true}>
           <QuestionForm
-            questionId={state.questionId}
             year={state.year}
             setYear={state.setYear}
             institution={state.institution}
@@ -172,7 +172,7 @@ const Questoes: React.FC = () => {
         <div className="flex justify-center items-center gap-2 mt-4">
           <Button
             variant="outline"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
             Anterior
@@ -184,7 +184,7 @@ const Questoes: React.FC = () => {
           
           <Button
             variant="outline"
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
             Próxima
@@ -194,7 +194,6 @@ const Questoes: React.FC = () => {
 
       <Card title="Nova Questão" description="Crie uma nova questão para suas listas" defaultOpen={false}>
         <QuestionForm
-          questionId={state.questionId}
           year={state.year}
           setYear={state.setYear}
           institution={state.institution}
@@ -224,7 +223,7 @@ const Questoes: React.FC = () => {
           topicos={state.topicos}
           setTopicos={state.setTopicos}
           onSubmit={actions.handleSaveQuestion}
-          submitButtonText="Salvar Questão"
+          submitButtonText="Criar Questão"
         />
       </Card>
 
