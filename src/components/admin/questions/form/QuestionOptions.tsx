@@ -28,8 +28,8 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
           isCorrect: index === 0, // Define a primeira como correta por padrão
         }));
       setOptions(newOptions);
-    } else if (questionType === "Certo ou Errado" && (options.length === 0 || options.length > 2)) {
-      // Cria 2 opções para Certo ou Errado
+    } else if (questionType === "Certo ou Errado") {
+      // Sempre criar exatamente 2 opções para Certo ou Errado
       setOptions([
         { id: "option-0", text: "Certo", isCorrect: true },
         { id: "option-1", text: "Errado", isCorrect: false },

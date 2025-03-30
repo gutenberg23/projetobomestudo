@@ -31,105 +31,15 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
       
       // Substitui caracteres especiais problemáticos
       return decoded
-        .replace(/[\u2013\u2014]/g, '-') // Substitui hífens especiais
-        .replace(/[\u2018\u2019]/g, "'") // Substitui aspas simples especiais
-        .replace(/[\u201C\u201D]/g, '"') // Substitui aspas duplas especiais
-        .replace(/[\u2026]/g, '...') // Substitui reticências especiais
-        .replace(/[\u00A0]/g, ' ') // Substitui espaço não-quebrável
-        .replace(/[\u2022]/g, '•') // Substitui bullet point
-        .replace(/[\u2013\u2014]/g, '-') // Substitui hífens especiais
-        .replace(/[\u2010\u2011\u2012\u2015]/g, '-') // Substitui outros tipos de hífens
-        .replace(/[\u00B0]/g, '°') // Substitui grau
-        .replace(/[\u00AE]/g, '®') // Substitui registro
-        .replace(/[\u2122]/g, '™') // Substitui trademark
-        .replace(/[\u00A9]/g, '©') // Substitui copyright
-        .replace(/[\u00A7]/g, '§') // Substitui seção
-        .replace(/[\u00B6]/g, '¶') // Substitui parágrafo
-        .replace(/[\u00B7]/g, '·') // Substitui ponto médio
-        .replace(/[\u00B4]/g, "'") // Substitui acento agudo
-        .replace(/[\u00B8]/g, '¸') // Substitui cedilha
-        .replace(/[\u00B0]/g, '°') // Substitui grau
-        .replace(/[\u00B1]/g, '±') // Substitui mais/menos
-        .replace(/[\u00B2]/g, '²') // Substitui ao quadrado
-        .replace(/[\u00B3]/g, '³') // Substitui ao cubo
-        .replace(/[\u00B5]/g, 'µ') // Substitui micro
-        .replace(/[\u00B9]/g, '¹') // Substitui expoente 1
-        .replace(/[\u00BA]/g, 'º') // Substitui ordinal masculino
-        .replace(/[\u00BB]/g, '»') // Substitui aspas duplas angulares
-        .replace(/[\u00BC]/g, '¼') // Substitui um quarto
-        .replace(/[\u00BD]/g, '½') // Substitui meio
-        .replace(/[\u00BE]/g, '¾') // Substitui três quartos
-        .replace(/[\u00BF]/g, '¿') // Substitui interrogação invertida
-        .replace(/[\u00C0]/g, 'À') // Substitui A com grave
-        .replace(/[\u00C1]/g, 'Á') // Substitui A com agudo
-        .replace(/[\u00C2]/g, 'Â') // Substitui A com circunflexo
-        .replace(/[\u00C3]/g, 'Ã') // Substitui A com til
-        .replace(/[\u00C4]/g, 'Ä') // Substitui A com trema
-        .replace(/[\u00C5]/g, 'Å') // Substitui A com anel
-        .replace(/[\u00C6]/g, 'Æ') // Substitui AE
-        .replace(/[\u00C7]/g, 'Ç') // Substitui C com cedilha
-        .replace(/[\u00C8]/g, 'È') // Substitui E com grave
-        .replace(/[\u00C9]/g, 'É') // Substitui E com agudo
-        .replace(/[\u00CA]/g, 'Ê') // Substitui E com circunflexo
-        .replace(/[\u00CB]/g, 'Ë') // Substitui E com trema
-        .replace(/[\u00CC]/g, 'Ì') // Substitui I com grave
-        .replace(/[\u00CD]/g, 'Í') // Substitui I com agudo
-        .replace(/[\u00CE]/g, 'Î') // Substitui I com circunflexo
-        .replace(/[\u00CF]/g, 'Ï') // Substitui I com trema
-        .replace(/[\u00D0]/g, 'Ð') // Substitui ETH
-        .replace(/[\u00D1]/g, 'Ñ') // Substitui N com til
-        .replace(/[\u00D2]/g, 'Ò') // Substitui O com grave
-        .replace(/[\u00D3]/g, 'Ó') // Substitui O com agudo
-        .replace(/[\u00D4]/g, 'Ô') // Substitui O com circunflexo
-        .replace(/[\u00D5]/g, 'Õ') // Substitui O com til
-        .replace(/[\u00D6]/g, 'Ö') // Substitui O com trema
-        .replace(/[\u00D7]/g, '×') // Substitui multiplicação
-        .replace(/[\u00D8]/g, 'Ø') // Substitui O com barra
-        .replace(/[\u00D9]/g, 'Ù') // Substitui U com grave
-        .replace(/[\u00DA]/g, 'Ú') // Substitui U com agudo
-        .replace(/[\u00DB]/g, 'Û') // Substitui U com circunflexo
-        .replace(/[\u00DC]/g, 'Ü') // Substitui U com trema
-        .replace(/[\u00DD]/g, 'Ý') // Substitui Y com agudo
-        .replace(/[\u00DE]/g, 'Þ') // Substitui THORN
-        .replace(/[\u00DF]/g, 'ß') // Substitui eszett
-        .replace(/[\u00E0]/g, 'à') // Substitui a com grave
-        .replace(/[\u00E1]/g, 'á') // Substitui a com agudo
-        .replace(/[\u00E2]/g, 'â') // Substitui a com circunflexo
-        .replace(/[\u00E3]/g, 'ã') // Substitui a com til
-        .replace(/[\u00E4]/g, 'ä') // Substitui a com trema
-        .replace(/[\u00E5]/g, 'å') // Substitui a com anel
-        .replace(/[\u00E6]/g, 'æ') // Substitui ae
-        .replace(/[\u00E7]/g, 'ç') // Substitui c com cedilha
-        .replace(/[\u00E8]/g, 'è') // Substitui e com grave
-        .replace(/[\u00E9]/g, 'é') // Substitui e com agudo
-        .replace(/[\u00EA]/g, 'ê') // Substitui e com circunflexo
-        .replace(/[\u00EB]/g, 'ë') // Substitui e com trema
-        .replace(/[\u00EC]/g, 'ì') // Substitui i com grave
-        .replace(/[\u00ED]/g, 'í') // Substitui i com agudo
-        .replace(/[\u00EE]/g, 'î') // Substitui i com circunflexo
-        .replace(/[\u00EF]/g, 'ï') // Substitui i com trema
-        .replace(/[\u00F0]/g, 'ð') // Substitui eth
-        .replace(/[\u00F1]/g, 'ñ') // Substitui n com til
-        .replace(/[\u00F2]/g, 'ò') // Substitui o com grave
-        .replace(/[\u00F3]/g, 'ó') // Substitui o com agudo
-        .replace(/[\u00F4]/g, 'ô') // Substitui o com circunflexo
-        .replace(/[\u00F5]/g, 'õ') // Substitui o com til
-        .replace(/[\u00F6]/g, 'ö') // Substitui o com trema
-        .replace(/[\u00F7]/g, '÷') // Substitui divisão
-        .replace(/[\u00F8]/g, 'ø') // Substitui o com barra
-        .replace(/[\u00F9]/g, 'ù') // Substitui u com grave
-        .replace(/[\u00FA]/g, 'ú') // Substitui u com agudo
-        .replace(/[\u00FB]/g, 'û') // Substitui u com circunflexo
-        .replace(/[\u00FC]/g, 'ü') // Substitui u com trema
-        .replace(/[\u00FD]/g, 'ý') // Substitui y com agudo
-        .replace(/[\u00FE]/g, 'þ') // Substitui thorn
-        .replace(/[\u00FF]/g, 'ÿ') // Substitui y com trema
-        .replace(/[\u2028]/g, '\n') // Substitui quebra de linha
-        .replace(/[\u2029]/g, '\n\n') // Substitui quebra de parágrafo
-        .replace(/[\u202F]/g, ' ') // Substitui espaço fino
-        .replace(/[\u205F]/g, ' ') // Substitui espaço matemático
-        .replace(/[\u3000]/g, ' ') // Substitui espaço ideográfico
-        .replace(/[\uFEFF]/g, ''); // Remove BOM
+        .replace(/[\u2018\u2019]/g, "'") // Aspas simples curvas
+        .replace(/[\u201C\u201D]/g, '"') // Aspas duplas curvas
+        .replace(/[\u2013\u2014]/g, '–') // Travessões
+        .replace(/[\u2026]/g, '...') // Reticências
+        .replace(/[\u00A0]/g, ' ') // Espaço não-quebrável
+        .replace(/[\u2022]/g, '•') // Bullet point
+        .replace(/[\u2010\u2011\u2012\u2015]/g, '-') // Outros tipos de hífens
+        .replace(/\r\n/g, '\n') // Normaliza quebras de linha
+        .replace(/\r/g, '\n'); // Normaliza quebras de linha
     } catch (e) {
       console.error('Erro ao decodificar texto:', e);
       return text;
@@ -316,6 +226,7 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
       const question = {
         id: generateUUID(),
         user_id: user.id,
+        number: i, // Adiciona o número da questão baseado no índice
         year: row.year,
         institution: row.institution,
         organization: row.organization,

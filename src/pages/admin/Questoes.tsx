@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Card from "@/components/admin/questions/Card";
 import QuestionFilters from "@/components/admin/questions/QuestionFilters";
 import QuestionList from "@/components/admin/questions/QuestionList";
@@ -12,13 +12,33 @@ import { QuestionItemType, QuestionOption } from "@/components/admin/questions/t
 import { Json } from "@/integrations/supabase/types";
 import CriarSimuladoModal from "@/components/admin/questions/modals/CriarSimuladoModal";
 import ImportQuestionsCard from "@/components/admin/questions/ImportQuestionsCard";
+import ReportedErrorsCard from "@/components/admin/questions/ReportedErrorsCard";
+import { Button } from "@/components/ui/button";
+import { useFetchQuestionsActions } from '@/components/admin/questions/hooks/actions/useFetchQuestionsActions';
+import { useQuestionManagementStore } from '@/stores/questionManagementStore';
+import { useFilterActions } from '@/components/admin/questions/hooks/actions/useFilterActions';
+import { fetchQuestionById } from '@/services/questoesService';
+
+const ITEMS_PER_PAGE = 20;
 
 const Questoes: React.FC = () => {
   const state = useQuestionsState();
   const actions = useQuestionActions(state);
   const { user } = useAuth();
+  const { fetchQuestionsAndRelatedData } = useFetchQuestionsActions();
+  const questions = useQuestionManagementStore((state) => state.questions);
+  const dropdownData = useQuestionManagementStore((state) => state.dropdownData);
   
-  const filteredQuestions = actions.getFilteredQuestions();
+  const [currentPage, setCurrentPage] = useState(1);
+  const { filters, setFilters, showFilters, setShowFilters, resetFilters, getFilteredQuestions } = useFilterActions(state);
+  
+  // Calcular paginação
+  const filteredQuestions = getFilteredQuestions(questions);
+  const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
+  const paginatedQuestions = filteredQuestions.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   // Função para converter options do banco para o formato esperado
   const parseOptions = (options: Json | null): QuestionOption[] => {
@@ -38,8 +58,43 @@ const Questoes: React.FC = () => {
 
   // Buscar questões e dados relacionados do banco de dados
   useEffect(() => {
-    actions.fetchQuestionsAndRelatedData();
+    fetchQuestionsAndRelatedData();
   }, []);
+
+  const handleQuestionsImported = () => {
+    fetchQuestionsAndRelatedData();
+  };
+
+  const handleEditFromError = async (questionId: string) => {
+    try {
+      const questionData = await fetchQuestionById(questionId);
+
+      // Atualizar o estado com os dados da questão
+      state.setQuestionId(questionData.id);
+      state.setYear(questionData.year || '');
+      state.setInstitution(questionData.institution || '');
+      state.setOrganization(questionData.organization || '');
+      state.setRole(questionData.role || '');
+      state.setDiscipline(questionData.discipline || '');
+      state.setLevel(questionData.level || '');
+      state.setDifficulty(questionData.difficulty || '');
+      state.setQuestionType(questionData.questiontype || '');
+      state.setQuestionText(questionData.content || '');
+      state.setTeacherExplanation(questionData.teacherexplanation || '');
+      state.setExpandableContent(questionData.expandablecontent || '');
+      state.setAIExplanation(questionData.aiexplanation || '');
+      state.setOptions(questionData.options);
+      state.setTopicos(questionData.topicos);
+
+      // Abrir o card de edição
+      state.setIsEditQuestionCardOpen(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    } catch (error) {
+      console.error('Erro ao carregar questão:', error);
+      toast.error('Erro ao carregar questão');
+    }
+  };
 
   return (
     <div className="space-y-6 p-4">
@@ -80,22 +135,6 @@ const Questoes: React.FC = () => {
             setOptions={state.setOptions}
             topicos={state.topicos}
             setTopicos={state.setTopicos}
-            institutions={state.institutions}
-            setInstitutions={state.setInstitutions}
-            organizations={state.organizations}
-            setOrganizations={state.setOrganizations}
-            roles={state.roles}
-            setRoles={state.setRoles}
-            disciplines={state.disciplines}
-            setDisciplines={state.setDisciplines}
-            levels={state.levels}
-            setLevels={state.setLevels}
-            difficulties={state.difficulties}
-            setDifficulties={state.setDifficulties}
-            questionTypes={state.questionTypes}
-            setQuestionTypes={state.setQuestionTypes}
-            years={state.years}
-            setYears={state.setYears}
             onSubmit={actions.handleUpdateQuestion}
             submitButtonText="Salvar Modificações"
             isEditing={true}
@@ -103,20 +142,22 @@ const Questoes: React.FC = () => {
         </Card>
       )}
 
-      <ImportQuestionsCard onQuestionsImported={actions.fetchQuestionsAndRelatedData} />
+      <ImportQuestionsCard onQuestionsImported={handleQuestionsImported} />
+      <ReportedErrorsCard onEditQuestion={handleEditFromError} />
 
       <Card title="Questões Cadastradas" description="Visualize e gerencie as questões cadastradas" defaultOpen={false}>
         <QuestionFilters
-          filters={state.filters}
-          setFilters={state.setFilters}
-          showFilters={state.showFilters}
-          setShowFilters={state.setShowFilters}
-          resetFilters={actions.resetFilters}
+          filters={filters}
+          setFilters={setFilters}
+          showFilters={showFilters}
+          setShowFilters={setShowFilters}
+          resetFilters={resetFilters}
           handleClearAllQuestionStats={actions.handleClearAllQuestionStats}
+          dropdownData={dropdownData}
         />
         
         <QuestionList
-          filteredQuestions={filteredQuestions}
+          filteredQuestions={paginatedQuestions}
           selectedQuestions={state.selectedQuestions}
           toggleQuestionSelection={actions.toggleQuestionSelection}
           handleCreateSimulado={actions.handleCreateSimulado}
@@ -124,7 +165,31 @@ const Questoes: React.FC = () => {
           handleEditQuestion={actions.handleEditQuestion}
           copyToClipboard={actions.copyToClipboard}
           handleClearQuestionStats={actions.handleClearQuestionStats}
+          questions={questions}
         />
+
+        {/* Paginação */}
+        <div className="flex justify-center items-center gap-2 mt-4">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            Anterior
+          </Button>
+          
+          <span className="text-sm text-gray-600">
+            Página {currentPage} de {totalPages}
+          </span>
+          
+          <Button
+            variant="outline"
+            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Próxima
+          </Button>
+        </div>
       </Card>
 
       <Card title="Nova Questão" description="Crie uma nova questão para suas listas" defaultOpen={false}>
@@ -158,22 +223,6 @@ const Questoes: React.FC = () => {
           setOptions={state.setOptions}
           topicos={state.topicos}
           setTopicos={state.setTopicos}
-          institutions={state.institutions}
-          setInstitutions={state.setInstitutions}
-          organizations={state.organizations}
-          setOrganizations={state.setOrganizations}
-          roles={state.roles}
-          setRoles={state.setRoles}
-          disciplines={state.disciplines}
-          setDisciplines={state.setDisciplines}
-          levels={state.levels}
-          setLevels={state.setLevels}
-          difficulties={state.difficulties}
-          setDifficulties={state.setDifficulties}
-          questionTypes={state.questionTypes}
-          setQuestionTypes={state.setQuestionTypes}
-          years={state.years}
-          setYears={state.setYears}
           onSubmit={actions.handleSaveQuestion}
           submitButtonText="Salvar Questão"
         />

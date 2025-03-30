@@ -10,14 +10,10 @@ export interface QuestionItemType {
   questionType: string;
   content: string;
   teacherExplanation: string;
-  aiExplanation?: string;
-  expandableContent?: string;
-  options: Array<{
-    id: string;
-    text: string;
-    isCorrect: boolean;
-  }>;
-  topicos?: string[];
+  aiExplanation: string;
+  expandableContent: string;
+  options: QuestionOption[];
+  topicos: string[];
 }
 
 export interface FiltersType {
@@ -75,4 +71,21 @@ export interface Assunto {
   disciplina: string;
   patrocinador?: string;
   questoes_ids?: string[];
+}
+
+export interface FilterItem {
+  label: string;
+  value: string;
+  isActive: boolean;
+}
+
+export interface Filters {
+  disciplina: FilterItem;
+  nivel: FilterItem;
+  institution: FilterItem;
+  organization: FilterItem;
+  role: FilterItem;
+  ano: FilterItem;
+  dificuldade: FilterItem;
+  questionType: FilterItem;
 }

@@ -1,7 +1,5 @@
 import React from "react";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
-import AssuntosToolbar from "./assuntos/AssuntosToolbar";
-import AssuntosLoading from "./assuntos/AssuntosLoading";
 import AddAssuntoDialog from "./assuntos/AddAssuntoDialog";
 import EditAssuntoDialog from "./assuntos/EditAssuntoDialog";
 import DeleteAssuntoDialog from "./assuntos/DeleteAssuntoDialog";
@@ -43,34 +41,31 @@ const AssuntosField: React.FC<AssuntosFieldProps> = ({
   }
 
   return (
-    <div className="w-full">
-      <Label className="block text-sm font-medium text-[#272f3c]">
+    <div className="flex flex-col gap-2">
+      <Label className="text-sm font-medium text-[#272f3c]">
         Assuntos
       </Label>
 
-      <div className="flex flex-col gap-2">
-        {loading ? (
-          <AssuntosLoading />
-        ) : (
-          <CheckboxGroup
-            title=""
-            options={assuntosList.map(t => t.nome).sort((a, b) => a.localeCompare(b))}
-            selectedValues={assuntos}
-            onChange={handleAssuntosChange}
-            placeholder="Selecione os assuntos"
-          />
-        )}
-
-        <div className="flex gap-2 justify-end">
-          <AssuntosToolbar 
-            onAdd={() => setIsAddDialogOpen(true)}
-            onEdit={() => setIsEditDialogOpen(true)}
-            onDelete={() => setIsDeleteDialogOpen(true)}
-            assuntosList={assuntosList}
-            iconsOnly={true}
-          />
-        </div>
-      </div>
+      {loading ? (
+        <div className="h-10 w-full bg-gray-100 animate-pulse rounded-md" />
+      ) : (
+        <CheckboxGroup
+          title=""
+          options={assuntosList.map(t => t.nome).sort((a, b) => a.localeCompare(b))}
+          selectedValues={assuntos}
+          onChange={handleAssuntosChange}
+          placeholder="Selecione os assuntos"
+          handleEditOption={(oldValue) => {
+            setCurrentAssunto(assuntosList.find(a => a.nome === oldValue) || null);
+            setIsEditDialogOpen(true);
+          }}
+          handleDeleteOption={(value) => {
+            setCurrentAssunto(assuntosList.find(a => a.nome === value) || null);
+            setIsDeleteDialogOpen(true);
+          }}
+          openAddDialog={() => setIsAddDialogOpen(true)}
+        />
+      )}
 
       {/* Dialogs for adding, editing, and deleting assuntos */}
       <AddAssuntoDialog 

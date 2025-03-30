@@ -1,13 +1,18 @@
 export interface Question {
   id: string;
+  number: number;
   content: string;
-  additionalContent?: string;
-  teacherExplanation?: string;
+  command: string;
+  options: QuestionOption[];
   year: string;
   institution: string;
   organization: string;
   role: string;
-  options: QuestionOption[];
+  educationLevel: string;
+  discipline: string;
+  topics: string[];
+  expandableContent?: string;
+  teacherExplanation?: string;
   comments: Comment[];
   images?: string[];
   aiExplanation?: string;
@@ -16,7 +21,7 @@ export interface Question {
 export interface QuestionOption {
   id: string;
   text: string;
-  isCorrect?: boolean;
+  isCorrect: boolean;
 }
 
 export interface Comment {
@@ -53,4 +58,16 @@ export interface Lesson {
   updatedAt?: string;
   rating?: string;
   question?: Question;
+}
+
+export interface QuestionHeaderProps {
+  questionNumber: number;
+  year: string;
+  institution: string;
+  organization: string;
+  role: string;
+  educationLevel: string;
+  discipline: string;
+  topics: string[];
+  questionId: string;
 }

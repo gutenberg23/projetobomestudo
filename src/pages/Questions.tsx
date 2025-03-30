@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -19,7 +18,8 @@ const Questions = () => {
     organizations: [] as string[],
     roles: [] as string[],
     years: [] as string[],
-    educationLevels: [] as string[]
+    educationLevels: [] as string[],
+    difficulty: [] as string[]
   });
   const [questionsPerPage, setQuestionsPerPage] = useState("10");
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,7 +33,8 @@ const Questions = () => {
     organizations: [] as string[],
     roles: [] as string[],
     years: [] as string[],
-    educationLevels: [] as string[]
+    educationLevels: [] as string[],
+    difficulty: [] as string[]
   });
   
   const totalQuestions = questions.length;
@@ -129,6 +130,7 @@ const Questions = () => {
         const disciplines = [...new Set(data.map(q => q.discipline).filter(Boolean))].sort();
         const levels = [...new Set(data.map(q => q.level).filter(Boolean))].sort();
         const years = [...new Set(data.map(q => q.year).filter(Boolean))].sort((a, b) => b.localeCompare(a));
+        const difficulties = [...new Set(data.map(q => q.difficulty).filter(Boolean))].sort();
         
         // Coletar todos os tópicos únicos
         const allTopics = data.flatMap(q => q.topicos || [])
@@ -144,7 +146,8 @@ const Questions = () => {
           organizations,
           roles,
           years,
-          educationLevels: ['Médio', 'Superior', 'Pós-graduação'] // Mantém esses valores padrão pois não estão no banco
+          educationLevels: levels,
+          difficulty: difficulties
         });
         
       } catch (error) {
@@ -199,6 +202,10 @@ const Questions = () => {
       return false;
     }
     
+    if (selectedFilters.topics.length > 0 && !selectedFilters.topics.some(topic => question.topicos?.includes(topic))) {
+      return false;
+    }
+    
     if (selectedFilters.institutions.length > 0 && !selectedFilters.institutions.includes(question.institution)) {
       return false;
     }
@@ -219,14 +226,8 @@ const Questions = () => {
       return false;
     }
     
-    // Filtrar por tópicos
-    if (selectedFilters.topics.length > 0) {
-      const hasMatchingTopic = question.topicos.some((topico: string) => 
-        selectedFilters.topics.includes(topico)
-      );
-      if (!hasMatchingTopic) {
-        return false;
-      }
+    if (selectedFilters.difficulty.length > 0 && !selectedFilters.difficulty.includes(question.difficulty)) {
+      return false;
     }
     
     return true;
@@ -269,6 +270,8 @@ const Questions = () => {
           handlePageChange={handlePageChange}
           hasFilters={hasFilters}
           loading={loading}
+          questionsPerPage={questionsPerPage}
+          setQuestionsPerPage={setQuestionsPerPage}
         />
       </main>
       <Footer />

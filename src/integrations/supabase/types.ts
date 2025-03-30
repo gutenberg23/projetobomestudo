@@ -1072,6 +1072,40 @@ export type Database = {
         }
         Relationships: []
       }
+      questoes_erros_reportados: {
+        Row: {
+          id: string
+          questao_id: string
+          descricao: string
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          questao_id: string
+          descricao: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          questao_id?: string
+          descricao?: string
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questoes_erros_reportados_questao_id_fkey"
+            columns: ["questao_id"]
+            referencedRelation: "questoes"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

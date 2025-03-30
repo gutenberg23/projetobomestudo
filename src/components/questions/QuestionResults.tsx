@@ -1,4 +1,3 @@
-
 import React from "react";
 import { QuestionCard } from "@/components/new/QuestionCard";
 import QuestionListSummary from "./QuestionListSummary";
@@ -14,6 +13,8 @@ interface QuestionResultsProps {
   handlePageChange: (page: number) => void;
   hasFilters: boolean;
   loading?: boolean;
+  questionsPerPage: string;
+  setQuestionsPerPage: (value: string) => void;
 }
 
 const QuestionResults: React.FC<QuestionResultsProps> = ({
@@ -24,7 +25,9 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
   totalPages,
   handlePageChange,
   hasFilters,
-  loading = false
+  loading = false,
+  questionsPerPage,
+  setQuestionsPerPage
 }) => {
   if (loading) {
     return (
@@ -70,7 +73,12 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
 
   return (
     <div className="space-y-8 mt-8">
-      <QuestionListSummary count={questions.length} hasFilters={hasFilters} />
+      <QuestionListSummary 
+        count={questions.length} 
+        hasFilters={hasFilters} 
+        questionsPerPage={questionsPerPage}
+        setQuestionsPerPage={setQuestionsPerPage}
+      />
       
       {questions.map(question => (
         <QuestionCard

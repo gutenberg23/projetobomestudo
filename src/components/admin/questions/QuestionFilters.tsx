@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Dispatch, SetStateAction } from "react";
 import { ChevronDown, ChevronUp, Filter, XCircle, Eraser } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Filters } from './types';
 
 interface FilterItem {
   key: string;
@@ -22,24 +23,23 @@ interface FilterItem {
   value: string;
 }
 
-interface Filters {
-  disciplina: FilterItem;
-  nivel: FilterItem;
-  institution: FilterItem;
-  organization: FilterItem;
-  role: FilterItem;
-  ano: FilterItem;
-  dificuldade: FilterItem;
-  questionType: FilterItem;
-}
-
 interface QuestionFiltersProps {
   filters: Filters;
-  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  setFilters: Dispatch<SetStateAction<Filters>>;
   showFilters: boolean;
-  setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
+  setShowFilters: Dispatch<SetStateAction<boolean>>;
   resetFilters: () => void;
-  handleClearAllQuestionStats?: () => Promise<void>;
+  handleClearAllQuestionStats: () => Promise<void>;
+  dropdownData: {
+    years: string[];
+    institutions: string[];
+    organizations: string[];
+    roles: string[];
+    disciplines: string[];
+    levels: string[];
+    difficulties: string[];
+    questionTypes: string[];
+  };
 }
 
 const QuestionFilters: React.FC<QuestionFiltersProps> = ({
@@ -48,7 +48,8 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
   showFilters,
   setShowFilters,
   resetFilters,
-  handleClearAllQuestionStats
+  handleClearAllQuestionStats,
+  dropdownData
 }) => {
   const handleChangeFilter = (
     filterKey: keyof Filters,

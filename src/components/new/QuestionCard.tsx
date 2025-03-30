@@ -42,8 +42,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     simuladoId: string;
   }>();
 
-  // Verificar se há conteúdo adicional para mostrar (imagens, textos longos, etc.)
-  const hasExpandableContent = question.additionalContent || question.images?.length > 0;
+  // Verificar se há conteúdo expansível
+  const hasExpandableContent = Boolean(question.expandableContent);
 
   // Resetar o estado quando a questão muda
   useEffect(() => {
@@ -348,36 +348,52 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       setSubmittingComment(false);
     }
   };
-  return <article className="w-full rounded-xl border border-solid border-gray-100 mb-5 bg-white relative">
-      <header className="overflow-hidden rounded-t-xl rounded-b-none border-b border-gray-100">
-        <QuestionHeader year={question.year} institution={question.institution} organization={question.organization} role={question.role} id={question.id} />
-      </header>
+  return (
+    <div className="w-full bg-white rounded-lg shadow-md mb-4">
+      <QuestionHeader
+        questionNumber={question.number}
+        year={question.year}
+        institution={question.institution}
+        organization={question.organization}
+        role={question.role}
+        educationLevel={question.educationLevel}
+        discipline={question.discipline}
+        topics={question.topics}
+        questionId={question.id}
+      />
+
+      {/* Conteúdo expandível */}
+      {hasExpandableContent && (
+        <div className="mt-6 mb-2 px-4">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowExpandedContent(!showExpandedContent)}
+              className="flex items-center justify-start p-1 text-[#5f2ebe] hover:text-[#5f2ebe]/80 transition-colors focus:outline-none"
+              aria-label={showExpandedContent ? "Recolher conteúdo adicional" : "Expandir conteúdo adicional"}
+            >
+              <span className="mr-1">Conteúdo relacionado à questão</span>
+              {showExpandedContent ? <ChevronUp className="h-4 w-4 md:h-5 md:w-5" /> : <span className="text-lg font-bold">+</span>}
+            </button>
+            {hasAnswered && (
+              <Badge variant="secondary" className="text-white bg-slate-300">
+                Você já respondeu
+              </Badge>
+            )}
+          </div>
+          {showExpandedContent && (
+            <div className="mt-2 p-4 bg-gray-50 rounded-lg" dangerouslySetInnerHTML={{ __html: question.expandableContent || '' }} />
+          )}
+        </div>
+      )}
+
+      {/* Comando da questão */}
+      <div className="mb-4 px-4 text-gray-700" dangerouslySetInnerHTML={{ __html: question.command }} />
 
       <div className="flex gap-2.5 items-start px-3 md:px-5 py-2.5 w-full text-base text-slate-800">
-        <div className="flex flex-1 shrink gap-2.5 items-start px-2.5 py-5 w-full rounded-md basis-0 min-w-60 relative">
-          {hasAnswered && <Badge variant="secondary" className="absolute top-0 right-0 text-white z-10 bg-slate-300">
-              Você já respondeu
-            </Badge>}
-          
-          {hasExpandableContent && <button onClick={toggleExpandedContent} className="flex items-center justify-center p-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors focus:outline-none" aria-label={showExpandedContent ? "Recolher conteúdo adicional" : "Expandir conteúdo adicional"}>
-              {showExpandedContent ? <ChevronUp className="h-4 w-4 md:h-5 md:w-5" /> : <ChevronDown className="h-4 w-4 md:h-5 md:w-5" />}
-            </button>}
-          
-          <div className="flex-1">
-            {hasExpandableContent && showExpandedContent && <div className="mb-4 border-b border-gray-100 pb-4">
-                {question.images && question.images.length > 0 && <div className="flex flex-wrap gap-2 mb-3">
-                    {question.images.map((image, index) => <img key={index} src={image} alt={`Imagem ${index + 1} da questão ${question.id}`} className="max-w-full h-auto rounded-md" />)}
-                  </div>}
-                
-                {question.additionalContent && <div className="text-[#67748a] text-sm md:text-base" dangerouslySetInnerHTML={{
-              __html: question.additionalContent
-            }} />}
-              </div>}
-            
-            <p className="text-left text-sm md:text-base" dangerouslySetInnerHTML={{
+        <div className="flex flex-col w-full px-2.5 py-5 rounded-md relative">
+          <p className="text-left text-sm md:text-base" dangerouslySetInnerHTML={{
             __html: question.content
           }} />
-          </div>
         </div>
       </div>
 
@@ -419,5 +435,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             </button>
           </div>
         </section>}
-    </article>;
+    </div>
+  );
 };

@@ -24,21 +24,27 @@ export const useAssuntosService = (disciplina: string, selectedAssuntos: string[
 
       setLoading(true);
       try {
-        console.log("Buscando assuntos para disciplina:", disciplina);
+        console.log("Buscando tópicos para disciplina:", disciplina);
         const { data, error } = await supabase
-          .from('assuntos')
-          .select('*')
-          .eq('disciplina', disciplina);
+          .from('questoes')
+          .select('topicos')
+          .eq('discipline', disciplina);
 
         if (error) {
           throw error;
         }
 
-        console.log("Assuntos retornados:", data);
-        setAssuntosList(data || []);
+        // Extrair tópicos únicos de todas as questões
+        const topicos = data
+          .flatMap(q => q.topicos || [])
+          .filter((value, index, self) => self.indexOf(value) === index)
+          .sort();
+
+        console.log("Tópicos retornados:", topicos);
+        setAssuntosList(topicos.map(nome => ({ id: nome, nome, disciplina })));
       } catch (error) {
-        console.error("Erro ao buscar assuntos:", error);
-        toast.error("Erro ao carregar assuntos. Tente novamente.");
+        console.error("Erro ao buscar tópicos:", error);
+        toast.error("Erro ao carregar tópicos. Tente novamente.");
       } finally {
         setLoading(false);
       }
@@ -57,73 +63,49 @@ export const useAssuntosService = (disciplina: string, selectedAssuntos: string[
 
   const handleAddAssunto = async () => {
     if (!newAssuntoNome.trim()) {
-      toast.error("O nome do assunto não pode estar vazio");
+      toast.error("O nome do tópico não pode estar vazio");
       return;
     }
 
     try {
-      const { data, error } = await supabase
-        .from('assuntos')
-        .insert([{ 
-          nome: newAssuntoNome, 
-          disciplina,
-          patrocinador: "",
-          questoes_ids: []
-        }])
-        .select();
-
-      if (error) {
-        throw error;
-      }
-
-      if (data && data.length > 0) {
-        setAssuntosList([...assuntosList, data[0]]);
-        toast.success("Assunto adicionado com sucesso!");
-        setNewAssuntoNome("");
-        setIsAddDialogOpen(false);
-      }
+      // Adicionar o novo tópico à lista local
+      const newAssunto = { id: newAssuntoNome, nome: newAssuntoNome, disciplina };
+      setAssuntosList([...assuntosList, newAssunto]);
+      toast.success("Tópico adicionado com sucesso!");
+      setNewAssuntoNome("");
+      setIsAddDialogOpen(false);
     } catch (error) {
-      console.error("Erro ao adicionar assunto:", error);
-      toast.error("Erro ao adicionar assunto. Tente novamente.");
+      console.error("Erro ao adicionar tópico:", error);
+      toast.error("Erro ao adicionar tópico. Tente novamente.");
     }
   };
 
   const handleEditAssunto = async () => {
     if (!currentAssunto || !newAssuntoNome.trim()) {
-      toast.error("O nome do assunto não pode estar vazio");
+      toast.error("O nome do tópico não pode estar vazio");
       return;
     }
 
     try {
-      const { error } = await supabase
-        .from('assuntos')
-        .update({ 
-          nome: newAssuntoNome
-        })
-        .eq('id', currentAssunto.id);
-
-      if (error) {
-        throw error;
-      }
-
+      // Atualizar o tópico na lista local
       setAssuntosList(assuntosList.map(t => 
         t.id === currentAssunto.id ? { ...t, nome: newAssuntoNome } : t
       ));
       
-      // Atualizar também no array de assuntos selecionados
+      // Atualizar também no array de tópicos selecionados
       if (selectedAssuntos.includes(currentAssunto.nome)) {
         const newAssuntos = selectedAssuntos.filter(t => t !== currentAssunto.nome);
         newAssuntos.push(newAssuntoNome);
         setSelectedAssuntos(newAssuntos);
       }
 
-      toast.success("Assunto atualizado com sucesso!");
+      toast.success("Tópico atualizado com sucesso!");
       setNewAssuntoNome("");
       setCurrentAssunto(null);
       setIsEditDialogOpen(false);
     } catch (error) {
-      console.error("Erro ao editar assunto:", error);
-      toast.error("Erro ao editar assunto. Tente novamente.");
+      console.error("Erro ao editar tópico:", error);
+      toast.error("Erro ao editar tópico. Tente novamente.");
     }
   };
 
@@ -131,28 +113,20 @@ export const useAssuntosService = (disciplina: string, selectedAssuntos: string[
     if (!currentAssunto) return;
 
     try {
-      const { error } = await supabase
-        .from('assuntos')
-        .delete()
-        .eq('id', currentAssunto.id);
-
-      if (error) {
-        throw error;
-      }
-
+      // Remover o tópico da lista local
       setAssuntosList(assuntosList.filter(t => t.id !== currentAssunto.id));
       
-      // Remover do array de assuntos selecionados
+      // Remover do array de tópicos selecionados
       if (selectedAssuntos.includes(currentAssunto.nome)) {
         setSelectedAssuntos(selectedAssuntos.filter(t => t !== currentAssunto.nome));
       }
 
-      toast.success("Assunto removido com sucesso!");
+      toast.success("Tópico removido com sucesso!");
       setCurrentAssunto(null);
       setIsDeleteDialogOpen(false);
     } catch (error) {
-      console.error("Erro ao excluir assunto:", error);
-      toast.error("Erro ao excluir assunto. Tente novamente.");
+      console.error("Erro ao excluir tópico:", error);
+      toast.error("Erro ao excluir tópico. Tente novamente.");
     }
   };
 

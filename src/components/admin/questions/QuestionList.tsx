@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,10 +13,11 @@ interface QuestionListProps {
   selectedQuestions: string[];
   toggleQuestionSelection: (id: string) => void;
   handleCreateSimulado: () => void;
-  handleRemoveQuestion: (id: string) => void;
-  handleEditQuestion: (question: QuestionItemType) => void;
+  handleRemoveQuestion: (id: string) => Promise<void>;
+  handleEditQuestion: (question: QuestionItemType) => Promise<void>;
   copyToClipboard: (text: string) => void;
-  handleClearQuestionStats: (id: string) => void;
+  handleClearQuestionStats: (id: string) => Promise<void>;
+  questions: QuestionItemType[];
 }
 
 const QuestionList: React.FC<QuestionListProps> = ({
@@ -29,6 +29,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
   handleEditQuestion,
   copyToClipboard,
   handleClearQuestionStats,
+  questions
 }) => {
   return (
     <div>

@@ -1,136 +1,95 @@
-
-import { FiltersType } from "../../types";
+import { useState } from 'react';
+import { Filters, FilterItem } from '../../types';
 import { useSearchParams } from "react-router-dom";
 import { useEffect } from "react";
+import { QuestionItemType } from '../../types';
 
-// Interface para o estado de filtros usado no componente QuestionFilters
-export interface FilterItem {
-  key: string;
-  isActive: boolean;
-  value: string;
-}
+const emptyFilter: FilterItem = { label: 'Todos', value: '', isActive: false };
 
-export interface Filters {
-  disciplina: FilterItem;
-  nivel: FilterItem;
-  institution: FilterItem;
-  organization: FilterItem;
-  role: FilterItem;
-  ano: FilterItem;
-  dificuldade: FilterItem;
-  questionType: FilterItem;
-}
+const initialFilters: Filters = {
+  disciplina: emptyFilter,
+  nivel: emptyFilter,
+  institution: emptyFilter,
+  organization: emptyFilter,
+  role: emptyFilter,
+  ano: emptyFilter,
+  dificuldade: emptyFilter,
+  questionType: emptyFilter,
+};
 
 export const useFilterActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [filters, setFilters] = useState<Filters>(initialFilters);
+  const [showFilters, setShowFilters] = useState(false);
   
   // Carregar filtros da URL quando o componente é montado
   useEffect(() => {
-    const urlFilters: Partial<Record<keyof Filters, string>> = {};
+    const params = new URLSearchParams(searchParams);
+    const loadedFilters: Filters = { ...initialFilters };
     
-    // Verificar cada parâmetro na URL
-    Array.from(searchParams.entries()).forEach(([key, value]) => {
-      if (key in state.filters) {
-        urlFilters[key as keyof Filters] = value;
+    Object.keys(loadedFilters).forEach((key) => {
+      const filterKey = key as keyof Filters;
+      const value = params.get(key);
+      if (value !== null) {
+        loadedFilters[filterKey] = {
+          ...loadedFilters[filterKey],
+          value,
+          isActive: true
+        };
       }
     });
     
-    // Atualizar o estado apenas se houver filtros na URL
-    if (Object.keys(urlFilters).length > 0) {
-      state.setFilters(prevFilters => {
-        const newFilters = { ...prevFilters };
-        
-        // Atualizar apenas os filtros encontrados na URL
-        Object.entries(urlFilters).forEach(([key, value]) => {
-          const filterKey = key as keyof Filters;
-          if (filterKey in newFilters) {
-            newFilters[filterKey] = {
-              ...newFilters[filterKey],
-              isActive: true,
-              value: value
-            };
-          }
-        });
-        
-        return newFilters;
-      });
-    }
-  }, []);
+    setFilters(loadedFilters);
+  }, [searchParams]);
 
-  const getFilteredQuestions = () => {
-    const { questions, filters } = state;
-    
-    return questions.filter(question => {
-      // Verificar se filtros estão ativos antes de aplicá-los
-      const disciplinaMatch = !filters.disciplina.isActive || 
-        (question.discipline.toLowerCase().includes(filters.disciplina.value.toLowerCase()));
-      
-      const nivelMatch = !filters.nivel.isActive || 
-        (question.level.toLowerCase().includes(filters.nivel.value.toLowerCase()));
-      
-      const institutionMatch = !filters.institution.isActive || 
-        (question.institution.toLowerCase().includes(filters.institution.value.toLowerCase()));
-      
-      const organizationMatch = !filters.organization.isActive || 
-        (question.organization.toLowerCase().includes(filters.organization.value.toLowerCase()));
-      
-      const roleMatch = !filters.role.isActive || 
-        (question.role.toLowerCase().includes(filters.role.value.toLowerCase()));
-      
-      const anoMatch = !filters.ano.isActive || 
-        (question.year.toLowerCase().includes(filters.ano.value.toLowerCase()));
-      
-      const dificuldadeMatch = !filters.dificuldade.isActive || 
-        (question.difficulty.toLowerCase().includes(filters.dificuldade.value.toLowerCase()));
-      
-      const typeMatch = !filters.questionType.isActive || 
-        (question.questionType.toLowerCase().includes(filters.questionType.value.toLowerCase()));
-      
-      return disciplinaMatch && nivelMatch && institutionMatch && 
-             organizationMatch && roleMatch && anoMatch && 
-             dificuldadeMatch && typeMatch;
-    });
-  };
-
-  const resetFilters = () => {
-    const { setFilters } = state;
-    
-    // Criar um objeto de filtros limpo
-    const emptyFilters: Filters = {
-      disciplina: { key: 'disciplina', isActive: false, value: '' },
-      nivel: { key: 'nivel', isActive: false, value: '' },
-      institution: { key: 'institution', isActive: false, value: '' },
-      organization: { key: 'organization', isActive: false, value: '' },
-      role: { key: 'role', isActive: false, value: '' },
-      ano: { key: 'ano', isActive: false, value: '' },
-      dificuldade: { key: 'dificuldade', isActive: false, value: '' },
-      questionType: { key: 'questionType', isActive: false, value: '' }
-    };
-    
-    // Limpar filtros no estado
-    setFilters(emptyFilters);
-    
-    // Limpar parâmetros da URL
-    setSearchParams(new URLSearchParams());
-  };
-
-  // Função para atualizar a URL com filtros atuais
-  const updateUrlWithFilters = () => {
+  const updateUrlWithFilters = (newFilters: Filters) => {
     const params = new URLSearchParams();
     
-    // Adicionar apenas filtros ativos e não vazios
-    Object.entries(state.filters).forEach(([key, filterItem]) => {
-      if (filterItem.isActive && filterItem.value) {
-        params.set(key, filterItem.value);
+    Object.entries(newFilters).forEach(([key, filter]) => {
+      if (filter.isActive && filter.value) {
+        params.set(key, filter.value);
       }
     });
     
     setSearchParams(params);
   };
 
+  const getFilteredQuestions = (questions: QuestionItemType[]): QuestionItemType[] => {
+    return questions.filter(question => {
+      const matchesDisciplina = !filters.disciplina.isActive || question.discipline === filters.disciplina.value;
+      const matchesNivel = !filters.nivel.isActive || question.level === filters.nivel.value;
+      const matchesInstitution = !filters.institution.isActive || question.institution === filters.institution.value;
+      const matchesOrganization = !filters.organization.isActive || question.organization === filters.organization.value;
+      const matchesRole = !filters.role.isActive || question.role === filters.role.value;
+      const matchesAno = !filters.ano.isActive || question.year === filters.ano.value;
+      const matchesDificuldade = !filters.dificuldade.isActive || question.difficulty === filters.dificuldade.value;
+      const matchesQuestionType = !filters.questionType.isActive || question.questionType === filters.questionType.value;
+
+      return (
+        matchesDisciplina &&
+        matchesNivel &&
+        matchesInstitution &&
+        matchesOrganization &&
+        matchesRole &&
+        matchesAno &&
+        matchesDificuldade &&
+        matchesQuestionType
+      );
+    });
+  };
+
+  const resetFilters = () => {
+    setFilters(initialFilters);
+    setSearchParams(new URLSearchParams());
+  };
+
   return {
     getFilteredQuestions,
     resetFilters,
-    updateUrlWithFilters
+    updateUrlWithFilters,
+    filters,
+    setFilters,
+    showFilters,
+    setShowFilters,
   };
 };

@@ -1,7 +1,5 @@
-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { QuestionItemType } from "../../types";
 import { useAuth } from "@/contexts/AuthContext";
 import { Json } from "@/integrations/supabase/types";
 
@@ -11,12 +9,11 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
   // Função para salvar questão
   const handleSaveQuestion = async () => {
     const {
-      questionId, year, institution, organization, role, discipline,
+      year, institution, organization, role, discipline,
       level, difficulty, questionType, questionText, teacherExplanation,
-      aiExplanation, expandableContent, options, questions, setQuestions, 
-      setQuestionId, setYear, setInstitution, setOrganization, setRole, 
-      setDiscipline, setLevel, setDifficulty, setQuestionType, setQuestionText, 
-      setTeacherExplanation, setAIExplanation, setOptions, topicos, setTopicos, setExpandableContent
+      aiExplanation, expandableContent, options, setQuestionText, 
+      setTeacherExplanation, setAIExplanation, setOptions, topicos, setTopicos, setExpandableContent,
+      setYear, setInstitution, setOrganization, setRole, setDiscipline, setLevel, setDifficulty, setQuestionType
     } = state;
 
     if (
@@ -63,9 +60,13 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
     }
 
     try {
+      // Gerar UUID para a questão
+      const uuid = crypto.randomUUID();
+
       // Construir objeto para salvar no banco de dados
       const questionData = {
-        id: questionId,
+        id: uuid,
+        user_id: user.id,
         year,
         institution,
         organization,
@@ -75,12 +76,11 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
         difficulty,
         questiontype: questionType,
         content: questionText,
-        teacherexplanation: teacherExplanation,
-        aiexplanation: aiExplanation,
-        expandablecontent: expandableContent,
-        options: options as unknown as Json, // Forçar a conversão para Json
-        topicos,
-        user_id: user.id
+        teacherexplanation: teacherExplanation || null,
+        aiexplanation: aiExplanation || null,
+        expandablecontent: expandableContent || null,
+        options: options as unknown as Json,
+        topicos: topicos || []
       };
 
       // Inserir no banco de dados
@@ -89,34 +89,20 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
         .insert(questionData);
 
       if (error) {
-        throw error;
+        console.error("Erro ao salvar questão:", error);
+        if (error.code === '23505') {
+          toast.error("Já existe uma questão com este ID. Tente novamente.");
+        } else if (error.code === '23502') {
+          toast.error("Campos obrigatórios não preenchidos. Verifique todos os campos e tente novamente.");
+        } else if (error.code === '23503') {
+          toast.error("Erro de referência. Verifique se todos os campos selecionados são válidos.");
+        } else {
+          toast.error(`Erro ao salvar questão: ${error.message}`);
+        }
+        return;
       }
 
-      // Atualizar estado local
-      const newQuestion: QuestionItemType = {
-        id: questionId,
-        year,
-        institution,
-        organization,
-        role,
-        discipline,
-        level,
-        difficulty,
-        questionType,
-        content: questionText,
-        teacherExplanation,
-        aiExplanation,
-        expandableContent,
-        options,
-        topicos
-      };
-
-      setQuestions([...questions, newQuestion]);
-
-      // Gerar um novo ID para a próxima questão
-      const now = new Date();
-      const newId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
-      setQuestionId(newId);
+      toast.success("Questão salva com sucesso!");
 
       // Limpar campos
       setYear("");
@@ -134,10 +120,13 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
       setOptions([]);
       setTopicos([]);
 
-      toast.success("Questão salva com sucesso!");
     } catch (error) {
       console.error("Erro ao salvar questão:", error);
-      toast.error("Erro ao salvar questão. Tente novamente.");
+      if (error instanceof Error) {
+        toast.error(`Erro ao salvar questão: ${error.message}`);
+      } else {
+        toast.error("Erro desconhecido ao salvar questão. Tente novamente.");
+      }
     }
   };
 
