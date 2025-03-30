@@ -1,4 +1,3 @@
-
 import React, { useEffect } from "react";
 import Card from "@/components/admin/questions/Card";
 import QuestionFilters from "@/components/admin/questions/QuestionFilters";
@@ -12,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { QuestionItemType, QuestionOption } from "@/components/admin/questions/types";
 import { Json } from "@/integrations/supabase/types";
 import CriarSimuladoModal from "@/components/admin/questions/modals/CriarSimuladoModal";
+import ImportQuestionsCard from "@/components/admin/questions/ImportQuestionsCard";
 
 const Questoes: React.FC = () => {
   const state = useQuestionsState();
@@ -38,64 +38,7 @@ const Questoes: React.FC = () => {
 
   // Buscar questões e dados relacionados do banco de dados
   useEffect(() => {
-    const fetchQuestionsAndRelatedData = async () => {
-      try {
-        // Buscar todas as questões
-        const { data, error } = await supabase
-          .from('questoes')
-          .select('*');
-        
-        if (error) {
-          throw error;
-        }
-        
-        // Transformar os dados para o formato esperado pelo componente
-        const formattedQuestions: QuestionItemType[] = data.map(q => ({
-          id: q.id,
-          year: q.year,
-          institution: q.institution,
-          organization: q.organization,
-          role: q.role,
-          discipline: q.discipline,
-          level: q.level,
-          difficulty: q.difficulty,
-          questionType: q.questiontype,
-          content: q.content,
-          teacherExplanation: q.teacherexplanation,
-          aiExplanation: q.aiexplanation || "",
-          expandableContent: q.expandablecontent || "",
-          options: parseOptions(q.options),
-          topicos: Array.isArray(q.topicos) ? q.topicos : []
-        }));
-        
-        state.setQuestions(formattedQuestions);
-        
-        // Extrair valores únicos para cada dropdown
-        const institutions = [...new Set(data.map(q => q.institution))].filter(Boolean).sort();
-        const organizations = [...new Set(data.map(q => q.organization))].filter(Boolean).sort();
-        const roles = [...new Set(data.map(q => q.role))].filter(Boolean).sort();
-        const disciplines = [...new Set(data.map(q => q.discipline))].filter(Boolean).sort();
-        const levels = [...new Set(data.map(q => q.level))].filter(Boolean).sort();
-        const difficulties = [...new Set(data.map(q => q.difficulty))].filter(Boolean).sort();
-        const questionTypes = [...new Set(data.map(q => q.questiontype))].filter(Boolean).sort();
-        const years = [...new Set(data.map(q => q.year))].filter(Boolean).sort((a, b) => b.localeCompare(a));
-
-        // Atualizar o estado com os valores extraídos
-        state.setInstitutions(institutions);
-        state.setOrganizations(organizations);
-        state.setRoles(roles);
-        state.setDisciplines(disciplines);
-        state.setLevels(levels);
-        state.setDifficulties(difficulties);
-        state.setQuestionTypes(questionTypes);
-        state.setYears(years);
-      } catch (error) {
-        console.error('Erro ao carregar questões:', error);
-        toast.error('Erro ao carregar questões. Tente novamente.');
-      }
-    };
-    
-    fetchQuestionsAndRelatedData();
+    actions.fetchQuestionsAndRelatedData();
   }, []);
 
   return (
@@ -159,6 +102,8 @@ const Questoes: React.FC = () => {
           />
         </Card>
       )}
+
+      <ImportQuestionsCard onQuestionsImported={actions.fetchQuestionsAndRelatedData} />
 
       <Card title="Questões Cadastradas" description="Visualize e gerencie as questões cadastradas" defaultOpen={false}>
         <QuestionFilters

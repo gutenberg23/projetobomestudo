@@ -1,4 +1,3 @@
-
 import { useClipboardActions } from "./actions/useClipboardActions";
 import { useSaveQuestionActions } from "./actions/useSaveQuestionActions";
 import { useSearchQuestionActions } from "./actions/useSearchQuestionActions";
@@ -6,6 +5,7 @@ import { useUpdateQuestionActions } from "./actions/useUpdateQuestionActions";
 import { useQuestionSelectionActions } from "./actions/useQuestionSelectionActions";
 import { useQuestionManagementActions } from "./actions/useQuestionManagementActions";
 import { useFilterActions } from "./actions/useFilterActions";
+import { useFetchQuestionsActions } from "./actions/useFetchQuestionsActions";
 
 export const useQuestionActions = (state: ReturnType<typeof import("./useQuestionsState").useQuestionsState>) => {
   const { copyToClipboard } = useClipboardActions();
@@ -20,6 +20,7 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     handleClearAllQuestionStats
   } = useQuestionManagementActions(state);
   const { getFilteredQuestions, resetFilters } = useFilterActions(state);
+  const { fetchQuestionsAndRelatedData } = useFetchQuestionsActions(state);
 
   return {
     copyToClipboard,
@@ -33,6 +34,7 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     getFilteredQuestions,
     resetFilters,
     handleClearQuestionStats,
-    handleClearAllQuestionStats
+    handleClearAllQuestionStats,
+    fetchQuestionsAndRelatedData
   };
 };
