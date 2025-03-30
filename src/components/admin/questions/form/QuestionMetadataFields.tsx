@@ -5,6 +5,12 @@ import AssuntosField from "./AssuntosField";
 import { useSelectFieldState } from "./useSelectFieldState";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 import AddValueDialog from "./AddValueDialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface QuestionMetadataFieldsProps {
   institution: string;
@@ -25,6 +31,7 @@ interface QuestionMetadataFieldsProps {
   setQuestionType: (value: string) => void;
   topicos: string[];
   setTopicos: (value: string[]) => void;
+  showValidation?: boolean;
 }
 
 export const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
@@ -46,6 +53,7 @@ export const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
   setQuestionType,
   topicos,
   setTopicos,
+  showValidation = false,
 }) => {
   const dropdownData = useQuestionManagementStore((state) => state.dropdownData);
 
@@ -130,95 +138,108 @@ export const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Banca */}
-        <SelectField
-          id="institution"
-          label="Banca"
-          value={institutionState.value}
-          onChange={setInstitution}
-          options={dropdownData.institutions}
-          handleEditOption={institutionState.handleEdit}
-          handleDeleteOption={institutionState.handleDelete}
-          openAddDialog={() => institutionState.setIsDialogOpen(true)}
-          placeholder="Selecione a banca"
-        />
+        <div className="space-y-2">
+          <Label htmlFor="institution">Banca</Label>
+          <Select value={institutionState.value} onValueChange={setInstitution}>
+            <SelectTrigger className={cn(showValidation && !institution && "border-red-500")}>
+              <SelectValue placeholder="Selecione a banca" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.institutions.map((inst) => (
+                <SelectItem key={inst} value={inst}>{inst}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Órgão */}
-        <SelectField
-          id="organization"
-          label="Órgão"
-          value={organizationState.value}
-          onChange={setOrganization}
-          options={dropdownData.organizations}
-          handleEditOption={organizationState.handleEdit}
-          handleDeleteOption={organizationState.handleDelete}
-          openAddDialog={() => organizationState.setIsDialogOpen(true)}
-          placeholder="Selecione o órgão"
-        />
+        <div className="space-y-2">
+          <Label htmlFor="organization">Órgão</Label>
+          <Select value={organizationState.value} onValueChange={setOrganization}>
+            <SelectTrigger className={cn(showValidation && !organization && "border-red-500")}>
+              <SelectValue placeholder="Selecione o órgão" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.organizations.map((org) => (
+                <SelectItem key={org} value={org}>{org}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Ano */}
-        <SelectField
-          id="year"
-          label="Ano"
-          value={yearState.value}
-          onChange={setYear}
-          options={dropdownData.years}
-          handleEditOption={yearState.handleEdit}
-          handleDeleteOption={yearState.handleDelete}
-          openAddDialog={() => yearState.setIsDialogOpen(true)}
-          placeholder="Selecione o ano"
-        />
+        <div className="space-y-2">
+          <Label htmlFor="year">Ano</Label>
+          <Select value={yearState.value} onValueChange={setYear}>
+            <SelectTrigger className={cn(showValidation && !year && "border-red-500")}>
+              <SelectValue placeholder="Selecione o ano" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.years.map((y) => (
+                <SelectItem key={y} value={y}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Disciplina */}
-        <SelectField
-          id="discipline"
-          label="Disciplina"
-          value={disciplineState.value}
-          onChange={setDiscipline}
-          options={dropdownData.disciplines}
-          handleEditOption={disciplineState.handleEdit}
-          handleDeleteOption={disciplineState.handleDelete}
-          openAddDialog={() => disciplineState.setIsDialogOpen(true)}
-          placeholder="Selecione a disciplina"
-        />
+        <div className="space-y-2">
+          <Label htmlFor="discipline">Disciplina</Label>
+          <Select value={disciplineState.value} onValueChange={setDiscipline}>
+            <SelectTrigger className={cn(showValidation && !discipline && "border-red-500")}>
+              <SelectValue placeholder="Selecione a disciplina" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.disciplines.map((disc) => (
+                <SelectItem key={disc} value={disc}>{disc}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Nível */}
-        <SelectField
-          id="level"
-          label="Nível"
-          value={levelState.value}
-          onChange={setLevel}
-          options={dropdownData.levels}
-          handleEditOption={levelState.handleEdit}
-          handleDeleteOption={levelState.handleDelete}
-          openAddDialog={() => levelState.setIsDialogOpen(true)}
-          placeholder="Selecione o nível"
-        />
+        <div className="space-y-2">
+          <Label htmlFor="level">Nível</Label>
+          <Select value={levelState.value} onValueChange={setLevel}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o nível" />
+            </SelectTrigger>
+            <SelectContent>
+              {dropdownData.levels.map((lvl) => (
+                <SelectItem key={lvl} value={lvl}>{lvl}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Dificuldade */}
-        <SelectField
-          id="difficulty"
-          label="Dificuldade"
-          value={difficultyState.value}
-          onChange={setDifficulty}
-          options={dropdownData.difficulties}
-          handleEditOption={difficultyState.handleEdit}
-          handleDeleteOption={difficultyState.handleDelete}
-          openAddDialog={() => difficultyState.setIsDialogOpen(true)}
-          placeholder="Selecione a dificuldade"
-        />
+        <div className="space-y-2">
+          <Label htmlFor="difficulty">Dificuldade</Label>
+          <Select value={difficultyState.value} onValueChange={setDifficulty}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a dificuldade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="facil">Fácil</SelectItem>
+              <SelectItem value="medio">Médio</SelectItem>
+              <SelectItem value="dificil">Difícil</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Tipo de Questão */}
-        <SelectField
-          id="questionType"
-          label="Tipo de Questão"
-          value={questionTypeState.value}
-          onChange={setQuestionType}
-          options={dropdownData.questionTypes}
-          handleEditOption={questionTypeState.handleEdit}
-          handleDeleteOption={questionTypeState.handleDelete}
-          openAddDialog={() => questionTypeState.setIsDialogOpen(true)}
-          placeholder="Selecione o tipo"
-        />
+        <div className="space-y-2">
+          <Label htmlFor="questionType">Tipo de Questão</Label>
+          <Select value={questionTypeState.value} onValueChange={setQuestionType}>
+            <SelectTrigger className={cn(showValidation && !questionType && "border-red-500")}>
+              <SelectValue placeholder="Selecione o tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Múltipla Escolha">Múltipla Escolha</SelectItem>
+              <SelectItem value="Certo ou Errado">Certo ou Errado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Cargo */}
         <CheckboxGroup

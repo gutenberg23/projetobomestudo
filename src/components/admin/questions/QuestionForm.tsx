@@ -7,6 +7,9 @@ import SubmitButton from "./form/SubmitButton";
 import { useClipboard } from "./form/useClipboard";
 import { QuestionOption } from "./types";
 import { useQuestionManagementStore } from "@/stores/questionManagementStore";
+import { AIPromptCard } from "./form/AIPromptCard";
+import { toast } from "sonner";
+import { generateAIResponse } from "@/services/aiService";
 
 interface QuestionFormProps {
   year: string;
@@ -73,10 +76,41 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   setTopicos,
   onSubmit,
   submitButtonText,
-  isEditing = false
+  isEditing = false,
 }) => {
-  const { copyToClipboard } = useClipboard();
-  const dropdownData = useQuestionManagementStore((state) => state.dropdownData);
+  const [aiPrompt, setAIPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showValidation, setShowValidation] = useState(false);
+
+  const handleGenerateAIResponse = async () => {
+    try {
+      setIsGenerating(true);
+
+      const questionData = {
+        text: questionText,
+        options: options.map((opt, index) => ({
+          letter: String.fromCharCode(65 + index),
+          text: opt.text,
+          isCorrect: opt.isCorrect
+        })),
+        discipline,
+        level,
+        difficulty,
+        topicos,
+        existingExplanation: aiExplanation,
+        prompt: aiPrompt
+      };
+
+      const response = await generateAIResponse(questionData);
+      setAIExplanation(response);
+      toast.success("Resposta da IA gerada com sucesso!");
+    } catch (error) {
+      console.error("Erro ao gerar resposta da IA:", error);
+      toast.error("Erro ao gerar resposta da IA");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   // Função para garantir o número correto de opções baseado no tipo de questão
   const ensureCorrectNumberOfOptions = () => {
@@ -108,6 +142,27 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
     }
   }, [questionType]);
 
+  const handleSubmit = () => {
+    // Validar apenas campos obrigatórios
+    if (!institution || !organization || !year || !discipline || !questionType || !questionText) {
+      setShowValidation(true);
+      toast.error("Por favor, preencha todos os campos obrigatórios");
+      return;
+    }
+
+    // Validar opções
+    if (questionType === "Múltipla Escolha") {
+      // Validar apenas as 4 primeiras alternativas
+      const requiredOptions = options.slice(0, 4);
+      if (!requiredOptions.every(opt => opt.text.trim())) {
+        toast.error("As 4 primeiras alternativas são obrigatórias");
+        return;
+      }
+    }
+
+    onSubmit();
+  };
+
   return (
     <div className="space-y-6">
       {/* Question Metadata Fields */}
@@ -130,6 +185,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         setQuestionType={setQuestionType}
         topicos={topicos}
         setTopicos={setTopicos}
+        showValidation={showValidation}
       />
 
       {/* Expandable Content */}
@@ -167,7 +223,13 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
       </div>
 
       {/* Question Options */}
-      {questionType && <QuestionOptions questionType={questionType} options={options} setOptions={setOptions} />}
+      {questionType && (
+        <QuestionOptions
+          questionType={questionType}
+          options={options}
+          setOptions={setOptions}
+        />
+      )}
 
       {/* Teacher Explanation */}
       <div>
@@ -189,7 +251,7 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
       {/* AI Explanation */}
       <div>
         <label htmlFor="ai-explanation" className="block text-sm font-medium text-[#272f3c] mb-1">
-          Resposta da BIA
+          Resposta da BIA (BomEstudo IA)
         </label>
         <QuestionTextFields 
           questionText={null} 
@@ -203,8 +265,19 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
         />
       </div>
 
+      {/* AI Prompt Card */}
+      <AIPromptCard
+        aiPrompt={aiPrompt}
+        setAIPrompt={setAIPrompt}
+        onGenerate={handleGenerateAIResponse}
+        isGenerating={isGenerating}
+      />
+
       {/* Submit Button */}
-      <SubmitButton onClick={onSubmit} text={submitButtonText} />
+      <SubmitButton
+        onClick={handleSubmit}
+        text={submitButtonText}
+      />
     </div>
   );
 };

@@ -1,33 +1,26 @@
-
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Json } from "@/integrations/supabase/types";
+import { useQuestionManagementStore } from "@/stores/questionManagementStore";
 
 export const useUpdateQuestionActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
+  const questions = useQuestionManagementStore((state) => state.questions);
+  const setQuestions = useQuestionManagementStore((state) => state.setQuestions);
+
   const handleUpdateQuestion = async () => {
     const {
       questionId, year, institution, organization, role, discipline,
       level, difficulty, questionType, questionText, teacherExplanation,
-      aiExplanation, expandableContent, options, questions, setQuestions, 
-      setIsEditQuestionCardOpen, setQuestionId, setYear, setInstitution, 
-      setOrganization, setRole, setDiscipline, setLevel, setDifficulty, 
-      setQuestionType, setQuestionText, setTeacherExplanation, setAIExplanation, 
-      setExpandableContent, setOptions, topicos, setTopicos
+      aiExplanation, expandableContent, options, setIsEditQuestionCardOpen, 
+      setQuestionId, setYear, setInstitution, setOrganization, setRole, 
+      setDiscipline, setLevel, setDifficulty, setQuestionType, setQuestionText, 
+      setTeacherExplanation, setAIExplanation, setExpandableContent, setOptions, 
+      topicos, setTopicos
     } = state;
 
-    // Verificações de preenchimento (igual ao salvamento)
-    if (
-      !year || 
-      !institution || 
-      !organization || 
-      !role || 
-      !discipline || 
-      !level || 
-      !difficulty || 
-      !questionType || 
-      !questionText
-    ) {
-      toast.error("Preencha todos os campos obrigatórios!");
+    // Validar apenas campos obrigatórios
+    if (!year || !institution || !organization || !discipline || !questionType || !questionText) {
+      toast.error("Por favor, preencha todos os campos obrigatórios");
       return;
     }
 
@@ -39,10 +32,10 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
       }
 
       if (questionType === "Múltipla Escolha") {
-        // Verificar se todas as alternativas têm texto para múltipla escolha
-        const emptyOptions = options.filter(o => !o.text.trim());
-        if (emptyOptions.length > 0) {
-          toast.error("Todas as alternativas devem ter um texto!");
+        // Verificar apenas as 4 primeiras alternativas
+        const requiredOptions = options.slice(0, 4);
+        if (!requiredOptions.every(opt => opt.text.trim())) {
+          toast.error("As 4 primeiras alternativas são obrigatórias");
           return;
         }
       }
@@ -60,18 +53,18 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
         year,
         institution,
         organization,
-        role,
+        role: role || null,
         discipline,
-        level,
-        difficulty,
+        level: level || null,
+        difficulty: difficulty || null,
         questiontype: questionType,
         content: questionText,
-        teacherexplanation: teacherExplanation,
-        aiexplanation: aiExplanation,
-        expandablecontent: expandableContent,
-        options: options as unknown as Json, // Forçar a conversão para Json
-        topicos,
-        updated_at: new Date().toISOString() // Converter Date para string ISO
+        teacherexplanation: teacherExplanation || null,
+        aiexplanation: aiExplanation || null,
+        expandablecontent: expandableContent || null,
+        options: options as unknown as Json,
+        topicos: topicos || [],
+        updated_at: new Date().toISOString()
       };
 
       // Atualizar no banco de dados
