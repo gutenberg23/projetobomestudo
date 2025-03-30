@@ -4,6 +4,7 @@ drop table if exists "public"."questoes_erros_reportados";
 create table "public"."questoes_erros_reportados" (
     "id" uuid not null default gen_random_uuid(),
     "questao_id" text not null references public.questoes(id) on delete cascade,
+    "user_id" uuid not null references auth.users(id) on delete cascade,
     "descricao" text not null,
     "status" text not null default 'pendente'::text,
     "created_at" timestamp with time zone not null default timezone('utc'::text, now()),
@@ -40,4 +41,4 @@ with check (
 create policy "Usuários podem reportar erros"
 on public.questoes_erros_reportados for insert
 to authenticated
-with check (true); 
+with check (auth.uid() = user_id); 

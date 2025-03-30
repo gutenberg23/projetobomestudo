@@ -693,51 +693,26 @@ export type Database = {
       }
       profiles: {
         Row: {
-          assinante: boolean | null
-          cursos_favoritos: string[] | null
-          disciplinas_favoritos: string[] | null
-          email: string | null
-          foto_perfil: string | null
           id: string
-          inicio_assinatura: string | null
+          email: string | null
           nome: string | null
-          role: string | null
-          status: string | null
-          termino_assinatura: string | null
-          tipo: string | null
-          ultimo_login: string | null
+          created_at: string
+          updated_at: string
         }
         Insert: {
-          assinante?: boolean | null
-          cursos_favoritos?: string[] | null
-          disciplinas_favoritos?: string[] | null
-          email?: string | null
-          foto_perfil?: string | null
           id: string
-          inicio_assinatura?: string | null
+          email?: string | null
           nome?: string | null
-          role?: string | null
-          status?: string | null
-          termino_assinatura?: string | null
-          tipo?: string | null
-          ultimo_login?: string | null
+          created_at?: string
+          updated_at?: string
         }
         Update: {
-          assinante?: boolean | null
-          cursos_favoritos?: string[] | null
-          disciplinas_favoritos?: string[] | null
-          email?: string | null
-          foto_perfil?: string | null
           id?: string
-          inicio_assinatura?: string | null
+          email?: string | null
           nome?: string | null
-          role?: string | null
-          status?: string | null
-          termino_assinatura?: string | null
-          tipo?: string | null
-          ultimo_login?: string | null
+          created_at?: string
+          updated_at?: string
         }
-        Relationships: []
       }
       question_stats_clearing_log: {
         Row: {
@@ -1076,6 +1051,7 @@ export type Database = {
         Row: {
           id: string
           questao_id: string
+          user_id: string
           descricao: string
           status: string
           created_at: string
@@ -1084,6 +1060,7 @@ export type Database = {
         Insert: {
           id?: string
           questao_id: string
+          user_id: string
           descricao: string
           status?: string
           created_at?: string
@@ -1092,6 +1069,7 @@ export type Database = {
         Update: {
           id?: string
           questao_id?: string
+          user_id?: string
           descricao?: string
           status?: string
           created_at?: string
@@ -1247,6 +1225,15 @@ export type Database = {
             }
             Returns: undefined
           }
+      get_users_by_ids: {
+        Args: {
+          user_ids: string[]
+        }
+        Returns: {
+          id: string
+          email: string
+        }[]
+      }
     }
     Enums: {
       user_role: "aluno" | "professor" | "admin"

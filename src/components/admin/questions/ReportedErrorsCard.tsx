@@ -14,6 +14,11 @@ type ReportedError = Database['public']['Tables']['questoes_erros_reportados']['
     institution: string;
     discipline: string;
   };
+  user?: {
+    id: string;
+    email: string | null;
+    nome: string | null;
+  };
 };
 
 interface ReportedErrorsCardProps {
@@ -44,7 +49,23 @@ export function ReportedErrorsCard({ onEditQuestion }: ReportedErrorsCardProps) 
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setReportedErrors(data || []);
+
+      // Buscar os emails dos usuários separadamente
+      const userIds = data?.map(error => error.user_id) || [];
+      const { data: usersData, error: usersError } = await supabase
+        .from('profiles')
+        .select('id, email, nome')
+        .in('id', userIds);
+
+      if (usersError) throw usersError;
+
+      // Combinar os dados
+      const combinedData = data?.map(error => ({
+        ...error,
+        user: usersData?.find(user => user.id === error.user_id)
+      })) || [];
+
+      setReportedErrors(combinedData);
     } catch (error) {
       console.error('Erro ao buscar erros reportados:', error);
       toast.error('Erro ao carregar erros reportados');
@@ -77,7 +98,6 @@ export function ReportedErrorsCard({ onEditQuestion }: ReportedErrorsCardProps) 
 
   const handleResolveError = (questionId: string, errorId: string) => {
     onEditQuestion(questionId);
-    handleStatusChange(errorId, 'resolvido');
   };
 
   const getStatusBadge = (status: string) => {
@@ -125,13 +145,39 @@ export function ReportedErrorsCard({ onEditQuestion }: ReportedErrorsCardProps) 
                     size="sm"
                     onClick={() => handleResolveError(error.questao_id, error.id)}
                   >
-                    Resolver erro
+                    Editar questão
                   </Button>
                 </div>
               </div>
               <p className="text-sm text-gray-600">{error.descricao}</p>
-              <div className="text-xs text-gray-400">
-                Reportado em: {new Date(error.created_at).toLocaleString()}
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-gray-400">
+                  Reportado por: {error.user?.nome || error.user?.email || 'Usuário desconhecido'}
+                </div>
+                <div className="text-xs text-gray-400">
+                  Reportado em: {new Date(error.created_at).toLocaleString()}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                {getStatusBadge(error.status)}
+                {error.status === 'pendente' && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStatusChange(error.id, 'resolvido')}
+                    >
+                      Marcar como resolvido
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleStatusChange(error.id, 'ignorado')}
+                    >
+                      Ignorar
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           ))}
