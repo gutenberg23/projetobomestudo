@@ -19,6 +19,10 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 
 export const generateAIResponse = async (questionData: QuestionData): Promise<string> => {
   try {
+    if (!API_URL) {
+      throw new Error('URL da API não configurada');
+    }
+
     // Construir o prompt baseado nos dados da questão
     const basePrompt = `Você é um assistente especializado em explicar questões de concursos.
 A questão é da disciplina ${questionData.discipline}, nível ${questionData.level} e dificuldade ${questionData.difficulty}.
@@ -38,7 +42,7 @@ Por favor, reescreva a explicação de uma forma diferente, mantendo a mesma est
 ${questionData.prompt ? `\nInstruções adicionais:
 ${questionData.prompt}` : ''}`;
 
-    console.log('Enviando requisição para a API...');
+    console.log('Enviando requisição para a API...', API_URL);
 
     // Fazer a chamada à API
     const response = await fetch(`${API_URL}/generate`, {
@@ -56,13 +60,12 @@ ${questionData.prompt}` : ''}`;
       }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `Erro HTTP: ${response.status}` }));
-      console.error('Erro na resposta da API:', errorData);
-      throw new Error(errorData.error || `Erro ao gerar resposta da IA (status: ${response.status})`);
-    }
-
     const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Erro na resposta da API:', data);
+      throw new Error(data.error || data.details || `Erro ao gerar resposta da IA (status: ${response.status})`);
+    }
     
     if (!data.choices || !data.choices[0] || !data.choices[0].text) {
       console.error('Resposta inválida da API:', data);
