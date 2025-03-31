@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import Card from "@/components/admin/questions/Card";
 import QuestionFilters from "@/components/admin/questions/QuestionFilters";
 import QuestionList from "@/components/admin/questions/QuestionList";
@@ -29,41 +29,37 @@ const Questoes: React.FC = () => {
   const questions = useQuestionManagementStore((state) => state.questions);
   const dropdownData = useQuestionManagementStore((state) => state.dropdownData);
   
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const { filters, setFilters, showFilters, setShowFilters, resetFilters, getFilteredQuestions } = useFilterActions(state);
   
   // Calcular paginação
   const filteredQuestions = getFilteredQuestions(questions);
-  const paginatedQuestions = filteredQuestions;
-
-  // Função para converter options do banco para o formato esperado
-  const parseOptions = (options: Json | null): QuestionOption[] => {
-    if (!options) return [];
-    
-    // Verificar se options é um array
-    if (Array.isArray(options)) {
-      return options.map((option: any) => ({
-        id: option.id || `option-${Math.random().toString(36).substr(2, 9)}`,
-        text: option.text || '',
-        isCorrect: Boolean(option.isCorrect)
-      }));
-    }
-    
-    return [];
-  };
+  const paginatedQuestions = filteredQuestions.slice(
+    (state.currentPage - 1) * ITEMS_PER_PAGE,
+    state.currentPage * ITEMS_PER_PAGE
+  );
 
   // Buscar questões e dados relacionados do banco de dados
   useEffect(() => {
-    fetchQuestionsAndRelatedData(currentPage);
-  }, [currentPage]);
+    console.log('Buscando questões para página:', state.currentPage);
+    state.setLoading(true);
+    fetchQuestionsAndRelatedData(state.currentPage)
+      .finally(() => {
+        state.setLoading(false);
+      });
+  }, [state.currentPage]);
 
   const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
+    console.log('Mudando para página:', newPage);
+    state.updatePage(newPage);
   };
 
   const handleQuestionsImported = () => {
-    fetchQuestionsAndRelatedData(currentPage);
+    console.log('Questões importadas, recarregando página atual');
+    state.setLoading(true);
+    fetchQuestionsAndRelatedData(state.currentPage)
+      .finally(() => {
+        state.setLoading(false);
+      });
   };
 
   const handleEditFromError = async (questionId: string) => {
@@ -95,6 +91,58 @@ const Questoes: React.FC = () => {
       console.error('Erro ao carregar questão:', error);
       toast.error('Erro ao carregar questão');
     }
+  };
+
+  // Renderizar a lista de questões
+  const renderQuestionList = () => {
+    if (state.loading) {
+      return <div className="flex justify-center items-center h-32">Carregando...</div>;
+    }
+
+    return (
+      <QuestionList
+        filteredQuestions={paginatedQuestions}
+        selectedQuestions={state.selectedQuestions}
+        toggleQuestionSelection={actions.toggleQuestionSelection}
+        handleCreateSimulado={actions.handleCreateSimulado}
+        handleRemoveQuestion={actions.handleRemoveQuestion}
+        handleEditQuestion={actions.handleEditQuestion}
+        copyToClipboard={actions.copyToClipboard}
+        handleClearQuestionStats={actions.handleClearQuestionStats}
+        questions={questions}
+      />
+    );
+  };
+
+  // Renderizar a paginação
+  const renderPagination = () => {
+    if (state.loading) {
+      return null;
+    }
+
+    return (
+      <div className="flex justify-center items-center gap-2 mt-4">
+        <Button
+          variant="outline"
+          onClick={() => handlePageChange(state.currentPage - 1)}
+          disabled={state.currentPage === 1 || state.loading}
+        >
+          Anterior
+        </Button>
+        
+        <span className="text-sm text-gray-600">
+          Página {state.currentPage} de {state.totalPages}
+        </span>
+        
+        <Button
+          variant="outline"
+          onClick={() => handlePageChange(state.currentPage + 1)}
+          disabled={state.currentPage === state.totalPages || state.loading}
+        >
+          Próxima
+        </Button>
+      </div>
+    );
   };
 
   return (
@@ -156,40 +204,8 @@ const Questoes: React.FC = () => {
           dropdownData={dropdownData}
         />
         
-        <QuestionList
-          filteredQuestions={paginatedQuestions}
-          selectedQuestions={state.selectedQuestions}
-          toggleQuestionSelection={actions.toggleQuestionSelection}
-          handleCreateSimulado={actions.handleCreateSimulado}
-          handleRemoveQuestion={actions.handleRemoveQuestion}
-          handleEditQuestion={actions.handleEditQuestion}
-          copyToClipboard={actions.copyToClipboard}
-          handleClearQuestionStats={actions.handleClearQuestionStats}
-          questions={questions}
-        />
-
-        {/* Paginação */}
-        <div className="flex justify-center items-center gap-2 mt-4">
-          <Button
-            variant="outline"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            Anterior
-          </Button>
-          
-          <span className="text-sm text-gray-600">
-            Página {currentPage} de {totalPages}
-          </span>
-          
-          <Button
-            variant="outline"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Próxima
-          </Button>
-        </div>
+        {renderQuestionList()}
+        {renderPagination()}
       </Card>
 
       <Card title="Nova Questão" description="Crie uma nova questão para suas listas" defaultOpen={false}>

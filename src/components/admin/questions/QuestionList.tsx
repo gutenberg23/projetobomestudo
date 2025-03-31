@@ -2,7 +2,7 @@ import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Copy, Edit, Trash, BarChart, Eraser } from "lucide-react";
+import { Copy, Edit, Trash, BarChart, Eraser, Bot } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QuestionStats } from "@/components/new/question/QuestionStats";
@@ -64,6 +64,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
                 <TableHead>Banca</TableHead>
                 <TableHead>Disciplina</TableHead>
                 <TableHead>Tipo</TableHead>
+                <TableHead>IA</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -104,6 +105,24 @@ const QuestionList: React.FC<QuestionListProps> = ({
                   <TableCell>{question.institution}</TableCell>
                   <TableCell>{question.discipline}</TableCell>
                   <TableCell>{question.questionType}</TableCell>
+                  <TableCell>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex items-center justify-center">
+                            {question.aiexplanation ? (
+                              <Bot className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Bot className="h-4 w-4 text-gray-300" />
+                            )}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{question.aiexplanation ? "Explicação de IA disponível" : "Sem explicação de IA"}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button variant="outline" size="sm" onClick={() => copyToClipboard(question.id)}>

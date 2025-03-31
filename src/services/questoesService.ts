@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { QuestionItemType, QuestionOption } from "@/components/admin/questions/types";
 import { Json } from "@/integrations/supabase/types";
 
-const ITEMS_PER_PAGE = 20;
+export const ITEMS_PER_PAGE = 20;
 
 const parseOptions = (options: Json | null): QuestionOption[] => {
   if (!options) return [];
@@ -22,6 +22,8 @@ export const fetchQuestionsData = async (page: number = 1) => {
   try {
     const start = (page - 1) * ITEMS_PER_PAGE;
     const end = start + ITEMS_PER_PAGE - 1;
+
+    console.log('Buscando questões:', { page, start, end, ITEMS_PER_PAGE });
 
     // Buscar questões com paginação
     const { data: questionsData, error: questionsError, count } = await supabase
@@ -93,11 +95,25 @@ export const fetchQuestionsData = async (page: number = 1) => {
       topicos: Array.from(new Set(allQuestionsData.flatMap(q => (Array.isArray(q.topicos) ? q.topicos : []).filter(Boolean)))).sort()
     };
 
+    const totalCount = count || 0;
+    const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+    console.log('Resultado da busca:', {
+      page,
+      start,
+      end,
+      totalCount,
+      totalPages,
+      questionsCount: questionsData.length,
+      questionsData: questionsData.map(q => q.id)
+    });
+
     return {
       questions: formattedQuestions,
       dropdownData,
-      totalCount: count || 0,
-      totalPages: Math.ceil((count || 0) / ITEMS_PER_PAGE)
+      totalCount,
+      totalPages,
+      currentPage: page
     };
   } catch (error) {
     console.error('Erro ao buscar dados das questões:', error);

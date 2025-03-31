@@ -56,14 +56,23 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
 
   const getFilteredQuestions = (questions: QuestionItemType[]): QuestionItemType[] => {
     return questions.filter(question => {
-      const matchesDisciplina = !filters.disciplina.isActive || question.discipline === filters.disciplina.value;
-      const matchesNivel = !filters.nivel.isActive || question.level === filters.nivel.value;
-      const matchesInstitution = !filters.institution.isActive || question.institution === filters.institution.value;
-      const matchesOrganization = !filters.organization.isActive || question.organization === filters.organization.value;
-      const matchesRole = !filters.role.isActive || question.role === filters.role.value;
-      const matchesAno = !filters.ano.isActive || question.year === filters.ano.value;
-      const matchesDificuldade = !filters.dificuldade.isActive || question.difficulty === filters.dificuldade.value;
-      const matchesQuestionType = !filters.questionType.isActive || question.questionType === filters.questionType.value;
+      const disciplinaValues = filters.disciplina.value ? filters.disciplina.value.split(',').filter(v => v !== '') : [];
+      const nivelValues = filters.nivel.value ? filters.nivel.value.split(',').filter(v => v !== '') : [];
+      const institutionValues = filters.institution.value ? filters.institution.value.split(',').filter(v => v !== '') : [];
+      const organizationValues = filters.organization.value ? filters.organization.value.split(',').filter(v => v !== '') : [];
+      const roleValues = filters.role.value ? filters.role.value.split(',').filter(v => v !== '') : [];
+      const anoValues = filters.ano.value ? filters.ano.value.split(',').filter(v => v !== '') : [];
+      const dificuldadeValues = filters.dificuldade.value ? filters.dificuldade.value.split(',').filter(v => v !== '') : [];
+      const questionTypeValues = filters.questionType.value ? filters.questionType.value.split(',').filter(v => v !== '') : [];
+
+      const matchesDisciplina = !filters.disciplina.isActive || disciplinaValues.length === 0 || disciplinaValues.includes(question.discipline);
+      const matchesNivel = !filters.nivel.isActive || nivelValues.length === 0 || nivelValues.includes(question.level);
+      const matchesInstitution = !filters.institution.isActive || institutionValues.length === 0 || institutionValues.includes(question.institution);
+      const matchesOrganization = !filters.organization.isActive || organizationValues.length === 0 || organizationValues.includes(question.organization);
+      const matchesRole = !filters.role.isActive || roleValues.length === 0 || roleValues.includes(question.role);
+      const matchesAno = !filters.ano.isActive || anoValues.length === 0 || anoValues.includes(question.year);
+      const matchesDificuldade = !filters.dificuldade.isActive || dificuldadeValues.length === 0 || dificuldadeValues.includes(question.difficulty);
+      const matchesQuestionType = !filters.questionType.isActive || questionTypeValues.length === 0 || questionTypeValues.includes(question.questionType);
 
       return (
         matchesDisciplina &&

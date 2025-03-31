@@ -1,6 +1,5 @@
-
 import React, { useState } from "react";
-import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy } from "lucide-react";
+import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -82,6 +81,12 @@ export const Header = () => {
                 <Settings className="w-4 h-4" />
                 Configurações
               </Link>
+              {user?.role === "admin" && (
+                <Link to="/admin" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Área Administrativa
+                </Link>
+              )}
               <div className="md:hidden border-t border-gray-100">
                 <Link to="/blog" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                   <Newspaper className="w-4 h-4" />

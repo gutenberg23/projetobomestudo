@@ -1,10 +1,12 @@
-import { useQuestionManagementStore } from "@/stores/questionManagementStore";
-import { fetchQuestionsData } from "@/services/questoesService";
+import { useQuestionsState } from '../useQuestionsState';
+import { fetchQuestionsData } from '@/services/questoesService';
+import { useQuestionManagementStore } from '@/stores/questionManagementStore';
 import { toast } from "sonner";
 import { QuestionItemType, QuestionOption } from "../../types";
 import { Json } from "@/integrations/supabase/types";
 
 export const useFetchQuestionsActions = () => {
+  const state = useQuestionsState();
   const setQuestions = useQuestionManagementStore((state) => state.setQuestions);
   const setDropdownData = useQuestionManagementStore((state) => state.setDropdownData);
 
@@ -24,16 +26,21 @@ export const useFetchQuestionsActions = () => {
     return [];
   };
 
-  const fetchQuestionsAndRelatedData = async (page: number = 1) => {
+  const fetchQuestionsAndRelatedData = async (page: number) => {
     try {
-      const { questions, dropdownData } = await fetchQuestionsData(page);
+      state.setLoading(true);
+      const response = await fetchQuestionsData(page);
       
-      setQuestions(questions);
-      setDropdownData(dropdownData);
+      setQuestions(response.questions);
+      setDropdownData(response.dropdownData);
+      state.updateQuestions(response.questions, response.totalCount);
+      state.updatePage(page);
     } catch (error) {
-      console.error('Erro ao buscar questões e dados relacionados:', error);
+      console.error('Erro ao buscar questões:', error);
       toast.error('Erro ao carregar questões. Tente novamente.');
       throw error;
+    } finally {
+      state.setLoading(false);
     }
   };
 
