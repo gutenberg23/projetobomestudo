@@ -113,37 +113,6 @@ const Questoes: React.FC = () => {
     );
   };
 
-  // Renderizar a paginação
-  const renderPagination = () => {
-    if (state.loading) {
-      return null;
-    }
-
-    return (
-      <div className="flex justify-center items-center gap-2 mt-4">
-        <Button
-          variant="outline"
-          onClick={() => handlePageChange(state.currentPage - 1)}
-          disabled={state.currentPage === 1 || state.loading}
-        >
-          Anterior
-        </Button>
-        
-        <span className="text-sm text-gray-600">
-          Página {state.currentPage} de {state.totalPages}
-        </span>
-        
-        <Button
-          variant="outline"
-          onClick={() => handlePageChange(state.currentPage + 1)}
-          disabled={state.currentPage === state.totalPages || state.loading}
-        >
-          Próxima
-        </Button>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6 p-4">
       <div>
@@ -204,7 +173,6 @@ const Questoes: React.FC = () => {
         />
         
         {renderQuestionList()}
-        {renderPagination()}
       </Card>
 
       <Card title="Nova Questão" description="Crie uma nova questão para suas listas" defaultOpen={false}>
