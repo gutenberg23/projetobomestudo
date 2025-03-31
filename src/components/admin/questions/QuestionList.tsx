@@ -1,116 +1,66 @@
 import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Copy, Edit, Trash, BarChart, Eraser, Bot } from "lucide-react";
+import { Copy, Edit, Trash2, BarChart, Eraser, Bot } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QuestionStats } from "@/components/new/question/QuestionStats";
 import { QuestionItemType } from "./types";
+import { Pagination } from "@/components/ui/pagination";
 
 interface QuestionListProps {
-  filteredQuestions: QuestionItemType[];
-  selectedQuestions: string[];
-  toggleQuestionSelection: (id: string) => void;
-  handleCreateSimulado: () => void;
-  handleRemoveQuestion: (id: string) => Promise<void>;
+  questions: QuestionItemType[];
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
   handleEditQuestion: (question: QuestionItemType) => Promise<void>;
+  handleRemoveQuestion: (id: string) => Promise<void>;
   copyToClipboard: (text: string) => void;
   handleClearQuestionStats: (id: string) => Promise<void>;
-  questions: QuestionItemType[];
 }
 
 const QuestionList: React.FC<QuestionListProps> = ({
-  filteredQuestions,
-  selectedQuestions,
-  toggleQuestionSelection,
-  handleCreateSimulado,
-  handleRemoveQuestion,
+  questions,
+  currentPage,
+  totalPages,
+  onPageChange,
   handleEditQuestion,
+  handleRemoveQuestion,
   copyToClipboard,
   handleClearQuestionStats,
-  questions
 }) => {
   return (
-    <div>
-      <div className="text-sm text-gray-500 mb-4">
-        {filteredQuestions.length} questões encontradas
+    <div className="space-y-4">
+      <div className="text-sm text-gray-500">
+        {questions.length} questões cadastradas
       </div>
       
-      {filteredQuestions.length === 0 ? (
+      {questions.length === 0 ? (
         <p className="text-[#67748a] text-center py-6">Nenhuma questão cadastrada.</p>
       ) : (
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[40px]">
-                  <Checkbox 
-                    checked={filteredQuestions.length > 0 && selectedQuestions.length === filteredQuestions.length} 
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        // Selecionar todas as questões
-                        const allIds = filteredQuestions.map(q => q.id);
-                        toggleQuestionSelection(allIds.join(','));
-                      } else {
-                        // Desmarcar todas
-                        toggleQuestionSelection('');
-                      }
-                    }} 
-                  />
-                </TableHead>
-                <TableHead>ID</TableHead>
                 <TableHead>Ano</TableHead>
                 <TableHead>Banca</TableHead>
-                <TableHead>Disciplina</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>IA</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredQuestions.map((question) => (
+              {questions.map((question) => (
                 <TableRow key={question.id}>
-                  <TableCell>
-                    <Checkbox 
-                      checked={selectedQuestions.includes(question.id)} 
-                      onCheckedChange={() => toggleQuestionSelection(question.id)} 
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {question.id}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                                  <BarChart className="h-4 w-4" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[700px] p-0">
-                                <QuestionStats questionId={question.id} />
-                              </PopoverContent>
-                            </Popover>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Estatísticas da Questão</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  </TableCell>
                   <TableCell>{question.year}</TableCell>
                   <TableCell>{question.institution}</TableCell>
-                  <TableCell>{question.discipline}</TableCell>
                   <TableCell>{question.questionType}</TableCell>
                   <TableCell>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="flex items-center justify-center">
-                            {question.aiexplanation ? (
+                            {question.aiExplanation ? (
                               <Bot className="h-4 w-4 text-green-500" />
                             ) : (
                               <Bot className="h-4 w-4 text-gray-300" />
@@ -118,22 +68,52 @@ const QuestionList: React.FC<QuestionListProps> = ({
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>{question.aiexplanation ? "Explicação de IA disponível" : "Sem explicação de IA"}</p>
+                          <p>{question.aiExplanation ? "Explicação de IA disponível" : "Sem explicação de IA"}</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => copyToClipboard(question.id)}>
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleEditQuestion(question)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleRemoveQuestion(question.id)}>
-                        <Trash className="h-4 w-4" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => copyToClipboard(question.id)}>
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Copiar ID</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => handleEditQuestion(question)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar questão</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => handleRemoveQuestion(question.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Excluir questão</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -151,6 +131,26 @@ const QuestionList: React.FC<QuestionListProps> = ({
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                  <BarChart className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[700px] p-0">
+                                <QuestionStats questionId={question.id} />
+                              </PopoverContent>
+                            </Popover>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Estatísticas da questão</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -160,17 +160,16 @@ const QuestionList: React.FC<QuestionListProps> = ({
         </div>
       )}
 
-      <div className="mt-4 flex justify-end">
-        <Button
-          onClick={handleCreateSimulado}
-          className="bg-[#272f3c] hover:bg-[#1a1f28] text-white"
-          disabled={selectedQuestions.length === 0}
-        >
-          Criar Simulado ({selectedQuestions.length} questões selecionadas)
-        </Button>
+      <div className="flex justify-center mt-4">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+        />
       </div>
     </div>
   );
 };
 
 export default QuestionList;
+

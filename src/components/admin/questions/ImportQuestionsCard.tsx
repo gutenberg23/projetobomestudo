@@ -279,46 +279,12 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
       })));
 
       // Inserir questões no banco de dados
-      console.log('Estrutura da primeira questão:', JSON.stringify(questions[0], null, 2));
-      
-      // Garantir que estamos enviando apenas os campos necessários
-      const questionsToInsert = questions.map(q => ({
-        id: q.id,
-        user_id: q.user_id,
-        year: q.year,
-        institution: q.institution,
-        organization: q.organization,
-        role: q.role,
-        discipline: q.discipline,
-        level: q.level,
-        difficulty: q.difficulty,
-        questiontype: q.questiontype,
-        content: q.content,
-        teacherexplanation: q.teacherexplanation,
-        aiexplanation: q.aiexplanation,
-        expandablecontent: q.expandablecontent,
-        topicos: q.topicos,
-        options: q.options
-      }));
-
-      console.log('Estrutura da primeira questão após limpeza:', JSON.stringify(questionsToInsert[0], null, 2));
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('questoes')
-        .insert(questionsToInsert)
-        .select();
+        .insert(questions);
 
-      if (error) {
-        console.error('Erro detalhado do Supabase:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Dados inseridos com sucesso:', data);
       toast.success(`${questions.length} questões importadas com sucesso!`);
       onQuestionsImported();
     } catch (error) {

@@ -19,7 +19,7 @@ import { useQuestionManagementStore } from '@/stores/questionManagementStore';
 import { useFilterActions } from '@/components/admin/questions/hooks/actions/useFilterActions';
 import { fetchQuestionById } from '@/services/questoesService';
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 10;
 
 const Questoes: React.FC = () => {
   const state = useQuestionsState();
@@ -33,6 +33,7 @@ const Questoes: React.FC = () => {
   
   // Calcular paginação
   const filteredQuestions = getFilteredQuestions(questions);
+  const totalPages = Math.ceil(filteredQuestions.length / ITEMS_PER_PAGE);
   const paginatedQuestions = filteredQuestions.slice(
     (state.currentPage - 1) * ITEMS_PER_PAGE,
     state.currentPage * ITEMS_PER_PAGE
@@ -40,23 +41,22 @@ const Questoes: React.FC = () => {
 
   // Buscar questões e dados relacionados do banco de dados
   useEffect(() => {
-    console.log('Buscando questões para página:', state.currentPage);
+    console.log('Buscando questões');
     state.setLoading(true);
-    fetchQuestionsAndRelatedData(state.currentPage)
+    fetchQuestionsAndRelatedData()
       .finally(() => {
         state.setLoading(false);
       });
-  }, [state.currentPage]);
+  }, []);
 
   const handlePageChange = (newPage: number) => {
-    console.log('Mudando para página:', newPage);
     state.updatePage(newPage);
   };
 
   const handleQuestionsImported = () => {
     console.log('Questões importadas, recarregando página atual');
     state.setLoading(true);
-    fetchQuestionsAndRelatedData(state.currentPage)
+    fetchQuestionsAndRelatedData()
       .finally(() => {
         state.setLoading(false);
       });
@@ -101,15 +101,14 @@ const Questoes: React.FC = () => {
 
     return (
       <QuestionList
-        filteredQuestions={paginatedQuestions}
-        selectedQuestions={state.selectedQuestions}
-        toggleQuestionSelection={actions.toggleQuestionSelection}
-        handleCreateSimulado={actions.handleCreateSimulado}
-        handleRemoveQuestion={actions.handleRemoveQuestion}
+        questions={paginatedQuestions}
+        currentPage={state.currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
         handleEditQuestion={actions.handleEditQuestion}
+        handleRemoveQuestion={actions.handleRemoveQuestion}
         copyToClipboard={actions.copyToClipboard}
         handleClearQuestionStats={actions.handleClearQuestionStats}
-        questions={questions}
       />
     );
   };

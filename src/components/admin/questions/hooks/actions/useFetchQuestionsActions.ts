@@ -26,21 +26,14 @@ export const useFetchQuestionsActions = () => {
     return [];
   };
 
-  const fetchQuestionsAndRelatedData = async (page: number) => {
+  const fetchQuestionsAndRelatedData = async () => {
     try {
-      state.setLoading(true);
-      const response = await fetchQuestionsData(page);
-      
-      setQuestions(response.questions);
-      setDropdownData(response.dropdownData);
-      state.updateQuestions(response.questions, response.totalCount);
-      state.updatePage(page);
+      const { questions, dropdownData } = await fetchQuestionsData();
+      setQuestions(questions);
+      setDropdownData(dropdownData);
     } catch (error) {
       console.error('Erro ao buscar questões:', error);
-      toast.error('Erro ao carregar questões. Tente novamente.');
       throw error;
-    } finally {
-      state.setLoading(false);
     }
   };
 

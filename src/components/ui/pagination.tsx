@@ -13,7 +13,24 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange,
 }) => {
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 7;
+    const halfMaxVisiblePages = Math.floor(maxVisiblePages / 2);
+
+    let startPage = Math.max(1, currentPage - halfMaxVisiblePages);
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    return pages;
+  };
 
   return (
     <div className="flex items-center justify-center space-x-2">
@@ -26,7 +43,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         <ChevronLeft className="h-4 w-4" />
       </Button>
       
-      {pages.map((page) => (
+      {getPageNumbers().map((page) => (
         <Button
           key={page}
           variant={currentPage === page ? "default" : "outline"}
