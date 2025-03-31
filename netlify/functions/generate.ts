@@ -15,7 +15,7 @@ export const handler: Handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { prompt } = body;
+    const { prompt, max_tokens, temperature, top_p, frequency_penalty, presence_penalty } = body;
 
     if (!prompt) {
       return {
@@ -36,18 +36,37 @@ export const handler: Handler = async (event) => {
           content: prompt
         }
       ],
+      max_tokens: max_tokens || 1000,
+      temperature: temperature || 0.7,
+      top_p: top_p || 0.9,
+      frequency_penalty: frequency_penalty || 0.5,
+      presence_penalty: presence_penalty || 0.5,
     });
 
     return {
       statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      },
       body: JSON.stringify({
-        response: completion.choices[0].message.content
+        choices: [{
+          text: completion.choices[0].message.content
+        }]
       }),
     };
   } catch (error) {
     console.error('Erro:', error);
     return {
       statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      },
       body: JSON.stringify({ error: 'Erro interno do servidor' }),
     };
   }

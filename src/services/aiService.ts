@@ -15,6 +15,8 @@ interface QuestionData {
   prompt?: string;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 export const generateAIResponse = async (questionData: QuestionData): Promise<string> => {
   try {
     // Construir o prompt baseado nos dados da questão
@@ -39,7 +41,7 @@ ${questionData.prompt}` : ''}`;
     console.log('Enviando requisição para a API...');
 
     // Fazer a chamada à API
-    const response = await fetch('/api/generate', {
+    const response = await fetch(`${API_URL}/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
