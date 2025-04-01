@@ -142,4 +142,14 @@
 .pill-button-style textarea,
 .pill-button-style select {
   border-radius: 9999px !important;
+}
+
+/* Remover arredondamento apenas dos botões do menu do curso */
+button.course-nav-button,
+.course-nav-button.btn {
+  border-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
 } 

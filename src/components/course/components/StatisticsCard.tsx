@@ -45,7 +45,7 @@ export const StatisticsCard = ({
   )
   .filter(topic => topic.exercisesDone > 0) // Filtra apenas tópicos com exercícios feitos
   .sort((a, b) => a.performance - b.performance) // Ordena do pior para o melhor
-  .slice(0, 5); // Pega os 5 piores
+  .slice(0, 4); // Pega os 4 piores
 
   // Colors for the bar chart
   const BAR_COLORS = {

@@ -93,7 +93,7 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
             <button
               onClick={handleDisciplinasClick}
               className={cn(
-                "flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors",
+                "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
                 activeTab === 'disciplinas' && "text-[#5f2ebe] border-[#5f2ebe]"
               )}
             >
@@ -105,7 +105,7 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
             <button
               onClick={handleEditalClick}
               className={cn(
-                "flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors",
+                "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
                 activeTab === 'edital' && "text-[#5f2ebe] border-[#5f2ebe]"
               )}
             >
@@ -117,7 +117,7 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
             <button
               onClick={handleSimuladosClick}
               className={cn(
-                "flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors",
+                "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
                 activeTab === 'simulados' && "text-[#5f2ebe] border-[#5f2ebe]"
               )}
             >
@@ -129,11 +129,11 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
         
         {/* Botão de Progresso */}
         {activeTab === 'disciplinas' && (
-          <div className="hidden sm:flex">
+          <div className="flex">
             <button
               onClick={handleProgressClick}
               className={cn(
-                "flex items-center gap-2 px-4 py-3 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] transition-colors rounded-md",
+                "course-nav-button flex items-center gap-2 px-4 py-3 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] transition-colors rounded-none",
                 isProgressVisible && "bg-gray-100 text-[#5f2ebe]"
               )}
             >

@@ -188,11 +188,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     const fetchComments = async () => {
       try {
         // Primeiro buscar os comentários
-        const {
-          data: commentsData,
-          error,
-          count
-        } = await supabase
+        const { data: commentsData, error, count } = await supabase
           .from('comentarios_questoes')
           .select(`
             id,
@@ -202,9 +198,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             questao_id
           `, { count: 'exact' })
           .eq('questao_id', question.id)
-          .order('created_at', {
-            ascending: false
-          });
+          .order('created_at', { ascending: false });
 
         if (error) {
           console.error("Erro ao buscar comentários:", error);
@@ -218,24 +212,33 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
         if (commentsData && commentsData.length > 0) {
           // Para cada comentário, buscar os dados do perfil do usuário e os likes separadamente
-          const formattedComments = await Promise.all(commentsData.map(async comment => {
+          const formattedComments = await Promise.all(commentsData.map(async (comment) => {
             // Buscar dados do perfil separadamente
-            const {
-              data: profileData
-            } = await supabase.from('profiles').select('nome, foto_perfil').eq('id', comment.usuario_id).single();
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('nome, foto_perfil, google_photo')
+              .eq('id', comment.usuario_id)
+              .single();
 
             // Buscar likes do comentário
-            const {
-              data: likesData,
-              error: likesError
-            } = await supabase.from('likes_comentarios').select('id').eq('comentario_id', comment.id);
+            const { data: likesData, error: likesError } = await supabase
+              .from('likes_comentarios')
+              .select('id')
+              .eq('comentario_id', comment.id);
+
             if (likesError) {
               console.error("Erro ao buscar likes:", likesError);
             }
+
+            // Usar a foto do Google se disponível, senão usar a foto do perfil, ou fallback para o avatar padrão
+            const userAvatar = profileData?.google_photo || 
+                             profileData?.foto_perfil || 
+                             "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
+
             return {
               id: comment.id,
               author: profileData?.nome || "Usuário",
-              avatar: profileData?.foto_perfil || "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+              avatar: userAvatar,
               content: comment.conteudo,
               timestamp: new Date(comment.created_at).toLocaleDateString('pt-BR', {
                 day: '2-digit',
@@ -446,15 +449,21 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       const isLiked = likedComments.includes(commentId);
       if (isLiked) {
         // Remover o like - buscar o ID do like para deletar corretamente
-        const {
-          data,
-          error: findError
-        } = await supabase.from('likes_comentarios').select('id').eq('comentario_id', commentId).eq('usuario_id', userId).single();
+        const { data, error: findError } = await supabase
+          .from('likes_comentarios')
+          .select('id')
+          .eq('comentario_id', commentId)
+          .eq('usuario_id', userId)
+          .single();
+        
         if (findError) throw findError;
+        
         if (data && data.id) {
-          const {
-            error
-          } = await supabase.from('likes_comentarios').delete().eq('id', data.id);
+          const { error } = await supabase
+            .from('likes_comentarios')
+            .delete()
+            .eq('id', data.id);
+            
           if (error) throw error;
 
           // Atualizar estado local antes de buscar novamente
@@ -475,12 +484,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         }
       } else {
         // Adicionar o like
-        const {
-          error
-        } = await supabase.from('likes_comentarios').insert({
-          comentario_id: commentId,
-          usuario_id: userId
-        });
+        const { error } = await supabase
+          .from('likes_comentarios')
+          .insert({
+            comentario_id: commentId,
+            usuario_id: userId
+          });
+          
         if (error) throw error;
 
         // Atualizar estado local antes de buscar novamente
@@ -521,22 +531,39 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     }
     try {
       setSubmittingComment(true);
-      const {
-        data: newComment,
-        error
-      } = await supabase.from('comentarios_questoes').insert({
-        questao_id: question.id,
-        usuario_id: userId,
-        conteudo: comment
-      }).select().single();
+      
+      // Buscar dados do perfil do usuário primeiro
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('nome, foto_perfil, google_photo')
+        .eq('id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Usar a foto do Google se disponível, senão usar a foto do perfil, ou fallback para o avatar padrão
+      const userAvatar = profileData.google_photo || 
+                        profileData.foto_perfil || 
+                        "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
+
+      const { data: newComment, error } = await supabase
+        .from('comentarios_questoes')
+        .insert({
+          questao_id: question.id,
+          usuario_id: userId,
+          conteudo: comment
+        })
+        .select()
+        .single();
+
       if (error) throw error;
 
       // Adicionar o novo comentário à lista com os dados do perfil
       if (newComment) {
         const newCommentWithProfile = {
           id: newComment.id,
-          author: userName || "Usuário",
-          avatar: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+          author: profileData.nome || "Usuário",
+          avatar: userAvatar,
           content: newComment.conteudo,
           timestamp: new Date(newComment.created_at).toLocaleDateString('pt-BR', {
             day: '2-digit',
@@ -549,7 +576,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           userId
         };
         setComments(prev => [newCommentWithProfile, ...prev]);
-        setCommentsCount(prev => prev + 1); // Incrementar a contagem
+        setCommentsCount(prev => prev + 1);
         setComment("");
         toast.success("Comentário enviado com sucesso!");
       }

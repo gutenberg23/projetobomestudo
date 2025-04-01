@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { DashboardSummary } from "./components/DashboardSummary";
 import { SubjectTable } from "./components/SubjectTable";
@@ -380,7 +379,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
 
   logWithTimestamp("Renderizando view principal");
   return (
-    <div className="bg-[#f6f8fa] rounded-[10px] pb-5 px-[10px] md:px-5">
+    <div className="bg-[#f6f8fa] rounded-[10px] pb-5 w-full">
       {(activeTab !== 'edital' || (activeTab === 'edital' && hasEdital)) && (
         <DashboardSummary 
           overallStats={calculateOverallStats(subjects)} 
