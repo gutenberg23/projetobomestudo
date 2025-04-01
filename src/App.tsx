@@ -34,6 +34,7 @@ import Disciplinas from "./pages/admin/Disciplinas";
 import Cursos from "./pages/admin/Cursos";
 import Professores from "./pages/admin/Professores";
 import ConfiguracoesSite from "./pages/admin/ConfiguracoesSite";
+import Kanban from "./pages/admin/Kanban";
 
 // Importante: criar a instância do QueryClient dentro do componente
 const App = () => {
@@ -67,6 +68,7 @@ const App = () => {
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<Dashboard />} />
+                  <Route path="kanban" element={<Kanban />} />
                   <Route path="posts" element={<Posts />} />
                   <Route path="usuarios" element={<Usuarios />} />
                   <Route path="questoes" element={<Questoes />} />

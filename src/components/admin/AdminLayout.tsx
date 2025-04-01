@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Youtube,
   Settings,
+  Kanban,
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -28,6 +29,11 @@ const AdminLayout = () => {
       path: "/admin", 
       label: "Dashboard", 
       icon: <LayoutDashboard className="w-5 h-5" /> 
+    },
+    {
+      path: "/admin/kanban",
+      label: "Kanban",
+      icon: <Kanban className="w-5 h-5" />
     },
     { 
       path: "/admin/posts", 
