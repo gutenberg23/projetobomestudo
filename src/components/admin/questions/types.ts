@@ -90,4 +90,5 @@ export interface Filters {
   dificuldade: FilterItem;
   questionType: FilterItem;
   topicos: FilterItem;
+  conteudo: FilterItem;
 }

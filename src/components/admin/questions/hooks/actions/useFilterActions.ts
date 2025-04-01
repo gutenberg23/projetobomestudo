@@ -16,6 +16,7 @@ const initialFilters: Filters = {
   dificuldade: emptyFilter,
   questionType: emptyFilter,
   topicos: emptyFilter,
+  conteudo: emptyFilter,
 };
 
 export const useFilterActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
@@ -66,6 +67,7 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
       const dificuldadeValues = filters.dificuldade.value ? filters.dificuldade.value.split(',').filter(v => v !== '') : [];
       const questionTypeValues = filters.questionType.value ? filters.questionType.value.split(',').filter(v => v !== '') : [];
       const topicosValues = filters.topicos.value ? filters.topicos.value.split(',').filter(v => v !== '') : [];
+      const searchTerm = filters.conteudo.value ? filters.conteudo.value.toLowerCase() : '';
 
       const matchesDisciplina = !filters.disciplina.isActive || disciplinaValues.length === 0 || disciplinaValues.includes(question.discipline);
       const matchesNivel = !filters.nivel.isActive || nivelValues.length === 0 || nivelValues.includes(question.level);
@@ -76,6 +78,7 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
       const matchesDificuldade = !filters.dificuldade.isActive || dificuldadeValues.length === 0 || dificuldadeValues.includes(question.difficulty);
       const matchesQuestionType = !filters.questionType.isActive || questionTypeValues.length === 0 || questionTypeValues.includes(question.questionType);
       const matchesTopicos = !filters.topicos.isActive || topicosValues.length === 0 || topicosValues.some(topico => question.topicos?.includes(topico));
+      const matchesContent = !filters.conteudo.isActive || !searchTerm || question.content.toLowerCase().includes(searchTerm);
 
       return (
         matchesDisciplina &&
@@ -86,7 +89,8 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
         matchesAno &&
         matchesDificuldade &&
         matchesQuestionType &&
-        matchesTopicos
+        matchesTopicos &&
+        matchesContent
       );
     });
   };

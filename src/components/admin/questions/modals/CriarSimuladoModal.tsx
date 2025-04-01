@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ interface CriarSimuladoModalProps {
 interface Curso {
   id: string;
   titulo: string;
+  descricao: string;
 }
 
 const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
@@ -37,7 +38,7 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
         
         const { data, error } = await supabase
           .from("cursos")
-          .select("id, titulo")
+          .select("id, titulo, descricao")
           .order("titulo", { ascending: true });
 
         console.log("Resposta do Supabase:", { data, error });
@@ -175,38 +176,37 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-[#272f3c]">Criar Novo Simulado</DialogTitle>
+          <DialogTitle>Criar Simulado</DialogTitle>
+          <DialogDescription>
+            Preencha os dados para criar um novo simulado.
+          </DialogDescription>
         </DialogHeader>
-
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="titulo" className="text-right text-[#67748a]">
+            <Label htmlFor="titulo" className="text-right">
               Título
             </Label>
             <Input
               id="titulo"
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
-              className="col-span-3 border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
-              placeholder="Digite o título do simulado"
+              className="col-span-3"
             />
           </div>
-
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="dataFim" className="text-right text-[#67748a]">
-              Disponível até
+            <Label htmlFor="data_fim" className="text-right">
+              Data Fim
             </Label>
             <Input
-              id="dataFim"
+              id="data_fim"
               type="date"
               value={dataFim}
               onChange={(e) => setDataFim(e.target.value)}
-              className="col-span-3 border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
+              className="col-span-3"
             />
           </div>
-
           <div className="mt-4">
             <Label className="text-[#67748a] mb-2 block">Cursos</Label>
             <div className="border rounded-lg p-4">
@@ -231,29 +231,29 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
                       onChange={() => handleCursoSelect(curso.id)}
                       className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
                     />
-                    <span className="text-sm text-[#67748a]">{curso.titulo}</span>
+                    <span className="text-sm text-[#67748a]">{curso.titulo} - {curso.descricao}</span>
                   </label>
                 ))}
               </div>
 
               {totalPages > 1 && (
-                <div className="mt-4 flex justify-center space-x-2">
+                <div className="flex justify-center gap-2 mt-4">
                   <Button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
                     variant="outline"
                     size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
                   >
                     Anterior
                   </Button>
-                  <span className="flex items-center text-sm text-[#67748a]">
+                  <span className="text-sm text-[#67748a]">
                     Página {currentPage} de {totalPages}
                   </span>
                   <Button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
                     variant="outline"
                     size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
                   >
                     Próxima
                   </Button>
@@ -262,23 +262,18 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
             </div>
           </div>
         </div>
-
-        <div className="flex justify-end space-x-2">
-          <Button
-            onClick={onClose}
-            variant="outline"
-            className="text-[#67748a] hover:text-[#272f3c]"
-          >
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button
+          <Button 
+            type="button" 
             onClick={handleCreateSimulado}
             disabled={isLoading}
-            className="bg-[#5f2ebe] hover:bg-[#4a1f9c] text-white"
           >
             {isLoading ? "Criando..." : "Criar Simulado"}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

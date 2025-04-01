@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 interface Curso {
   id: string;
   titulo: string;
+  descricao: string;
 }
 
 interface EditarSimuladoModalProps {
@@ -60,7 +62,7 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
         // Buscar todos os cursos
         const { data: cursosData, error: cursosError } = await supabase
           .from("cursos")
-          .select("id, titulo")
+          .select("id, titulo, descricao")
           .order("titulo", { ascending: true });
 
         if (cursosError) throw cursosError;
@@ -175,7 +177,7 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
         <DialogHeader>
           <DialogTitle>Editar Simulado</DialogTitle>
           <DialogDescription>
-            Edite as informações do simulado e vincule a cursos.
+            Edite os dados do simulado.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -190,10 +192,9 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
               className="col-span-3"
             />
           </div>
-
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="data_fim" className="text-right">
-              Disponível até
+              Data Fim
             </Label>
             <Input
               id="data_fim"
@@ -203,7 +204,6 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
               className="col-span-3"
             />
           </div>
-
           <div className="mt-4">
             <Label className="text-[#67748a] mb-2 block">Cursos</Label>
             <div className="border rounded-lg p-4">
@@ -228,49 +228,49 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
                       onChange={() => handleCursoSelect(curso.id)}
                       className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
                     />
-                    <span className="text-sm text-[#67748a]">{curso.titulo}</span>
+                    <span className="text-sm text-[#67748a]">{curso.titulo} - {curso.descricao}</span>
                   </label>
                 ))}
               </div>
 
               {totalPages > 1 && (
-                <div className="mt-4 flex justify-center gap-2">
+                <div className="flex justify-center gap-2 mt-4">
                   <Button
-                    type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
                   >
                     Anterior
                   </Button>
+                  <span className="text-sm text-[#67748a]">
+                    Página {currentPage} de {totalPages}
+                  </span>
                   <Button
-                    type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
                   >
-                    Próximo
+                    Próxima
                   </Button>
                 </div>
               )}
             </div>
           </div>
-
-          <div className="flex justify-end gap-2 mt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button 
-              type="button" 
-              onClick={handleSaveChanges}
-              disabled={isLoading}
-            >
-              {isLoading ? "Salvando..." : "Salvar alterações"}
-            </Button>
-          </div>
         </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button 
+            type="button" 
+            onClick={handleSaveChanges}
+            disabled={isLoading}
+          >
+            {isLoading ? "Salvando..." : "Salvar Alterações"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

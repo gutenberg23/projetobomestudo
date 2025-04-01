@@ -214,7 +214,7 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
   
   if (isLoading) {
     return (
-      <div className="bg-white rounded-md p-3 md:p-4 w-full md:w-[600px] max-w-full flex justify-center items-center h-[200px]">
+      <div className="bg-white rounded-md p-2 w-full md:w-[300px] max-w-full flex justify-center items-center h-[150px]">
         <p className="text-[#67748a]">Carregando estatísticas...</p>
       </div>
     );
@@ -223,21 +223,21 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
   const totalRespostas = performanceData.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="bg-white rounded-md p-3 md:p-4 w-full md:w-[600px] max-w-full">
-      <div className="flex flex-col gap-4">
-        <div className="p-3 md:p-3 border rounded-md w-full">
-          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-3 text-sm md:text-base">
+    <div className="bg-white rounded-md p-2 w-full md:w-[300px] max-w-full">
+      <div className="flex flex-col gap-2">
+        <div className="p-2 border rounded-md w-full">
+          <h3 className="text-center text-[#272f3c] font-medium mb-1 text-xs md:text-sm">
             Percentual de Rendimento {totalRespostas > 0 ? `(${totalRespostas} respostas)` : '(Sem respostas)'}
           </h3>
-          <div className="h-[180px] md:h-[200px]">
+          <div className="h-[120px] md:h-[140px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={performanceData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={35}
-                  outerRadius={55}
+                  innerRadius={25}
+                  outerRadius={40}
                   paddingAngle={2}
                   dataKey="value"
                 >
@@ -245,28 +245,28 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '12px' }} />
+                <Legend layout="horizontal" verticalAlign="bottom" align="center" wrapperStyle={{ fontSize: '11px' }} />
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="p-3 md:p-3 border rounded-md w-full">
-          <h3 className="text-center text-[#272f3c] font-medium mb-2 md:mb-3 text-sm md:text-base">Alternativas mais respondidas</h3>
-          <div className="h-[180px] md:h-[200px]">
+        <div className="p-2 border rounded-md w-full">
+          <h3 className="text-center text-[#272f3c] font-medium mb-1 text-xs md:text-sm">Alternativas mais respondidas</h3>
+          <div className="h-[120px] md:h-[140px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={alternativesData}
                 margin={{
                   top: 5,
-                  right: 20,
-                  left: 0,
+                  right: 10,
+                  left: -10,
                   bottom: 5,
                 }}
               >
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
                 <Bar dataKey="value">
                   {alternativesData.map((entry, index) => (

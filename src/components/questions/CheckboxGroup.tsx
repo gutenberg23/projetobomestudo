@@ -8,7 +8,7 @@ interface CheckboxGroupProps {
   title: string;
   options: string[];
   selectedValues: string[];
-  onChange: (value: string) => void;
+  onChange: (value: string, checked: boolean) => void;
   handleEditOption?: (oldValue: string) => void;
   handleDeleteOption?: (value: string) => void;
   openAddDialog?: () => void;
@@ -106,7 +106,8 @@ export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
                           selectedOption === option && "bg-gray-100"
                         )}
                         onClick={() => {
-                          onChange(option);
+                          const isSelected = selectedValues.includes(option);
+                          onChange(option, !isSelected);
                           setSelectedOption(option);
                         }}
                       >

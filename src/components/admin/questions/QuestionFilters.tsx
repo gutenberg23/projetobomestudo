@@ -1,8 +1,9 @@
 import React, { Dispatch, SetStateAction } from "react";
-import { ChevronDown, ChevronUp, Filter, XCircle, Eraser } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter, XCircle, Eraser, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 import { Filters } from './types';
+import { Input } from "@/components/ui/input";
 
 interface QuestionFiltersProps {
   filters: Filters;
@@ -33,27 +34,57 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
   handleClearAllQuestionStats,
   dropdownData
 }) => {
-  const handleChangeFilter = (
+  const handleCheckboxChange = (
     filterKey: keyof Filters,
-    value: string
+    value: string,
+    checked: boolean
   ) => {
-    const currentValues = filters[filterKey].value ? filters[filterKey].value.split(',').filter(v => v !== '') : [];
-    const newValues = currentValues.includes(value) 
-      ? currentValues.filter(v => v !== value)
-      : [...currentValues, value];
-      
+    setFilters((prev) => {
+      const currentValues = prev[filterKey].value
+        ? prev[filterKey].value.split(",")
+        : [];
+      let newValues: string[];
+
+      if (checked) {
+        newValues = [...currentValues, value];
+      } else {
+        newValues = currentValues.filter((v) => v !== value);
+      }
+
+      return {
+        ...prev,
+        [filterKey]: {
+          ...prev[filterKey],
+          value: newValues.join(","),
+          isActive: newValues.length > 0,
+        },
+      };
+    });
+  };
+
+  const handleSearchChange = (value: string) => {
     setFilters((prev) => ({
       ...prev,
-      [filterKey]: {
-        ...prev[filterKey],
-        value: newValues.join(','),
-        isActive: true
+      conteudo: {
+        ...prev.conteudo,
+        value,
+        isActive: value.length > 0,
       },
     }));
   };
 
   return (
-    <div className="mb-6">
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Pesquisar no conteúdo das questões..."
+          value={filters.conteudo.value || ""}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          className="pl-8"
+        />
+      </div>
+
       <div className="flex justify-between mb-4">
         <div className="flex space-x-2">
           <Button
@@ -82,7 +113,7 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
           )}
         </div>
         
-        {showFilters && (
+        {(Object.values(filters).some(f => f.isActive)) && (
           <Button
             variant="ghost"
             onClick={resetFilters}
@@ -95,69 +126,71 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
       </div>
 
       {showFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
-          <CheckboxGroup 
-            title="Disciplina" 
-            options={dropdownData.disciplines} 
-            selectedValues={filters.disciplina.value ? filters.disciplina.value.split(',').filter(d => d !== '') : []} 
-            onChange={value => handleChangeFilter("disciplina", value)} 
-          />
-          
-          <CheckboxGroup 
-            title="Nível" 
-            options={dropdownData.levels} 
-            selectedValues={filters.nivel.value ? filters.nivel.value.split(',').filter(l => l !== '') : []} 
-            onChange={value => handleChangeFilter("nivel", value)} 
-          />
-          
-          <CheckboxGroup 
-            title="Banca" 
-            options={dropdownData.institutions} 
-            selectedValues={filters.institution.value ? filters.institution.value.split(',').filter(i => i !== '') : []} 
-            onChange={value => handleChangeFilter("institution", value)} 
-          />
-          
-          <CheckboxGroup 
-            title="Órgão" 
-            options={dropdownData.organizations} 
-            selectedValues={filters.organization.value ? filters.organization.value.split(',').filter(o => o !== '') : []} 
-            onChange={value => handleChangeFilter("organization", value)} 
-          />
-          
-          <CheckboxGroup 
-            title="Cargo" 
-            options={dropdownData.roles} 
-            selectedValues={filters.role.value ? filters.role.value.split(',').filter(r => r !== '') : []} 
-            onChange={value => handleChangeFilter("role", value)} 
-          />
-          
-          <CheckboxGroup 
-            title="Ano" 
-            options={dropdownData.years} 
-            selectedValues={filters.ano.value ? filters.ano.value.split(',').filter(a => a !== '') : []} 
-            onChange={value => handleChangeFilter("ano", value)} 
-          />
-          
-          <CheckboxGroup 
-            title="Dificuldade" 
-            options={dropdownData.difficulties} 
-            selectedValues={filters.dificuldade.value ? filters.dificuldade.value.split(',').filter(d => d !== '') : []} 
-            onChange={value => handleChangeFilter("dificuldade", value)} 
-          />
-          
-          <CheckboxGroup 
-            title="Tipo de Questão" 
-            options={dropdownData.questionTypes} 
-            selectedValues={filters.questionType.value ? filters.questionType.value.split(',').filter(t => t !== '') : []} 
-            onChange={value => handleChangeFilter("questionType", value)} 
-          />
+        <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <CheckboxGroup 
+              title="Disciplina" 
+              options={dropdownData.disciplines} 
+              selectedValues={filters.disciplina.value ? filters.disciplina.value.split(',').filter(d => d !== '') : []} 
+              onChange={(value, checked) => handleCheckboxChange("disciplina", value, checked)} 
+            />
+            
+            <CheckboxGroup 
+              title="Nível" 
+              options={dropdownData.levels} 
+              selectedValues={filters.nivel.value ? filters.nivel.value.split(',').filter(l => l !== '') : []} 
+              onChange={(value, checked) => handleCheckboxChange("nivel", value, checked)} 
+            />
+            
+            <CheckboxGroup 
+              title="Banca" 
+              options={dropdownData.institutions} 
+              selectedValues={filters.institution.value ? filters.institution.value.split(',').filter(i => i !== '') : []} 
+              onChange={(value, checked) => handleCheckboxChange("institution", value, checked)} 
+            />
+            
+            <CheckboxGroup 
+              title="Órgão" 
+              options={dropdownData.organizations} 
+              selectedValues={filters.organization.value ? filters.organization.value.split(',').filter(o => o !== '') : []} 
+              onChange={(value, checked) => handleCheckboxChange("organization", value, checked)} 
+            />
+            
+            <CheckboxGroup 
+              title="Cargo" 
+              options={dropdownData.roles} 
+              selectedValues={filters.role.value ? filters.role.value.split(',').filter(r => r !== '') : []} 
+              onChange={(value, checked) => handleCheckboxChange("role", value, checked)} 
+            />
+            
+            <CheckboxGroup 
+              title="Ano" 
+              options={dropdownData.years} 
+              selectedValues={filters.ano.value ? filters.ano.value.split(',').filter(a => a !== '') : []} 
+              onChange={(value, checked) => handleCheckboxChange("ano", value, checked)} 
+            />
+            
+            <CheckboxGroup 
+              title="Dificuldade" 
+              options={dropdownData.difficulties} 
+              selectedValues={filters.dificuldade.value ? filters.dificuldade.value.split(',').filter(d => d !== '') : []} 
+              onChange={(value, checked) => handleCheckboxChange("dificuldade", value, checked)} 
+            />
+            
+            <CheckboxGroup 
+              title="Tipo de Questão" 
+              options={dropdownData.questionTypes} 
+              selectedValues={filters.questionType.value ? filters.questionType.value.split(',').filter(t => t !== '') : []} 
+              onChange={(value, checked) => handleCheckboxChange("questionType", value, checked)} 
+            />
 
-          <CheckboxGroup 
-            title="Assuntos" 
-            options={dropdownData.topicos} 
-            selectedValues={filters.topicos.value ? filters.topicos.value.split(',').filter(t => t !== '') : []} 
-            onChange={value => handleChangeFilter("topicos", value)} 
-          />
+            <CheckboxGroup 
+              title="Assuntos" 
+              options={dropdownData.topicos} 
+              selectedValues={filters.topicos.value ? filters.topicos.value.split(',').filter(t => t !== '') : []} 
+              onChange={(value, checked) => handleCheckboxChange("topicos", value, checked)} 
+            />
+          </div>
         </div>
       )}
     </div>

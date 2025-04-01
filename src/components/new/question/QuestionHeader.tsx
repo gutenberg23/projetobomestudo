@@ -106,7 +106,7 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
                       <BarChart className="h-4 w-4 text-white" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[45vw] md:w-[700px] p-0">
+                  <PopoverContent className="w-[300px] p-0">
                     <QuestionStats questionId={questionId} />
                   </PopoverContent>
                 </Popover>

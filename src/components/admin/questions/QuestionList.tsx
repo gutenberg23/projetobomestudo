@@ -227,7 +227,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
                                   <BarChart className="h-4 w-4" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[700px] p-0">
+                              <PopoverContent className="w-[300px] p-0">
                                 <QuestionStats questionId={question.id} />
                               </PopoverContent>
                             </Popover>

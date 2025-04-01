@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +38,7 @@ const QuestionIdField: React.FC<QuestionIdFieldProps> = ({
                     <BarChart className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[700px] p-0">
+                <PopoverContent className="w-[300px] p-0">
                   <QuestionStats questionId={questionId} />
                 </PopoverContent>
               </Popover>
