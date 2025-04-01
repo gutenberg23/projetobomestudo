@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,152 +6,416 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { Spinner } from "@/components/ui/spinner";
+import { AlertCircle, Upload, HelpCircle, X } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const SeoConfig = () => {
-  const [metaTitle, setMetaTitle] = useState("BomEstudo – A Plataforma Completa para Concurseiros");
-  const [metaDescription, setMetaDescription] = useState("Preparação completa para concursos com questões comentadas, videoaulas, material atualizado e estatísticas de desempenho.");
-  const [keywords, setKeywords] = useState("questões de concurso, simulados online, plataforma de estudos");
-  const [allowIndexing, setAllowIndexing] = useState(true);
-  const [generateSitemap, setGenerateSitemap] = useState(true);
-  const [siteUrl, setSiteUrl] = useState("https://bomestudo.com.br");
+  const { config, isLoading, updateSeoConfig, hasTableError } = useSiteConfig();
+  const [siteTitle, setSiteTitle] = useState(config.seo.siteTitle);
+  const [siteDescription, setSiteDescription] = useState(config.seo.siteDescription);
+  const [siteKeywords, setSiteKeywords] = useState<string[]>(config.seo.siteKeywords);
+  const [newKeyword, setNewKeyword] = useState("");
+  const [ogImageUrl, setOgImageUrl] = useState(config.seo.ogImageUrl);
+  const [twitterHandle, setTwitterHandle] = useState(config.seo.twitterHandle);
+  const [googleAnalyticsId, setGoogleAnalyticsId] = useState(config.seo.googleAnalyticsId);
+  const [enableIndexing, setEnableIndexing] = useState(config.seo.enableIndexing);
+  const [structuredData, setStructuredData] = useState(config.seo.structuredData);
+  const [isSaving, setIsSaving] = useState(false);
+  const [ogImageFile, setOgImageFile] = useState<File | null>(null);
+  const [ogImagePreview, setOgImagePreview] = useState(config.seo.ogImageUrl);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Aqui implementaria a lógica para salvar as configurações
-    toast.success("Configurações de SEO atualizadas com sucesso!");
+  // Atualizar estados locais quando as configurações forem carregadas
+  useEffect(() => {
+    if (!isLoading) {
+      setSiteTitle(config.seo.siteTitle);
+      setSiteDescription(config.seo.siteDescription);
+      setSiteKeywords(config.seo.siteKeywords);
+      setOgImageUrl(config.seo.ogImageUrl);
+      setTwitterHandle(config.seo.twitterHandle);
+      setGoogleAnalyticsId(config.seo.googleAnalyticsId);
+      setEnableIndexing(config.seo.enableIndexing);
+      setStructuredData(config.seo.structuredData);
+      setOgImagePreview(config.seo.ogImageUrl);
+    }
+  }, [config, isLoading]);
+
+  const handleOgImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      setOgImageFile(file);
+      const url = URL.createObjectURL(file);
+      setOgImagePreview(url);
+    }
   };
+
+  const uploadImage = async (file: File, path: string) => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `og-image-${Date.now()}.${fileExt}`;
+      const filePath = `${path}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('lovable-uploads')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase
+        .storage
+        .from('lovable-uploads')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Erro ao fazer upload de imagem:', error);
+      throw error;
+    }
+  };
+
+  const handleAddKeyword = () => {
+    if (newKeyword.trim() && !siteKeywords.includes(newKeyword.trim())) {
+      setSiteKeywords([...siteKeywords, newKeyword.trim()]);
+      setNewKeyword("");
+    }
+  };
+
+  const handleKeywordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddKeyword();
+    }
+  };
+
+  const handleRemoveKeyword = (keyword: string) => {
+    setSiteKeywords(siteKeywords.filter(k => k !== keyword));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      setIsSaving(true);
+
+      // Fazer upload da imagem OG, se existir
+      let newOgImageUrl = ogImageUrl;
+
+      if (ogImageFile) {
+        setUploadingImage(true);
+        try {
+          newOgImageUrl = await uploadImage(ogImageFile, 'seo');
+        } catch (error) {
+          toast.error('Erro ao fazer upload da imagem OG');
+          console.error(error);
+        } finally {
+          setUploadingImage(false);
+        }
+      }
+      
+      const seoConfig = {
+        siteTitle,
+        siteDescription,
+        siteKeywords,
+        ogImageUrl: newOgImageUrl,
+        twitterHandle,
+        googleAnalyticsId,
+        enableIndexing,
+        structuredData
+      };
+      
+      await updateSeoConfig(seoConfig);
+      
+      toast.success('Configurações de SEO atualizadas com sucesso!');
+      setOgImageFile(null);
+    } catch (error) {
+      console.error('Erro ao salvar configurações:', error);
+      toast.error('Erro ao salvar configurações');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <h2 className="text-lg font-medium text-[#272f3c] mb-4">SEO Global</h2>
+        <h2 className="text-lg font-medium text-[#272f3c] mb-4">Configurações de SEO</h2>
         <p className="text-sm text-[#67748a] mb-6">
-          Configure as informações para otimização em motores de busca
+          Otimize as meta tags e configurações para melhorar o posicionamento nos motores de busca
         </p>
       </div>
 
-      <div className="space-y-4">
-        <h3 className="text-md font-medium text-[#272f3c]">Meta Informações</h3>
-        
-        {/* Meta Title */}
+      {hasTableError && (
+        <div className="bg-red-50 border border-red-200 p-4 rounded-md">
+          <div className="flex items-start">
+            <AlertCircle className="text-red-500 w-5 h-5 mt-0.5 mr-2" />
+            <div>
+              <p className="text-red-800 text-sm font-medium mb-1">Tabela de configurações não encontrada</p>
+              <p className="text-red-700 text-xs">
+                As configurações estão sendo salvas apenas localmente e serão perdidas quando você recarregar a página.
+                Entre em contato com o administrador do sistema para criar a tabela 'configuracoes_site' no banco de dados.
+              </p>
+              <p className="text-red-700 text-xs mt-2">
+                <strong>Dica para o administrador:</strong> Execute o script no arquivo 'scripts/create_configuracoes_site_table.sql' 
+                no painel de consultas SQL do Supabase.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      <Card className="p-6 space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="meta-title">Título do Site (Meta Title)</Label>
+          <Label htmlFor="site-title">Título do Site (Meta Title)</Label>
           <Input
-            id="meta-title"
-            value={metaTitle}
-            onChange={(e) => setMetaTitle(e.target.value)}
-            placeholder="Ex: BomEstudo – A Plataforma Completa para Concurseiros"
+            id="site-title"
+            value={siteTitle}
+            onChange={(e) => setSiteTitle(e.target.value)}
+            placeholder="BomEstudo - Plataforma de estudos para concursos"
+            maxLength={60}
           />
           <div className="flex justify-between">
             <p className="text-xs text-[#67748a]">
-              Título que aparece na aba do navegador e nos resultados de busca
+              Título usado nos resultados de busca e barra do navegador
             </p>
             <p className="text-xs text-[#67748a]">
-              {metaTitle.length}/60 caracteres
+              {siteTitle.length}/60 caracteres
             </p>
           </div>
         </div>
 
-        {/* Meta Description */}
         <div className="space-y-2">
-          <Label htmlFor="meta-description">Meta Descrição (Meta Description)</Label>
+          <Label htmlFor="site-description">Descrição do Site (Meta Description)</Label>
           <Textarea
-            id="meta-description"
-            value={metaDescription}
-            onChange={(e) => setMetaDescription(e.target.value)}
-            placeholder="Um resumo chamativo do site (até 160 caracteres)"
+            id="site-description"
+            value={siteDescription}
+            onChange={(e) => setSiteDescription(e.target.value)}
+            placeholder="Plataforma de estudos online para candidatos de concursos públicos com cursos, questões comentadas e estatísticas de desempenho."
+            maxLength={160}
             rows={3}
           />
           <div className="flex justify-between">
             <p className="text-xs text-[#67748a]">
-              Descrição que aparece nos resultados de busca
+              Descrição usada nos resultados de busca
             </p>
             <p className="text-xs text-[#67748a]">
-              {metaDescription.length}/160 caracteres
+              {siteDescription.length}/160 caracteres
             </p>
           </div>
         </div>
 
-        {/* Keywords */}
         <div className="space-y-2">
-          <Label htmlFor="keywords">Palavras-chave principais</Label>
-          <Textarea
-            id="keywords"
-            value={keywords}
-            onChange={(e) => setKeywords(e.target.value)}
-            placeholder="Ex: questões de concurso, simulados online, plataforma de estudos"
-            rows={2}
-          />
+          <div className="flex items-center gap-2">
+            <Label htmlFor="site-keywords">Palavras-chave</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="w-[200px] text-xs">
+                    Adicione palavras-chave relevantes para o conteúdo do seu site. Embora tenham menos impacto no SEO moderno, ainda são úteis.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              id="site-keywords"
+              value={newKeyword}
+              onChange={(e) => setNewKeyword(e.target.value)}
+              placeholder="Adicionar palavra-chave e pressionar Enter"
+              onKeyDown={handleKeywordKeyDown}
+            />
+            <Button 
+              type="button" 
+              onClick={handleAddKeyword}
+              variant="outline"
+              size="sm"
+            >
+              Adicionar
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {siteKeywords.map((keyword, index) => (
+              <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                {keyword}
+                <button
+                  type="button"
+                  className="ml-1 text-gray-500 hover:text-gray-700"
+                  onClick={() => handleRemoveKeyword(keyword)}
+                >
+                  <X size={14} />
+                </button>
+              </Badge>
+            ))}
+          </div>
           <p className="text-xs text-[#67748a]">
-            Separe as palavras-chave por vírgulas
+            Palavras-chave relacionadas ao seu site (separadas por vírgula na meta tag)
           </p>
         </div>
-
-        <Separator className="my-6" />
-
-        <h3 className="text-md font-medium text-[#272f3c]">Indexação e Mapeamento</h3>
+      </Card>
+      
+      <Card className="p-6 space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="og-image">Imagem de Open Graph</Label>
+          <div className="flex items-start gap-4">
+            <div 
+              className="w-32 h-24 bg-gray-100 rounded-md flex items-center justify-center overflow-hidden"
+            >
+              {ogImagePreview ? (
+                <img src={ogImagePreview} alt="OG Image Preview" className="max-w-full max-h-full object-cover" />
+              ) : (
+                <p className="text-xs text-gray-400">Sem imagem</p>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-[#67748a] mb-2">
+                Imagem exibida quando o link do site é compartilhado nas redes sociais (recomendado: 1200x630px)
+              </p>
+              <div className="flex gap-2">
+                <label htmlFor="og-image-upload" className="cursor-pointer">
+                  <div className="flex items-center gap-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md text-xs font-medium">
+                    <Upload size={14} /> Selecionar imagem
+                  </div>
+                  <input
+                    id="og-image-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleOgImageChange}
+                    className="hidden"
+                  />
+                </label>
+                {uploadingImage && <Spinner size="sm" />}
+              </div>
+            </div>
+          </div>
+        </div>
         
-        {/* URL do site */}
         <div className="space-y-2">
-          <Label htmlFor="site-url">URL do Site</Label>
+          <Label htmlFor="twitter-handle">Twitter Handle</Label>
           <Input
-            id="site-url"
-            value={siteUrl}
-            onChange={(e) => setSiteUrl(e.target.value)}
-            placeholder="Ex: https://bomestudo.com.br"
+            id="twitter-handle"
+            value={twitterHandle}
+            onChange={(e) => setTwitterHandle(e.target.value)}
+            placeholder="@bomestudo"
           />
           <p className="text-xs text-[#67748a]">
-            URL base do seu site (importante para o sitemap)
+            Nome de usuário no Twitter para atribuição em cards compartilhados
           </p>
         </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="ga-id">ID do Google Analytics</Label>
+          <Input
+            id="ga-id"
+            value={googleAnalyticsId}
+            onChange={(e) => setGoogleAnalyticsId(e.target.value)}
+            placeholder="G-XXXXXXXXXX ou UA-XXXXXXXX-X"
+          />
+          <p className="text-xs text-[#67748a]">
+            Código de acompanhamento do Google Analytics
+          </p>
+        </div>
+      </Card>
 
-        {/* Indexação */}
+      <Card className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="allow-indexing">Permitir Indexação</Label>
-            <p className="text-xs text-[#67748a]">
-              Permitir que mecanismos de busca indexem o site
+            <div className="flex items-center gap-1">
+              <Label htmlFor="enable-indexing">Permitir Indexação</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="w-[200px] text-xs">
+                      Quando desativado, o site não será indexado pelos motores de busca
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <p className="text-[#67748a] text-xs">
+              Permite que motores de busca indexem seu site
             </p>
           </div>
           <Switch
-            id="allow-indexing"
-            checked={allowIndexing}
-            onCheckedChange={setAllowIndexing}
+            id="enable-indexing"
+            checked={enableIndexing}
+            onCheckedChange={setEnableIndexing}
           />
         </div>
 
-        {/* Sitemap */}
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="generate-sitemap">Gerar Sitemap</Label>
-            <p className="text-xs text-[#67748a]">
-              Gerar automaticamente o arquivo sitemap.xml
+            <div className="flex items-center gap-1">
+              <Label htmlFor="structured-data">Dados Estruturados</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="w-[220px] text-xs">
+                      Adiciona markup Schema.org para melhorar a exibição nos resultados de busca
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <p className="text-[#67748a] text-xs">
+              Habilita dados estruturados (Schema.org)
             </p>
           </div>
           <Switch
-            id="generate-sitemap"
-            checked={generateSitemap}
-            onCheckedChange={setGenerateSitemap}
+            id="structured-data"
+            checked={structuredData}
+            onCheckedChange={setStructuredData}
           />
         </div>
-
-        {/* Robots.txt Preview */}
-        {allowIndexing ? (
-          <div className="mt-4 p-4 bg-gray-50 rounded-md border font-mono text-sm">
-            <p>User-agent: *</p>
-            <p>Allow: /</p>
-            <p>Sitemap: {siteUrl}/sitemap.xml</p>
+      </Card>
+      
+      {!enableIndexing && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
+          <div className="flex items-start">
+            <AlertCircle className="text-amber-500 w-5 h-5 mt-0.5 mr-2" />
+            <div>
+              <p className="text-amber-800 text-sm font-medium mb-1">Atenção: Indexação Desativada</p>
+              <p className="text-amber-700 text-xs">
+                Seu site não será indexado pelos motores de busca enquanto esta opção estiver desativada.
+                Isso significa que seu site não aparecerá em resultados de pesquisa.
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="mt-4 p-4 bg-gray-50 rounded-md border font-mono text-sm">
-            <p>User-agent: *</p>
-            <p>Disallow: /</p>
           </div>
         )}
-      </div>
 
       <div className="flex justify-end pt-4">
-        <Button type="submit">Salvar Alterações</Button>
+        <Button type="submit" disabled={isLoading || isSaving}>
+          {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+        </Button>
       </div>
     </form>
   );

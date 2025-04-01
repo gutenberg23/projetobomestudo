@@ -49,7 +49,7 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
           .maybeSingle();
         
         console.log("Dados do curso:", cursoData, "Erro:", cursoError);
-
+        
         if (!cursoData || cursoError) {
           // Se não for um curso, verificar se é uma disciplina
           const { data: disciplinaData, error: disciplinaError } = await supabase
@@ -86,35 +86,35 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
           if (cursoData.disciplinas_ids && cursoData.disciplinas_ids.length > 0) {
             console.log("Disciplinas do curso:", cursoData.disciplinas_ids);
             
-            const { data: disciplinasData, error: disciplinasError } = await supabase
-              .from('disciplinas')
-              .select('*')
-              .in('id', cursoData.disciplinas_ids);
-            
-            console.log("Disciplinas encontradas:", disciplinasData, "Erro:", disciplinasError);
-            
-            if (disciplinasData && !disciplinasError) {
+              const { data: disciplinasData, error: disciplinasError } = await supabase
+                .from('disciplinas')
+                .select('*')
+                .in('id', cursoData.disciplinas_ids);
+                
+              console.log("Disciplinas encontradas:", disciplinasData, "Erro:", disciplinasError);
+              
+              if (disciplinasData && !disciplinasError) {
               // Converter os dados para o formato esperado pelo componente
               const formattedSubjects: Subject[] = await Promise.all(disciplinasData.map(async (disciplina) => {
-                const subject: Subject = {
-                  id: disciplina.id,
-                  name: disciplina.titulo,
-                  rating: disciplina.descricao || "0",
-                  lessons: [],
-                };
-                
-                // Carregar as aulas de cada disciplina
-                if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-                  console.log("Buscando aulas para disciplina:", disciplina.titulo, disciplina.aulas_ids);
+                  const subject: Subject = {
+                    id: disciplina.id,
+                    name: disciplina.titulo,
+                    rating: disciplina.descricao || "0",
+                    lessons: [],
+                  };
                   
-                  try {
-                    const { data: aulasData, error: aulasError } = await supabase
-                      .from('aulas')
-                      .select('*')
-                      .in('id', disciplina.aulas_ids);
-                    
-                    console.log("Aulas da disciplina:", aulasData, "Erro:", aulasError);
-                    
+                  // Carregar as aulas de cada disciplina
+                  if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
+                    console.log("Buscando aulas para disciplina:", disciplina.titulo, disciplina.aulas_ids);
+                  
+                    try {
+                      const { data: aulasData, error: aulasError } = await supabase
+                        .from('aulas')
+                        .select('*')
+                        .in('id', disciplina.aulas_ids);
+                        
+                      console.log("Aulas da disciplina:", aulasData, "Erro:", aulasError);
+                      
                     if (aulasData && !aulasError) {
                       // Para cada aula, buscar os tópicos
                       const aulasComTopicos = await Promise.all(
@@ -131,15 +131,15 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                                 questao = questoesCache[questaoId];
                               } else {
                                 // Buscar questão - CORRIGIDO: usar .eq('id', questaoId) em vez de .id=eq.
-                                const { data: questaoData, error: questaoError } = await supabase
-                                  .from('questoes')
-                                  .select('*')
+                              const { data: questaoData, error: questaoError } = await supabase
+                                .from('questoes')
+                                .select('*')
                                   .eq('id', questaoId)
                                   .maybeSingle();
                                 
-                                if (questaoData && !questaoError) {
-                                  questao = {
-                                    id: questaoData.id,
+                              if (questaoData && !questaoError) {
+                                questao = {
+                                  id: questaoData.id,
                                     titulo: "Questão de exemplo",
                                     texto: questaoData.content,
                                     // ... outros campos necessários
@@ -184,42 +184,42 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                           };
                         })
                       );
-                      
-                      subject.lessons = aulasComTopicos.map(aula => ({
-                        id: aula.id,
-                        title: aula.titulo,
-                        duration: "0",
-                        description: aula.descricao || '',
-                        rating: 'V',
-                        sections: aula.topicos.map(topico => ({
-                          id: topico.id,
-                          title: topico.nome,
-                          isActive: false,
-                          contentType: "video",
-                          duration: 0,
-                          videoUrl: topico.video_url,
-                          textContent: "",
-                          professorId: topico.professor_id,
-                          professorNome: topico.professor_nome
-                        })),
-                        question: aula.questao
-                      }));
+                        
+                        subject.lessons = aulasComTopicos.map(aula => ({
+                          id: aula.id,
+                          title: aula.titulo,
+                          duration: "0",
+                          description: aula.descricao || '',
+                          rating: 'V',
+                          sections: aula.topicos.map(topico => ({
+                            id: topico.id,
+                            title: topico.nome,
+                            isActive: false,
+                            contentType: "video",
+                            duration: 0,
+                            videoUrl: topico.video_url,
+                            textContent: "",
+                            professorId: topico.professor_id,
+                            professorNome: topico.professor_nome
+                          })),
+                          question: aula.questao
+                        }));
+                      }
+                    } catch (aulasError) {
+                      console.error("Erro ao buscar aulas:", aulasError);
                     }
-                  } catch (aulasError) {
-                    console.error("Erro ao buscar aulas:", aulasError);
                   }
-                }
+                  
+                  return subject;
+                }));
                 
-                return subject;
-              }));
-              
-              // Sort subjects by rating in descending order (highest to lowest)
-              const sortedSubjects = [...formattedSubjects].sort((a, b) => {
-                const ratingA = a.rating ? Number(a.rating) : 0;
-                const ratingB = b.rating ? Number(b.rating) : 0;
-                return ratingB - ratingA;
-              });
-              
+                // Sort subjects by rating in descending order (highest to lowest)
+                const sortedSubjects = [...formattedSubjects].sort((a, b) => {
+                  const ratingA = a.rating ? Number(a.rating) : 0;
+                  const ratingB = b.rating ? Number(b.rating) : 0;
+                  return ratingB - ratingA;
+                });
+                
               if (isMounted) {
                 setSubjects(sortedSubjects);
                 if (onSubjectsCountChange) {
@@ -235,13 +235,13 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
         if (isMounted) {
-          toast.error("Erro ao carregar dados");
-          setSubjects([]);
-          if (onSubjectsCountChange) onSubjectsCountChange(0);
+        toast.error("Erro ao carregar dados");
+        setSubjects([]);
+        if (onSubjectsCountChange) onSubjectsCountChange(0);
         }
       } finally {
         if (isMounted) {
-          setLoading(false);
+        setLoading(false);
         }
       }
     };
@@ -257,7 +257,7 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
   useEffect(() => {
     setDataFetched(false);
   }, [effectiveCourseId]);
-
+  
   if (loading) {
     return (
       <div className="flex justify-center items-center h-40">

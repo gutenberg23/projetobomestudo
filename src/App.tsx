@@ -20,6 +20,9 @@ import TermosEPoliticas from "./pages/TermosEPoliticas";
 import { AuthProvider } from "./contexts/AuthContext";
 import Simulado from "./pages/Simulado";
 import { ConfigGuard } from './components/guards/ConfigGuard';
+import { useSiteConfig } from "./hooks/useSiteConfig";
+import { useEffect } from "react";
+import "./styles/globals.css";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -37,6 +40,32 @@ import Professores from "./pages/admin/Professores";
 import ConfiguracoesSite from "./pages/admin/ConfiguracoesSite";
 import Kanban from "./pages/admin/Kanban";
 
+// Componente para aplicar as configurações de estilo
+const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
+  const { config, isLoading } = useSiteConfig();
+
+  useEffect(() => {
+    if (!isLoading) {
+      // Aplicar classe para estilo de botões
+      document.documentElement.classList.remove(
+        'rounded-button-style', 
+        'square-button-style', 
+        'pill-button-style'
+      );
+      document.documentElement.classList.add(`${config.visual.buttonStyle}-button-style`);
+
+      // Aplicar modo escuro se habilitado
+      if (config.visual.darkMode) {
+        document.documentElement.classList.add('dark-mode');
+      } else {
+        document.documentElement.classList.remove('dark-mode');
+      }
+    }
+  }, [config, isLoading]);
+
+  return <>{children}</>;
+};
+
 // Importante: criar a instância do QueryClient dentro do componente
 const App = () => {
   // Instância do queryClient dentro do componente para garantir que seja criada
@@ -51,74 +80,76 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <AuthProvider>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/esqueci-senha" element={<EsqueciSenha />} />
-                <Route path="/reset-password" element={<ResetSenha />} />
-                <Route path="/course/:courseId" element={<CourseLayout />} />
-                
-                <Route path="/explore" element={
-                  <ConfigGuard configKey="showExplorePage">
-                    <Explore />
-                  </ConfigGuard>
-                } />
-                
-                <Route path="/my-courses" element={
-                  <ConfigGuard configKey="showMyCoursesPage">
-                    <MyCourses />
-                  </ConfigGuard>
-                } />
-                
-                <Route path="/questions" element={
-                  <ConfigGuard configKey="showQuestionsPage">
-                    <Questions />
-                  </ConfigGuard>
-                } />
-                
-                <Route path="/settings" element={<Settings />} />
-                
-                <Route path="/blog" element={
-                  <ConfigGuard configKey="showBlogPage">
-                    <Blog />
-                  </ConfigGuard>
-                } />
-                
-                <Route path="/blog/autor/:author" element={
-                  <ConfigGuard configKey="showBlogPage">
-                    <AuthorPosts />
-                  </ConfigGuard>
-                } />
-                
-                <Route path="/blog/:slug" element={
-                  <ConfigGuard configKey="showBlogPage">
-                    <BlogPost />
-                  </ConfigGuard>
-                } />
-                
-                <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
-                
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<Dashboard />} />
-                  <Route path="kanban" element={<Kanban />} />
-                  <Route path="posts" element={<Posts />} />
-                  <Route path="usuarios" element={<Usuarios />} />
-                  <Route path="questoes" element={<Questoes />} />
-                  <Route path="simulados" element={<Simulados />} />
-                  <Route path="edital" element={<Edital />} />
-                  <Route path="topicos" element={<Topicos />} />
-                  <Route path="aulas" element={<Aulas />} />
-                  <Route path="disciplinas" element={<Disciplinas />} />
-                  <Route path="cursos" element={<Cursos />} />
-                  <Route path="professores" element={<Professores />} />
-                  <Route path="configuracoes" element={<ConfiguracoesSite />} />
-                </Route>
-                
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="/simulado/:simuladoId" element={<Simulado />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <SiteConfigProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+                  <Route path="/reset-password" element={<ResetSenha />} />
+                  <Route path="/course/:courseId" element={<CourseLayout />} />
+                  
+                  <Route path="/explore" element={
+                    <ConfigGuard configKey="showExplorePage">
+                      <Explore />
+                    </ConfigGuard>
+                  } />
+                  
+                  <Route path="/my-courses" element={
+                    <ConfigGuard configKey="showMyCoursesPage">
+                      <MyCourses />
+                    </ConfigGuard>
+                  } />
+                  
+                  <Route path="/questions" element={
+                    <ConfigGuard configKey="showQuestionsPage">
+                      <Questions />
+                    </ConfigGuard>
+                  } />
+                  
+                  <Route path="/settings" element={<Settings />} />
+                  
+                  <Route path="/blog" element={
+                    <ConfigGuard configKey="showBlogPage">
+                      <Blog />
+                    </ConfigGuard>
+                  } />
+                  
+                  <Route path="/blog/autor/:author" element={
+                    <ConfigGuard configKey="showBlogPage">
+                      <AuthorPosts />
+                    </ConfigGuard>
+                  } />
+                  
+                  <Route path="/blog/:slug" element={
+                    <ConfigGuard configKey="showBlogPage">
+                      <BlogPost />
+                    </ConfigGuard>
+                  } />
+                  
+                  <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
+                  
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<Dashboard />} />
+                    <Route path="kanban" element={<Kanban />} />
+                    <Route path="posts" element={<Posts />} />
+                    <Route path="usuarios" element={<Usuarios />} />
+                    <Route path="questoes" element={<Questoes />} />
+                    <Route path="simulados" element={<Simulados />} />
+                    <Route path="edital" element={<Edital />} />
+                    <Route path="topicos" element={<Topicos />} />
+                    <Route path="aulas" element={<Aulas />} />
+                    <Route path="disciplinas" element={<Disciplinas />} />
+                    <Route path="cursos" element={<Cursos />} />
+                    <Route path="professores" element={<Professores />} />
+                    <Route path="configuracoes" element={<ConfiguracoesSite />} />
+                  </Route>
+                  
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="/simulado/:simuladoId" element={<Simulado />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </SiteConfigProvider>
             </AuthProvider>
           </BrowserRouter>
         </div>
