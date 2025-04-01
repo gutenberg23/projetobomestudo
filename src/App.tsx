@@ -19,6 +19,7 @@ import NotFound from "./pages/NotFound";
 import TermosEPoliticas from "./pages/TermosEPoliticas";
 import { AuthProvider } from "./contexts/AuthContext";
 import Simulado from "./pages/Simulado";
+import { ConfigGuard } from './components/guards/ConfigGuard';
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -56,13 +57,45 @@ const App = () => {
                 <Route path="/esqueci-senha" element={<EsqueciSenha />} />
                 <Route path="/reset-password" element={<ResetSenha />} />
                 <Route path="/course/:courseId" element={<CourseLayout />} />
-                <Route path="/explore" element={<Explore />} />
-                <Route path="/my-courses" element={<MyCourses />} />
-                <Route path="/questions" element={<Questions />} />
+                
+                <Route path="/explore" element={
+                  <ConfigGuard configKey="showExplorePage">
+                    <Explore />
+                  </ConfigGuard>
+                } />
+                
+                <Route path="/my-courses" element={
+                  <ConfigGuard configKey="showMyCoursesPage">
+                    <MyCourses />
+                  </ConfigGuard>
+                } />
+                
+                <Route path="/questions" element={
+                  <ConfigGuard configKey="showQuestionsPage">
+                    <Questions />
+                  </ConfigGuard>
+                } />
+                
                 <Route path="/settings" element={<Settings />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/autor/:author" element={<AuthorPosts />} />
-                <Route path="/blog/:slug" element={<BlogPost />} />
+                
+                <Route path="/blog" element={
+                  <ConfigGuard configKey="showBlogPage">
+                    <Blog />
+                  </ConfigGuard>
+                } />
+                
+                <Route path="/blog/autor/:author" element={
+                  <ConfigGuard configKey="showBlogPage">
+                    <AuthorPosts />
+                  </ConfigGuard>
+                } />
+                
+                <Route path="/blog/:slug" element={
+                  <ConfigGuard configKey="showBlogPage">
+                    <BlogPost />
+                  </ConfigGuard>
+                } />
+                
                 <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
                 
                 {/* Admin Routes */}

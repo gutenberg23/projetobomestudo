@@ -6,6 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import logo from "/lovable-uploads/logo.svg";
+import { useSiteConfig } from "@/hooks/useSiteConfig";
+
 export const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
@@ -13,6 +15,9 @@ export const Header = () => {
     user,
     signOut
   } = useAuth();
+  const [showMenu, setShowMenu] = useState(false);
+  const { config } = useSiteConfig();
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -27,18 +32,24 @@ export const Header = () => {
       </div>
 
       <div className="hidden md:flex items-center space-x-6 mr-6">
-        <Link to="/blog" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
-          <Newspaper className="w-4 h-4 px-px" />
-          <span className="font-extralight">Blog</span>
-        </Link>
-        <Link to="/questions" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
-          <FileText className="w-4 h-4" />
-          <span className="font-extralight">Questões</span>
-        </Link>
-        <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
-          <Trophy className="w-4 h-4" />
-          <span className="font-extralight">Estude Grátis</span>
-        </Link>
+        {config.pages.showBlogPage && (
+          <Link to="/blog" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+            <Newspaper className="w-4 h-4 px-px" />
+            <span className="font-extralight">Blog</span>
+          </Link>
+        )}
+        {config.pages.showQuestionsPage && (
+          <Link to="/questions" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+            <FileText className="w-4 h-4" />
+            <span className="font-extralight">Questões</span>
+          </Link>
+        )}
+        {config.pages.showExplorePage && (
+          <Link to="/explore" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+            <Trophy className="w-4 h-4" />
+            <span className="font-extralight">Estude Grátis</span>
+          </Link>
+        )}
       </div>
 
       <div className="flex items-center gap-2.5">
@@ -73,10 +84,12 @@ export const Header = () => {
                 </div>
               </div> : null}
             <nav className="flex flex-col">
-              <Link to="/my-courses" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
-                <BookOpen className="w-4 h-4" />
-                Meus Cursos
-              </Link>
+              {config.pages.showMyCoursesPage && (
+                <Link to="/my-courses" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Meus Cursos
+                </Link>
+              )}
               <Link to="/settings" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <Settings className="w-4 h-4" />
                 Configurações
@@ -88,18 +101,24 @@ export const Header = () => {
                 </Link>
               )}
               <div className="md:hidden border-t border-gray-100">
-                <Link to="/blog" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
-                  <Newspaper className="w-4 h-4" />
-                  Blog
-                </Link>
-                <Link to="/questions" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Questões
-                </Link>
-                <Link to="/explore" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
-                  <Trophy className="w-4 h-4" />
-                  Estude Grátis
-                </Link>
+                {config.pages.showBlogPage && (
+                  <Link to="/blog" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                    <Newspaper className="w-4 h-4" />
+                    Blog
+                  </Link>
+                )}
+                {config.pages.showQuestionsPage && (
+                  <Link to="/questions" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Questões
+                  </Link>
+                )}
+                {config.pages.showExplorePage && (
+                  <Link to="/explore" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                    <Trophy className="w-4 h-4" />
+                    Estude Grátis
+                  </Link>
+                )}
               </div>
               {user ? <div className="border-t border-gray-100">
                   <button onClick={signOut} className="w-full text-left px-4 py-3 text-sm font-light text-red-600 hover:bg-slate-50 flex items-center gap-2">

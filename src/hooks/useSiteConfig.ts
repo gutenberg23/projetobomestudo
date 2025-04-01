@@ -7,8 +7,16 @@ interface TabsConfig {
   showSimuladosTab: boolean;
 }
 
+export interface PagesConfig {
+  showBlogPage: boolean;
+  showQuestionsPage: boolean;
+  showExplorePage: boolean;
+  showMyCoursesPage: boolean;
+}
+
 interface SiteConfig {
   tabs: TabsConfig;
+  pages: PagesConfig;
 }
 
 // Valores padrão enquanto a tabela não existe
@@ -17,6 +25,12 @@ const DEFAULT_CONFIG: SiteConfig = {
     showDisciplinasTab: true,
     showEditalTab: true,
     showSimuladosTab: true,
+  },
+  pages: {
+    showBlogPage: true,
+    showQuestionsPage: true, 
+    showExplorePage: true,
+    showMyCoursesPage: true
   }
 };
 
@@ -76,58 +90,84 @@ export const useSiteConfig = () => {
     
     try {
       // Buscar configurações de visibilidade das abas
-      const { data, error } = await supabase
+      const { data: tabsData, error: tabsError } = await supabase
         .from('configuracoes_site')
         .select('*')
         .eq('chave', 'tabs_course')
         .maybeSingle();
       
+      // Buscar configurações de visibilidade das páginas
+      const { data: pagesData, error: pagesError } = await supabase
+        .from('configuracoes_site')
+        .select('*')
+        .eq('chave', 'pages_visibility')
+        .maybeSingle();
+      
       // Verificar se temos um erro de "tabela não existe"
-      if (error && (
-          error.code === '42P01' || // Postgres table not found
-          error.message?.toLowerCase().includes('not exist') ||
-          error.message?.toLowerCase().includes('não existe')
-      )) {
-        console.error('Erro ao buscar configurações:', error);
+      if ((tabsError && 
+          (tabsError.code === '42P01' || 
+          tabsError.message?.toLowerCase().includes('not exist') ||
+          tabsError.message?.toLowerCase().includes('não existe'))) ||
+          (pagesError && 
+          (pagesError.code === '42P01' ||
+          pagesError.message?.toLowerCase().includes('not exist') ||
+          pagesError.message?.toLowerCase().includes('não existe')))
+      ) {
+        console.error('Erro ao buscar configurações:', tabsError || pagesError);
         console.warn('A tabela configuracoes_site não existe. Usando valores padrão.');
-        logTableError(error);
+        logTableError(tabsError || pagesError);
         hasTableError = true;
         setConfig(DEFAULT_CONFIG);
         return;
-      } else if (error && error.code !== 'PGRST116') {
-        console.error('Erro ao buscar configurações:', error);
+      } else if ((tabsError && tabsError.code !== 'PGRST116') || (pagesError && pagesError.code !== 'PGRST116')) {
+        console.error('Erro ao buscar configurações:', tabsError || pagesError);
         setError(new Error('Erro ao buscar configurações'));
         return;
       }
       
-      // Se encontrar dados, atualizar a visibilidade
-      if (data && data.valor) {
+      // Configuração padrão inicial
+      let newConfig = { ...DEFAULT_CONFIG };
+      
+      // Atualizar configurações das abas se encontradas
+      if (tabsData && tabsData.valor) {
         try {
-          const settings = JSON.parse(data.valor);
-          const newConfig = {
-            ...config,
-            tabs: {
-              showDisciplinasTab: settings.showDisciplinasTab ?? true,
-              showEditalTab: settings.showEditalTab ?? true,
-              showSimuladosTab: settings.showSimuladosTab ?? true
-            }
+          const tabsSettings = JSON.parse(tabsData.valor);
+          newConfig.tabs = {
+            showDisciplinasTab: tabsSettings.showDisciplinasTab ?? true,
+            showEditalTab: tabsSettings.showEditalTab ?? true,
+            showSimuladosTab: tabsSettings.showSimuladosTab ?? true
           };
-          
-          // Atualizar estado e cache global
-          if (isMounted.current) {
-            setConfig(newConfig);
-            globalConfigCache = newConfig;
-            lastFetchTime = now;
-          }
         } catch (e) {
-          console.error('Erro ao processar configurações:', e);
+          console.error('Erro ao processar configurações de abas:', e);
           if (isMounted.current) {
             setError(new Error('Erro ao processar configurações'));
           }
         }
-      } else {
-        // Se não encontrou dados, mas a tabela existe, usar valores padrão
-        setConfig(DEFAULT_CONFIG);
+      }
+      
+      // Atualizar configurações das páginas se encontradas
+      if (pagesData && pagesData.valor) {
+        try {
+          const pagesSettings = JSON.parse(pagesData.valor);
+          newConfig.pages = {
+            showBlogPage: pagesSettings.showBlogPage ?? true,
+            showQuestionsPage: pagesSettings.showQuestionsPage ?? true,
+            showExplorePage: pagesSettings.showExplorePage ?? true,
+            showMyCoursesPage: pagesSettings.showMyCoursesPage ?? true
+          };
+        } catch (e) {
+          console.error('Erro ao processar configurações de páginas:', e);
+          if (isMounted.current) {
+            setError(new Error('Erro ao processar configurações'));
+          }
+        }
+      }
+      
+      // Atualizar estado e cache global
+      if (isMounted.current) {
+        setConfig(newConfig);
+        globalConfigCache = newConfig;
+        lastFetchTime = now;
       }
     } catch (error) {
       console.error('Erro ao buscar configurações:', error);
@@ -140,7 +180,7 @@ export const useSiteConfig = () => {
         setIsLoading(false);
       }
     }
-  }, [config]);
+  }, []);
 
   const updateTabsConfig = useCallback(async (tabsConfig: TabsConfig) => {
     // Se a tabela não existe, apenas atualiza o estado local
@@ -213,6 +253,77 @@ export const useSiteConfig = () => {
     }
   }, [config]);
 
+  const updatePagesConfig = useCallback(async (pagesConfig: PagesConfig) => {
+    // Se a tabela não existe, apenas atualiza o estado local
+    if (hasTableError) {
+      const newConfig = {
+        ...config,
+        pages: pagesConfig
+      };
+      
+      setConfig(newConfig);
+      globalConfigCache = newConfig;
+      lastFetchTime = Date.now();
+      
+      console.log('ATENÇÃO: A tabela configuracoes_site não existe. As configurações não estão sendo salvas no banco de dados.');
+      console.log('Execute o script SQL para criar a tabela ou entre em contato com o administrador.');
+      
+      return true;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('configuracoes_site')
+        .upsert({
+          chave: 'pages_visibility',
+          valor: JSON.stringify(pagesConfig),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'chave' });
+      
+      // Verificar se temos um erro de "tabela não existe"
+      if (error && (
+          error.code === '42P01' || // Postgres table not found
+          error.message?.toLowerCase().includes('not exist') ||
+          error.message?.toLowerCase().includes('não existe')
+      )) {
+        console.error('Erro ao salvar configurações de páginas:', error);
+        console.warn('A tabela configuracoes_site não existe. As configurações serão salvas apenas localmente.');
+        logTableError(error);
+        hasTableError = true;
+        
+        // Mesmo sem a tabela, atualiza o estado local
+        const newConfig = {
+          ...config,
+          pages: pagesConfig
+        };
+        
+        setConfig(newConfig);
+        globalConfigCache = newConfig;
+        lastFetchTime = Date.now();
+        
+        return true;
+      } else if (error) {
+        console.error('Erro ao salvar configurações de páginas:', error);
+        throw new Error('Erro ao salvar configurações de páginas');
+      }
+      
+      // Atualizar estado e cache global
+      const newConfig = {
+        ...config,
+        pages: pagesConfig
+      };
+      
+      setConfig(newConfig);
+      globalConfigCache = newConfig;
+      lastFetchTime = Date.now();
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao salvar configurações de páginas:', error);
+      throw error;
+    }
+  }, [config]);
+
   // Efeito para buscar dados na montagem do componente
   useEffect(() => {
     fetchConfig();
@@ -228,6 +339,7 @@ export const useSiteConfig = () => {
     error,
     fetchConfig: () => fetchConfig(true), // Forçar atualização
     updateTabsConfig,
+    updatePagesConfig,
     hasTableError
   };
 }; 

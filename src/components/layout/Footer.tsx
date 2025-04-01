@@ -1,10 +1,12 @@
-
 import React from "react";
 import { Instagram, Facebook, Twitter, Youtube, Mail, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import logoFooter from "/lovable-uploads/logo-footer.svg";
+import { useSiteConfig } from "@/hooks/useSiteConfig";
 
 export const Footer = () => {
+  const { config } = useSiteConfig();
+
   return (
     <footer className="w-full pt-[50px] pb-[30px] px-4 text-white mt-10 bg-[#2a2438]">
       {/* Footer Top Section */}
@@ -41,24 +43,30 @@ export const Footer = () => {
                 <span>Home</span>
               </Link>
             </li>
-            <li>
-              <Link to="/explore" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Explorar</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/my-courses" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Meus Cursos</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/questions" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
-                <ChevronRight size={16} className="mr-1" />
-                <span>Questões</span>
-              </Link>
-            </li>
+            {config.pages.showExplorePage && (
+              <li>
+                <Link to="/explore" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
+                  <ChevronRight size={16} className="mr-1" />
+                  <span>Explorar</span>
+                </Link>
+              </li>
+            )}
+            {config.pages.showMyCoursesPage && (
+              <li>
+                <Link to="/my-courses" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
+                  <ChevronRight size={16} className="mr-1" />
+                  <span>Meus Cursos</span>
+                </Link>
+              </li>
+            )}
+            {config.pages.showQuestionsPage && (
+              <li>
+                <Link to="/questions" className="text-gray-300 hover:text-[#5f2ebe] flex items-center transition-colors">
+                  <ChevronRight size={16} className="mr-1" />
+                  <span>Questões</span>
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
 

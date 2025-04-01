@@ -9,6 +9,7 @@ import VisualizacaoConfig from "../admin/components/configuracoes/VisualizacaoCo
 import GeralConfig from "../admin/components/configuracoes/GeralConfig";
 import SeoConfig from "../admin/components/configuracoes/SeoConfig";
 import CourseConfig from "../admin/components/configuracoes/CourseConfig";
+import PagesConfig from "../admin/components/configuracoes/PagesConfig";
 
 const ConfiguracoesSite = () => {
   return (
@@ -20,11 +21,12 @@ const ConfiguracoesSite = () => {
 
       <div className="bg-white rounded-md shadow">
         <Tabs defaultValue="visual" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 p-1 mb-2">
+          <TabsList className="grid w-full grid-cols-5 p-1 mb-2">
             <TabsTrigger value="visual">Personalização Visual</TabsTrigger>
             <TabsTrigger value="geral">Configurações Gerais</TabsTrigger>
             <TabsTrigger value="seo">SEO Global</TabsTrigger>
             <TabsTrigger value="course">Configurações de Curso</TabsTrigger>
+            <TabsTrigger value="pages">Páginas</TabsTrigger>
           </TabsList>
           
           <div className="p-4">
@@ -42,6 +44,10 @@ const ConfiguracoesSite = () => {
             
             <TabsContent value="course" className="mt-0">
               <CourseConfig />
+            </TabsContent>
+            
+            <TabsContent value="pages" className="mt-0">
+              <PagesConfig />
             </TabsContent>
           </div>
         </Tabs>
