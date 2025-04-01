@@ -13,6 +13,7 @@ const PagesConfig = () => {
   const [showQuestionsPage, setShowQuestionsPage] = useState(config.pages.showQuestionsPage);
   const [showExplorePage, setShowExplorePage] = useState(config.pages.showExplorePage);
   const [showMyCoursesPage, setShowMyCoursesPage] = useState(config.pages.showMyCoursesPage);
+  const [showQuestionBooksPage, setShowQuestionBooksPage] = useState(config.pages.showQuestionBooksPage);
   const [isSaving, setIsSaving] = useState(false);
 
   // Atualizar estados locais quando as configurações forem carregadas
@@ -22,6 +23,7 @@ const PagesConfig = () => {
       setShowQuestionsPage(config.pages.showQuestionsPage);
       setShowExplorePage(config.pages.showExplorePage);
       setShowMyCoursesPage(config.pages.showMyCoursesPage);
+      setShowQuestionBooksPage(config.pages.showQuestionBooksPage);
     }
   }, [config, isLoading]);
 
@@ -35,7 +37,8 @@ const PagesConfig = () => {
         showBlogPage,
         showQuestionsPage,
         showExplorePage,
-        showMyCoursesPage
+        showMyCoursesPage,
+        showQuestionBooksPage
       };
       
       await updatePagesConfig(pagesConfig);
@@ -149,6 +152,21 @@ const PagesConfig = () => {
                 id="my-courses-page"
                 checked={showMyCoursesPage}
                 onCheckedChange={setShowMyCoursesPage}
+                disabled={isSaving}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="question-books-page">Página de Cadernos de Questões</Label>
+                <p className="text-[#67748a] text-xs">
+                  Controla a visibilidade da página de Cadernos de Questões
+                </p>
+              </div>
+              <Switch
+                id="question-books-page"
+                checked={showQuestionBooksPage}
+                onCheckedChange={setShowQuestionBooksPage}
                 disabled={isSaving}
               />
             </div>

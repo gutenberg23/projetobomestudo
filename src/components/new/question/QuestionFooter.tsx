@@ -1,5 +1,6 @@
 import React from "react";
-import { MessageSquare, GraduationCap, Sparkles } from "lucide-react";
+import { MessageSquare, GraduationCap, Sparkles, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface QuestionFooterProps {
   commentsCount: number;
@@ -17,6 +18,7 @@ interface QuestionFooterProps {
   hasAIExplanation: boolean;
   isSubmittingAnswer: boolean;
   addToBookDialog?: React.ReactNode;
+  onRemove?: () => void;
 }
 
 export const QuestionFooter: React.FC<QuestionFooterProps> = ({
@@ -34,7 +36,8 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
   hasTeacherExplanation,
   hasAIExplanation,
   isSubmittingAnswer,
-  addToBookDialog
+  addToBookDialog,
+  onRemove
 }) => {
   return (
     <div className="flex flex-wrap gap-2 justify-between items-center px-4 py-2 border-t border-gray-100">
@@ -52,6 +55,17 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
         </button>
 
         {addToBookDialog}
+
+        {onRemove && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onRemove}
+            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
@@ -78,7 +92,7 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
                 : "text-gray-600 hover:bg-gray-100"
             }`}
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-4 w-4" />
             <span>BIA</span>
           </button>
         )}

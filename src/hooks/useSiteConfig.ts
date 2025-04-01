@@ -12,6 +12,7 @@ export interface PagesConfig {
   showQuestionsPage: boolean;
   showExplorePage: boolean;
   showMyCoursesPage: boolean;
+  showQuestionBooksPage: boolean;
 }
 
 interface VisualConfig {
@@ -66,7 +67,8 @@ const DEFAULT_CONFIG: SiteConfig = {
     showBlogPage: true,
     showQuestionsPage: true, 
     showExplorePage: true,
-    showMyCoursesPage: true
+    showMyCoursesPage: true,
+    showQuestionBooksPage: true
   },
   visual: {
     primaryColor: '#5f2ebe',
@@ -199,7 +201,8 @@ export const useSiteConfig = () => {
                 showBlogPage: pagesSettings.showBlogPage ?? true,
                 showQuestionsPage: pagesSettings.showQuestionsPage ?? true,
                 showExplorePage: pagesSettings.showExplorePage ?? true,
-                showMyCoursesPage: pagesSettings.showMyCoursesPage ?? true
+                showMyCoursesPage: pagesSettings.showMyCoursesPage ?? true,
+                showQuestionBooksPage: pagesSettings.showQuestionBooksPage ?? true
               };
             }
             else if (item.chave === 'visual_config' && item.valor) {

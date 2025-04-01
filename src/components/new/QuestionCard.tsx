@@ -576,16 +576,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             questionId={question.id}
           />
         </div>
-        {onRemove && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onRemove(question.id)}
-            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
       </div>
 
       {/* Conteúdo expandível */}
@@ -612,9 +602,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
       )}
 
-      {/* Comando da questão */}
-      <div className="mb-4 px-4 text-gray-700" dangerouslySetInnerHTML={{ __html: question.command }} />
-
+      {/* Conteúdo da questão */}
       <div className="flex gap-2.5 items-start px-3 md:px-5 py-2.5 w-full text-base text-slate-800">
         <div className="flex flex-col w-full px-2.5 py-5 rounded-md relative">
           <p className="text-left text-sm md:text-base" dangerouslySetInnerHTML={{
@@ -622,6 +610,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           }} />
         </div>
       </div>
+
+      {/* Comando da questão */}
+      {question.command && (
+        <div className="mb-4 px-4 text-gray-700" dangerouslySetInnerHTML={{ __html: question.command }} />
+      )}
 
       {question.options.map((option, index) => <QuestionOption key={option.id} id={option.id} text={option.text} index={index} isDisabled={disabledOptions.includes(option.id)} isSelected={selectedOption === option.id} isCorrect={Boolean(option.isCorrect)} onToggleDisabled={handleToggleDisabled} onSelect={handleOptionClick} showAnswer={showAnswer} />)}
 
@@ -654,6 +647,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         hasTeacherExplanation={Boolean(question.teacherExplanation)} 
         hasAIExplanation={Boolean(question.aiExplanation)} 
         isSubmittingAnswer={isSubmittingAnswer}
+        onRemove={onRemove ? () => onRemove(question.id) : undefined}
         addToBookDialog={
           <Dialog open={openAddToBook} onOpenChange={setOpenAddToBook}>
             <DialogTrigger asChild>

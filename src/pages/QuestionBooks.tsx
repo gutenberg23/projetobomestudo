@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Book, Plus, Pencil, Trash2 } from 'lucide-react';
+import { Book, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -45,15 +45,21 @@ interface QuestionBook {
 
 export default function QuestionBooks() {
   const [books, setBooks] = useState<QuestionBook[]>([]);
+  const [publicBooks, setPublicBooks] = useState<QuestionBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingBook, setEditingBook] = useState<QuestionBook | null>(null);
   const [newBookTitle, setNewBookTitle] = useState('');
   const [newBookType, setNewBookType] = useState<'public' | 'private'>('private');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [publicCurrentPage, setPublicCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchBooks();
+    fetchPublicBooks();
   }, []);
 
   const fetchBooks = async () => {
@@ -81,6 +87,71 @@ export default function QuestionBooks() {
       setLoading(false);
     }
   };
+
+  const fetchPublicBooks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cadernos_questoes')
+        .select('*')
+        .eq('is_public', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setPublicBooks(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar cadernos públicos:', error);
+      toast.error('Erro ao carregar os cadernos públicos');
+    }
+  };
+
+  const filteredPublicBooks = publicBooks.filter(book => 
+    book.nome.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Cálculos para paginação dos meus cadernos
+  const totalPages = Math.ceil(books.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentBooks = books.slice(startIndex, endIndex);
+
+  // Cálculos para paginação dos cadernos públicos
+  const totalPublicPages = Math.ceil(filteredPublicBooks.length / itemsPerPage);
+  const publicStartIndex = (publicCurrentPage - 1) * itemsPerPage;
+  const publicEndIndex = publicStartIndex + itemsPerPage;
+  const currentPublicBooks = filteredPublicBooks.slice(publicStartIndex, publicEndIndex);
+
+  const PaginationControls = ({ 
+    currentPage, 
+    totalPages, 
+    onPageChange 
+  }: { 
+    currentPage: number; 
+    totalPages: number; 
+    onPageChange: (page: number) => void;
+  }) => (
+    <div className="flex items-center justify-end gap-2 py-4 px-6 border-t">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      <span className="text-sm text-gray-600">
+        Página {currentPage} de {totalPages || 1}
+      </span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages || totalPages === 0}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 
   const handleCreateBook = async () => {
     try {
@@ -202,7 +273,7 @@ export default function QuestionBooks() {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
               <Book className="h-6 w-6 text-purple-500" />
-              <h1 className="text-2xl font-semibold text-gray-900">Cadernos de Questões</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">Meus cadernos de questões</h1>
             </div>
 
             <Dialog open={open} onOpenChange={(isOpen) => {
@@ -271,34 +342,35 @@ export default function QuestionBooks() {
             </Dialog>
           </div>
 
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
-            </div>
-          ) : books.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">Você ainda não tem nenhum caderno.</p>
-              <p className="text-sm text-gray-400 mt-2">
-                Crie seu primeiro caderno para começar a organizar suas questões.
-              </p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm border">
-              <Table>
-                <TableHeader>
+          <div className="bg-white rounded-lg shadow-sm border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Data da Criação</TableHead>
+                  <TableHead>Questões</TableHead>
+                  <TableHead>Respondidas</TableHead>
+                  <TableHead>Acertos</TableHead>
+                  <TableHead>Erros</TableHead>
+                  <TableHead>Aproveitamento</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
                   <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Data da Criação</TableHead>
-                    <TableHead className="text-center">Questões</TableHead>
-                    <TableHead className="text-center">Respondidas</TableHead>
-                    <TableHead className="text-center">Acertos</TableHead>
-                    <TableHead className="text-center">Erros</TableHead>
-                    <TableHead className="text-center">Aproveitamento</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableCell colSpan={8} className="text-center py-4">
+                      Carregando...
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {books.map((book) => {
+                ) : books.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center py-4">
+                      Nenhum caderno encontrado
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  currentBooks.map((book) => {
                     const aproveitamento = book.answered_questions > 0
                       ? ((book.correct_answers / book.answered_questions) * 100).toFixed(1)
                       : '0.0';
@@ -355,11 +427,92 @@ export default function QuestionBooks() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
+                  })
+                )}
+              </TableBody>
+            </Table>
+            {books.length > 0 && (
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            )}
+          </div>
+
+          <div className="mt-12">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Cadernos públicos</h2>
+              <div className="w-1/3">
+                <Input
+                  placeholder="Pesquisar cadernos públicos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Data da Criação</TableHead>
+                    <TableHead>Questões</TableHead>
+                    <TableHead>Respondidas</TableHead>
+                    <TableHead>Acertos</TableHead>
+                    <TableHead>Erros</TableHead>
+                    <TableHead>Aproveitamento</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4">
+                        Carregando...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredPublicBooks.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4">
+                        Nenhum caderno público encontrado
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    currentPublicBooks.map((book) => (
+                      <TableRow
+                        key={book.id}
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() => navigate(`/cadernos/${book.id}`)}
+                      >
+                        <TableCell>{book.nome}</TableCell>
+                        <TableCell>
+                          {new Date(book.created_at).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                        <TableCell>{book.total_questions}</TableCell>
+                        <TableCell>{book.answered_questions}</TableCell>
+                        <TableCell>{book.correct_answers}</TableCell>
+                        <TableCell>{book.wrong_answers}</TableCell>
+                        <TableCell>
+                          <span className={`text-${book.correct_answers === 0 ? 'gray' : book.correct_answers / book.answered_questions >= 0.7 ? 'green' : 'red'}-500`}>
+                            {book.answered_questions === 0 ? '0.0%' : ((book.correct_answers / book.answered_questions) * 100).toFixed(1) + '%'}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
+              {filteredPublicBooks.length > 0 && (
+                <PaginationControls
+                  currentPage={publicCurrentPage}
+                  totalPages={totalPublicPages}
+                  onPageChange={setPublicCurrentPage}
+                />
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
       <Footer />

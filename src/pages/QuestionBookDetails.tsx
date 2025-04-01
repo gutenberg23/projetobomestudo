@@ -47,6 +47,7 @@ export default function QuestionBookDetails() {
         return;
       }
 
+      // Primeiro, busca os detalhes do caderno
       const { data: bookData, error: bookError } = await supabase
         .from('cadernos_questoes')
         .select('*')
@@ -61,94 +62,49 @@ export default function QuestionBookDetails() {
         return;
       }
 
+      // Depois, busca as questões do caderno usando join
       const { data: questionsData, error: questionsError } = await supabase
-        .from('questoes_caderno')
+        .from('questoes')
         .select(`
-          questao:questao_id (
-            id,
-            number,
-            content,
-            command,
-            options,
-            year,
-            institution,
-            organization,
-            role,
-            education_level,
-            discipline,
-            topics,
-            expandable_content,
-            teacher_explanation,
-            ai_explanation
-          )
+          id,
+          content,
+          options,
+          year,
+          institution,
+          organization,
+          role,
+          level,
+          discipline,
+          topicos,
+          expandablecontent,
+          teacherexplanation,
+          aiexplanation
         `)
-        .eq('caderno_id', id);
+        .in('id', (await supabase
+          .from('questoes_caderno')
+          .select('questao_id')
+          .eq('caderno_id', id))
+          .data?.map(q => q.questao_id) || []);
 
       if (questionsError) throw questionsError;
 
-      const questions = ((questionsData as unknown) as Array<{
-        questao: {
-          id: string;
-          number: number;
-          content: string;
-          command: string;
-          options: Array<{
-            id: string;
-            text: string;
-            isCorrect: boolean;
-          }>;
-          year?: string;
-          institution?: string;
-          organization?: string;
-          role?: string;
-          education_level?: string;
-          discipline?: string;
-          topics?: string[];
-          expandable_content?: string;
-          teacher_explanation?: string;
-          ai_explanation?: string;
-        } | null;
-      }>)
-        .map(q => q.questao)
-        .filter((q): q is NonNullable<{
-          id: string;
-          number: number;
-          content: string;
-          command: string;
-          options: Array<{
-            id: string;
-            text: string;
-            isCorrect: boolean;
-          }>;
-          year?: string;
-          institution?: string;
-          organization?: string;
-          role?: string;
-          education_level?: string;
-          discipline?: string;
-          topics?: string[];
-          expandable_content?: string;
-          teacher_explanation?: string;
-          ai_explanation?: string;
-        }> => Boolean(q))
-        .map(q => ({
-          id: q.id,
-          number: q.number,
-          content: q.content,
-          command: q.command,
-          options: q.options,
-          year: q.year,
-          institution: q.institution,
-          organization: q.organization,
-          role: q.role,
-          educationLevel: q.education_level,
-          discipline: q.discipline,
-          topics: q.topics,
-          expandableContent: q.expandable_content,
-          teacherExplanation: q.teacher_explanation,
-          aiExplanation: q.ai_explanation,
-          comments: []
-        } as Question));
+      const questions = (questionsData || []).map(q => ({
+        id: q.id,
+        content: q.content,
+        command: "", // Não temos campo separado para comando
+        options: q.options,
+        year: q.year,
+        institution: q.institution,
+        organization: q.organization,
+        role: q.role,
+        educationLevel: q.level,
+        discipline: q.discipline,
+        topics: q.topicos,
+        expandableContent: q.expandablecontent,
+        teacherExplanation: q.teacherexplanation,
+        aiExplanation: q.aiexplanation,
+        comments: []
+      } as Question));
 
       setBook({
         ...bookData,
@@ -389,14 +345,6 @@ export default function QuestionBookDetails() {
                 )}
               </div>
             </div>
-
-            <Button
-              onClick={() => navigate(`/simulado?caderno=${id}`)}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Iniciar Simulado
-            </Button>
           </div>
 
           <div className="space-y-6">
