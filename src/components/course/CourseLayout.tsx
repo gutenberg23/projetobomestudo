@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Header } from "../layout/Header";
 import { Footer } from "../layout/Footer";
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { useUserProgress } from "./hooks/useUserProgress";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSiteConfig } from "@/hooks/useSiteConfig";
 
 export const CourseLayout = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -22,8 +23,33 @@ export const CourseLayout = () => {
   const [subjectsCount, setSubjectsCount] = useState<number>(0);
   const [subjectsData, setSubjectsData] = useState<any[]>([]);
   
+  // Usar o hook de configurações do site
+  const { config, isLoading: isLoadingConfig } = useSiteConfig();
+  
   // Usar o hook de progresso com o ID do usuário atual
   const { progressPercentage } = useUserProgress(user?.id, courseId);
+
+  // Efeito para ajustar a aba ativa quando as configurações são carregadas
+  useEffect(() => {
+    if (isLoadingConfig) return;
+    
+    const { showDisciplinasTab, showEditalTab, showSimuladosTab } = config.tabs;
+    
+    // Se a aba atual está invisível, mudar para a primeira aba visível
+    if (
+      (activeTab === 'disciplinas' && !showDisciplinasTab) ||
+      (activeTab === 'edital' && !showEditalTab) ||
+      (activeTab === 'simulados' && !showSimuladosTab)
+    ) {
+      if (showDisciplinasTab) {
+        setActiveTab('disciplinas');
+      } else if (showEditalTab) {
+        setActiveTab('edital');
+      } else if (showSimuladosTab) {
+        setActiveTab('simulados');
+      }
+    }
+  }, [config.tabs, activeTab, isLoadingConfig]);
 
   // Carregar dados das disciplinas quando o componente montar
   useEffect(() => {
@@ -66,18 +92,18 @@ export const CourseLayout = () => {
     fetchSubjectsData();
   }, [courseId]);
 
-  const handleProgressClick = () => {
+  const handleProgressClick = useCallback(() => {
     setIsProgressVisible(!isProgressVisible);
-  };
+  }, [isProgressVisible]);
 
   // Função para receber o número de disciplinas e os dados das disciplinas do componente SubjectsList
-  const handleSubjectsCountChange = (count: number, data?: any[]) => {
+  const handleSubjectsCountChange = useCallback((count: number, data?: any[]) => {
     if (data) {
       setSubjectsData(data);
       setSubjectsCount(count);
       console.log("CourseLayout - Recebendo dados de disciplinas:", data.length);
     }
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
@@ -90,10 +116,11 @@ export const CourseLayout = () => {
           onProgressClick={handleProgressClick}
           isProgressVisible={isProgressVisible}
         />
-        {activeTab === 'disciplinas' && (
+        
+        {activeTab === 'disciplinas' && config.tabs.showDisciplinasTab && (
           <div className="bg-[rgba(246,248,250,1)] flex w-full gap-5 py-0 flex-col xl:flex-row px-[10px] md:px-[32px] relative">
             <div className="flex-1">
-              <SubjectsList onSubjectsCountChange={handleSubjectsCountChange} />
+              <SubjectsList courseId={courseId} onSubjectsCountChange={handleSubjectsCountChange} />
             </div>
             
             {/* Card de Progresso Flutuante */}
@@ -119,9 +146,16 @@ export const CourseLayout = () => {
             </div>
           </div>
         )}
-        {(activeTab === 'edital' || activeTab === 'simulados') && (
-          <div className="bg-[rgba(246,248,250,1)] w-full">
-            <EditorializedView activeTab={activeTab} />
+        
+        {activeTab === 'edital' && config.tabs.showEditalTab && (
+          <div className="container mx-auto px-[10px] md:px-0">
+            <EditorializedView activeTab="edital" />
+          </div>
+        )}
+        
+        {activeTab === 'simulados' && config.tabs.showSimuladosTab && (
+          <div className="container mx-auto px-[10px] md:px-0">
+            <EditorializedView activeTab="simulados" />
           </div>
         )}
       </main>

@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { Subject } from "../types/editorialized";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
+import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+
 interface StatisticsCardProps {
   subjects: Subject[];
 }
+
 export const StatisticsCard = ({
   subjects
 }: StatisticsCardProps) => {
   const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.name || "");
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
   };
@@ -26,18 +29,23 @@ export const StatisticsCard = ({
     };
   });
 
-  // Data for donut chart
-  const totalTopics = subjects.reduce((acc, subject) => acc + subject.topics.length, 0);
-  const completedTopics = subjects.reduce((acc, subject) => acc + subject.topics.filter(topic => topic.isDone).length, 0);
-  const progressPercentage = Math.round(completedTopics / totalTopics * 100);
-  const donutData = [{
-    name: 'Concluído',
-    value: progressPercentage
-  }, {
-    name: 'Pendente',
-    value: 100 - progressPercentage
-  }];
-  const DONUT_COLORS = ['#5f2ebe', '#cecfcd'];
+  // Dados para a lista de tópicos que precisam de melhoria
+  const topicsNeedingImprovement = subjects.flatMap(subject => 
+    subject.topics.map(topic => {
+      const performance = topic.exercisesDone > 0 
+        ? Math.round((topic.hits / topic.exercisesDone) * 100) 
+        : 0;
+      return {
+        name: topic.name,
+        subject: subject.name,
+        performance,
+        exercisesDone: topic.exercisesDone
+      };
+    })
+  )
+  .filter(topic => topic.exercisesDone > 0) // Filtra apenas tópicos com exercícios feitos
+  .sort((a, b) => a.performance - b.performance) // Ordena do pior para o melhor
+  .slice(0, 5); // Pega os 5 piores
 
   // Colors for the bar chart
   const BAR_COLORS = {
@@ -51,20 +59,26 @@ export const StatisticsCard = ({
     acertos: topic.hits,
     erros: topic.exercisesDone - topic.hits
   })) || [];
-  return <div className={`bg-gradient-to-br from-[#5f2ebe10] to-[#5f2ebe20] rounded-[16px] ${isExpanded ? 'p-4 my-[15px] py-[17px]' : 'p-0 mb-4 py-0'}`}>
-      <div className={`flex justify-between items-center ${isExpanded ? 'mb-4' : 'p-4'}`}>
+
+  return (
+    <div className={`bg-gradient-to-br from-[#5f2ebe10] to-[#5f2ebe20] rounded-[16px] ${isExpanded ? 'p-4 my-[15px] py-[17px]' : 'p-0 mb-4 py-0'}`}>
+      <div 
+        className={`flex justify-between items-center ${isExpanded ? 'mb-4' : 'p-4'} cursor-pointer`}
+        onClick={toggleExpanded}
+      >
         <div className="flex items-center gap-3">
           <div className="bg-[#5f2ebe] w-1 h-8 rounded-full"></div>
           <h3 className="text-left text-2xl font-bold bg-gradient-to-r from-[#5f2ebe] to-[#8a5ee0] text-transparent bg-clip-text">
             Minhas Estatísticas
           </h3>
         </div>
-        <button onClick={toggleExpanded} className="text-[#5f2ebe] hover:bg-[#f0ebff] p-2 rounded-full transition-all duration-300">
+        <div className="text-[#5f2ebe] hover:bg-[#f0ebff] p-2 rounded-full transition-all duration-300">
           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </button>
+        </div>
       </div>
 
-      {isExpanded && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {isExpanded && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white p-4 rounded-[14px] py-[15px]">
             <h3 className="font-semibold text-center mb-4">
               Aproveitamento por Disciplina
@@ -73,13 +87,24 @@ export const StatisticsCard = ({
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData}>
                   <PolarGrid />
-                  <PolarAngleAxis dataKey="subject" tick={{
-                fontSize: window.innerWidth < 768 ? 10 : 12
-              }} />
-                  <Radar name="Aproveitamento" dataKey="value" stroke="#5f2ebe" fill="#5f2ebe" fillOpacity={0.6} />
-                  <Tooltip contentStyle={{
-                fontSize: window.innerWidth < 768 ? 10 : 12
-              }} />
+                  <PolarAngleAxis 
+                    dataKey="subject" 
+                    tick={{
+                      fontSize: window.innerWidth < 768 ? 10 : 12
+                    }} 
+                  />
+                  <Radar 
+                    name="Aproveitamento" 
+                    dataKey="value" 
+                    stroke="#5f2ebe" 
+                    fill="#5f2ebe" 
+                    fillOpacity={0.6} 
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      fontSize: window.innerWidth < 768 ? 10 : 12
+                    }} 
+                  />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -87,22 +112,42 @@ export const StatisticsCard = ({
           
           <div className="bg-white p-4 rounded-[14px]">
             <h3 className="font-semibold text-center mb-4">
-              Progresso Geral
+              Tópicos que Precisam de Melhoria
             </h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={donutData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                    {donutData.map((entry, index) => <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{
-                fontSize: window.innerWidth < 768 ? 10 : 12
-              }} />
-                  <Legend wrapperStyle={{
-                fontSize: window.innerWidth < 768 ? 10 : 12
-              }} />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="space-y-4">
+              {topicsNeedingImprovement.map((topic, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <div className="flex-1">
+                      <p className="font-medium text-[#272f3c]">{topic.name}</p>
+                      <p className="text-[#67748a] text-xs">{topic.subject}</p>
+                    </div>
+                    <span className={`font-medium ${
+                      topic.performance < 50 ? 'text-red-500' : 
+                      topic.performance < 70 ? 'text-orange-500' : 
+                      'text-green-500'
+                    }`}>
+                      {topic.performance}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div 
+                      className={`h-full rounded-full ${
+                        topic.performance < 50 ? 'bg-red-500' : 
+                        topic.performance < 70 ? 'bg-orange-500' : 
+                        'bg-green-500'
+                      }`}
+                      style={{ width: `${topic.performance}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {topicsNeedingImprovement.length === 0 && (
+                <div className="text-center py-8 text-[#67748a]">
+                  Nenhum tópico com exercícios realizados ainda.
+                </div>
+              )}
             </div>
           </div>
 
@@ -116,33 +161,61 @@ export const StatisticsCard = ({
                   <SelectValue placeholder="Selecione uma disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {subjects.map(subject => <SelectItem key={subject.id} value={subject.name}>
+                  {subjects.map(subject => (
+                    <SelectItem key={subject.id} value={subject.name}>
                       {subject.name}
-                    </SelectItem>)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={selectedSubjectData}>
-                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} tick={{
-                fontSize: window.innerWidth < 768 ? 10 : 12
-              }} />
-                  <YAxis tick={{
-                fontSize: window.innerWidth < 768 ? 10 : 12
-              }} />
-                  <Tooltip contentStyle={{
-                fontSize: window.innerWidth < 768 ? 10 : 12
-              }} />
-                  <Legend wrapperStyle={{
-                fontSize: window.innerWidth < 768 ? 10 : 12
-              }} />
-                  <Bar dataKey="acertos" stackId="a" fill={BAR_COLORS.acertos} name="Acertos" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="erros" stackId="a" fill={BAR_COLORS.erros} name="Erros" radius={[4, 4, 0, 0]} />
+                  <XAxis 
+                    dataKey="name" 
+                    angle={-45} 
+                    textAnchor="end" 
+                    height={100} 
+                    tick={{
+                      fontSize: window.innerWidth < 768 ? 10 : 12
+                    }} 
+                  />
+                  <YAxis 
+                    tick={{
+                      fontSize: window.innerWidth < 768 ? 10 : 12
+                    }} 
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      fontSize: window.innerWidth < 768 ? 10 : 12
+                    }} 
+                  />
+                  <Legend 
+                    wrapperStyle={{
+                      fontSize: window.innerWidth < 768 ? 10 : 12
+                    }} 
+                  />
+                  <Bar 
+                    dataKey="acertos" 
+                    stackId="a" 
+                    fill={BAR_COLORS.acertos} 
+                    name="Acertos" 
+                    radius={[4, 4, 0, 0]} 
+                  />
+                  <Bar 
+                    dataKey="erros" 
+                    stackId="a" 
+                    fill={BAR_COLORS.erros} 
+                    name="Erros" 
+                    radius={[4, 4, 0, 0]} 
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
-        </div>}
-    </div>;
+        </div>
+      )}
+    </div>
+  );
 };

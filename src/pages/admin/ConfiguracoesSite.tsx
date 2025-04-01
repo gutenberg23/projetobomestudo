@@ -1,4 +1,3 @@
-
 import React from "react";
 import { 
   Tabs, 
@@ -9,6 +8,7 @@ import {
 import VisualizacaoConfig from "../admin/components/configuracoes/VisualizacaoConfig";
 import GeralConfig from "../admin/components/configuracoes/GeralConfig";
 import SeoConfig from "../admin/components/configuracoes/SeoConfig";
+import CourseConfig from "../admin/components/configuracoes/CourseConfig";
 
 const ConfiguracoesSite = () => {
   return (
@@ -20,10 +20,11 @@ const ConfiguracoesSite = () => {
 
       <div className="bg-white rounded-md shadow">
         <Tabs defaultValue="visual" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 p-1 mb-2">
+          <TabsList className="grid w-full grid-cols-4 p-1 mb-2">
             <TabsTrigger value="visual">Personalização Visual</TabsTrigger>
             <TabsTrigger value="geral">Configurações Gerais</TabsTrigger>
             <TabsTrigger value="seo">SEO Global</TabsTrigger>
+            <TabsTrigger value="course">Configurações de Curso</TabsTrigger>
           </TabsList>
           
           <div className="p-4">
@@ -37,6 +38,10 @@ const ConfiguracoesSite = () => {
             
             <TabsContent value="seo" className="mt-0">
               <SeoConfig />
+            </TabsContent>
+            
+            <TabsContent value="course" className="mt-0">
+              <CourseConfig />
             </TabsContent>
           </div>
         </Tabs>

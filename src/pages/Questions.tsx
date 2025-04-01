@@ -1,15 +1,22 @@
+'use client';
+
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import QuestionFiltersPanel from "@/components/questions/QuestionFiltersPanel";
 import QuestionResults from "@/components/questions/QuestionResults";
+import { ScoreCounter } from "@/components/questions/ScoreCounter";
+import { Button } from "@/components/ui/button";
+import { Calculator } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
 import { useSearchParams } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Questions = () => {
   const [searchParams] = useSearchParams();
+  const [showScoreCounter, setShowScoreCounter] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState({
     disciplines: [] as string[],
@@ -242,37 +249,52 @@ const Questions = () => {
     currentPage * parseInt(questionsPerPage)
   );
   
-  const hasFilters = Object.values(selectedFilters).some(arr => arr.length > 0);
-  
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
       <main className="flex-grow pt-[120px] px-4 md:px-8 mx-auto w-full">
-        <h1 className="text-2xl mb-6 text-[#262f3c] font-extrabold md:text-3xl">Questões</h1>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl text-[#262f3c] font-extrabold md:text-3xl">Questões</h1>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={() => setShowScoreCounter(true)}
+            >
+              <Calculator className="h-4 w-4" />
+              Contador
+            </Button>
+          </div>
 
-        <QuestionFiltersPanel 
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedFilters={selectedFilters}
-          handleFilterChange={handleFilterChange}
-          handleApplyFilters={handleApplyFilters}
-          questionsPerPage={questionsPerPage}
-          setQuestionsPerPage={setQuestionsPerPage}
-          filterOptions={filterOptions}
-        />
+          <QuestionFiltersPanel
+            filterOptions={filterOptions}
+            selectedFilters={selectedFilters}
+            handleFilterChange={handleFilterChange}
+            handleApplyFilters={handleApplyFilters}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            questionsPerPage={questionsPerPage}
+            setQuestionsPerPage={setQuestionsPerPage}
+          />
 
-        <QuestionResults 
-          questions={paginatedQuestions}
-          disabledOptions={disabledOptions}
-          onToggleDisabled={handleToggleDisabled}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          handlePageChange={handlePageChange}
-          hasFilters={hasFilters}
-          loading={loading}
-          questionsPerPage={questionsPerPage}
-          setQuestionsPerPage={setQuestionsPerPage}
-        />
+          <QuestionResults
+            questions={paginatedQuestions}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            handlePageChange={handlePageChange}
+            loading={loading}
+            disabledOptions={disabledOptions}
+            onToggleDisabled={handleToggleDisabled}
+            hasFilters={Object.values(selectedFilters).some(arr => arr.length > 0)}
+            questionsPerPage={questionsPerPage}
+            setQuestionsPerPage={setQuestionsPerPage}
+          />
+        </div>
+
+        {showScoreCounter && (
+          <ScoreCounter onClose={() => setShowScoreCounter(false)} />
+        )}
       </main>
       <Footer />
     </div>

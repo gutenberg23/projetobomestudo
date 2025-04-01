@@ -11,11 +11,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+
+// Declarar o tipo global
+declare global {
+  interface Window {
+    handleQuestionAnswer?: (isCorrect: boolean) => void;
+  }
+}
+
 interface QuestionCardProps {
   question: Question;
   disabledOptions: string[];
   onToggleDisabled: (optionId: string, event: React.MouseEvent) => void;
 }
+
 export const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   disabledOptions,
@@ -30,6 +39,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [comment, setComment] = useState("");
   const [showExpandedContent, setShowExpandedContent] = useState(false);
   const [comments, setComments] = useState<Array<any>>([]);
+  const [commentsCount, setCommentsCount] = useState<number>(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
@@ -117,6 +127,29 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     getUserData();
   }, [question.id]);
 
+  // Buscar contagem de comentários independente de mostrar ou não os comentários
+  useEffect(() => {
+    const fetchCommentsCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('comentarios_questoes')
+          .select('id', { count: 'exact', head: true })
+          .eq('questao_id', question.id);
+          
+        if (error) {
+          console.error("Erro ao buscar contagem de comentários:", error);
+          return;
+        }
+        
+        setCommentsCount(count || 0);
+      } catch (error) {
+        console.error("Erro ao processar contagem de comentários:", error);
+      }
+    };
+    
+    fetchCommentsCount();
+  }, [question.id]);
+
   // Buscar comentários da questão
   useEffect(() => {
     const fetchComments = async () => {
@@ -124,20 +157,32 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         // Primeiro buscar os comentários
         const {
           data: commentsData,
-          error
-        } = await supabase.from('comentarios_questoes').select(`
+          error,
+          count
+        } = await supabase
+          .from('comentarios_questoes')
+          .select(`
             id,
             conteudo,
             created_at,
             usuario_id,
             questao_id
-          `).eq('questao_id', question.id).order('created_at', {
-          ascending: false
-        });
+          `, { count: 'exact' })
+          .eq('questao_id', question.id)
+          .order('created_at', {
+            ascending: false
+          });
+
         if (error) {
           console.error("Erro ao buscar comentários:", error);
           return;
         }
+
+        // Atualizar a contagem sempre que carregar os comentários completos
+        if (count !== null) {
+          setCommentsCount(count);
+        }
+
         if (commentsData && commentsData.length > 0) {
           // Para cada comentário, buscar os dados do perfil do usuário e os likes separadamente
           const formattedComments = await Promise.all(commentsData.map(async comment => {
@@ -191,19 +236,25 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       // Verificar se a opção selecionada é a correta
       const correctOption = question.options.find(opt => opt.isCorrect);
       const isCorrect = correctOption?.id === selectedOption;
+
       try {
         setIsSubmittingAnswer(true);
 
+        // Atualizar o contador
+        if (window.handleQuestionAnswer) {
+          window.handleQuestionAnswer(isCorrect);
+        }
+
         // Registrar a resposta do aluno
         if (userId) {
-          const {
-            error
-          } = await supabase.from('respostas_alunos').insert({
-            aluno_id: userId,
-            questao_id: question.id,
-            opcao_id: selectedOption,
-            is_correta: isCorrect
-          });
+          const { error } = await supabase
+            .from('respostas_alunos')
+            .insert({
+              aluno_id: userId,
+              questao_id: question.id,
+              opcao_id: selectedOption,
+              is_correta: isCorrect
+            });
           if (error) throw error;
           setHasAnswered(true);
         }
@@ -338,6 +389,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           userId
         };
         setComments(prev => [newCommentWithProfile, ...prev]);
+        setCommentsCount(prev => prev + 1); // Incrementar a contagem
         setComment("");
         toast.success("Comentário enviado com sucesso!");
       }
@@ -399,7 +451,21 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       {question.options.map((option, index) => <QuestionOption key={option.id} id={option.id} text={option.text} index={index} isDisabled={disabledOptions.includes(option.id)} isSelected={selectedOption === option.id} isCorrect={Boolean(option.isCorrect)} onToggleDisabled={handleToggleDisabled} onSelect={handleOptionClick} showAnswer={showAnswer} />)}
 
-      <QuestionFooter commentsCount={comments.length} showComments={showComments} showAnswer={showAnswer} showOfficialAnswer={showOfficialAnswer} showAIAnswer={showAIAnswer} onToggleComments={toggleComments} onToggleAnswer={toggleAnswer} onToggleOfficialAnswer={toggleOfficialAnswer} onToggleAIAnswer={toggleAIAnswer} hasSelectedOption={selectedOption !== null} hasTeacherExplanation={Boolean(question.teacherExplanation)} hasAIExplanation={Boolean(question.aiExplanation)} isSubmittingAnswer={isSubmittingAnswer} />
+      <QuestionFooter 
+        commentsCount={commentsCount} 
+        showComments={showComments} 
+        showAnswer={showAnswer} 
+        showOfficialAnswer={showOfficialAnswer} 
+        showAIAnswer={showAIAnswer} 
+        onToggleComments={toggleComments} 
+        onToggleAnswer={toggleAnswer} 
+        onToggleOfficialAnswer={toggleOfficialAnswer} 
+        onToggleAIAnswer={toggleAIAnswer} 
+        hasSelectedOption={selectedOption !== null} 
+        hasTeacherExplanation={Boolean(question.teacherExplanation)} 
+        hasAIExplanation={Boolean(question.aiExplanation)} 
+        isSubmittingAnswer={isSubmittingAnswer} 
+      />
 
       {showOfficialAnswer && question.teacherExplanation && <section className="py-3 md:py-5 w-full border-t border-gray-100">
           <QuestionComment comment={{

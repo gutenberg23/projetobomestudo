@@ -35,6 +35,7 @@ interface QuestionFiltersPanelProps {
     educationLevels: string[];
     difficulty: string[];
   };
+  rightElement?: React.ReactNode;
 }
 
 const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
@@ -45,7 +46,8 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   handleApplyFilters,
   questionsPerPage,
   setQuestionsPerPage,
-  filterOptions
+  filterOptions,
+  rightElement
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -208,7 +210,20 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           </CollapsibleContent>
         </Collapsible>
       ) : (
-        filtersContent
+        <>
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center">
+              <h3 className="text-lg font-medium text-[#272f3c]">Filtros</h3>
+              {activeFiltersCount > 0 && (
+                <span className="ml-2 bg-[#5f2ebe] text-white text-xs px-2 py-1 rounded-full">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </div>
+            {rightElement}
+          </div>
+          {filtersContent}
+        </>
       )}
     </div>
   );

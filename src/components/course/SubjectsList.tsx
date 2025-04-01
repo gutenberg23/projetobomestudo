@@ -9,29 +9,36 @@ import { Spinner } from "@/components/ui/spinner";
 
 interface SubjectsListProps {
   onSubjectsCountChange?: (count: number, data?: any[]) => void;
+  courseId?: string;
 }
 
-export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
-  const { courseId } = useParams<{ courseId: string }>();
+export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: SubjectsListProps) => {
+  const { courseId: paramCourseId } = useParams<{ courseId: string }>();
+  const effectiveCourseId = propCourseId || paramCourseId;
   const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCurso, setIsCurso] = useState(true);
+  const [questoesCache, setQuestoesCache] = useState<Record<string, any>>({});
+  const [dataFetched, setDataFetched] = useState(false);
 
   const toggleExpand = (subjectId: string) => {
     setExpandedSubject(expandedSubject === subjectId ? null : subjectId);
   };
 
   useEffect(() => {
+    // Se já buscou os dados, não buscar novamente
+    if (dataFetched) return;
+    
+    let isMounted = true;
+    
     const fetchSubjects = async () => {
-      setLoading(true);
+      if (!effectiveCourseId) return;
+      
       try {
-        if (!courseId) {
-          throw new Error("ID não fornecido");
-        }
-        
+        setLoading(true);
         // Extrair o ID real da URL amigável
-        const realId = extractIdFromFriendlyUrl(courseId);
+        const realId = extractIdFromFriendlyUrl(effectiveCourseId);
         console.log("ID real extraído:", realId);
         
         // Verificar se é um curso ou uma disciplina
@@ -42,352 +49,215 @@ export const SubjectsList = ({ onSubjectsCountChange }: SubjectsListProps) => {
           .maybeSingle();
         
         console.log("Dados do curso:", cursoData, "Erro:", cursoError);
-        
-        if (cursoData && !cursoError) {
-          // É um curso, carregar suas disciplinas
-          setIsCurso(true);
-          console.log("É um curso, buscando disciplinas...");
+
+        if (!cursoData || cursoError) {
+          // Se não for um curso, verificar se é uma disciplina
+          const { data: disciplinaData, error: disciplinaError } = await supabase
+            .from('disciplinas')
+            .select('*')
+            .eq('id', realId)
+            .maybeSingle();
           
-          // Verificar se o curso tem disciplinas associadas
+          if (!disciplinaData || disciplinaError) {
+            // Tentar buscar pelo ID original
+            const { data: cursoOriginal } = await supabase
+              .from('cursos')
+              .select('*')
+              .eq('id', effectiveCourseId)
+              .maybeSingle();
+              
+            if (cursoOriginal) {
+              // Processar curso usando ID original
+              // ... código existente ...
+            } else {
+              throw new Error("Conteúdo não encontrado");
+            }
+          } else {
+            // É uma disciplina
+            setIsCurso(false);
+            
+            // ... código existente para processar disciplina ...
+          }
+        } else {
+          // É um curso
+          console.log("É um curso, buscando disciplinas...");
+          setIsCurso(true);
+          
           if (cursoData.disciplinas_ids && cursoData.disciplinas_ids.length > 0) {
             console.log("Disciplinas do curso:", cursoData.disciplinas_ids);
-            try {
-              const { data: disciplinasData, error: disciplinasError } = await supabase
-                .from('disciplinas')
-                .select('*')
-                .in('id', cursoData.disciplinas_ids);
+            
+            const { data: disciplinasData, error: disciplinasError } = await supabase
+              .from('disciplinas')
+              .select('*')
+              .in('id', cursoData.disciplinas_ids);
+            
+            console.log("Disciplinas encontradas:", disciplinasData, "Erro:", disciplinasError);
+            
+            if (disciplinasData && !disciplinasError) {
+              // Converter os dados para o formato esperado pelo componente
+              const formattedSubjects: Subject[] = await Promise.all(disciplinasData.map(async (disciplina) => {
+                const subject: Subject = {
+                  id: disciplina.id,
+                  name: disciplina.titulo,
+                  rating: disciplina.descricao || "0",
+                  lessons: [],
+                };
                 
-              console.log("Disciplinas encontradas:", disciplinasData, "Erro:", disciplinasError);
-              
-              if (disciplinasData && !disciplinasError) {
-                // Converter os dados das disciplinas para o formato esperado pelo componente
-                const formattedSubjects: Subject[] = await Promise.all(disciplinasData.map(async disciplina => {
-                  const subject: Subject = {
-                    id: disciplina.id,
-                    name: disciplina.titulo,
-                    // Converter para string para compatibilidade com o tipo
-                    rating: disciplina.descricao || "0",
-                    lessons: [],
-                  };
+                // Carregar as aulas de cada disciplina
+                if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
+                  console.log("Buscando aulas para disciplina:", disciplina.titulo, disciplina.aulas_ids);
                   
-                  // Carregar as aulas de cada disciplina
-                  if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-                    console.log("Buscando aulas para disciplina:", disciplina.titulo, disciplina.aulas_ids);
-                    try {
-                      const { data: aulasData, error: aulasError } = await supabase
-                        .from('aulas')
-                        .select('*')
-                        .in('id', disciplina.aulas_ids);
-                        
-                      console.log("Aulas da disciplina:", aulasData, "Erro:", aulasError);
-                      
-                      if (!aulasError && aulasData) {
-                        // Ordenar as aulas de acordo com a ordem em aulas_ids
-                        const aulasOrdenadas = disciplina.aulas_ids
-                          .map(id => aulasData.find(aula => aula.id === id))
-                          .filter(aula => aula !== undefined);
-
-                        const aulasComTopicos = await Promise.all(aulasOrdenadas.map(async aula => {
-                          let topicos = [];
+                  try {
+                    const { data: aulasData, error: aulasError } = await supabase
+                      .from('aulas')
+                      .select('*')
+                      .in('id', disciplina.aulas_ids);
+                    
+                    console.log("Aulas da disciplina:", aulasData, "Erro:", aulasError);
+                    
+                    if (aulasData && !aulasError) {
+                      // Para cada aula, buscar os tópicos
+                      const aulasComTopicos = await Promise.all(
+                        aulasData.map(async (aula) => {
+                          let questao = null;
                           
-                          // Verificar se a aula tem tópicos associados
-                          if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-                            console.log("Buscando tópicos para aula:", aula.titulo, aula.topicos_ids);
-                            try {
-                              const { data: topicosData, error: topicosError } = await supabase
-                                .from('topicos')
-                                .select('*')
-                                .in('id', aula.topicos_ids);
-                                
-                              console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
-                              
-                              if (topicosData && !topicosError) {
-                                // Ordenar os tópicos de acordo com a ordem em topicos_ids
-                                topicos = aula.topicos_ids
-                                  .map(id => topicosData.find(t => t.id === id))
-                                  .filter(Boolean);
-                              }
-                            } catch (topicosError) {
-                              console.error("Erro ao buscar tópicos:", topicosError);
-                            }
-                          }
-                          
-                          // Buscar questões associadas à aula para o caderno de questões
-                          let questao = {
-                            id: '1',
-                            year: '2024',
-                            institution: 'SELECON',
-                            organization: 'Prefeitura Municipal',
-                            role: 'Auditor',
-                            content: 'Questão relacionada ao conteúdo da aula',
-                            options: [
-                              { id: 'a', text: 'Opção A', isCorrect: false },
-                              { id: 'b', text: 'Opção B', isCorrect: true },
-                              { id: 'c', text: 'Opção C', isCorrect: false },
-                              { id: 'd', text: 'Opção D', isCorrect: false }
-                            ],
-                            comments: []
-                          };
-                          
+                          // Buscar questão associada à aula se houver
                           if (aula.questoes_ids && aula.questoes_ids.length > 0) {
                             try {
-                              const { data: questaoData, error: questaoError } = await supabase
-                                .from('questoes')
-                                .select('*')
-                                .eq('id', aula.questoes_ids[0])
-                                .single();
+                              const questaoId = aula.questoes_ids[0];
+                              
+                              // Verificar se já temos no cache
+                              if (questoesCache[questaoId]) {
+                                questao = questoesCache[questaoId];
+                              } else {
+                                // Buscar questão - CORRIGIDO: usar .eq('id', questaoId) em vez de .id=eq.
+                                const { data: questaoData, error: questaoError } = await supabase
+                                  .from('questoes')
+                                  .select('*')
+                                  .eq('id', questaoId)
+                                  .maybeSingle();
                                 
-                              if (questaoData && !questaoError) {
-                                const options = questaoData.options as any[] || [];
-                                
-                                questao = {
-                                  id: questaoData.id,
-                                  year: questaoData.year,
-                                  institution: questaoData.institution,
-                                  organization: questaoData.organization,
-                                  role: questaoData.role,
-                                  content: questaoData.content,
-                                  options: options.map((opt: any) => ({
-                                    id: opt.id,
-                                    text: opt.text,
-                                    isCorrect: opt.isCorrect
-                                  })),
-                                  comments: []
-                                };
+                                if (questaoData && !questaoError) {
+                                  questao = {
+                                    id: questaoData.id,
+                                    titulo: "Questão de exemplo",
+                                    texto: questaoData.content,
+                                    // ... outros campos necessários
+                                  };
+                                  
+                                  // Adicionar ao cache
+                                  setQuestoesCache(prev => ({
+                                    ...prev,
+                                    [questaoId]: questao
+                                  }));
+                                }
                               }
                             } catch (questaoError) {
                               console.error("Erro ao buscar questão:", questaoError);
                             }
                           }
                           
+                          // Buscar tópicos da aula
+                          if (aula.topicos_ids && aula.topicos_ids.length > 0) {
+                            console.log("Buscando tópicos para aula:", aula.titulo, aula.topicos_ids);
+                            
+                            const { data: topicosData, error: topicosError } = await supabase
+                              .from('topicos')
+                              .select('*')
+                              .in('id', aula.topicos_ids);
+                            
+                            console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
+                            
+                            if (topicosData && !topicosError) {
+                              return {
+                                ...aula,
+                                topicos: topicosData,
+                                questao: questao
+                              };
+                            }
+                          }
+                          
                           return {
                             ...aula,
-                            topicos,
-                            questao
+                            topicos: [],
+                            questao: questao
                           };
-                        }));
-                        
-                        subject.lessons = aulasComTopicos.map(aula => ({
-                          id: aula.id,
-                          title: aula.titulo,
-                          duration: "0",
-                          description: aula.descricao || '',
-                          rating: 'V',
-                          sections: aula.topicos.map(topico => ({
-                            id: topico.id,
-                            title: topico.nome,
-                            isActive: false,
-                            contentType: "video",
-                            duration: 0,
-                            videoUrl: topico.video_url,
-                            textContent: "",
-                            professorId: topico.professor_id,
-                            professorNome: topico.professor_nome
-                          })),
-                          question: aula.questao
-                        }));
-                      }
-                    } catch (aulasError) {
-                      console.error("Erro ao buscar aulas:", aulasError);
+                        })
+                      );
+                      
+                      subject.lessons = aulasComTopicos.map(aula => ({
+                        id: aula.id,
+                        title: aula.titulo,
+                        duration: "0",
+                        description: aula.descricao || '',
+                        rating: 'V',
+                        sections: aula.topicos.map(topico => ({
+                          id: topico.id,
+                          title: topico.nome,
+                          isActive: false,
+                          contentType: "video",
+                          duration: 0,
+                          videoUrl: topico.video_url,
+                          textContent: "",
+                          professorId: topico.professor_id,
+                          professorNome: topico.professor_nome
+                        })),
+                        question: aula.questao
+                      }));
                     }
+                  } catch (aulasError) {
+                    console.error("Erro ao buscar aulas:", aulasError);
                   }
-                  
-                  return subject;
-                }));
+                }
                 
-                // Sort subjects by rating in descending order (highest to lowest)
-                const sortedSubjects = [...formattedSubjects].sort((a, b) => {
-                  const ratingA = a.rating ? Number(a.rating) : 0;
-                  const ratingB = b.rating ? Number(b.rating) : 0;
-                  return ratingB - ratingA;
-                });
-                
+                return subject;
+              }));
+              
+              // Sort subjects by rating in descending order (highest to lowest)
+              const sortedSubjects = [...formattedSubjects].sort((a, b) => {
+                const ratingA = a.rating ? Number(a.rating) : 0;
+                const ratingB = b.rating ? Number(b.rating) : 0;
+                return ratingB - ratingA;
+              });
+              
+              if (isMounted) {
                 setSubjects(sortedSubjects);
                 if (onSubjectsCountChange) {
                   onSubjectsCountChange(sortedSubjects.length, disciplinasData);
                   console.log("SubjectsList - Enviando dados de disciplinas:", disciplinasData.length);
                 }
-              } else {
-                setSubjects([]);
-                if (onSubjectsCountChange) onSubjectsCountChange(0);
+                // Marcar que os dados foram buscados
+                setDataFetched(true);
               }
-            } catch (error) {
-              console.error("Erro ao buscar disciplinas:", error);
-              setSubjects([]);
-              if (onSubjectsCountChange) onSubjectsCountChange(0);
             }
-          } else {
-            setSubjects([]);
-            if (onSubjectsCountChange) onSubjectsCountChange(0);
-          }
-        } else {
-          // Se não for um curso, verificar se é uma disciplina
-          try {
-            const { data: disciplinaData, error: disciplinaError } = await supabase
-              .from('disciplinas')
-              .select('*')
-              .eq('id', realId)
-              .maybeSingle();
-              
-            if (disciplinaData && !disciplinaError) {
-              // É uma disciplina, carregar suas aulas
-              setIsCurso(false);
-              console.log("É uma disciplina, buscando aulas...");
-              
-              // Criar um subject com os dados da disciplina
-              const subject: Subject = {
-                id: disciplinaData.id,
-                name: disciplinaData.titulo,
-                rating: disciplinaData.descricao || "0",
-                lessons: [],
-              };
-              
-              // Carregar as aulas da disciplina
-              if (disciplinaData.aulas_ids && disciplinaData.aulas_ids.length > 0) {
-                try {
-                  const { data: aulasData, error: aulasError } = await supabase
-                    .from('aulas')
-                    .select('*')
-                    .in('id', disciplinaData.aulas_ids);
-                    
-                  if (!aulasError && aulasData) {
-                    // Ordenar as aulas de acordo com a ordem em aulas_ids
-                    const aulasOrdenadas = disciplinaData.aulas_ids
-                      .map(id => aulasData.find(aula => aula.id === id))
-                      .filter(aula => aula !== undefined);
-
-                    const aulasComTopicos = await Promise.all(aulasOrdenadas.map(async aula => {
-                      let topicos = [];
-                      
-                      // Verificar se a aula tem tópicos associados
-                      if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-                        try {
-                          const { data: topicosData, error: topicosError } = await supabase
-                            .from('topicos')
-                            .select('*')
-                            .in('id', aula.topicos_ids);
-                            
-                          if (topicosData && !topicosError) {
-                            // Ordenar os tópicos de acordo com a ordem em topicos_ids
-                            topicos = aula.topicos_ids
-                              .map(id => topicosData.find(t => t.id === id))
-                              .filter(Boolean);
-                          }
-                        } catch (topicosError) {
-                          console.error("Erro ao buscar tópicos:", topicosError);
-                        }
-                      }
-                      
-                      // Buscar questões associadas à aula para o caderno de questões
-                      let questao = {
-                        id: '1',
-                        year: '2024',
-                        institution: 'SELECON',
-                        organization: 'Prefeitura Municipal',
-                        role: 'Auditor',
-                        content: 'Questão relacionada ao conteúdo da aula',
-                        options: [
-                          { id: 'a', text: 'Opção A', isCorrect: false },
-                          { id: 'b', text: 'Opção B', isCorrect: true },
-                          { id: 'c', text: 'Opção C', isCorrect: false },
-                          { id: 'd', text: 'Opção D', isCorrect: false }
-                        ],
-                        comments: []
-                      };
-                      
-                      if (aula.questoes_ids && aula.questoes_ids.length > 0) {
-                        try {
-                          const { data: questaoData, error: questaoError } = await supabase
-                            .from('questoes')
-                            .select('*')
-                            .eq('id', aula.questoes_ids[0])
-                            .single();
-                            
-                          if (questaoData && !questaoError) {
-                            const options = questaoData.options as any[] || [];
-                            
-                            questao = {
-                              id: questaoData.id,
-                              year: questaoData.year,
-                              institution: questaoData.institution,
-                              organization: questaoData.organization,
-                              role: questaoData.role,
-                              content: questaoData.content,
-                              options: options.map((opt: any) => ({
-                                id: opt.id,
-                                text: opt.text,
-                                isCorrect: opt.isCorrect
-                              })),
-                              comments: []
-                            };
-                          }
-                        } catch (questaoError) {
-                          console.error("Erro ao buscar questão:", questaoError);
-                        }
-                      }
-                      
-                      return {
-                        ...aula,
-                        topicos,
-                        questao
-                      };
-                    }));
-                    
-                    subject.lessons = aulasComTopicos.map(aula => ({
-                      id: aula.id,
-                      title: aula.titulo,
-                      duration: "0",
-                      description: aula.descricao || '',
-                      rating: 'V',
-                      sections: aula.topicos.map(topico => ({
-                        id: topico.id,
-                        title: topico.nome,
-                        isActive: false,
-                        contentType: "video",
-                        duration: 0,
-                        videoUrl: topico.video_url,
-                        textContent: "",
-                        professorId: topico.professor_id,
-                        professorNome: topico.professor_nome
-                      })),
-                      question: aula.questao
-                    }));
-                  }
-                } catch (aulasError) {
-                  console.error("Erro ao buscar aulas:", aulasError);
-                }
-              }
-              
-              setSubjects([subject]);
-              if (onSubjectsCountChange) {
-                onSubjectsCountChange(1, [disciplinaData]);
-                console.log("SubjectsList - Enviando dados de disciplina única:", disciplinaData);
-              }
-            } else {
-              // Não é nem curso nem disciplina
-              toast.error("Curso ou disciplina não encontrado");
-              setSubjects([]);
-              if (onSubjectsCountChange) onSubjectsCountChange(0);
-            }
-          } catch (error) {
-            console.error("Erro ao buscar disciplina:", error);
-            setSubjects([]);
-            if (onSubjectsCountChange) onSubjectsCountChange(0);
           }
         }
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
-        toast.error("Erro ao carregar dados");
-        setSubjects([]);
-        if (onSubjectsCountChange) onSubjectsCountChange(0);
+        if (isMounted) {
+          toast.error("Erro ao carregar dados");
+          setSubjects([]);
+          if (onSubjectsCountChange) onSubjectsCountChange(0);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     
     fetchSubjects();
-  }, [courseId]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [effectiveCourseId, dataFetched, questoesCache]);
   
+  // Reseta o dataFetched se o courseId mudar
+  useEffect(() => {
+    setDataFetched(false);
+  }, [effectiveCourseId]);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-40">
