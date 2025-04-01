@@ -1,134 +1,115 @@
-
 import React, { useState, useEffect } from "react";
-import { SimuladosTable } from "./components/simulados";
-import { Simulado } from "./components/simulados/SimuladosTypes";
-import { toast } from "sonner";
+import { SimuladosTable } from "./components/simulados/SimuladosTable";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuestionSelectionActions } from "@/components/admin/questions/hooks/actions/useQuestionSelectionActions";
-import { useQuestionsState } from "@/components/admin/questions/hooks/useQuestionsState";
+import { toast } from "sonner";
+import { Simulado } from "./components/simulados/SimuladosTypes";
 
-const Simulados = () => {
-  const questionsState = useQuestionsState();
-  const { handleCreateSimulado } = useQuestionSelectionActions(questionsState);
-  
-  // Estado para os simulados
+const Simulados: React.FC = () => {
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // Buscar simulados do banco de dados ao carregar a página
-  useEffect(() => {
-    const fetchSimulados = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from("simulados")
-          .select("*");
-        
-        if (error) throw error;
-        
-        // Formatar os dados para o formato utilizado no componente
-        const formattedSimulados: Simulado[] = data.map(simulado => ({
-          id: simulado.id,
-          titulo: simulado.titulo,
-          descricao: `Disponível de: ${simulado.data_inicio ? new Date(simulado.data_inicio).toLocaleDateString('pt-BR') : 'Indefinido'} até ${simulado.data_fim ? new Date(simulado.data_fim).toLocaleDateString('pt-BR') : 'Indefinido'}`,
-          questoesIds: simulado.questoes_ids || [],
-          cursosIds: [simulado.curso_id], // Inicia com o curso principal
-          ativo: simulado.ativo
-        }));
-        
-        setSimulados(formattedSimulados);
-      } catch (error) {
-        console.error("Erro ao buscar simulados:", error);
-        toast.error("Erro ao carregar simulados. Tente novamente.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchSimulados();
-  }, []);
 
-  // Vincular simulado a um curso
-  const handleVincularCurso = async (simuladoId: string) => {
-    // Aqui iria a lógica para abrir um modal e vincular o simulado a um novo curso
-    toast.info("Funcionalidade de vincular curso em desenvolvimento");
-  };
-
-  // Ativar/desativar simulado
-  const handleToggleAtivo = async (simuladoId: string) => {
+  const fetchSimulados = async () => {
     try {
-      // Encontrar o simulado atual
-      const simuladoAtual = simulados.find(s => s.id === simuladoId);
-      if (!simuladoAtual) return;
-      
-      const novoStatus = !simuladoAtual.ativo;
-      
-      // Atualizar no banco de dados
-      const { error } = await supabase
+      // Primeiro, buscar os simulados
+      const { data: simuladosData, error: simuladosError } = await supabase
         .from("simulados")
-        .update({ ativo: novoStatus })
-        .eq("id", simuladoId);
-      
-      if (error) throw error;
-      
-      // Atualizar o estado local
-      setSimulados(prevSimulados => 
-        prevSimulados.map(simulado => {
-          if (simulado.id === simuladoId) {
-            return {...simulado, ativo: novoStatus};
-          }
-          return simulado;
-        })
-      );
-      
-      toast.success(`Simulado ${novoStatus ? 'ativado' : 'desativado'} com sucesso!`);
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (simuladosError) throw simuladosError;
+
+      // Depois, buscar os cursos relacionados
+      const cursoIds = simuladosData.map(s => s.curso_id);
+      const { data: cursosData, error: cursosError } = await supabase
+        .from("cursos")
+        .select("id, titulo")
+        .in("id", cursoIds);
+
+      if (cursosError) throw cursosError;
+
+      // Criar um mapa de cursos para fácil acesso
+      const cursosMap = new Map(cursosData.map(curso => [curso.id, curso]));
+
+      // Formatar os dados para o formato esperado pelo componente
+      const formattedSimulados: Simulado[] = simuladosData.map(simulado => ({
+        id: simulado.id,
+        titulo: simulado.titulo,
+        descricao: simulado.descricao,
+        questoes_ids: simulado.questoes_ids || [],
+        curso_id: simulado.curso_id,
+        data_fim: simulado.data_fim,
+        ativo: simulado.ativo,
+        curso: {
+          titulo: cursosMap.get(simulado.curso_id)?.titulo || ""
+        },
+        questoesIds: simulado.questoes_ids || [],
+        cursosIds: [simulado.curso_id]
+      }));
+
+      setSimulados(formattedSimulados);
     } catch (error) {
-      console.error("Erro ao atualizar simulado:", error);
-      toast.error("Erro ao atualizar simulado. Tente novamente.");
+      console.error("Erro ao buscar simulados:", error);
+      toast.error("Erro ao carregar simulados");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Excluir simulado
-  const handleExcluir = async (simuladoId: string) => {
+  useEffect(() => {
+    fetchSimulados();
+  }, []);
+
+  const handleToggleAtivo = async (id: string) => {
     try {
-      // Confirmar exclusão
-      if (!window.confirm("Tem certeza que deseja excluir este simulado?")) {
-        return;
-      }
-      
-      // Excluir do banco de dados
+      const simulado = simulados.find(s => s.id === id);
+      if (!simulado) return;
+
+      const { error } = await supabase
+        .from("simulados")
+        .update({ ativo: !simulado.ativo })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      fetchSimulados();
+      toast.success(`Simulado ${simulado.ativo ? "desativado" : "ativado"} com sucesso!`);
+    } catch (error) {
+      console.error("Erro ao alterar status:", error);
+      toast.error("Erro ao alterar status do simulado");
+    }
+  };
+
+  const handleExcluir = async (id: string) => {
+    if (!confirm("Tem certeza que deseja excluir este simulado?")) return;
+
+    try {
       const { error } = await supabase
         .from("simulados")
         .delete()
-        .eq("id", simuladoId);
-      
+        .eq("id", id);
+
       if (error) throw error;
-      
-      // Atualizar o estado local
-      setSimulados(prevSimulados => 
-        prevSimulados.filter(simulado => simulado.id !== simuladoId)
-      );
-      
-      toast.success('Simulado excluído com sucesso!');
+
+      fetchSimulados();
+      toast.success("Simulado excluído com sucesso!");
     } catch (error) {
       console.error("Erro ao excluir simulado:", error);
-      toast.error("Erro ao excluir simulado. Tente novamente.");
+      toast.error("Erro ao excluir simulado");
     }
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-[#272f3c]">Simulados</h1>
-      <p className="text-[#67748a]">Gerenciamento de simulados</p>
-      
+    <div className="container mx-auto py-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Simulados</h1>
+      </div>
+
       {isLoading ? (
-        <div className="h-40 flex items-center justify-center">
-          <p className="text-[#67748a]">Carregando simulados...</p>
-        </div>
+        <div className="text-center py-4">Carregando...</div>
       ) : (
-        <SimuladosTable 
+        <SimuladosTable
           simulados={simulados}
-          handleVincularCurso={handleVincularCurso}
+          onRefresh={fetchSimulados}
           handleToggleAtivo={handleToggleAtivo}
           handleExcluir={handleExcluir}
         />

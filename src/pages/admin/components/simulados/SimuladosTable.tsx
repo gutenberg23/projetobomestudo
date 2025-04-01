@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState } from "react";
 import {
   Table,
   TableHeader,
@@ -11,13 +10,31 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link, Trash, Power, Edit, ExternalLink } from "lucide-react";
 import { SimuladosTableProps } from "./SimuladosTypes";
+import EditarSimuladoModal from "./EditarSimuladoModal";
+import { supabase } from "@/integrations/supabase/client";
 
 export const SimuladosTable: React.FC<SimuladosTableProps> = ({
   simulados,
-  handleVincularCurso,
   handleToggleAtivo,
   handleExcluir
 }) => {
+  const [editingSimuladoId, setEditingSimuladoId] = useState<string | null>(null);
+
+  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("simulados")
+        .update({ ativo: !currentStatus })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      handleToggleAtivo(id);
+    } catch (error) {
+      console.error("Erro ao alterar status:", error);
+    }
+  };
+
   return (
     <div className="rounded-md border bg-white">
       <Table>
@@ -56,20 +73,20 @@ export const SimuladosTable: React.FC<SimuladosTableProps> = ({
                       </Button>
                     </a>
                     <Button 
-                      onClick={() => handleVincularCurso(simulado.id)} 
-                      variant="outline" 
-                      size="sm"
-                      title="Vincular a um curso"
-                    >
-                      <Link className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      onClick={() => handleToggleAtivo(simulado.id)} 
+                      onClick={() => handleToggleStatus(simulado.id, simulado.ativo)} 
                       variant="outline" 
                       size="sm"
                       title={simulado.ativo ? "Desativar" : "Ativar"}
                     >
                       <Power className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      onClick={() => setEditingSimuladoId(simulado.id)} 
+                      variant="outline" 
+                      size="sm"
+                      title="Editar Simulado"
+                    >
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button 
                       onClick={() => handleExcluir(simulado.id)} 
@@ -93,6 +110,12 @@ export const SimuladosTable: React.FC<SimuladosTableProps> = ({
           )}
         </TableBody>
       </Table>
+
+      <EditarSimuladoModal
+        isOpen={editingSimuladoId !== null}
+        onClose={() => setEditingSimuladoId(null)}
+        simuladoId={editingSimuladoId || ""}
+      />
     </div>
   );
 };
