@@ -15,6 +15,7 @@ const initialFilters: Filters = {
   ano: emptyFilter,
   dificuldade: emptyFilter,
   questionType: emptyFilter,
+  topicos: emptyFilter,
 };
 
 export const useFilterActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
@@ -64,6 +65,7 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
       const anoValues = filters.ano.value ? filters.ano.value.split(',').filter(v => v !== '') : [];
       const dificuldadeValues = filters.dificuldade.value ? filters.dificuldade.value.split(',').filter(v => v !== '') : [];
       const questionTypeValues = filters.questionType.value ? filters.questionType.value.split(',').filter(v => v !== '') : [];
+      const topicosValues = filters.topicos.value ? filters.topicos.value.split(',').filter(v => v !== '') : [];
 
       const matchesDisciplina = !filters.disciplina.isActive || disciplinaValues.length === 0 || disciplinaValues.includes(question.discipline);
       const matchesNivel = !filters.nivel.isActive || nivelValues.length === 0 || nivelValues.includes(question.level);
@@ -73,6 +75,7 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
       const matchesAno = !filters.ano.isActive || anoValues.length === 0 || anoValues.includes(question.year);
       const matchesDificuldade = !filters.dificuldade.isActive || dificuldadeValues.length === 0 || dificuldadeValues.includes(question.difficulty);
       const matchesQuestionType = !filters.questionType.isActive || questionTypeValues.length === 0 || questionTypeValues.includes(question.questionType);
+      const matchesTopicos = !filters.topicos.isActive || topicosValues.length === 0 || topicosValues.some(topico => question.topicos?.includes(topico));
 
       return (
         matchesDisciplina &&
@@ -82,7 +85,8 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
         matchesRole &&
         matchesAno &&
         matchesDificuldade &&
-        matchesQuestionType
+        matchesQuestionType &&
+        matchesTopicos
       );
     });
   };

@@ -88,4 +88,5 @@ export interface Filters {
   ano: FilterItem;
   dificuldade: FilterItem;
   questionType: FilterItem;
+  topicos: FilterItem;
 }

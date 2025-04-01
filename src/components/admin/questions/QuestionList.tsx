@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Copy, Edit, Trash2, BarChart, Eraser, Bot } from "lucide-react";
@@ -7,16 +7,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { QuestionStats } from "@/components/new/question/QuestionStats";
 import { QuestionItemType } from "./types";
 import { Pagination } from "@/components/ui/pagination";
+import { toast } from "sonner";
+import CriarSimuladoModal from "./modals/CriarSimuladoModal";
 
 interface QuestionListProps {
   questions: QuestionItemType[];
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  handleEditQuestion: (question: QuestionItemType) => Promise<void>;
-  handleRemoveQuestion: (id: string) => Promise<void>;
+  handleEditQuestion: (question: QuestionItemType) => void;
+  handleRemoveQuestion: (id: string) => void;
   copyToClipboard: (text: string) => void;
-  handleClearQuestionStats: (id: string) => Promise<void>;
+  handleClearQuestionStats: (id: string) => void;
 }
 
 const QuestionList: React.FC<QuestionListProps> = ({
@@ -29,8 +31,55 @@ const QuestionList: React.FC<QuestionListProps> = ({
   copyToClipboard,
   handleClearQuestionStats,
 }) => {
+  const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+  const [showCreateSimuladoModal, setShowCreateSimuladoModal] = useState(false);
+
+  const handleQuestionSelect = (questionId: string) => {
+    setSelectedQuestions(prev => {
+      if (prev.includes(questionId)) {
+        return prev.filter(id => id !== questionId);
+      } else {
+        return [...prev, questionId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedQuestions.length === questions.length) {
+      setSelectedQuestions([]);
+    } else {
+      setSelectedQuestions(questions.map(q => q.id));
+    }
+  };
+
+  const handleCreateSimulado = () => {
+    if (selectedQuestions.length === 0) {
+      toast.error("Selecione pelo menos uma questão para criar o simulado");
+      return;
+    }
+    setShowCreateSimuladoModal(true);
+  };
+
+  const handleCloseCreateSimuladoModal = () => {
+    setShowCreateSimuladoModal(false);
+    setSelectedQuestions([]);
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          {selectedQuestions.length > 0 && (
+            <Button
+              onClick={handleCreateSimulado}
+              className="bg-[#5f2ebe] hover:bg-[#4a1f9c] text-white"
+            >
+              Registrar Novo Simulado
+            </Button>
+          )}
+        </div>
+      </div>
+
       <div className="text-sm text-gray-500">
         {questions.length} questões cadastradas
       </div>
@@ -42,36 +91,45 @@ const QuestionList: React.FC<QuestionListProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Ano</TableHead>
+                <TableHead>
+                  <input
+                    type="checkbox"
+                    checked={selectedQuestions.length === questions.length}
+                    onChange={handleSelectAll}
+                    className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
+                  />
+                </TableHead>
+                <TableHead>Questão</TableHead>
+                <TableHead>Disciplina</TableHead>
                 <TableHead>Banca</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>IA</TableHead>
+                <TableHead>Cargo</TableHead>
+                <TableHead>Categorias</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {questions.map((question) => (
                 <TableRow key={question.id}>
-                  <TableCell>{question.year}</TableCell>
-                  <TableCell>{question.institution}</TableCell>
-                  <TableCell>{question.questionType}</TableCell>
                   <TableCell>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center justify-center">
-                            {question.aiExplanation ? (
-                              <Bot className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <Bot className="h-4 w-4 text-gray-300" />
-                            )}
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{question.aiExplanation ? "Explicação de IA disponível" : "Sem explicação de IA"}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <input
+                      type="checkbox"
+                      checked={selectedQuestions.includes(question.id)}
+                      onChange={() => handleQuestionSelect(question.id)}
+                      className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-gray-900">
+                      {question.content.substring(0, 100)}...
+                    </div>
+                  </TableCell>
+                  <TableCell>{question.discipline}</TableCell>
+                  <TableCell>{question.institution}</TableCell>
+                  <TableCell>{question.role}</TableCell>
+                  <TableCell>
+                    <div className="text-sm text-gray-900">
+                      {question.topicos?.join(", ") || "Sem categorias"}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
@@ -167,6 +225,14 @@ const QuestionList: React.FC<QuestionListProps> = ({
           onPageChange={onPageChange}
         />
       </div>
+
+      {showCreateSimuladoModal && (
+        <CriarSimuladoModal
+          isOpen={showCreateSimuladoModal}
+          onClose={handleCloseCreateSimuladoModal}
+          selectedQuestions={selectedQuestions}
+        />
+      )}
     </div>
   );
 };

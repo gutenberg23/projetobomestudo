@@ -20,6 +20,7 @@ interface QuestionFiltersProps {
     levels: string[];
     difficulties: string[];
     questionTypes: string[];
+    topicos: string[];
   };
 }
 
@@ -149,6 +150,13 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
             options={dropdownData.questionTypes} 
             selectedValues={filters.questionType.value ? filters.questionType.value.split(',').filter(t => t !== '') : []} 
             onChange={value => handleChangeFilter("questionType", value)} 
+          />
+
+          <CheckboxGroup 
+            title="Assuntos" 
+            options={dropdownData.topicos} 
+            selectedValues={filters.topicos.value ? filters.topicos.value.split(',').filter(t => t !== '') : []} 
+            onChange={value => handleChangeFilter("topicos", value)} 
           />
         </div>
       )}

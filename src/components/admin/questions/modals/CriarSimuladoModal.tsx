@@ -1,17 +1,10 @@
-
-import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { CalendarIcon, PlusCircle, X } from "lucide-react";
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { ptBR } from 'date-fns/locale';
 
 interface CriarSimuladoModalProps {
   isOpen: boolean;
@@ -19,105 +12,170 @@ interface CriarSimuladoModalProps {
   selectedQuestions: string[];
 }
 
+interface Curso {
+  id: string;
+  titulo: string;
+}
+
 const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
   isOpen,
   onClose,
-  selectedQuestions,
+  selectedQuestions
 }) => {
   const [titulo, setTitulo] = useState("");
-  const [cursoId, setCursoId] = useState("");
-  const [cursosIds, setCursosIds] = useState<string[]>([]);
-  const [dataInicio, setDataInicio] = useState<Date | undefined>(undefined);
-  const [dataFim, setDataFim] = useState<Date | undefined>(undefined);
+  const [dataFim, setDataFim] = useState("");
+  const [cursos, setCursos] = useState<Curso[]>([]);
+  const [cursosSelecionados, setCursosSelecionados] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  const handleAddCurso = () => {
-    if (!cursoId.trim()) {
-      toast.error("Por favor, insira um ID de curso válido");
-      return;
+  useEffect(() => {
+    const fetchCursos = async () => {
+      try {
+        console.log("Iniciando busca de cursos...");
+        
+        const { data, error } = await supabase
+          .from("cursos")
+          .select("id, titulo")
+          .order("titulo", { ascending: true });
+
+        console.log("Resposta do Supabase:", { data, error });
+
+        if (error) {
+          console.error("Erro detalhado ao buscar cursos:", {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          throw error;
+        }
+
+        if (!data) {
+          console.warn("Nenhum curso encontrado na resposta");
+          return;
+        }
+
+        console.log("Cursos encontrados:", data);
+        setCursos(data);
+      } catch (error) {
+        console.error("Erro completo ao buscar cursos:", error);
+        toast.error("Erro ao carregar cursos. Por favor, tente novamente.");
+      }
+    };
+
+    if (isOpen) {
+      console.log("Modal aberto, buscando cursos...");
+      fetchCursos();
     }
+  }, [isOpen]);
 
-    if (cursosIds.includes(cursoId)) {
-      toast.error("Este curso já foi adicionado");
-      return;
-    }
-
-    setCursosIds([...cursosIds, cursoId]);
-    setCursoId("");
+  const handleCursoSelect = (cursoId: string) => {
+    setCursosSelecionados(prev => {
+      if (prev.includes(cursoId)) {
+        return prev.filter(id => id !== cursoId);
+      } else {
+        return [...prev, cursoId];
+      }
+    });
   };
 
-  const handleRemoveCurso = (id: string) => {
-    setCursosIds(cursosIds.filter(curso => curso !== id));
+  const handleSelectAllCursos = () => {
+    if (cursosSelecionados.length === cursos.length) {
+      setCursosSelecionados([]);
+    } else {
+      setCursosSelecionados(cursos.map(c => c.id));
+    }
   };
 
-  const handleCadastrarSimulado = async () => {
+  const handleCreateSimulado = async () => {
     if (!titulo.trim()) {
       toast.error("Por favor, insira um título para o simulado");
       return;
     }
 
-    if (cursosIds.length === 0) {
-      toast.error("Por favor, adicione pelo menos um curso");
+    if (cursosSelecionados.length === 0) {
+      toast.error("Por favor, selecione pelo menos um curso");
       return;
     }
 
     try {
       setIsLoading(true);
+      console.log("Iniciando criação do simulado com os dados:", {
+        titulo,
+        cursosSelecionados,
+        questoesSelecionadas: selectedQuestions,
+        dataFim
+      });
 
       // Criar o primeiro registro principal de simulado
       const { data, error } = await supabase.from("simulados").insert({
         titulo,
-        curso_id: cursosIds[0], // O primeiro curso será o principal
-        data_inicio: dataInicio ? dataInicio.toISOString() : null,
-        data_fim: dataFim ? dataFim.toISOString() : null,
+        curso_id: cursosSelecionados[0], // O primeiro curso será o principal
+        data_fim: dataFim ? new Date(dataFim).toISOString() : null,
         questoes_ids: selectedQuestions,
-        quantidade_questoes: selectedQuestions.length
+        quantidade_questoes: selectedQuestions.length,
+        ativo: true
       }).select();
 
+      console.log("Resposta da criação do primeiro simulado:", { data, error });
+
       if (error) {
+        console.error("Erro detalhado ao criar primeiro simulado:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        });
         throw error;
       }
 
       // Se há mais de um curso, criar registros adicionais
-      if (cursosIds.length > 1) {
-        const restanteCursos = cursosIds.slice(1);
+      if (cursosSelecionados.length > 1) {
+        console.log("Criando simulados adicionais para os outros cursos");
+        const restanteCursos = cursosSelecionados.slice(1);
         const batchInserts = restanteCursos.map(cursoId => ({
           titulo,
           curso_id: cursoId,
-          data_inicio: dataInicio ? dataInicio.toISOString() : null,
-          data_fim: dataFim ? dataFim.toISOString() : null,
+          data_fim: dataFim ? new Date(dataFim).toISOString() : null,
           questoes_ids: selectedQuestions,
-          quantidade_questoes: selectedQuestions.length
+          quantidade_questoes: selectedQuestions.length,
+          ativo: true
         }));
+
+        console.log("Dados para inserção em lote:", batchInserts);
 
         const { error: batchError } = await supabase.from("simulados").insert(batchInserts);
         if (batchError) {
+          console.error("Erro detalhado ao criar simulados adicionais:", {
+            code: batchError.code,
+            message: batchError.message,
+            details: batchError.details,
+            hint: batchError.hint
+          });
           throw batchError;
         }
       }
 
-      toast.success("Simulado cadastrado com sucesso!");
-      resetForm();
+      toast.success("Simulado criado com sucesso!");
       onClose();
     } catch (error) {
-      console.error("Erro ao cadastrar simulado:", error);
-      toast.error("Erro ao cadastrar simulado. Por favor, tente novamente.");
+      console.error("Erro completo ao criar simulado:", error);
+      toast.error("Erro ao criar simulado. Por favor, tente novamente.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setTitulo("");
-    setCursoId("");
-    setCursosIds([]);
-    setDataInicio(undefined);
-    setDataFim(undefined);
-  };
+  const totalPages = Math.ceil(cursos.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const cursosPaginados = cursos.slice(startIndex, endIndex);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle className="text-[#272f3c]">Criar Novo Simulado</DialogTitle>
         </DialogHeader>
@@ -137,131 +195,90 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
           </div>
 
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="cursoId" className="text-right text-[#67748a]">
-              ID do Curso
+            <Label htmlFor="dataFim" className="text-right text-[#67748a]">
+              Disponível até
             </Label>
-            <div className="col-span-3 flex space-x-2">
-              <Input
-                id="cursoId"
-                value={cursoId}
-                onChange={(e) => setCursoId(e.target.value)}
-                className="flex-grow border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
-                placeholder="Digite o ID do curso"
-              />
-              <Button 
-                type="button" 
-                onClick={handleAddCurso}
-                variant="secondary"
-                size="icon"
-                className="h-10 w-10"
-              >
-                <PlusCircle className="h-5 w-5" />
-              </Button>
-            </div>
+            <Input
+              id="dataFim"
+              type="date"
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+              className="col-span-3 border-[#5f2ebe] focus-visible:ring-[#5f2ebe]"
+            />
           </div>
 
-          {cursosIds.length > 0 && (
-            <div className="grid grid-cols-4 items-start gap-4">
-              <div className="col-start-2 col-span-3">
-                <div className="flex flex-wrap gap-2">
-                  {cursosIds.map(id => (
-                    <div key={id} className="flex items-center bg-slate-100 px-3 py-1 rounded-md">
-                      <span className="text-sm text-[#67748a] mr-2">{id}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 p-0"
-                        onClick={() => handleRemoveCurso(id)}
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+          <div className="mt-4">
+            <Label className="text-[#67748a] mb-2 block">Cursos</Label>
+            <div className="border rounded-lg p-4">
+              <div className="mb-4">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={cursosSelecionados.length === cursos.length}
+                    onChange={handleSelectAllCursos}
+                    className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
+                  />
+                  <span className="text-sm text-[#67748a]">Selecionar todos</span>
+                </label>
               </div>
-            </div>
-          )}
+              
+              <div className="space-y-2">
+                {cursosPaginados.map((curso) => (
+                  <label key={curso.id} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={cursosSelecionados.includes(curso.id)}
+                      onChange={() => handleCursoSelect(curso.id)}
+                      className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
+                    />
+                    <span className="text-sm text-[#67748a]">{curso.titulo}</span>
+                  </label>
+                ))}
+              </div>
 
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right text-[#67748a]">
-              Data Início
-            </Label>
-            <div className="col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
+              {totalPages > 1 && (
+                <div className="mt-4 flex justify-center space-x-2">
                   <Button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
                     variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal border-[#5f2ebe] focus-visible:ring-[#5f2ebe]",
-                      !dataInicio && "text-muted-foreground"
-                    )}
+                    size="sm"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dataInicio ? format(dataInicio, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data de início</span>}
+                    Anterior
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dataInicio}
-                    onSelect={setDataInicio}
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right text-[#67748a]">
-              Data Fim
-            </Label>
-            <div className="col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
+                  <span className="flex items-center text-sm text-[#67748a]">
+                    Página {currentPage} de {totalPages}
+                  </span>
                   <Button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
                     variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal border-[#5f2ebe] focus-visible:ring-[#5f2ebe]",
-                      !dataFim && "text-muted-foreground"
-                    )}
+                    size="sm"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dataFim ? format(dataFim, "dd/MM/yyyy", { locale: ptBR }) : <span>Selecione a data de fim</span>}
+                    Próxima
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={dataFim}
-                    onSelect={setDataFim}
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <div className="col-span-4 text-[#67748a] text-sm">
-              {selectedQuestions.length} questões serão incluídas neste simulado.
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
+        <div className="flex justify-end space-x-2">
+          <Button
+            onClick={onClose}
+            variant="outline"
+            className="text-[#67748a] hover:text-[#272f3c]"
+          >
             Cancelar
           </Button>
-          <Button 
-            onClick={handleCadastrarSimulado} 
-            disabled={isLoading || !titulo.trim() || cursosIds.length === 0}
-            className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90"
+          <Button
+            onClick={handleCreateSimulado}
+            disabled={isLoading}
+            className="bg-[#5f2ebe] hover:bg-[#4a1f9c] text-white"
           >
-            {isLoading ? "Cadastrando..." : "Cadastrar Simulado"}
+            {isLoading ? "Criando..." : "Criar Simulado"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

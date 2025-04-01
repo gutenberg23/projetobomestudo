@@ -19,7 +19,6 @@ import NotFound from "./pages/NotFound";
 import TermosEPoliticas from "./pages/TermosEPoliticas";
 import { AuthProvider } from "./contexts/AuthContext";
 import Simulado from "./pages/Simulado";
-import AuthCallback from "./pages/auth/callback";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -55,7 +54,6 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/esqueci-senha" element={<EsqueciSenha />} />
                 <Route path="/reset-password" element={<ResetSenha />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/course/:courseId" element={<CourseLayout />} />
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/my-courses" element={<MyCourses />} />
