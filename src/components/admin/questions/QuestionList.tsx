@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Copy, Edit, Trash2, BarChart, Eraser, Bot } from "lucide-react";
+import { Copy, Edit, Trash2, BarChart, Eraser, Bot, ChevronDown, ChevronUp } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { QuestionStats } from "@/components/new/question/QuestionStats";
@@ -9,6 +9,8 @@ import { QuestionItemType } from "./types";
 import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
 import CriarSimuladoModal from "./modals/CriarSimuladoModal";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface QuestionListProps {
   questions: QuestionItemType[];
@@ -33,6 +35,7 @@ const QuestionList: React.FC<QuestionListProps> = ({
 }) => {
   const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
   const [showCreateSimuladoModal, setShowCreateSimuladoModal] = useState(false);
+  const [showFullContent, setShowFullContent] = useState(false);
 
   const handleQuestionSelect = (questionId: string) => {
     setSelectedQuestions(prev => {
@@ -78,6 +81,16 @@ const QuestionList: React.FC<QuestionListProps> = ({
             </Button>
           )}
         </div>
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="show-full-content"
+            checked={showFullContent}
+            onCheckedChange={setShowFullContent}
+          />
+          <Label htmlFor="show-full-content">
+            Mostrar conteúdo completo
+          </Label>
+        </div>
       </div>
 
       <div className="text-sm text-gray-500">
@@ -119,8 +132,23 @@ const QuestionList: React.FC<QuestionListProps> = ({
                     />
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm text-gray-900">
-                      {question.content.substring(0, 100)}...
+                    <div className="text-sm text-gray-900 prose prose-sm max-w-none">
+                      {showFullContent ? (
+                        <div dangerouslySetInnerHTML={{ __html: question.content }} />
+                      ) : (
+                        <div>
+                          <div dangerouslySetInnerHTML={{ __html: question.content.substring(0, 100) + '...' }} />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="mt-2 text-[#5f2ebe] hover:text-[#4a1f9c]"
+                            onClick={() => setShowFullContent(true)}
+                          >
+                            Ver mais
+                            <ChevronDown className="ml-1 h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>{question.discipline}</TableCell>

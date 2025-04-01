@@ -16,6 +16,7 @@ interface ItemProps {
   lessons: number;
   onRemove: (id: string) => void;
   banca?: string;
+  cargo?: string;
 }
 
 const FavoriteItem: React.FC<ItemProps> = ({
@@ -25,9 +26,10 @@ const FavoriteItem: React.FC<ItemProps> = ({
   topics,
   lessons,
   onRemove,
-  banca
+  banca,
+  cargo
 }) => {
-  const displayTitle = banca ? `${title} - ${banca}` : title;
+  const displayTitle = cargo ? `${title} - ${cargo}` : (banca ? `${title} - ${banca}` : title);
   
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1">
@@ -123,7 +125,8 @@ const MyCourses = () => {
                   isFavorite: true,
                   topics: topicsCount,
                   lessons: course.aulas_ids?.length || 0,
-                  informacoes_curso: course.informacoes_curso
+                  informacoes_curso: course.informacoes_curso,
+                  cargo: course.descricao
                 };
               })
             );
@@ -257,7 +260,16 @@ const MyCourses = () => {
               <h2 className="text-2xl mb-4 text-[#272f3c] font-bold">Concursos</h2>
               <div className="bg-white rounded-lg overflow-hidden">
                 <div className="divide-y divide-gray-100">
-                  {favoriteCourses.length > 0 ? favoriteCourses.map(course => <FavoriteItem key={course.id} id={course.id} title={course.titulo} description={course.descricao || ""} topics={course.topics} lessons={course.lessons} onRemove={handleRemoveCourse} />) : <div className="p-8 text-center text-gray-500">
+                  {favoriteCourses.length > 0 ? favoriteCourses.map(course => <FavoriteItem 
+                    key={course.id} 
+                    id={course.id} 
+                    title={course.titulo} 
+                    description={course.descricao || ""} 
+                    topics={course.topics} 
+                    lessons={course.lessons} 
+                    onRemove={handleRemoveCourse}
+                    cargo={course.descricao}
+                  />) : <div className="p-8 text-center text-gray-500">
                       Você ainda não adicionou nenhum curso aos favoritos.
                     </div>}
                 </div>

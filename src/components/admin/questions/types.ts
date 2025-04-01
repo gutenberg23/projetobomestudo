@@ -52,6 +52,7 @@ export interface CourseItemType {
   lessons: number;
   informacoes_curso?: string;
   friendlyUrl?: string;
+  cargo?: string;
 }
 
 export interface DisciplinaItemType {

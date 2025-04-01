@@ -21,6 +21,7 @@ interface ItemProps {
   onToggleFavorite: (id: string) => void;
   friendlyUrl: string;
   banca?: string;
+  cargo?: string;
 }
 
 const ResultItem: React.FC<ItemProps> = ({
@@ -32,9 +33,10 @@ const ResultItem: React.FC<ItemProps> = ({
   lessons,
   onToggleFavorite,
   friendlyUrl,
-  banca
+  banca,
+  cargo
 }) => {
-  const displayTitle = banca ? `${title} - ${banca}` : title;
+  const displayTitle = cargo ? `${title} - ${cargo}` : (banca ? `${title} - ${banca}` : title);
   
   return <div className="flex justify-between items-center p-4 border-b border-gray-100">
       <div className="flex-1 pr-10">
@@ -103,7 +105,8 @@ const Explore = () => {
             topics: course.topicos_ids?.length || 0,
             lessons: course.aulas_ids?.length || 0,
             informacoes_curso: course.informacoes_curso,
-            friendlyUrl
+            friendlyUrl,
+            cargo: course.descricao
           };
         });
         setCourses(formattedCourses);
@@ -300,6 +303,7 @@ const Explore = () => {
                 onToggleFavorite={handleToggleFavorite} 
                 friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} 
                 banca={showSubjects ? (item as DisciplinaItemType).banca : undefined}
+                cargo={!showSubjects ? item.descricao : undefined}
               />) : <div className="p-8 text-center text-gray-500">
                   Nenhum resultado encontrado para "{searchTerm}"
                 </div>}
