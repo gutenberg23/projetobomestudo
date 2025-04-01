@@ -3,19 +3,30 @@ export interface Question {
   number: number;
   content: string;
   command: string;
-  options: QuestionOption[];
-  year: string;
-  institution: string;
-  organization: string;
-  role: string;
-  educationLevel: string;
-  discipline: string;
-  topics: string[];
+  options: Array<{
+    id: string;
+    text: string;
+    isCorrect: boolean;
+  }>;
+  year?: string;
+  institution?: string;
+  organization?: string;
+  role?: string;
+  educationLevel?: string;
+  discipline?: string;
+  topics?: string[];
   expandableContent?: string;
   teacherExplanation?: string;
-  comments: Comment[];
-  images?: string[];
   aiExplanation?: string;
+  comments: Array<{
+    id: string;
+    author: string;
+    avatar: string;
+    content: string;
+    timestamp: string;
+    likes: number;
+    userId?: string;
+  }>;
 }
 
 export interface QuestionOption {

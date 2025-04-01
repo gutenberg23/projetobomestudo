@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield } from "lucide-react";
+import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -42,6 +42,12 @@ export const Header = () => {
           <Link to="/questions" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
             <FileText className="w-4 h-4" />
             <span className="font-extralight">Questões</span>
+          </Link>
+        )}
+        {config.pages.showQuestionsPage && (
+          <Link to="/cadernos" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+            <Book className="w-4 h-4" />
+            <span className="font-extralight">Cadernos</span>
           </Link>
         )}
         {config.pages.showExplorePage && (
@@ -88,6 +94,12 @@ export const Header = () => {
                 <Link to="/my-courses" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                   <BookOpen className="w-4 h-4" />
                   Meus Cursos
+                </Link>
+              )}
+              {config.pages.showQuestionsPage && (
+                <Link to="/cadernos" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <Book className="w-4 h-4" />
+                  Cadernos de Questões
                 </Link>
               )}
               <Link to="/settings" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">

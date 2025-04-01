@@ -6,11 +6,28 @@ import { QuestionHeader } from "./question/QuestionHeader";
 import { QuestionOption } from "./question/QuestionOption";
 import { QuestionComment } from "./question/QuestionComment";
 import { QuestionFooter } from "./question/QuestionFooter";
-import { Send, ChevronDown, ChevronUp } from "lucide-react";
+import { Send, ChevronDown, ChevronUp, X, Plus, BookPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 // Declarar o tipo global
 declare global {
@@ -23,12 +40,20 @@ interface QuestionCardProps {
   question: Question;
   disabledOptions: string[];
   onToggleDisabled: (optionId: string, event: React.MouseEvent) => void;
+  onRemove?: (questionId: string) => Promise<void>;
+}
+
+interface QuestionBook {
+  id: string;
+  nome: string;
+  is_public: boolean;
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   disabledOptions,
-  onToggleDisabled
+  onToggleDisabled,
+  onRemove
 }) => {
   const [showComments, setShowComments] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -46,6 +71,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [hasAnswered, setHasAnswered] = useState(false);
   const [alreadyLikedIds, setAlreadyLikedIds] = useState<string[]>([]);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [openAddToBook, setOpenAddToBook] = useState(false);
+  const [books, setBooks] = useState<QuestionBook[]>([]);
+  const [selectedBookId, setSelectedBookId] = useState<string>('');
+  const [loadingBooks, setLoadingBooks] = useState(false);
+  const [creatingBook, setCreatingBook] = useState(false);
+  const [newBookTitle, setNewBookTitle] = useState('');
+  const [newBookType, setNewBookType] = useState<'public' | 'private'>('private');
+  const [showStats, setShowStats] = useState(false);
   const {
     simuladoId
   } = useParams<{
@@ -228,11 +261,135 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       fetchComments();
     }
   }, [question.id, showComments, likedComments]);
+
+  useEffect(() => {
+    if (openAddToBook) {
+      fetchBooks();
+    }
+  }, [openAddToBook]);
+
+  const fetchBooks = async () => {
+    try {
+      setLoadingBooks(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Você precisa estar logado para ver seus cadernos');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('cadernos_questoes')
+        .select('id, nome, is_public')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setBooks(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar cadernos:', error);
+      toast.error('Erro ao carregar os cadernos');
+    } finally {
+      setLoadingBooks(false);
+    }
+  };
+
+  const handleCreateBook = async () => {
+    try {
+      if (!newBookTitle.trim()) {
+        toast.error('O título é obrigatório');
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Você precisa estar logado para criar um caderno');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('cadernos_questoes')
+        .insert([
+          {
+            nome: newBookTitle.trim(),
+            user_id: user.id,
+            is_public: newBookType === 'public'
+          }
+        ])
+        .select('id, nome, is_public')
+        .single();
+
+      if (error) throw error;
+
+      setBooks(prev => [data, ...prev]);
+      setSelectedBookId(data.id);
+      setCreatingBook(false);
+      setNewBookTitle('');
+      setNewBookType('private');
+      toast.success('Caderno criado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao criar caderno:', error);
+      toast.error('Erro ao criar o caderno');
+    }
+  };
+
+  const handleAddToBook = async () => {
+    try {
+      if (!selectedBookId) {
+        toast.error('Selecione um caderno');
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Você precisa estar logado para adicionar questões');
+        return;
+      }
+
+      // Verifica se a questão já existe no caderno
+      const { data: existingQuestion, error: checkError } = await supabase
+        .from('questoes_caderno')
+        .select('*')
+        .eq('caderno_id', selectedBookId)
+        .eq('questao_id', question.id)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') throw checkError;
+      if (existingQuestion) {
+        toast.error('Esta questão já está no caderno');
+        return;
+      }
+
+      // Adiciona a questão ao caderno
+      const { error: insertError } = await supabase
+        .from('questoes_caderno')
+        .insert([
+          {
+            caderno_id: selectedBookId,
+            questao_id: question.id,
+            user_id: user.id
+          }
+        ]);
+
+      if (insertError) throw insertError;
+
+      setOpenAddToBook(false);
+      setSelectedBookId('');
+      toast.success('Questão adicionada ao caderno!');
+    } catch (error) {
+      console.error('Erro ao adicionar questão:', error);
+      toast.error('Erro ao adicionar questão ao caderno');
+    }
+  };
+
   const toggleComments = () => {
     setShowComments(!showComments);
   };
-  const toggleAnswer = async () => {
-    if (!showAnswer && selectedOption !== null) {
+  const handleAnswer = async () => {
+    if (selectedOption !== null) {
       // Verificar se a opção selecionada é a correta
       const correctOption = question.options.find(opt => opt.isCorrect);
       const isCorrect = correctOption?.id === selectedOption;
@@ -257,6 +414,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             });
           if (error) throw error;
           setHasAnswered(true);
+          setShowAnswer(true);
         }
       } catch (error) {
         console.error("Erro ao registrar resposta:", error);
@@ -265,7 +423,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         setIsSubmittingAnswer(false);
       }
     }
-    setShowAnswer(!showAnswer);
+  };
+  const toggleStats = () => {
+    setShowStats(!showStats);
   };
   const toggleOfficialAnswer = () => {
     setShowOfficialAnswer(!showOfficialAnswer);
@@ -402,17 +562,31 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
   return (
     <div className="w-full bg-white rounded-lg shadow-md mb-4">
-      <QuestionHeader
-        questionNumber={question.number}
-        year={question.year}
-        institution={question.institution}
-        organization={question.organization}
-        role={question.role}
-        educationLevel={question.educationLevel}
-        discipline={question.discipline}
-        topics={question.topics}
-        questionId={question.id}
-      />
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <QuestionHeader
+            questionNumber={question.number}
+            year={question.year || ""}
+            institution={question.institution || ""}
+            organization={question.organization || ""}
+            role={question.role || ""}
+            educationLevel={question.educationLevel || ""}
+            discipline={question.discipline || ""}
+            topics={question.topics || []}
+            questionId={question.id}
+          />
+        </div>
+        {onRemove && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onRemove(question.id)}
+            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
       {/* Conteúdo expandível */}
       {hasExpandableContent && (
@@ -451,20 +625,160 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       {question.options.map((option, index) => <QuestionOption key={option.id} id={option.id} text={option.text} index={index} isDisabled={disabledOptions.includes(option.id)} isSelected={selectedOption === option.id} isCorrect={Boolean(option.isCorrect)} onToggleDisabled={handleToggleDisabled} onSelect={handleOptionClick} showAnswer={showAnswer} />)}
 
+      <div className="flex justify-start px-4 mt-4 mb-4">
+        <Button
+          onClick={handleAnswer}
+          disabled={!selectedOption || isSubmittingAnswer}
+          className={`px-8 py-2 rounded-full font-medium ${
+            !selectedOption || isSubmittingAnswer
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : "bg-purple-600 text-white hover:bg-purple-700"
+          }`}
+        >
+          {isSubmittingAnswer ? "Enviando..." : "Responder"}
+        </Button>
+      </div>
+
       <QuestionFooter 
         commentsCount={commentsCount} 
         showComments={showComments} 
         showAnswer={showAnswer} 
+        showStats={showStats}
         showOfficialAnswer={showOfficialAnswer} 
         showAIAnswer={showAIAnswer} 
         onToggleComments={toggleComments} 
-        onToggleAnswer={toggleAnswer} 
+        onToggleAnswer={toggleStats}
         onToggleOfficialAnswer={toggleOfficialAnswer} 
         onToggleAIAnswer={toggleAIAnswer} 
         hasSelectedOption={selectedOption !== null} 
         hasTeacherExplanation={Boolean(question.teacherExplanation)} 
         hasAIExplanation={Boolean(question.aiExplanation)} 
-        isSubmittingAnswer={isSubmittingAnswer} 
+        isSubmittingAnswer={isSubmittingAnswer}
+        addToBookDialog={
+          <Dialog open={openAddToBook} onOpenChange={setOpenAddToBook}>
+            <DialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-purple-500 hover:text-purple-600 hover:bg-purple-50"
+              >
+                <BookPlus className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar ao Caderno</DialogTitle>
+                <DialogDescription>
+                  Selecione um caderno para adicionar esta questão
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="space-y-4">
+                {loadingBooks ? (
+                  <div className="flex justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500" />
+                  </div>
+                ) : books.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500">Você ainda não tem nenhum caderno.</p>
+                    <Button
+                      variant="link"
+                      onClick={() => setCreatingBook(true)}
+                      className="mt-2"
+                    >
+                      Criar novo caderno
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Caderno
+                      </label>
+                      <Select
+                        value={selectedBookId}
+                        onValueChange={setSelectedBookId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um caderno" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {books.map((book) => (
+                            <SelectItem key={book.id} value={book.id}>
+                              {book.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      variant="link"
+                      onClick={() => setCreatingBook(true)}
+                      className="px-0"
+                    >
+                      Ou criar novo caderno
+                    </Button>
+                  </>
+                )}
+
+                {creatingBook && (
+                  <div className="space-y-4 border-t pt-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Nome do Novo Caderno
+                      </label>
+                      <Input
+                        placeholder="Digite o nome do caderno"
+                        value={newBookTitle}
+                        onChange={(e) => setNewBookTitle(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Tipo
+                      </label>
+                      <Select
+                        value={newBookType}
+                        onValueChange={(value: 'public' | 'private') => setNewBookType(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="private">Privado</SelectItem>
+                          <SelectItem value="public">Público</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setCreatingBook(false);
+                          setNewBookTitle('');
+                          setNewBookType('private');
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button onClick={handleCreateBook}>
+                        Criar Caderno
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {!creatingBook && (books.length > 0 || selectedBookId) && (
+                  <div className="flex justify-end">
+                    <Button onClick={handleAddToBook}>
+                      Adicionar ao Caderno
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        }
       />
 
       {showOfficialAnswer && question.teacherExplanation && <section className="py-3 md:py-5 w-full border-t border-gray-100">

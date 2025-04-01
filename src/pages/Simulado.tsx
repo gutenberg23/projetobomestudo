@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
@@ -79,6 +79,8 @@ const Simulado = () => {
   const [displayOption, setDisplayOption] = useState<DisplayOption>("single");
   const [currentPage, setCurrentPage] = useState(1);
   
+  const [searchParams] = useSearchParams();
+  
   // Calcular o número de páginas com base na opção de exibição
   const getPageCount = () => {
     if (displayOption === "all") return 1;
@@ -149,16 +151,21 @@ const Simulado = () => {
           // Formatar questões para o formato do QuestionCard
           const questionsForCard: Question[] = questionsData.map((q: any) => ({
             id: q.id,
+            number: q.number || 0,
             content: q.content,
-            additionalContent: q.expandablecontent || undefined,
-            teacherExplanation: q.teacherexplanation || undefined,
+            command: q.command || '',
+            options: parseOptions(q.options),
             year: q.year,
             institution: q.institution,
             organization: q.organization,
             role: q.role,
-            options: parseOptions(q.options),
-            comments: [],
-            aiExplanation: q.aiexplanation || undefined
+            educationLevel: q.education_level,
+            discipline: q.discipline,
+            topics: Array.isArray(q.topics) ? q.topics : [],
+            expandableContent: q.expandablecontent || undefined,
+            teacherExplanation: q.teacherexplanation || undefined,
+            aiExplanation: q.aiexplanation || undefined,
+            comments: []
           }));
           
           setFormattedQuestions(questionsForCard);
@@ -192,6 +199,145 @@ const Simulado = () => {
 
     fetchSimulado();
   }, [simuladoId]);
+
+  useEffect(() => {
+    fetchQuestions();
+  }, [searchParams]);
+
+  const fetchQuestions = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Você precisa estar logado para fazer o simulado');
+        return;
+      }
+
+      const caderno = searchParams.get('caderno');
+      let questionsQuery;
+
+      if (caderno) {
+        // Verifica se o usuário tem acesso ao caderno
+        const { data: bookData, error: bookError } = await supabase
+          .from('cadernos_questoes')
+          .select('*')
+          .eq('id', caderno)
+          .single();
+
+        if (bookError) throw bookError;
+
+        if (bookData.user_id !== user.id && !bookData.is_public) {
+          toast.error('Você não tem permissão para ver este caderno');
+          return;
+        }
+
+        // Busca as questões do caderno
+        questionsQuery = supabase
+          .from('questoes_caderno')
+          .select(`
+            questao:questao_id (
+              id,
+              number,
+              content,
+              command,
+              options,
+              year,
+              institution,
+              organization,
+              role,
+              education_level,
+              discipline,
+              topics,
+              expandable_content,
+              teacher_explanation,
+              ai_explanation
+            )
+          `)
+          .eq('caderno_id', caderno);
+      } else {
+        // Busca questões aleatórias
+        questionsQuery = supabase
+          .from('questoes')
+          .select('*')
+          .limit(10);
+      }
+
+      const { data: questionsData, error: questionsError } = await questionsQuery;
+
+      if (questionsError) throw questionsError;
+
+      const processedQuestions = caderno
+        ? ((questionsData as unknown) as Array<{
+            questao: {
+              id: string;
+              number: number;
+              content: string;
+              command: string;
+              options: Array<{
+                id: string;
+                text: string;
+                isCorrect: boolean;
+              }>;
+              year?: string;
+              institution?: string;
+              organization?: string;
+              role?: string;
+              education_level?: string;
+              discipline?: string;
+              topics?: string[];
+              expandable_content?: string;
+              teacher_explanation?: string;
+              ai_explanation?: string;
+            } | null;
+          }>)
+            .map(q => q.questao)
+            .filter((q): q is NonNullable<{
+              id: string;
+              number: number;
+              content: string;
+              command: string;
+              options: Array<{
+                id: string;
+                text: string;
+                isCorrect: boolean;
+              }>;
+              year?: string;
+              institution?: string;
+              organization?: string;
+              role?: string;
+              education_level?: string;
+              discipline?: string;
+              topics?: string[];
+              expandable_content?: string;
+              teacher_explanation?: string;
+              ai_explanation?: string;
+            }> => Boolean(q))
+            .map(q => ({
+              id: q.id,
+              number: q.number,
+              content: q.content,
+              command: q.command,
+              options: q.options,
+              year: q.year,
+              institution: q.institution,
+              organization: q.organization,
+              role: q.role,
+              educationLevel: q.education_level,
+              discipline: q.discipline,
+              topics: q.topics,
+              expandableContent: q.expandable_content,
+              teacherExplanation: q.teacher_explanation,
+              aiExplanation: q.ai_explanation,
+              comments: []
+            } as Question))
+        : questionsData;
+
+      setQuestions(processedQuestions || []);
+    } catch (error) {
+      console.error('Erro ao buscar questões:', error);
+      toast.error('Erro ao carregar as questões');
+    }
+  };
 
   // Função para calcular e salvar os resultados do simulado
   const calculateAndSaveResults = async () => {

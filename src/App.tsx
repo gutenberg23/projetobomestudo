@@ -19,6 +19,8 @@ import NotFound from "./pages/NotFound";
 import TermosEPoliticas from "./pages/TermosEPoliticas";
 import { AuthProvider } from "./contexts/AuthContext";
 import Simulado from "./pages/Simulado";
+import QuestionBooks from "./pages/QuestionBooks";
+import QuestionBookDetails from "./pages/QuestionBookDetails";
 import { ConfigGuard } from './components/guards/ConfigGuard';
 import { useSiteConfig } from "./hooks/useSiteConfig";
 import { useEffect } from "react";
@@ -103,6 +105,18 @@ const App = () => {
                   <Route path="/questions" element={
                     <ConfigGuard configKey="showQuestionsPage">
                       <Questions />
+                    </ConfigGuard>
+                  } />
+                  
+                  <Route path="/cadernos" element={
+                    <ConfigGuard configKey="showQuestionsPage">
+                      <QuestionBooks />
+                    </ConfigGuard>
+                  } />
+                  
+                  <Route path="/cadernos/:id" element={
+                    <ConfigGuard configKey="showQuestionsPage">
+                      <QuestionBookDetails />
                     </ConfigGuard>
                   } />
                   

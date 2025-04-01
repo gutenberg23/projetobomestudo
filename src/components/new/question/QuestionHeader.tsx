@@ -67,32 +67,48 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
 
   return (
     <header className="flex overflow-hidden flex-wrap justify-between items-center px-3 md:px-5 py-2.5 w-full rounded-t-xl rounded-b-none border border-gray-200 border-solid min-h-[74px] text-slate-800 bg-[#272f3c]">
-      <div className="flex overflow-hidden flex-wrap flex-1 shrink gap-2.5 justify-center items-center self-stretch p-2.5 my-auto text-xl font-semibold rounded-md basis-0 min-w-60">
+      <div className="flex overflow-hidden flex-1 shrink items-center self-stretch p-2.5 my-auto text-xl font-semibold rounded-md basis-0 min-w-60">
         <img 
           src="/lovable-uploads/interroga.svg" 
           alt="Question Icon" 
-          className="object-contain shrink-0 self-stretch my-auto w-6 aspect-square" 
+          className="object-contain shrink-0 mr-4 w-6 aspect-square" 
         />
-        <p className="flex-1 shrink self-stretch my-auto basis-0 text-white">
+        <div className="flex flex-wrap gap-y-2 items-center text-white leading-none">
           {questionNumber && (
-            <>
-              <span className="text-sm text-white">Questão: </span>
-              <span className="font-normal text-sm text-white">{questionNumber}</span>
-            </>
+            <div className="flex items-center mr-6">
+              <span className="text-sm">Questão:&nbsp;</span>
+              <span className="font-normal text-sm">{questionNumber}</span>
+            </div>
           )}
-          <span className="text-sm text-white">{questionNumber ? ' | ' : ''}Ano: </span>
-          <span className="font-normal text-sm text-white">{year}</span>
-          <span className="text-sm text-white"> | Banca: </span>
-          <span className="font-normal text-sm text-white">{institution}</span>
-          <span className="text-sm text-white"> | Órgão: </span>
-          <span className="font-normal text-sm text-white">{organization}</span>
-          <span className="text-sm text-white"> | Prova: </span>
-          <span className="font-normal text-sm text-white">{role}</span>
-          <span className="text-sm text-white"> | Nível: </span>
-          <span className="font-normal text-sm text-white">{educationLevel}</span>
-          <span className="text-sm text-white"> | Disciplina: </span>
-          <span className="font-normal text-sm text-white">{discipline}</span>
-        </p>
+          <div className="flex items-center mr-6">
+            <span className="text-sm">Ano:&nbsp;</span>
+            <span className="font-normal text-sm">{year}</span>
+          </div>
+          <div className="flex items-center mr-6">
+            <span className="text-sm">Banca:&nbsp;</span>
+            <span className="font-normal text-sm">{institution}</span>
+          </div>
+          <div className="flex items-center mr-6">
+            <span className="text-sm">Órgão:&nbsp;</span>
+            <span className="font-normal text-sm">{organization}</span>
+          </div>
+          <div className="flex items-center mr-6">
+            <span className="text-sm">Prova:&nbsp;</span>
+            <span className="font-normal text-sm">{role}</span>
+          </div>
+          <div className="flex items-center mr-6">
+            <span className="text-sm">Disciplina:&nbsp;</span>
+            <span className="font-normal text-sm">
+              {discipline}
+              {topics && topics.length > 0 && (
+                <>
+                  {" → "}
+                  <span className="text-gray-300">{topics.join(", ")}</span>
+                </>
+              )}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="flex overflow-hidden gap-2 justify-center items-center self-stretch p-2.5 my-auto text-xs text-center whitespace-nowrap rounded-md max-sm:mx-auto">
