@@ -18,6 +18,7 @@ import {
   Youtube,
   Settings,
   Kanban,
+  Book,
 } from "lucide-react";
 
 const AdminLayout = () => {
@@ -54,6 +55,11 @@ const AdminLayout = () => {
       path: "/admin/questoes", 
       label: "Questões", 
       icon: <HelpCircle className="w-5 h-5" /> 
+    },
+    { 
+      path: "/admin/cadernos", 
+      label: "Cadernos de Questões", 
+      icon: <Book className="w-5 h-5" /> 
     },
     { 
       path: "/admin/simulados", 

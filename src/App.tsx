@@ -32,6 +32,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import Posts from "./pages/admin/posts";
 import Usuarios from "./pages/admin/Usuarios";
 import Questoes from "./pages/admin/Questoes";
+import AdminQuestionBooks from "./pages/admin/QuestionBooks";
 import Simulados from "./pages/admin/Simulados";
 import Edital from "./pages/admin/Edital";
 import Topicos from "./pages/admin/Topicos";
@@ -41,6 +42,7 @@ import Cursos from "./pages/admin/Cursos";
 import Professores from "./pages/admin/Professores";
 import ConfiguracoesSite from "./pages/admin/ConfiguracoesSite";
 import Kanban from "./pages/admin/Kanban";
+import EditQuestionBook from './pages/admin/EditQuestionBook';
 
 // Componente para aplicar as configurações de estilo
 const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
@@ -149,6 +151,8 @@ const App = () => {
                     <Route path="posts" element={<Posts />} />
                     <Route path="usuarios" element={<Usuarios />} />
                     <Route path="questoes" element={<Questoes />} />
+                    <Route path="cadernos" element={<AdminQuestionBooks />} />
+                    <Route path="cadernos/:id/editar" element={<EditQuestionBook />} />
                     <Route path="simulados" element={<Simulados />} />
                     <Route path="edital" element={<Edital />} />
                     <Route path="topicos" element={<Topicos />} />
