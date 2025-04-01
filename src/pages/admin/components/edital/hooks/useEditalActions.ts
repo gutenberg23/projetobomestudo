@@ -100,6 +100,35 @@ export const useEditalActions = () => {
     }
   };
 
+  const excluirDisciplina = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase
+        .from('disciplinaverticalizada')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Disciplina excluída com sucesso!",
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Erro ao excluir disciplina:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir disciplina. Tente novamente.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const cadastrarEdital = async (edital: Omit<Edital, 'id' | 'created_at'>) => {
     try {
       setIsLoading(true);
@@ -118,7 +147,7 @@ export const useEditalActions = () => {
 
       toast({
         title: "Sucesso",
-        description: "Edital cadastrado com sucesso!",
+        description: "Edital verticalizado cadastrado com sucesso!",
       });
 
       return data;
@@ -213,44 +242,15 @@ export const useEditalActions = () => {
     }
   };
 
-  const excluirDisciplina = async (id: string) => {
-    try {
-      setIsLoading(true);
-      const { error } = await supabase
-        .from('disciplinaverticalizada')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Sucesso",
-        description: "Disciplina excluída com sucesso!",
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('Erro ao excluir disciplina:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao excluir disciplina. Tente novamente.",
-        variant: "destructive"
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return {
     isLoading,
     cadastrarDisciplina,
     listarDisciplinas,
+    atualizarDisciplina,
+    excluirDisciplina,
     cadastrarEdital,
     listarEditais,
     toggleAtivoEdital,
-    excluirEdital,
-    excluirDisciplina,
-    atualizarDisciplina
+    excluirEdital
   };
 };

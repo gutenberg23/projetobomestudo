@@ -3,6 +3,7 @@ import DisciplinasTable from "./DisciplinasTable";
 import DisciplinaForm from "./DisciplinaForm";
 import { Disciplina } from "@/types/edital";
 import { useEditalActions } from "./hooks/useEditalActions";
+import { CriarEditalVerticalizadoModal } from "./CriarEditalVerticalizadoModal";
 
 const DisciplinasTab: React.FC = () => {
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
@@ -10,6 +11,7 @@ const DisciplinasTab: React.FC = () => {
   const [filteredDisciplinas, setFilteredDisciplinas] = useState<Disciplina[]>([]);
   const [todasSelecionadas, setTodasSelecionadas] = useState(false);
   const [disciplinaParaEditar, setDisciplinaParaEditar] = useState<Disciplina | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
     isLoading,
@@ -78,15 +80,15 @@ const DisciplinasTab: React.FC = () => {
     }
   };
 
-  const handleCriarEdital = async () => {
+  const handleCriarEdital = async (cursoId: string, titulo: string) => {
     const disciplinasSelecionadas = disciplinas.filter(d => d.selecionada);
     if (disciplinasSelecionadas.length === 0) {
       return;
     }
 
     const edital = await cadastrarEdital({
-      titulo: 'Novo Edital',
-      curso_id: '',
+      titulo: titulo,
+      curso_id: cursoId,
       disciplinas_ids: disciplinasSelecionadas.map(d => d.id),
       ativo: true
     });
@@ -109,7 +111,7 @@ const DisciplinasTab: React.FC = () => {
         onToggleSelecaoTodas={toggleSelecaoTodas}
         onToggleSelecao={toggleSelecao}
         onExcluir={handleExcluirDisciplina}
-        onCriarEdital={handleCriarEdital}
+        onCriarEdital={() => setIsModalOpen(true)}
         onEditDisciplina={setDisciplinaParaEditar}
       />
 
@@ -124,6 +126,13 @@ const DisciplinasTab: React.FC = () => {
           disciplinaParaEditar={disciplinaParaEditar}
         />
       )}
+
+      <CriarEditalVerticalizadoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        disciplinasSelecionadas={disciplinas.filter(d => d.selecionada).map(d => d.id)}
+        onCriarEdital={handleCriarEdital}
+      />
     </div>
   );
 };
