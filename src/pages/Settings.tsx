@@ -1,25 +1,95 @@
+import React, { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/lib/supabase";
+import { toast } from "react-toastify";
+import InputMask from "react-input-mask";
 
-import React, { useState } from "react";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { User, CreditCard, AlertCircle, Camera } from "lucide-react";
+import { Camera, User as UserIcon } from "lucide-react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+
+interface FormData {
+  nome: string;
+  sobrenome: string;
+  nome_social: string;
+  email: string;
+  nascimento: string;
+  sexo: string;
+  escolaridade: string;
+  estado_civil: string;
+  celular: string;
+  telefone: string;
+  cep: string;
+  endereco: string;
+  numero: string;
+  bairro: string;
+  complemento: string;
+  estado: string;
+  cidade: string;
+  foto_perfil: string;
+}
+
+// Componente personalizado para Input com máscara
+const MaskedInput = React.forwardRef<HTMLInputElement, {
+  mask: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  id?: string;
+  className?: string;
+}>((props, ref) => {
+  const { mask, value, onChange, placeholder, id, className } = props;
+  return (
+    <div className="relative">
+      <InputMask
+        mask={mask}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        id={id}
+      >
+        {(inputProps: any) => (
+          <input
+            {...inputProps}
+            className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className || ""}`}
+            ref={ref}
+          />
+        )}
+      </InputMask>
+    </div>
+  );
+});
+
+MaskedInput.displayName = "MaskedInput";
 
 const Settings = () => {
-  const [formData, setFormData] = useState({
+  const { user, updateProfile } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState<FormData>({
     nome: "",
     sobrenome: "",
-    nomeSocial: "",
+    nome_social: "",
+    email: "",
     nascimento: "",
     sexo: "",
     escolaridade: "",
-    estadoCivil: "",
-    email: "carlos@exemplo.com",
+    estado_civil: "",
     celular: "",
     telefone: "",
     cep: "",
@@ -29,17 +99,136 @@ const Settings = () => {
     complemento: "",
     estado: "",
     cidade: "",
+    foto_perfil: "",
   });
 
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        nome: user.nome || "",
+        sobrenome: user.sobrenome || "",
+        nome_social: user.nome_social || "",
+        email: user.email || "",
+        nascimento: user.nascimento || "",
+        sexo: user.sexo || "",
+        escolaridade: user.escolaridade || "",
+        estado_civil: user.estado_civil || "",
+        celular: user.celular || "",
+        telefone: user.telefone || "",
+        cep: user.cep || "",
+        endereco: user.endereco || "",
+        numero: user.numero || "",
+        bairro: user.bairro || "",
+        complemento: user.complemento || "",
+        estado: user.estado || "",
+        cidade: user.cidade || "",
+        foto_perfil: user.foto_perfil || "",
+      });
+    }
+  }, [user]);
+
+  const handleChange = (field: keyof FormData, value: string) => {
+    // Remove todos os caracteres não numéricos para campos específicos
+    if (field === 'celular' || field === 'telefone' || field === 'cep') {
+      value = value.replace(/\D/g, '');
+    }
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      // Validar tamanho do arquivo (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast("A imagem deve ter no máximo 2MB", {
+          type: "error"
+        });
+        return;
+      }
+
+      // Validar tipo do arquivo
+      if (!file.type.startsWith("image/")) {
+        toast("O arquivo deve ser uma imagem", {
+          type: "error"
+        });
+        return;
+      }
+
+      setLoading(true);
+
+      // Gerar nome único para o arquivo
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `profile-photos/${user?.id}/${fileName}`;
+
+      // Fazer upload para o Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("files")
+        .upload(filePath, file);
+
+      if (uploadError) {
+        toast(uploadError.message, {
+          type: "error"
+        });
+        return;
+      }
+
+      // Obter URL pública da imagem
+      const { data: { publicUrl } } = supabase.storage
+        .from("files")
+        .getPublicUrl(filePath);
+
+      // Atualizar foto do usuário no banco
+      const { error: updateError } = await updateProfile({ foto_perfil: publicUrl });
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setFormData(prev => ({ ...prev, foto_perfil: publicUrl }));
+
+      toast("Sua foto de perfil foi atualizada com sucesso", {
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar foto:", error);
+      toast(error instanceof Error ? error.message : "Erro desconhecido ao fazer upload", {
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Aqui seria implementada a lógica para salvar os dados
-    console.log("Dados salvos:", formData);
-    // Aqui poderia ter uma chamada para uma API
+    setLoading(true);
+
+    try {
+      // Formatar a data antes de enviar
+      const formattedData = {
+        ...formData,
+        email: undefined, // Não atualizar o email
+        nascimento: formData.nascimento ? new Date(formData.nascimento).toISOString() : null
+      };
+
+      const { error } = await updateProfile(formattedData);
+
+      if (error) throw error;
+
+      toast("Suas informações foram atualizadas com sucesso", {
+        type: "success"
+      });
+    } catch (error) {
+      console.error("Erro ao atualizar perfil:", error);
+      toast(error instanceof Error ? error.message : "Erro desconhecido ao atualizar perfil", {
+        type: "error"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -53,57 +242,30 @@ const Settings = () => {
             Mantendo sua conta atualizada, você nos ajuda a disponibilizar dados mais precisos sobre as aprovações pelo Brasil.
           </p>
 
-          {/* Alerta de e-mail não validado */}
-          <div className="bg-amber-50 p-4 rounded-lg mb-8 flex items-start justify-between">
-            <div className="flex gap-2">
-              <AlertCircle className="text-amber-500 h-5 w-5 mt-0.5" />
-              <div>
-                <p className="font-medium text-amber-800">O seu e-mail ainda não foi validado.</p>
-                <p className="text-amber-700 text-sm">
-                  Valide o seu e-mail através do link enviado para {formData.email}.
-                  Caso não tenha recebido, clique no botão para reenviar.
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" className="bg-amber-400 text-white border-amber-400 hover:bg-amber-500 hover:text-white">
-              Reenviar e-mail
-            </Button>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Coluna com perfil e foto */}
+            {/* Coluna com foto */}
             <div className="space-y-6">
               <div className="flex flex-col items-center bg-gray-50 p-6 rounded-lg">
                 <div className="relative mb-4">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-sm">
-                    <AvatarImage src="https://github.com/shadcn.png" />
+                    <AvatarImage src={user?.foto_perfil || ""} />
                     <AvatarFallback className="bg-[#ea2be2] text-white text-xl">
-                      <User className="h-10 w-10" />
+                      <UserIcon className="h-10 w-10" />
                     </AvatarFallback>
                   </Avatar>
-                  <button className="absolute bottom-0 right-0 bg-[#ea2be2] text-white p-2 rounded-full">
+                  <label htmlFor="foto-perfil" className="absolute bottom-0 right-0 bg-[#ea2be2] text-white p-2 rounded-full cursor-pointer">
                     <Camera className="h-4 w-4" />
-                  </button>
+                    <input
+                      id="foto-perfil"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
-                <h2 className="text-lg font-medium">Carlos Silva</h2>
+                <h2 className="text-lg font-medium">{formData.nome}</h2>
                 <p className="text-gray-500 text-sm">{formData.email}</p>
-                <Button className="mt-4 w-full bg-[#ea2be2] hover:bg-opacity-90">
-                  Assinatura Ilimitada
-                </Button>
-              </div>
-
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="font-medium text-[#272f3c] mb-4">Menu</h3>
-                <nav className="space-y-2">
-                  <a href="#" className="flex items-center gap-2 text-[#67748a] py-2 px-2 rounded-md hover:bg-gray-100 hover:text-[#ea2be2]">
-                    <User className="h-4 w-4" />
-                    <span>Minha conta</span>
-                  </a>
-                  <a href="#" className="flex items-center gap-2 text-[#67748a] py-2 px-2 rounded-md hover:bg-gray-100 hover:text-[#ea2be2]">
-                    <CreditCard className="h-4 w-4" />
-                    <span>Gerenciar assinatura</span>
-                  </a>
-                </nav>
               </div>
             </div>
 
@@ -133,21 +295,28 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="nomeSocial">Nome social</Label>
+                      <Label htmlFor="nome_social">Nome social</Label>
                       <Input
-                        id="nomeSocial"
-                        value={formData.nomeSocial}
-                        onChange={(e) => handleChange("nomeSocial", e.target.value)}
+                        id="nome_social"
+                        value={formData.nome_social}
+                        onChange={(e) => handleChange("nome_social", e.target.value)}
                         placeholder="Seu nome social"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="nascimento">Nascimento</Label>
+                      <Label htmlFor="nascimento">Data de Nascimento</Label>
                       <Input
                         id="nascimento"
-                        value={formData.nascimento}
-                        onChange={(e) => handleChange("nascimento", e.target.value)}
-                        placeholder="dd/mm/aaaa"
+                        type="date"
+                        value={formData.nascimento ? new Date(formData.nascimento).toISOString().split('T')[0] : ""}
+                        onChange={(e) => {
+                          const date = e.target.value;
+                          if (date) {
+                            handleChange("nascimento", date);
+                          }
+                        }}
+                        min="1900-01-01"
+                        max={new Date().toISOString().split('T')[0]}
                       />
                     </div>
                     <div className="space-y-2">
@@ -185,12 +354,12 @@ const Settings = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="estadoCivil">Estado Civil</Label>
+                      <Label htmlFor="estado_civil">Estado Civil</Label>
                       <Select
-                        onValueChange={(value) => handleChange("estadoCivil", value)}
-                        value={formData.estadoCivil}
+                        onValueChange={(value) => handleChange("estado_civil", value)}
+                        value={formData.estado_civil}
                       >
-                        <SelectTrigger id="estadoCivil">
+                        <SelectTrigger id="estado_civil">
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
@@ -215,28 +384,28 @@ const Settings = () => {
                         id="email"
                         type="email"
                         value={formData.email}
-                        onChange={(e) => handleChange("email", e.target.value)}
-                        placeholder="seu@email.com"
                         disabled
                         className="bg-gray-100"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="celular">Celular</Label>
-                      <Input
+                      <MaskedInput
+                        mask="(99)99999-9999"
                         id="celular"
                         value={formData.celular}
                         onChange={(e) => handleChange("celular", e.target.value)}
-                        placeholder="(00) 00000-0000"
+                        placeholder="(00)00000-0000"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="telefone">Telefone</Label>
-                      <Input
+                      <MaskedInput
+                        mask="(99)9999-9999"
                         id="telefone"
                         value={formData.telefone}
                         onChange={(e) => handleChange("telefone", e.target.value)}
-                        placeholder="(00) 0000-0000"
+                        placeholder="(00)0000-0000"
                       />
                     </div>
                   </div>
@@ -249,7 +418,8 @@ const Settings = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="cep">CEP</Label>
-                      <Input
+                      <MaskedInput
+                        mask="99999-999"
                         id="cep"
                         value={formData.cep}
                         onChange={(e) => handleChange("cep", e.target.value)}
@@ -345,103 +515,15 @@ const Settings = () => {
                 </div>
 
                 <div className="pt-4">
-                  <Button type="submit" className="bg-[#ea2be2] hover:bg-opacity-90 w-full md:w-auto">
-                    Salvar alterações
+                  <Button 
+                    type="submit" 
+                    className="bg-[#ea2be2] hover:bg-opacity-90 w-full md:w-auto"
+                    disabled={loading}
+                  >
+                    {loading ? "Salvando..." : "Salvar alterações"}
                   </Button>
                 </div>
               </form>
-
-              <Separator className="my-10" />
-
-              {/* Seção de assinatura */}
-              <div>
-                <h2 className="text-xl font-bold text-[#272f3c] mb-6">Gerenciar Assinatura</h2>
-                
-                <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-medium text-[#272f3c]">Plano Atual</h3>
-                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Ativo</span>
-                  </div>
-                  <div className="mb-4">
-                    <p className="text-2xl font-bold text-[#272f3c]">Assinatura Ilimitada</p>
-                    <p className="text-[#67748a]">Acesso a todos os cursos e materiais da plataforma</p>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <p className="font-medium text-[#272f3c]">R$ 39,90 <span className="text-[#67748a] text-sm font-normal">/mês</span></p>
-                    <Button variant="outline" className="border-[#ea2be2] text-[#ea2be2] hover:bg-[#ea2be2] hover:text-white">
-                      Alterar plano
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Seção de métodos de pagamento */}
-                <h3 className="font-medium text-[#272f3c] mb-4">Métodos de Pagamento</h3>
-                
-                <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-8 bg-gray-100 rounded-md flex items-center justify-center">
-                        <CreditCard className="h-5 w-5 text-gray-500" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-[#272f3c]">Cartão de crédito</p>
-                        <p className="text-sm text-[#67748a]">**** **** **** 4242</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="text-sm h-8">
-                      Editar
-                    </Button>
-                  </div>
-                  
-                  <Button className="w-full md:w-auto bg-[#ea2be2] hover:bg-opacity-90">
-                    Adicionar novo método de pagamento
-                  </Button>
-                </div>
-
-                {/* Histórico de faturas */}
-                <h3 className="font-medium text-[#272f3c] mb-4">Histórico de Faturas</h3>
-                
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Recibo</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">01/06/2023</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ 39,90</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                              Pago
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="#" className="text-[#ea2be2] hover:text-[#ea2be2]">Download</a>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">01/05/2023</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">R$ 39,90</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                              Pago
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="#" className="text-[#ea2be2] hover:text-[#ea2be2]">Download</a>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -1,21 +1,17 @@
 import React, { useState } from "react";
-import { Search, Menu, User, FileText, Compass, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book } from "lucide-react";
+import { Search, Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import logo from "/lovable-uploads/logo.svg";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 
 export const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
-  const {
-    user,
-    signOut
-  } = useAuth();
-  const [showMenu, setShowMenu] = useState(false);
+  const { user, signOut } = useAuth();
   const { config } = useSiteConfig();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -24,7 +20,9 @@ export const Header = () => {
       navigate(`/explore?search=${encodeURIComponent(searchQuery)}`);
     }
   };
-  return <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-0">
+
+  return (
+    <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-between flex-wrap border-b border-[rgba(247,248,250,1)] fixed top-0 left-0 z-50 px-0">
       <div className="flex min-h-[88px] flex-col items-stretch justify-center w-[230px] py-[21px]">
         <Link to="/">
           <img loading="lazy" src={logo} alt="Company Logo" className="aspect-[8.06] w-[230px] md:w-[230px] w-[120px] object-contain" />
@@ -142,5 +140,6 @@ export const Header = () => {
           </PopoverContent>
         </Popover>
       </div>
-    </header>;
+    </header>
+  );
 };

@@ -2,32 +2,25 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-
-interface User {
-  id: string;
-  email: string;
-  nome?: string;
-  role?: "aluno" | "professor" | "admin";
-  foto_perfil?: string;
-}
+import { User, DatabaseUser } from "@/types/user";
 
 interface AuthContextType {
   user: User | null;
-  profile: any | null;
+  profile: DatabaseUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: any }>;
-  updateProfile: (data: Partial<User>) => Promise<{ error: any }>;
-  signInWithGoogle: () => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: Error | null }>;
+  updateProfile: (data: Partial<User>) => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<DatabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -36,12 +29,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Configurar o Supabase para persistir a sessão entre abas
     supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        setUser({
+        const userData: User = {
           id: session.user.id,
           email: session.user.email || '',
-        });
-        
-        // Buscar perfil do usuário
+          nome: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        setUser(userData);
         fetchUserProfile(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -53,12 +48,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          setUser({
+          const userData: User = {
             id: session.user.id,
             email: session.user.email || '',
-          });
-          
-          // Buscar perfil do usuário
+            nome: '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          setUser(userData);
           await fetchUserProfile(session.user.id);
         }
       } catch (error) {
@@ -80,16 +77,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
         
       if (userProfile && !error) {
-        setProfile(userProfile);
-        // Fix: Ensure we're setting the correct type for role
+        const profile = userProfile as DatabaseUser;
+        setProfile(profile);
         setUser(prev => {
           if (!prev) return null;
-          return { 
-            ...prev, 
-            nome: userProfile.nome,
-            role: userProfile.role as "aluno" | "professor" | "admin",
-            foto_perfil: userProfile.foto_perfil
+          const updatedUser: User = {
+            ...prev,
+            nome: profile.nome || prev.nome,
+            sobrenome: profile.sobrenome || undefined,
+            nome_social: profile.nome_social || undefined,
+            nascimento: profile.nascimento || undefined,
+            sexo: profile.sexo || undefined,
+            escolaridade: profile.escolaridade || undefined,
+            estado_civil: profile.estado_civil || undefined,
+            celular: profile.celular || undefined,
+            telefone: profile.telefone || undefined,
+            cep: profile.cep || undefined,
+            endereco: profile.endereco || undefined,
+            numero: profile.numero || undefined,
+            bairro: profile.bairro || undefined,
+            complemento: profile.complemento || undefined,
+            estado: profile.estado || undefined,
+            cidade: profile.cidade || undefined,
+            foto_perfil: profile.foto_perfil || undefined,
+            role: profile.role,
           };
+          return updatedUser;
         });
       }
     } catch (error) {
@@ -130,51 +143,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithGoogle = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/login`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-      
-      if (error) {
-        toast({
-          title: "Erro ao fazer login com Google",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
-      }
-      
-      return { error: null };
-    } catch (error: any) {
-      toast({
-        title: "Erro ao fazer login com Google",
-        description: error.message,
-        variant: "destructive",
-      });
-      return { error };
-    }
-  };
-
   const signUp = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signUp({ 
-        email, 
+      const { error } = await supabase.auth.signUp({
+        email,
         password,
-        options: {
-          data: {
-            nome: email.split('@')[0],
-          }
-        }
       });
-      
+
       if (error) {
         toast({
           title: "Erro ao criar conta",
@@ -183,12 +158,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         return { error };
       }
-      
+
       toast({
         title: "Conta criada com sucesso",
-        description: "Verifique seu e-mail para confirmar seu cadastro.",
+        description: "Verifique seu e-mail para confirmar o cadastro.",
       });
-      
+
       return { error: null };
     } catch (error: any) {
       toast({
@@ -204,43 +179,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.auth.signOut();
       navigate("/login");
-      toast({
-        title: "Logout realizado com sucesso",
-        description: "Você foi desconectado da sua conta.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erro ao fazer logout",
-        description: error.message,
-        variant: "destructive",
-      });
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
     }
   };
 
   const resetPassword = async (email: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+
       if (error) {
         toast({
-          title: "Erro ao solicitar redefinição de senha",
+          title: "Erro ao resetar senha",
           description: error.message,
           variant: "destructive",
         });
         return { error };
       }
-      
+
       toast({
         title: "E-mail enviado",
         description: "Verifique seu e-mail para redefinir sua senha.",
       });
-      
+
       return { error: null };
     } catch (error: any) {
       toast({
-        title: "Erro ao solicitar redefinição de senha",
+        title: "Erro ao resetar senha",
         description: error.message,
         variant: "destructive",
       });
@@ -266,12 +231,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
 
+      // Atualizar estado local
       setUser(prev => prev ? { ...prev, ...data } : null);
-      
-      toast({
-        title: "Perfil atualizado",
-        description: "Suas informações foram atualizadas com sucesso.",
-      });
       
       return { error: null };
     } catch (error: any) {
@@ -281,6 +242,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         variant: "destructive",
       });
       return { error };
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+
+      if (error) {
+        toast({
+          title: "Erro ao fazer login com Google",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro ao fazer login com Google",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -304,7 +287,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

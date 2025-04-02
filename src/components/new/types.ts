@@ -82,3 +82,12 @@ export interface QuestionHeaderProps {
   topics: string[];
   questionId: string;
 }
+
+export interface QuestionBook {
+  id: string;
+  nome: string;
+  user_id: string;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}

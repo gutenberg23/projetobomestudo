@@ -698,6 +698,22 @@ export type Database = {
           nome: string | null
           created_at: string
           updated_at: string
+          sobrenome: string | null
+          nome_social: string | null
+          nascimento: string | null
+          sexo: string | null
+          escolaridade: string | null
+          estado_civil: string | null
+          celular: string | null
+          telefone: string | null
+          cep: string | null
+          endereco: string | null
+          numero: string | null
+          bairro: string | null
+          complemento: string | null
+          estado: string | null
+          cidade: string | null
+          foto_perfil: string | null
         }
         Insert: {
           id: string
@@ -705,6 +721,22 @@ export type Database = {
           nome?: string | null
           created_at?: string
           updated_at?: string
+          sobrenome?: string | null
+          nome_social?: string | null
+          nascimento?: string | null
+          sexo?: string | null
+          escolaridade?: string | null
+          estado_civil?: string | null
+          celular?: string | null
+          telefone?: string | null
+          cep?: string | null
+          endereco?: string | null
+          numero?: string | null
+          bairro?: string | null
+          complemento?: string | null
+          estado?: string | null
+          cidade?: string | null
+          foto_perfil?: string | null
         }
         Update: {
           id?: string
@@ -712,7 +744,24 @@ export type Database = {
           nome?: string | null
           created_at?: string
           updated_at?: string
+          sobrenome?: string | null
+          nome_social?: string | null
+          nascimento?: string | null
+          sexo?: string | null
+          escolaridade?: string | null
+          estado_civil?: string | null
+          celular?: string | null
+          telefone?: string | null
+          cep?: string | null
+          endereco?: string | null
+          numero?: string | null
+          bairro?: string | null
+          complemento?: string | null
+          estado?: string | null
+          cidade?: string | null
+          foto_perfil?: string | null
         }
+        Relationships: []
       }
       question_stats_clearing_log: {
         Row: {

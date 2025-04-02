@@ -1,15 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import type { Question } from "./types";
+import type { Question, QuestionBook } from "./types";
 import { QuestionHeader } from "./question/QuestionHeader";
 import { QuestionOption } from "./question/QuestionOption";
 import { QuestionComment } from "./question/QuestionComment";
 import { QuestionFooter } from "./question/QuestionFooter";
-import { Send, ChevronDown, ChevronUp, X, Plus, BookPlus } from "lucide-react";
+import { Send, ChevronUp, BookPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import {
@@ -43,12 +42,6 @@ interface QuestionCardProps {
   onRemove?: (questionId: string) => Promise<void>;
 }
 
-interface QuestionBook {
-  id: string;
-  nome: string;
-  is_public: boolean;
-}
-
 export const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   disabledOptions,
@@ -66,10 +59,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [comments, setComments] = useState<Array<any>>([]);
   const [commentsCount, setCommentsCount] = useState<number>(0);
   const [userId, setUserId] = useState<string | null>(null);
-  const [userName, setUserName] = useState<string | null>(null);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [hasAnswered, setHasAnswered] = useState(false);
-  const [alreadyLikedIds, setAlreadyLikedIds] = useState<string[]>([]);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [openAddToBook, setOpenAddToBook] = useState(false);
   const [books, setBooks] = useState<QuestionBook[]>([]);
@@ -79,11 +70,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [newBookTitle, setNewBookTitle] = useState('');
   const [newBookType, setNewBookType] = useState<'public' | 'private'>('private');
   const [showStats, setShowStats] = useState(false);
-  const {
-    simuladoId
-  } = useParams<{
-    simuladoId: string;
-  }>();
 
   // Verificar se há conteúdo expansível
   const hasExpandableContent = Boolean(question.expandableContent);
@@ -129,14 +115,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       if (user) {
         setUserId(user.id);
 
-        // Buscar nome do usuário
-        const {
-          data: profileData
-        } = await supabase.from('profiles').select('nome').eq('id', user.id).single();
-        if (profileData) {
-          setUserName(profileData.nome);
-        }
-
         // Verificar se já respondeu esta questão
         const {
           data: respostaData
@@ -152,7 +130,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           data: likesData
         } = await supabase.from('likes_comentarios').select('comentario_id').eq('usuario_id', user.id);
         if (likesData && likesData.length > 0) {
-          setAlreadyLikedIds(likesData.map(like => like.comentario_id));
           setLikedComments(likesData.map(like => like.comentario_id));
         }
       }
@@ -216,7 +193,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             // Buscar dados do perfil separadamente
             const { data: profileData } = await supabase
               .from('profiles')
-              .select('nome, foto_perfil, google_photo')
+              .select('nome, foto_perfil')
               .eq('id', comment.usuario_id)
               .single();
 
@@ -230,9 +207,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               console.error("Erro ao buscar likes:", likesError);
             }
 
-            // Usar a foto do Google se disponível, senão usar a foto do perfil, ou fallback para o avatar padrão
-            const userAvatar = profileData?.google_photo || 
-                             profileData?.foto_perfil || 
+            // Usar a foto do perfil ou fallback para o avatar padrão
+            const userAvatar = profileData?.foto_perfil || 
                              "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
 
             return {
@@ -263,7 +239,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     if (showComments) {
       fetchComments();
     }
-  }, [question.id, showComments, likedComments]);
+  }, [question.id, showComments]);
 
   useEffect(() => {
     if (openAddToBook) {
@@ -283,7 +259,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       const { data, error } = await supabase
         .from('cadernos_questoes')
-        .select('id, nome, is_public')
+        .select('id, nome, user_id, is_public, created_at, updated_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -314,14 +290,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       const { data, error } = await supabase
         .from('cadernos_questoes')
-        .insert([
-          {
-            nome: newBookTitle.trim(),
-            user_id: user.id,
-            is_public: newBookType === 'public'
-          }
-        ])
-        .select('id, nome, is_public')
+        .insert({
+          nome: newBookTitle.trim(),
+          user_id: user.id,
+          is_public: newBookType === 'public'
+        })
+        .select('id, nome, user_id, is_public, created_at, updated_at')
         .single();
 
       if (error) throw error;
@@ -369,13 +343,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       // Adiciona a questão ao caderno
       const { error: insertError } = await supabase
         .from('questoes_caderno')
-        .insert([
-          {
-            caderno_id: selectedBookId,
-            questao_id: question.id,
-            user_id: user.id
-          }
-        ]);
+        .insert({
+          caderno_id: selectedBookId,
+          questao_id: question.id,
+          user_id: user.id
+        });
 
       if (insertError) throw insertError;
 
@@ -436,9 +408,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const toggleAIAnswer = () => {
     setShowAIAnswer(!showAIAnswer);
   };
-  const toggleExpandedContent = () => {
-    setShowExpandedContent(!showExpandedContent);
-  };
   const toggleLike = async (commentId: string) => {
     if (!userId) {
       toast.error("Você precisa estar logado para curtir comentários.");
@@ -466,16 +435,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             
           if (error) throw error;
 
-          // Atualizar estado local antes de buscar novamente
+          // Atualizar estado local
           setLikedComments(prev => prev.filter(id => id !== commentId));
-
-          // Atualizar contagem visualmente imediatamente
           setComments(prevComments => {
             return prevComments.map(c => {
               if (c.id === commentId) {
                 return {
                   ...c,
-                  likes: Math.max(0, c.likes - 1) // Garantir que não fique negativo
+                  likes: Math.max(0, c.likes - 1)
                 };
               }
               return c;
@@ -493,10 +460,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           
         if (error) throw error;
 
-        // Atualizar estado local antes de buscar novamente
+        // Atualizar estado local
         setLikedComments(prev => [...prev, commentId]);
-
-        // Atualizar contagem visualmente imediatamente
         setComments(prevComments => {
           return prevComments.map(c => {
             if (c.id === commentId) {
@@ -535,15 +500,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       // Buscar dados do perfil do usuário primeiro
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('nome, foto_perfil, google_photo')
+        .select('nome, foto_perfil')
         .eq('id', userId)
         .single();
 
       if (profileError) throw profileError;
 
-      // Usar a foto do Google se disponível, senão usar a foto do perfil, ou fallback para o avatar padrão
-      const userAvatar = profileData.google_photo || 
-                        profileData.foto_perfil || 
+      // Usar a foto do perfil ou fallback para o avatar padrão
+      const userAvatar = profileData.foto_perfil || 
                         "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
 
       const { data: newComment, error } = await supabase

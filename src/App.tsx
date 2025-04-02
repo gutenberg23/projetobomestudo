@@ -25,6 +25,8 @@ import { ConfigGuard } from './components/guards/ConfigGuard';
 import { useSiteConfig } from "./hooks/useSiteConfig";
 import { useEffect } from "react";
 import "./styles/globals.css";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -70,22 +72,19 @@ const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Importante: criar a instância do QueryClient dentro do componente
-const App = () => {
-  // Instância do queryClient dentro do componente para garantir que seja criada
-  // durante a renderização do componente e não durante a inicialização do módulo
-  const queryClient = new QueryClient();
+const queryClient = new QueryClient();
 
+export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AuthProvider>
-              <SiteConfigProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <SiteConfigProvider>
+              <div className="min-h-screen bg-background font-sans antialiased">
+                <ToastContainer position="top-right" autoClose={3000} />
                 <Routes>
+                  <Route path="/settings" element={<Settings />} />
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/esqueci-senha" element={<EsqueciSenha />} />
@@ -121,8 +120,6 @@ const App = () => {
                       <QuestionBookDetails />
                     </ConfigGuard>
                   } />
-                  
-                  <Route path="/settings" element={<Settings />} />
                   
                   <Route path="/blog" element={
                     <ConfigGuard configKey="showBlogPage">
@@ -167,13 +164,13 @@ const App = () => {
                   <Route path="/simulado/:simuladoId" element={<Simulado />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
-              </SiteConfigProvider>
-            </AuthProvider>
-          </BrowserRouter>
-        </div>
+                <Toaster />
+                <Sonner />
+              </div>
+            </SiteConfigProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
 }
-
-export default App;
