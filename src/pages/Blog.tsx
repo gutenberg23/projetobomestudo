@@ -1,22 +1,20 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { BlogLayout } from "@/components/blog/BlogLayout";
 import { BlogList } from "@/components/blog/BlogList";
 import { FeaturedPosts } from "@/components/blog/FeaturedPosts";
 import { StateFilter } from "@/components/blog/StateFilter";
-import { CategoryFilter } from "@/components/blog/CategoryFilter";
-import { SidebarPosts } from "@/components/blog/SidebarPosts";
 import { LatestNews } from "@/components/blog/LatestNews";
 import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
-import { STATES, CATEGORIES } from "@/data/blogFilters";
+import { STATES } from "@/data/blogFilters";
 import { fetchBlogPosts } from "@/services/blogService";
 import { BlogPost } from "@/components/blog/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, MessageSquare } from "lucide-react";
+import { TrendingUp } from "lucide-react";
+import { SidebarPosts } from "@/components/blog/SidebarPosts";
 
 const Blog = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeState, setActiveState] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,33 +50,28 @@ const Blog = () => {
         post.title.toLowerCase().includes(term) || 
         post.summary.toLowerCase().includes(term) || 
         post.content.toLowerCase().includes(term) || 
-        post.tags?.some(tag => tag.toLowerCase().includes(term)) || 
-        post.category.toLowerCase().includes(term)
+        post.tags?.some(tag => tag.toLowerCase().includes(term))
       );
     }
 
     // Filtrar por estado
     if (activeState) {
-      result = result.filter(post => post.state === activeState);
-    }
-
-    // Filtrar por categoria
-    if (activeCategory) {
-      const categoryObj = CATEGORIES.find(cat => cat.id === activeCategory);
-      result = result.filter(post => post.category === categoryObj?.value);
+      const selectedState = STATES.find(s => s.id === activeState);
+      if (selectedState) {
+        result = result.filter(post => 
+          post.tags?.some(tag => tag.toLowerCase() === selectedState.value.toLowerCase())
+        );
+      }
     }
     
     setFilteredPosts(result);
-  }, [searchTerm, activeState, activeCategory, allPosts]);
+  }, [searchTerm, activeState, allPosts]);
 
   // Posts destacados para o carrossel
   const featuredPosts = allPosts.filter(post => post.featured).slice(0, 3);
 
   // Posts mais populares (baseado em curtidas)
   const popularPosts = [...allPosts].sort((a, b) => b.likesCount - a.likesCount).slice(0, 5);
-
-  // Posts mais comentados
-  const mostCommentedPosts = [...allPosts].sort((a, b) => b.commentCount - a.commentCount).slice(0, 5);
 
   // Posts mais recentes
   const latestPosts = [...allPosts]
@@ -87,10 +80,6 @@ const Blog = () => {
 
   const handleStateSelect = (stateId: string | null) => {
     setActiveState(stateId);
-  };
-
-  const handleCategorySelect = (categoryId: string | null) => {
-    setActiveCategory(categoryId);
   };
 
   if (loading) {
@@ -132,16 +121,9 @@ const Blog = () => {
         
         <div className="lg:col-span-2">
           {/* Posts em destaque (apenas na página inicial sem filtros) */}
-          {!searchTerm && !activeState && !activeCategory && featuredPosts.length > 0 && (
+          {!searchTerm && !activeState && featuredPosts.length > 0 && (
             <FeaturedPosts posts={featuredPosts} />
           )}
-          
-          {/* Filtro de categorias */}
-          <CategoryFilter 
-            categories={CATEGORIES} 
-            activeCategory={activeCategory} 
-            onSelectCategory={handleCategorySelect} 
-          />
           
           {/* Listagem de posts */}
           <div className="mt-6">
@@ -155,7 +137,6 @@ const Blog = () => {
                   onClick={() => {
                     setSearchTerm("");
                     setActiveState(null);
-                    setActiveCategory(null);
                   }}
                 >
                   Limpar filtros
@@ -171,13 +152,6 @@ const Blog = () => {
             title="Posts Populares" 
             posts={popularPosts} 
             icon={<TrendingUp className="h-5 w-5 mr-2 text-primary" />}
-          />
-          
-          {/* Posts mais comentados */}
-          <SidebarPosts 
-            title="Mais Comentados" 
-            posts={mostCommentedPosts} 
-            icon={<MessageSquare className="h-5 w-5 mr-2 text-primary" />}
           />
           
           {/* Últimas notícias */}

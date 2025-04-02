@@ -266,7 +266,7 @@ export default function QuestionBooks() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
       <Header />
       <div className="flex-1 pt-[88px]">
         <div className="container mx-auto py-8 px-4">
