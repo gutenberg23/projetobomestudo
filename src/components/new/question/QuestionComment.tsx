@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Heart } from "lucide-react";
 import type { Comment } from "../types";
@@ -45,7 +44,7 @@ export const QuestionComment: React.FC<QuestionCommentProps> = ({
           className="flex gap-2.5 items-center py-2.5 text-base whitespace-nowrap transition-colors ml-auto"
         >
           <span className={isLiked ? "text-fuchsia-500" : "text-slate-500"}>
-            {comment.likes + (isLiked ? 1 : 0)}
+            {comment.likes}
           </span>
           <Heart
             className={`w-6 h-6 ${

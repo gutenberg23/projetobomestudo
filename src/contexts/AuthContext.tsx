@@ -178,7 +178,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Bem-vindo de volta ao BomEstudo!",
       });
       
-      navigate("/");
+      // Não navegamos automaticamente para "/"
+      // navigate("/");
       return { error: null };
     } catch (error: any) {
       console.error("Erro não tratado durante login:", error);

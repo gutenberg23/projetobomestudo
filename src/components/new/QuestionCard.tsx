@@ -70,6 +70,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [newBookTitle, setNewBookTitle] = useState('');
   const [newBookType, setNewBookType] = useState<'public' | 'private'>('private');
   const [showStats, setShowStats] = useState(false);
+  const [teacherLikesCount, setTeacherLikesCount] = useState(0);
+  const [aiLikesCount, setAILikesCount] = useState(0);
 
   // Verificar se há conteúdo expansível
   const hasExpandableContent = Boolean(question.expandableContent);
@@ -114,8 +116,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-
-        // Verificar se já respondeu esta questão
+        console.log("🔍 USER_ID carregado:", user.id);
+        
+        // Verificar se o usuário já respondeu essa questão
         const {
           data: respostaData
         } = await supabase.from('respostas_alunos').select('*').eq('questao_id', question.id).eq('aluno_id', user.id);
@@ -129,9 +132,38 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         const {
           data: likesData
         } = await supabase.from('likes_comentarios').select('comentario_id').eq('usuario_id', user.id);
-        if (likesData && likesData.length > 0) {
-          setLikedComments(likesData.map(like => like.comentario_id));
-        }
+        
+        console.log("🔍 LIKES de comentários carregados:", likesData);
+        
+        // Verificar quais gabaritos/IA já foram curtidos pelo usuário
+        // Usamos o ID completo da questão
+        const {
+          data: likesGabaritosData
+        } = await supabase
+          .from('likes_gabaritos')
+          .select('questao_id, type')
+          .eq('usuario_id', user.id)
+          .ilike('questao_id', `${question.id}%`); // Usar ILIKE para pegar tanto IDs parciais quanto completos
+        
+        console.log("🔍 LIKES de gabaritos carregados:", likesGabaritosData);
+        
+        // Combinar os dois tipos de likes
+        const likedCommentIds = likesData?.map(like => like.comentario_id) || [];
+        
+        // Processar os likes de gabaritos e IA corretamente
+        const likedSpecialComments = likesGabaritosData?.map(like => {
+          // Se tiver um tipo definido (teacher ou ai), use-o, caso contrário assuma teacher (para compatibilidade)
+          const type = like.type || 'teacher';
+          // Usar o ID completo da questão
+          const fullId = `${type}-${question.id}`;
+          console.log("🔍 Construindo ID para comentário especial:", fullId);
+          return fullId;
+        }) || [];
+        
+        const allLikes = [...likedCommentIds, ...likedSpecialComments];
+        console.log("🔍 TODOS os likes combinados:", allLikes);
+        
+        setLikedComments(allLikes);
       }
     };
     getUserData();
@@ -193,11 +225,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             // Buscar dados do perfil separadamente
             const { data: profileData } = await supabase
               .from('profiles')
-              .select('nome, foto_perfil')
+              .select('nome')
               .eq('id', comment.usuario_id)
               .single();
 
-            // Buscar likes do comentário
+            // Buscar total de likes do comentário
             const { data: likesData, error: likesError } = await supabase
               .from('likes_comentarios')
               .select('id')
@@ -207,9 +239,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               console.error("Erro ao buscar likes:", likesError);
             }
 
-            // Usar a foto do perfil ou fallback para o avatar padrão
-            const userAvatar = profileData?.foto_perfil || 
-                             "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
+            // Avatar padrão para todos os usuários
+            const userAvatar = "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
 
             return {
               id: comment.id,
@@ -239,7 +270,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     if (showComments) {
       fetchComments();
     }
-  }, [question.id, showComments]);
+  }, [question.id, showComments, likedComments]);
 
   useEffect(() => {
     if (openAddToBook) {
@@ -414,68 +445,248 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       return;
     }
     try {
+      console.log("💗 CURTIDA INICIADA em:", commentId);
+      console.log("💗 Estado atual de likedComments:", likedComments);
+      
+      // Verificar se é um comentário de professor/gabarito ou IA
+      const isProfessorOrAI = commentId.startsWith('teacher-') || commentId.startsWith('ai-');
+      
       // Verificar se já está nos likes (interface)
       const isLiked = likedComments.includes(commentId);
-      if (isLiked) {
-        // Remover o like - buscar o ID do like para deletar corretamente
-        const { data, error: findError } = await supabase
-          .from('likes_comentarios')
-          .select('id')
-          .eq('comentario_id', commentId)
-          .eq('usuario_id', userId)
-          .single();
+      console.log("💗 Já está curtido?", isLiked);
+      
+      if (isProfessorOrAI) {
+        // Extrair o ID real da questão do formato "teacher-XXXX" ou "ai-XXXX"
+        // Aqui está o problema: temos que pegar todo o ID após o prefixo e o hífen
+        const type = commentId.startsWith('teacher-') ? 'teacher' : 'ai';
+        const questaoId = commentId.substring(type.length + 1); // +1 para o hífen
         
-        if (findError) throw findError;
+        console.log("💗 Tipo de comentário especial:", type, "questaoId COMPLETO:", questaoId);
         
-        if (data && data.id) {
-          const { error } = await supabase
-            .from('likes_comentarios')
-            .delete()
-            .eq('id', data.id);
+        if (isLiked) {
+          console.log("💗 Removendo like de comentário especial");
+          // Remover o like - buscar o ID do like para deletar corretamente
+          const { data, error: findError } = await supabase
+            .from('likes_gabaritos')
+            .select('id')
+            .eq('questao_id', questaoId)
+            .eq('usuario_id', userId)
+            // Incluir type na busca para diferenciar entre teacher e ai
+            .eq('type', type)
+            .single();
+          
+          console.log("💗 Resultado da busca para remover like:", data, findError);
+          
+          if (findError && findError.code !== 'PGRST116') throw findError;
+          
+          if (data && data.id) {
+            const { error } = await supabase
+              .from('likes_gabaritos')
+              .delete()
+              .eq('id', data.id);
+              
+            console.log("💗 Resultado da remoção do like:", error ? "Erro: " + error.message : "Sucesso");
             
-          if (error) throw error;
+            if (error) throw error;
+
+            // Atualizar estado local
+            setLikedComments(prev => {
+              const newState = prev.filter(id => id !== commentId);
+              console.log("💗 Novo estado de likedComments após remoção:", newState);
+              return newState;
+            });
+            
+            // Atualizar contadores específicos
+            if (type === 'teacher') {
+              setTeacherLikesCount(prev => {
+                const newCount = Math.max(0, prev - 1);
+                console.log("💗 Contador de likes do professor atualizado:", newCount);
+                return newCount;
+              });
+            } else if (type === 'ai') {
+              setAILikesCount(prev => {
+                const newCount = Math.max(0, prev - 1);
+                console.log("💗 Contador de likes da IA atualizado:", newCount);
+                return newCount;
+              });
+            }
+          }
+        } else {
+          console.log("💗 Adicionando like em comentário especial");
+          // Verificar se já existe um like antes de tentar adicionar
+          const { data: existingLike, error: checkError } = await supabase
+            .from('likes_gabaritos')
+            .select('id')
+            .eq('questao_id', questaoId)
+            .eq('usuario_id', userId)
+            // Incluir type na busca para diferenciar entre teacher e ai
+            .eq('type', type)
+            .maybeSingle();
+            
+          console.log("💗 Verificação de like existente:", existingLike, checkError);
+            
+          if (checkError) throw checkError;
+          
+          // Se não existir, adicionar o like
+          if (!existingLike) {
+            console.log("💗 Like não existe, inserindo novo...");
+            const { data, error } = await supabase
+              .from('likes_gabaritos')
+              .insert({
+                questao_id: questaoId,
+                usuario_id: userId,
+                type: type // Incluir o tipo para diferenciar entre teacher e ai
+              })
+              .select();
+              
+            console.log("💗 Resultado da inserção do like:", data, error ? "Erro: " + error.message : "Sucesso");
+              
+            if (error) throw error;
+            
+            // Atualizar contadores específicos
+            if (type === 'teacher') {
+              setTeacherLikesCount(prev => {
+                const newCount = prev + 1;
+                console.log("💗 Contador de likes do professor atualizado:", newCount);
+                return newCount;
+              });
+            } else if (type === 'ai') {
+              setAILikesCount(prev => {
+                const newCount = prev + 1;
+                console.log("💗 Contador de likes da IA atualizado:", newCount);
+                return newCount;
+              });
+            }
+          } else {
+            console.log("💗 Like já existe no banco, não inserindo.");
+          }
 
           // Atualizar estado local
-          setLikedComments(prev => prev.filter(id => id !== commentId));
-          setComments(prevComments => {
-            return prevComments.map(c => {
-              if (c.id === commentId) {
-                return {
-                  ...c,
-                  likes: Math.max(0, c.likes - 1)
-                };
-              }
-              return c;
-            });
+          setLikedComments(prev => {
+            const newState = [...prev, commentId];
+            console.log("💗 Novo estado de likedComments após adição:", newState);
+            return newState;
           });
         }
       } else {
-        // Adicionar o like
-        const { error } = await supabase
-          .from('likes_comentarios')
-          .insert({
-            comentario_id: commentId,
-            usuario_id: userId
-          });
+        console.log("💗 Processando like de comentário normal de usuário");
+        // Para comentários normais/usuários
+        if (isLiked) {
+          console.log("💗 Removendo like de comentário normal");
+          // Remover o like - buscar o ID do like para deletar corretamente
+          const { data, error: findError } = await supabase
+            .from('likes_comentarios')
+            .select('id')
+            .eq('comentario_id', commentId)
+            .eq('usuario_id', userId)
+            .single();
           
-        if (error) throw error;
+          console.log("💗 Resultado da busca para remover like:", data, findError);
+          
+          if (findError && findError.code !== 'PGRST116') throw findError;
+          
+          if (data && data.id) {
+            const { error } = await supabase
+              .from('likes_comentarios')
+              .delete()
+              .eq('id', data.id);
+              
+            console.log("💗 Resultado da remoção do like:", error ? "Erro: " + error.message : "Sucesso");
+              
+            if (error) throw error;
 
-        // Atualizar estado local
-        setLikedComments(prev => [...prev, commentId]);
-        setComments(prevComments => {
-          return prevComments.map(c => {
-            if (c.id === commentId) {
-              return {
-                ...c,
-                likes: c.likes + 1
-              };
+            // Atualizar estado local somente se a operação no banco foi bem-sucedida
+            setLikedComments(prev => {
+              const newState = prev.filter(id => id !== commentId);
+              console.log("💗 Novo estado de likedComments após remoção:", newState);
+              return newState;
+            });
+            
+            // Atualização visual somente se a operação no banco foi bem-sucedida
+            setComments(prevComments => {
+              console.log("💗 Atualizando contador visual de likes");
+              return prevComments.map(c => {
+                if (c.id === commentId) {
+                  const newLikes = Math.max(0, c.likes - 1);
+                  console.log("💗 Novo contador de likes para este comentário:", newLikes);
+                  return {
+                    ...c,
+                    likes: newLikes
+                  };
+                }
+                return c;
+              });
+            });
+          }
+        } else {
+          console.log("💗 Adicionando like em comentário normal");
+          // Verificar se já existe um like antes de tentar adicionar
+          const { data: existingLike, error: checkError } = await supabase
+            .from('likes_comentarios')
+            .select('id')
+            .eq('comentario_id', commentId)
+            .eq('usuario_id', userId)
+            .maybeSingle();
+            
+          console.log("💗 Verificação de like existente:", existingLike, checkError);
+            
+          if (checkError) throw checkError;
+          
+          // Se não existir, adicionar o like
+          if (!existingLike) {
+            console.log("💗 Like não existe, inserindo novo...");
+            const { data, error } = await supabase
+              .from('likes_comentarios')
+              .insert({
+                comentario_id: commentId,
+                usuario_id: userId
+              })
+              .select();
+              
+            console.log("💗 Resultado da inserção do like:", data, error ? "Erro: " + error.message : "Sucesso");
+              
+            if (error) throw error;
+            
+            // Atualizar estado local somente se a operação no banco foi bem-sucedida
+            setLikedComments(prev => {
+              const newState = [...prev, commentId];
+              console.log("💗 Novo estado de likedComments após adição:", newState);
+              return newState;
+            });
+            
+            // Atualização visual somente se a operação no banco foi bem-sucedida
+            setComments(prevComments => {
+              console.log("💗 Atualizando contador visual de likes");
+              return prevComments.map(c => {
+                if (c.id === commentId) {
+                  const newLikes = c.likes + 1;
+                  console.log("💗 Novo contador de likes para este comentário:", newLikes);
+                  return {
+                    ...c,
+                    likes: newLikes
+                  };
+                }
+                return c;
+              });
+            });
+          } else {
+            console.log("💗 Like já existe no banco, não inserindo.");
+            // O like já existe no banco, mas não no estado local.
+            // Vamos apenas atualizar o estado local para corrigir a UI
+            if (!likedComments.includes(commentId)) {
+              console.log("💗 Atualizando apenas estado local para like existente");
+              setLikedComments(prev => {
+                const newState = [...prev, commentId];
+                console.log("💗 Novo estado de likedComments:", newState);
+                return newState;
+              });
             }
-            return c;
-          });
-        });
+          }
+        }
       }
+      console.log("💗 Operação de like concluída com sucesso");
     } catch (error) {
-      console.error("Erro ao curtir comentário:", error);
+      console.error("❌ Erro ao curtir comentário:", error);
       toast.error("Erro ao curtir comentário. Tente novamente.");
     }
   };
@@ -497,18 +708,25 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     try {
       setSubmittingComment(true);
       
-      // Buscar dados do perfil do usuário primeiro
+      // Buscar dados do perfil do usuário primeiro - corrigindo os campos selecionados
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('nome, foto_perfil')
+        .select('nome')
         .eq('id', userId)
         .single();
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Erro ao buscar perfil:", profileError);
+        throw new Error("Não foi possível obter seus dados de perfil. Tente novamente.");
+      }
 
-      // Usar a foto do perfil ou fallback para o avatar padrão
-      const userAvatar = profileData.foto_perfil || 
-                        "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
+      // Avatar padrão para todos os usuários (já que não temos foto_perfil)
+      const userAvatar = "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
+
+      // Verificar se o id da questão está definido
+      if (!question.id) {
+        throw new Error("ID da questão não disponível");
+      }
 
       const { data: newComment, error } = await supabase
         .from('comentarios_questoes')
@@ -520,7 +738,18 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Detalhes do erro ao inserir comentário:", error);
+        
+        if (error.code === "23502") { // Violação de not null
+          throw new Error("Campos obrigatórios não preenchidos");
+        } else if (error.code === "23503") { // Violação de foreign key
+          throw new Error("Referência inválida à questão ou usuário");
+        } else if (error.code === '400' || error.message?.includes('400')) {
+          throw new Error(`Erro 400: ${error.message || "Requisição inválida"}`);
+        }
+        throw error;
+      }
 
       // Adicionar o novo comentário à lista com os dados do perfil
       if (newComment) {
@@ -546,11 +775,58 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       }
     } catch (error) {
       console.error("Erro ao enviar comentário:", error);
-      toast.error("Erro ao enviar comentário. Tente novamente.");
+      const errorMessage = error instanceof Error ? error.message : "Erro ao enviar comentário. Tente novamente.";
+      toast.error(errorMessage);
     } finally {
       setSubmittingComment(false);
     }
   };
+
+  // Corrigir o método que busca contagem total de likes para gabaritos e IA
+  useEffect(() => {
+    const fetchSpecialLikesCount = async () => {
+      try {
+        console.log("🔢 Buscando contagem de likes para ID da questão:", question.id);
+        
+        // Buscar todos os likes do gabarito para esta questão e contar manualmente
+        // Usar ILIKE para pegar tanto IDs parciais quanto completos
+        const { data: teacherLikes, error: teacherError } = await supabase
+          .from('likes_gabaritos')
+          .select('id')
+          .ilike('questao_id', `${question.id}%`)
+          .eq('type', 'teacher');
+
+        if (teacherError) {
+          console.error("❌ Erro ao buscar likes do gabarito:", teacherError);
+        } else {
+          const count = teacherLikes?.length || 0;
+          console.log("✅ Contagem de likes do gabarito:", count, "- Dados:", teacherLikes);
+          setTeacherLikesCount(count);
+        }
+
+        // Buscar todos os likes da IA para esta questão e contar manualmente
+        // Usar ILIKE para pegar tanto IDs parciais quanto completos
+        const { data: aiLikes, error: aiError } = await supabase
+          .from('likes_gabaritos')
+          .select('id')
+          .ilike('questao_id', `${question.id}%`)
+          .eq('type', 'ai');
+
+        if (aiError) {
+          console.error("❌ Erro ao buscar likes da IA:", aiError);
+        } else {
+          const count = aiLikes?.length || 0;
+          console.log("✅ Contagem de likes da IA:", count, "- Dados:", aiLikes);
+          setAILikesCount(count);
+        }
+      } catch (error) {
+        console.error("❌ Erro ao buscar contagem de likes especiais:", error);
+      }
+    };
+
+    fetchSpecialLikesCount();
+  }, [question.id, likedComments]); // Atualiza quando os likes mudarem
+
   return (
     <div className="w-full bg-white rounded-lg shadow-md mb-4">
       <div className="flex items-start justify-between gap-4">
@@ -773,7 +1049,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         avatar: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
         content: question.teacherExplanation,
         timestamp: "Gabarito oficial",
-        likes: 0
+        likes: teacherLikesCount
       }} isLiked={likedComments.includes(`teacher-${question.id}`)} onToggleLike={toggleLike} />
         </section>}
 
@@ -784,7 +1060,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         avatar: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
         content: question.aiExplanation,
         timestamp: "Resposta da IA",
-        likes: 0
+        likes: aiLikesCount
       }} isLiked={likedComments.includes(`ai-${question.id}`)} onToggleLike={toggleLike} />
         </section>}
 

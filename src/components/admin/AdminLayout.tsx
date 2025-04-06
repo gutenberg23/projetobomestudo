@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -20,11 +20,59 @@ import {
   Book,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { isJornalista } = usePermissions();
+  const { user } = useAuth();
+  const [isActive, setIsActive] = useState(true);
+
+  useEffect(() => {
+    // Verificar estado de autenticação quando a aba recebe foco
+    const handleVisibilityChange = () => {
+      const isVisible = document.visibilityState === 'visible';
+      setIsActive(isVisible);
+      
+      // Verificar marcadores de sessão ao voltar para a aba
+      if (isVisible) {
+        const adminAuthChecked = sessionStorage.getItem('admin-auth-checked') === 'true';
+        const adminAccessGranted = sessionStorage.getItem('admin-access-granted') === 'true';
+        
+        // Se existir sessão local mas o objeto user estiver nulo, não forçar redirecionamento
+        if (adminAccessGranted && !user) {
+          console.log("AdminLayout: Sessão local válida, ignorando redirecionamento");
+        }
+      }
+    };
+
+    // Verificar autenticação quando a aba recebe foco
+    const handleFocus = () => {
+      setIsActive(true);
+    };
+
+    // Registrar listeners para detectar quando a aba recebe/perde foco
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user]);
+
+  // Verificar se usuário ainda está autenticado quando a aba fica ativa novamente
+  useEffect(() => {
+    // Só redirecionar se não tivermos marcadores de sessão válidos
+    if (isActive && !user) {
+      const adminAccessGranted = sessionStorage.getItem('admin-access-granted') === 'true';
+      if (!adminAccessGranted) {
+        navigate('/admin/login');
+      }
+    }
+  }, [isActive, user, navigate]);
 
   const allMenuItems = [
     { 
@@ -141,7 +189,7 @@ const AdminLayout = () => {
           </button>
         </div>
         
-        <nav className="flex-1 overflow-y-auto py-4 px-2">
+        <nav className="flex-1 overflow-y-auto py-4 px-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
           <ul className="space-y-1">
             {menuItems.map((item) => (
               <li key={item.path}>

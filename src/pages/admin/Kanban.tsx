@@ -151,7 +151,7 @@ const Kanban = () => {
                         <div
                           {...provided.droppableProps}
                           ref={provided.innerRef}
-                          className="space-y-2 min-h-[200px]"
+                          className="space-y-2 min-h-[200px] max-h-[550px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
                         >
                           {items
                             .filter(item => item.column_id === column.id)
@@ -324,7 +324,7 @@ const Kanban = () => {
                             className="h-8 w-8 text-[#67748a] hover:text-[#5f2ebe]"
                             onClick={(e) => {
                               e.stopPropagation();
-                              downloadFile(file.url);
+                              if (file.url) downloadFile(file.url);
                             }}
                           >
                             <Download className="h-4 w-4" />

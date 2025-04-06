@@ -149,29 +149,31 @@ export default function App() {
                   
                   <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
                   
-                  {/* Admin Routes */}
+                  {/* Admin Routes - Isoladas em sua própria estrutura para evitar interações indesejadas */}
                   <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin" element={
+                  <Route path="/admin/*" element={
                     <AdminGuard>
-                      <AdminLayout />
+                      <Routes>
+                        <Route path="/" element={<AdminLayout />}>
+                          <Route index element={<Dashboard />} />
+                          <Route path="kanban" element={<Kanban />} />
+                          <Route path="posts" element={<Posts />} />
+                          <Route path="usuarios" element={<Usuarios />} />
+                          <Route path="questoes" element={<Questoes />} />
+                          <Route path="cadernos" element={<AdminQuestionBooks />} />
+                          <Route path="cadernos/:id/editar" element={<EditQuestionBook />} />
+                          <Route path="simulados" element={<Simulados />} />
+                          <Route path="edital" element={<Edital />} />
+                          <Route path="topicos" element={<Topicos />} />
+                          <Route path="aulas" element={<Aulas />} />
+                          <Route path="disciplinas" element={<Disciplinas />} />
+                          <Route path="cursos" element={<Cursos />} />
+                          <Route path="professores" element={<Professores />} />
+                          <Route path="configuracoes" element={<ConfiguracoesSite />} />
+                        </Route>
+                      </Routes>
                     </AdminGuard>
-                  }>
-                    <Route index element={<Dashboard />} />
-                    <Route path="kanban" element={<Kanban />} />
-                    <Route path="posts" element={<Posts />} />
-                    <Route path="usuarios" element={<Usuarios />} />
-                    <Route path="questoes" element={<Questoes />} />
-                    <Route path="cadernos" element={<AdminQuestionBooks />} />
-                    <Route path="cadernos/:id/editar" element={<EditQuestionBook />} />
-                    <Route path="simulados" element={<Simulados />} />
-                    <Route path="edital" element={<Edital />} />
-                    <Route path="topicos" element={<Topicos />} />
-                    <Route path="aulas" element={<Aulas />} />
-                    <Route path="disciplinas" element={<Disciplinas />} />
-                    <Route path="cursos" element={<Cursos />} />
-                    <Route path="professores" element={<Professores />} />
-                    <Route path="configuracoes" element={<ConfiguracoesSite />} />
-                  </Route>
+                  } />
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="/simulado/:simuladoId" element={<Simulado />} />
