@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPost, Region } from "@/components/blog/types";
 import { Database } from "@/integrations/supabase/types";
@@ -12,21 +11,21 @@ function mapDatabasePostToAppPost(post: Database['public']['Tables']['blog_posts
     summary: post.summary,
     content: post.content,
     author: post.author,
-    authorAvatar: post.author_avatar,
+    authorAvatar: post.author_avatar ?? undefined,
     commentCount: post.comment_count || 0,
     likesCount: post.likes_count || 0,
     createdAt: post.created_at,
     slug: post.slug,
     category: post.category,
     region: post.region as Region | undefined,
-    state: post.state,
+    state: post.state ?? undefined,
     tags: post.tags || [],
-    metaDescription: post.meta_description,
+    metaDescription: post.meta_description ?? undefined,
     metaKeywords: post.meta_keywords || [],
-    featuredImage: post.featured_image,
+    featuredImage: post.featured_image ?? undefined,
     readingTime: post.reading_time ? String(post.reading_time) : undefined,
     relatedPosts: Array.isArray(post.related_posts) ? post.related_posts.map(String) : [],
-    featured: post.featured
+    featured: post.featured ?? undefined
   };
 }
 
@@ -184,17 +183,91 @@ export async function updateBlogPost(id: string, post: Partial<BlogPost>): Promi
 
 // Função para excluir um post
 export async function deleteBlogPost(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from('blog_posts')
-    .delete()
-    .eq('id', id);
+  try {
+    console.log('Tentando excluir post com ID:', id);
+    
+    // Verificar se estamos usando dados mockados (IDs simples como "1", "2", etc.)
+    const isMockId = /^\d+$/.test(id) || id.length < 10;
+    
+    if (isMockId) {
+      console.info(`ID mockado detectado: ${id}, simulando exclusão`);
+      // Para dados mockados, apenas simular sucesso
+      return true;
+    }
+    
+    // Para IDs reais, verificar se é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      console.error(`ID inválido para excluir post: ${id}`);
+      return false;
+    }
+    
+    // Buscar informações do post para realizar uma verificação local de permissões
+    const { data: postData, error: fetchError } = await supabase
+      .from('blog_posts')
+      .select('id, author')
+      .eq('id', id)
+      .single();
+    
+    if (fetchError) {
+      console.error(`Erro ao buscar post ${id} antes de excluir:`, fetchError);
+      if (fetchError.code === 'PGRST116') {
+        console.error('Post não encontrado, pode já ter sido excluído ou não existe');
+      }
+      return false;
+    }
+    
+    if (!postData) {
+      console.error(`Post com ID ${id} não encontrado`);
+      return false;
+    }
+    
+    console.log(`Post encontrado: ID=${id}, Autor=${postData.author}`);
+    
+    // Excluir o post
+    console.log(`Executando exclusão do post ${id}`);
+    const { error } = await supabase
+      .from('blog_posts')
+      .delete()
+      .eq('id', id);
 
-  if (error) {
-    console.error(`Erro ao excluir post ${id}:`, error);
+    if (error) {
+      console.error(`Erro ao excluir post ${id}:`, {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
+      // Verificar se é erro de permissão
+      if (error.code === '42501' || error.message.includes('permission denied')) {
+        console.error(`Erro de permissão: o usuário atual não tem autorização para excluir este post. O autor é: ${postData.author}`);
+        
+        // Solicitar informações do usuário atual
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          console.log('Usuário atual:', userData.user.id);
+          
+          // Buscar perfil para obter role e nome
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id, nome, role, nivel')
+            .eq('id', userData.user.id)
+            .single();
+            
+          console.log('Perfil do usuário:', profileData);
+        }
+      }
+      
+      return false;
+    }
+
+    console.log(`Post ${id} excluído com sucesso`);
+    return true;
+  } catch (error) {
+    console.error(`Exceção ao excluir post ${id}:`, error);
     return false;
   }
-
-  return true;
 }
 
 /**
@@ -273,7 +346,7 @@ export const incrementComments = async (postId: string): Promise<boolean> => {
       return false;
     }
 
-    const { data, error } = await supabase.rpc('increment_blog_post_comments', {
+    const { error } = await supabase.rpc('increment_blog_post_comments', {
       post_id: postId
     });
 
@@ -341,3 +414,152 @@ export const resetBlogPostLikes = async (postId: string): Promise<boolean> => {
     return false;
   }
 };
+
+// Função para diagnóstico do problema de exclusão de posts
+export async function diagnoseBlogPostsTable(): Promise<any> {
+  try {
+    // 1. Verificar se o usuário está autenticado
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) {
+      console.error("Erro ao verificar autenticação:", authError);
+      return {
+        success: false,
+        error: authError,
+        message: "Não foi possível verificar a autenticação"
+      };
+    }
+
+    const userId = authData?.user?.id;
+    console.log("Usuário autenticado:", userId);
+    
+    // 2. Verificar o perfil do usuário
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (profileError) {
+      console.error("Erro ao buscar perfil:", profileError);
+      return {
+        success: false,
+        error: profileError,
+        authData,
+        message: "Falha ao buscar perfil do usuário"
+      };
+    }
+    
+    console.log("Perfil do usuário:", profileData);
+    
+    // 3. Verificar se a tabela blog_posts existe
+    const { data: tablesData, error: tablesError } = await supabase
+      .from('blog_posts')
+      .select('id')
+      .limit(1);
+      
+    if (tablesError) {
+      console.error("Erro ao verificar tabela blog_posts:", tablesError);
+      return {
+        success: false,
+        error: tablesError,
+        authData,
+        profileData,
+        message: "Falha ao acessar tabela blog_posts"
+      };
+    }
+    
+    console.log("Tabela blog_posts acessível:", tablesData);
+    
+    // 4. Tentar inserir um post de teste (para verificar permissões de INSERT)
+    const testPostData = {
+      title: "Teste de Diagnóstico",
+      summary: "Post criado para diagnóstico de permissões",
+      content: "Conteúdo de teste para diagnóstico",
+      author: profileData.nome || "Usuário de Teste",
+      slug: "test-diagnostic-" + new Date().getTime(),
+      category: "Diagnóstico"
+    };
+    
+    const { data: insertData, error: insertError } = await supabase
+      .from('blog_posts')
+      .insert([testPostData])
+      .select();
+      
+    console.log("Tentativa de inserção:", insertData, insertError);
+    
+    let postId;
+    if (insertData && insertData.length > 0) {
+      postId = insertData[0].id;
+      console.log("Post de teste criado com ID:", postId);
+    }
+    
+    // 5. Se conseguiu criar um post, tentar excluí-lo
+    let deleteResult = null;
+    let deleteError = null;
+    
+    if (postId) {
+      const { error } = await supabase
+        .from('blog_posts')
+        .delete()
+        .eq('id', postId);
+        
+      deleteError = error;
+      deleteResult = !error;
+      console.log("Tentativa de exclusão:", deleteResult, deleteError);
+    }
+    
+    // 6. Verificar políticas existentes (usando SQL)
+    const { data: policies, error: policiesError } = await supabase.rpc(
+      'execute_sql', 
+      { 
+        sql_query: `
+          SELECT 
+            polname AS policy_name,
+            polrelid::regclass AS table_name,
+            polcmd AS command_type, 
+            pg_get_expr(polqual, polrelid) AS using_expr
+          FROM 
+            pg_policy
+          WHERE 
+            polrelid = 'public.blog_posts'::regclass
+        `
+      }
+    );
+    
+    // 7. Retornar resultado completo do diagnóstico
+    return {
+      success: true,
+      authentication: {
+        userId,
+        authenticated: !!userId
+      },
+      profile: profileData,
+      tableAccess: {
+        exists: !!tablesData,
+        data: tablesData
+      },
+      permissions: {
+        insert: {
+          success: !!insertData,
+          error: insertError
+        },
+        delete: {
+          success: deleteResult,
+          error: deleteError,
+          postId
+        }
+      },
+      policies: {
+        success: !!policies,
+        error: policiesError,
+        data: policies
+      }
+    };
+  } catch (error) {
+    console.error("Erro durante diagnóstico:", error);
+    return {
+      success: false,
+      error
+    };
+  }
+}

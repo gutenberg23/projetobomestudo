@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { User, DatabaseUser } from "@/types/user";
 
@@ -9,11 +9,12 @@ interface AuthContextType {
   profile: DatabaseUser | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, nome?: string, sobrenome?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updateProfile: (data: Partial<User>) => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<{ error: Error | null }>;
+  clearAuthSession: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,9 +26,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const clearAuthSession = () => {
+    localStorage.removeItem('bomestudo-auth-v2');
+    localStorage.removeItem('bomestudo-auth-token');
+    localStorage.removeItem('supabase.auth.token');
+    
+    supabase.auth.signOut().catch(err => console.error("Erro ao fazer logout:", err));
+    
+    setUser(null);
+    setProfile(null);
+    
+    navigate("/login");
+    
+    toast({
+      title: "Sessão limpa",
+      description: "Sua sessão foi limpa. Por favor, faça login novamente.",
+    });
+  };
+
   useEffect(() => {
-    // Configurar o Supabase para persistir a sessão entre abas
-    supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state change:", event, session?.user?.id);
       if (event === 'SIGNED_IN' && session) {
         const userData: User = {
           id: session.user.id,
@@ -41,12 +60,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setProfile(null);
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log("Token refreshed successfully");
       }
     });
 
     const fetchUserData = async () => {
       try {
+        console.log("Verificando sessão existente...");
         const { data: { session } } = await supabase.auth.getSession();
+        console.log("Sessão existente:", session?.user?.id);
+        
         if (session?.user) {
           const userData: User = {
             id: session.user.id,
@@ -66,18 +90,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchUserData();
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
     try {
-      const { data: userProfile, error } = await supabase
-        .from('profiles')
-        .select('*')
+      console.log("Buscando perfil do usuário:", userId);
+      const { data: userProfile, error } = await supabase.from('profiles')
+        .select('id, email, nome, sobrenome, role, foto_url')
         .eq('id', userId)
         .single();
         
-      if (userProfile && !error) {
-        const profile = userProfile as DatabaseUser;
+      if (error) {
+        console.error("Erro ao buscar perfil:", error);
+        return;
+      }
+        
+      if (userProfile) {
+        console.log("Perfil encontrado:", userProfile);
+        const profile = userProfile as unknown as DatabaseUser;
         setProfile(profile);
         setUser(prev => {
           if (!prev) return null;
@@ -85,25 +119,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ...prev,
             nome: profile.nome || prev.nome,
             sobrenome: profile.sobrenome || undefined,
-            nome_social: profile.nome_social || undefined,
-            nascimento: profile.nascimento || undefined,
-            sexo: profile.sexo || undefined,
-            escolaridade: profile.escolaridade || undefined,
-            estado_civil: profile.estado_civil || undefined,
-            celular: profile.celular || undefined,
-            telefone: profile.telefone || undefined,
-            cep: profile.cep || undefined,
-            endereco: profile.endereco || undefined,
-            numero: profile.numero || undefined,
-            bairro: profile.bairro || undefined,
-            complemento: profile.complemento || undefined,
-            estado: profile.estado || undefined,
-            cidade: profile.cidade || undefined,
-            foto_perfil: profile.foto_perfil || undefined,
+            foto_url: profile.foto_url || undefined,
             role: profile.role,
           };
           return updatedUser;
         });
+      } else {
+        console.warn("Perfil do usuário não encontrado");
       }
     } catch (error) {
       console.error("Erro ao buscar perfil do usuário:", error);
@@ -112,15 +134,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password,
-      });
+      console.log("Tentando login com email:", email);
       
-      if (error) {
+      if (!email || !password) {
+        const error = new Error("Email e senha são obrigatórios");
         toast({
           title: "Erro ao fazer login",
-          description: error.message,
+          description: "Email e senha são obrigatórios",
+          variant: "destructive",
+        });
+        return { error };
+      }
+      
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password
+      });
+      
+      console.log("Resposta de login:", data ? "Dados recebidos" : "Sem dados", error);
+      
+      if (error) {
+        console.error("Erro detalhado:", error);
+        
+        let errorMessage = error.message;
+        if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Email ou senha incorretos. Por favor, verifique e tente novamente.";
+        } else if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Email não confirmado. Por favor, verifique sua caixa de entrada.";
+        } else if (error.message.includes("Database error granting user")) {
+          errorMessage = "Erro interno do servidor. Tente limpar a sessão e fazer login novamente.";
+        }
+        
+        toast({
+          title: "Erro ao fazer login",
+          description: errorMessage,
           variant: "destructive",
         });
         return { error };
@@ -134,26 +181,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       navigate("/");
       return { error: null };
     } catch (error: any) {
+      console.error("Erro não tratado durante login:", error);
       toast({
         title: "Erro ao fazer login",
-        description: error.message,
+        description: error.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
         variant: "destructive",
       });
       return { error };
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, nome?: string, sobrenome?: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      console.log("Tentando criar conta com:", email, nome, sobrenome);
+      
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            nome,
+            sobrenome
+          }
+        }
       });
+      
+      console.log("Resposta de cadastro:", data ? "Dados recebidos" : "Sem dados", error);
 
       if (error) {
+        console.error("Erro detalhado:", error);
+        
+        let errorMessage = error.message;
+        if (error.message.includes("already registered")) {
+          errorMessage = "Este email já está registrado. Por favor, tente fazer login.";
+        }
+        
         toast({
           title: "Erro ao criar conta",
-          description: error.message,
+          description: errorMessage,
           variant: "destructive",
         });
         return { error };
@@ -166,9 +231,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return { error: null };
     } catch (error: any) {
+      console.error("Erro não tratado durante cadastro:", error);
       toast({
         title: "Erro ao criar conta",
-        description: error.message,
+        description: error.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
         variant: "destructive",
       });
       return { error };
@@ -186,9 +252,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string) => {
     try {
+      console.log("Solicitando redefinição de senha para:", email);
       const { error } = await supabase.auth.resetPasswordForEmail(email);
 
       if (error) {
+        console.error("Erro ao resetar senha:", error);
         toast({
           title: "Erro ao resetar senha",
           description: error.message,
@@ -204,9 +272,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return { error: null };
     } catch (error: any) {
+      console.error("Erro não tratado ao resetar senha:", error);
       toast({
         title: "Erro ao resetar senha",
-        description: error.message,
+        description: error.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
         variant: "destructive",
       });
       return { error };
@@ -217,12 +286,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: new Error("Usuário não autenticado") };
 
     try {
+      console.log("Atualizando perfil do usuário:", user.id, data);
       const { error } = await supabase
         .from('profiles')
         .update(data)
         .eq('id', user.id);
 
       if (error) {
+        console.error("Erro ao atualizar perfil:", error);
         toast({
           title: "Erro ao atualizar perfil",
           description: error.message,
@@ -231,14 +302,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
 
-      // Atualizar estado local
       setUser(prev => prev ? { ...prev, ...data } : null);
+      toast({
+        title: "Perfil atualizado",
+        description: "Suas informações foram atualizadas com sucesso.",
+      });
       
       return { error: null };
     } catch (error: any) {
+      console.error("Erro não tratado ao atualizar perfil:", error);
       toast({
         title: "Erro ao atualizar perfil",
-        description: error.message,
+        description: error.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
         variant: "destructive",
       });
       return { error };
@@ -247,23 +322,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log("Iniciando login com Google");
+      
+      // URL de retorno corrigida para corresponder ao domínio atual
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      console.log("URL de redirecionamento:", redirectTo);
+      
+      // Verificar se temos o domínio correto na lista de domínios permitidos
+      if (window.location.hostname === 'localhost') {
+        console.log("Usando localhost - certifique-se de que http://localhost:8080 está na lista de sites permitidos no Supabase");
+      }
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+          redirectTo: redirectTo,
+          queryParams: {
+            prompt: 'select_account'
+          }
+        }
       });
+      
+      console.log("Resposta do login com Google:", data ? "Dados recebidos" : "Sem dados", error);
 
       if (error) {
+        console.error("Erro detalhado:", error);
         toast({
           title: "Erro ao fazer login com Google",
           description: error.message,
           variant: "destructive",
         });
+        return { error };
       }
+      
+      return { error: null };
     } catch (error: any) {
+      console.error("Erro não tratado ao login com Google:", error);
       toast({
         title: "Erro ao fazer login com Google",
-        description: error.message,
+        description: error.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
         variant: "destructive",
       });
+      return { error };
     }
   };
 
@@ -277,7 +377,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       signOut,
       resetPassword,
       updateProfile,
-      signInWithGoogle
+      signInWithGoogle,
+      clearAuthSession
     }}>
       {children}
     </AuthContext.Provider>

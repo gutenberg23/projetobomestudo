@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import EsqueciSenha from "./pages/EsqueciSenha";
+import RedefinirSenha from "./pages/RedefinirSenha";
 import ResetSenha from "./pages/ResetSenha";
 import { CourseLayout } from "./components/course/CourseLayout";
 import Explore from "./pages/Explore";
@@ -22,11 +23,14 @@ import Simulado from "./pages/Simulado";
 import QuestionBooks from "./pages/QuestionBooks";
 import QuestionBookDetails from "./pages/QuestionBookDetails";
 import { ConfigGuard } from './components/guards/ConfigGuard';
+import { AdminGuard } from './components/guards/AdminGuard';
 import { useSiteConfig } from "./hooks/useSiteConfig";
 import { useEffect } from "react";
 import "./styles/globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Perfil from "./pages/Perfil";
+import DirectLogin from "@/pages/DirectLogin";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -45,6 +49,7 @@ import Professores from "./pages/admin/Professores";
 import ConfiguracoesSite from "./pages/admin/ConfiguracoesSite";
 import Kanban from "./pages/admin/Kanban";
 import EditQuestionBook from './pages/admin/EditQuestionBook';
+import AdminLogin from "./pages/admin/AdminLogin";
 
 // Componente para aplicar as configurações de estilo
 const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
@@ -87,7 +92,10 @@ export default function App() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/" element={<Index />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/direct-login" element={<DirectLogin />} />
                   <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+                  <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+                  <Route path="/perfil" element={<Perfil />} />
                   <Route path="/reset-password" element={<ResetSenha />} />
                   <Route path="/course/:courseId" element={<CourseLayout />} />
                   
@@ -142,7 +150,12 @@ export default function App() {
                   <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
                   
                   {/* Admin Routes */}
-                  <Route path="/admin" element={<AdminLayout />}>
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin" element={
+                    <AdminGuard>
+                      <AdminLayout />
+                    </AdminGuard>
+                  }>
                     <Route index element={<Dashboard />} />
                     <Route path="kanban" element={<Kanban />} />
                     <Route path="posts" element={<Posts />} />

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UserFiltersState } from "./types";
 import { Search, Filter } from "lucide-react";
@@ -78,6 +77,8 @@ const UserFilters: React.FC<UserFiltersProps> = ({
             <SelectItem value="aluno">Alunos</SelectItem>
             <SelectItem value="professor">Professores</SelectItem>
             <SelectItem value="administrador">Administradores</SelectItem>
+            <SelectItem value="assistente">Assistentes</SelectItem>
+            <SelectItem value="jornalista">Jornalistas</SelectItem>
           </SelectContent>
         </Select>
       </div>

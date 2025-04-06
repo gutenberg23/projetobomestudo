@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UserType } from "../types";
 import { Button } from "@/components/ui/button";
@@ -86,6 +85,8 @@ const NewUserDialog: React.FC<NewUserDialogProps> = ({
                 <SelectItem value="aluno">Aluno</SelectItem>
                 <SelectItem value="professor">Professor</SelectItem>
                 <SelectItem value="administrador">Administrador</SelectItem>
+                <SelectItem value="assistente">Assistente</SelectItem>
+                <SelectItem value="jornalista">Jornalista</SelectItem>
               </SelectContent>
             </Select>
           </div>

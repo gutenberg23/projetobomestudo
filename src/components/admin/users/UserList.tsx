@@ -1,4 +1,3 @@
-
 import React from "react";
 import { UserData } from "./types";
 import { User } from "lucide-react";
@@ -16,8 +15,6 @@ interface UserListProps {
   usuarios: UserData[];
   isLoading?: boolean;
   onEdit: (usuario: UserData) => void;
-  onChangePassword: (usuario: UserData) => void;
-  onSendMessage: (usuario: UserData) => void;
   onViewHistory: (usuario: UserData) => void;
   onViewNotes: (usuario: UserData) => void;
   onChangeStatus: (id: string, status: "ativo" | "inativo") => void;
@@ -28,8 +25,6 @@ const UserList: React.FC<UserListProps> = ({
   usuarios,
   isLoading = false,
   onEdit,
-  onChangePassword,
-  onSendMessage,
   onViewHistory,
   onViewNotes,
   onChangeStatus,
@@ -57,14 +52,14 @@ const UserList: React.FC<UserListProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Usuário</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Data de Cadastro</TableHead>
-            <TableHead>Último Login</TableHead>
-            <TableHead>Assinante</TableHead>
-            <TableHead>Início da Assinatura</TableHead>
-            <TableHead>Término da Assinatura</TableHead>
+            <TableHead>Informações</TableHead>
+            <TableHead>Função</TableHead>
+            <TableHead>Situação</TableHead>
+            <TableHead>Cadastrado em</TableHead>
+            <TableHead>Último Acesso</TableHead>
+            <TableHead>Premium</TableHead>
+            <TableHead>Início Premium</TableHead>
+            <TableHead>Término Premium</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -75,8 +70,6 @@ const UserList: React.FC<UserListProps> = ({
                 key={usuario.id}
                 usuario={usuario}
                 onEdit={onEdit}
-                onChangePassword={onChangePassword}
-                onSendMessage={onSendMessage}
                 onViewHistory={onViewHistory}
                 onViewNotes={onViewNotes}
                 onChangeStatus={onChangeStatus}

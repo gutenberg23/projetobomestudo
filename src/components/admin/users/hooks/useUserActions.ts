@@ -1,6 +1,5 @@
-
 import { useToast } from "@/hooks/use-toast";
-import { UserData, UseUsersStateReturn } from "../types";
+import { UserData, UseUsersStateReturn, UserType } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useUserActions = (state: UseUsersStateReturn) => {
@@ -13,14 +12,10 @@ export const useUserActions = (state: UseUsersStateReturn) => {
     setUsuariosFiltrados,
     setDialogEditarUsuario,
     setDialogExcluirUsuario,
-    setDialogAlterarSenha,
     setDialogEnviarMensagem,
-    setDialogVerHistorico,
-    setDialogNotasUsuario,
     setDialogNovoUsuario,
     setUsuarioSelecionado,
     novoUsuario,
-    setNovoUsuario,
     filtros,
     setPaginaAtual
   } = state;
@@ -29,15 +24,41 @@ export const useUserActions = (state: UseUsersStateReturn) => {
     setUsuarioSelecionado(usuario);
   };
   
-  const alterarStatusUsuario = async (id: string, novoStatus: "ativo" | "inativo") => {
+  const alterarStatus = async (id: string, novoStatus: "ativo" | "inativo") => {
     try {
-      // Atualizar no banco de dados
-      const { error } = await supabase
+      // Verificar se o usuário atual é administrador
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: currentUserProfile } = await supabase
         .from('profiles')
-        .update({ status: novoStatus })
+        .select('nivel')
+        .eq('id', user?.id)
+        .single();
+
+      if (!currentUserProfile || currentUserProfile.nivel !== 'admin') {
+        throw new Error('Apenas administradores podem alterar o status dos usuários');
+      }
+
+      // Atualizar na tabela profiles
+      const { error: profilesError } = await supabase
+        .from('profiles')
+        .update({ 
+          status: novoStatus,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id);
       
-      if (error) throw error;
+      if (profilesError) throw profilesError;
+
+      // Atualizar na tabela perfil
+      const { error: perfilError } = await supabase
+        .from('perfil')
+        .update({ 
+          status: novoStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+      
+      if (perfilError) throw perfilError;
       
       // Atualizar na interface
       const novosUsuarios = usuarios.map(usuario => 
@@ -59,7 +80,7 @@ export const useUserActions = (state: UseUsersStateReturn) => {
       console.error("Erro ao alterar status:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível alterar o status do usuário. Tente novamente.",
+        description: error instanceof Error ? error.message : "Não foi possível alterar o status do usuário. Tente novamente.",
         variant: "destructive"
       });
     }
@@ -68,17 +89,45 @@ export const useUserActions = (state: UseUsersStateReturn) => {
   const excluirUsuario = async () => {
     if (!usuarioSelecionado) return;
     
+    const userId = usuarioSelecionado.id; // Guardar ID antes do try/catch para evitar null checks
+    
     try {
-      // Excluir usuário no Supabase Auth
-      const { error } = await supabase.auth.admin.deleteUser(
-        usuarioSelecionado.id
-      );
+      // Verificar se o usuário atual é administrador
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: currentUserProfile } = await supabase
+        .from('profiles')
+        .select('nivel')
+        .eq('id', user?.id)
+        .single();
+
+      if (!currentUserProfile || currentUserProfile.nivel !== 'admin') {
+        throw new Error('Apenas administradores podem excluir usuários');
+      }
+
+      // Excluir da tabela perfil primeiro (devido à chave estrangeira)
+      const { error: perfilError } = await supabase
+        .from('perfil')
+        .delete()
+        .eq('id', userId);
       
-      if (error) throw error;
+      if (perfilError) throw perfilError;
+
+      // Excluir da tabela profiles
+      const { error: profilesError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+      
+      if (profilesError) throw profilesError;
+
+      // Excluir usuário no Supabase Auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
+      
+      if (authError) throw authError;
       
       // Atualizar na interface
-      setUsuarios(usuarios.filter(usuario => usuario.id !== usuarioSelecionado.id));
-      setUsuariosFiltrados(usuariosFiltrados.filter(usuario => usuario.id !== usuarioSelecionado.id));
+      setUsuarios(usuarios.filter(usuario => usuario.id !== userId));
+      setUsuariosFiltrados(usuariosFiltrados.filter(usuario => usuario.id !== userId));
       
       setDialogExcluirUsuario(false);
       
@@ -90,7 +139,7 @@ export const useUserActions = (state: UseUsersStateReturn) => {
       console.error("Erro ao excluir usuário:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível excluir o usuário. Tente novamente.",
+        description: error instanceof Error ? error.message : "Não foi possível excluir o usuário. Tente novamente.",
         variant: "destructive"
       });
     }
@@ -107,6 +156,35 @@ export const useUserActions = (state: UseUsersStateReturn) => {
     }
     
     try {
+      // Verificar se o usuário atual é administrador
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: currentUserProfile } = await supabase
+        .from('profiles')
+        .select('nivel')
+        .eq('id', user?.id)
+        .single();
+
+      if (!currentUserProfile || currentUserProfile.nivel !== 'admin') {
+        throw new Error('Apenas administradores podem criar novos usuários');
+      }
+
+      // Mapear tipo para nivel e role
+      const nivelMap = {
+        'aluno': 'usuario',
+        'professor': 'professor',
+        'administrador': 'admin',
+        'assistente': 'assistente',
+        'jornalista': 'usuario'
+      };
+
+      const roleMap = {
+        'aluno': 'aluno',
+        'professor': 'professor',
+        'administrador': 'admin',
+        'assistente': 'assistente',
+        'jornalista': 'jornalista'
+      };
+
       // Criar novo usuário no Supabase Auth
       const { data, error } = await supabase.auth.admin.createUser({
         email: novoUsuario.email,
@@ -118,109 +196,257 @@ export const useUserActions = (state: UseUsersStateReturn) => {
       });
       
       if (error) throw error;
-      
-      // Atualizar perfil do usuário
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          nome: novoUsuario.nome,
-          tipo: novoUsuario.tipo,
-          status: novoUsuario.status,
-          assinante: novoUsuario.assinante,
-          inicio_assinatura: novoUsuario.assinante ? novoUsuario.inicioAssinatura : null,
-          termino_assinatura: novoUsuario.assinante ? novoUsuario.terminoAssinatura : null
-        })
-        .eq('id', data.user.id);
-      
-      if (updateError) throw updateError;
-      
-      // Criar objeto do usuário
-      const usuarioCriado: UserData = {
+
+      // Preparar dados básicos do usuário
+      const baseUserData = {
         id: data.user.id,
-        nome: novoUsuario.nome || "",
-        email: novoUsuario.email || "",
-        tipo: novoUsuario.tipo as "aluno" | "professor" | "administrador" || "aluno",
-        status: novoUsuario.status as "ativo" | "inativo" || "ativo",
-        dataCadastro: new Date().toISOString().split('T')[0],
-        ultimoLogin: "-",
-        fotoPerfil: "",
-        assinante: novoUsuario.assinante || false,
-        inicioAssinatura: novoUsuario.inicioAssinatura || "",
-        terminoAssinatura: novoUsuario.terminoAssinatura || ""
+        email: novoUsuario.email,
+        nome: novoUsuario.nome,
+        nivel: nivelMap[novoUsuario.tipo || 'aluno'], // Converter tipo para nivel usando o mapa
+        status: novoUsuario.status || 'ativo',
+        role: roleMap[novoUsuario.tipo || 'aluno'], // Converter tipo para role usando o mapa
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
-      setUsuarios([usuarioCriado, ...usuarios]);
-      setUsuariosFiltrados([usuarioCriado, ...usuariosFiltrados]);
+      // Inserir na tabela profiles
+      const { error: profilesError } = await supabase
+        .from('profiles')
+        .insert([baseUserData]);
       
-      // Limpar formulário
-      setNovoUsuario({
-        nome: "",
-        email: "",
-        tipo: "aluno",
-        status: "ativo",
+      if (profilesError) throw profilesError;
+
+      // Inserir na tabela perfil
+      const { error: perfilError } = await supabase
+        .from('perfil')
+        .insert([baseUserData]);
+      
+      if (perfilError) throw perfilError;
+
+      // Adicionar o novo usuário à lista
+      const novoUsuarioData: UserData = {
+        id: data.user.id,
+        nome: novoUsuario.nome,
+        email: novoUsuario.email,
+        tipo: novoUsuario.tipo || 'aluno',
+        status: novoUsuario.status || 'ativo',
+        dataCadastro: new Date().toLocaleDateString('pt-BR'),
+        ultimoLogin: '-',
+        fotoPerfil: '',
         assinante: false,
-        inicioAssinatura: "",
-        terminoAssinatura: ""
-      });
+        inicioAssinatura: '',
+        terminoAssinatura: ''
+      };
       
+      setUsuarios([...usuarios, novoUsuarioData]);
+      setUsuariosFiltrados([...usuariosFiltrados, novoUsuarioData]);
       setDialogNovoUsuario(false);
       
       toast({
         title: "Usuário criado",
-        description: "Novo usuário adicionado com sucesso!",
+        description: "Novo usuário criado com sucesso!",
       });
     } catch (error) {
       console.error("Erro ao criar usuário:", error);
       toast({
         title: "Erro",
-        description: `Não foi possível criar o usuário: ${error.message}`,
+        description: error instanceof Error ? error.message : "Não foi possível criar o usuário. Tente novamente.",
         variant: "destructive"
       });
     }
   };
   
+  const formatarData = (data: string | null): string => {
+    if (!data) return '';
+    
+    try {
+      // Se já estiver no formato yyyy-MM-dd, não é necessário converter
+      if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+        return data;
+      }
+      
+      // Se contiver T, é um formato ISO completo, então pegamos apenas a parte da data
+      if (data.includes('T')) {
+        return data.split('T')[0];
+      }
+      
+      // Tenta converter a data para o formato esperado
+      const dateObj = new Date(data);
+      if (isNaN(dateObj.getTime())) {
+        console.error('Data inválida:', data);
+        return '';
+      }
+      
+      // Formato yyyy-MM-dd
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      console.error('Erro ao formatar data:', e);
+      return '';
+    }
+  };
+
   const atualizarUsuario = async () => {
     if (!usuarioSelecionado) return;
     
     try {
-      // Atualizar perfil no banco de dados
-      const { error } = await supabase
+      // Verificar se o usuário atual é administrador
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: currentUserProfile } = await supabase
         .from('profiles')
-        .update({
-          nome: usuarioSelecionado.nome,
-          tipo: usuarioSelecionado.tipo,
-          status: usuarioSelecionado.status,
-          assinante: usuarioSelecionado.assinante,
-          inicio_assinatura: usuarioSelecionado.assinante ? usuarioSelecionado.inicioAssinatura : null,
-          termino_assinatura: usuarioSelecionado.assinante ? usuarioSelecionado.terminoAssinatura : null
-        })
+        .select('nivel')
+        .eq('id', user?.id)
+        .single();
+
+      if (!currentUserProfile || currentUserProfile.nivel !== 'admin') {
+        throw new Error('Apenas administradores podem editar usuários');
+      }
+
+      // Mapear tipo para nivel e role
+      const nivelMap = {
+        'aluno': 'usuario',
+        'professor': 'professor',
+        'administrador': 'admin',
+        'assistente': 'assistente',
+        'jornalista': 'usuario'
+      };
+
+      const roleMap = {
+        'aluno': 'aluno',
+        'professor': 'professor',
+        'administrador': 'admin',
+        'assistente': 'assistente',
+        'jornalista': 'jornalista'
+      };
+
+      // Preparar dados do usuário
+      const userData: {
+        nome: string;
+        nivel: string;
+        role: string;
+        status: string;
+        updated_at: string;
+        assinante: boolean;
+        inicio_assinatura?: string;
+        termino_assinatura?: string;
+      } = {
+        nome: usuarioSelecionado.nome,
+        nivel: nivelMap[usuarioSelecionado.tipo],
+        role: roleMap[usuarioSelecionado.tipo],
+        status: usuarioSelecionado.status,
+        updated_at: new Date().toISOString(),
+        assinante: usuarioSelecionado.assinante || false
+      };
+
+      // Adicionar datas de assinatura apenas se o usuário for assinante e as datas existirem
+      if (usuarioSelecionado.assinante) {
+        if (usuarioSelecionado.inicioAssinatura && usuarioSelecionado.inicioAssinatura !== '') {
+          userData.inicio_assinatura = formatarData(usuarioSelecionado.inicioAssinatura);
+          // Verificação adicional para garantir formato correto
+          if (userData.inicio_assinatura && !/^\d{4}-\d{2}-\d{2}$/.test(userData.inicio_assinatura)) {
+            console.error('Formato de data inválido para inicio_assinatura:', userData.inicio_assinatura);
+            delete userData.inicio_assinatura;
+          }
+        }
+        if (usuarioSelecionado.terminoAssinatura && usuarioSelecionado.terminoAssinatura !== '') {
+          userData.termino_assinatura = formatarData(usuarioSelecionado.terminoAssinatura);
+          // Verificação adicional para garantir formato correto
+          if (userData.termino_assinatura && !/^\d{4}-\d{2}-\d{2}$/.test(userData.termino_assinatura)) {
+            console.error('Formato de data inválido para termino_assinatura:', userData.termino_assinatura);
+            delete userData.termino_assinatura;
+          }
+        }
+      }
+
+      // Remover campos vazios para evitar erro no banco
+      const cleanUserData = Object.fromEntries(
+        Object.entries(userData).filter(([_, value]) => value !== '')
+      );
+
+      // Atualizar na tabela profiles
+      const { error: profilesError } = await supabase
+        .from('profiles')
+        .update(cleanUserData)
         .eq('id', usuarioSelecionado.id);
       
-      if (error) throw error;
+      if (profilesError) throw profilesError;
+
+      // Atualizar na tabela perfil
+      const { error: perfilError } = await supabase
+        .from('perfil')
+        .update(cleanUserData)
+        .eq('id', usuarioSelecionado.id);
       
-      // Atualizar na interface
-      const novosUsuarios = usuarios.map(usuario => 
-        usuario.id === usuarioSelecionado.id ? usuarioSelecionado : usuario
-      );
+      if (perfilError) throw perfilError;
+
+      // Buscar dados atualizados do usuário
+      const { data: perfilAtualizado, error: perfilError2 } = await supabase
+        .from('perfil')
+        .select('*')
+        .eq('id', usuarioSelecionado.id)
+        .single();
       
-      setUsuarios(novosUsuarios);
-      setUsuariosFiltrados(
-        usuariosFiltrados.map(usuario => 
-          usuario.id === usuarioSelecionado.id ? usuarioSelecionado : usuario
-        )
-      );
+      if (perfilError2) throw perfilError2;
+
+      if (perfilAtualizado) {
+        // Determinar o tipo baseado no nivel ou role
+        let tipoAtualizado: UserType = 'aluno';
+        
+        if (perfilAtualizado.nivel === 'assistente' || perfilAtualizado.role === 'assistente') {
+          tipoAtualizado = 'assistente';
+        } else if (perfilAtualizado.nivel === 'admin' || perfilAtualizado.role === 'admin') {
+          tipoAtualizado = 'administrador';
+        } else if (perfilAtualizado.nivel === 'professor' || perfilAtualizado.role === 'professor') {
+          tipoAtualizado = 'professor';
+        } else if (perfilAtualizado.role === 'jornalista') {
+          tipoAtualizado = 'jornalista';
+        } else if (perfilAtualizado.nivel === 'usuario' || perfilAtualizado.role === 'aluno') {
+          tipoAtualizado = 'aluno';
+        }
+        
+        // Atualizar na interface apenas o usuário modificado
+        const novosUsuarios = usuarios.map(usuario => 
+          usuario.id === usuarioSelecionado.id ? {
+            ...usuario,
+            nome: perfilAtualizado.nome || '',
+            tipo: tipoAtualizado,
+            status: perfilAtualizado.status as UserData['status'] || 'ativo',
+            assinante: perfilAtualizado.assinante || false,
+            inicioAssinatura: perfilAtualizado.inicio_assinatura || '',
+            terminoAssinatura: perfilAtualizado.termino_assinatura || ''
+          } : usuario
+        );
+        
+        setUsuarios(novosUsuarios);
+        setUsuariosFiltrados(
+          usuariosFiltrados.map(usuario => 
+            usuario.id === usuarioSelecionado.id ? {
+              ...usuario,
+              nome: perfilAtualizado.nome || '',
+              tipo: tipoAtualizado,
+              status: perfilAtualizado.status as UserData['status'] || 'ativo',
+              assinante: perfilAtualizado.assinante || false,
+              inicioAssinatura: perfilAtualizado.inicio_assinatura || '',
+              terminoAssinatura: perfilAtualizado.termino_assinatura || ''
+            } : usuario
+          )
+        );
+      }
       
       setDialogEditarUsuario(false);
       
       toast({
         title: "Usuário atualizado",
-        description: "Os dados do usuário foram atualizados com sucesso!",
+        description: "Dados do usuário atualizados com sucesso!",
       });
     } catch (error) {
       console.error("Erro ao atualizar usuário:", error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o usuário. Tente novamente.",
+        description: error instanceof Error ? error.message : "Não foi possível atualizar o usuário. Tente novamente.",
         variant: "destructive"
       });
     }
@@ -235,33 +461,6 @@ export const useUserActions = (state: UseUsersStateReturn) => {
     });
   };
   
-  const alterarSenha = async (novaSenha: string) => {
-    if (!usuarioSelecionado) return;
-    
-    try {
-      const { error } = await supabase.auth.admin.updateUserById(
-        usuarioSelecionado.id,
-        { password: novaSenha }
-      );
-      
-      if (error) throw error;
-      
-      setDialogAlterarSenha(false);
-      
-      toast({
-        title: "Senha atualizada",
-        description: "A senha foi alterada com sucesso.",
-      });
-    } catch (error) {
-      console.error("Erro ao alterar senha:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível alterar a senha. Tente novamente.",
-        variant: "destructive"
-      });
-    }
-  };
-
   // Filtragem de usuários
   const filtrarUsuarios = () => {
     let resultado = [...usuarios];
@@ -291,12 +490,11 @@ export const useUserActions = (state: UseUsersStateReturn) => {
 
   return {
     selecionarUsuario,
-    alterarStatusUsuario,
+    alterarStatus,
     excluirUsuario,
     salvarNovoUsuario,
     atualizarUsuario,
     enviarMensagem,
-    alterarSenha,
     filtrarUsuarios
   };
 };

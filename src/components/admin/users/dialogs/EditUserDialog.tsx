@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 interface EditUserDialogProps {
@@ -58,6 +57,8 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
                 <SelectItem value="aluno">Aluno</SelectItem>
                 <SelectItem value="professor">Professor</SelectItem>
                 <SelectItem value="administrador">Administrador</SelectItem>
+                <SelectItem value="assistente">Assistente</SelectItem>
+                <SelectItem value="jornalista">Jornalista</SelectItem>
               </SelectContent>
             </Select>
           </div>

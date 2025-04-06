@@ -3,6 +3,7 @@ import { ModoInterface } from "../types";
 import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
@@ -31,7 +32,6 @@ export function usePostsActions(state: PostsState) {
     resumo,
     conteudo,
     autor,
-    autorAvatar,
     categoria,
     destacado,
     tags,
@@ -47,13 +47,21 @@ export function usePostsActions(state: PostsState) {
   } = state;
 
   const { user } = useAuth();
+  const { isJornalista } = usePermissions();
 
   // Iniciar criação de um novo post
   const iniciarCriacaoPost = () => {
     setTitulo("");
     setResumo("");
     setConteudo("");
-    setAutor("");
+    
+    // Se for jornalista, preencher automaticamente o autor com o nome do usuário
+    if (isJornalista() && user?.nome) {
+      setAutor(user.nome);
+    } else {
+      setAutor("");
+    }
+    
     setAutorAvatar("");
     setCategoria("");
     setDestacado(false);
@@ -71,6 +79,16 @@ export function usePostsActions(state: PostsState) {
 
   // Iniciar edição de um post existente
   const iniciarEdicaoPost = (post: BlogPost) => {
+    // Se for jornalista, verificar se o post pertence a ele
+    if (isJornalista() && user?.nome && post.author !== user.nome) {
+      toast({
+        title: "Acesso negado",
+        description: "Você só pode editar posts de sua autoria.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setTitulo(post.title);
     setResumo(post.summary);
     setConteudo(post.content);
@@ -92,6 +110,16 @@ export function usePostsActions(state: PostsState) {
 
   // Salvar um post (novo ou editado)
   const salvarPost = async () => {
+    // Se for jornalista, garantir que o autor é o próprio usuário
+    if (isJornalista() && user?.nome && autor !== user.nome) {
+      toast({
+        title: "Acesso negado",
+        description: "Você só pode criar posts com seu nome como autor.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
       const slug = titulo
@@ -119,12 +147,19 @@ export function usePostsActions(state: PostsState) {
         .map(k => k.trim())
         .filter(k => k.length > 0);
       
+      // Definir o autor apropriado
+      let postAutor = autor;
+      // Se o usuário for jornalista, garantir que o autor é o próprio usuário
+      if (isJornalista() && user?.nome) {
+        postAutor = user.nome;
+      }
+      
       const postData = {
         title: titulo,
         summary: resumo,
         content: conteudo,
-        author: user?.email?.split('@')[0] || 'Anônimo',
-        authorAvatar: user?.user_metadata?.avatar_url,
+        author: postAutor,
+        authorAvatar: user?.foto_url || '',
         slug: slug,
         category: categoria,
         region: regiao === "none" ? undefined : regiao as Region,
@@ -143,6 +178,17 @@ export function usePostsActions(state: PostsState) {
       let novoPost: BlogPost | null;
       
       if (postEditando) {
+        // Se for jornalista, verificar se o post pertence a ele
+        if (isJornalista() && user?.nome && postEditando.author !== user.nome) {
+          toast({
+            title: "Acesso negado",
+            description: "Você só pode editar posts de sua autoria.",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+        
         // Atualiza o post existente no banco de dados
         novoPost = await updateBlogPost(postEditando.id, postData);
         if (novoPost) {
@@ -192,6 +238,19 @@ export function usePostsActions(state: PostsState) {
 
   // Excluir um post
   const excluirPost = async (id: string) => {
+    // Se for jornalista, verificar se o post pertence a ele
+    if (isJornalista() && user?.nome) {
+      const postToDelete = posts.find(post => post.id === id);
+      if (postToDelete && postToDelete.author !== user.nome) {
+        toast({
+          title: "Acesso negado",
+          description: "Você só pode excluir posts de sua autoria.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
     if (window.confirm("Tem certeza que deseja excluir este post?")) {
       setLoading(true);
       try {
@@ -204,9 +263,19 @@ export function usePostsActions(state: PostsState) {
             variant: "default"
           });
         } else {
+          // Buscar informações detalhadas sobre o erro
+          const postInfo = posts.find(post => post.id === id);
+          let errorMessage = "Ocorreu um erro ao excluir o post.";
+          
+          if (isJornalista() && user?.nome && postInfo && postInfo.author !== user.nome) {
+            errorMessage = "Você só pode excluir posts de sua autoria.";
+          } else if (user?.role !== 'admin' && user?.nivel !== 'admin' && postInfo && postInfo.author !== user?.nome) {
+            errorMessage = "Apenas administradores ou o autor do post podem excluí-lo.";
+          }
+          
           toast({
             title: "Erro",
-            description: "Ocorreu um erro ao excluir o post. Tente novamente.",
+            description: errorMessage,
             variant: "destructive"
           });
         }

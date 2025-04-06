@@ -78,11 +78,14 @@ export const Header = () => {
                   Meus Cursos
                 </Link>
               )}
+              {/* Mostra o link "Cadernos de Questões" apenas no modo mobile */}
               {config.pages.showQuestionsPage && (
-                <Link to="/cadernos" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
-                  <Book className="w-4 h-4" />
-                  Cadernos de Questões
-                </Link>
+                <div className="md:hidden">
+                  <Link to="/cadernos" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                    <Book className="w-4 h-4" />
+                    Cadernos de Questões
+                  </Link>
+                </div>
               )}
               <Link to="/settings" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
                 <Settings className="w-4 h-4" />

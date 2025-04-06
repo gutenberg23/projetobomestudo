@@ -1,5 +1,4 @@
-
-export type UserType = "aluno" | "professor" | "administrador";
+export type UserType = "aluno" | "professor" | "administrador" | "assistente" | "jornalista";
 export type UserStatus = "ativo" | "inativo";
 
 export interface UserData {
@@ -18,8 +17,8 @@ export interface UserData {
 
 export interface UserFiltersState {
   termoPesquisa: string;
-  filtroStatus: string;
-  filtroTipo: string;
+  filtroStatus: "todos" | UserStatus;
+  filtroTipo: "todos" | UserType;
 }
 
 export interface UserNote {
@@ -44,7 +43,6 @@ export interface UseUsersStateReturn {
   dialogEditarUsuario: boolean;
   dialogNovoUsuario: boolean;
   dialogExcluirUsuario: boolean;
-  dialogAlterarSenha: boolean;
   dialogEnviarMensagem: boolean;
   dialogVerHistorico: boolean;
   dialogNotasUsuario: boolean;
@@ -58,7 +56,6 @@ export interface UseUsersStateReturn {
   setDialogEditarUsuario: (open: boolean) => void;
   setDialogNovoUsuario: (open: boolean) => void;
   setDialogExcluirUsuario: (open: boolean) => void;
-  setDialogAlterarSenha: (open: boolean) => void;
   setDialogEnviarMensagem: (open: boolean) => void;
   setDialogVerHistorico: (open: boolean) => void;
   setDialogNotasUsuario: (open: boolean) => void;

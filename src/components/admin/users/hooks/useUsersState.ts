@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { UserData, UserFiltersState, UseUsersStateReturn } from "../types";
+import { UserData, UserFiltersState, UseUsersStateReturn, UserType } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,7 +20,6 @@ export const useUsersState = (): UseUsersStateReturn => {
   const [dialogEditarUsuario, setDialogEditarUsuario] = useState(false);
   const [dialogNovoUsuario, setDialogNovoUsuario] = useState(false);
   const [dialogExcluirUsuario, setDialogExcluirUsuario] = useState(false);
-  const [dialogAlterarSenha, setDialogAlterarSenha] = useState(false);
   const [dialogEnviarMensagem, setDialogEnviarMensagem] = useState(false);
   const [dialogVerHistorico, setDialogVerHistorico] = useState(false);
   const [dialogNotasUsuario, setDialogNotasUsuario] = useState(false);
@@ -45,27 +43,42 @@ export const useUsersState = (): UseUsersStateReturn => {
     const fetchUsuarios = async () => {
       setIsLoading(true);
       try {
-        // Simular a busca de usuários já que não temos acesso admin
-        const { data: profiles, error: profilesError } = await supabase
-          .from('profiles')
+        // Buscar dados da tabela perfil que contém todas as informações
+        const { data: perfis, error: perfilError } = await supabase
+          .from('perfil')
           .select('*');
         
-        if (profilesError) throw profilesError;
+        if (perfilError) throw perfilError;
         
         // Transformar os dados dos perfis em usuários
-        const usuariosCombinados = profiles.map(profile => {
+        const usuariosCombinados: UserData[] = perfis.map(perfil => {
+          // Determinar o tipo baseado no nivel ou role
+          let tipo: UserType = 'aluno';
+          
+          if (perfil.nivel === 'assistente' || perfil.role === 'assistente') {
+            tipo = 'assistente';
+          } else if (perfil.nivel === 'admin' || perfil.role === 'admin') {
+            tipo = 'administrador';
+          } else if (perfil.nivel === 'professor' || perfil.role === 'professor') {
+            tipo = 'professor';
+          } else if (perfil.nivel === 'jornalista' || perfil.role === 'jornalista') {
+            tipo = 'jornalista';
+          } else if (perfil.nivel === 'usuario' || perfil.role === 'aluno') {
+            tipo = 'aluno';
+          }
+          
           return {
-            id: profile.id || '',
-            nome: profile.nome || '',
-            email: profile.email || '',
-            tipo: (profile.tipo as UserData['tipo']) || 'aluno',
-            status: (profile.status as UserData['status']) || 'ativo',
-            dataCadastro: '2023-01-01', // Valor padrão
-            ultimoLogin: profile.ultimo_login ? new Date(profile.ultimo_login).toLocaleString('pt-BR') : '-',
-            fotoPerfil: profile.foto_perfil || '',
-            assinante: profile.assinante || false,
-            inicioAssinatura: profile.inicio_assinatura || '',
-            terminoAssinatura: profile.termino_assinatura || ''
+            id: perfil.id || '',
+            nome: perfil.nome || '',
+            email: perfil.email || '',
+            tipo,
+            status: perfil.status as UserData['status'] || 'ativo',
+            dataCadastro: perfil.created_at ? new Date(perfil.created_at).toLocaleDateString('pt-BR') : '-',
+            ultimoLogin: perfil.ultimo_login ? new Date(perfil.ultimo_login).toLocaleString('pt-BR') : '-',
+            fotoPerfil: perfil.foto_url || '',
+            assinante: perfil.assinante || false,
+            inicioAssinatura: perfil.inicio_assinatura || '',
+            terminoAssinatura: perfil.termino_assinatura || ''
           };
         });
         
@@ -105,7 +118,6 @@ export const useUsersState = (): UseUsersStateReturn => {
     dialogEditarUsuario,
     dialogNovoUsuario,
     dialogExcluirUsuario,
-    dialogAlterarSenha,
     dialogEnviarMensagem,
     dialogVerHistorico,
     dialogNotasUsuario,
@@ -119,7 +131,6 @@ export const useUsersState = (): UseUsersStateReturn => {
     setDialogEditarUsuario,
     setDialogNovoUsuario,
     setDialogExcluirUsuario,
-    setDialogAlterarSenha,
     setDialogEnviarMensagem,
     setDialogVerHistorico,
     setDialogNotasUsuario,

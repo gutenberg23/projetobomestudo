@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   FileText,
-  MessageSquare,
   Users,
   HelpCircle,
   Calendar,
@@ -20,83 +19,104 @@ import {
   Kanban,
   Book,
 } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { isJornalista } = usePermissions();
 
-  const menuItems = [
+  const allMenuItems = [
     { 
       path: "/admin", 
       label: "Dashboard", 
-      icon: <LayoutDashboard className="w-5 h-5" /> 
+      icon: <LayoutDashboard className="w-5 h-5" />,
+      showForJornalista: false
     },
     {
       path: "/admin/kanban",
       label: "Kanban",
-      icon: <Kanban className="w-5 h-5" />
+      icon: <Kanban className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/posts", 
       label: "Posts", 
-      icon: <FileText className="w-5 h-5" /> 
+      icon: <FileText className="w-5 h-5" />,
+      showForJornalista: true
     },
     { 
       path: "/admin/usuarios", 
       label: "Usuários", 
-      icon: <Users className="w-5 h-5" /> 
+      icon: <Users className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/professores", 
       label: "Professores", 
-      icon: <Youtube className="w-5 h-5" /> 
+      icon: <Youtube className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/questoes", 
       label: "Questões", 
-      icon: <HelpCircle className="w-5 h-5" /> 
+      icon: <HelpCircle className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/cadernos", 
       label: "Cadernos de Questões", 
-      icon: <Book className="w-5 h-5" /> 
+      icon: <Book className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/simulados", 
       label: "Simulados", 
-      icon: <Calendar className="w-5 h-5" /> 
+      icon: <Calendar className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/edital", 
       label: "Edital Verticalizado", 
-      icon: <BookOpen className="w-5 h-5" /> 
+      icon: <BookOpen className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/topicos", 
       label: "Tópicos", 
-      icon: <FolderTree className="w-5 h-5" /> 
+      icon: <FolderTree className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/aulas", 
       label: "Aulas", 
-      icon: <BookMarked className="w-5 h-5" /> 
+      icon: <BookMarked className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/disciplinas", 
       label: "Disciplinas", 
-      icon: <Layers className="w-5 h-5" /> 
+      icon: <Layers className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/cursos", 
       label: "Cursos", 
-      icon: <Folders className="w-5 h-5" /> 
+      icon: <Folders className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/configuracoes", 
       label: "Configurações", 
-      icon: <Settings className="w-5 h-5" /> 
+      icon: <Settings className="w-5 h-5" />,
+      showForJornalista: false
     },
   ];
+
+  // Filtrar os itens do menu de acordo com o papel do usuário
+  const menuItems = isJornalista() 
+    ? allMenuItems.filter(item => item.showForJornalista)
+    : allMenuItems;
 
   return (
     <div className="flex h-screen bg-[#f6f8fa] font-inter">

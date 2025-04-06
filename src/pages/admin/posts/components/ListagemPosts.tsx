@@ -1,10 +1,11 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, Info, Plus, Search, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { BlogPost } from "@/components/blog/types";
+import { diagnoseBlogPostsTable } from "@/services/blogService";
+import { useToast } from "@/hooks/use-toast";
 
 interface ListagemPostsProps {
   postsFiltrados: BlogPost[];
@@ -23,14 +24,66 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
   onIniciarEdicaoPost,
   onExcluirPost
 }) => {
+  const { toast } = useToast();
+  const [isRunningDiagnostic, setIsRunningDiagnostic] = React.useState(false);
+  
+  const runDiagnostic = async () => {
+    setIsRunningDiagnostic(true);
+    try {
+      toast({
+        title: "Diagnóstico em andamento",
+        description: "Verificando permissões para posts...",
+      });
+      
+      const result = await diagnoseBlogPostsTable();
+      console.log("Resultado do diagnóstico:", result);
+      
+      if (result.success) {
+        const canDelete = result.permissions?.delete?.success;
+        toast({
+          title: canDelete ? "Diagnóstico concluído com sucesso" : "Problema de permissão detectado",
+          description: canDelete 
+            ? "As permissões de exclusão estão corretas. Verifique o console para mais detalhes."
+            : "Você não tem permissão para excluir posts. Verifique o console para mais detalhes.",
+          variant: canDelete ? "default" : "destructive",
+        });
+      } else {
+        toast({
+          title: "Falha no diagnóstico",
+          description: result.message || "Ocorreu um erro durante o diagnóstico. Verifique o console para mais detalhes.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao executar diagnóstico:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível executar o diagnóstico. Verifique o console para mais detalhes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRunningDiagnostic(false);
+    }
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[#272f3c]">Posts</h1>
-        <Button onClick={onIniciarCriacaoPost} className="bg-[#ea2be2] hover:bg-[#d029d5]">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Post
-        </Button>
+        <div className="flex space-x-2">
+          <Button 
+            onClick={runDiagnostic} 
+            variant="outline"
+            disabled={isRunningDiagnostic}
+          >
+            <Info className="h-4 w-4 mr-2" />
+            Diagnóstico
+          </Button>
+          <Button onClick={onIniciarCriacaoPost} className="bg-[#ea2be2] hover:bg-[#d029d5]">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Post
+          </Button>
+        </div>
       </div>
       
       <div className="bg-white p-4 rounded-lg shadow-sm">

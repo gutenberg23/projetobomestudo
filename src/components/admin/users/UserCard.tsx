@@ -1,16 +1,13 @@
-
 import React from "react";
 import { UserData } from "./types";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Edit, Trash2, CheckSquare, XSquare, Key, Bell, History, StickyNote } from "lucide-react";
+import { Edit, Trash2, CheckSquare, XSquare, History, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TableRow, TableCell } from "@/components/ui/table";
 
 interface UserCardProps {
   usuario: UserData;
   onEdit: (usuario: UserData) => void;
-  onChangePassword: (usuario: UserData) => void;
-  onSendMessage: (usuario: UserData) => void;
   onViewHistory: (usuario: UserData) => void;
   onViewNotes: (usuario: UserData) => void;
   onChangeStatus: (id: string, status: "ativo" | "inativo") => void;
@@ -20,8 +17,6 @@ interface UserCardProps {
 const UserCard: React.FC<UserCardProps> = ({
   usuario,
   onEdit,
-  onChangePassword,
-  onSendMessage,
   onViewHistory,
   onViewNotes,
   onChangeStatus,
@@ -44,8 +39,27 @@ const UserCard: React.FC<UserCardProps> = ({
         </div>
       </TableCell>
       <TableCell>
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${usuario.tipo === 'administrador' ? 'bg-purple-100 text-purple-800' : usuario.tipo === 'professor' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-          {usuario.tipo === 'administrador' ? 'Admin' : usuario.tipo === 'professor' ? 'Professor' : 'Aluno'}
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          usuario.tipo === 'administrador' 
+            ? 'bg-purple-100 text-purple-800' 
+            : usuario.tipo === 'professor' 
+              ? 'bg-blue-100 text-blue-800' 
+              : usuario.tipo === 'assistente'
+                ? 'bg-teal-100 text-teal-800'
+                : usuario.tipo === 'jornalista'
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-gray-100 text-gray-800'
+        }`}>
+          {usuario.tipo === 'administrador' 
+            ? 'Admin' 
+            : usuario.tipo === 'professor' 
+              ? 'Professor' 
+              : usuario.tipo === 'assistente'
+                ? 'Assistente'
+                : usuario.tipo === 'jornalista'
+                  ? 'Jornalista'
+                  : 'Aluno'
+          }
         </span>
       </TableCell>
       <TableCell>
@@ -66,10 +80,6 @@ const UserCard: React.FC<UserCardProps> = ({
         <div className="flex justify-end space-x-2">
           <Button variant="outline" size="sm" onClick={() => onEdit(usuario)}>
             <Edit size={16} />
-          </Button>
-          
-          <Button variant="outline" size="sm" onClick={() => onChangePassword(usuario)}>
-            <Key size={16} />
           </Button>
           
           <Button variant="outline" size="sm" onClick={() => onViewNotes(usuario)}>
