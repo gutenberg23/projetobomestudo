@@ -29,6 +29,8 @@ export const useTopicosActions = (
 
   // Funções para abrir modais
   const openEditModal = (topico: Topico) => {
+    console.log('Abrindo modal de edição com tópico:', topico);
+    console.log('Propriedade abrirEmNovaGuia:', topico.abrirEmNovaGuia);
     setCurrentTopico(topico);
     setIsOpenEdit(true);
   };
@@ -48,7 +50,15 @@ export const useTopicosActions = (
           nome: updatedTopico.titulo,
           disciplina: updatedTopico.disciplina,
           patrocinador: updatedTopico.patrocinador,
-          questoes_ids: updatedTopico.questoesIds
+          questoes_ids: updatedTopico.questoesIds,
+          professor_id: updatedTopico.professor_id,
+          professor_nome: updatedTopico.professor_nome,
+          video_url: updatedTopico.videoUrl,
+          pdf_url: updatedTopico.pdfUrl,
+          mapa_url: updatedTopico.mapaUrl,
+          resumo_url: updatedTopico.resumoUrl,
+          musica_url: updatedTopico.musicaUrl,
+          abrir_em_nova_guia: updatedTopico.abrirEmNovaGuia
         })
         .eq('id', updatedTopico.id);
 
@@ -148,7 +158,7 @@ export const useTopicosActions = (
       console.log("Total de questões:", questoesIds.length);
       
       // Cadastrar a aula no banco de dados usando o método insert correto
-      const { data, error } = await supabase
+      const { data: _, error } = await supabase
         .from('aulas')
         .insert([
           {

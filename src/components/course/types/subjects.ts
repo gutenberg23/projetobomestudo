@@ -1,4 +1,3 @@
-
 export interface Subject {
   id: string;
   name: string;
@@ -26,4 +25,5 @@ export interface Section {
   textContent?: string;
   professorId?: string;
   professorNome?: string;
+  abrirEmNovaGuia?: boolean;
 }

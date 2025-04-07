@@ -14,6 +14,7 @@ interface VideoContentLayoutProps {
   setVideoHeight?: (height: number) => void;
   onSectionClick: (sectionId: string) => void;
   onToggleCompletion?: (sectionId: string, event: React.MouseEvent) => void;
+  forceUpdate?: number;
 }
 
 export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
@@ -24,23 +25,11 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
   videoHeight = 400,
   setVideoHeight = () => {},
   onSectionClick,
-  onToggleCompletion = () => {}
+  onToggleCompletion = () => {},
+  forceUpdate = 0
 }) => {
   const videoRef = useRef<HTMLDivElement>(null);
   const [currentVideoHeight, setCurrentVideoHeight] = useState(videoHeight);
-
-  // Dados de exemplo do professor - em um caso real, isso viria de uma API ou props
-  const teacherExample = {
-    name: "Ana Maria Silva",
-    photoUrl: "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg", // Usando imagem de exemplo do projeto
-    socialMedia: {
-      youtube: "https://youtube.com/usuario",
-      instagram: "https://instagram.com/usuario",
-      telegram: "https://t.me/usuario",
-      facebook: "https://facebook.com/usuario",
-      twitter: "https://twitter.com/usuario"
-    }
-  };
 
   useEffect(() => {
     const updateVideoHeight = () => {
@@ -70,7 +59,7 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
             selectedSection={selectedSection} 
             sections={sections}
             videoHeight={currentVideoHeight}
-            teacher={teacherExample}
+            forceUpdate={forceUpdate}
           />
         </div>
       </div>

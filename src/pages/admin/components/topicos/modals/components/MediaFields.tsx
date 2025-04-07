@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Topico } from "../../TopicosTypes";
 
 interface MediaFieldsProps {
@@ -46,6 +46,17 @@ export const MediaFields: React.FC<MediaFieldsProps> = ({
             <SelectItem value="destino">No destino</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="flex items-center space-x-2 mt-2">
+        <Checkbox 
+          id="abrirEmNovaGuia" 
+          checked={newTopico.abrirEmNovaGuia} 
+          onCheckedChange={(checked) => setNewTopico({ ...newTopico, abrirEmNovaGuia: checked === true })}
+        />
+        <Label htmlFor="abrirEmNovaGuia" className="cursor-pointer">
+          Abrir aula em nova guia
+        </Label>
       </div>
 
       <div>

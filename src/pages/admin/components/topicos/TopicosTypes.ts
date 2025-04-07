@@ -1,4 +1,3 @@
-
 export interface Topico {
   id: string;
   titulo: string;
@@ -15,6 +14,7 @@ export interface Topico {
   professor_nome: string;
   selecionado?: boolean;
   abrirVideoEm?: "site" | "destino";
+  abrirEmNovaGuia?: boolean;
 }
 
 export interface TopicosModalsProps {

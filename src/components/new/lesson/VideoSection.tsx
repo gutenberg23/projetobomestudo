@@ -1,44 +1,43 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import type { Section } from "../types";
-import { Youtube, Instagram, Facebook, MessageCircle, Twitter, Globe } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
-
-interface TeacherInfo {
-  name: string;
-  photoUrl: string;
-  socialMedia: {
-    youtube?: string;
-    instagram?: string;
-    telegram?: string;
-    facebook?: string;
-    twitter?: string;
-    website?: string;
-  };
-}
 
 interface VideoSectionProps {
   selectedSection: string;
   sections: Section[];
   videoHeight: number;
-  teacher?: TeacherInfo;
+  forceUpdate?: number;
 }
 
 export const VideoSection: React.FC<VideoSectionProps> = ({
   selectedSection,
   sections,
   videoHeight,
-  teacher = {
-    name: "Professor(a)",
-    photoUrl: "",
-    socialMedia: {}
-  }
+  forceUpdate = 0
 }) => {
   const currentSection = sections.find(s => s.id === selectedSection);
   const [responsiveHeight, setResponsiveHeight] = useState(videoHeight);
-  const [professorData, setProfessorData] = useState<TeacherInfo | null>(null);
+  
+  // Criar uma referência para armazenar o valor de abrirEmNovaGuia
+  const abrirEmNovaGuiaRef = useRef<boolean | undefined>(undefined);
+  
+  // Atualizar a referência quando o valor mudar
+  useEffect(() => {
+    if (currentSection && currentSection.abrirEmNovaGuia !== undefined) {
+      abrirEmNovaGuiaRef.current = currentSection.abrirEmNovaGuia;
+      console.log('Valor de abrirEmNovaGuia salvo na referência:', abrirEmNovaGuiaRef.current);
+    }
+  }, [currentSection, currentSection?.abrirEmNovaGuia, forceUpdate]);
+
+  // Resetar a referência quando mudar para uma seção diferente
+  useEffect(() => {
+    // Quando a seção mudar, limpar a referência até recebermos o novo valor
+    if (!currentSection) {
+      abrirEmNovaGuiaRef.current = undefined;
+      console.log('Valor de abrirEmNovaGuia na referência foi resetado devido à mudança de seção');
+    }
+  }, [selectedSection]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -56,99 +55,13 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
     };
   }, []);
 
-  // Buscar informações do professor quando o tópico mudar
   useEffect(() => {
-    const fetchProfessorData = async () => {
-      if (!currentSection || !currentSection.professorId) {
-        setProfessorData(null);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('professores')
-          .select('*')
-          .eq('id', currentSection.professorId)
-          .single();
-
-        if (data && !error) {
-          setProfessorData({
-            name: data.nome_completo,
-            photoUrl: data.foto_perfil || "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg",
-            socialMedia: {
-              youtube: data.link_youtube,
-              instagram: data.instagram,
-              facebook: data.facebook,
-              twitter: data.twitter,
-              website: data.website
-            }
-          });
-        } else {
-          // Se não encontrar o professor pelo ID, tenta pelo nome
-          if (currentSection.professorNome) {
-            const { data: nameData, error: nameError } = await supabase
-              .from('professores')
-              .select('*')
-              .ilike('nome_completo', `%${currentSection.professorNome}%`)
-              .single();
-
-            if (nameData && !nameError) {
-              setProfessorData({
-                name: nameData.nome_completo,
-                photoUrl: nameData.foto_perfil || "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg",
-                socialMedia: {
-                  youtube: nameData.link_youtube,
-                  instagram: nameData.instagram,
-                  facebook: nameData.facebook,
-                  twitter: nameData.twitter,
-                  website: nameData.website
-                }
-              });
-            } else {
-              // Usa o nome do professor mesmo sem dados adicionais
-              setProfessorData({
-                name: currentSection.professorNome,
-                photoUrl: "/lovable-uploads/a63635e0-17bb-44d0-b68a-fb02fd8878d7.jpg",
-                socialMedia: {}
-              });
-            }
-          } else {
-            setProfessorData(null);
-          }
-        }
-      } catch (error) {
-        console.error("Erro ao buscar dados do professor:", error);
-        setProfessorData(null);
-      }
-    };
-
-    fetchProfessorData();
-  }, [currentSection]);
-
-  const SocialMediaIcons = () => {
-    const teacherData = professorData || teacher;
-    
-    return <div className="flex items-center gap-3">
-        {teacherData.socialMedia.youtube && <a href={teacherData.socialMedia.youtube} target="_blank" rel="noopener noreferrer" aria-label="Youtube">
-            <Youtube className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
-          </a>}
-        {teacherData.socialMedia.instagram && <a href={teacherData.socialMedia.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-            <Instagram className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
-          </a>}
-        {teacherData.socialMedia.telegram && <a href={teacherData.socialMedia.telegram} target="_blank" rel="noopener noreferrer" aria-label="Telegram">
-            <MessageCircle className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
-          </a>}
-        {teacherData.socialMedia.facebook && <a href={teacherData.socialMedia.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-            <Facebook className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
-          </a>}
-        {teacherData.socialMedia.twitter && <a href={teacherData.socialMedia.twitter} target="_blank" rel="noopener noreferrer" aria-label="Twitter">
-            <Twitter className="w-5 h-5 text-white hover:text-[#5f2ebe] transition-colors" />
-          </a>}
-        {teacherData.socialMedia.website && <a href={teacherData.socialMedia.website} target="_blank" rel="noopener noreferrer" aria-label="Website">
-            <Globe className="w-5 h-5 text-white hover:text-[#ea2be2] transition-colors" />
-          </a>}
-      </div>;
-  };
+    if (currentSection) {
+      console.log('Seção mudou para:', currentSection.title);
+      console.log('abrirEmNovaGuia na mudança de seção:', currentSection.abrirEmNovaGuia);
+      console.log('forceUpdate valor:', forceUpdate);
+    }
+  }, [currentSection, forceUpdate]);
 
   const renderVideoContent = () => {
     if (!currentSection || !currentSection.videoUrl) {
@@ -159,26 +72,80 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
       );
     }
 
-    // Verificar se é um URL do YouTube
+    console.log('=== VIDEO SECTION RENDERING ===');
+    console.log('Seção atual:', currentSection.title);
+    console.log('ID da seção:', currentSection.id);
+    console.log('URL do vídeo:', currentSection.videoUrl);
+    console.log('abrirEmNovaGuia do objeto currentSection:', currentSection.abrirEmNovaGuia);
+    console.log('abrirEmNovaGuia da referência (persistente):', abrirEmNovaGuiaRef.current);
+    console.log('Tipo de abrirEmNovaGuia:', typeof currentSection.abrirEmNovaGuia);
+    
+    // Priorizar o valor da referência se ele existir (isso mantém o estado entre re-renderizações)
+    // caso contrário, usar o valor do objeto currentSection
+    const shouldUseNewTab = abrirEmNovaGuiaRef.current !== undefined 
+      ? checkTrueValue(abrirEmNovaGuiaRef.current) 
+      : checkTrueValue(currentSection.abrirEmNovaGuia);
+    
+    console.log('Resultado da validação final (usando referência persistente):', shouldUseNewTab);
+
+    if (shouldUseNewTab) {
+      console.log('Mostrando thumbnail devido ao checkbox "Abrir aula em nova guia"');
+      return showThumbnail(currentSection.videoUrl);
+    }
+
+    console.log('Mostrando player de vídeo incorporado (padrão)');
+    return showVideoPlayer(currentSection.videoUrl, currentSection.title);
+  };
+
+  const showThumbnail = (videoUrl: string) => {
+    return (
+      <>
+        {/* Título do tópico acima da thumbnail */}
+        <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/70 to-transparent p-4 text-white rounded-t-xl">
+          <h2 className="font-semibold text-lg md:text-xl line-clamp-2">
+            {currentSection?.title || "Aula sem título"}
+          </h2>
+        </div>
+        
+        <div 
+          className="w-full h-full absolute top-0 left-0 rounded-xl cursor-pointer"
+          onClick={() => {
+            window.open(videoUrl, '_blank');
+            // Não fazer nada aqui que altere o estado, apenas abrir a URL
+          }}
+        >
+          <img 
+            src="/lovable-uploads/thumbnail.png" 
+            alt="Thumbnail da aula"
+            className="w-full h-full object-cover rounded-xl"
+          />
+          
+          <div className="absolute inset-0 bg-black/40 rounded-xl">
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const showVideoPlayer = (videoUrl: string, title: string) => {
     const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
-    const match = currentSection.videoUrl.match(youtubeRegex);
+    const match = videoUrl.match(youtubeRegex);
     
     if (match && match[1]) {
       const videoId = match[1];
       return (
         <iframe 
           src={`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0`}
-          title={currentSection.title}
+          title={title}
           className="w-full h-full absolute top-0 left-0 rounded-xl"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         ></iframe>
       );
     } else {
-      // Se não for um URL do YouTube, tenta exibir como vídeo normal
       return (
         <video 
-          src={currentSection.videoUrl} 
+          src={videoUrl} 
           controls 
           className="w-full h-full absolute top-0 left-0 rounded-xl"
         >
@@ -188,43 +155,61 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
     }
   };
 
-  const teacherData = professorData || teacher;
+  const checkTrueValue = (value: any): boolean => {
+    if (value === undefined || value === null) return false;
+    if (typeof value === 'boolean') return value === true;
+    if (typeof value === 'string') return value.toLowerCase() === 'true' || value === '1';
+    if (typeof value === 'number') return value === 1;
+    return false;
+  };
 
-  // Estado para controlar a visibilidade das informações do professor
-  const [showTeacherInfo, setShowTeacherInfo] = useState(false);
+  // Função para alternar diretamente a propriedade abrirEmNovaGuia (apenas para testes)
+  // Comentada por não estar sendo utilizada
+  /*
+  const toggleAbrirEmNovaGuia = async () => {
+    if (!currentSection || !currentSection.id) return;
+    
+    try {
+      console.log('Tentando alternar abrirEmNovaGuia para o tópico:', currentSection.id);
+      console.log('Valor atual:', currentSection.abrirEmNovaGuia);
+      
+      // Alternar o valor atual
+      const newValue = !checkTrueValue(currentSection.abrirEmNovaGuia);
+      
+      // Atualizar no banco de dados
+      const { error } = await supabase
+        .from('topicos')
+        .update({ abrir_em_nova_guia: newValue })
+        .eq('id', currentSection.id);
+        
+      if (error) {
+        console.error('Erro ao atualizar tópico:', error);
+        return;
+      }
+      
+      console.log('Valor de abrirEmNovaGuia alterado para:', newValue);
+      
+      // Atualizar localmente o tópico para efeito imediato
+      // Isso é apenas para visualização, a próxima navegação buscará do banco
+      if (currentSection) {
+        currentSection.abrirEmNovaGuia = newValue;
+        console.log('Atualização local feita. Recarregue a página para ver os efeitos.');
+      }
+      
+    } catch (err) {
+      console.error('Erro ao alternar abrirEmNovaGuia:', err);
+    }
+  };
+  */
 
-  return <div className="video-container w-full">
+  return (
+    <div className="video-container w-full">
       <div 
         className="aspect-video bg-slate-200 rounded-xl relative overflow-hidden" 
         style={{ height: responsiveHeight || 'auto' }}
-        onMouseEnter={() => setShowTeacherInfo(true)}
-        onMouseLeave={() => setShowTeacherInfo(false)}
       >
-        {/* Removendo a div de informações do professor do topo */}
         {renderVideoContent()}
-        
-        {/* Informações do professor na parte inferior, visíveis apenas ao passar o mouse */}
-        <div 
-          className={`absolute bottom-0 left-0 right-0 p-3 z-10 bg-gradient-to-t from-black/70 to-transparent flex flex-col sm:flex-row sm:justify-between sm:items-center w-full rounded-b-xl transition-opacity duration-300 ${showTeacherInfo ? 'opacity-100' : 'opacity-0'}`}
-        >
-          <div className="flex items-center flex-col sm:flex-row">
-            <div className="flex flex-col items-center sm:items-start sm:flex-row">
-              <Avatar className="h-12 w-12 mb-2 sm:mb-0 sm:mr-3 border-2 border-white/30">
-                <AvatarImage src={teacherData.photoUrl} alt={teacherData.name} />
-                <AvatarFallback className="bg-[#f6f8fa] text-[#272f3c]">
-                  {teacherData.name.split(' ').map(name => name[0]).join('').substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-center sm:text-left">
-                <h3 className="font-medium text-white">{teacherData.name}</h3>
-                <p className="text-sm text-white/80 font-extralight">Professor</p>
-              </div>
-            </div>
-          </div>
-          <div className="mt-3 sm:mt-0 flex justify-center sm:justify-start">
-            <SocialMediaIcons />
-          </div>
-        </div>
       </div>
-    </div>;
+    </div>
+  );
 };

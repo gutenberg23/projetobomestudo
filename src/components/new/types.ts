@@ -55,6 +55,7 @@ export interface Section {
   isActive?: boolean;
   professorId?: string;
   professorNome?: string;
+  abrirEmNovaGuia?: boolean;
 }
 
 export interface Lesson {

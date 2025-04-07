@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { 
   TopicosFilter, 
   TopicosTable, 
@@ -24,6 +24,7 @@ import { Topico } from "./components/topicos/TopicosTypes";
 import { QuestionsManager } from "./components/topicos/modals/components/QuestionsManager";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TeacherData {
   id: string;
@@ -68,7 +69,8 @@ const Topicos = () => {
     pdfUrl: "",
     mapaUrl: "",
     resumoUrl: "",
-    musicaUrl: ""
+    musicaUrl: "",
+    abrirEmNovaGuia: false
   });
   const [disciplinas, setDisciplinas] = useState<string[]>([]);
   const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
@@ -212,7 +214,8 @@ const Topicos = () => {
             pdf_url: newTopico.pdfUrl,
             mapa_url: newTopico.mapaUrl,
             resumo_url: newTopico.resumoUrl,
-            musica_url: newTopico.musicaUrl
+            musica_url: newTopico.musicaUrl,
+            abrir_em_nova_guia: newTopico.abrirEmNovaGuia
           }
         ])
         .select();
@@ -234,7 +237,8 @@ const Topicos = () => {
           questoesIds: data[0].questoes_ids || [],
           professor_id: data[0].professor_id || "",
           professor_nome: data[0].professor_nome || "",
-          selecionado: false
+          selecionado: false,
+          abrirEmNovaGuia: data[0].abrir_em_nova_guia || false
         };
         
         setTopicos([...topicos, newCreatedTopico]);
@@ -250,7 +254,8 @@ const Topicos = () => {
           pdfUrl: "",
           mapaUrl: "",
           resumoUrl: "",
-          musicaUrl: ""
+          musicaUrl: "",
+          abrirEmNovaGuia: false
         });
         
         setIsCreateModalOpen(false);
@@ -427,6 +432,17 @@ const Topicos = () => {
               <p className="text-xs text-[#67748a] mt-1">
                 Links do YouTube serão automaticamente convertidos para o formato de incorporação.
               </p>
+            </div>
+            
+            <div className="flex items-center space-x-2 mb-4">
+              <Checkbox
+                id="abrir-em-nova-guia"
+                checked={newTopico.abrirEmNovaGuia || false}
+                onCheckedChange={(checked) => setNewTopico({ ...newTopico, abrirEmNovaGuia: checked === true })}
+              />
+              <Label htmlFor="abrir-em-nova-guia" className="cursor-pointer text-sm text-[#272f3c]">
+                Abrir aula em nova guia
+              </Label>
             </div>
             
             <div className="space-y-2">

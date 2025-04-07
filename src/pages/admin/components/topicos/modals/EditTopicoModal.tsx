@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Topico } from "../TopicosTypes";
 import { QuestionsManager } from "./components/QuestionsManager";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,6 +44,8 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
 
   useEffect(() => {
     if (isOpen && topico) {
+      console.log('Abrindo modal com tópico:', topico);
+      console.log('Valor de abrirEmNovaGuia:', topico.abrirEmNovaGuia);
       setEditedTopico({ ...topico });
       fetchDisciplinas();
       fetchTeachers();
@@ -198,33 +201,19 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
             professor_nome = selectedTeacher.nomeCompleto;
           }
         }
-
-        const { error } = await supabase
-          .from('topicos')
-          .update({ 
-            nome: editedTopico.titulo,
-            disciplina: editedTopico.disciplina,
-            patrocinador: editedTopico.patrocinador,
-            questoes_ids: editedTopico.questoesIds,
-            professor_id: editedTopico.professor_id,
-            professor_nome: professor_nome,
-            video_url: editedTopico.videoUrl,
-            pdf_url: editedTopico.pdfUrl,
-            mapa_url: editedTopico.mapaUrl,
-            resumo_url: editedTopico.resumoUrl,
-            musica_url: editedTopico.musicaUrl
-          })
-          .eq('id', editedTopico.id);
-
-        if (error) throw error;
         
-        onSave({
+        // Atualizar o tópico com o nome do professor atualizado
+        const topicoAtualizado = {
           ...editedTopico,
           professor_nome: professor_nome
-        });
-        toast.success("Tópico atualizado com sucesso!");
+        };
+        
+        // Chamar a função de salvamento externa em vez de fazer a atualização direta
+        onSave(topicoAtualizado);
+        
+        // Fechar o modal e mostrar mensagem de sucesso é responsabilidade da função onSave
       } catch (error) {
-        console.error("Erro ao atualizar tópico:", error);
+        console.error("Erro ao preparar tópico para atualização:", error);
         toast.error("Erro ao atualizar o tópico. Tente novamente.");
       }
     }
@@ -305,8 +294,17 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
               id="edit-video-url"
               value={editedTopico.videoUrl}
               onChange={(e) => setEditedTopico({ ...editedTopico, videoUrl: e.target.value })}
-              placeholder="https://exemplo.com/video"
             />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="edit-abrir-em-nova-guia"
+              checked={editedTopico.abrirEmNovaGuia || false}
+              onCheckedChange={(checked) => setEditedTopico({ ...editedTopico, abrirEmNovaGuia: checked === true })}
+            />
+            <Label htmlFor="edit-abrir-em-nova-guia" className="cursor-pointer text-sm text-[#272f3c]">
+              Abrir aula em nova guia
+            </Label>
           </div>
           <div>
             <Label htmlFor="edit-pdf-url">Link da Aula em PDF</Label>
@@ -314,7 +312,6 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
               id="edit-pdf-url"
               value={editedTopico.pdfUrl}
               onChange={(e) => setEditedTopico({ ...editedTopico, pdfUrl: e.target.value })}
-              placeholder="https://exemplo.com/aula.pdf"
             />
           </div>
           <div>

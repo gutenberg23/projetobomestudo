@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import type { Lesson, Question, QuestionOption } from "./types";
+import type { Lesson } from "./types";
 import ItensDaAula from "./ItensDaAula";
 import { QuestionCard } from "./QuestionCard";
 import { LessonHeader } from "./lesson/LessonHeader";
@@ -10,19 +10,16 @@ import { useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
-import { Json } from "@/integrations/supabase/types";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import { useQuestions } from "@/hooks/useQuestions";
 
 interface LessonCardProps {
   lesson: Lesson;
-  question?: Question;
 }
 
 export const LessonCard: React.FC<LessonCardProps> = ({
-  lesson,
-  question
+  lesson
 }) => {
   const [selectedSection, setSelectedSection] = useState<string>(lesson.sections && lesson.sections.length > 0 ? lesson.sections[0].id : "");
   const [completedSections, setCompletedSections] = useState<string[]>([]);
@@ -35,12 +32,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
-  const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
-  const [showExplanation, setShowExplanation] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   // Usar o novo hook useQuestions
   const { 
@@ -234,6 +228,17 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           musica: data?.musica_url
         });
         
+        // Mapear explicitamente a propriedade abrir_em_nova_guia para abrirEmNovaGuia no objeto currentSection
+        if (lesson.sections && lesson.sections.length > 0 && data) {
+          const currentSection = lesson.sections.find(section => section.id === selectedSection);
+          if (currentSection) {
+            currentSection.abrirEmNovaGuia = data.abrir_em_nova_guia === true;
+            console.log('Valor de abrir_em_nova_guia carregado do banco:', data.abrir_em_nova_guia);
+            console.log('Valor mapeado para abrirEmNovaGuia:', currentSection.abrirEmNovaGuia);
+            setForceUpdate(prev => prev + 1); // Forçar re-renderização
+          }
+        }
+        
         setTopicData(data);
       } catch (error) {
         console.error('Erro ao buscar dados do tópico:', error);
@@ -242,32 +247,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     
     fetchTopicData();
   }, [selectedSection]);
-
-  const convertToQuestionOptions = (options: any): QuestionOption[] => {
-    if (!options) return [];
-    let optionsArray: any[] = [];
-    if (Array.isArray(options)) {
-      optionsArray = options;
-    } else if (typeof options === 'object') {
-      optionsArray = Object.values(options);
-    } else {
-      return [];
-    }
-    return optionsArray.map(opt => {
-      if (typeof opt === 'string') {
-        return {
-          id: `opt-${Math.random().toString(36).substring(2, 9)}`,
-          text: opt,
-          isCorrect: false
-        };
-      }
-      return {
-        id: typeof opt.id === 'string' ? opt.id : `opt-${Math.random().toString(36).substring(2, 9)}`,
-        text: typeof opt.text === 'string' ? opt.text : opt.text || '',
-        isCorrect: Boolean(opt.isCorrect)
-      };
-    });
-  };
 
   const checkScroll = () => {
     if (sectionsContainerRef.current) {
@@ -331,14 +310,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
     setDisabledOptions(prev => prev.includes(optionId) ? prev.filter(id => id !== optionId) : [...prev, optionId]);
   };
 
-  const handleOptionSelect = (optionId: string) => {
-    setSelectedOptionId(optionId);
-  };
-
-  const handleCommentSubmit = (comment: string) => {
-    console.log("Comentário enviado:", comment);
-  };
-
   return (
     <article ref={cardRef} className="mb-4 bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
       <LessonHeader
@@ -362,6 +333,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             setVideoHeight={setVideoHeight}
             onSectionClick={handleSectionClick}
             onToggleCompletion={toggleCompletion}
+            forceUpdate={forceUpdate}
           />
           <ItensDaAula
             setShowQuestions={handleQuestionButtonClick}

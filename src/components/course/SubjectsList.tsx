@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Subject as SubjectComponent } from "./components/Subject";
-import { Subject, Lesson } from "./types/subjects";
+import { Subject } from "./types/subjects";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { toast } from "sonner";
@@ -10,6 +10,14 @@ import { Spinner } from "@/components/ui/spinner";
 interface SubjectsListProps {
   onSubjectsCountChange?: (count: number, data?: any[]) => void;
   courseId?: string;
+}
+
+// Interface para questão
+interface Questao {
+  id: string;
+  titulo: string;
+  texto: string;
+  [key: string]: any; // Para outras propriedades que possam existir
 }
 
 export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: SubjectsListProps) => {
@@ -119,7 +127,7 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                       // Para cada aula, buscar os tópicos
                       const aulasComTopicos = await Promise.all(
                         aulasData.map(async (aula) => {
-                          let questao = null;
+                          let questao: Questao | null = null;
                           
                           // Buscar questão associada à aula se houver
                           if (aula.questoes_ids && aula.questoes_ids.length > 0) {
@@ -171,7 +179,12 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                             if (topicosData && !topicosError) {
                               return {
                                 ...aula,
-                                topicos: topicosData,
+                                topicos: topicosData.map((topico: any) => ({
+                                  ...topico,
+                                  // Mapear explicitamente o campo abrir_em_nova_guia para abrirEmNovaGuia
+                                  // Garantir que seja um valor booleano
+                                  abrirEmNovaGuia: topico.abrir_em_nova_guia === true
+                                })),
                                 questao: questao
                               };
                             }
@@ -191,7 +204,7 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                           duration: "0",
                           description: aula.descricao || '',
                           rating: 'V',
-                          sections: aula.topicos.map(topico => ({
+                          sections: aula.topicos.map((topico: any) => ({
                             id: topico.id,
                             title: topico.nome,
                             isActive: false,

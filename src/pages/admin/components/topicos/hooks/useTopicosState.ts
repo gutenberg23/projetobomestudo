@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Topico } from "../TopicosTypes";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,7 +48,8 @@ export const useTopicosState = () => {
           questoesIds: item.questoes_ids || [],
           professor_id: item.professor_id || "",
           professor_nome: item.professor_nome || "",
-          selecionado: false
+          selecionado: false,
+          abrirEmNovaGuia: item.abrir_em_nova_guia || false
         })) || [];
         
         setTopicos(formattedTopicos);
