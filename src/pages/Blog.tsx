@@ -59,7 +59,10 @@ const Blog = () => {
       const selectedState = STATES.find(s => s.id === activeState);
       if (selectedState) {
         result = result.filter(post => 
-          post.tags?.some(tag => tag.toLowerCase() === selectedState.value.toLowerCase())
+          // Verificar se o estado do post corresponde ao estado selecionado (nome ou sigla)
+          (post.state && 
+            (post.state.toLowerCase() === selectedState.value.toLowerCase() || 
+             post.state.toLowerCase() === selectedState.name.toLowerCase()))
         );
       }
     }
@@ -109,31 +112,38 @@ const Blog = () => {
 
   return (
     <BlogLayout>
+      {/* Filtro de estados - ocupa toda a largura */}
+      <div className="mb-6">
+        <StateFilter 
+          states={STATES} 
+          activeState={activeState} 
+          onSelectState={handleStateSelect} 
+        />
+      </div>
+      
+      {/* Posts em destaque - ocupa toda a largura */}
+      {!searchTerm && !activeState && featuredPosts.length > 0 && (
+        <FeaturedPosts posts={featuredPosts} />
+      )}
+      
+      {/* Layout de duas colunas abaixo dos destaques */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-3">
-          {/* Filtro de estados - agora ocupa toda a largura */}
-          <StateFilter 
-            states={STATES} 
-            activeState={activeState} 
-            onSelectState={handleStateSelect} 
-          />
-        </div>
-        
         <div className="lg:col-span-2">
-          {/* Posts em destaque (apenas na página inicial sem filtros) */}
-          {!searchTerm && !activeState && featuredPosts.length > 0 && (
-            <FeaturedPosts posts={featuredPosts} />
-          )}
+          {/* Título da seção de posts */}
+          <div className="flex items-center mb-6">
+            <h2 className="text-2xl font-bold text-[#272f3c]">Todos os Posts</h2>
+            <div className="ml-4 flex-1 h-0.5 bg-gray-200"></div>
+          </div>
           
           {/* Listagem de posts */}
-          <div className="mt-6">
+          <div>
             <BlogList posts={filteredPosts} />
             
             {filteredPosts.length === 0 && (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
                 <p className="text-gray-500">Nenhum post encontrado com os filtros selecionados.</p>
                 <button 
-                  className="mt-4 text-primary hover:underline"
+                  className="mt-4 text-[#5f2ebe] hover:underline"
                   onClick={() => {
                     setSearchTerm("");
                     setActiveState(null);
@@ -151,7 +161,7 @@ const Blog = () => {
           <SidebarPosts 
             title="Posts Populares" 
             posts={popularPosts} 
-            icon={<TrendingUp className="h-5 w-5 mr-2 text-primary" />}
+            icon={<TrendingUp className="h-5 w-5 mr-2 text-[#5f2ebe]" />}
           />
           
           {/* Últimas notícias */}

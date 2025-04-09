@@ -31,6 +31,8 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Perfil from "./pages/Perfil";
 import DirectLogin from "@/pages/DirectLogin";
+import RegionPosts from "@/pages/RegionPosts";
+import StatePosts from "@/pages/StatePosts";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -138,6 +140,18 @@ export default function App() {
                   <Route path="/blog/autor/:author" element={
                     <ConfigGuard configKey="showBlogPage">
                       <AuthorPosts />
+                    </ConfigGuard>
+                  } />
+
+                  <Route path="/blog/regiao/:regionId" element={
+                    <ConfigGuard configKey="showBlogPage">
+                      <RegionPosts />
+                    </ConfigGuard>
+                  } />
+
+                  <Route path="/blog/estado/:stateId" element={
+                    <ConfigGuard configKey="showBlogPage">
+                      <StatePosts />
                     </ConfigGuard>
                   } />
                   

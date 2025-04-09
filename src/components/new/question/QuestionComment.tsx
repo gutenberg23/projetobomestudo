@@ -41,18 +41,12 @@ export const QuestionComment: React.FC<QuestionCommentProps> = ({
         </div>
         <button
           onClick={() => onToggleLike(comment.id)}
-          className="flex gap-2.5 items-center py-2.5 text-base whitespace-nowrap transition-colors ml-auto"
+          className={`flex items-center gap-1 text-sm ${
+            isLiked ? 'text-[#5f2ebe]' : 'text-gray-500 hover:text-[#5f2ebe]'
+          }`}
         >
-          <span className={isLiked ? "text-fuchsia-500" : "text-slate-500"}>
-            {comment.likes}
-          </span>
-          <Heart
-            className={`w-6 h-6 ${
-              isLiked
-                ? "fill-fuchsia-500 text-fuchsia-500"
-                : "text-slate-500"
-            }`}
-          />
+          <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+          <span>{comment.likes}</span>
         </button>
       </div>
     </article>

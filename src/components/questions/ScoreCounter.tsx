@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Minimize2, Maximize2, Check, X as XIcon } from 'lucide-react';
+import { X, Minimize2, Maximize2, Check, X as XIcon, Play, Pause, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ScoreCounterProps {
@@ -14,9 +14,19 @@ export function ScoreCounter({ onClose }: ScoreCounterProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<'correct' | 'incorrect' | null>(null);
   const [showAnimation, setShowAnimation] = useState(false);
+  const [time, setTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
 
   const total = correct + incorrect;
   const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+  // Formatar o tempo em HH:MM:SS
+  const formatTime = (timeInSeconds: number) => {
+    const hours = Math.floor(timeInSeconds / 3600);
+    const minutes = Math.floor((timeInSeconds % 3600) / 60);
+    const seconds = timeInSeconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   // Função para ser chamada quando o usuário responde uma questão
   const handleAnswer = (isCorrect: boolean) => {
@@ -30,6 +40,24 @@ export function ScoreCounter({ onClose }: ScoreCounterProps) {
     setShowAnimation(true);
     setTimeout(() => setShowAnimation(false), 1000);
   };
+
+  // Controles do cronômetro
+  const toggleTimer = () => setIsRunning(!isRunning);
+  const resetTimer = () => {
+    setTime(0);
+    setIsRunning(false);
+  };
+
+  // Efeito para atualizar o cronômetro
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRunning) {
+      interval = setInterval(() => {
+        setTime(prevTime => prevTime + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning]);
 
   // Expor a função handleAnswer globalmente para ser acessada pelo QuestionCard
   useEffect(() => {
@@ -65,7 +93,14 @@ export function ScoreCounter({ onClose }: ScoreCounterProps) {
       <Card className={`fixed bottom-4 right-4 bg-white shadow-lg rounded-lg z-40 transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-64'}`}>
         <div className="flex justify-between items-center p-4">
           <h3 className="font-medium">
-            {isMinimized ? `${correct}/${total} (${percentage}%)` : 'Seu Progresso'}
+            {isMinimized ? (
+              <div className="flex items-center gap-2">
+                <span>{`${correct}/${total} (${percentage}%)`}</span>
+                <span className="text-gray-600">{formatTime(time)}</span>
+              </div>
+            ) : (
+              'Seu Progresso'
+            )}
           </h3>
           <div className="flex items-center gap-1">
             <Button 
@@ -113,6 +148,31 @@ export function ScoreCounter({ onClose }: ScoreCounterProps) {
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Aproveitamento</span>
               <span className="font-medium">{percentage}%</span>
+            </div>
+
+            <div className="border-t pt-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600">Tempo</span>
+                <span className="font-medium">{formatTime(time)}</span>
+              </div>
+              <div className="flex justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleTimer}
+                  className="h-8 px-3"
+                >
+                  {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetTimer}
+                  className="h-8 px-3"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         )}

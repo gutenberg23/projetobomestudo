@@ -1,7 +1,7 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PaginationProps {
   currentPage: number;
@@ -32,7 +32,10 @@ export const BlogPagination: React.FC<PaginationProps> = ({
         variant="outline" 
         onClick={handlePreviousPage} 
         disabled={currentPage === 1}
-        className="flex items-center"
+        className={cn(
+          "flex items-center border-[#5f2ebe] text-[#5f2ebe]",
+          "hover:bg-[#ede7f9] hover:text-[#5f2ebe]"
+        )}
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
         Anterior
@@ -46,7 +49,10 @@ export const BlogPagination: React.FC<PaginationProps> = ({
         variant="outline" 
         onClick={handleNextPage} 
         disabled={currentPage === totalPages}
-        className="flex items-center"
+        className={cn(
+          "flex items-center border-[#5f2ebe] text-[#5f2ebe]",
+          "hover:bg-[#ede7f9] hover:text-[#5f2ebe]"
+        )}
       >
         Próxima
         <ArrowRight className="h-4 w-4 ml-2" />
