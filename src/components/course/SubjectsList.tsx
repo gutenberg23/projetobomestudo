@@ -66,6 +66,8 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
             .eq('id', realId)
             .maybeSingle();
           
+          console.log("Dados da disciplina:", disciplinaData, "Erro:", disciplinaError);
+          
           if (!disciplinaData || disciplinaError) {
             // Tentar buscar pelo ID original
             const { data: cursoOriginal } = await supabase
@@ -82,9 +84,138 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
             }
           } else {
             // É uma disciplina
+            console.log("É uma disciplina avulsa:", disciplinaData.titulo);
             setIsCurso(false);
             
-            // ... código existente para processar disciplina ...
+            // Criar um subject a partir da disciplina
+            const formattedSubject: Subject = {
+              id: disciplinaData.id,
+              name: disciplinaData.titulo,
+              rating: disciplinaData.descricao || "0",
+              lessons: [],
+            };
+            
+            // Carregar as aulas da disciplina
+            if (disciplinaData.aulas_ids && disciplinaData.aulas_ids.length > 0) {
+              console.log("Buscando aulas para disciplina avulsa:", disciplinaData.titulo, disciplinaData.aulas_ids);
+            
+              try {
+                const { data: aulasData, error: aulasError } = await supabase
+                  .from('aulas')
+                  .select('*')
+                  .in('id', disciplinaData.aulas_ids);
+                  
+                console.log("Aulas da disciplina avulsa:", aulasData, "Erro:", aulasError);
+                
+                if (aulasData && !aulasError) {
+                  // Para cada aula, buscar os tópicos
+                  const aulasComTopicos = await Promise.all(
+                    aulasData.map(async (aula) => {
+                      let questao: Questao | null = null;
+                      
+                      // Buscar questão associada à aula se houver
+                      if (aula.questoes_ids && aula.questoes_ids.length > 0) {
+                        try {
+                          const questaoId = aula.questoes_ids[0];
+                          
+                          // Verificar se já temos no cache
+                          if (questoesCache[questaoId]) {
+                            questao = questoesCache[questaoId];
+                          } else {
+                            // Buscar questão
+                            const { data: questaoData, error: questaoError } = await supabase
+                              .from('questoes')
+                              .select('*')
+                              .eq('id', questaoId)
+                              .maybeSingle();
+                            
+                            if (questaoData && !questaoError) {
+                              questao = {
+                                id: questaoData.id,
+                                titulo: "Questão de exemplo",
+                                texto: questaoData.content,
+                                // ... outros campos necessários
+                              };
+                              
+                              // Adicionar ao cache
+                              setQuestoesCache(prev => ({
+                                ...prev,
+                                [questaoId]: questao
+                              }));
+                            }
+                          }
+                        } catch (questaoError) {
+                          console.error("Erro ao buscar questão:", questaoError);
+                        }
+                      }
+                      
+                      // Buscar tópicos da aula
+                      if (aula.topicos_ids && aula.topicos_ids.length > 0) {
+                        console.log("Buscando tópicos para aula:", aula.titulo, aula.topicos_ids);
+                        
+                        const { data: topicosData, error: topicosError } = await supabase
+                          .from('topicos')
+                          .select('*')
+                          .in('id', aula.topicos_ids);
+                        
+                        console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
+                        
+                        if (topicosData && !topicosError) {
+                          return {
+                            ...aula,
+                            topicos: topicosData.map((topico: any) => ({
+                              ...topico,
+                              // Mapear explicitamente o campo abrir_em_nova_guia para abrirEmNovaGuia
+                              // Garantir que seja um valor booleano
+                              abrirEmNovaGuia: topico.abrir_em_nova_guia === true
+                            })),
+                            questao: questao
+                          };
+                        }
+                      }
+                      
+                      return {
+                        ...aula,
+                        topicos: [],
+                        questao: questao
+                      };
+                    })
+                  );
+                    
+                  formattedSubject.lessons = aulasComTopicos.map(aula => ({
+                    id: aula.id,
+                    title: aula.titulo,
+                    duration: "0",
+                    description: aula.descricao || '',
+                    rating: 'V',
+                    sections: aula.topicos.map((topico: any) => ({
+                      id: topico.id,
+                      title: topico.nome,
+                      isActive: false,
+                      contentType: "video",
+                      duration: 0,
+                      videoUrl: topico.video_url,
+                      textContent: "",
+                      professorId: topico.professor_id,
+                      professorNome: topico.professor_nome
+                    })),
+                    question: aula.questao
+                  }));
+                }
+              } catch (aulasError) {
+                console.error("Erro ao buscar aulas:", aulasError);
+              }
+            }
+            
+            if (isMounted) {
+              setSubjects([formattedSubject]);
+              if (onSubjectsCountChange) {
+                onSubjectsCountChange(1, [disciplinaData]);
+                console.log("SubjectsList - Enviando dados da disciplina avulsa:", disciplinaData);
+              }
+              // Marcar que os dados foram buscados
+              setDataFetched(true);
+            }
           }
         } else {
           // É um curso

@@ -56,8 +56,6 @@ BEGIN
                 'raw_user_meta_data', v_user.raw_user_meta_data
             )
         );
-
-        -- O trigger sync_profiles_to_perfil irá sincronizar automaticamente com a tabela perfil
         
         RAISE NOTICE 'Usuário sincronizado: % (%)', v_user.email, v_user.id;
     END LOOP;

@@ -42,6 +42,19 @@ console.log('Supabase client configurado com sucesso');
 // Função para atualizar o perfil do usuário para administrador
 export const makeUserAdmin = async (email: string) => {
   try {
+    // Primeiro, buscar o usuário pelo email para obter o ID
+    const { data: userData, error: findError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (findError || !userData) {
+      console.error('Erro ao encontrar usuário pelo email:', findError);
+      throw findError || new Error('Usuário não encontrado');
+    }
+
+    // Atualizar usando o ID em vez do email
     const { data: user, error: userError } = await supabase
       .from('profiles')
       .update({
@@ -49,7 +62,8 @@ export const makeUserAdmin = async (email: string) => {
         nivel: 'admin',
         status: 'ativo'
       })
-      .eq('email', email);
+      .eq('id', userData.id)
+      .single();
 
     if (userError) {
       console.error('Erro ao atualizar perfil:', userError);
@@ -64,16 +78,16 @@ export const makeUserAdmin = async (email: string) => {
   }
 };
 
-// Teste de conexão
+// Teste de conexão - modificado para ser mais seguro
 (async () => {
   try {
-    // Primeiro testar sem autenticação para isolar problemas de autenticação vs. conectividade
+    // Primeiro testar sem autenticação para isolar problemas
     const { error } = await supabase.from('profiles').select('count').limit(1);
     
     if (error) {
       console.error('Erro ao conectar com o Supabase:', error.message);
       
-      // Se o erro for de permissão, test se conseguimos acessar tabelas públicas
+      // Se o erro for de permissão, testar se conseguimos acessar tabelas públicas
       try {
         const { error: authError } = await supabase.auth.getSession();
         if (authError) {
@@ -91,8 +105,8 @@ export const makeUserAdmin = async (email: string) => {
     // Verificar site URLs permitidos (apenas log)
     console.log('IMPORTANTE: Verifique se o domínio', currentDomain, 'está na lista de Site URLs permitidos no Dashboard do Supabase -> Authentication -> URL Configuration');
 
-    // Tentar atualizar o perfil do usuário para administrador
-    await makeUserAdmin('gutenberg23@gmail.com');
+    // NÃO executar chamadas automáticas que possam gerar erros
+    // A chamada a makeUserAdmin foi removida para evitar erros
   } catch (err) {
     console.error('Erro ao testar conexão com o Supabase:', err);
   }

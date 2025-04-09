@@ -64,31 +64,55 @@ export const CourseLayout = () => {
       try {
         const realCourseId = extractIdFromFriendlyUrl(courseId);
         
-        // Buscar o curso para obter os IDs das disciplinas
+        // Verificar primeiro se é um curso ou uma disciplina
+        // Verificar se é um curso
         const { data: cursoData, error: cursoError } = await supabase
           .from('cursos')
           .select('disciplinas_ids')
           .eq('id', realCourseId)
           .single();
           
-        if (cursoError || !cursoData?.disciplinas_ids) {
-          console.error('Erro ao buscar curso:', cursoError);
-          return;
-        }
-        
-        // Buscar todas as disciplinas do curso
-        const { data: disciplinasData, error: disciplinasError } = await supabase
-          .from('disciplinas')
-          .select('*')
-          .in('id', cursoData.disciplinas_ids);
+        if (cursoError || !cursoData) {
+          console.log("Não é um curso, verificando se é uma disciplina avulsa...");
           
-        if (disciplinasError || !disciplinasData) {
-          console.error('Erro ao buscar disciplinas:', disciplinasError);
+          // Se não for um curso, verificar se é uma disciplina
+          const { data: disciplinaData, error: disciplinaError } = await supabase
+            .from('disciplinas')
+            .select('*')
+            .eq('id', realCourseId)
+            .single();
+            
+          if (disciplinaError || !disciplinaData) {
+            console.error('Erro ao buscar curso/disciplina:', cursoError, disciplinaError);
+            return;
+          }
+          
+          // É uma disciplina avulsa - não precisamos fazer nada porque o SubjectsList já irá carregá-la
+          console.log("É uma disciplina avulsa:", disciplinaData.titulo);
+          setSubjectsData([disciplinaData]);
+          setSubjectsCount(1);
           return;
         }
         
-        setSubjectsData(disciplinasData);
-        setSubjectsCount(disciplinasData.length);
+        // É um curso, buscar suas disciplinas
+        if (cursoData.disciplinas_ids && cursoData.disciplinas_ids.length > 0) {
+          const { data: disciplinasData, error: disciplinasError } = await supabase
+            .from('disciplinas')
+            .select('*')
+            .in('id', cursoData.disciplinas_ids);
+            
+          if (disciplinasError || !disciplinasData) {
+            console.error('Erro ao buscar disciplinas:', disciplinasError);
+            return;
+          }
+          
+          setSubjectsData(disciplinasData);
+          setSubjectsCount(disciplinasData.length);
+        } else {
+          console.log("Curso sem disciplinas");
+          setSubjectsData([]);
+          setSubjectsCount(0);
+        }
       } catch (error) {
         console.error('Erro ao buscar dados das disciplinas:', error);
       }

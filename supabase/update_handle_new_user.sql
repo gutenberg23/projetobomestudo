@@ -40,8 +40,6 @@ BEGIN
     )
   );
   
-  -- O trigger sync_profiles_to_perfil irá sincronizar automaticamente com a tabela perfil
-  
   -- Registrar evento de criação de conta
   INSERT INTO public.auth_logs (
     user_id,

@@ -49,17 +49,6 @@ export const useUserActions = (state: UseUsersStateReturn) => {
       
       if (profilesError) throw profilesError;
 
-      // Atualizar na tabela perfil
-      const { error: perfilError } = await supabase
-        .from('perfil')
-        .update({ 
-          status: novoStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-      
-      if (perfilError) throw perfilError;
-      
       // Atualizar na interface
       const novosUsuarios = usuarios.map(usuario => 
         usuario.id === id ? { ...usuario, status: novoStatus } : usuario
@@ -103,14 +92,6 @@ export const useUserActions = (state: UseUsersStateReturn) => {
       if (!currentUserProfile || currentUserProfile.nivel !== 'admin') {
         throw new Error('Apenas administradores podem excluir usuários');
       }
-
-      // Excluir da tabela perfil primeiro (devido à chave estrangeira)
-      const { error: perfilError } = await supabase
-        .from('perfil')
-        .delete()
-        .eq('id', userId);
-      
-      if (perfilError) throw perfilError;
 
       // Excluir da tabela profiles
       const { error: profilesError } = await supabase
@@ -215,13 +196,6 @@ export const useUserActions = (state: UseUsersStateReturn) => {
         .insert([baseUserData]);
       
       if (profilesError) throw profilesError;
-
-      // Inserir na tabela perfil
-      const { error: perfilError } = await supabase
-        .from('perfil')
-        .insert([baseUserData]);
-      
-      if (perfilError) throw perfilError;
 
       // Adicionar o novo usuário à lista
       const novoUsuarioData: UserData = {
@@ -374,17 +348,9 @@ export const useUserActions = (state: UseUsersStateReturn) => {
       
       if (profilesError) throw profilesError;
 
-      // Atualizar na tabela perfil
-      const { error: perfilError } = await supabase
-        .from('perfil')
-        .update(cleanUserData)
-        .eq('id', usuarioSelecionado.id);
-      
-      if (perfilError) throw perfilError;
-
       // Buscar dados atualizados do usuário
       const { data: perfilAtualizado, error: perfilError2 } = await supabase
-        .from('perfil')
+        .from('profiles')
         .select('*')
         .eq('id', usuarioSelecionado.id)
         .single();

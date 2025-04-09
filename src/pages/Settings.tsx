@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
 import { toast } from "react-toastify";
@@ -101,31 +101,62 @@ const Settings = () => {
     cidade: "",
     foto_perfil: "",
   });
+  const formInitializedRef = useRef(false);
 
   useEffect(() => {
-    if (user) {
-      setFormData({
-        nome: user.nome || "",
-        sobrenome: user.sobrenome || "",
-        nome_social: user.nome_social || "",
-        email: user.email || "",
-        nascimento: user.nascimento || "",
-        sexo: user.sexo || "",
-        escolaridade: user.escolaridade || "",
-        estado_civil: user.estado_civil || "",
-        celular: user.celular || "",
-        telefone: user.telefone || "",
-        cep: user.cep || "",
-        endereco: user.endereco || "",
-        numero: user.numero || "",
-        bairro: user.bairro || "",
-        complemento: user.complemento || "",
-        estado: user.estado || "",
-        cidade: user.cidade || "",
-        foto_perfil: user.foto_perfil || "",
-      });
-    }
-  }, [user]);
+    if (!user?.id) return;
+    
+    const loadProfileData = async () => {
+      try {
+        console.log("Buscando dados do perfil para o usuário:", user.id);
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (error) {
+          console.error("Erro ao buscar perfil:", error);
+          toast("Erro ao carregar dados do perfil", {
+            type: "error"
+          });
+          return;
+        }
+        
+        if (data) {
+          console.log("Dados do perfil encontrados:", data);
+          setFormData({
+            nome: data.nome || "",
+            sobrenome: data.sobrenome || "",
+            nome_social: data.nome_social || "",
+            email: data.email || "",
+            nascimento: data.nascimento || "",
+            sexo: data.sexo || "",
+            escolaridade: data.escolaridade || "",
+            estado_civil: data.estado_civil || "",
+            celular: data.celular || "",
+            telefone: data.telefone || "",
+            cep: data.cep || "",
+            endereco: data.endereco || "",
+            numero: data.numero || "",
+            bairro: data.bairro || "",
+            complemento: data.complemento || "",
+            estado: data.estado || "",
+            cidade: data.cidade || "",
+            foto_perfil: data.foto_perfil || ""
+          });
+        }
+      } catch (err) {
+        console.error("Erro ao carregar dados:", err);
+        toast("Erro ao carregar dados do perfil", {
+          type: "error"
+        });
+      }
+    };
+
+    loadProfileData();
+  }, [user?.id]);
 
   const handleChange = (field: keyof FormData, value: string) => {
     // Remove todos os caracteres não numéricos para campos específicos
@@ -161,14 +192,15 @@ const Settings = () => {
       // Gerar nome único para o arquivo
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `profile-photos/${user?.id}/${fileName}`;
+      const filePath = `${user?.id}/${fileName}`;
 
       // Fazer upload para o Supabase Storage
       const { error: uploadError } = await supabase.storage
-        .from("files")
+        .from("profile-photos")
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error("Erro de upload:", uploadError);
         toast(uploadError.message, {
           type: "error"
         });
@@ -177,7 +209,7 @@ const Settings = () => {
 
       // Obter URL pública da imagem
       const { data: { publicUrl } } = supabase.storage
-        .from("files")
+        .from("profile-photos")
         .getPublicUrl(filePath);
 
       // Atualizar foto do usuário no banco
@@ -230,6 +262,84 @@ const Settings = () => {
       setLoading(false);
     }
   };
+
+  // Função para buscar dados diretamente do banco
+  const debugFetchProfile = async () => {
+    if (!user?.id) {
+      toast("Usuário não encontrado", {
+        type: "error"
+      });
+      return;
+    }
+    
+    try {
+      console.log("Buscando dados diretamente da tabela profiles para id:", user.id);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      console.log("Resultado direto da consulta a profiles:", { data, error });
+      
+      if (error) {
+        toast(error.message, {
+          type: "error"
+        });
+        return;
+      }
+      
+      if (data) {
+        toast("Perfil carregado com sucesso", {
+          type: "success"
+        });
+        
+        // Mostrar os dados encontrados
+        console.log("Dados completos do perfil:", data);
+        
+        // Preencher o formulário com os dados encontrados
+        setFormData({
+          nome: data.nome || "",
+          sobrenome: data.sobrenome || "",
+          nome_social: data.nome_social || "",
+          email: data.email || "",
+          nascimento: data.nascimento || "",
+          sexo: data.sexo || "",
+          escolaridade: data.escolaridade || "",
+          estado_civil: data.estado_civil || "",
+          celular: data.celular || "",
+          telefone: data.telefone || "",
+          cep: data.cep || "",
+          endereco: data.endereco || "",
+          numero: data.numero || "",
+          bairro: data.bairro || "",
+          complemento: data.complemento || "",
+          estado: data.estado || "",
+          cidade: data.cidade || "",
+          foto_perfil: data.foto_perfil || ""
+        });
+        
+        formInitializedRef.current = true;
+      } else {
+        toast("Não foi possível encontrar dados do perfil", {
+          type: "error"
+        });
+      }
+    } catch (err) {
+      console.error("Erro ao buscar dados:", err);
+      toast("Erro ao buscar dados do perfil", {
+        type: "error"
+      });
+    }
+  };
+  
+  // Executar debug no carregamento se o formulário não estiver inicializado
+  useEffect(() => {
+    if (!formInitializedRef.current && user?.id) {
+      debugFetchProfile();
+    }
+  }, [user?.id]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -521,6 +631,17 @@ const Settings = () => {
                     disabled={loading}
                   >
                     {loading ? "Salvando..." : "Salvar alterações"}
+                  </Button>
+                </div>
+
+                <div className="mt-4 mb-2 flex justify-end">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    className="ml-2"
+                    onClick={debugFetchProfile}
+                  >
+                    Recarregar dados
                   </Button>
                 </div>
               </form>

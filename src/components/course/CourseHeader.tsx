@@ -134,18 +134,29 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId, progress =
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('cursos_favoritos, disciplinas_favoritos')
+        .select('*')
         .eq('id', user.id)
         .single();
+
+      if (profileError) {
+        console.error("Erro ao buscar perfil:", profileError);
+        toast.error("Erro ao buscar perfil do usuário");
+        return;
+      }
 
       if (!profile) {
         toast.error("Perfil não encontrado");
         return;
       }
 
+      // Inicializar os arrays se não existirem
       const field = isCurso ? 'cursos_favoritos' : 'disciplinas_favoritos';
+      if (!profile[field]) {
+        profile[field] = [];
+      }
+      
       const currentFavorites = profile[field] || [];
       const newFavorites = isFavorite
         ? currentFavorites.filter(id => id !== realId)
@@ -156,7 +167,10 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId, progress =
         .update({ [field]: newFavorites })
         .eq('id', user.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error("Erro ao atualizar favoritos:", updateError);
+        throw updateError;
+      }
 
       setIsFavorite(!isFavorite);
       toast.success(isFavorite ? "Removido dos favoritos" : "Adicionado aos favoritos");

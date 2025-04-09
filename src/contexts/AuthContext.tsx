@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Adicionar refs para controlar atualizações desnecessárias
+  const profileFetchedRef = useRef<boolean>(false);
+  const isRefreshingRef = useRef<boolean>(false);
+  const lastFetchTimeRef = useRef<number>(0);
+  const authChangeHandlerRef = useRef<boolean>(false);
 
   const clearAuthSession = () => {
     localStorage.removeItem('bomestudo-auth-v2');
@@ -45,8 +51,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Evitar configurar múltiplos listeners
+    if (authChangeHandlerRef.current) return;
+    
+    // Função para lidar com mudanças de visibilidade da página
+    const handleVisibilityChange = () => {
+      // Só verificar sessão quando a página ficar visível novamente
+      // e se a última verificação foi há mais de 5 minutos
+      const currentTime = Date.now();
+      const fiveMinutesInMs = 5 * 60 * 1000; // 5 minutos em milissegundos
+      
+      if (document.visibilityState === 'visible' && 
+          (currentTime - lastFetchTimeRef.current) > fiveMinutesInMs) {
+        console.log("Verificando sessão após mudança de visibilidade");
+        // Atualizar o timestamp da última verificação
+        lastFetchTimeRef.current = currentTime;
+      }
+    };
+
+    // Adicionar ouvinte para mudanças de visibilidade
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Define a flag que indica que o handler foi configurado
+    authChangeHandlerRef.current = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Evitar várias chamadas simultâneas
+      if (isRefreshingRef.current) {
+        console.log("Ignorando evento de autenticação, atualização em andamento");
+        return;
+      }
+      
       console.log("Auth state change:", event, session?.user?.id);
+      isRefreshingRef.current = true;
+      
       if (event === 'SIGNED_IN' && session) {
         const userData: User = {
           id: session.user.id,
@@ -56,17 +94,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           updated_at: new Date().toISOString(),
         };
         setUser(userData);
-        fetchUserProfile(session.user.id);
+        
+        // Só buscar o perfil se ainda não foi buscado
+        if (!profileFetchedRef.current) {
+          fetchUserProfile(session.user.id);
+        } else {
+          console.log("Perfil já foi buscado, ignorando nova requisição");
+          
+          // Mesmo com o perfil já buscado, permitir novas atualizações após um tempo
+          setTimeout(() => {
+            isRefreshingRef.current = false;
+          }, 1000);
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setProfile(null);
+        profileFetchedRef.current = false;
+        isRefreshingRef.current = false;
       } else if (event === 'TOKEN_REFRESHED') {
         console.log("Token refreshed successfully");
+        isRefreshingRef.current = false;
+      } else {
+        // Para outros eventos, também liberar o bloqueio
+        setTimeout(() => {
+          isRefreshingRef.current = false;
+        }, 1000);
       }
     });
 
     const fetchUserData = async () => {
       try {
+        if (isRefreshingRef.current) {
+          console.log("Ignorando fetchUserData, atualização em andamento");
+          return;
+        }
+        isRefreshingRef.current = true;
+        
         console.log("Verificando sessão existente...");
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Sessão existente:", session?.user?.id);
@@ -80,55 +143,143 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             updated_at: new Date().toISOString(),
           };
           setUser(userData);
-          await fetchUserProfile(session.user.id);
+          
+          // Só buscar o perfil se ainda não foi buscado
+          if (!profileFetchedRef.current) {
+            await fetchUserProfile(session.user.id);
+          } else {
+            console.log("Perfil já foi buscado, ignorando nova requisição");
+          }
         }
+        
+        // Atualizar o timestamp da última verificação
+        lastFetchTimeRef.current = Date.now();
       } catch (error) {
         console.error("Erro ao buscar dados do usuário:", error);
       } finally {
         setLoading(false);
+        setTimeout(() => {
+          isRefreshingRef.current = false;
+        }, 1000);
       }
     };
 
     fetchUserData();
     
     return () => {
+      console.log("Limpando inscrição do auth state change");
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      authChangeHandlerRef.current = false;
     };
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      // Verificar se o perfil já foi buscado
+      if (profileFetchedRef.current && profile?.id === userId) {
+        console.log("Perfil já foi buscado anteriormente, ignorando nova requisição");
+        isRefreshingRef.current = false;
+        return;
+      }
+      
       console.log("Buscando perfil do usuário:", userId);
+      
+      // Buscar TODOS os campos da tabela profiles
+      console.log("Consultando profiles com id:", userId);
       const { data: userProfile, error } = await supabase.from('profiles')
-        .select('id, email, nome, sobrenome, role, foto_url')
+        .select('*')
         .eq('id', userId)
         .single();
         
+      console.log("Resultado da consulta:", { data: userProfile, error });
+      
       if (error) {
         console.error("Erro ao buscar perfil:", error);
+        
+        // Se não encontrou o perfil, tentar criar um básico
+        if (error.code === 'PGRST116') { // No rows returned
+          console.log("Perfil não encontrado, criando perfil básico");
+          
+          // Obter dados do usuário da auth
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          
+          if (authUser) {
+            console.log("Dados do usuário auth:", authUser);
+            
+            // Criar perfil básico com dados mínimos
+            const basicProfile = {
+              id: userId,
+              email: authUser.email,
+              nome: authUser.user_metadata?.nome || "Usuário",
+              sobrenome: authUser.user_metadata?.sobrenome || "",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            
+            console.log("Tentando criar perfil básico:", basicProfile);
+            
+            // Inserir o perfil básico
+            const { data: newProfile, error: createError } = await supabase
+              .from('profiles')
+              .upsert(basicProfile)
+              .select('*')
+              .single();
+              
+            if (createError) {
+              console.error("Erro ao criar perfil básico:", createError);
+            } else {
+              console.log("Perfil básico criado com sucesso:", newProfile);
+              setProfile(newProfile as unknown as DatabaseUser);
+              setUser(prev => ({
+                ...prev,
+                ...newProfile,
+                nome: newProfile.nome || prev?.nome || ""
+              }));
+              profileFetchedRef.current = true;
+            }
+          }
+        }
+        isRefreshingRef.current = false;
         return;
       }
-        
+      
       if (userProfile) {
-        console.log("Perfil encontrado:", userProfile);
-        const profile = userProfile as unknown as DatabaseUser;
-        setProfile(profile);
+        console.log("Perfil encontrado - dados completos:", JSON.stringify(userProfile, null, 2));
+        const profileData = userProfile as unknown as DatabaseUser;
+        setProfile(profileData);
+        
+        // Atualizar o usuário com todos os campos do perfil
         setUser(prev => {
           if (!prev) return null;
-          const updatedUser: User = {
+          
+          const updatedUser = {
             ...prev,
-            nome: profile.nome || prev.nome,
-            sobrenome: profile.sobrenome || undefined,
-            foto_url: profile.foto_url || undefined,
-            role: profile.role,
+            ...profileData, // Copiar todos os campos
+            nome: profileData.nome || prev.nome,
+            sobrenome: profileData.sobrenome || undefined,
+            foto_url: profileData.foto_url || undefined,
+            foto_perfil: profileData.foto_perfil || undefined,
+            role: profileData.role,
           };
+          
+          console.log("Usuário atualizado com dados do perfil:", updatedUser);
+          
           return updatedUser;
         });
+        
+        // Marcar que o perfil foi buscado com sucesso
+        profileFetchedRef.current = true;
       } else {
         console.warn("Perfil do usuário não encontrado");
       }
     } catch (error) {
       console.error("Erro ao buscar perfil do usuário:", error);
+    } finally {
+      // Liberar o bloqueio após completar a operação
+      setTimeout(() => {
+        isRefreshingRef.current = false;
+      }, 1000);
     }
   };
 

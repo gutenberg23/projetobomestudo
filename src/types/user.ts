@@ -8,6 +8,7 @@ export interface User {
   nome?: string;
   sobrenome?: string;
   foto_url?: string;
+  foto_perfil?: string;
   role?: UserRole;
   nivel?: UserNivel;
   status?: UserStatus;
@@ -22,6 +23,7 @@ export interface DatabaseUser {
   nome: string;
   sobrenome?: string;
   foto_url?: string;
+  foto_perfil?: string;
   role?: UserRole;
   nivel?: UserNivel;
   status?: UserStatus;

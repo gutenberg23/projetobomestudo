@@ -43,9 +43,9 @@ export const useUsersState = (): UseUsersStateReturn => {
     const fetchUsuarios = async () => {
       setIsLoading(true);
       try {
-        // Buscar dados da tabela perfil que contém todas as informações
+        // Buscar dados da tabela profiles que contém todas as informações
         const { data: perfis, error: perfilError } = await supabase
-          .from('perfil')
+          .from('profiles')
           .select('*');
         
         if (perfilError) throw perfilError;

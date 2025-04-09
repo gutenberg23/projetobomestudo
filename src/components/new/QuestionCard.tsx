@@ -72,6 +72,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [showStats, setShowStats] = useState(false);
   const [teacherLikesCount, setTeacherLikesCount] = useState(0);
   const [aiLikesCount, setAILikesCount] = useState(0);
+  const [gabaritoAvatar, setGabaritoAvatar] = useState<string>("/default-avatar.png");
 
   // Verificar se há conteúdo expansível
   const hasExpandableContent = Boolean(question.expandableContent);
@@ -197,15 +198,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     const fetchComments = async () => {
       try {
         // Primeiro buscar os comentários
-        const { data: commentsData, error, count } = await supabase
+        const { data: commentsData, error } = await supabase
           .from('comentarios_questoes')
-          .select(`
-            id,
-            conteudo,
-            created_at,
-            usuario_id,
-            questao_id
-          `, { count: 'exact' })
+          .select('*')
           .eq('questao_id', question.id)
           .order('created_at', { ascending: false });
 
@@ -214,20 +209,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           return;
         }
 
-        // Atualizar a contagem sempre que carregar os comentários completos
-        if (count !== null) {
-          setCommentsCount(count);
-        }
-
         if (commentsData && commentsData.length > 0) {
-          // Para cada comentário, buscar os dados do perfil do usuário e os likes separadamente
-          const formattedComments = await Promise.all(commentsData.map(async (comment) => {
-            // Buscar dados do perfil separadamente
-            const { data: profileData } = await supabase
+          // Para cada comentário, buscar os dados do perfil e likes separadamente
+          const formattedComments = await Promise.all(commentsData.map(async (comment: any) => {
+            // Buscar perfil do usuário
+            const { data: profileData, error: profileError } = await supabase
               .from('profiles')
-              .select('nome')
+              .select('nome, foto_perfil')
               .eq('id', comment.usuario_id)
               .single();
+
+            const userAvatar = profileData?.foto_perfil || "/default-avatar.png";
+            const userName = profileData?.nome || "Usuário";
+
+            if (profileError) {
+              console.error("Erro ao buscar perfil:", profileError);
+            }
 
             // Buscar total de likes do comentário
             const { data: likesData, error: likesError } = await supabase
@@ -239,12 +236,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               console.error("Erro ao buscar likes:", likesError);
             }
 
-            // Avatar padrão para todos os usuários
-            const userAvatar = "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
-
             return {
               id: comment.id,
-              author: profileData?.nome || "Usuário",
+              author: userName,
               avatar: userAvatar,
               content: comment.conteudo,
               timestamp: new Date(comment.created_at).toLocaleDateString('pt-BR', {
@@ -259,8 +253,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             };
           }));
           setComments(formattedComments);
+          setCommentsCount(commentsData.length);
         } else {
           setComments([]);
+          setCommentsCount(0);
         }
       } catch (error) {
         console.error("Erro ao processar comentários:", error);
@@ -270,7 +266,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     if (showComments) {
       fetchComments();
     }
-  }, [question.id, showComments, likedComments]);
+  }, [question.id, showComments]);
 
   useEffect(() => {
     if (openAddToBook) {
@@ -711,7 +707,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       // Buscar dados do perfil do usuário primeiro - corrigindo os campos selecionados
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('nome')
+        .select('nome, foto_perfil')
         .eq('id', userId)
         .single();
 
@@ -720,8 +716,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         throw new Error("Não foi possível obter seus dados de perfil. Tente novamente.");
       }
 
-      // Avatar padrão para todos os usuários (já que não temos foto_perfil)
-      const userAvatar = "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0";
+      // Usar a foto de perfil do usuário se disponível
+      const userAvatar = profileData.foto_perfil || "/default-avatar.png";
 
       // Verificar se o id da questão está definido
       if (!question.id) {
@@ -826,6 +822,55 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
     fetchSpecialLikesCount();
   }, [question.id, likedComments]); // Atualiza quando os likes mudarem
+
+  useEffect(() => {
+    const fetchLastUpdatedBy = async () => {
+      if (!question.id) return;
+
+      try {
+        // Buscar a última atualização
+        const { data: updateData, error } = await supabase
+          .from('atualizacoes_questoes')
+          .select('*')
+          .eq('questao_id', question.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          if (error.code === 'PGRST116') {
+            // Nenhuma atualização encontrada, usar avatar padrão
+            console.log("Nenhuma atualização de professor encontrada para esta questão");
+            return;
+          }
+          console.error("Erro ao buscar última atualização:", error);
+          return;
+        }
+
+        // Buscar o perfil do professor separadamente
+        if (updateData && updateData.professor_id) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('foto_perfil')
+            .eq('id', updateData.professor_id)
+            .single();
+
+          if (profileError) {
+            console.error("Erro ao buscar perfil do professor:", profileError);
+            return;
+          }
+
+          if (profileData?.foto_perfil) {
+            setGabaritoAvatar(profileData.foto_perfil);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao buscar última atualização:", error);
+      }
+    };
+
+    fetchLastUpdatedBy();
+  }, [question.id]);
 
   return (
     <div className="w-full bg-white rounded-lg shadow-md mb-4">
@@ -1046,7 +1091,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <QuestionComment comment={{
         id: `teacher-${question.id}`,
         author: "Professor",
-        avatar: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+        avatar: gabaritoAvatar,
         content: question.teacherExplanation,
         timestamp: "Gabarito oficial",
         likes: teacherLikesCount
@@ -1057,7 +1102,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <QuestionComment comment={{
         id: `ai-${question.id}`,
         author: "BIA (BomEstudo IA)",
-        avatar: "https://cdn.builder.io/api/v1/image/assets/d6eb265de0f74f23ac89a5fae3b90a0d/53bd675aced9cd35bef2bdde64d667b38352b92776785d91dc81b5813eb0aba0",
+        avatar: "/lovable-uploads/BIA.jpg",
         content: question.aiExplanation,
         timestamp: "Resposta da IA",
         likes: aiLikesCount
