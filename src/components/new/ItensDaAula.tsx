@@ -10,6 +10,7 @@ interface ItensDaAulaProps {
   mapaUrl?: string | null;
   resumoUrl?: string | null;
   musicaUrl?: string | null;
+  cadernoQuestoesUrl?: string | null;
 }
 
 const ItensDaAula: React.FC<ItensDaAulaProps> = ({
@@ -18,7 +19,8 @@ const ItensDaAula: React.FC<ItensDaAulaProps> = ({
   pdfUrl,
   mapaUrl,
   resumoUrl,
-  musicaUrl
+  musicaUrl,
+  cadernoQuestoesUrl
 }) => {
   return (
     <main className="flex justify-between mt-5 w-full text-base font-medium text-center min-h-[74px] text-slate-800 max-md:max-w-full px-0 mx-0">
@@ -29,6 +31,7 @@ const ItensDaAula: React.FC<ItensDaAulaProps> = ({
         mapaUrl={mapaUrl}
         resumoUrl={resumoUrl}
         musicaUrl={musicaUrl}
+        cadernoQuestoesUrl={cadernoQuestoesUrl}
       />
     </main>
   );

@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Table,
@@ -62,6 +61,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
             <TableHead className="w-[90px]">Mapa</TableHead>
             <TableHead className="w-[90px]">Resumo</TableHead>
             <TableHead className="w-[90px]">Música</TableHead>
+            <TableHead className="w-[90px]">Caderno</TableHead>
             <TableHead className="w-[80px]">Questões</TableHead>
             <TableHead className="w-[100px]">Ações</TableHead>
           </TableRow>
@@ -96,6 +96,9 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
                 <TableCell className="text-center">
                   <StatusIcon filled={!!topico.musicaUrl} />
                 </TableCell>
+                <TableCell className="text-center">
+                  <StatusIcon filled={!!topico.cadernoQuestoesUrl} />
+                </TableCell>
                 <TableCell>{topico.questoesIds.length} questões</TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
@@ -120,7 +123,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={12} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={13} className="text-center py-4 text-[#67748a]">
                 Nenhum tópico encontrado com os filtros aplicados.
               </TableCell>
             </TableRow>

@@ -58,6 +58,7 @@ export const useTopicosActions = (
           mapa_url: updatedTopico.mapaUrl,
           resumo_url: updatedTopico.resumoUrl,
           musica_url: updatedTopico.musicaUrl,
+          caderno_questoes_url: updatedTopico.cadernoQuestoesUrl,
           abrir_em_nova_guia: updatedTopico.abrirEmNovaGuia
         })
         .eq('id', updatedTopico.id);

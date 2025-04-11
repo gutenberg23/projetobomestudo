@@ -194,6 +194,8 @@ const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
+                itemsPerPage={ITEMS_PER_PAGE}
+                totalItems={filteredDisciplinas.length}
               />
             </div>
           )}

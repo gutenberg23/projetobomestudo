@@ -100,6 +100,8 @@ const EditaisTable: React.FC<EditaisTableProps> = ({
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+              itemsPerPage={ITEMS_PER_PAGE}
+              totalItems={editais.length}
             />
           </div>
         )}

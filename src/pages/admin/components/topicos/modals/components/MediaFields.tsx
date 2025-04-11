@@ -88,6 +88,26 @@ export const MediaFields: React.FC<MediaFieldsProps> = ({
           placeholder="URL do resumo"
         />
       </div>
+
+      <div>
+        <Label htmlFor="musicaUrl">Link da Música</Label>
+        <Input
+          id="musicaUrl"
+          value={newTopico.musicaUrl}
+          onChange={(e) => setNewTopico({ ...newTopico, musicaUrl: e.target.value })}
+          placeholder="URL da música"
+        />
+      </div>
+
+      <div>
+        <Label htmlFor="cadernoQuestoesUrl">Link do Caderno de Questões</Label>
+        <Input
+          id="cadernoQuestoesUrl"
+          value={newTopico.cadernoQuestoesUrl}
+          onChange={(e) => setNewTopico({ ...newTopico, cadernoQuestoesUrl: e.target.value })}
+          placeholder="URL do caderno de questões"
+        />
+      </div>
     </>
   );
 };

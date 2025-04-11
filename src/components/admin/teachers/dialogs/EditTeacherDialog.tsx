@@ -58,7 +58,7 @@ const EditTeacherDialog: React.FC<EditTeacherDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!teacher || !formData.nomeCompleto || !formData.email || !formData.disciplina) {
+    if (!teacher || !formData.nomeCompleto || !formData.disciplina) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",

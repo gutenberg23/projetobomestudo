@@ -333,12 +333,21 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
             />
           </div>
           <div>
-            <Label htmlFor="edit-musica-url">Link da Música</Label>
+            <Label htmlFor="edit-musicaUrl">Link da Música</Label>
             <Input
-              id="edit-musica-url"
-              value={editedTopico.musicaUrl}
+              id="edit-musicaUrl"
+              value={editedTopico.musicaUrl || ""}
               onChange={(e) => setEditedTopico({ ...editedTopico, musicaUrl: e.target.value })}
-              placeholder="https://exemplo.com/musica"
+              placeholder="URL da música"
+            />
+          </div>
+          <div>
+            <Label htmlFor="edit-cadernoQuestoesUrl">Link do Caderno de Questões</Label>
+            <Input
+              id="edit-cadernoQuestoesUrl"
+              value={editedTopico.cadernoQuestoesUrl || ""}
+              onChange={(e) => setEditedTopico({ ...editedTopico, cadernoQuestoesUrl: e.target.value })}
+              placeholder="URL do caderno de questões"
             />
           </div>
           <QuestionsManager

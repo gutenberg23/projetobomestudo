@@ -45,6 +45,7 @@ export const useTopicosState = () => {
           mapaUrl: item.mapa_url || "",
           resumoUrl: item.resumo_url || "",
           musicaUrl: item.musica_url || "",
+          cadernoQuestoesUrl: item.caderno_questoes_url || "",
           questoesIds: item.questoes_ids || [],
           professor_id: item.professor_id || "",
           professor_nome: item.professor_nome || "",

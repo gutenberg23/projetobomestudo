@@ -10,6 +10,7 @@ interface ButtonContainerProps {
   mapaUrl?: string | null;
   resumoUrl?: string | null;
   musicaUrl?: string | null;
+  cadernoQuestoesUrl?: string | null;
 }
 
 export const ButtonContainer: React.FC<ButtonContainerProps> = ({
@@ -18,7 +19,8 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
   pdfUrl,
   mapaUrl,
   resumoUrl,
-  musicaUrl
+  musicaUrl,
+  cadernoQuestoesUrl
 }) => {
   const openResource = (url: string | null | undefined) => {
     if (url) {
@@ -31,7 +33,7 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
       <div className="flex gap-5 justify-center items-center flex-wrap">
         <ActionButton 
           icon="/lovable-uploads/interroga.svg" 
-          label="Caderno de Questões" 
+          label="Questões" 
           variant="highlight" 
           isActive={showQuestions} 
           onClick={setShowQuestions} 
@@ -66,6 +68,14 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
             icon="/lovable-uploads/musica.svg" 
             label="Música" 
             onClick={() => openResource(musicaUrl)} 
+          />
+        )}
+        
+        {cadernoQuestoesUrl && (
+          <ActionButton 
+            icon="/lovable-uploads/interroga.svg" 
+            label="Caderno de Questões" 
+            onClick={() => openResource(cadernoQuestoesUrl)} 
           />
         )}
       </div>

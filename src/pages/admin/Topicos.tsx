@@ -70,6 +70,7 @@ const Topicos = () => {
     mapaUrl: "",
     resumoUrl: "",
     musicaUrl: "",
+    cadernoQuestoesUrl: "",
     abrirEmNovaGuia: false
   });
   const [disciplinas, setDisciplinas] = useState<string[]>([]);
@@ -202,46 +203,46 @@ const Topicos = () => {
 
       const { data, error } = await supabase
         .from('topicos')
-        .insert([
-          { 
-            nome: newTopico.titulo,
-            disciplina: newTopico.disciplina,
-            patrocinador: newTopico.patrocinador,
-            questoes_ids: newTopico.questoesIds,
-            professor_id: newTopico.professor_id,
-            professor_nome: professor_nome,
-            video_url: newTopico.videoUrl,
-            pdf_url: newTopico.pdfUrl,
-            mapa_url: newTopico.mapaUrl,
-            resumo_url: newTopico.resumoUrl,
-            musica_url: newTopico.musicaUrl,
-            abrir_em_nova_guia: newTopico.abrirEmNovaGuia
-          }
-        ])
+        .insert({
+          nome: newTopico.titulo,
+          patrocinador: newTopico.patrocinador,
+          disciplina: newTopico.disciplina,
+          questoes_ids: newTopico.questoesIds,
+          professor_id: newTopico.professor_id,
+          professor_nome: professor_nome,
+          video_url: newTopico.videoUrl,
+          pdf_url: newTopico.pdfUrl,
+          mapa_url: newTopico.mapaUrl,
+          resumo_url: newTopico.resumoUrl,
+          musica_url: newTopico.musicaUrl,
+          caderno_questoes_url: newTopico.cadernoQuestoesUrl,
+          abrir_em_nova_guia: newTopico.abrirEmNovaGuia
+        })
         .select();
       
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const newCreatedTopico: Topico = {
+        const novoTopico: Topico = {
           id: data[0].id,
           titulo: data[0].nome,
           thumbnail: "",
-          patrocinador: data[0].patrocinador || "Não informado",
+          patrocinador: data[0].patrocinador,
           disciplina: data[0].disciplina,
-          videoUrl: data[0].video_url || "",
-          pdfUrl: data[0].pdf_url || "",
-          mapaUrl: data[0].mapa_url || "",
-          resumoUrl: data[0].resumo_url || "",
-          musicaUrl: data[0].musica_url || "",
-          questoesIds: data[0].questoes_ids || [],
-          professor_id: data[0].professor_id || "",
-          professor_nome: data[0].professor_nome || "",
+          videoUrl: data[0].video_url,
+          pdfUrl: data[0].pdf_url,
+          mapaUrl: data[0].mapa_url,
+          resumoUrl: data[0].resumo_url,
+          musicaUrl: data[0].musica_url,
+          cadernoQuestoesUrl: data[0].caderno_questoes_url,
+          questoesIds: data[0].questoes_ids,
+          professor_id: data[0].professor_id,
+          professor_nome: data[0].professor_nome,
           selecionado: false,
-          abrirEmNovaGuia: data[0].abrir_em_nova_guia || false
+          abrirEmNovaGuia: data[0].abrir_em_nova_guia
         };
         
-        setTopicos([...topicos, newCreatedTopico]);
+        setTopicos([...topicos, novoTopico]);
         toast.success("Tópico criado com sucesso!");
         
         setNewTopico({
@@ -255,6 +256,7 @@ const Topicos = () => {
           mapaUrl: "",
           resumoUrl: "",
           musicaUrl: "",
+          cadernoQuestoesUrl: "",
           abrirEmNovaGuia: false
         });
         
@@ -482,6 +484,16 @@ const Topicos = () => {
                 value={newTopico.musicaUrl}
                 onChange={(e) => setNewTopico({ ...newTopico, musicaUrl: e.target.value })}
                 placeholder="https://exemplo.com/musica"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="topico-caderno-questoes-url">Link do Caderno de Questões</Label>
+              <Input
+                id="topico-caderno-questoes-url"
+                value={newTopico.cadernoQuestoesUrl}
+                onChange={(e) => setNewTopico({ ...newTopico, cadernoQuestoesUrl: e.target.value })}
+                placeholder="https://exemplo.com/caderno"
               />
             </div>
             

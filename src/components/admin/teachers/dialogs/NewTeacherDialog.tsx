@@ -58,7 +58,7 @@ const NewTeacherDialog: React.FC<NewTeacherDialogProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.nomeCompleto || !formData.email || !formData.disciplina) {
+    if (!formData.nomeCompleto || !formData.disciplina) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",

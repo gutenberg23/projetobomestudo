@@ -9,6 +9,7 @@ export interface Topico {
   mapaUrl: string;
   resumoUrl: string;
   musicaUrl: string;
+  cadernoQuestoesUrl: string;
   questoesIds: string[];
   professor_id: string;
   professor_nome: string;

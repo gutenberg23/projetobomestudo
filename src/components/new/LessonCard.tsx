@@ -225,7 +225,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           pdf: data?.pdf_url,
           mapa: data?.mapa_url,
           resumo: data?.resumo_url,
-          musica: data?.musica_url
+          musica: data?.musica_url,
+          cadernoQuestoes: data?.caderno_questoes_url
         });
         
         // Mapear explicitamente a propriedade abrir_em_nova_guia para abrirEmNovaGuia no objeto currentSection
@@ -342,6 +343,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             mapaUrl={topicData?.mapa_url}
             resumoUrl={topicData?.resumo_url}
             musicaUrl={topicData?.musica_url}
+            cadernoQuestoesUrl={topicData?.caderno_questoes_url}
           />
           {showQuestions && (
             <div className="mt-4 px-[20px]">

@@ -251,6 +251,8 @@ const QuestionList: React.FC<QuestionListProps> = ({
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={onPageChange}
+          itemsPerPage={10}
+          totalItems={questions.length}
         />
       </div>
 
