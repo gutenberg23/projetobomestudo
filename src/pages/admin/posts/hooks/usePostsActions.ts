@@ -51,45 +51,30 @@ export function usePostsActions(state: PostsState) {
 
   // Iniciar criação de um novo post
   const iniciarCriacaoPost = () => {
-    console.log("iniciarCriacaoPost chamada - verificando valores atuais:");
-    console.log("Título atual:", titulo);
-    console.log("Resumo atual:", resumo);
-    console.log("Conteúdo atual:", conteudo);
+    setTitulo("");
+    setResumo("");
+    setConteudo("");
     
-    // Não limpar os campos se já estiverem preenchidos
-    if (!titulo && !resumo && !conteudo) {
-      console.log("Campos vazios, inicializando com valores padrão");
-      setTitulo("");
-      setResumo("");
-      setConteudo("");
-      
-      // Se for jornalista, preencher automaticamente o autor com o nome do usuário
-      if (isJornalista() && user?.nome) {
-        setAutor(user.nome);
-      } else {
-        setAutor("");
-      }
-      
-      setAutorAvatar("");
-      setCategoria("");
-      setDestacado(false);
-      setTags("");
-      setMetaDescricao("");
-      setMetaKeywords("");
-      setTempoLeitura("");
-      setImagemDestaque("");
-      setRegiao("none");
-      setEstado("none");
-      setPostsRelacionados("");
+    // Se for jornalista, preencher automaticamente o autor com o nome do usuário
+    if (isJornalista() && user?.nome) {
+      setAutor(user.nome);
     } else {
-      console.log("Mantendo valores existentes dos campos que já foram preenchidos");
+      setAutor("");
     }
     
-    // Definir o postEditando como null e mudar para o modo de criação
+    setAutorAvatar("");
+    setCategoria("");
+    setDestacado(false);
+    setTags("");
+    setMetaDescricao("");
+    setMetaKeywords("");
+    setTempoLeitura("");
+    setImagemDestaque("");
+    setRegiao("none");
+    setEstado("none");
+    setPostsRelacionados("");
     setPostEditando(null);
-    console.log("Alterando modo para CRIAR");
     setModo(ModoInterface.CRIAR);
-    console.log("Modo alterado para:", ModoInterface.CRIAR);
   };
 
   // Iniciar edição de um post existente

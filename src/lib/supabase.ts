@@ -1,115 +1,43 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import { type Database } from '@/types/database';
 
-// Carregar variáveis de ambiente
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Validação básica
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Erro: Variáveis de ambiente do Supabase não encontradas');
-  throw new Error('Configuração do Supabase não encontrada');
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('As variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY são necessárias');
 }
 
 // Verificar se o domínio atual está na lista de permitidos
 const currentDomain = window.location.origin;
 console.log(`Aplicação executando no domínio: ${currentDomain}`);
 
-// Criar cliente do Supabase
-const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+// Criação do cliente Supabase com opções mais detalhadas
+const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   auth: {
     persistSession: true,
+    storageKey: 'bomestudo-auth-token', // Chave unificada para armazenamento
     autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
+    detectSessionInUrl: true,
+    flowType: 'pkce', // Usar PKCE para segurança adicional
+  },
+  global: {
+    headers: {
+      'X-Client-Info': `bomestudo-app/${import.meta.env.VITE_APP_VERSION || 'dev'}`
+    },
+  },
+  // Ajustes de timeout e retry
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
+  db: {
+    schema: 'public',
+  },
 });
 
-// Verificar se o cliente do Supabase foi inicializado corretamente
-if (!supabase) {
-  console.error('Erro: Cliente do Supabase não inicializado corretamente');
-  throw new Error('Cliente do Supabase não inicializado');
-}
-
-// Lista de buckets necessários
-const REQUIRED_BUCKETS = [
-  'temp-files',
-  'blog-images',
-  'avatars',
-  'uploads'
-];
-
-// Função para inicializar os buckets de armazenamento necessários
-export const inicializarStorageBuckets = async () => {
-  try {
-    const user = supabase.auth.getUser();
-    
-    // Verificar se o usuário está autenticado antes de tentar criar buckets
-    if (!user) {
-      console.log('Usuário não autenticado. Ignorando criação de buckets.');
-      return;
-    }
-    
-    console.log('Verificando buckets de armazenamento...');
-    
-    // Listar buckets existentes
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-    
-    if (listError) {
-      console.warn('Aviso: Não foi possível listar os buckets existentes. O usuário pode não ter permissões adequadas.', listError);
-      return;
-    }
-    
-    const existingBuckets = buckets?.map(bucket => bucket.name) || [];
-    console.log('Buckets existentes:', existingBuckets);
-    
-    // Tentar criar buckets faltantes
-    for (const bucketName of REQUIRED_BUCKETS) {
-      if (!existingBuckets.includes(bucketName)) {
-        console.log(`Tentando criar bucket ${bucketName}...`);
-        try {
-          // Tentar criar o bucket, mas não falhar se não for possível
-          const { error } = await supabase.storage.createBucket(bucketName, {
-            public: false
-          });
-          
-          if (error) {
-            console.warn(`Aviso: Não foi possível criar o bucket ${bucketName}. O aplicativo funcionará, mas alguns recursos podem estar limitados.`, error);
-          } else {
-            console.log(`Bucket ${bucketName} criado com sucesso.`);
-          }
-        } catch (err) {
-          console.warn(`Erro ao criar bucket ${bucketName}:`, err);
-        }
-      } else {
-        console.log(`Bucket ${bucketName} já existe.`);
-      }
-    }
-  } catch (error) {
-    // Apenas logar o erro, não falhar a inicialização
-    console.warn('Aviso: Erro ao inicializar buckets de armazenamento. O aplicativo continuará funcionando, mas alguns recursos podem estar limitados.', error);
-  }
-};
-
-// Utilitário para verificar se um bucket existe sem lançar erro
-export const verificarBucketExiste = async (bucketName: string): Promise<boolean> => {
-  try {
-    const { data } = await supabase.storage.listBuckets();
-    return data?.some(bucket => bucket.name === bucketName) || false;
-  } catch (error) {
-    console.warn(`Erro ao verificar se o bucket ${bucketName} existe:`, error);
-    return false;
-  }
-};
-
-// Obter URL pública para um arquivo
-export const getPublicUrl = (bucket: string, path: string): string => {
-  try {
-    const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-    return data.publicUrl;
-  } catch (error) {
-    console.error('Erro ao obter URL pública:', error);
-    return '';
-  }
-};
+console.log('Supabase client configurado com sucesso');
 
 // Função para atualizar o perfil do usuário para administrador
 export const makeUserAdmin = async (email: string) => {
@@ -184,22 +112,8 @@ export const makeUserAdmin = async (email: string) => {
   }
 })();
 
-// Função para verificar a configuração em ambiente de desenvolvimento
-(async () => {
-  try {
-    // Verificar se estamos em desenvolvimento
-    const isDevelopment = import.meta.env.MODE === 'development';
-    
-    if (isDevelopment) {
-      console.log("Verificando configuração de ambiente de desenvolvimento");
-      
-      // Outras configurações específicas para ambiente de desenvolvimento podem ser adicionadas aqui
-    }
-  } catch (error) {
-    console.error("Erro ao verificar configuração:", error);
-  }
-})();
-
-// Exportar o cliente Supabase e a instância de autenticação
+// Exportando o cliente Supabase
 export { supabase };
+
+// Exportando a instância auth para facilitar o uso
 export const auth = supabase.auth;
