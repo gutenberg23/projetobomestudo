@@ -1,4 +1,4 @@
-import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book } from "lucide-react";
+import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book, BarChart } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -45,6 +45,12 @@ export const Header = () => {
             <span className="font-extralight">Estude Grátis</span>
           </Link>
         )}
+        {user && (
+          <Link to="/dashboard" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+            <BarChart className="w-4 h-4" />
+            <span className="font-extralight">Dashboard</span>
+          </Link>
+        )}
       </div>
 
       <div className="flex items-center gap-2.5">
@@ -78,6 +84,10 @@ export const Header = () => {
                   Meus Cursos
                 </Link>
               )}
+              <Link to="/dashboard" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                <BarChart className="w-4 h-4" />
+                Dashboard
+              </Link>
               {/* Mostra o link "Cadernos de Questões" apenas no modo mobile */}
               {config.pages.showQuestionsPage && (
                 <div className="md:hidden">

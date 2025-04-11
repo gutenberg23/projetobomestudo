@@ -24,6 +24,7 @@ import QuestionBooks from "./pages/QuestionBooks";
 import QuestionBookDetails from "./pages/QuestionBookDetails";
 import { ConfigGuard } from './components/guards/ConfigGuard';
 import { AdminGuard } from './components/guards/AdminGuard';
+import { AuthGuard } from './components/guards/AuthGuard';
 import { useSiteConfig } from "./hooks/useSiteConfig";
 import { useEffect } from "react";
 import "./styles/globals.css";
@@ -37,6 +38,7 @@ import StatePosts from "@/pages/StatePosts";
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
+import DashboardAluno from "./pages/Dashboard";
 import Posts from "./pages/admin/posts";
 import Usuarios from "./pages/admin/Usuarios";
 import Questoes from "./pages/admin/Questoes";
@@ -111,6 +113,12 @@ export default function App() {
                     <ConfigGuard configKey="showMyCoursesPage">
                       <MyCourses />
                     </ConfigGuard>
+                  } />
+                  
+                  <Route path="/dashboard" element={
+                    <AuthGuard>
+                      <DashboardAluno />
+                    </AuthGuard>
                   } />
                   
                   <Route path="/questions" element={
