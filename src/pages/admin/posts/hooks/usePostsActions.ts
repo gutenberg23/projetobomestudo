@@ -122,10 +122,13 @@ export function usePostsActions(state: PostsState) {
     
     setLoading(true);
     try {
+      // Geração de slug com timestamp para garantir unicidade
+      const timestamp = Date.now().toString(36);
       const slug = titulo
         .toLowerCase()
         .replace(/[^\w\s]/gi, '')
-        .replace(/\s+/g, '-');
+        .replace(/\s+/g, '-')
+        + '-' + timestamp;
       
       // Convert the comma-separated tags into an array
       const tagsArray = tags.split(',')

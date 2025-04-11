@@ -1,7 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { BlogPost, Region } from "@/components/blog/types";
 import { Database } from "@/integrations/supabase/types";
-import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
+
+// Variável para armazenar cache dos posts
+let postsCache: BlogPost[] = [];
+let lastCacheTime = 0;
+const CACHE_TTL = 60000; // 1 minuto em ms
 
 // Função para mapear os dados do banco para o formato da aplicação
 function mapDatabasePostToAppPost(post: Database['public']['Tables']['blog_posts']['Row']): BlogPost {
@@ -54,22 +58,86 @@ function mapAppPostToDatabasePost(post: Omit<BlogPost, 'id' | 'createdAt'>): Omi
 }
 
 // Função para buscar todos os posts do blog
-export async function fetchBlogPosts(): Promise<BlogPost[]> {
+export async function fetchBlogPosts(authorFilter?: string): Promise<BlogPost[]> {
   try {
-    const { data, error } = await supabase
+    const now = Date.now();
+    console.log("fetchBlogPosts chamada com filtro:", authorFilter);
+    
+    // Usar cache se disponível e não expirado (exceto quando temos filtro de autor)
+    if (postsCache.length > 0 && !authorFilter && (now - lastCacheTime) < CACHE_TTL) {
+      console.log('Usando cache de posts (sem filtro)');
+      return postsCache;
+    }
+
+    let query = supabase
       .from('blog_posts')
       .select('*')
       .order('created_at', { ascending: false });
+    
+    // Se tiver um filtro de autor, aplicar
+    if (authorFilter) {
+      console.log(`Aplicando filtro de autor: author = "${authorFilter}"`);
+      query = query.eq('author', authorFilter);
+    }
+
+    console.log("Executando consulta Supabase:", authorFilter ? "com filtro" : "sem filtro");
+    const { data, error } = await query;
+    console.log("Resultado da consulta:", { 
+      temDados: !!data, 
+      quantidadeDados: data?.length || 0, 
+      temErro: !!error, 
+      mensagemErro: error?.message 
+    });
 
     if (error) {
       console.error('Erro ao buscar posts do blog:', error);
-      return MOCK_BLOG_POSTS; // Retorna posts mockados em caso de erro
+      
+      // Em caso de erro, retornar cache ou array vazio
+      if (postsCache.length > 0 && !authorFilter) {
+        console.log('Usando cache existente devido a erro');
+        return postsCache;
+      }
+      
+      // Se não temos cache ou estamos filtrando por autor, retornar array vazio
+      return [];
     }
 
-    return data && data.length > 0 ? data.map(mapDatabasePostToAppPost) : MOCK_BLOG_POSTS;
+    // Se temos dados reais, atualizar o cache (apenas para consultas sem filtro)
+    if (data && data.length > 0 && !authorFilter) {
+      const mappedData = data.map(mapDatabasePostToAppPost);
+      postsCache = mappedData;
+      lastCacheTime = now;
+      console.log('Cache de posts atualizado:', mappedData.length, 'posts');
+      return mappedData;
+    } else if (data && data.length > 0) {
+      // Dados com filtro, não armazenar em cache
+      const mappedData = data.map(mapDatabasePostToAppPost);
+      console.log(`Retornando ${mappedData.length} posts filtrados por autor "${authorFilter}" (sem atualizar cache)`);
+      return mappedData;
+    } else {
+      console.log(`Nenhum post encontrado${authorFilter ? ` para o autor "${authorFilter}"` : ""}`);
+      return []; // Retornar array vazio em vez de usar dados mockados
+    }
+    
+    // Se temos cache mas não dados novos, manter o cache
+    if (postsCache.length > 0) {
+      console.log('Sem novos dados - mantendo cache existente');
+      return postsCache;
+    }
+    
+    // Caso todos os outros casos falhem, retornar array vazio
+    return [];
   } catch (error) {
     console.error('Exceção ao buscar posts do blog:', error);
-    return MOCK_BLOG_POSTS;
+    
+    // Em caso de erro, verificar se temos cache
+    if (postsCache.length > 0 && !authorFilter) {
+      console.log('Usando cache existente devido a exceção');
+      return postsCache;
+    }
+    
+    // Se não temos cache, retornar array vazio
+    return [];
   }
 }
 
@@ -78,20 +146,15 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
   try {
     console.log('Buscando post com slug:', slug);
     
-    // Primeiro, verificar se a tabela existe
-    const { error: checkError } = await supabase
-      .from('blog_posts')
-      .select('id')
-      .limit(1);
-    
-    if (checkError && checkError.code === '42P01') {
-      console.info('Tabela de posts do blog não existe, usando dados mockados');
-      // Tabela não existe, usar mock data
-      const mockPost = MOCK_BLOG_POSTS.find(post => post.slug === slug);
-      console.log('Post mockado encontrado:', mockPost);
-      return mockPost || null;
+    // Primeiro, verificar no cache para evitar chamadas desnecessárias
+    if (postsCache.length > 0) {
+      const cachedPost = postsCache.find(post => post.slug === slug);
+      if (cachedPost) {
+        console.log('Post encontrado no cache:', cachedPost.title);
+        return cachedPost;
+      }
     }
-
+    
     const { data, error } = await supabase
       .from('blog_posts')
       .select('*')
@@ -100,20 +163,23 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
 
     if (error) {
       console.error(`Erro ao buscar post com slug ${slug}:`, error);
-      // Tentar encontrar no mock data
-      const mockPost = MOCK_BLOG_POSTS.find(post => post.slug === slug);
-      console.log('Post mockado encontrado após erro:', mockPost);
-      return mockPost || null;
+      return null;
     }
 
     console.log('Post encontrado no banco:', data);
-    return data ? mapDatabasePostToAppPost(data) : null;
+    const post = data ? mapDatabasePostToAppPost(data) : null;
+    
+    // Se encontramos o post no banco de dados e não está no cache, 
+    // pode ser útil atualizar o cache geral para incluir este post
+    if (post && postsCache.length > 0 && !postsCache.some(p => p.id === post.id)) {
+      console.log('Adicionando post ao cache existente');
+      postsCache = [post, ...postsCache];
+    }
+    
+    return post;
   } catch (error) {
     console.error(`Exceção ao buscar post com slug ${slug}:`, error);
-    // Tentar encontrar no mock data
-    const mockPost = MOCK_BLOG_POSTS.find(post => post.slug === slug);
-    console.log('Post mockado encontrado após exceção:', mockPost);
-    return mockPost || null;
+    return null;
   }
 }
 

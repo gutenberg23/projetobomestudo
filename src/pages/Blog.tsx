@@ -21,23 +21,48 @@ const Blog = () => {
 
   // Buscar posts do banco de dados
   useEffect(() => {
+    let isMounted = true;
+    
     const loadPosts = async () => {
       setLoading(true);
       try {
         const posts = await fetchBlogPosts();
-        setAllPosts(posts.length > 0 ? posts : MOCK_BLOG_POSTS);
-        setFilteredPosts(posts.length > 0 ? posts : MOCK_BLOG_POSTS);
+        
+        if (isMounted) {
+          // Se temos dados reais, usar eles
+          if (posts.length > 0) {
+            setAllPosts(posts);
+            setFilteredPosts(posts);
+          } 
+          // Se não temos dados e não temos posts já carregados, usar mock
+          else if (allPosts.length === 0) {
+            console.log("Usando posts mockados na página de blog");
+            setAllPosts(MOCK_BLOG_POSTS);
+            setFilteredPosts(MOCK_BLOG_POSTS);
+          }
+          // Se já temos posts carregados, manter os atuais
+        }
       } catch (error) {
         console.error("Erro ao carregar posts do blog:", error);
-        setAllPosts(MOCK_BLOG_POSTS);
-        setFilteredPosts(MOCK_BLOG_POSTS);
+        
+        // Só usar mock se ainda não temos posts carregados
+        if (isMounted && allPosts.length === 0) {
+          setAllPosts(MOCK_BLOG_POSTS);
+          setFilteredPosts(MOCK_BLOG_POSTS);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadPosts();
-  }, []);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Remover allPosts da dependência para evitar loops
 
   // Aplicar filtros aos posts
   useEffect(() => {

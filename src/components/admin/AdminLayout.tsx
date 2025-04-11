@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -26,9 +26,10 @@ const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { isJornalista } = usePermissions();
+  const { isJornalista, canAccessAdminArea } = usePermissions();
   const { user } = useAuth();
   const [isActive, setIsActive] = useState(true);
+  const lastCheckTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     // Verificar estado de autenticação quando a aba recebe foco
@@ -36,15 +37,9 @@ const AdminLayout = () => {
       const isVisible = document.visibilityState === 'visible';
       setIsActive(isVisible);
       
-      // Verificar marcadores de sessão ao voltar para a aba
+      // Desativar verificações automáticas ao voltar para a aba
       if (isVisible) {
-        const adminAuthChecked = sessionStorage.getItem('admin-auth-checked') === 'true';
-        const adminAccessGranted = sessionStorage.getItem('admin-access-granted') === 'true';
-        
-        // Se existir sessão local mas o objeto user estiver nulo, não forçar redirecionamento
-        if (adminAccessGranted && !user) {
-          console.log("AdminLayout: Sessão local válida, ignorando redirecionamento");
-        }
+        console.log("AdminLayout: Aba recebeu foco, verificações de permissão desativadas");
       }
     };
 
@@ -61,18 +56,7 @@ const AdminLayout = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [user]);
-
-  // Verificar se usuário ainda está autenticado quando a aba fica ativa novamente
-  useEffect(() => {
-    // Só redirecionar se não tivermos marcadores de sessão válidos
-    if (isActive && !user) {
-      const adminAccessGranted = sessionStorage.getItem('admin-access-granted') === 'true';
-      if (!adminAccessGranted) {
-        navigate('/admin/login');
-      }
-    }
-  }, [isActive, user, navigate]);
+  }, []);
 
   const allMenuItems = [
     { 
@@ -162,6 +146,7 @@ const AdminLayout = () => {
   ];
 
   // Filtrar os itens do menu de acordo com o papel do usuário
+  // Importante! Recalcular a cada renderização do componente
   const menuItems = isJornalista() 
     ? allMenuItems.filter(item => item.showForJornalista)
     : allMenuItems;

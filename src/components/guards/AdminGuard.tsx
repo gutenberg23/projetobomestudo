@@ -14,17 +14,9 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [hasAdminAccess, setHasAdminAccess] = useState(false);
   const location = useLocation();
-  const initialCheckDone = useRef(false);
+  const lastCheckTimeRef = useRef<number>(Date.now());
   
-  // Marker para indicar que esta aba já completou a verificação inicial
-  useEffect(() => {
-    // Configurar um marcador global para evitar re-verificações desnecessárias
-    if (!initialCheckDone.current && !loading && user) {
-      window.sessionStorage.setItem('admin-auth-checked', 'true');
-      initialCheckDone.current = true;
-    }
-  }, [loading, user]);
-
+  // Efeito para verificar permissões do usuário
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user) {
@@ -33,37 +25,23 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
         return;
       }
 
-      // Verificar acesso administrativo
+      // Verificar acesso administrativo sempre com base nos dados atuais do usuário
       const hasAccess = canAccessAdminArea();
       setHasAdminAccess(hasAccess);
       setCheckingAccess(false);
-      
-      // Se tem acesso, marcar como verificado para esta sessão
-      if (hasAccess) {
-        window.sessionStorage.setItem('admin-access-granted', 'true');
-      }
     };
 
-    // Se a verificação já foi feita nesta sessão, podemos usar o cache
-    const alreadyChecked = window.sessionStorage.getItem('admin-auth-checked') === 'true';
-    const accessGranted = window.sessionStorage.getItem('admin-access-granted') === 'true';
-    
-    if (alreadyChecked && accessGranted && user) {
-      // Se já verificamos e temos acesso, não precisamos verificar novamente
-      setHasAdminAccess(true);
-      setCheckingAccess(false);
-    } else {
-      // Caso contrário, verificar normalmente
-      checkAdminStatus();
-    }
+    // Sempre verificar o status quando o componente é montado ou quando o usuário muda
+    checkAdminStatus();
   }, [user, canAccessAdminArea]);
 
+  // Verificar a cada mudança de visibilidade da página
   useEffect(() => {
-    // Event listener para verificar quando a aba fica visível
     const handleVisibilityChange = () => {
+      // Desativar verificações automáticas ao voltar para a aba
+      // Isso evita redirecionamentos indesejados
       if (document.visibilityState === 'visible') {
-        console.log("AdminGuard: Aba recebeu foco, verificando autenticação");
-        // A verificação de autenticação já será feita pelo efeito principal
+        console.log("AdminGuard: Aba recebeu foco, verificações de permissão desativadas");
       }
     };
 
@@ -87,6 +65,7 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
 
   // Verificar se o usuário é jornalista e está tentando acessar uma rota diferente de /admin/posts
   if (isJornalista() && !location.pathname.includes('/admin/posts')) {
+    console.log("Jornalista tentando acessar rota não autorizada, redirecionando para /admin/posts");
     return <Navigate to="/admin/posts" replace />;
   }
 

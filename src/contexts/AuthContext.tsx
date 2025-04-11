@@ -31,6 +31,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isRefreshingRef = useRef<boolean>(false);
   const lastFetchTimeRef = useRef<number>(0);
   const authChangeHandlerRef = useRef<boolean>(false);
+  // Nova ref para rastrear se a autenticação inicial já foi feita
+  const initialAuthDoneRef = useRef<boolean>(false);
+  // Ref para armazenar a função de cancelamento da inscrição
+  const unsubscribeRef = useRef<() => void | null>(null);
 
   const clearAuthSession = () => {
     localStorage.removeItem('bomestudo-auth-v2');
@@ -56,16 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Função para lidar com mudanças de visibilidade da página
     const handleVisibilityChange = () => {
-      // Só verificar sessão quando a página ficar visível novamente
-      // e se a última verificação foi há mais de 5 minutos
-      const currentTime = Date.now();
-      const fiveMinutesInMs = 5 * 60 * 1000; // 5 minutos em milissegundos
-      
-      if (document.visibilityState === 'visible' && 
-          (currentTime - lastFetchTimeRef.current) > fiveMinutesInMs) {
-        console.log("Verificando sessão após mudança de visibilidade");
-        // Atualizar o timestamp da última verificação
-        lastFetchTimeRef.current = currentTime;
+      if (document.visibilityState === 'visible') {
+        console.log("Página recebeu foco - verificações desativadas");
       }
     };
 
@@ -75,52 +71,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Define a flag que indica que o handler foi configurado
     authChangeHandlerRef.current = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      // Evitar várias chamadas simultâneas
-      if (isRefreshingRef.current) {
-        console.log("Ignorando evento de autenticação, atualização em andamento");
-        return;
-      }
-      
-      console.log("Auth state change:", event, session?.user?.id);
-      isRefreshingRef.current = true;
-      
-      if (event === 'SIGNED_IN' && session) {
-        const userData: User = {
-          id: session.user.id,
-          email: session.user.email || '',
-          nome: '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setUser(userData);
-        
-        // Só buscar o perfil se ainda não foi buscado
-        if (!profileFetchedRef.current) {
-          fetchUserProfile(session.user.id);
-        } else {
-          console.log("Perfil já foi buscado, ignorando nova requisição");
+    // Configurar o listener de mudança de estado de autenticação
+    const setupAuthListener = () => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        // Se já completamos a autenticação inicial e já temos um usuário,
+        // cancelar o listener para evitar eventos indesejados ao trocar de aba
+        if (initialAuthDoneRef.current && user && event === 'SIGNED_IN') {
+          console.log("Evento SIGNED_IN ignorado - autenticação inicial já foi concluída");
           
-          // Mesmo com o perfil já buscado, permitir novas atualizações após um tempo
+          // Remover o listener após o primeiro login bem-sucedido
+          if (unsubscribeRef.current) {
+            console.log("Removendo listener de autenticação para evitar eventos ao trocar de aba");
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
+          }
+          
+          return;
+        }
+        
+        // Evitar várias chamadas simultâneas
+        if (isRefreshingRef.current) {
+          console.log("Ignorando evento de autenticação, atualização em andamento");
+          return;
+        }
+        
+        console.log("Auth state change:", event, session?.user?.id);
+        isRefreshingRef.current = true;
+        
+        if (event === 'SIGNED_IN' && session) {
+          const userData: User = {
+            id: session.user.id,
+            email: session.user.email || '',
+            nome: '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          setUser(userData);
+          
+          // Só buscar o perfil se ainda não foi buscado
+          if (!profileFetchedRef.current) {
+            fetchUserProfile(session.user.id);
+          } else {
+            console.log("Perfil já foi buscado, ignorando nova requisição");
+            
+            // Mesmo com o perfil já buscado, permitir novas atualizações após um tempo
+            setTimeout(() => {
+              isRefreshingRef.current = false;
+            }, 1000);
+          }
+          
+          // Marcar que a autenticação inicial foi concluída
+          initialAuthDoneRef.current = true;
+          
+          // Remover o listener após o primeiro login bem-sucedido
+          if (unsubscribeRef.current) {
+            console.log("Removendo listener de autenticação após login bem-sucedido");
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setProfile(null);
+          profileFetchedRef.current = false;
+          isRefreshingRef.current = false;
+          initialAuthDoneRef.current = false;
+          
+          // Reconfigurar o listener após logout
+          if (!unsubscribeRef.current) {
+            console.log("Reconfigurando listener de autenticação após logout");
+            setupAuthListener();
+          }
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log("Token refreshed successfully");
+          isRefreshingRef.current = false;
+        } else {
+          // Para outros eventos, também liberar o bloqueio
           setTimeout(() => {
             isRefreshingRef.current = false;
           }, 1000);
         }
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setProfile(null);
-        profileFetchedRef.current = false;
-        isRefreshingRef.current = false;
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log("Token refreshed successfully");
-        isRefreshingRef.current = false;
-      } else {
-        // Para outros eventos, também liberar o bloqueio
-        setTimeout(() => {
-          isRefreshingRef.current = false;
-        }, 1000);
-      }
-    });
+      });
+      
+      // Armazenar a função de cancelamento da inscrição
+      unsubscribeRef.current = () => subscription.unsubscribe();
+    };
+    
+    // Iniciar o listener
+    setupAuthListener();
 
     const fetchUserData = async () => {
       try {
@@ -130,11 +167,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         isRefreshingRef.current = true;
         
+        // Verificar se já temos um usuário e perfil carregados
+        if (user && profile && user.id === profile.id) {
+          console.log("Usuário e perfil já carregados, ignorando fetchUserData");
+          setLoading(false);
+          isRefreshingRef.current = false;
+          return;
+        }
+        
         console.log("Verificando sessão existente...");
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Sessão existente:", session?.user?.id);
         
         if (session?.user) {
+          // Se já temos o usuário com o mesmo ID, não precisamos recarregar os dados
+          if (user?.id === session.user.id && profileFetchedRef.current) {
+            console.log("Usuário já carregado com o mesmo ID, evitando recarregamento desnecessário");
+            isRefreshingRef.current = false;
+            lastFetchTimeRef.current = Date.now();
+            setLoading(false);
+            
+            // Marcar que a autenticação inicial foi concluída
+            initialAuthDoneRef.current = true;
+            
+            // Remover o listener após verificar que já estamos autenticados
+            if (unsubscribeRef.current) {
+              console.log("Removendo listener de autenticação após verificar sessão existente");
+              unsubscribeRef.current();
+              unsubscribeRef.current = null;
+            }
+            
+            return;
+          }
+          
           const userData: User = {
             id: session.user.id,
             email: session.user.email || '',
@@ -149,6 +214,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await fetchUserProfile(session.user.id);
           } else {
             console.log("Perfil já foi buscado, ignorando nova requisição");
+          }
+          
+          // Marcar que a autenticação inicial foi concluída
+          initialAuthDoneRef.current = true;
+          
+          // Remover o listener após verificar que já estamos autenticados
+          if (unsubscribeRef.current) {
+            console.log("Removendo listener de autenticação após carregar usuário e perfil");
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
           }
         }
         
@@ -167,10 +242,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUserData();
     
     return () => {
-      console.log("Limpando inscrição do auth state change");
-      subscription.unsubscribe();
+      console.log("Limpando inscrição e listeners");
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       authChangeHandlerRef.current = false;
+      initialAuthDoneRef.current = false;
     };
   }, []);
 
@@ -179,6 +258,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Verificar se o perfil já foi buscado
       if (profileFetchedRef.current && profile?.id === userId) {
         console.log("Perfil já foi buscado anteriormente, ignorando nova requisição");
+        isRefreshingRef.current = false;
+        return;
+      }
+      
+      // Verificar se a última busca foi feita há menos de 5 minutos
+      const currentTime = Date.now();
+      const fiveMinutesInMs = 5 * 60 * 1000;
+      
+      if (profile?.id === userId && (currentTime - lastFetchTimeRef.current < fiveMinutesInMs)) {
+        console.log("Perfil já foi buscado recentemente, usando dados em cache");
         isRefreshingRef.current = false;
         return;
       }
@@ -324,13 +413,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
       
+      // Login bem-sucedido, marcar a autenticação inicial como concluída
+      initialAuthDoneRef.current = true;
+      
+      // Remover o listener para evitar eventos ao trocar de aba
+      if (unsubscribeRef.current) {
+        console.log("Removendo listener após login bem-sucedido via formulário");
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+      
       toast({
         title: "Login realizado com sucesso",
         description: "Bem-vindo de volta ao BomEstudo!",
       });
       
-      // Não navegamos automaticamente para "/"
-      // navigate("/");
       return { error: null };
     } catch (error: any) {
       console.error("Erro não tratado durante login:", error);
@@ -506,6 +603,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         return { error };
       }
+      
+      // Como o login com Google envolve redirecionamento, vamos marcar para remover o listener
+      // quando o usuário retornar (na função fetchUserData)
+      initialAuthDoneRef.current = true;
       
       return { error: null };
     } catch (error: any) {
