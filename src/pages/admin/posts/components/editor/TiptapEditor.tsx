@@ -41,9 +41,6 @@ import {
   Heading3,
   Heading4,
   Heading5,
-  Type,
-  Palette,
-  Highlighter,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import './TiptapEditor.css';
@@ -70,6 +67,8 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
             class: 'list-decimal pl-4',
           },
         },
+        strike: false,
+        codeBlock: false,
       }),
       TextStyle,
       Color,
@@ -340,7 +339,6 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
             const selection = editor.state.selection;
             const node = editor.state.doc.nodeAt(selection.from);
             if (node) {
-              const style = window.getComputedStyle(editor.view.dom);
               navigator.clipboard.writeText(JSON.stringify({
                 type: node.type.name,
                 marks: node.marks.map(mark => ({

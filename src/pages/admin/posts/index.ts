@@ -1,2 +1,5 @@
+import Posts from './Posts';
+import { CriarPostIA } from './components/CriarPostIA';
 
-export { default } from './Posts';
+export { Posts, CriarPostIA };
+export default Posts;

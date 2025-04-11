@@ -8,16 +8,16 @@ import { usePermissions } from "@/hooks/usePermissions";
 export function usePostsState() {
   const { user } = useAuth();
   const { isJornalista } = usePermissions();
-  const [modo, setModo] = useState<ModoInterface>(ModoInterface.LISTAR);
+  const [modo, setModoInterno] = useState<ModoInterface>(ModoInterface.LISTAR);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(false);
   const [busca, setBusca] = useState("");
   const [postEditando, setPostEditando] = useState<BlogPost | null>(null);
   
   // Campos do formulário
-  const [titulo, setTitulo] = useState("");
-  const [resumo, setResumo] = useState("");
-  const [conteudo, setConteudo] = useState("");
+  const [titulo, setTituloInterno] = useState("");
+  const [resumo, setResumoInterno] = useState("");
+  const [conteudo, setConteudoInterno] = useState("");
   const [autor, setAutor] = useState("");
   const [autorAvatar, setAutorAvatar] = useState("");
   const [categoria, setCategoria] = useState("");
@@ -73,6 +73,63 @@ export function usePostsState() {
     return matchesBusca;
   });
 
+  // Wrappers para logar alterações dos estados críticos
+  const setModo = (novoModo: ModoInterface) => {
+    console.log("usePostsState: setModo chamado com valor:", novoModo);
+    setModoInterno(novoModo);
+  };
+  
+  const setTitulo = (novoTitulo: string) => {
+    console.log("usePostsState: setTitulo chamado com valor:", novoTitulo ? (novoTitulo.length > 30 ? novoTitulo.substring(0, 30) + "..." : novoTitulo) : "");
+    setTituloInterno(novoTitulo);
+  };
+  
+  const setResumo = (novoResumo: string) => {
+    console.log("usePostsState: setResumo chamado com valor:", novoResumo ? (novoResumo.length > 30 ? novoResumo.substring(0, 30) + "..." : novoResumo) : "");
+    setResumoInterno(novoResumo);
+  };
+  
+  const setConteudo = (novoConteudo: string) => {
+    console.log("usePostsState: setConteudo chamado com conteúdo de tamanho:", novoConteudo ? novoConteudo.length : 0);
+    setConteudoInterno(novoConteudo);
+  };
+
+  // Função para definir múltiplos campos de uma vez (para uso pela IA)
+  const preencherFormulario = (dados: {
+    titulo?: string,
+    resumo?: string,
+    conteudo?: string,
+    autor?: string,
+    categoria?: string,
+    tags?: string,
+    metaDescricao?: string,
+    metaKeywords?: string,
+    tempoLeitura?: string,
+    regiao?: Region | "none",
+    estado?: string
+  }) => {
+    console.log("usePostsState: preencherFormulario chamado com dados:", 
+      Object.keys(dados).map(key => `${key}: ${typeof dados[key as keyof typeof dados] === 'string' ? 
+        (dados[key as keyof typeof dados] as string).substring(0, 30) + '...' : 
+        dados[key as keyof typeof dados]}`).join(', ')
+    );
+    
+    if (dados.titulo !== undefined) setTituloInterno(dados.titulo);
+    if (dados.resumo !== undefined) setResumoInterno(dados.resumo);
+    if (dados.conteudo !== undefined) setConteudoInterno(dados.conteudo);
+    if (dados.autor !== undefined) setAutor(dados.autor);
+    if (dados.categoria !== undefined) setCategoria(dados.categoria);
+    if (dados.tags !== undefined) setTags(dados.tags);
+    if (dados.metaDescricao !== undefined) setMetaDescricao(dados.metaDescricao);
+    if (dados.metaKeywords !== undefined) setMetaKeywords(dados.metaKeywords);
+    if (dados.tempoLeitura !== undefined) setTempoLeitura(dados.tempoLeitura);
+    if (dados.regiao !== undefined) setRegiao(dados.regiao);
+    if (dados.estado !== undefined) setEstado(dados.estado);
+    
+    // Mudar para o modo de criação
+    setModoInterno(ModoInterface.CRIAR);
+  };
+
   return {
     modo,
     setModo,
@@ -114,6 +171,7 @@ export function usePostsState() {
     estado,
     setEstado,
     postsRelacionados,
-    setPostsRelacionados
+    setPostsRelacionados,
+    preencherFormulario
   };
 }

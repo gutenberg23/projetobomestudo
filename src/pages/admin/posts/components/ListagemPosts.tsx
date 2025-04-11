@@ -1,4 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Edit, Info, Plus, Search, Trash2 } from "lucide-react";
@@ -14,6 +22,17 @@ interface ListagemPostsProps {
   onIniciarCriacaoPost: () => void;
   onIniciarEdicaoPost: (post: BlogPost) => void;
   onExcluirPost: (id: string) => void;
+  setTitulo: (value: string) => void;
+  setResumo: (value: string) => void;
+  setConteudo: (value: string) => void;
+  setAutor: (value: string) => void;
+  setCategoria: (value: string) => void;
+  setTags: (value: string) => void;
+  setMetaDescricao: (value: string) => void;
+  setMetaKeywords: (value: string) => void;
+  setTempoLeitura: (value: string) => void;
+  setRegiao: (value: any) => void;
+  setEstado: (value: string) => void;
 }
 
 export const ListagemPosts: React.FC<ListagemPostsProps> = ({
@@ -22,7 +41,18 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
   onChangeBusca,
   onIniciarCriacaoPost,
   onIniciarEdicaoPost,
-  onExcluirPost
+  onExcluirPost,
+  setTitulo,
+  setResumo,
+  setConteudo,
+  setAutor,
+  setCategoria,
+  setTags,
+  setMetaDescricao,
+  setMetaKeywords,
+  setTempoLeitura,
+  setRegiao,
+  setEstado
 }) => {
   const { toast } = useToast();
   const [isRunningDiagnostic, setIsRunningDiagnostic] = React.useState(false);

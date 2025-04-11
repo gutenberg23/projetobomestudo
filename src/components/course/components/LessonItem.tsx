@@ -24,7 +24,6 @@ export const LessonItem: React.FC<LessonItemProps> = ({
   title,
   isCompleted = false,
   stats = { total: 0, hits: 0, errors: 0 },
-  questoesIds = [],
   onToggleComplete,
   lessonId
 }) => {
