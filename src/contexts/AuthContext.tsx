@@ -34,7 +34,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Nova ref para rastrear se a autenticação inicial já foi feita
   const initialAuthDoneRef = useRef<boolean>(false);
   // Ref para armazenar a função de cancelamento da inscrição
-  const unsubscribeRef = useRef<() => void | null>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+  // Ref para controlar recargas de página vs nova autenticação
+  const isPageReloadRef = useRef<boolean>(false);
+  // Ref para preservar URL durante recargas de página
+  const currentPageUrlRef = useRef<string>('');
+
+  useEffect(() => {
+    // Armazenar a URL atual para referência durante recargas
+    currentPageUrlRef.current = window.location.pathname;
+  }, []);
 
   const clearAuthSession = () => {
     localStorage.removeItem('bomestudo-auth-v2');
@@ -178,6 +187,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log("Verificando sessão existente...");
         const { data: { session } } = await supabase.auth.getSession();
         console.log("Sessão existente:", session?.user?.id);
+        
+        // Se encontrar uma sessão ao recarregar a página, marcar como recarga
+        if (session?.user && document.referrer && document.referrer.includes(window.location.origin)) {
+          isPageReloadRef.current = true;
+          console.log("Detectada recarga de página, preservando navegação atual");
+          
+          // Verificar se estamos em uma rota administrativa durante recarga
+          const isAdminRoute = currentPageUrlRef.current.startsWith('/admin');
+          if (isAdminRoute) {
+            console.log("Recarga em rota administrativa detectada:", currentPageUrlRef.current);
+          }
+        }
         
         if (session?.user) {
           // Se já temos o usuário com o mesmo ID, não precisamos recarregar os dados

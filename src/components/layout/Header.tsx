@@ -97,6 +97,12 @@ export const Header = () => {
                   Área Administrativa
                 </Link>
               )}
+              {user?.role === "jornalista" && (
+                <Link to="/admin/posts" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Criar/Editar Posts
+                </Link>
+              )}
               <div className="md:hidden border-t border-gray-100">
                 {config.pages.showBlogPage && (
                   <Link to="/blog" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">

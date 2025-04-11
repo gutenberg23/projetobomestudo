@@ -2,7 +2,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Spinner } from "@/components/ui/spinner";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -10,47 +10,54 @@ interface AdminGuardProps {
 
 export const AdminGuard = ({ children }: AdminGuardProps) => {
   const { user, loading } = useAuth();
-  const { canAccessAdminArea, isJornalista } = usePermissions();
+  const { canAccessAdminArea, canOnlyAccessPosts } = usePermissions();
   const [checkingAccess, setCheckingAccess] = useState(true);
-  const [hasAdminAccess, setHasAdminAccess] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [isPageReload, setIsPageReload] = useState(false);
   const location = useLocation();
-  const lastCheckTimeRef = useRef<number>(Date.now());
   
-  // Efeito para verificar permissões do usuário
+  // Detectar se é uma recarga de página
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    // Verificar se é uma atualização da página baseado no histórico de navegação
+    const isReload = 
+      window.performance && 
+      window.performance.navigation && 
+      window.performance.navigation.type === 1;
+    
+    // Se não conseguir detectar pelo navigation.type, verificar pelo referrer
+    const hasReferrer = document.referrer && document.referrer.includes(window.location.origin);
+    
+    setIsPageReload(isReload || Boolean(hasReferrer));
+    
+    if (isReload || hasReferrer) {
+      console.log("Detectada atualização de página - redirecionamentos serão bloqueados");
+    }
+  }, []);
+  
+  // Verificar permissões apenas após o usuário ser carregado completamente
+  useEffect(() => {
+    const checkPermissions = async () => {
+      // Esperar até que o carregamento do usuário seja concluído
+      if (loading) return;
+      
+      // Se não há usuário, não tem permissão
       if (!user) {
-        setHasAdminAccess(false);
+        setHasPermission(false);
         setCheckingAccess(false);
         return;
       }
-
-      // Verificar acesso administrativo sempre com base nos dados atuais do usuário
+      
+      // Verificar permissões com base nos dados do usuário
       const hasAccess = canAccessAdminArea();
-      setHasAdminAccess(hasAccess);
+      console.log("AdminGuard: Verificação de permissão concluída:", hasAccess);
+      setHasPermission(hasAccess);
       setCheckingAccess(false);
     };
-
-    // Sempre verificar o status quando o componente é montado ou quando o usuário muda
-    checkAdminStatus();
-  }, [user, canAccessAdminArea]);
-
-  // Verificar a cada mudança de visibilidade da página
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      // Desativar verificações automáticas ao voltar para a aba
-      // Isso evita redirecionamentos indesejados
-      if (document.visibilityState === 'visible') {
-        console.log("AdminGuard: Aba recebeu foco, verificações de permissão desativadas");
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
+    
+    checkPermissions();
+  }, [user, loading, canAccessAdminArea]);
+  
+  // Exibir spinner enquanto verifica
   if (loading || checkingAccess) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -58,20 +65,36 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
       </div>
     );
   }
-
+  
+  // Redirecionar para login se não estiver autenticado
   if (!user) {
     return <Navigate to="/admin/login" replace />;
   }
-
-  // Verificar se o usuário é jornalista e está tentando acessar uma rota diferente de /admin/posts
-  if (isJornalista() && !location.pathname.includes('/admin/posts')) {
-    console.log("Jornalista tentando acessar rota não autorizada, redirecionando para /admin/posts");
-    return <Navigate to="/admin/posts" replace />;
+  
+  // Se é uma atualização de página, não redirecionar - permitir que permaneça na mesma página
+  if (isPageReload) {
+    console.log("AdminGuard: Atualização de página detectada, evitando redirecionamento");
+    console.log("AdminGuard: Usuário atual:", user?.role, "Caminho atual:", location.pathname);
+    return <>{children}</>;
   }
-
-  if (!hasAdminAccess) {
+  
+  // Verificar se o usuário só pode acessar posts (jornalista)
+  if (hasPermission && canOnlyAccessPosts()) {
+    const isPostsPage = location.pathname.includes('/admin/posts');
+    const isAdminRoot = location.pathname === '/admin';
+    
+    // Apenas redirecionar se não estiver na página de posts ou na raiz
+    if (!isPostsPage && !isAdminRoot) {
+      console.log("Jornalista redirecionado para área de posts");
+      return <Navigate to="/admin/posts" replace />;
+    }
+  }
+  
+  // Se não tem acesso à área administrativa, redirecionar para home
+  if (hasPermission === false) {
+    console.log("Sem permissão para área administrativa, redirecionando para home");
     return <Navigate to="/" replace />;
   }
-
+  
   return <>{children}</>;
 }; 

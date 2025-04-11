@@ -27,6 +27,10 @@ export const usePermissions = () => {
   const canAccessAdminArea = () => {
     return isStaff() || isJornalista();
   };
+  
+  const canOnlyAccessPosts = () => {
+    return isJornalista() && !isStaff();
+  };
 
   return {
     isAdmin,
@@ -34,6 +38,7 @@ export const usePermissions = () => {
     isAssistente,
     isJornalista,
     isStaff,
-    canAccessAdminArea
+    canAccessAdminArea,
+    canOnlyAccessPosts
   };
 }; 

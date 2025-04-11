@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -20,41 +20,26 @@ import {
   Book,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useAuth } from "@/contexts/AuthContext";
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
-  const { isJornalista, canAccessAdminArea } = usePermissions();
-  const { user } = useAuth();
-  const [isActive, setIsActive] = useState(true);
-  const lastCheckTimeRef = useRef<number>(Date.now());
-
+  const { isJornalista } = usePermissions();
+  
   useEffect(() => {
     // Verificar estado de autenticação quando a aba recebe foco
     const handleVisibilityChange = () => {
-      const isVisible = document.visibilityState === 'visible';
-      setIsActive(isVisible);
-      
       // Desativar verificações automáticas ao voltar para a aba
-      if (isVisible) {
+      if (document.visibilityState === 'visible') {
         console.log("AdminLayout: Aba recebeu foco, verificações de permissão desativadas");
       }
     };
 
-    // Verificar autenticação quando a aba recebe foco
-    const handleFocus = () => {
-      setIsActive(true);
-    };
-
     // Registrar listeners para detectar quando a aba recebe/perde foco
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
