@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays } from "date-fns";
@@ -85,15 +85,6 @@ interface Simulado {
   realizado: boolean;
 }
 
-interface Stats {
-  id: string;
-  acertou: boolean | null;
-  disciplina?: string;
-  banca?: string;
-  topicos?: string;
-  questao: any;
-}
-
 const Dashboard = () => {
   const { user } = useAuth();
   const [periodo, setPeriodo] = useState("7");
@@ -150,11 +141,11 @@ const Dashboard = () => {
     } 
     // Verificar se há tópicos na questão (versão em português)
     else if (questao?.topicos && questao.topicos.length > 0) {
-      topicos = Array.isArray(questao.topicos) ? questao.topicos : [questao.topicos];
+      topicos = questao.topicos;
     } 
     // Verificar se há tópicos na questão (versão em inglês)
     else if (questao?.topics && questao.topics.length > 0) {
-      topicos = Array.isArray(questao.topics) ? questao.topics : [questao.topics];
+      topicos = questao.topics;
     }
     // Se não encontrou nenhum tópico
     else {
@@ -340,16 +331,16 @@ const Dashboard = () => {
               
               // Incrementar total apenas uma vez por resposta na disciplina (já feito fora do loop)
               topicoStat.total += 1;
-              
-              if (resposta.opcao_id) {
+            
+            if (resposta.opcao_id) {
                 if (resposta.is_correta) {
                   // Acertos do tópico
                   topicoStat.certas += 1;
-                } else {
+              } else {
                   // Erros do tópico
                   topicoStat.erradas += 1;
-                }
-              } else {
+              }
+            } else {
                 // Em branco do tópico
                 topicoStat.em_branco += 1;
               }
@@ -370,8 +361,9 @@ const Dashboard = () => {
           for (const [disciplina, disciplinaStat] of disciplinasMap.entries()) {
             const topicosDisc = topicosMap.get(disciplina);
             if (topicosDisc) {
+              // Ordenar os tópicos alfabeticamente pelo nome do tópico
               disciplinaStat.topicos = Array.from(topicosDisc.values())
-                .sort((a, b) => b.total - a.total); // Ordenar por quantidade de questões
+                .sort((a, b) => a.topico.localeCompare(b.topico)); // Ordenação alfabética por nome do tópico
               
               // Calcular totais da disciplina somando os valores dos tópicos
               disciplinaStat.certas = 0;
@@ -517,7 +509,7 @@ const Dashboard = () => {
             return;
           }
           
-          // Criar lista de IDs de simulados
+            // Criar lista de IDs de simulados
           const simuladosIds = Array.from(new Set(
             simuladosResults.map(result => result.simulado_id || "")
               .filter(id => id !== "")
@@ -529,11 +521,11 @@ const Dashboard = () => {
           }
           
           // Buscar detalhes dos simulados separadamente
-          const { data: simuladosData, error: simuladosDataError } = await supabase
-            .from("simulados")
-            .select("*")
-            .in("id", simuladosIds);
-          
+            const { data: simuladosData, error: simuladosDataError } = await supabase
+              .from("simulados")
+              .select("*")
+              .in("id", simuladosIds);
+              
           if (simuladosDataError) {
             console.log("Erro ao buscar detalhes dos simulados:", simuladosDataError.message);
           }
@@ -555,7 +547,7 @@ const Dashboard = () => {
               ? (simulado.questoes_ids?.length || totalQuestions || 0) 
               : totalQuestions || 0;
             
-            return {
+              return {
               id: simuladoId,
               titulo: simulado ? simulado.titulo : `Simulado ${simuladoId.slice(0, 8)}...`,
               questoes_total: questoesTotais,
@@ -566,10 +558,10 @@ const Dashboard = () => {
                 : 0,
               data_realizacao: format(new Date(result.created_at), "dd/MM/yyyy"),
               realizado: true
-            };
-          });
-          
-          setSimulados(formattedSimulados);
+              };
+            });
+            
+            setSimulados(formattedSimulados);
         } catch (simuladoError) {
           console.error("Erro ao buscar simulados:", simuladoError);
           setSimulados([]);
@@ -643,8 +635,8 @@ const Dashboard = () => {
             !topico.banca
           );
           
-          // Passo 2: Substituir a lista original de tópicos pela filtrada
-          disciplina.topicos = topicosFiltrados;
+          // Passo 2: Substituir a lista original de tópicos pela filtrada e ordenar alfabeticamente
+          disciplina.topicos = topicosFiltrados.sort((a, b) => a.topico.localeCompare(b.topico));
           
           // Passo 3: Recalcular os totais da disciplina baseado apenas nos tópicos filtrados
           disciplina.certas = 0;
@@ -727,8 +719,8 @@ const Dashboard = () => {
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
       <Header />
-      <main className="flex-grow pt-[120px] px-4 md:px-8 mx-auto w-full">
-        <div className="container mx-auto">
+      <main className="flex-grow pt-[120px] px-4 md:px-8 lg:px-12 w-full">
+        <div className="w-full">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <h1 className="text-2xl font-bold text-[#262f3c]">Dashboard</h1>
@@ -897,9 +889,9 @@ const Dashboard = () => {
             
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <div>
+                <div className="flex-1">
                   <CardTitle>Estatísticas por disciplina</CardTitle>
-                  <CardDescription>
+                  <CardDescription className="whitespace-nowrap">
                     Desempenho detalhado por disciplina {selectedBanca !== "todas" && `(Banca: ${
                       typeof selectedBanca === 'string' 
                         ? selectedBanca.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
@@ -907,19 +899,21 @@ const Dashboard = () => {
                     })`}
                   </CardDescription>
                 </div>
-                <Select value={selectedBanca} onValueChange={setSelectedBanca}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filtrar por banca" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas as bancas</SelectItem>
-                    {bancas.map((banca) => (
-                      <SelectItem key={banca.valor} value={banca.valor}>
-                        {banca.exibicao}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="ml-auto">
+                  <Select value={selectedBanca} onValueChange={setSelectedBanca}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filtrar por banca" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas as bancas</SelectItem>
+                      {bancas.map((banca) => (
+                        <SelectItem key={banca.valor} value={banca.valor}>
+                          {banca.exibicao}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -955,10 +949,10 @@ const Dashboard = () => {
                                   </span>
                                 )}
                               </td>
-                              <td className="py-2 text-center">{disciplina.certas}</td>
-                              <td className="py-2 text-center">{disciplina.erradas}</td>
-                              <td className="py-2 text-center">{disciplina.em_branco}</td>
-                              <td className="py-2 text-center">{disciplina.total}</td>
+                            <td className="py-2 text-center">{disciplina.certas}</td>
+                            <td className="py-2 text-center">{disciplina.erradas}</td>
+                            <td className="py-2 text-center">{disciplina.em_branco}</td>
+                            <td className="py-2 text-center">{disciplina.total}</td>
                               <td className="py-2 text-center">
                                 <div className="flex items-center justify-center">
                                   <div className="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
@@ -1009,7 +1003,7 @@ const Dashboard = () => {
                                           <span>{topico.aproveitamento}%</span>
                                         </div>
                                       </td>
-                                    </tr>
+                          </tr>
                                   ))
                                 ) : (
                                   <tr className="bg-gray-50 text-sm border-b border-gray-100">
@@ -1040,22 +1034,24 @@ const Dashboard = () => {
             
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Últimos Simulados</CardTitle>
-                  <CardDescription>
-                    Simulados realizados recentemente
+                <div className="flex-1">
+                  <CardTitle>Simulados</CardTitle>
+                  <CardDescription className="whitespace-nowrap">
+                    Resultados dos simulados realizados
                   </CardDescription>
                 </div>
-                <Select value={filtroSimulado} onValueChange={setFiltroSimulado}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filtrar por" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="concluidos">Concluídos</SelectItem>
-                    <SelectItem value="pendentes">Pendentes</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="ml-auto">
+                  <Select value={filtroSimulado} onValueChange={setFiltroSimulado}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filtrar simulados" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos os simulados</SelectItem>
+                      <SelectItem value="concluidos">Concluídos</SelectItem>
+                      <SelectItem value="pendentes">Pendentes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent>
                 {filteredSimulados.length > 0 ? (

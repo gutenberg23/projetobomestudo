@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import TermosEPoliticas from "./pages/TermosEPoliticas";
 import { AuthProvider } from "./contexts/AuthContext";
 import Simulado from "./pages/Simulado";
+import SimuladoRankingPage from "./pages/SimuladoRanking";
 import QuestionBooks from "./pages/QuestionBooks";
 import QuestionBookDetails from "./pages/QuestionBookDetails";
 import { ConfigGuard } from './components/guards/ConfigGuard';
@@ -199,6 +200,7 @@ export default function App() {
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="/simulado/:simuladoId" element={<Simulado />} />
+                  <Route path="/simulado-ranking/:simuladoId" element={<SimuladoRankingPage />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
                 <Toaster />

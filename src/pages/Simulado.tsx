@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { QuestionItemType } from "@/components/admin/questions/types";
 import { Json } from "@/integrations/supabase/types";
 import { QuestionCard } from "@/components/new/QuestionCard";
 import { Question } from "@/components/new/types";
@@ -17,46 +16,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Pagination } from "@/components/ui/pagination";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Trophy } from "lucide-react";
 
 // Opções de exibição de questões
 type DisplayOption = "single" | "ten" | "all";
-
-// Definição dos tipos para as tabelas do Supabase
-interface UserSimuladoResult {
-  id?: string;
-  user_id: string;
-  simulado_id: string;
-  acertos: number;
-  erros: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface RespostaAluno {
-  id: string;
-  aluno_id: string;
-  questao_id: string;
-  opcao_id: string;
-  is_correta: boolean;
-  created_at?: string;
-}
-
-interface RespostaAluno {
-  questao_id: string;
-  is_correta: boolean;
-  created_at?: string;
-}
-
-// Definição de tipo para a tabela user_simulado_results
-interface UserSimuladoResult {
-  id?: string;
-  user_id: string;
-  simulado_id: string;
-  acertos: number;
-  erros: number;
-  created_at?: string;
-  updated_at?: string;
-}
 
 // Tipo para o Supabase Client estendido
 type SupabaseClientWithCustomTables = typeof supabase & {
@@ -67,7 +33,6 @@ const Simulado = () => {
   const { simuladoId } = useParams<{ simuladoId: string }>();
   const navigate = useNavigate();
   const [simulado, setSimulado] = useState<any>(null);
-  const [questions, setQuestions] = useState<QuestionItemType[]>([]);
   const [formattedQuestions, setFormattedQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeQuestion, setActiveQuestion] = useState(0);
@@ -75,11 +40,16 @@ const Simulado = () => {
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [isFinishingSimulado, setIsFinishingSimulado] = useState(false);
   
+  // Estado para ranking
+  const [rankingIsPublic, setRankingIsPublic] = useState(false);
+  const [savingRankingVisibility, setSavingRankingVisibility] = useState(false);
+  
   // Estado para controlar a exibição das questões
   const [displayOption, setDisplayOption] = useState<DisplayOption>("single");
   const [currentPage, setCurrentPage] = useState(1);
   
   const [searchParams] = useSearchParams();
+  const { isAdmin } = usePermissions();
   
   // Calcular o número de páginas com base na opção de exibição
   const getPageCount = () => {
@@ -106,7 +76,7 @@ const Simulado = () => {
         // Buscar dados do simulado
         const { data: simuladoData, error: simuladoError } = await supabase
           .from("simulados")
-          .select("*")
+          .select("*, ranking_is_public")
           .eq("id", simuladoId)
           .single();
 
@@ -117,6 +87,7 @@ const Simulado = () => {
         }
 
         setSimulado(simuladoData);
+        setRankingIsPublic(simuladoData.ranking_is_public || false);
 
         // Buscar as questões do simulado
         if (simuladoData.questoes_ids && simuladoData.questoes_ids.length > 0) {
@@ -127,27 +98,6 @@ const Simulado = () => {
 
           if (questionsError) throw questionsError;
 
-          // Formatar os dados das questões
-          const formattedQuestionsAdmin: QuestionItemType[] = questionsData.map((q: any) => ({
-            id: q.id,
-            year: q.year,
-            institution: q.institution,
-            organization: q.organization,
-            role: q.role,
-            discipline: q.discipline,
-            level: q.level,
-            difficulty: q.difficulty,
-            questionType: q.questiontype,
-            content: q.content,
-            teacherExplanation: q.teacherexplanation,
-            aiExplanation: q.aiexplanation || "",
-            expandableContent: q.expandablecontent || "",
-            options: parseOptions(q.options),
-            topicos: Array.isArray(q.topicos) ? q.topicos : []
-          }));
-
-          setQuestions(formattedQuestionsAdmin);
-          
           // Formatar questões para o formato do QuestionCard
           const questionsForCard: Question[] = questionsData.map((q: any) => ({
             id: q.id,
@@ -332,7 +282,7 @@ const Simulado = () => {
             } as Question))
         : questionsData;
 
-      setQuestions(processedQuestions || []);
+      setFormattedQuestions(processedQuestions || []);
     } catch (error) {
       console.error('Erro ao buscar questões:', error);
       toast.error('Erro ao carregar as questões');
@@ -500,9 +450,40 @@ const Simulado = () => {
     window.scrollTo(0, 0);
   };
 
-  // Verificar se o usuário respondeu todas as questões
-  const allQuestionsAnswered = formattedQuestions.length > 0 && 
-    formattedQuestions.every(q => userAnswers[q.id]);
+  // Função para atualizar a visibilidade do ranking
+  const handleToggleRankingVisibility = async () => {
+    if (!isAdmin()) return;
+    
+    setSavingRankingVisibility(true);
+    try {
+      const { error } = await supabase
+        .from("simulados")
+        .update({ 
+          ranking_is_public: !rankingIsPublic,
+          ranking_updated_at: new Date().toISOString()
+        })
+        .eq("id", simuladoId);
+      
+      if (error) throw error;
+      
+      setRankingIsPublic(!rankingIsPublic);
+      toast.success(`Ranking ${!rankingIsPublic ? 'publicado' : 'definido como privado'} com sucesso!`);
+    } catch (error) {
+      console.error("Erro ao atualizar visibilidade do ranking:", error);
+      toast.error("Não foi possível atualizar a visibilidade do ranking. Tente novamente.");
+    } finally {
+      setSavingRankingVisibility(false);
+    }
+  };
+
+  // Verificar se o usuário pode ver o botão de ranking
+  const canViewRanking = rankingIsPublic || isAdmin();
+
+  const pageCount = getPageCount();
+  const displayedQuestions = getDisplayedQuestions();
+  
+  // Verificar quantas questões o usuário já respondeu
+  const questoesRespondidas = Object.keys(userAnswers).length;
 
   if (isLoading) {
     return (
@@ -536,10 +517,6 @@ const Simulado = () => {
     );
   }
 
-  const displayedQuestions = getDisplayedQuestions();
-  const pageCount = getPageCount();
-  const currentQuestion = formattedQuestions[activeQuestion];
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -558,6 +535,36 @@ const Simulado = () => {
                     <p>Até: {new Date(simulado.data_fim).toLocaleDateString('pt-BR')}</p>
                   )}
                 </div>
+
+                {/* Botão de Ranking */}
+                {canViewRanking && (
+                  <div className="mt-4">
+                    <Link to={`/simulado-ranking/${simuladoId}`}>
+                      <Button 
+                        variant="outline" 
+                        className="flex items-center gap-2 bg-[#5f2ebe] text-white hover:bg-[#4e259b]"
+                      >
+                        <Trophy className="h-4 w-4" />
+                        <span>Ranking</span>
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+
+                {/* Toggle para administradores */}
+                {isAdmin() && (
+                  <div className="mt-4 flex items-center space-x-2">
+                    <Switch 
+                      id="ranking-visibility" 
+                      checked={rankingIsPublic}
+                      onCheckedChange={handleToggleRankingVisibility}
+                      disabled={savingRankingVisibility}
+                    />
+                    <Label htmlFor="ranking-visibility">
+                      Ranking {rankingIsPublic ? "público" : "privado"}
+                    </Label>
+                  </div>
+                )}
               </div>
               
               <div className="mt-4 md:mt-0">
