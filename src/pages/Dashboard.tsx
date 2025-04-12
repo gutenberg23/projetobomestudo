@@ -51,17 +51,19 @@ interface DisciplinaStats {
   em_branco: number;
   total: number;
   aproveitamento: number;
+  banca?: string;
 }
 
 // Interface para simulados
 interface Simulado {
   id: string;
   titulo: string;
-  questoes_ids: string[];
-  data_realizacao: string;
+  questoes_total: number;
   acertos: number;
   erros: number;
-  nota: number;
+  aproveitamento: number;
+  data_realizacao: string;
+  realizado: boolean;
 }
 
 const Dashboard = () => {
@@ -69,7 +71,12 @@ const Dashboard = () => {
   const [periodo, setPeriodo] = useState("7");
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [disciplinasStats, setDisciplinasStats] = useState<DisciplinaStats[]>([]);
+  const [filteredDisciplinasStats, setFilteredDisciplinasStats] = useState<DisciplinaStats[]>([]);
   const [simulados, setSimulados] = useState<Simulado[]>([]);
+  const [filteredSimulados, setFilteredSimulados] = useState<Simulado[]>([]);
+  const [filtroSimulado, setFiltroSimulado] = useState("todos");
+  const [bancas, setBancas] = useState<string[]>([]);
+  const [selectedBanca, setSelectedBanca] = useState<string>("todas");
   const [totalStats, setTotalStats] = useState({
     total: 0,
     acertos: 0,
@@ -79,6 +86,11 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const CORES = ["#FF8042", "#5f2ebe"];
+
+  // Função para normalizar o nome da banca
+  const normalizarBanca = (banca: string): string => {
+    return banca?.trim().toUpperCase() || '';
+  };
 
   // Buscar estatísticas com base no período selecionado
   useEffect(() => {
@@ -124,6 +136,7 @@ const Dashboard = () => {
           // Calcular estatísticas diárias
           const dailyStatsMap = new Map<string, DailyStats>();
           const disciplinasMap = new Map<string, DisciplinaStats>();
+          const bancasSet = new Set<string>();
           
           // Inicializar mapa para cada dia do período
           for (let i = 0; i <= dias; i++) {
@@ -152,9 +165,8 @@ const Dashboard = () => {
             if (diaStat) {
               diaStat.questoes += 1;
               
-              // Verificar se a resposta está correta
-              const isCorreto = resposta.opcao_id === questao.resposta_id;
-              if (isCorreto) {
+              // Verificar se a resposta está correta usando is_correta
+              if (resposta.is_correta) {
                 diaStat.acertos += 1;
                 totalAcertos += 1;
               } else {
@@ -165,8 +177,13 @@ const Dashboard = () => {
               totalQuestoes += 1;
             }
             
-            // Agrupar por disciplina
+            // Obter a banca da resposta ou da questão
+            const banca = resposta.banca || questao.institution || "Sem banca";
+            bancasSet.add(normalizarBanca(banca));
+            
+            // Agrupar somente por disciplina (sem a banca na chave)
             const disciplina = questao.discipline || "Sem disciplina";
+            
             if (!disciplinasMap.has(disciplina)) {
               disciplinasMap.set(disciplina, {
                 disciplina,
@@ -174,7 +191,7 @@ const Dashboard = () => {
                 erradas: 0,
                 em_branco: 0,
                 total: 0,
-                aproveitamento: 0,
+                aproveitamento: 0
               });
             }
             
@@ -182,7 +199,7 @@ const Dashboard = () => {
             disciplinaStat.total += 1;
             
             if (resposta.opcao_id) {
-              if (resposta.opcao_id === questao.resposta_id) {
+              if (resposta.is_correta) {
                 disciplinaStat.certas += 1;
               } else {
                 disciplinaStat.erradas += 1;
@@ -220,9 +237,18 @@ const Dashboard = () => {
             });
           
           const disciplinasArray = Array.from(disciplinasMap.values());
+          const bancasArray = Array.from(bancasSet).sort();
+          
+          // Formatação das bancas para exibição na interface
+          const bancasFormatadas = bancasArray.map(banca => {
+            // Converter para minúsculas e depois capitalizar
+            return banca.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+          });
           
           setDailyStats(dailyStatsArray);
           setDisciplinasStats(disciplinasArray);
+          setFilteredDisciplinasStats(disciplinasArray);
+          setBancas(bancasFormatadas);
         } else {
           // Se não encontrou respostas, inicializar o mapa para os dias do período
           const emptyDailyStatsMap = new Map<string, DailyStats>();
@@ -249,6 +275,8 @@ const Dashboard = () => {
             })
           );
           setDisciplinasStats([]);
+          setFilteredDisciplinasStats([]);
+          setBancas([]);
           setTotalStats({
             total: 0,
             acertos: 0,
@@ -257,64 +285,102 @@ const Dashboard = () => {
           });
         }
         
-        // Buscar simulados do aluno - comentado pois a tabela não existe ainda
+        // Buscar simulados do aluno
         try {
-          // Desativar esta consulta temporariamente porque a tabela não existe
-          /*
-          const { data: respostasSimulados, error: simuladosError } = await supabase
-            .from("respostas_simulados")
+          // Buscar resultados de simulados do usuário
+          let { data: simuladosResults, error: simuladosError } = await supabase
+            .from("user_simulado_results")
             .select("*")
-            .eq("aluno_id", user.id)
+            .eq("user_id", user.id)
             .order("created_at", { ascending: false });
           
-          if (simuladosError) throw simuladosError;
-          
-          if (respostasSimulados && respostasSimulados.length > 0) {
-            // Criar lista de IDs de simulados
-            const simuladosIds = respostasSimulados.map(resposta => resposta.simulado_id);
+          // Se houver erro na primeira tabela, tentar a alternativa
+          if (simuladosError) {
+            console.log("Tentando tabela alternativa para simulados...", simuladosError.message);
             
-            // Buscar simulados
-            const { data: simuladosData, error: simuladosDataError } = await supabase
-              .from("simulados")
+            // Tentar com a tabela "simulado_results" (possível nome alternativo)
+            const { data: altResults, error: altError } = await supabase
+              .from("simulado_results")
               .select("*")
-              .in("id", simuladosIds);
-              
-            if (simuladosDataError) throw simuladosDataError;
+              .eq("user_id", user.id)
+              .order("created_at", { ascending: false });
             
-            // Criar um mapa para fácil acesso aos simulados
-            const simuladosMap = new Map();
-            if (simuladosData) {
-              simuladosData.forEach(simulado => {
-                simuladosMap.set(simulado.id, simulado);
-              });
+            if (!altError) {
+              simuladosResults = altResults;
+              simuladosError = null;
+              console.log("Usando tabela alternativa para simulados");
+            } else {
+              console.log("Tabela alternativa também não disponível:", altError.message);
             }
-            
-            // Formatar os dados para a interface
-            const formattedSimulados = respostasSimulados.map((resposta) => {
-              const simulado = simuladosMap.get(resposta.simulado_id);
-              return {
-                id: resposta.simulado_id,
-                titulo: simulado ? simulado.titulo : "Sem título",
-                questoes_ids: simulado ? simulado.questoes_ids || [] : [],
-                data_realizacao: format(new Date(resposta.created_at), "dd/MM/yyyy"),
-                acertos: resposta.acertos,
-                erros: resposta.erros,
-                nota: resposta.nota,
-              };
-            });
-            
-            setSimulados(formattedSimulados);
-          } else {
-            setSimulados([]);
           }
-          */
           
-          // Definir simulados como uma lista vazia até que a tabela seja criada
-          setSimulados([]);
+          if (simuladosError) {
+            // Se o erro persistir com ambas as tabelas
+            console.log("Nenhuma tabela de resultados de simulados disponível");
+            setSimulados([]);
+            return;
+          }
           
+          if (!simuladosResults || simuladosResults.length === 0) {
+            setSimulados([]);
+            return;
+          }
+          
+          // Criar lista de IDs de simulados
+          const simuladosIds = Array.from(new Set(
+            simuladosResults.map(result => result.simulado_id || "")
+              .filter(id => id !== "")
+          ));
+          
+          if (simuladosIds.length === 0) {
+            setSimulados([]);
+            return;
+          }
+          
+          // Buscar detalhes dos simulados separadamente
+          const { data: simuladosData, error: simuladosDataError } = await supabase
+            .from("simulados")
+            .select("*")
+            .in("id", simuladosIds);
+          
+          if (simuladosDataError) {
+            console.log("Erro ao buscar detalhes dos simulados:", simuladosDataError.message);
+          }
+          
+          // Formatar os dados para a interface, mesmo se houver erro na busca de detalhes
+          const formattedSimulados = simuladosResults.map((result) => {
+            // Tentar encontrar o simulado correspondente
+            const simulado = simuladosDataError ? null : 
+              simuladosData?.find(s => s.id === result.simulado_id);
+            
+            // Obter valores com tratamento para diferentes estruturas de coluna
+            const simuladoId = result.simulado_id || result.id;
+            const correctAnswers = result.correct_answers || result.acertos || 0;
+            const wrongAnswers = result.wrong_answers || result.erros || 0;
+            const totalQuestions = result.total_questions || 
+              (correctAnswers + wrongAnswers) || 0;
+            
+            const questoesTotais = simulado 
+              ? (simulado.questoes_ids?.length || totalQuestions || 0) 
+              : totalQuestions || 0;
+            
+            return {
+              id: simuladoId,
+              titulo: simulado ? simulado.titulo : `Simulado ${simuladoId.slice(0, 8)}...`,
+              questoes_total: questoesTotais,
+              acertos: correctAnswers,
+              erros: wrongAnswers,
+              aproveitamento: questoesTotais > 0 
+                ? Math.round((correctAnswers / questoesTotais) * 100) 
+                : 0,
+              data_realizacao: format(new Date(result.created_at), "dd/MM/yyyy"),
+              realizado: true
+            };
+          });
+          
+          setSimulados(formattedSimulados);
         } catch (simuladoError) {
           console.error("Erro ao buscar simulados:", simuladoError);
-          // Não interromper o fluxo principal se houver erro nos simulados
           setSimulados([]);
         }
       } catch (error) {
@@ -337,6 +403,152 @@ const Dashboard = () => {
     
     fetchStats();
   }, [user, periodo]);
+  
+  // Filtrar estatísticas por banca selecionada
+  useEffect(() => {
+    const fetchFilteredStats = async () => {
+      if (!user) return;
+      
+      if (selectedBanca === "todas") {
+        // Se todas as bancas estiverem selecionadas, usar as estatísticas gerais
+        setFilteredDisciplinasStats(disciplinasStats);
+      } else {
+        try {
+          const dias = parseInt(periodo);
+          const dataInicio = subDays(new Date(), dias);
+          const dataInicioFormatada = format(dataInicio, "yyyy-MM-dd");
+          
+          // Buscar todas as respostas do período para filtrar manualmente
+          const { data: respostas, error } = await supabase
+            .from("respostas_alunos")
+            .select("*")
+            .eq("aluno_id", user.id)
+            .gte("created_at", dataInicioFormatada);
+          
+          if (error) throw error;
+          
+          if (respostas && respostas.length > 0) {
+            // Criar lista de IDs de questões
+            const questoesIds = respostas.map(resposta => resposta.questao_id);
+            
+            // Buscar questões
+            const { data: questoes, error: questoesError } = await supabase
+              .from("questoes")
+              .select("*")
+              .in("id", questoesIds);
+              
+            if (questoesError) throw questoesError;
+            
+            // Criar um mapa para fácil acesso às questões
+            const questoesMap = new Map();
+            if (questoes) {
+              questoes.forEach(questao => {
+                questoesMap.set(questao.id, questao);
+              });
+            }
+            
+            // Filtrar respostas pela banca selecionada
+            const respostasFiltradas = respostas.filter(resposta => {
+              const questao = questoesMap.get(resposta.questao_id);
+              if (!questao) return false;
+              
+              // Normalizar e verificar se a banca da resposta OU da questão corresponde ao filtro
+              const bancaResposta = normalizarBanca(resposta.banca || '');
+              const bancaQuestao = normalizarBanca(questao.institution || '');
+              const filtroNormalizado = normalizarBanca(selectedBanca);
+              
+              console.log("Comparando bancas:", { 
+                bancaResposta, 
+                bancaQuestao, 
+                filtroNormalizado,
+                resultado: bancaResposta === filtroNormalizado || (bancaResposta === '' && bancaQuestao === filtroNormalizado)
+              });
+              
+              return bancaResposta === filtroNormalizado || 
+                     (bancaResposta === '' && bancaQuestao === filtroNormalizado);
+            });
+            
+            console.log(`Encontradas ${respostasFiltradas.length} respostas para a banca ${selectedBanca}`);
+            
+            // Se encontrou respostas filtradas, processar estatísticas
+            if (respostasFiltradas.length > 0) {
+              // Calcular estatísticas por disciplina
+              const disciplinasFilteredMap = new Map<string, DisciplinaStats>();
+              
+              respostasFiltradas.forEach((resposta) => {
+                const questao = questoesMap.get(resposta.questao_id);
+                if (!questao) return;
+                
+                const disciplina = questao.discipline || "Sem disciplina";
+                
+                if (!disciplinasFilteredMap.has(disciplina)) {
+                  disciplinasFilteredMap.set(disciplina, {
+                    disciplina,
+                    certas: 0,
+                    erradas: 0,
+                    em_branco: 0,
+                    total: 0,
+                    aproveitamento: 0
+                  });
+                }
+                
+                const disciplinaStat = disciplinasFilteredMap.get(disciplina)!;
+                disciplinaStat.total += 1;
+                
+                if (resposta.opcao_id) {
+                  if (resposta.is_correta) {
+                    disciplinaStat.certas += 1;
+                  } else {
+                    disciplinaStat.erradas += 1;
+                  }
+                } else {
+                  disciplinaStat.em_branco += 1;
+                }
+                
+                disciplinaStat.aproveitamento = 
+                  disciplinaStat.total > 0 
+                    ? Math.round((disciplinaStat.certas / disciplinaStat.total) * 100) 
+                    : 0;
+                
+                disciplinasFilteredMap.set(disciplina, disciplinaStat);
+              });
+              
+              // Converter para array
+              const disciplinasFilteredArray = Array.from(disciplinasFilteredMap.values());
+              setFilteredDisciplinasStats(disciplinasFilteredArray);
+            } else {
+              setFilteredDisciplinasStats([]);
+              console.log("Nenhuma resposta encontrada para o filtro de banca:", selectedBanca);
+            }
+          } else {
+            setFilteredDisciplinasStats([]);
+          }
+        } catch (error) {
+          console.error("Erro ao filtrar estatísticas por banca:", error);
+          toast.error("Erro ao filtrar estatísticas por banca.");
+          setFilteredDisciplinasStats([]);
+        }
+      }
+    };
+    
+    fetchFilteredStats();
+  }, [selectedBanca, periodo, user, disciplinasStats]);
+  
+  // Inicializar simulados filtrados quando os simulados mudarem
+  useEffect(() => {
+    setFilteredSimulados(simulados);
+  }, [simulados]);
+  
+  // Filtrar simulados baseado no filtro selecionado
+  useEffect(() => {
+    if (filtroSimulado === "todos") {
+      setFilteredSimulados(simulados);
+    } else if (filtroSimulado === "concluidos") {
+      setFilteredSimulados(simulados.filter(simulado => simulado.realizado));
+    } else if (filtroSimulado === "pendentes") {
+      setFilteredSimulados(simulados.filter(simulado => !simulado.realizado));
+    }
+  }, [filtroSimulado, simulados]);
   
   // Dados para o gráfico de rosca
   const pieChartData = [
@@ -428,7 +640,14 @@ const Dashboard = () => {
                           }}
                           labelFormatter={(label) => {
                             const item = dailyStats.find(stat => stat.date === label);
-                            return item ? item.dia_formatado : label;
+                            if (item) {
+                              // Calcular o aproveitamento do dia
+                              const aproveitamento = item.questoes > 0 
+                                ? Math.round((item.acertos / item.questoes) * 100) 
+                                : 0;
+                              return `${item.dia_formatado}\nAproveitamento: ${aproveitamento}%`;
+                            }
+                            return label;
                           }}
                         />
                         <Legend />
@@ -513,18 +732,20 @@ const Dashboard = () => {
                 <div>
                   <CardTitle>Estatísticas por disciplina</CardTitle>
                   <CardDescription>
-                    Desempenho detalhado por disciplina no período selecionado
+                    Desempenho detalhado por disciplina {selectedBanca !== "todas" && `(Banca: ${selectedBanca.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())})`}
                   </CardDescription>
                 </div>
-                <Select value={periodo} onValueChange={setPeriodo}>
+                <Select value={selectedBanca} onValueChange={setSelectedBanca}>
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Selecione o período" />
+                    <SelectValue placeholder="Filtrar por banca" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="7">Últimos 7 dias</SelectItem>
-                    <SelectItem value="30">Últimos 30 dias</SelectItem>
-                    <SelectItem value="90">Últimos 90 dias</SelectItem>
-                    <SelectItem value="365">Último ano</SelectItem>
+                    <SelectItem value="todas">Todas as bancas</SelectItem>
+                    {bancas.map((banca) => (
+                      <SelectItem key={banca} value={banca}>
+                        {banca}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </CardHeader>
@@ -542,8 +763,8 @@ const Dashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {disciplinasStats.length > 0 ? (
-                        disciplinasStats.map((disciplina, index) => (
+                      {filteredDisciplinasStats.length > 0 ? (
+                        filteredDisciplinasStats.map((disciplina, index) => (
                           <tr key={index} className="border-b">
                             <td className="py-2">{disciplina.disciplina}</td>
                             <td className="py-2 text-center">{disciplina.certas}</td>
@@ -556,7 +777,10 @@ const Dashboard = () => {
                       ) : (
                         <tr>
                           <td colSpan={6} className="py-4 text-center text-gray-500">
-                            Nenhum dado disponível para o período selecionado
+                            {selectedBanca !== "todas" 
+                              ? `Nenhuma questão respondida da banca ${selectedBanca} no período selecionado`
+                              : "Nenhum dado disponível para o período selecionado"
+                            }
                           </td>
                         </tr>
                       )}
@@ -574,7 +798,7 @@ const Dashboard = () => {
                     Simulados realizados recentemente
                   </CardDescription>
                 </div>
-                <Select defaultValue="todos">
+                <Select value={filtroSimulado} onValueChange={setFiltroSimulado}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filtrar por" />
                   </SelectTrigger>
@@ -586,28 +810,51 @@ const Dashboard = () => {
                 </Select>
               </CardHeader>
               <CardContent>
-                {simulados.length > 0 ? (
+                {filteredSimulados.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
                           <th className="py-2 text-left">Simulado</th>
-                          <th className="py-2 text-center">Data</th>
                           <th className="py-2 text-center">Questões</th>
                           <th className="py-2 text-center">Acertos</th>
                           <th className="py-2 text-center">Erros</th>
-                          <th className="py-2 text-center">Nota</th>
+                          <th className="py-2 text-center">Aproveitamento</th>
+                          <th className="py-2 text-center">Realizado</th>
+                          <th className="py-2 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {simulados.map((simulado) => (
+                        {filteredSimulados.map((simulado) => (
                           <tr key={simulado.id} className="border-b">
                             <td className="py-2">{simulado.titulo}</td>
-                            <td className="py-2 text-center">{simulado.data_realizacao}</td>
-                            <td className="py-2 text-center">{simulado.questoes_ids.length}</td>
+                            <td className="py-2 text-center">{simulado.questoes_total}</td>
                             <td className="py-2 text-center">{simulado.acertos}</td>
                             <td className="py-2 text-center">{simulado.erros}</td>
-                            <td className="py-2 text-center">{simulado.nota.toFixed(1)}</td>
+                            <td className="py-2 text-center">
+                              <div className="flex items-center">
+                                <div className="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
+                                  <div 
+                                    className="bg-green-600 h-2.5 rounded-full" 
+                                    style={{ width: `${simulado.aproveitamento}%` }}
+                                  ></div>
+                                </div>
+                                <span>{simulado.aproveitamento}%</span>
+                              </div>
+                            </td>
+                            <td className="py-2 text-center">
+                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                {simulado.realizado ? "Sim" : "Não"}
+                              </span>
+                            </td>
+                            <td className="py-2 text-center">
+                              <a 
+                                href={`/simulado/${simulado.id}/refazer`} 
+                                className="text-blue-600 hover:text-blue-800 px-3 py-1 bg-blue-50 rounded-md text-sm font-medium"
+                              >
+                                Refazer
+                              </a>
+                            </td>
                           </tr>
                         ))}
                       </tbody>

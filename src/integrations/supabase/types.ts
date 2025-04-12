@@ -858,6 +858,9 @@ export type Database = {
           is_correta: boolean
           opcao_id: string
           questao_id: string
+          topicos: string[] | null
+          disciplina: string | null
+          banca: string | null
         }
         Insert: {
           aluno_id: string
@@ -866,6 +869,9 @@ export type Database = {
           is_correta: boolean
           opcao_id: string
           questao_id: string
+          topicos?: string[] | null
+          disciplina?: string | null
+          banca?: string | null
         }
         Update: {
           aluno_id?: string
@@ -874,6 +880,9 @@ export type Database = {
           is_correta?: boolean
           opcao_id?: string
           questao_id?: string
+          topicos?: string[] | null
+          disciplina?: string | null
+          banca?: string | null
         }
         Relationships: []
       }

@@ -390,6 +390,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const toggleComments = () => {
     setShowComments(!showComments);
   };
+  
+  // Função para normalizar o nome da banca
+  const normalizarBanca = (banca: string): string => {
+    return banca?.trim().toUpperCase() || '';
+  };
+  
   const handleAnswer = async () => {
     if (selectedOption !== null) {
       // Verificar se a opção selecionada é a correta
@@ -412,7 +418,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               aluno_id: userId,
               questao_id: question.id,
               opcao_id: selectedOption,
-              is_correta: isCorrect
+              is_correta: isCorrect,
+              topicos: question.topics || [],
+              disciplina: question.discipline || '',
+              banca: normalizarBanca(question.institution || '')
             });
           if (error) throw error;
           setHasAnswered(true);
