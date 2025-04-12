@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BarChart, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -9,7 +9,6 @@ import { QuestionStats } from "./QuestionStats";
 import { QuestionHeaderProps } from "../types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Database } from '@/integrations/supabase/types';
 import { Label } from "@/components/ui/label";
 
 export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
@@ -18,7 +17,6 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
   institution,
   organization,
   role,
-  educationLevel,
   discipline,
   topics,
   questionId
@@ -27,6 +25,11 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportDescription, setReportDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Log para debug dos tópicos
+  useEffect(() => {
+    console.log("Topics recebidos no QuestionHeader:", topics);
+  }, [topics]);
 
   const handleReportSubmit = async () => {
     if (!reportDescription.trim()) {
@@ -98,16 +101,19 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
           </div>
           <div className="flex items-center mr-6">
             <span className="text-sm">Disciplina:&nbsp;</span>
-            <span className="font-normal text-sm">
-              {discipline}
-              {topics && topics.length > 0 && (
-                <>
-                  {" → "}
-                  <span className="text-gray-300">{topics.join(", ")}</span>
-                </>
-              )}
-            </span>
+            <span className="font-normal text-sm">{discipline}</span>
           </div>
+          {Array.isArray(topics) && topics.length > 0 ? (
+            <div className="flex items-center mr-6">
+              <span className="text-sm font-semibold">Assunto:&nbsp;</span>
+              <span className="font-normal text-sm text-white font-medium">{topics.join(", ")}</span>
+            </div>
+          ) : (
+            <div className="flex items-center mr-6">
+              <span className="text-sm font-semibold">Assunto:&nbsp;</span>
+              <span className="font-normal text-sm text-gray-400">Não informado</span>
+            </div>
+          )}
         </div>
       </div>
 

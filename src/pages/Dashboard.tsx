@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format, subDays } from "date-fns";
@@ -31,8 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import React from "react";
 
 // Interface para as estatísticas diárias
 interface DailyStats {
@@ -52,6 +53,24 @@ interface DisciplinaStats {
   total: number;
   aproveitamento: number;
   banca?: string;
+  topicos?: TopicoStats[];
+}
+
+// Interface para estatísticas por tópico
+interface TopicoStats {
+  topico: string;
+  certas: number;
+  erradas: number;
+  em_branco: number;
+  total: number;
+  aproveitamento: number;
+  banca?: string;
+}
+
+// Interface para resultados de tópicos com banca
+interface TopicoComBanca {
+  topico: string;
+  banca: string;
 }
 
 // Interface para simulados
@@ -66,6 +85,15 @@ interface Simulado {
   realizado: boolean;
 }
 
+interface Stats {
+  id: string;
+  acertou: boolean | null;
+  disciplina?: string;
+  banca?: string;
+  topicos?: string;
+  questao: any;
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const [periodo, setPeriodo] = useState("7");
@@ -75,8 +103,9 @@ const Dashboard = () => {
   const [simulados, setSimulados] = useState<Simulado[]>([]);
   const [filteredSimulados, setFilteredSimulados] = useState<Simulado[]>([]);
   const [filtroSimulado, setFiltroSimulado] = useState("todos");
-  const [bancas, setBancas] = useState<string[]>([]);
+  const [bancas, setBancas] = useState<{ valor: string; exibicao: string }[]>([]);
   const [selectedBanca, setSelectedBanca] = useState<string>("todas");
+  const [expandedDisciplinas, setExpandedDisciplinas] = useState<string[]>([]);
   const [totalStats, setTotalStats] = useState({
     total: 0,
     acertos: 0,
@@ -84,12 +113,90 @@ const Dashboard = () => {
     aproveitamento: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  // Criar um mapa para armazenar a relação entre disciplinas e bancas
+  const [disciplinasBancasMap, setDisciplinasBancasMap] = useState<Map<string, Set<string>>>(new Map());
 
   const CORES = ["#FF8042", "#5f2ebe"];
 
   // Função para normalizar o nome da banca
   const normalizarBanca = (banca: string): string => {
-    return banca?.trim().toUpperCase() || '';
+    return banca.toLowerCase().trim();
+  };
+  
+  // Função para normalizar o tópico
+  const normalizarTopico = (topico: string): string => {
+    // Remover pontuação e normalizar para minúsculas
+    return topico
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+      .replace(/[^\w\s]/g, ''); // Remove pontuação
+  };
+
+  // Função atualizada para extrair tópicos da resposta ou questão, incluindo informação da banca
+  const extrairTopicos = (resposta: any, questao: any): TopicoComBanca[] => {
+    let topicos: string[] = [];
+    let bancaDoTopico = resposta.banca || questao.institution || "Sem banca";
+    bancaDoTopico = normalizarBanca(bancaDoTopico);
+    
+    // Verificar se há tópicos na resposta
+    if (resposta?.topicos) {
+      // Pode ser um array ou uma string
+      if (Array.isArray(resposta.topicos)) {
+        topicos = resposta.topicos;
+      } else {
+        topicos = [resposta.topicos];
+      }
+    } 
+    // Verificar se há tópicos na questão (versão em português)
+    else if (questao?.topicos && questao.topicos.length > 0) {
+      topicos = Array.isArray(questao.topicos) ? questao.topicos : [questao.topicos];
+    } 
+    // Verificar se há tópicos na questão (versão em inglês)
+    else if (questao?.topics && questao.topics.length > 0) {
+      topicos = Array.isArray(questao.topics) ? questao.topics : [questao.topics];
+    }
+    // Se não encontrou nenhum tópico
+    else {
+      topicos = ["Sem tópico"];
+    }
+    
+    return topicos.map(topico => ({
+      topico,
+      banca: bancaDoTopico
+    }));
+  };
+
+  // Função para agrupar tópicos duplicados
+  const agruparTopicosDuplicados = (disciplinasComTopicos: DisciplinaStats[]): DisciplinaStats[] => {
+    return disciplinasComTopicos.map((disciplina) => {
+      const topicosMergeados = new Map<string, TopicoStats>();
+      
+      // Verificar se disciplina.topicos existe e não está vazio
+      if (disciplina.topicos && disciplina.topicos.length > 0) {
+        disciplina.topicos.forEach((tpc: TopicoStats) => {
+          const topicoNormalizado = normalizarTopico(tpc.topico);
+          
+          if (topicosMergeados.has(topicoNormalizado)) {
+            const topicoExistente = topicosMergeados.get(topicoNormalizado)!;
+            topicoExistente.certas += tpc.certas;
+            topicoExistente.erradas += tpc.erradas;
+            topicoExistente.em_branco += tpc.em_branco;
+            topicoExistente.total += tpc.total;
+          } else {
+            topicosMergeados.set(topicoNormalizado, {
+              ...tpc,
+              topico: topicoNormalizado,
+            });
+          }
+        });
+      }
+      
+      return {
+        ...disciplina,
+        topicos: Array.from(topicosMergeados.values()),
+      };
+    });
   };
 
   // Buscar estatísticas com base no período selecionado
@@ -136,7 +243,11 @@ const Dashboard = () => {
           // Calcular estatísticas diárias
           const dailyStatsMap = new Map<string, DailyStats>();
           const disciplinasMap = new Map<string, DisciplinaStats>();
+          const topicosMap = new Map<string, Map<string, TopicoStats>>();
           const bancasSet = new Set<string>();
+          
+          // Novo mapa para rastrear bancas por disciplina
+          const disciplinasBancasMap = new Map<string, Set<string>>();
           
           // Inicializar mapa para cada dia do período
           for (let i = 0; i <= dias; i++) {
@@ -179,10 +290,18 @@ const Dashboard = () => {
             
             // Obter a banca da resposta ou da questão
             const banca = resposta.banca || questao.institution || "Sem banca";
-            bancasSet.add(normalizarBanca(banca));
+            const bancaNormalizada = normalizarBanca(banca);
+            bancasSet.add(bancaNormalizada);
             
             // Agrupar somente por disciplina (sem a banca na chave)
             const disciplina = questao.discipline || "Sem disciplina";
+            
+            // Rastrear bancas para cada disciplina
+            if (!disciplinasBancasMap.has(disciplina)) {
+              disciplinasBancasMap.set(disciplina, new Set([bancaNormalizada]));
+            } else {
+              disciplinasBancasMap.get(disciplina)!.add(bancaNormalizada);
+            }
             
             if (!disciplinasMap.has(disciplina)) {
               disciplinasMap.set(disciplina, {
@@ -191,42 +310,99 @@ const Dashboard = () => {
                 erradas: 0,
                 em_branco: 0,
                 total: 0,
-                aproveitamento: 0
+                aproveitamento: 0,
+                banca: bancaNormalizada, // Associar a banca à disciplina
+                topicos: [],
               });
+              
+              // Inicializar o mapa de tópicos para esta disciplina
+              topicosMap.set(disciplina, new Map<string, TopicoStats>());
             }
             
-            const disciplinaStat = disciplinasMap.get(disciplina)!;
-            disciplinaStat.total += 1;
+            // Obter tópicos da resposta ou questão (agora com informação de banca)
+            const topicosComBanca = extrairTopicos(resposta, questao);
+            const topicosMapDisciplina = topicosMap.get(disciplina)!;
             
-            if (resposta.opcao_id) {
-              if (resposta.is_correta) {
-                disciplinaStat.certas += 1;
-              } else {
-                disciplinaStat.erradas += 1;
+            topicosComBanca.forEach(({ topico: tpc, banca: bancaTopico }: TopicoComBanca) => {
+              if (!topicosMapDisciplina.has(tpc)) {
+                topicosMapDisciplina.set(tpc, {
+                  topico: tpc,
+                  certas: 0,
+                  erradas: 0,
+                  em_branco: 0,
+                  total: 0,
+                  aproveitamento: 0,
+                  banca: bancaTopico // Armazenar a banca do tópico
+                });
               }
-            } else {
-              disciplinaStat.em_branco += 1;
-            }
+              
+              const topicoStat = topicosMapDisciplina.get(tpc)!;
+              
+              // Incrementar total apenas uma vez por resposta na disciplina (já feito fora do loop)
+              topicoStat.total += 1;
+              
+              if (resposta.opcao_id) {
+                if (resposta.is_correta) {
+                  // Acertos do tópico
+                  topicoStat.certas += 1;
+                } else {
+                  // Erros do tópico
+                  topicoStat.erradas += 1;
+                }
+              } else {
+                // Em branco do tópico
+                topicoStat.em_branco += 1;
+              }
+                                
+              topicoStat.aproveitamento = 
+                topicoStat.total > 0 
+                  ? Math.round((topicoStat.certas / topicoStat.total) * 100) 
+                  : 0;
+              
+              topicosMapDisciplina.set(tpc, topicoStat);
+            });
             
-            disciplinaStat.aproveitamento = 
-              disciplinaStat.total > 0 
-                ? Math.round((disciplinaStat.certas / disciplinaStat.total) * 100) 
-                : 0;
-            
-            disciplinasMap.set(disciplina, disciplinaStat);
+            // Atualizar disciplina e mapa de tópicos
+            topicosMap.set(disciplina, topicosMapDisciplina);
           });
+          
+          // Adicionar tópicos às disciplinas
+          for (const [disciplina, disciplinaStat] of disciplinasMap.entries()) {
+            const topicosDisc = topicosMap.get(disciplina);
+            if (topicosDisc) {
+              disciplinaStat.topicos = Array.from(topicosDisc.values())
+                .sort((a, b) => b.total - a.total); // Ordenar por quantidade de questões
+              
+              // Calcular totais da disciplina somando os valores dos tópicos
+              disciplinaStat.certas = 0;
+              disciplinaStat.erradas = 0;
+              disciplinaStat.em_branco = 0;
+              disciplinaStat.total = 0;
+              
+              disciplinaStat.topicos.forEach(topico => {
+                disciplinaStat.certas += topico.certas;
+                disciplinaStat.erradas += topico.erradas;
+                disciplinaStat.em_branco += topico.em_branco;
+                disciplinaStat.total += topico.total;
+              });
+              
+              // Calcular aproveitamento da disciplina
+              disciplinaStat.aproveitamento = 
+                disciplinaStat.total > 0 
+                  ? Math.round((disciplinaStat.certas / disciplinaStat.total) * 100) 
+                  : 0;
+              
+              disciplinasMap.set(disciplina, disciplinaStat);
+            }
+          }
+          
+          // Função para agrupar tópicos com o mesmo nome dentro de cada disciplina
+          const disciplinasComTopicoAgrupados = agruparTopicosDuplicados(Array.from(disciplinasMap.values()));
           
           // Calcular aproveitamento geral
           const aproveitamento = totalQuestoes > 0 
             ? Math.round((totalAcertos / totalQuestoes) * 100) 
             : 0;
-          
-          setTotalStats({
-            total: totalQuestoes,
-            acertos: totalAcertos,
-            erros: totalQuestoes - totalAcertos,
-            aproveitamento,
-          });
           
           // Converter para array e ordenar por data
           const dailyStatsArray = Array.from(dailyStatsMap.values())
@@ -236,19 +412,34 @@ const Dashboard = () => {
               return dateA.localeCompare(dateB);
             });
           
-          const disciplinasArray = Array.from(disciplinasMap.values());
           const bancasArray = Array.from(bancasSet).sort();
           
           // Formatação das bancas para exibição na interface
           const bancasFormatadas = bancasArray.map(banca => {
             // Converter para minúsculas e depois capitalizar
-            return banca.toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+            return {
+              valor: banca, // Valor original (minúsculo) para comparação
+              exibicao: banca.toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) // Para exibição
+            };
           });
           
           setDailyStats(dailyStatsArray);
-          setDisciplinasStats(disciplinasArray);
-          setFilteredDisciplinasStats(disciplinasArray);
+          setDisciplinasStats(disciplinasComTopicoAgrupados);
+          setFilteredDisciplinasStats(disciplinasComTopicoAgrupados);
           setBancas(bancasFormatadas);
+          
+          setTotalStats({
+            total: totalQuestoes,
+            acertos: totalAcertos,
+            erros: totalQuestoes - totalAcertos,
+            aproveitamento,
+          });
+          
+          // Atualizar o estado com o mapa de bancas por disciplina
+          setDisciplinasBancasMap(disciplinasBancasMap);
+          
+          // Reset da banca selecionada para "todas" quando os dados são carregados
+          setSelectedBanca("todas");
         } else {
           // Se não encontrou respostas, inicializar o mapa para os dias do período
           const emptyDailyStatsMap = new Map<string, DailyStats>();
@@ -404,135 +595,98 @@ const Dashboard = () => {
     fetchStats();
   }, [user, periodo]);
   
-  // Filtrar estatísticas por banca selecionada
+  // Aplicar filtro de banca quando selecionada
   useEffect(() => {
-    const fetchFilteredStats = async () => {
-      if (!user) return;
-      
-      if (selectedBanca === "todas") {
-        // Se todas as bancas estiverem selecionadas, usar as estatísticas gerais
-        setFilteredDisciplinasStats(disciplinasStats);
-      } else {
-        try {
-          const dias = parseInt(periodo);
-          const dataInicio = subDays(new Date(), dias);
-          const dataInicioFormatada = format(dataInicio, "yyyy-MM-dd");
-          
-          // Buscar todas as respostas do período para filtrar manualmente
-          const { data: respostas, error } = await supabase
-            .from("respostas_alunos")
-            .select("*")
-            .eq("aluno_id", user.id)
-            .gte("created_at", dataInicioFormatada);
-          
-          if (error) throw error;
-          
-          if (respostas && respostas.length > 0) {
-            // Criar lista de IDs de questões
-            const questoesIds = respostas.map(resposta => resposta.questao_id);
-            
-            // Buscar questões
-            const { data: questoes, error: questoesError } = await supabase
-              .from("questoes")
-              .select("*")
-              .in("id", questoesIds);
-              
-            if (questoesError) throw questoesError;
-            
-            // Criar um mapa para fácil acesso às questões
-            const questoesMap = new Map();
-            if (questoes) {
-              questoes.forEach(questao => {
-                questoesMap.set(questao.id, questao);
-              });
-            }
-            
-            // Filtrar respostas pela banca selecionada
-            const respostasFiltradas = respostas.filter(resposta => {
-              const questao = questoesMap.get(resposta.questao_id);
-              if (!questao) return false;
-              
-              // Normalizar e verificar se a banca da resposta OU da questão corresponde ao filtro
-              const bancaResposta = normalizarBanca(resposta.banca || '');
-              const bancaQuestao = normalizarBanca(questao.institution || '');
-              const filtroNormalizado = normalizarBanca(selectedBanca);
-              
-              console.log("Comparando bancas:", { 
-                bancaResposta, 
-                bancaQuestao, 
-                filtroNormalizado,
-                resultado: bancaResposta === filtroNormalizado || (bancaResposta === '' && bancaQuestao === filtroNormalizado)
-              });
-              
-              return bancaResposta === filtroNormalizado || 
-                     (bancaResposta === '' && bancaQuestao === filtroNormalizado);
-            });
-            
-            console.log(`Encontradas ${respostasFiltradas.length} respostas para a banca ${selectedBanca}`);
-            
-            // Se encontrou respostas filtradas, processar estatísticas
-            if (respostasFiltradas.length > 0) {
-              // Calcular estatísticas por disciplina
-              const disciplinasFilteredMap = new Map<string, DisciplinaStats>();
-              
-              respostasFiltradas.forEach((resposta) => {
-                const questao = questoesMap.get(resposta.questao_id);
-                if (!questao) return;
-                
-                const disciplina = questao.discipline || "Sem disciplina";
-                
-                if (!disciplinasFilteredMap.has(disciplina)) {
-                  disciplinasFilteredMap.set(disciplina, {
-                    disciplina,
-                    certas: 0,
-                    erradas: 0,
-                    em_branco: 0,
-                    total: 0,
-                    aproveitamento: 0
-                  });
-                }
-                
-                const disciplinaStat = disciplinasFilteredMap.get(disciplina)!;
-                disciplinaStat.total += 1;
-                
-                if (resposta.opcao_id) {
-                  if (resposta.is_correta) {
-                    disciplinaStat.certas += 1;
-                  } else {
-                    disciplinaStat.erradas += 1;
-                  }
-                } else {
-                  disciplinaStat.em_branco += 1;
-                }
-                
-                disciplinaStat.aproveitamento = 
-                  disciplinaStat.total > 0 
-                    ? Math.round((disciplinaStat.certas / disciplinaStat.total) * 100) 
-                    : 0;
-                
-                disciplinasFilteredMap.set(disciplina, disciplinaStat);
-              });
-              
-              // Converter para array
-              const disciplinasFilteredArray = Array.from(disciplinasFilteredMap.values());
-              setFilteredDisciplinasStats(disciplinasFilteredArray);
-            } else {
-              setFilteredDisciplinasStats([]);
-              console.log("Nenhuma resposta encontrada para o filtro de banca:", selectedBanca);
-            }
-          } else {
-            setFilteredDisciplinasStats([]);
-          }
-        } catch (error) {
-          console.error("Erro ao filtrar estatísticas por banca:", error);
-          toast.error("Erro ao filtrar estatísticas por banca.");
-          setFilteredDisciplinasStats([]);
-        }
-      }
-    };
+    if (!user) return;
     
-    fetchFilteredStats();
-  }, [selectedBanca, periodo, user, disciplinasStats]);
+    if (selectedBanca === "todas") {
+      // Se todas as bancas estiverem selecionadas, usar as estatísticas gerais
+      setFilteredDisciplinasStats(disciplinasStats);
+      return;
+    }
+    
+    // Se chegou aqui, significa que uma banca específica foi selecionada
+    setIsLoading(true);
+    
+    try {
+      // Usar a banca selecionada diretamente, sem normalização adicional
+      const bancaSelecionada = selectedBanca;
+      
+      // Fazer uma cópia profunda das estatísticas para poder modificá-las
+      const disciplinasParaFiltrar = JSON.parse(JSON.stringify(disciplinasStats));
+      
+      // Filtrar apenas as disciplinas que têm a banca selecionada
+      const disciplinasFiltradas = disciplinasParaFiltrar.filter((disciplina: DisciplinaStats) => {
+        // Verificar se a disciplina tem a banca diretamente
+        if (disciplina.banca === bancaSelecionada) {
+          return true;
+        }
+        
+        // Verificar no mapa de bancas por disciplina
+        const bancasDisciplina = disciplinasBancasMap.get(disciplina.disciplina);
+        if (bancasDisciplina && bancasDisciplina.has(bancaSelecionada)) {
+          return true;
+        }
+        
+        return false;
+      });
+      
+      // Para cada disciplina filtrada, incluir apenas os tópicos relevantes e recalcular os totais
+      disciplinasFiltradas.forEach((disciplina: DisciplinaStats) => {
+        // Filtrar tópicos que pertencem à banca selecionada
+        if (disciplina.topicos) {
+          // Passo 1: Filtrar os tópicos apenas para a banca selecionada
+          const topicosFiltrados = disciplina.topicos.filter((topico: TopicoStats) => 
+            // Verificar pela propriedade banca ou tentar pelo mapa de bancas-tópicos
+            topico.banca === bancaSelecionada || 
+            // Assumir que o tópico pertence à banca se a informação não estiver disponível
+            !topico.banca
+          );
+          
+          // Passo 2: Substituir a lista original de tópicos pela filtrada
+          disciplina.topicos = topicosFiltrados;
+          
+          // Passo 3: Recalcular os totais da disciplina baseado apenas nos tópicos filtrados
+          disciplina.certas = 0;
+          disciplina.erradas = 0;
+          disciplina.em_branco = 0;
+          disciplina.total = 0;
+          
+          topicosFiltrados.forEach((topico: TopicoStats) => {
+            disciplina.certas += topico.certas;
+            disciplina.erradas += topico.erradas;
+            disciplina.em_branco += topico.em_branco;
+            disciplina.total += topico.total;
+          });
+          
+          // Recalcular o aproveitamento
+          disciplina.aproveitamento = 
+            disciplina.total > 0 
+              ? Math.round((disciplina.certas / disciplina.total) * 100) 
+              : 0;
+        }
+      });
+      
+      if (disciplinasFiltradas.length > 0) {
+        // Força a atualização do estado para garantir a rerenderização
+        setFilteredDisciplinasStats([]);
+        
+        // Pequeno timeout para garantir que o React processe o estado vazio primeiro
+        setTimeout(() => {
+          setFilteredDisciplinasStats(disciplinasFiltradas);
+        }, 10);
+      } else {
+        // Se não houver disciplinas para a banca selecionada, mostrar lista vazia
+        setFilteredDisciplinasStats([]);
+      }
+    } catch (error) {
+      console.error("Erro ao filtrar estatísticas por banca:", error);
+      toast.error("Erro ao filtrar estatísticas por banca.");
+      setFilteredDisciplinasStats([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedBanca, disciplinasStats, user, disciplinasBancasMap]);
   
   // Inicializar simulados filtrados quando os simulados mudarem
   useEffect(() => {
@@ -555,6 +709,20 @@ const Dashboard = () => {
     { name: "Erros", value: totalStats.erros },
     { name: "Acertos", value: totalStats.acertos },
   ];
+
+  // Função para alternar a expansão de uma disciplina
+  const toggleDisciplina = (disciplina: string) => {
+    setExpandedDisciplinas(prev => 
+      prev.includes(disciplina)
+        ? prev.filter(d => d !== disciplina)
+        : [...prev, disciplina]
+    );
+  };
+
+  // Certificar-se de que o valor da banca selecionada está sendo aplicado corretamente
+  useEffect(() => {
+    // Limpar qualquer log de debug
+  }, [selectedBanca]);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
@@ -732,7 +900,11 @@ const Dashboard = () => {
                 <div>
                   <CardTitle>Estatísticas por disciplina</CardTitle>
                   <CardDescription>
-                    Desempenho detalhado por disciplina {selectedBanca !== "todas" && `(Banca: ${selectedBanca.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())})`}
+                    Desempenho detalhado por disciplina {selectedBanca !== "todas" && `(Banca: ${
+                      typeof selectedBanca === 'string' 
+                        ? selectedBanca.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
+                        : selectedBanca
+                    })`}
                   </CardDescription>
                 </div>
                 <Select value={selectedBanca} onValueChange={setSelectedBanca}>
@@ -742,8 +914,8 @@ const Dashboard = () => {
                   <SelectContent>
                     <SelectItem value="todas">Todas as bancas</SelectItem>
                     {bancas.map((banca) => (
-                      <SelectItem key={banca} value={banca}>
-                        {banca}
+                      <SelectItem key={banca.valor} value={banca.valor}>
+                        {banca.exibicao}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -765,14 +937,90 @@ const Dashboard = () => {
                     <tbody>
                       {filteredDisciplinasStats.length > 0 ? (
                         filteredDisciplinasStats.map((disciplina, index) => (
-                          <tr key={index} className="border-b">
-                            <td className="py-2">{disciplina.disciplina}</td>
-                            <td className="py-2 text-center">{disciplina.certas}</td>
-                            <td className="py-2 text-center">{disciplina.erradas}</td>
-                            <td className="py-2 text-center">{disciplina.em_branco}</td>
-                            <td className="py-2 text-center">{disciplina.total}</td>
-                            <td className="py-2 text-center">{disciplina.aproveitamento}%</td>
-                          </tr>
+                          <React.Fragment key={`disciplina-${disciplina.disciplina}-${index}`}>
+                            <tr 
+                              className="border-b hover:bg-gray-50 cursor-pointer"
+                              onClick={() => toggleDisciplina(disciplina.disciplina)}
+                            >
+                              <td className="py-2 flex items-center">
+                                <span className="mr-2 text-gray-500 inline-flex items-center justify-center w-5 h-5">
+                                  {expandedDisciplinas.includes(disciplina.disciplina) 
+                                    ? <ChevronDown size={16} /> 
+                                    : <ChevronRight size={16} />}
+                                </span>
+                                <span className="font-medium">{disciplina.disciplina}</span>
+                                {selectedBanca !== "todas" && (
+                                  <span className="ml-2 text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                    Filtrado por banca
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2 text-center">{disciplina.certas}</td>
+                              <td className="py-2 text-center">{disciplina.erradas}</td>
+                              <td className="py-2 text-center">{disciplina.em_branco}</td>
+                              <td className="py-2 text-center">{disciplina.total}</td>
+                              <td className="py-2 text-center">
+                                <div className="flex items-center justify-center">
+                                  <div className="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                                    <div 
+                                      className={`h-1.5 rounded-full ${
+                                        disciplina.aproveitamento >= 70 ? 'bg-green-500' : 
+                                        disciplina.aproveitamento >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                      }`}
+                                      style={{ width: `${disciplina.aproveitamento}%` }}
+                                    ></div>
+                                  </div>
+                                  <span>{disciplina.aproveitamento}%</span>
+                                </div>
+                              </td>
+                            </tr>
+                            {/* Tópicos expandidos */}
+                            {expandedDisciplinas.includes(disciplina.disciplina) && (
+                              <>
+                                {disciplina.topicos && disciplina.topicos.length > 0 ? (
+                                  disciplina.topicos.map((topico, topicoIndex) => (
+                                    <tr 
+                                      key={`topico-${disciplina.disciplina}-${topicoIndex}`} 
+                                      className="bg-gray-50 text-sm border-b border-gray-100"
+                                    >
+                                      <td className="py-2 pl-10 text-gray-700">
+                                        {topico.topico}
+                                        {selectedBanca !== "todas" && (
+                                          <span className="ml-2 text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">
+                                            {selectedBanca}
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="py-2 text-center text-gray-700">{topico.certas}</td>
+                                      <td className="py-2 text-center text-gray-700">{topico.erradas}</td>
+                                      <td className="py-2 text-center text-gray-700">{topico.em_branco}</td>
+                                      <td className="py-2 text-center text-gray-700">{topico.total}</td>
+                                      <td className="py-2 text-center text-gray-700">
+                                        <div className="flex items-center justify-center">
+                                          <div className="w-12 bg-gray-200 rounded-full h-1 mr-2">
+                                            <div 
+                                              className={`h-1 rounded-full ${
+                                                topico.aproveitamento >= 70 ? 'bg-green-500' : 
+                                                topico.aproveitamento >= 50 ? 'bg-yellow-500' : 'bg-red-500'
+                                              }`}
+                                              style={{ width: `${topico.aproveitamento}%` }}
+                                            ></div>
+                                          </div>
+                                          <span>{topico.aproveitamento}%</span>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr className="bg-gray-50 text-sm border-b border-gray-100">
+                                    <td colSpan={6} className="py-3 text-center text-gray-500">
+                                      Nenhum tópico encontrado para esta disciplina
+                                    </td>
+                                  </tr>
+                                )}
+                              </>
+                            )}
+                          </React.Fragment>
                         ))
                       ) : (
                         <tr>

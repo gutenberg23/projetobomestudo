@@ -73,9 +73,136 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [teacherLikesCount, setTeacherLikesCount] = useState(0);
   const [aiLikesCount, setAILikesCount] = useState(0);
   const [gabaritoAvatar, setGabaritoAvatar] = useState<string>("/default-avatar.png");
+  const [hasVerifiedMetadata, setHasVerifiedMetadata] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isFixingMetadata, setIsFixingMetadata] = useState(false);
+  const [loadedTopics, setLoadedTopics] = useState<string[]>([]);
 
   // Verificar se há conteúdo expansível
   const hasExpandableContent = Boolean(question.expandableContent);
+
+  // Buscar tópicos diretamente do banco de dados caso não estejam disponíveis
+  useEffect(() => {
+    const fetchTopicsIfNeeded = async () => {
+      // Se já temos tópicos, não precisamos buscar
+      if (question.topics && question.topics.length > 0) {
+        setLoadedTopics(question.topics);
+        return;
+      }
+      
+      if (!question.id) return;
+      
+      try {
+        console.log("Buscando tópicos diretamente do banco para questão:", question.id);
+        
+        const { data, error } = await supabase
+          .from('questoes')
+          .select('topicos')
+          .eq('id', question.id)
+          .single();
+          
+        if (error) {
+          console.error("Erro ao buscar tópicos:", error);
+          return;
+        }
+        
+        if (data && data.topicos && Array.isArray(data.topicos) && data.topicos.length > 0) {
+          console.log("Tópicos encontrados no banco:", data.topicos);
+          setLoadedTopics(data.topicos);
+        } else {
+          console.log("Nenhum tópico encontrado no banco para esta questão");
+          setLoadedTopics([]);
+        }
+      } catch (err) {
+        console.error("Erro ao buscar tópicos da questão:", err);
+      }
+    };
+    
+    fetchTopicsIfNeeded();
+  }, [question.id, question.topics]);
+
+  // Verificar e atualizar metadados da questão, se necessário
+  useEffect(() => {
+    const verifyQuestionMetadata = async () => {
+      if (!question.id || hasVerifiedMetadata) return;
+      
+      try {
+        // Verificar se a questão tem disciplina e tópicos definidos
+        const needsUpdate = (!question.discipline || !question.topics || question.topics.length === 0);
+        
+        if (needsUpdate) {
+          console.log("Questão com metadados incompletos detectada:", question.id);
+          console.log("Dados atuais:", {
+            discipline: question.discipline || "Indefinida",
+            topics: question.topics || []
+          });
+          
+          // Buscar informações completas da questão do banco de dados
+          const { data: questionData, error } = await supabase
+            .from('questoes')
+            .select('discipline, topicos')
+            .eq('id', question.id)
+            .single();
+            
+          if (error) {
+            console.error("Erro ao buscar metadados completos da questão:", error);
+            return;
+          }
+          
+          if (questionData) {
+            // Verificar se temos dados mais completos no banco
+            const disciplineBD = questionData.discipline || "";
+            const topicsBD = questionData.topicos || [];
+            
+            if (disciplineBD || (topicsBD && topicsBD.length > 0)) {
+              console.log("Dados recuperados do banco:", {
+                discipline: disciplineBD,
+                topics: topicsBD
+              });
+              
+              // Atualizar as questões respondidas que estão faltando metadados
+              // Buscar respostas anteriores do usuário para esta questão que possam estar sem metadados
+              if (userId) {
+                const { data: respostasDesatualizadas, error: respostasError } = await supabase
+                  .from('respostas_alunos')
+                  .select('*')
+                  .eq('questao_id', question.id)
+                  .eq('aluno_id', userId)
+                  .or('disciplina.is.null,topicos.is.null,disciplina.eq.');
+                  
+                if (!respostasError && respostasDesatualizadas && respostasDesatualizadas.length > 0) {
+                  console.log(`Encontradas ${respostasDesatualizadas.length} respostas desatualizadas para atualizar`);
+                  
+                  // Atualizar cada resposta com os metadados corretos
+                  for (const resposta of respostasDesatualizadas) {
+                    const { error: updateError } = await supabase
+                      .from('respostas_alunos')
+                      .update({
+                        disciplina: disciplineBD || resposta.disciplina || "",
+                        topicos: topicsBD?.length > 0 ? topicsBD : (resposta.topicos || [])
+                      })
+                      .eq('id', resposta.id);
+                      
+                    if (updateError) {
+                      console.error("Erro ao atualizar resposta:", updateError);
+                    } else {
+                      console.log("Resposta atualizada com sucesso:", resposta.id);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao verificar metadados da questão:", error);
+      } finally {
+        setHasVerifiedMetadata(true);
+      }
+    };
+    
+    verifyQuestionMetadata();
+  }, [question.id, question.discipline, question.topics, userId, hasVerifiedMetadata]);
 
   // Resetar o estado quando a questão muda
   useEffect(() => {
@@ -83,6 +210,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     setShowAnswer(false);
     setShowOfficialAnswer(false);
     setShowAIAnswer(false);
+
+    // Log para depuração - verificar se a questão tem tópicos
+    console.log("Question object:", {
+      id: question.id,
+      discipline: question.discipline,
+      topics: question.topics,
+      hasTopics: Boolean(question.topics && question.topics.length > 0)
+    });
 
     // Verificar novamente se o usuário já respondeu esta nova questão
     const checkUserAnswer = async () => {
@@ -412,6 +547,34 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
         // Registrar a resposta do aluno
         if (userId) {
+          // Garantir que tenhamos a disciplina, usando fallbacks caso necessário
+          const disciplina = question.discipline || "";
+          // Usar loadedTopics se disponível, senão usar topics da question
+          const topicos = loadedTopics.length > 0 ? loadedTopics : (question.topics || []);
+          const banca = normalizarBanca(question.institution || "");
+          
+          // Verificar se temos os dados necessários
+          if (!disciplina) {
+            console.error("Disciplina não encontrada para a questão:", question.id);
+            toast.error("Não foi possível enviar sua resposta: dados de disciplina ausentes.");
+            return;
+          }
+          
+          if (!topicos || topicos.length === 0) {
+            console.warn("Tópicos não encontrados para a questão:", question.id);
+            // Permitimos continuar, mas logamos o aviso
+          }
+          
+          console.log("Enviando resposta com os seguintes dados:", {
+            aluno_id: userId,
+            questao_id: question.id,
+            opcao_id: selectedOption,
+            is_correta: isCorrect,
+            topicos,
+            disciplina,
+            banca
+          });
+
           const { error } = await supabase
             .from('respostas_alunos')
             .insert({
@@ -419,13 +582,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               questao_id: question.id,
               opcao_id: selectedOption,
               is_correta: isCorrect,
-              topicos: question.topics || [],
-              disciplina: question.discipline || '',
-              banca: normalizarBanca(question.institution || '')
+              topicos: topicos,
+              disciplina: disciplina,
+              banca: banca
             });
-          if (error) throw error;
+            
+          if (error) {
+            console.error("Erro detalhado ao registrar resposta:", error);
+            throw error;
+          }
+          
           setHasAnswered(true);
           setShowAnswer(true);
+          toast.success("Resposta registrada com sucesso!");
         }
       } catch (error) {
         console.error("Erro ao registrar resposta:", error);
@@ -881,6 +1050,141 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     fetchLastUpdatedBy();
   }, [question.id]);
 
+  // Verificar se o usuário é administrador
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        // Buscar o perfil do usuário para verificar se é admin
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single();
+          
+        setIsAdmin(profileData?.is_admin || false);
+      } catch (error) {
+        console.error("Erro ao verificar permissões admin:", error);
+      }
+    };
+    
+    checkAdmin();
+  }, []);
+  
+  // Função para corrigir metadados das respostas
+  const fixAllResponsesMetadata = async () => {
+    if (!isAdmin) return;
+    
+    try {
+      setIsFixingMetadata(true);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuário não autenticado");
+        return;
+      }
+      
+      // Buscar todas as respostas que têm problemas de metadados
+      const { data: respostasProblematicas, error: queryError } = await supabase
+        .from('respostas_alunos')
+        .select('id, questao_id, disciplina, topicos')
+        .or('disciplina.is.null,topicos.is.null,disciplina.eq.');
+      
+      if (queryError) {
+        console.error("Erro ao buscar respostas com problemas:", queryError);
+        toast.error("Erro ao buscar respostas");
+        return;
+      }
+      
+      if (!respostasProblematicas || respostasProblematicas.length === 0) {
+        toast.success("Nenhuma resposta com problemas encontrada");
+        return;
+      }
+      
+      toast.info(`Encontradas ${respostasProblematicas.length} respostas com metadados problemáticos. Tentando corrigir...`);
+      
+      // Interface para resposta
+      interface RespostaAluno {
+        id: string;
+        questao_id: string;
+        disciplina?: string;
+        topicos?: string[];
+      }
+      
+      // Interface para o mapa de respostas
+      interface RespostasPorQuestaoMap {
+        [questao_id: string]: RespostaAluno[];
+      }
+      
+      // Agrupar respostas por questão para reduzir o número de consultas
+      const respostasPorQuestao: RespostasPorQuestaoMap = {};
+      
+      respostasProblematicas.forEach((resposta: RespostaAluno) => {
+        if (!respostasPorQuestao[resposta.questao_id]) {
+          respostasPorQuestao[resposta.questao_id] = [];
+        }
+        respostasPorQuestao[resposta.questao_id].push(resposta);
+      });
+      
+      // Para cada questão, buscar metadados e atualizar as respostas
+      let corrigidas = 0;
+      let falhas = 0;
+      
+      for (const questaoId of Object.keys(respostasPorQuestao)) {
+        // Buscar dados da questão
+        const { data: questaoData, error: questaoError } = await supabase
+          .from('questoes')
+          .select('discipline, topicos')
+          .eq('id', questaoId)
+          .single();
+          
+        if (questaoError) {
+          console.error(`Erro ao buscar dados da questão ${questaoId}:`, questaoError);
+          falhas += respostasPorQuestao[questaoId].length;
+          continue;
+        }
+        
+        const discipline = questaoData?.discipline || "";
+        const topicos = questaoData?.topicos || [];
+        
+        // Se a questão não tem metadados, ignoramos
+        if (!discipline && (!topicos || topicos.length === 0)) {
+          console.warn(`Questão ${questaoId} não tem metadados para atualizar`);
+          falhas += respostasPorQuestao[questaoId].length;
+          continue;
+        }
+        
+        // Atualizar cada resposta dessa questão
+        for (const resposta of respostasPorQuestao[questaoId]) {
+          const { error: updateError } = await supabase
+            .from('respostas_alunos')
+            .update({
+              disciplina: discipline,
+              topicos: topicos
+            })
+            .eq('id', resposta.id);
+            
+          if (updateError) {
+            console.error(`Erro ao atualizar resposta ${resposta.id}:`, updateError);
+            falhas++;
+          } else {
+            console.log(`Resposta ${resposta.id} atualizada com sucesso`);
+            corrigidas++;
+          }
+        }
+      }
+      
+      toast.success(`Processo concluído: ${corrigidas} respostas corrigidas, ${falhas} falhas.`);
+    } catch (error) {
+      console.error("Erro no processo de correção:", error);
+      toast.error("Erro ao corrigir respostas");
+    } finally {
+      setIsFixingMetadata(false);
+    }
+  };
+
   return (
     <div className="w-full bg-white rounded-lg shadow-md mb-4">
       <div className="flex items-start justify-between gap-4">
@@ -893,7 +1197,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             role={question.role || ""}
             educationLevel={question.educationLevel || ""}
             discipline={question.discipline || ""}
-            topics={question.topics || []}
+            topics={loadedTopics.length > 0 ? loadedTopics : (question.topics || [])}
             questionId={question.id}
           />
         </div>
@@ -956,7 +1260,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       <QuestionFooter 
         commentsCount={commentsCount} 
         showComments={showComments} 
-        showAnswer={showAnswer} 
         showStats={showStats}
         showOfficialAnswer={showOfficialAnswer} 
         showAIAnswer={showAIAnswer} 
@@ -964,11 +1267,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         onToggleAnswer={toggleStats}
         onToggleOfficialAnswer={toggleOfficialAnswer} 
         onToggleAIAnswer={toggleAIAnswer} 
-        hasSelectedOption={selectedOption !== null} 
         hasTeacherExplanation={Boolean(question.teacherExplanation)} 
         hasAIExplanation={Boolean(question.aiExplanation)} 
-        isSubmittingAnswer={isSubmittingAnswer}
         onRemove={onRemove ? () => onRemove(question.id) : undefined}
+        isAdmin={isAdmin}
+        isFixingMetadata={isFixingMetadata}
+        onFixMetadata={fixAllResponsesMetadata}
         addToBookDialog={
           <Dialog open={openAddToBook} onOpenChange={setOpenAddToBook}>
             <DialogTrigger asChild>

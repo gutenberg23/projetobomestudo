@@ -1,43 +1,43 @@
 import React from "react";
-import { MessageSquare, GraduationCap, Sparkles, X } from "lucide-react";
+import { MessageSquare, GraduationCap, Sparkles, X, Bug, BarChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface QuestionFooterProps {
   commentsCount: number;
   showComments: boolean;
-  showAnswer: boolean;
-  showStats: boolean;
   showOfficialAnswer: boolean;
   showAIAnswer: boolean;
+  showStats: boolean;
   onToggleComments: () => void;
-  onToggleAnswer: () => void;
   onToggleOfficialAnswer: () => void;
   onToggleAIAnswer: () => void;
-  hasSelectedOption: boolean;
+  onToggleAnswer: () => void;
   hasTeacherExplanation: boolean;
   hasAIExplanation: boolean;
-  isSubmittingAnswer: boolean;
   addToBookDialog?: React.ReactNode;
   onRemove?: () => void;
+  isAdmin?: boolean;
+  isFixingMetadata?: boolean;
+  onFixMetadata?: () => void;
 }
 
 export const QuestionFooter: React.FC<QuestionFooterProps> = ({
   commentsCount,
   showComments,
-  showAnswer,
-  showStats,
   showOfficialAnswer,
   showAIAnswer,
+  showStats,
   onToggleComments,
-  onToggleAnswer,
   onToggleOfficialAnswer,
   onToggleAIAnswer,
-  hasSelectedOption,
+  onToggleAnswer,
   hasTeacherExplanation,
   hasAIExplanation,
-  isSubmittingAnswer,
   addToBookDialog,
-  onRemove
+  onRemove,
+  isAdmin = false,
+  isFixingMetadata = false,
+  onFixMetadata
 }) => {
   return (
     <div className="flex flex-wrap gap-2 justify-between items-center px-4 py-2 border-t border-gray-100">
@@ -69,6 +69,18 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={onToggleAnswer}
+          className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-full transition-colors ${
+            showStats
+              ? "bg-purple-100 text-purple-700"
+              : "text-gray-600 hover:bg-gray-100"
+          }`}
+        >
+          <BarChart className="w-4 h-4" />
+          <span>Estatísticas</span>
+        </button>
+
         {hasTeacherExplanation && (
           <button
             onClick={onToggleOfficialAnswer}
@@ -95,6 +107,19 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
             <Sparkles className="w-4 w-4" />
             <span>BIA</span>
           </button>
+        )}
+        
+        {isAdmin && onFixMetadata && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onFixMetadata}
+            disabled={isFixingMetadata}
+            className="ml-2 text-xs flex items-center gap-1"
+          >
+            <Bug className="w-3 h-3" />
+            <span>{isFixingMetadata ? "Corrigindo..." : "Corrigir Dados"}</span>
+          </Button>
         )}
       </div>
     </div>
