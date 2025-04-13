@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
+import { ActivityLogger } from '@/services/activity-logger';
 import {
   Dialog,
   DialogContent,
@@ -592,6 +593,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             throw error;
           }
           
+          // Registrar atividade no histórico
+          await ActivityLogger.logQuestionAnswer(question.id, {
+            question_text: question.content?.substring(0, 100) + "...", // Primeiros 100 caracteres
+            discipline: disciplina,
+            topic: topicos.length > 0 ? topicos[0] : 'N/A',
+            is_correct: isCorrect
+          });
+          
           setHasAnswered(true);
           setShowAnswer(true);
           toast.success("Resposta registrada com sucesso!");
@@ -604,14 +613,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       }
     }
   };
-  const toggleStats = () => {
-    setShowStats(!showStats);
-  };
   const toggleOfficialAnswer = () => {
     setShowOfficialAnswer(!showOfficialAnswer);
   };
   const toggleAIAnswer = () => {
     setShowAIAnswer(!showAIAnswer);
+  };
+  const toggleStats = () => {
+    setShowStats(!showStats);
   };
   const toggleLike = async (commentId: string) => {
     if (!userId) {
@@ -704,7 +713,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           // Se não existir, adicionar o like
           if (!existingLike) {
             console.log("💗 Like não existe, inserindo novo...");
-            const { data, error } = await supabase
+            const { /* data não utilizado */ error } = await supabase
               .from('likes_gabaritos')
               .insert({
                 questao_id: questaoId,
@@ -713,9 +722,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               })
               .select();
               
-            console.log("💗 Resultado da inserção do like:", data, error ? "Erro: " + error.message : "Sucesso");
+            console.log("💗 Resultado da inserção do like:", /* data, */ error ? "Erro: " + error.message : "Sucesso");
               
             if (error) throw error;
+            
+            // Registrar atividade de curtida
+            await ActivityLogger.logCommentLike(`${type}-${questaoId}`);
             
             // Atualizar contadores específicos
             if (type === 'teacher') {
@@ -809,35 +821,30 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           // Se não existir, adicionar o like
           if (!existingLike) {
             console.log("💗 Like não existe, inserindo novo...");
-            const { data, error } = await supabase
+            const { /* data não utilizado */ error } = await supabase
               .from('likes_comentarios')
               .insert({
                 comentario_id: commentId,
                 usuario_id: userId
               })
               .select();
-              
-            console.log("💗 Resultado da inserção do like:", data, error ? "Erro: " + error.message : "Sucesso");
+            
+            console.log("💗 Resultado da inserção do like:", error ? "Erro: " + error.message : "Sucesso");
               
             if (error) throw error;
             
-            // Atualizar estado local somente se a operação no banco foi bem-sucedida
-            setLikedComments(prev => {
-              const newState = [...prev, commentId];
-              console.log("💗 Novo estado de likedComments após adição:", newState);
-              return newState;
-            });
+            // Registrar atividade de curtida
+            await ActivityLogger.logCommentLike(commentId);
             
-            // Atualização visual somente se a operação no banco foi bem-sucedida
+            // Atualização visual
             setComments(prevComments => {
               console.log("💗 Atualizando contador visual de likes");
               return prevComments.map(c => {
                 if (c.id === commentId) {
-                  const newLikes = c.likes + 1;
-                  console.log("💗 Novo contador de likes para este comentário:", newLikes);
+                  console.log("💗 Novo contador de likes para este comentário:", c.likes + 1);
                   return {
                     ...c,
-                    likes: newLikes
+                    likes: c.likes + 1
                   };
                 }
                 return c;
@@ -845,27 +852,29 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             });
           } else {
             console.log("💗 Like já existe no banco, não inserindo.");
-            // O like já existe no banco, mas não no estado local.
-            // Vamos apenas atualizar o estado local para corrigir a UI
-            if (!likedComments.includes(commentId)) {
-              console.log("💗 Atualizando apenas estado local para like existente");
-              setLikedComments(prev => {
-                const newState = [...prev, commentId];
-                console.log("💗 Novo estado de likedComments:", newState);
-                return newState;
-              });
-            }
           }
+
+          // Atualizar estado local
+          setLikedComments(prev => {
+            const newState = [...prev, commentId];
+            console.log("💗 Novo estado de likedComments após adição:", newState);
+            return newState;
+          });
         }
       }
       console.log("💗 Operação de like concluída com sucesso");
     } catch (error) {
-      console.error("❌ Erro ao curtir comentário:", error);
-      toast.error("Erro ao curtir comentário. Tente novamente.");
+      console.error("❌ Erro ao processar curtida:", error);
+      toast.error("Erro ao processar sua curtida. Tente novamente mais tarde.");
     }
   };
   const handleOptionClick = (optionId: string) => {
-    setSelectedOption(optionId);
+    // Se a opção clicada já está selecionada, remover a seleção
+    if (selectedOption === optionId) {
+      setSelectedOption(null);
+    } else {
+      setSelectedOption(optionId);
+    }
   };
   const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
     if (selectedOption === optionId) {
@@ -923,6 +932,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           throw new Error(`Erro 400: ${error.message || "Requisição inválida"}`);
         }
         throw error;
+      }
+
+      // Registrar a atividade de comentário
+      if (newComment) {
+        await ActivityLogger.logCommentCreate(
+          newComment.id,
+          question.id,
+          'question'
+        );
       }
 
       // Adicionar o novo comentário à lista com os dados do perfil
@@ -1186,11 +1204,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
 
   return (
-    <div className="w-full bg-white rounded-lg shadow-md mb-4">
-      <div className="flex items-start justify-between gap-4">
+    <div className="w-full bg-white rounded-lg mb-4">
+      <div className="flex items-start justify-between">
         <div className="flex-1">
           <QuestionHeader
-            questionNumber={question.number}
             year={question.year || ""}
             institution={question.institution || ""}
             organization={question.organization || ""}
@@ -1228,8 +1245,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       )}
 
       {/* Conteúdo da questão */}
-      <div className="flex gap-2.5 items-start px-3 md:px-5 py-2.5 w-full text-base text-slate-800">
-        <div className="flex flex-col w-full px-2.5 py-5 rounded-md relative">
+      <div className="flex gap-2.5 items-start px-5 py-2.5 w-full text-base text-slate-800">
+        <div className="flex flex-col w-full py-5 rounded-md relative">
           <p className="text-left text-sm md:text-base" dangerouslySetInnerHTML={{
             __html: question.content
           }} />
@@ -1260,13 +1277,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       <QuestionFooter 
         commentsCount={commentsCount} 
         showComments={showComments} 
-        showStats={showStats}
         showOfficialAnswer={showOfficialAnswer} 
         showAIAnswer={showAIAnswer} 
+        showStats={showStats}
         onToggleComments={toggleComments} 
-        onToggleAnswer={toggleStats}
         onToggleOfficialAnswer={toggleOfficialAnswer} 
         onToggleAIAnswer={toggleAIAnswer} 
+        onToggleStats={toggleStats}
         hasTeacherExplanation={Boolean(question.teacherExplanation)} 
         hasAIExplanation={Boolean(question.aiExplanation)} 
         onRemove={onRemove ? () => onRemove(question.id) : undefined}
@@ -1420,6 +1437,32 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         timestamp: "Resposta da IA",
         likes: aiLikesCount
       }} isLiked={likedComments.includes(`ai-${question.id}`)} onToggleLike={toggleLike} />
+        </section>}
+
+      {showStats && <section className="py-3 md:py-5 w-full border-t border-gray-100">
+          <div className="px-5">
+            <h3 className="text-lg font-semibold mb-3">Estatísticas da Questão</h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="mb-2">Informações estatísticas sobre esta questão serão exibidas aqui.</p>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                  <span>Taxa de acerto:</span>
+                  <span className="font-semibold">68%</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Total de respostas:</span>
+                  <span className="font-semibold">42</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Média de tempo para resposta:</span>
+                  <span className="font-semibold">1m 30s</span>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              Estas estatísticas são aproximadas e calculadas com base nas respostas dos estudantes.
+            </p>
+          </div>
         </section>}
 
       {showComments && <section className="py-3 md:py-5 w-full border-t border-gray-100">

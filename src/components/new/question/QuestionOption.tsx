@@ -1,4 +1,3 @@
-
 import React from "react";
 import { X } from "lucide-react";
 
@@ -71,7 +70,7 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
       
       <button 
         onClick={() => onSelect(id)} 
-        className={`flex flex-1 gap-4 items-center self-stretch p-3 text-base whitespace-normal rounded-xl border border-solid ${styles.container} ${styles.background} ${isDisabled ? "opacity-50 line-through" : ""}`} 
+        className={`flex flex-1 gap-4 items-center self-stretch p-3 text-base max-sm:text-sm whitespace-normal rounded-xl border border-solid ${styles.container} ${styles.background} ${isDisabled ? "opacity-50 line-through" : ""}`} 
         disabled={isDisabled}
       >
         <span className={`gap-2.5 self-stretch font-bold text-center rounded border border-solid min-h-[30px] w-[30px] flex items-center justify-center ${styles.letter}`}>

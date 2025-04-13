@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { ActivityLogger } from "@/services/activity-logger";
 
 const Perfil = () => {
   const { user, updateProfile, loading } = useAuth();
@@ -46,6 +47,9 @@ const Perfil = () => {
         nome: formData.nome,
         sobrenome: formData.sobrenome,
       });
+
+      // Registrar atividade de atualização de perfil
+      await ActivityLogger.logProfileUpdate(`Atualizou nome para: ${formData.nome} ${formData.sobrenome}`);
 
       toast({
         title: "Perfil atualizado",

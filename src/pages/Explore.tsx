@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
 import { generateFriendlyUrl } from "@/utils/slug-utils";
+import { ActivityLogger } from '@/services/activity-logger';
 
 interface ItemProps {
   id: string;
@@ -18,19 +19,15 @@ interface ItemProps {
   isFavorite: boolean;
   topics: number;
   lessons: number;
-  onToggleFavorite: (id: string) => void;
+  onToggleFavorite: (friendlyUrl: string) => void;
   friendlyUrl: string;
   banca?: string;
   cargo?: string;
 }
 
 const ResultItem: React.FC<ItemProps> = ({
-  id,
   title,
-  description,
   isFavorite,
-  topics,
-  lessons,
   onToggleFavorite,
   friendlyUrl,
   banca,
@@ -191,10 +188,14 @@ const Explore = () => {
         console.log("Favoritos atuais:", disciplinasFavoritos);
         const isAlreadyFavorite = disciplinasFavoritos.includes(disciplinaId);
         if (isAlreadyFavorite) {
-          disciplinasFavoritos = disciplinasFavoritos.filter(id => id !== disciplinaId);
+          disciplinasFavoritos = disciplinasFavoritos.filter((id: string) => id !== disciplinaId);
           toast.success("Disciplina removida dos favoritos");
         } else {
           disciplinasFavoritos.push(disciplinaId);
+          
+          // Registrar atividade de favoritar disciplina
+          await ActivityLogger.logSubjectFavorite(disciplinaId, subject.titulo);
+          
           toast.success("Disciplina adicionada aos favoritos");
         }
         console.log("Favoritos atualizados:", disciplinasFavoritos);
@@ -230,10 +231,14 @@ const Explore = () => {
         console.log("Favoritos atuais:", cursosFavoritos);
         const isAlreadyFavorite = cursosFavoritos.includes(cursoId);
         if (isAlreadyFavorite) {
-          cursosFavoritos = cursosFavoritos.filter(id => id !== cursoId);
+          cursosFavoritos = cursosFavoritos.filter((id: string) => id !== cursoId);
           toast.success("Curso removido dos favoritos");
         } else {
           cursosFavoritos.push(cursoId);
+          
+          // Registrar atividade de favoritar curso
+          await ActivityLogger.logCourseFavorite(cursoId, course.titulo);
+          
           toast.success("Curso adicionado aos favoritos");
         }
         console.log("Favoritos atualizados:", cursosFavoritos);
@@ -262,9 +267,10 @@ const Explore = () => {
 
   const filteredData = showSubjects ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase())) : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
 
-  return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+  return (
+    <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
       <Header />
-      <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
+      <main className="flex-grow px-4 md:px-8 w-full">
         <h1 className="text-3xl mb-2 md:text-3xl font-extrabold text-[#272f3c]">Explorar</h1>
         <p className="text-[#67748a] mb-6">Pesquise por concursos ou disciplinas do seu interesse</p>
 
@@ -294,12 +300,12 @@ const Explore = () => {
             </div> : <div className="divide-y divide-gray-100">
               {filteredData.length > 0 ? filteredData.map(item => <ResultItem 
                 key={item.id} 
-                id={item.id} 
+                id={item.id}
                 title={item.titulo} 
-                description={item.descricao || ""} 
-                isFavorite={item.isFavorite} 
-                topics={item.topics} 
-                lessons={item.lessons} 
+                description={item.descricao || ""}
+                isFavorite={item.isFavorite}
+                topics={item.topics}
+                lessons={item.lessons}
                 onToggleFavorite={handleToggleFavorite} 
                 friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} 
                 banca={showSubjects ? (item as DisciplinaItemType).banca : undefined}
@@ -311,7 +317,8 @@ const Explore = () => {
         </div>
       </main>
       <Footer />
-    </div>;
+    </div>
+  );
 };
 
 export default Explore;

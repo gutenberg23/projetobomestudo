@@ -20,6 +20,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Trophy } from "lucide-react";
+import { ActivityLogger } from "@/services/activity-logger";
 
 // Opções de exibição de questões
 type DisplayOption = "single" | "ten" | "all";
@@ -37,7 +38,7 @@ const Simulado = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [disabledOptions, setDisabledOptions] = useState<Record<string, string[]>>({});
-  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
+  const [_userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [isFinishingSimulado, setIsFinishingSimulado] = useState(false);
   
   // Estado para ranking
@@ -291,12 +292,13 @@ const Simulado = () => {
 
   // Função para calcular e salvar os resultados do simulado
   const calculateAndSaveResults = async () => {
+    setIsFinishingSimulado(true);
+
     try {
-      setIsFinishingSimulado(true);
+      const { data: userData } = await supabase.auth.getUser();
       
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData.user) {
-        toast.error("Você precisa estar logado para salvar os resultados.");
+      if (!userData.user) {
+        toast.error("Você precisa estar logado para finalizar o simulado.");
         return;
       }
 
@@ -365,6 +367,20 @@ const Simulado = () => {
         console.error("Erro ao salvar resultados:", upsertError);
         toast.error("Erro ao salvar resultados. Tente novamente.");
         return;
+      }
+
+      // Registrar a atividade de completar o simulado
+      if (simulado && simuladoId) {
+        await ActivityLogger.logExamComplete(
+          simuladoId, 
+          String(simulado.titulo || 'Simulado sem título'), 
+          {
+            acertos,
+            erros,
+            total_questoes: formattedQuestions.length,
+            porcentagem_acertos: formattedQuestions.length > 0 ? Math.round((acertos / formattedQuestions.length) * 100) : 0
+          }
+        );
       }
 
       toast.success("Simulado finalizado com sucesso!");
@@ -482,14 +498,11 @@ const Simulado = () => {
   const pageCount = getPageCount();
   const displayedQuestions = getDisplayedQuestions();
   
-  // Verificar quantas questões o usuário já respondeu
-  const questoesRespondidas = Object.keys(userAnswers).length;
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center pt-[88px]">
+        <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-[#272f3c] mb-4">Carregando simulado...</h1>
           </div>
@@ -503,7 +516,7 @@ const Simulado = () => {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center pt-[88px]">
+        <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-[#272f3c] mb-4">Simulado não encontrado</h1>
             <p className="text-[#67748a]">O simulado solicitado não existe ou não está disponível.</p>
@@ -520,7 +533,7 @@ const Simulado = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 pt-[88px] bg-[#f6f8fa]">
+      <main className="flex-1 bg-[#f6f8fa]">
         <div className="container mx-auto py-8 px-4">
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center">

@@ -344,8 +344,7 @@ const Settings = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      
-      <main className="flex-1 pt-[88px] bg-white">
+      <main className="flex-1 bg-white">
         <div className="max-w-5xl mx-auto px-4 py-8">
           <h1 className="text-2xl font-bold text-[#272f3c] mb-4">Minha conta</h1>
           <p className="text-[#67748a] mb-6">
@@ -649,7 +648,6 @@ const Settings = () => {
           </div>
         </div>
       </main>
-      
       <Footer />
     </div>
   );

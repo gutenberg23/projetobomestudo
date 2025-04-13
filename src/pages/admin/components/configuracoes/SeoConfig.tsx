@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
@@ -30,6 +29,7 @@ const SeoConfig = () => {
   const [googleAnalyticsId, setGoogleAnalyticsId] = useState(config.seo.googleAnalyticsId);
   const [enableIndexing, setEnableIndexing] = useState(config.seo.enableIndexing);
   const [structuredData, setStructuredData] = useState(config.seo.structuredData);
+  const [robotsTxt, setRobotsTxt] = useState(config.seo.robotsTxt || "");
   const [isSaving, setIsSaving] = useState(false);
   const [ogImageFile, setOgImageFile] = useState<File | null>(null);
   const [ogImagePreview, setOgImagePreview] = useState(config.seo.ogImageUrl);
@@ -47,8 +47,28 @@ const SeoConfig = () => {
       setEnableIndexing(config.seo.enableIndexing);
       setStructuredData(config.seo.structuredData);
       setOgImagePreview(config.seo.ogImageUrl);
+      setRobotsTxt(config.seo.robotsTxt || "");
     }
   }, [config, isLoading]);
+
+  // Carregar o conteúdo do robots.txt quando o componente for montado
+  useEffect(() => {
+    const fetchRobotsTxt = async () => {
+      try {
+        const response = await fetch('/robots.txt');
+        if (response.ok) {
+          const text = await response.text();
+          setRobotsTxt(text);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar robots.txt:', error);
+      }
+    };
+
+    if (!config.seo.robotsTxt) {
+      fetchRobotsTxt();
+    }
+  }, [config.seo.robotsTxt]);
 
   const handleOgImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files && e.target.files[0];
@@ -124,6 +144,24 @@ const SeoConfig = () => {
         }
       }
       
+      // Atualizar o arquivo robots.txt
+      try {
+        const response = await fetch('/api/update-robots-txt', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ content: robotsTxt }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Falha ao atualizar robots.txt');
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar robots.txt:', error);
+        toast.error('Erro ao atualizar robots.txt');
+      }
+      
       const seoConfig = {
         siteTitle,
         siteDescription,
@@ -132,7 +170,8 @@ const SeoConfig = () => {
         twitterHandle,
         googleAnalyticsId,
         enableIndexing,
-        structuredData
+        structuredData,
+        robotsTxt
       };
       
       await updateSeoConfig(seoConfig);
@@ -397,6 +436,37 @@ const SeoConfig = () => {
         </div>
       </Card>
       
+      <Card className="p-6 space-y-6">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="robots-txt">Arquivo Robots.txt</Label>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="w-[220px] text-xs">
+                    Este arquivo instrui os motores de busca sobre quais páginas do seu site podem ser indexadas.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <Textarea
+            id="robots-txt"
+            value={robotsTxt}
+            onChange={(e) => setRobotsTxt(e.target.value)}
+            rows={10}
+            className="font-mono text-sm"
+            placeholder="User-agent: *\nDisallow: /admin/\nAllow: /"
+          />
+          <p className="text-xs text-[#67748a]">
+            Edite as instruções para os motores de busca. Por padrão, todas as páginas administrativas (/admin/) estão bloqueadas.
+          </p>
+        </div>
+      </Card>
+      
       {!enableIndexing && (
         <div className="bg-amber-50 border border-amber-200 p-4 rounded-md">
           <div className="flex items-start">
@@ -409,8 +479,8 @@ const SeoConfig = () => {
               </p>
             </div>
           </div>
-          </div>
-        )}
+        </div>
+      )}
 
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading || isSaving}>

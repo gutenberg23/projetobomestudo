@@ -21,7 +21,7 @@ interface QuestionFiltersPanelProps {
     educationLevels: string[];
     difficulty: string[];
   };
-  handleFilterChange: (category: string, value: string) => void;
+  handleFilterChange: (category: "topics" | "disciplines" | "institutions" | "organizations" | "roles" | "years" | "educationLevels" | "difficulty", value: string) => void;
   handleApplyFilters: () => void;
   questionsPerPage: string;
   setQuestionsPerPage: (value: string) => void;

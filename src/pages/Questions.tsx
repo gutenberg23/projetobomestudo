@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
 import { useSearchParams } from "react-router-dom";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Questions = () => {
   const [searchParams] = useSearchParams();
@@ -43,8 +42,6 @@ const Questions = () => {
     educationLevels: [] as string[],
     difficulty: [] as string[]
   });
-  
-  const totalQuestions = questions.length;
   
   // Função para converter options do banco para o formato esperado
   const parseOptions = (options: Json | null): any[] => {
@@ -177,15 +174,18 @@ const Questions = () => {
     );
   };
   
-  const handleFilterChange = (category: keyof typeof selectedFilters, value: string) => {
+  const handleFilterChange = (
+    category: "topics" | "disciplines" | "institutions" | "organizations" | "roles" | "years" | "educationLevels" | "difficulty",
+    value: string
+  ) => {
     setSelectedFilters(prev => {
-      const currentValues = prev[category];
-      return {
-        ...prev,
-        [category]: currentValues.includes(value) 
-          ? currentValues.filter(item => item !== value) 
-          : [...currentValues, value]
-      };
+      const newFilters = { ...prev };
+      if (newFilters[category].includes(value)) {
+        newFilters[category] = newFilters[category].filter(item => item !== value);
+      } else {
+        newFilters[category] = [...newFilters[category], value];
+      }
+      return newFilters;
     });
   };
   
@@ -250,9 +250,9 @@ const Questions = () => {
   );
   
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+    <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
       <Header />
-      <main className="flex-grow pt-[120px] px-4 md:px-8 mx-auto w-full">
+      <main className="flex-grow px-4 md:px-8 mx-auto w-full">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl text-[#262f3c] font-extrabold md:text-3xl">Questões</h1>

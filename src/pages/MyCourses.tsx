@@ -199,7 +199,7 @@ const MyCourses = () => {
       if (!profile) return;
 
       const cursosFavoritos = profile.cursos_favoritos || [];
-      const updatedFavorites = cursosFavoritos.filter(favId => favId !== id);
+      const updatedFavorites = cursosFavoritos.filter((favId: string) => favId !== id);
 
       await supabase.from('profiles').update({
         cursos_favoritos: updatedFavorites
@@ -232,7 +232,7 @@ const MyCourses = () => {
       if (!profile) return;
 
       const disciplinasFavoritos = profile.disciplinas_favoritos || [];
-      const updatedFavorites = disciplinasFavoritos.filter(favId => favId !== id);
+      const updatedFavorites = disciplinasFavoritos.filter((favId: string) => favId !== id);
 
       await supabase.from('profiles').update({
         disciplinas_favoritos: updatedFavorites
@@ -246,9 +246,9 @@ const MyCourses = () => {
     }
   };
 
-  return <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+  return <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
       <Header />
-      <main className="flex-grow pt-[120px] px-4 md:px-8 w-full">
+      <main className="flex-grow px-4 md:px-8 w-full">
         <h1 className="text-3xl mb-2 text-[#272f3c] font-extrabold md:text-3xl">Minhas Matrículas</h1>
         <p className="text-[#67748a] mb-6">Aqui você encontra as suas disciplinas e seus concursos favoritos.</p>
 

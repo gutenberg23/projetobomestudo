@@ -25,7 +25,6 @@ export const CourseLayout = () => {
   const [currentX, setCurrentX] = useState(0);
   const progressPanelRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [subjectsCount, setSubjectsCount] = useState<number>(0);
   const [subjectsData, setSubjectsData] = useState<any[]>([]);
   
   // Usar o hook de configurações do site
@@ -90,7 +89,6 @@ export const CourseLayout = () => {
           // É uma disciplina avulsa - não precisamos fazer nada porque o SubjectsList já irá carregá-la
           console.log("É uma disciplina avulsa:", disciplinaData.titulo);
           setSubjectsData([disciplinaData]);
-          setSubjectsCount(1);
           return;
         }
         
@@ -107,11 +105,9 @@ export const CourseLayout = () => {
           }
           
           setSubjectsData(disciplinasData);
-          setSubjectsCount(disciplinasData.length);
         } else {
           console.log("Curso sem disciplinas");
           setSubjectsData([]);
-          setSubjectsCount(0);
         }
       } catch (error) {
         console.error('Erro ao buscar dados das disciplinas:', error);
@@ -170,7 +166,6 @@ export const CourseLayout = () => {
   const handleSubjectsCountChange = useCallback((count: number, data?: any[]) => {
     if (data) {
       setSubjectsData(data);
-      setSubjectsCount(count);
       console.log("CourseLayout - Recebendo dados de disciplinas:", data.length);
     }
   }, []);
@@ -202,7 +197,7 @@ export const CourseLayout = () => {
   return (
     <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
       <Header />
-      <main className="pt-[88px] flex-1">
+      <main className="flex-1">
         <CourseHeader courseId={courseId || ''} progress={progressPercentage} />
         <CourseNavigation
           activeTab={activeTab}

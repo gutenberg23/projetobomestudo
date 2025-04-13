@@ -35,6 +35,7 @@ import Perfil from "./pages/Perfil";
 import DirectLogin from "@/pages/DirectLogin";
 import RegionPosts from "@/pages/RegionPosts";
 import StatePosts from "@/pages/StatePosts";
+import ActivityTracker from "./components/layout/ActivityTracker";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -91,121 +92,123 @@ export default function App() {
         <BrowserRouter>
           <AuthProvider>
             <SiteConfigProvider>
-              <div className="min-h-screen bg-background font-sans antialiased">
-                <ToastContainer position="top-right" autoClose={3000} />
-                <Routes>
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/direct-login" element={<DirectLogin />} />
-                  <Route path="/esqueci-senha" element={<EsqueciSenha />} />
-                  <Route path="/redefinir-senha" element={<RedefinirSenha />} />
-                  <Route path="/perfil" element={<Perfil />} />
-                  <Route path="/reset-password" element={<ResetSenha />} />
-                  <Route path="/course/:courseId" element={<CourseLayout />} />
-                  
-                  <Route path="/explore" element={
-                    <ConfigGuard configKey="showExplorePage">
-                      <Explore />
-                    </ConfigGuard>
-                  } />
-                  
-                  <Route path="/my-courses" element={
-                    <ConfigGuard configKey="showMyCoursesPage">
-                      <MyCourses />
-                    </ConfigGuard>
-                  } />
-                  
-                  <Route path="/dashboard" element={
-                    <AuthGuard>
-                      <DashboardAluno />
-                    </AuthGuard>
-                  } />
-                  
-                  <Route path="/questions" element={
-                    <ConfigGuard configKey="showQuestionsPage">
-                      <Questions />
-                    </ConfigGuard>
-                  } />
-                  
-                  <Route path="/cadernos" element={
-                    <ConfigGuard configKey="showQuestionsPage">
-                      <QuestionBooks />
-                    </ConfigGuard>
-                  } />
-                  
-                  <Route path="/cadernos/:id" element={
-                    <ConfigGuard configKey="showQuestionsPage">
-                      <QuestionBookDetails />
-                    </ConfigGuard>
-                  } />
-                  
-                  <Route path="/blog" element={
-                    <ConfigGuard configKey="showBlogPage">
-                      <Blog />
-                    </ConfigGuard>
-                  } />
-                  
-                  <Route path="/blog/autor/:author" element={
-                    <ConfigGuard configKey="showBlogPage">
-                      <AuthorPosts />
-                    </ConfigGuard>
-                  } />
+              <ActivityTracker>
+                <div className="min-h-screen bg-background font-sans antialiased">
+                  <ToastContainer position="top-right" autoClose={3000} />
+                  <Routes>
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/" element={<Index />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/direct-login" element={<DirectLogin />} />
+                    <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+                    <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+                    <Route path="/perfil" element={<Perfil />} />
+                    <Route path="/reset-password" element={<ResetSenha />} />
+                    <Route path="/course/:courseId" element={<CourseLayout />} />
+                    
+                    <Route path="/explore" element={
+                      <ConfigGuard configKey="showExplorePage">
+                        <Explore />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/my-courses" element={
+                      <ConfigGuard configKey="showMyCoursesPage">
+                        <MyCourses />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/dashboard" element={
+                      <AuthGuard>
+                        <DashboardAluno />
+                      </AuthGuard>
+                    } />
+                    
+                    <Route path="/questions" element={
+                      <ConfigGuard configKey="showQuestionsPage">
+                        <Questions />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/cadernos" element={
+                      <ConfigGuard configKey="showQuestionsPage">
+                        <QuestionBooks />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/cadernos/:id" element={
+                      <ConfigGuard configKey="showQuestionsPage">
+                        <QuestionBookDetails />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/blog" element={
+                      <ConfigGuard configKey="showBlogPage">
+                        <Blog />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/blog/autor/:author" element={
+                      <ConfigGuard configKey="showBlogPage">
+                        <AuthorPosts />
+                      </ConfigGuard>
+                    } />
 
-                  <Route path="/blog/regiao/:regionId" element={
-                    <ConfigGuard configKey="showBlogPage">
-                      <RegionPosts />
-                    </ConfigGuard>
-                  } />
+                    <Route path="/blog/regiao/:regionId" element={
+                      <ConfigGuard configKey="showBlogPage">
+                        <RegionPosts />
+                      </ConfigGuard>
+                    } />
 
-                  <Route path="/blog/estado/:stateId" element={
-                    <ConfigGuard configKey="showBlogPage">
-                      <StatePosts />
-                    </ConfigGuard>
-                  } />
-                  
-                  <Route path="/blog/:slug" element={
-                    <ConfigGuard configKey="showBlogPage">
-                      <BlogPost />
-                    </ConfigGuard>
-                  } />
-                  
-                  <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
-                  
-                  {/* Admin Routes - Isoladas em sua própria estrutura para evitar interações indesejadas */}
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin/*" element={
-                    <AdminGuard>
-                      <Routes>
-                        <Route path="/" element={<AdminLayout />}>
-                          <Route index element={<Dashboard />} />
-                          <Route path="kanban" element={<Kanban />} />
-                          <Route path="posts" element={<Posts />} />
-                          <Route path="usuarios" element={<Usuarios />} />
-                          <Route path="questoes" element={<Questoes />} />
-                          <Route path="cadernos" element={<AdminQuestionBooks />} />
-                          <Route path="cadernos/:id/editar" element={<EditQuestionBook />} />
-                          <Route path="simulados" element={<Simulados />} />
-                          <Route path="edital" element={<Edital />} />
-                          <Route path="topicos" element={<Topicos />} />
-                          <Route path="aulas" element={<Aulas />} />
-                          <Route path="disciplinas" element={<Disciplinas />} />
-                          <Route path="cursos" element={<Cursos />} />
-                          <Route path="professores" element={<Professores />} />
-                          <Route path="configuracoes" element={<ConfiguracoesSite />} />
-                        </Route>
-                      </Routes>
-                    </AdminGuard>
-                  } />
-                  
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="/simulado/:simuladoId" element={<Simulado />} />
-                  <Route path="/simulado-ranking/:simuladoId" element={<SimuladoRankingPage />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-                <Toaster />
-                <Sonner />
-              </div>
+                    <Route path="/blog/estado/:stateId" element={
+                      <ConfigGuard configKey="showBlogPage">
+                        <StatePosts />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/blog/:slug" element={
+                      <ConfigGuard configKey="showBlogPage">
+                        <BlogPost />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
+                    
+                    {/* Admin Routes - Isoladas em sua própria estrutura para evitar interações indesejadas */}
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin/*" element={
+                      <AdminGuard>
+                        <Routes>
+                          <Route path="/" element={<AdminLayout />}>
+                            <Route index element={<Dashboard />} />
+                            <Route path="kanban" element={<Kanban />} />
+                            <Route path="posts" element={<Posts />} />
+                            <Route path="usuarios" element={<Usuarios />} />
+                            <Route path="questoes" element={<Questoes />} />
+                            <Route path="cadernos" element={<AdminQuestionBooks />} />
+                            <Route path="cadernos/:id/editar" element={<EditQuestionBook />} />
+                            <Route path="simulados" element={<Simulados />} />
+                            <Route path="edital" element={<Edital />} />
+                            <Route path="topicos" element={<Topicos />} />
+                            <Route path="aulas" element={<Aulas />} />
+                            <Route path="disciplinas" element={<Disciplinas />} />
+                            <Route path="cursos" element={<Cursos />} />
+                            <Route path="professores" element={<Professores />} />
+                            <Route path="configuracoes" element={<ConfiguracoesSite />} />
+                          </Route>
+                        </Routes>
+                      </AdminGuard>
+                    } />
+                    
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="/simulado/:simuladoId" element={<Simulado />} />
+                    <Route path="/simulado-ranking/:simuladoId" element={<SimuladoRankingPage />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                  <Toaster />
+                  <Sonner />
+                </div>
+              </ActivityTracker>
             </SiteConfigProvider>
           </AuthProvider>
         </BrowserRouter>

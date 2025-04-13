@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BarChart, AlertTriangle } from "lucide-react";
+import { BarChart, AlertTriangle, Info, MoveRight } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -12,16 +12,16 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 
 export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
-  questionNumber,
   year,
   institution,
   organization,
   role,
   discipline,
-  topics,
+  topics = [],
   questionId
 }) => {
   const [statsOpen, setStatsOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportDescription, setReportDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,55 +69,65 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
   };
 
   return (
-    <header className="flex overflow-hidden flex-wrap justify-between items-center px-3 md:px-5 py-2.5 w-full rounded-t-xl rounded-b-none border border-gray-200 border-solid min-h-[74px] text-slate-800 bg-[#272f3c]">
-      <div className="flex overflow-hidden flex-1 shrink items-center self-stretch p-2.5 my-auto text-xl font-semibold rounded-md basis-0 min-w-60">
-        <img 
-          src="/lovable-uploads/interroga.svg" 
-          alt="Question Icon" 
-          className="object-contain shrink-0 mr-4 w-6 aspect-square" 
-        />
-        <div className="flex flex-wrap gap-y-2 items-center text-white leading-none">
-          {questionNumber && (
-            <div className="flex items-center mr-6">
-              <span className="text-sm">Questão:&nbsp;</span>
-              <span className="font-normal text-sm">{questionNumber}</span>
-            </div>
-          )}
-          <div className="flex items-center mr-6">
-            <span className="text-sm">Ano:&nbsp;</span>
-            <span className="font-normal text-sm">{year}</span>
-          </div>
-          <div className="flex items-center mr-6">
-            <span className="text-sm">Banca:&nbsp;</span>
-            <span className="font-normal text-sm">{institution}</span>
-          </div>
-          <div className="flex items-center mr-6">
-            <span className="text-sm">Órgão:&nbsp;</span>
-            <span className="font-normal text-sm">{organization}</span>
-          </div>
-          <div className="flex items-center mr-6">
-            <span className="text-sm">Prova:&nbsp;</span>
-            <span className="font-normal text-sm">{role}</span>
-          </div>
-          <div className="flex items-center mr-6">
-            <span className="text-sm">Disciplina:&nbsp;</span>
-            <span className="font-normal text-sm">{discipline}</span>
-          </div>
-          {Array.isArray(topics) && topics.length > 0 ? (
-            <div className="flex items-center mr-6">
-              <span className="text-sm font-semibold">Assunto:&nbsp;</span>
-              <span className="font-normal text-sm text-white font-medium">{topics.join(", ")}</span>
-            </div>
-          ) : (
-            <div className="flex items-center mr-6">
-              <span className="text-sm font-semibold">Assunto:&nbsp;</span>
-              <span className="font-normal text-sm text-gray-400">Não informado</span>
-            </div>
+    <header className="flex flex-row justify-between items-center px-3 md:px-5 py-2 w-full rounded-t-xl rounded-b-none border border-gray-200 border-solid min-h-[60px] text-slate-800 bg-[#5f2ebe]">
+      <div className="flex items-center text-white">
+        <div className="flex items-center">
+          <span className="text-sm max-sm:hidden">Disciplina:&nbsp;</span>
+          <span className="font-normal text-sm max-sm:text-xs">{discipline || "Não informado"}</span>
+          {Array.isArray(topics) && topics.length > 0 && (
+            <>
+              <MoveRight className="h-3 w-3 mx-1.5 text-gray-300 max-sm:hidden" />
+              <span className="font-normal text-sm max-sm:hidden text-white font-medium">{topics.join(", ")}</span>
+            </>
           )}
         </div>
       </div>
 
-      <div className="flex overflow-hidden gap-2 justify-center items-center self-stretch p-2.5 my-auto text-xs text-center whitespace-nowrap rounded-md max-sm:mx-auto">
+      <div className="flex gap-2 items-center">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <Popover open={infoOpen} onOpenChange={setInfoOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors">
+                      <Info className="h-4 w-4 text-white" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-3">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Informações da Questão</h4>
+                      <div className="text-xs space-y-1.5">
+                        <div className="sm:hidden">
+                          <span className="font-medium">Assunto:</span> {Array.isArray(topics) && topics.length > 0 ? topics.join(", ") : "Não informado"}
+                        </div>
+                        <div>
+                          <span className="font-medium">ID:</span> {questionId || "Não informado"}
+                        </div>
+                        <div>
+                          <span className="font-medium">Ano:</span> {year || "Não informado"}
+                        </div>
+                        <div>
+                          <span className="font-medium">Banca:</span> {institution || "Não informado"}
+                        </div>
+                        <div>
+                          <span className="font-medium">Órgão:</span> {organization || "Não informado"}
+                        </div>
+                        <div>
+                          <span className="font-medium">Prova:</span> {role || "Não informado"}
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Informações da Questão</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

@@ -46,9 +46,9 @@ const SimuladoRankingPage = () => {
   }, [simuladoId]);
   
   return (
-    <div className="flex flex-col min-h-screen bg-[#f8f9fa]">
+    <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
       <Header />
-      <main className="flex-1 container mx-auto pt-[120px] pb-8 px-4">
+      <main className="flex-1 container mx-auto pb-8 px-4">
         <div className="mb-6">
           <Link to={`/simulado/${simuladoId}`}>
             <Button variant="ghost" className="p-0 h-auto">

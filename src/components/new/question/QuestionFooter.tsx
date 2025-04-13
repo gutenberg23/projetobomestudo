@@ -7,11 +7,11 @@ interface QuestionFooterProps {
   showComments: boolean;
   showOfficialAnswer: boolean;
   showAIAnswer: boolean;
-  showStats: boolean;
+  showStats?: boolean;
   onToggleComments: () => void;
   onToggleOfficialAnswer: () => void;
   onToggleAIAnswer: () => void;
-  onToggleAnswer: () => void;
+  onToggleStats?: () => void;
   hasTeacherExplanation: boolean;
   hasAIExplanation: boolean;
   addToBookDialog?: React.ReactNode;
@@ -26,11 +26,11 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
   showComments,
   showOfficialAnswer,
   showAIAnswer,
-  showStats,
+  showStats = false,
   onToggleComments,
   onToggleOfficialAnswer,
   onToggleAIAnswer,
-  onToggleAnswer,
+  onToggleStats,
   hasTeacherExplanation,
   hasAIExplanation,
   addToBookDialog,
@@ -69,17 +69,19 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          onClick={onToggleAnswer}
-          className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-full transition-colors ${
-            showStats
-              ? "bg-purple-100 text-purple-700"
-              : "text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          <BarChart className="w-4 h-4" />
-          <span>Estatísticas</span>
-        </button>
+        {onToggleStats && (
+          <button
+            onClick={onToggleStats}
+            className={`flex items-center gap-1 px-3 py-1.5 text-sm rounded-full transition-colors ${
+              showStats
+                ? "bg-purple-100 text-purple-700"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <BarChart className="w-4 h-4" />
+            <span>Estatísticas</span>
+          </button>
+        )}
 
         {hasTeacherExplanation && (
           <button

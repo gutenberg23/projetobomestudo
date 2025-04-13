@@ -46,6 +46,7 @@ interface SeoConfig {
   googleAnalyticsId: string;
   enableIndexing: boolean;
   structuredData: boolean;
+  robotsTxt: string;
 }
 
 interface SiteConfig {
@@ -98,7 +99,8 @@ const DEFAULT_CONFIG: SiteConfig = {
     twitterHandle: '@bomestudo',
     googleAnalyticsId: '',
     enableIndexing: true,
-    structuredData: true
+    structuredData: true,
+    robotsTxt: ''
   }
 };
 
@@ -128,6 +130,36 @@ let globalConfigCache: SiteConfig | null = null;
 let lastFetchTime = 0;
 const CACHE_TTL = 60 * 1000; // 1 minuto
 let hasTableError = false; // Flag para controlar erros de tabela inexistente
+
+// Função auxiliar para verificar se uma string é um JSON válido
+const isValidJSON = (str: string): boolean => {
+  if (typeof str !== 'string') return false;
+  if (str === '[object Object]') return false;
+  
+  try {
+    JSON.parse(str);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+// Função para tentar parsear JSON com segurança
+const safeJSONParse = (str: any, defaultValue: any = {}) => {
+  if (!str) return defaultValue;
+  if (typeof str === 'object') return str; // Já é um objeto, não precisa parse
+  
+  if (isValidJSON(str)) {
+    try {
+      return JSON.parse(str);
+    } catch (e) {
+      console.error('Erro ao fazer parse de JSON:', e);
+      return defaultValue;
+    }
+  }
+  
+  return defaultValue;
+};
 
 export const useSiteConfig = () => {
   const [config, setConfig] = useState<SiteConfig>(
@@ -188,7 +220,10 @@ export const useSiteConfig = () => {
         for (const item of data) {
           try {
             if (item.chave === 'tabs_course' && item.valor) {
-              const tabsSettings = JSON.parse(item.valor);
+              const tabsSettings = typeof item.valor === 'string' && isValidJSON(item.valor) 
+                ? JSON.parse(item.valor) 
+                : (typeof item.valor === 'object' ? item.valor : {});
+              
               newConfig.tabs = {
                 showDisciplinasTab: tabsSettings.showDisciplinasTab ?? true,
                 showEditalTab: tabsSettings.showEditalTab ?? true,
@@ -196,7 +231,8 @@ export const useSiteConfig = () => {
               };
             } 
             else if (item.chave === 'pages_visibility' && item.valor) {
-              const pagesSettings = JSON.parse(item.valor);
+              const pagesSettings = safeJSONParse(item.valor, {});
+              
               newConfig.pages = {
                 showBlogPage: pagesSettings.showBlogPage ?? true,
                 showQuestionsPage: pagesSettings.showQuestionsPage ?? true,
@@ -206,21 +242,24 @@ export const useSiteConfig = () => {
               };
             }
             else if (item.chave === 'visual_config' && item.valor) {
-              const visualSettings = JSON.parse(item.valor);
+              const visualSettings = safeJSONParse(item.valor, {});
+              
               newConfig.visual = {
                 ...newConfig.visual,
                 ...visualSettings
               };
             }
             else if (item.chave === 'general_config' && item.valor) {
-              const generalSettings = JSON.parse(item.valor);
+              const generalSettings = safeJSONParse(item.valor, {});
+              
               newConfig.general = {
                 ...newConfig.general,
                 ...generalSettings
               };
             }
             else if (item.chave === 'seo_config' && item.valor) {
-              const seoSettings = JSON.parse(item.valor);
+              const seoSettings = safeJSONParse(item.valor, {});
+              
               newConfig.seo = {
                 ...newConfig.seo,
                 ...seoSettings,
@@ -256,29 +295,21 @@ export const useSiteConfig = () => {
   }, []);
 
   const updateTabsConfig = useCallback(async (tabsConfig: TabsConfig) => {
-    // Se a tabela não existe, apenas atualiza o estado local
-    if (hasTableError) {
-      const newConfig = {
-        ...config,
-        tabs: tabsConfig
-      };
-      
-      setConfig(newConfig);
-      globalConfigCache = newConfig;
-      lastFetchTime = Date.now();
-      
-      console.log('ATENÇÃO: A tabela configuracoes_site não existe. As configurações não estão sendo salvas no banco de dados.');
-      console.log('Execute o script SQL para criar a tabela ou entre em contato com o administrador.');
-      
-      return true;
-    }
-
+    if (!tabsConfig) return false;
+    
+    const updatedTabsConfig = {
+      ...config.tabs,
+      ...tabsConfig
+    };
+    
     try {
+      const tabsConfigJson = JSON.stringify(updatedTabsConfig);
+      
       const { error } = await supabase
         .from('configuracoes_site')
         .upsert({
           chave: 'tabs_course',
-          valor: JSON.stringify(tabsConfig),
+          valor: tabsConfigJson,
           updated_at: new Date().toISOString()
         }, { onConflict: 'chave' });
       
@@ -296,7 +327,7 @@ export const useSiteConfig = () => {
         // Mesmo sem a tabela, atualiza o estado local
         const newConfig = {
           ...config,
-          tabs: tabsConfig
+          tabs: updatedTabsConfig
         };
         
         setConfig(newConfig);
@@ -312,7 +343,7 @@ export const useSiteConfig = () => {
       // Atualizar estado e cache global
       const newConfig = {
         ...config,
-        tabs: tabsConfig
+        tabs: updatedTabsConfig
       };
       
       setConfig(newConfig);
@@ -327,29 +358,21 @@ export const useSiteConfig = () => {
   }, [config]);
 
   const updatePagesConfig = useCallback(async (pagesConfig: PagesConfig) => {
-    // Se a tabela não existe, apenas atualiza o estado local
-    if (hasTableError) {
-      const newConfig = {
-        ...config,
-        pages: pagesConfig
-      };
-      
-      setConfig(newConfig);
-      globalConfigCache = newConfig;
-      lastFetchTime = Date.now();
-      
-      console.log('ATENÇÃO: A tabela configuracoes_site não existe. As configurações não estão sendo salvas no banco de dados.');
-      console.log('Execute o script SQL para criar a tabela ou entre em contato com o administrador.');
-      
-      return true;
-    }
-
+    if (!pagesConfig) return false;
+    
+    const updatedPagesConfig = {
+      ...config.pages,
+      ...pagesConfig
+    };
+    
     try {
+      const pagesConfigJson = JSON.stringify(updatedPagesConfig);
+      
       const { error } = await supabase
         .from('configuracoes_site')
         .upsert({
           chave: 'pages_visibility',
-          valor: JSON.stringify(pagesConfig),
+          valor: pagesConfigJson,
           updated_at: new Date().toISOString()
         }, { onConflict: 'chave' });
       
@@ -367,7 +390,7 @@ export const useSiteConfig = () => {
         // Mesmo sem a tabela, atualiza o estado local
         const newConfig = {
           ...config,
-          pages: pagesConfig
+          pages: updatedPagesConfig
         };
         
         setConfig(newConfig);
@@ -383,7 +406,7 @@ export const useSiteConfig = () => {
       // Atualizar estado e cache global
       const newConfig = {
         ...config,
-        pages: pagesConfig
+        pages: updatedPagesConfig
       };
       
       setConfig(newConfig);
@@ -398,35 +421,21 @@ export const useSiteConfig = () => {
   }, [config]);
 
   const updateVisualConfig = useCallback(async (visualConfig: Partial<VisualConfig>) => {
-    // Mesclar as novas configurações com as existentes
+    if (!visualConfig) return false;
+    
     const updatedVisualConfig = {
       ...config.visual,
       ...visualConfig
     };
     
-    // Se a tabela não existe, apenas atualiza o estado local
-    if (hasTableError) {
-      const newConfig = {
-        ...config,
-        visual: updatedVisualConfig
-      };
-      
-      setConfig(newConfig);
-      globalConfigCache = newConfig;
-      lastFetchTime = Date.now();
-      
-      console.log('ATENÇÃO: A tabela configuracoes_site não existe. As configurações não estão sendo salvas no banco de dados.');
-      console.log('Execute o script SQL para criar a tabela ou entre em contato com o administrador.');
-      
-      return true;
-    }
-
     try {
+      const visualConfigJson = JSON.stringify(updatedVisualConfig);
+      
       const { error } = await supabase
         .from('configuracoes_site')
         .upsert({
           chave: 'visual_config',
-          valor: JSON.stringify(updatedVisualConfig),
+          valor: visualConfigJson,
           updated_at: new Date().toISOString()
         }, { onConflict: 'chave' });
       
@@ -478,35 +487,21 @@ export const useSiteConfig = () => {
   }, [config]);
 
   const updateGeneralConfig = useCallback(async (generalConfig: Partial<GeneralConfig>) => {
-    // Mesclar as novas configurações com as existentes
+    if (!generalConfig) return false;
+    
     const updatedGeneralConfig = {
       ...config.general,
       ...generalConfig
     };
     
-    // Se a tabela não existe, apenas atualiza o estado local
-    if (hasTableError) {
-      const newConfig = {
-        ...config,
-        general: updatedGeneralConfig
-      };
-      
-      setConfig(newConfig);
-      globalConfigCache = newConfig;
-      lastFetchTime = Date.now();
-      
-      console.log('ATENÇÃO: A tabela configuracoes_site não existe. As configurações não estão sendo salvas no banco de dados.');
-      console.log('Execute o script SQL para criar a tabela ou entre em contato com o administrador.');
-      
-      return true;
-    }
-
     try {
+      const generalConfigJson = JSON.stringify(updatedGeneralConfig);
+      
       const { error } = await supabase
         .from('configuracoes_site')
         .upsert({
           chave: 'general_config',
-          valor: JSON.stringify(updatedGeneralConfig),
+          valor: generalConfigJson,
           updated_at: new Date().toISOString()
         }, { onConflict: 'chave' });
       
@@ -564,35 +559,21 @@ export const useSiteConfig = () => {
   }, [config]);
 
   const updateSeoConfig = useCallback(async (seoConfig: Partial<SeoConfig>) => {
-    // Mesclar as novas configurações com as existentes
+    if (!seoConfig) return false;
+    
     const updatedSeoConfig = {
       ...config.seo,
       ...seoConfig
     };
     
-    // Se a tabela não existe, apenas atualiza o estado local
-    if (hasTableError) {
-      const newConfig = {
-        ...config,
-        seo: updatedSeoConfig
-      };
-      
-      setConfig(newConfig);
-      globalConfigCache = newConfig;
-      lastFetchTime = Date.now();
-      
-      console.log('ATENÇÃO: A tabela configuracoes_site não existe. As configurações não estão sendo salvas no banco de dados.');
-      console.log('Execute o script SQL para criar a tabela ou entre em contato com o administrador.');
-      
-      return true;
-    }
-
     try {
+      const seoConfigJson = JSON.stringify(updatedSeoConfig);
+      
       const { error } = await supabase
         .from('configuracoes_site')
         .upsert({
           chave: 'seo_config',
-          valor: JSON.stringify(updatedSeoConfig),
+          valor: seoConfigJson,
           updated_at: new Date().toISOString()
         }, { onConflict: 'chave' });
       

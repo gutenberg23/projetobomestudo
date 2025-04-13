@@ -30,6 +30,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { ActivityLogger } from '@/services/activity-logger';
 
 interface QuestionBook {
   id: string;
@@ -181,6 +182,12 @@ export default function QuestionBooks() {
 
       if (error) throw error;
 
+      // Registrar atividade de criação de caderno
+      await ActivityLogger.logNotebookCreate(
+        data.id, 
+        newBookTitle.trim()
+      );
+
       setBooks(prev => [data, ...prev]);
       setOpen(false);
       setNewBookTitle('');
@@ -250,6 +257,12 @@ export default function QuestionBooks() {
 
       if (error) throw error;
 
+      // Registrar atividade de exclusão de caderno
+      await ActivityLogger.logNotebookDelete(
+        book.id, 
+        book.nome
+      );
+
       setBooks(prev => prev.filter(b => b.id !== book.id));
       toast.success('Caderno excluído com sucesso!');
     } catch (error) {
@@ -268,7 +281,7 @@ export default function QuestionBooks() {
   return (
     <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
       <Header />
-      <div className="flex-1 pt-[88px]">
+      <div className="flex-1">
         <div className="container mx-auto py-8 px-4">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">

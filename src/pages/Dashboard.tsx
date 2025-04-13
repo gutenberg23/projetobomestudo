@@ -717,9 +717,9 @@ const Dashboard = () => {
   }, [selectedBanca]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
+    <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
       <Header />
-      <main className="flex-grow pt-[120px] px-4 md:px-8 lg:px-12 w-full">
+      <main className="flex-grow px-4 md:px-8 lg:px-12 w-full">
         <div className="w-full">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">

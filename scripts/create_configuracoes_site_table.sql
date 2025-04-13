@@ -43,7 +43,7 @@ VALUES
 ('pages_visibility', '{"showBlogPage":true,"showQuestionsPage":true,"showExplorePage":true,"showMyCoursesPage":true}'),
 ('visual_config', '{"primaryColor":"#5f2ebe","secondaryColor":"#272f3c","accentColor":"#f97316","logoUrl":"/lovable-uploads/logo.svg","faviconUrl":"/favicon.ico","fontFamily":"Inter, sans-serif","buttonStyle":"rounded","darkMode":false}'),
 ('general_config', '{"siteName":"BomEstudo","contactEmail":"contato@bomestudo.com.br","supportEmail":"suporte@bomestudo.com.br","whatsappNumber":"5511999999999","footerText":"© BomEstudo. Todos os direitos reservados.","enableRegistration":true,"enableComments":true,"maintenanceMode":false}'),
-('seo_config', '{"siteTitle":"BomEstudo - Plataforma de estudos para concursos","siteDescription":"Plataforma de estudos online para candidatos de concursos públicos com cursos, questões comentadas e estatísticas de desempenho.","siteKeywords":["concursos","estudos","questões","cursos","preparatório"],"ogImageUrl":"/images/og-image.jpg","twitterHandle":"@bomestudo","googleAnalyticsId":"","enableIndexing":true,"structuredData":true}')
+('seo_config', '{"siteTitle":"BomEstudo - Plataforma de estudos para concursos","siteDescription":"Plataforma de estudos online para candidatos de concursos públicos com cursos, questões comentadas e estatísticas de desempenho.","siteKeywords":["concursos","estudos","questões","cursos","preparatório"],"ogImageUrl":"/images/og-image.jpg","twitterHandle":"@bomestudo","googleAnalyticsId":"","enableIndexing":true,"structuredData":true,"robotsTxt":"User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /dashboard/\nDisallow: */admin/*\n\n# Sitemap\nSitemap: https://seusite.com.br/sitemap.xml"}')
 ON CONFLICT (chave) DO UPDATE 
 SET valor = EXCLUDED.valor;
 

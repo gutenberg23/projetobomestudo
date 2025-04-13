@@ -2,14 +2,12 @@ import React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface QuestionListSummaryProps {
-  count: number;
   hasFilters: boolean;
   questionsPerPage: string;
   setQuestionsPerPage: (value: string) => void;
 }
 
 const QuestionListSummary: React.FC<QuestionListSummaryProps> = ({
-  count,
   hasFilters,
   questionsPerPage,
   setQuestionsPerPage
@@ -17,8 +15,7 @@ const QuestionListSummary: React.FC<QuestionListSummaryProps> = ({
   return (
     <div className="mb-4 flex items-center justify-between">
       <p className="text-sm text-gray-600">
-        Mostrando <strong>{count}</strong> questões
-        {hasFilters && " com filtros aplicados"}
+        {hasFilters && "Filtros aplicados"}
       </p>
       <div className="flex items-center gap-4">
         <span className="text-sm whitespace-nowrap">Questões por página:</span>

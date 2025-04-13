@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Book, ChevronLeft, Pencil, Save, X, Plus } from 'lucide-react';
+import { Book, ChevronLeft, Pencil, Save, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
@@ -90,6 +90,7 @@ export default function QuestionBookDetails() {
 
       const questions = (questionsData || []).map(q => ({
         id: q.id,
+        number: 0,
         content: q.content,
         command: "", // Não temos campo separado para comando
         options: q.options,
@@ -251,9 +252,9 @@ export default function QuestionBookDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
         <Header />
-        <div className="flex-1 pt-[88px]">
+        <div className="flex-1">
           <div className="container mx-auto py-8 px-4">
             <div className="flex justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
@@ -267,9 +268,9 @@ export default function QuestionBookDetails() {
 
   if (!book) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
         <Header />
-        <div className="flex-1 pt-[88px]">
+        <div className="flex-1">
           <div className="container mx-auto py-8 px-4">
             <div className="text-center">
               <p className="text-gray-500">Caderno não encontrado</p>
@@ -289,9 +290,9 @@ export default function QuestionBookDetails() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
       <Header />
-      <div className="flex-1 pt-[88px]">
+      <div className="flex-1">
         <div className="container mx-auto py-8 px-4">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">

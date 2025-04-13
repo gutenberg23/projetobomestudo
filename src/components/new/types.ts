@@ -73,14 +73,13 @@ export interface Lesson {
 }
 
 export interface QuestionHeaderProps {
-  questionNumber: number;
-  year: string;
-  institution: string;
-  organization: string;
-  role: string;
-  educationLevel: string;
-  discipline: string;
-  topics: string[];
+  year?: string;
+  institution?: string;
+  organization?: string;
+  role?: string;
+  educationLevel?: string;
+  discipline?: string;
+  topics?: string[];
   questionId: string;
 }
 
