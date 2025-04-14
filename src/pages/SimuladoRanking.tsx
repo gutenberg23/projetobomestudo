@@ -46,7 +46,7 @@ const SimuladoRankingPage = () => {
   }, [simuladoId]);
   
   return (
-    <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
       <main className="flex-1 container mx-auto pb-8 px-4">
         <div className="mb-6">

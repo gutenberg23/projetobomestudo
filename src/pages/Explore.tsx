@@ -268,9 +268,10 @@ const Explore = () => {
   const filteredData = showSubjects ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase())) : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
-      <main className="flex-grow px-4 md:px-8 w-full mx-auto pt-8">
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <h1 className="text-2xl font-bold mb-4">Explorar</h1>
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Explore Conteúdos</h1>
           <p className="text-[#67748a] mb-6">Encontre todos os concursos e disciplinas disponíveis para estudo.</p>

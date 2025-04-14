@@ -63,8 +63,10 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   if (isLoading) {
     return (
       <div className="bg-white border-b border-[rgba(239,239,239,1)] mb-5">
-        <div className="mx-auto flex min-w-60 w-full items-center justify-center flex-wrap px-[10px] md:px-[32px] bg-transparent py-4">
-          <Spinner />
+        <div className="w-full flex justify-center">
+          <div className="max-w-[1400px] w-full flex items-center justify-center px-[10px] md:px-[32px] bg-transparent py-4">
+            <Spinner />
+          </div>
         </div>
       </div>
     );
@@ -76,10 +78,12 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   if (!showDisciplinasTab && !showEditalTab && !showSimuladosTab) {
     return (
       <div className="bg-white border-b border-[rgba(239,239,239,1)] mb-5">
-        <div className="mx-auto flex min-w-60 w-full items-center justify-between flex-wrap px-[10px] md:px-[32px] bg-transparent py-4">
-          <p className="text-[rgba(38,47,60,0.7)]">
-            Conteúdo temporariamente indisponível. Por favor, volte mais tarde.
-          </p>
+        <div className="w-full flex justify-center">
+          <div className="max-w-[1400px] w-full flex items-center justify-between px-[10px] md:px-[32px] bg-transparent py-4">
+            <p className="text-[rgba(38,47,60,0.7)]">
+              Conteúdo temporariamente indisponível. Por favor, volte mais tarde.
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -87,61 +91,63 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
 
   return (
     <div className="bg-white border-b border-[rgba(239,239,239,1)] mb-5">
-      <div className="mx-auto flex min-w-60 w-full items-center justify-between flex-wrap px-[10px] md:px-[32px] bg-transparent">
-        <div className="flex items-center gap-2">
-          {showDisciplinasTab && (
-            <button
-              onClick={handleDisciplinasClick}
-              className={cn(
-                "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
-                activeTab === 'disciplinas' && "text-[#5f2ebe] border-[#5f2ebe]"
-              )}
-            >
-              <BookOpen className="w-5 h-5" />
-              <span className="hidden md:inline">Disciplinas</span>
-            </button>
-          )}
-          {showEditalTab && (
-            <button
-              onClick={handleEditalClick}
-              className={cn(
-                "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
-                activeTab === 'edital' && "text-[#5f2ebe] border-[#5f2ebe]"
-              )}
-            >
-              <FileText className="w-5 h-5" />
-              <span className="hidden md:inline">Edital</span>
-            </button>
-          )}
-          {showSimuladosTab && (
-            <button
-              onClick={handleSimuladosClick}
-              className={cn(
-                "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
-                activeTab === 'simulados' && "text-[#5f2ebe] border-[#5f2ebe]"
-              )}
-            >
-              <Target className="w-5 h-5" />
-              <span className="hidden md:inline">Simulados</span>
-            </button>
+      <div className="w-full flex justify-center">
+        <div className="max-w-[1400px] w-full flex items-center justify-between px-[10px] md:px-[32px] bg-transparent">
+          <div className="flex items-center gap-2">
+            {showDisciplinasTab && (
+              <button
+                onClick={handleDisciplinasClick}
+                className={cn(
+                  "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  activeTab === 'disciplinas' && "text-[#5f2ebe] border-[#5f2ebe]"
+                )}
+              >
+                <BookOpen className="w-5 h-5" />
+                <span className="hidden md:inline">Disciplinas</span>
+              </button>
+            )}
+            {showEditalTab && (
+              <button
+                onClick={handleEditalClick}
+                className={cn(
+                  "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  activeTab === 'edital' && "text-[#5f2ebe] border-[#5f2ebe]"
+                )}
+              >
+                <FileText className="w-5 h-5" />
+                <span className="hidden md:inline">Edital</span>
+              </button>
+            )}
+            {showSimuladosTab && (
+              <button
+                onClick={handleSimuladosClick}
+                className={cn(
+                  "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  activeTab === 'simulados' && "text-[#5f2ebe] border-[#5f2ebe]"
+                )}
+              >
+                <Target className="w-5 h-5" />
+                <span className="hidden md:inline">Simulados</span>
+              </button>
+            )}
+          </div>
+          
+          {/* Botão de Progresso */}
+          {activeTab === 'disciplinas' && (
+            <div className="flex">
+              <button
+                onClick={handleProgressClick}
+                className={cn(
+                  "course-nav-button flex items-center gap-2 px-4 py-3 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] transition-colors rounded-none",
+                  isProgressVisible && "bg-gray-100 text-[#5f2ebe]"
+                )}
+              >
+                <BarChart className="w-5 h-5" />
+                <span className="hidden md:inline">Meu Progresso</span>
+              </button>
+            </div>
           )}
         </div>
-        
-        {/* Botão de Progresso */}
-        {activeTab === 'disciplinas' && (
-          <div className="flex">
-            <button
-              onClick={handleProgressClick}
-              className={cn(
-                "course-nav-button flex items-center gap-2 px-4 py-3 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] transition-colors rounded-none",
-                isProgressVisible && "bg-gray-100 text-[#5f2ebe]"
-              )}
-            >
-              <BarChart className="w-5 h-5" />
-              <span className="hidden md:inline">Meu Progresso</span>
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, SlidersHorizontal, X } from "lucide-react";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 import { useSearchParams } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuestionFiltersPanelProps {
   searchQuery: string;
@@ -50,6 +51,62 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   const [_, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
+  const [topicsByDiscipline, setTopicsByDiscipline] = useState<Record<string, string[]>>({});
+  const [allQuestions, setAllQuestions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Buscar questões para análise de tópicos por disciplina
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('questoes')
+          .select('discipline, topicos');
+          
+        if (error) throw error;
+        
+        if (data) {
+          setAllQuestions(data);
+          
+          // Criar mapeamento de disciplinas para tópicos
+          const topicsMap: Record<string, Set<string>> = {};
+          
+          data.forEach(question => {
+            const discipline = question.discipline;
+            const topics = question.topicos || [];
+            
+            if (discipline && topics.length > 0) {
+              if (!topicsMap[discipline]) {
+                topicsMap[discipline] = new Set();
+              }
+              
+              topics.forEach((topic: string) => {
+                topicsMap[discipline].add(topic);
+              });
+            }
+          });
+          
+          // Converter Sets para arrays e ordenar
+          const formattedMap: Record<string, string[]> = {};
+          Object.keys(topicsMap).forEach(discipline => {
+            formattedMap[discipline] = [...topicsMap[discipline]].sort((a, b) => 
+              a.localeCompare(b)
+            );
+          });
+          
+          setTopicsByDiscipline(formattedMap);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar questões:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchQuestions();
+  }, []);
 
   // Ordenar todas as listas de opções em ordem alfabética
   const sortedOptions = {
@@ -63,13 +120,30 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     difficulty: [...filterOptions.difficulty].sort((a, b) => a.localeCompare(b))
   };
 
+  // Filtrar tópicos com base nas disciplinas selecionadas
+  const filteredTopics = useMemo(() => {
+    if (selectedFilters.disciplines.length === 0) {
+      return [];
+    }
+    
+    // Se tiver disciplinas selecionadas, mostrar apenas tópicos relacionados
+    const topicsSet = new Set<string>();
+    
+    selectedFilters.disciplines.forEach(discipline => {
+      const topics = topicsByDiscipline[discipline] || [];
+      topics.forEach(topic => topicsSet.add(topic));
+    });
+    
+    return [...topicsSet].sort((a, b) => a.localeCompare(b));
+  }, [selectedFilters.disciplines, topicsByDiscipline]);
+
   // Atualizar a URL com os filtros selecionados
   const updateUrlWithFilters = () => {
     const params = new URLSearchParams();
     
     // Adicionar consulta de pesquisa
-    if (searchQuery) {
-      params.set('q', searchQuery);
+    if (localSearchQuery) {
+      params.set('q', localSearchQuery);
     }
     
     // Adicionar filtros selecionados
@@ -88,6 +162,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
 
   // Aplicar filtros e atualizar URL
   const applyFiltersWithUrl = () => {
+    setSearchQuery(localSearchQuery);
     updateUrlWithFilters();
     handleApplyFilters();
     if (isMobile) {
@@ -102,6 +177,41 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
 
   const activeFiltersCount = countActiveFilters();
   
+  // Função para remover todos os filtros
+  const clearAllFilters = () => {
+    // Resetar a pesquisa local
+    setLocalSearchQuery("");
+    
+    // Criar um objeto com todos os filtros vazios
+    const emptyFilters = {
+      disciplines: [],
+      topics: [],
+      institutions: [],
+      organizations: [],
+      roles: [],
+      years: [],
+      educationLevels: [],
+      difficulty: []
+    };
+    
+    // Atualizar a URL sem filtros
+    const params = new URLSearchParams();
+    params.set('perPage', questionsPerPage);
+    setSearchParams(params);
+    
+    // Propagar as mudanças para o componente pai
+    setSearchQuery("");
+    
+    // Usar evento de retorno para atualizar todos os filtros
+    const handler = handleFilterChange as any;
+    if (typeof handler === 'function') {
+      handler("reset_all", emptyFilters);
+    }
+    
+    // Aplicar os filtros vazios
+    handleApplyFilters();
+  };
+  
   const filtersContent = (
     <>
       <div className="grid grid-cols-1 gap-6 mb-6">
@@ -109,8 +219,8 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           <Input 
             type="text" 
             placeholder="Pesquisar palavras-chave..." 
-            value={searchQuery} 
-            onChange={e => setSearchQuery(e.target.value)} 
+            value={localSearchQuery} 
+            onChange={e => setLocalSearchQuery(e.target.value)} 
             className="pr-10 w-full" 
           />
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -126,10 +236,15 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
         />
         
         <CheckboxGroup 
-          title="Tópico" 
-          options={sortedOptions.topics} 
+          title="Assunto" 
+          options={filteredTopics} 
           selectedValues={selectedFilters.topics} 
           onChange={value => handleFilterChange("topics", value)} 
+          placeholder={
+            selectedFilters.disciplines.length === 0 
+              ? "Selecione uma disciplina primeiro" 
+              : "Selecione os assuntos"
+          }
         />
         
         <CheckboxGroup 
@@ -175,9 +290,26 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
         />
       </div>
 
-      <Button onClick={applyFiltersWithUrl} className="w-full text-white bg-[#5f2ebe]">
-        Filtrar Questões
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          onClick={applyFiltersWithUrl} 
+          variant="flat" 
+          className="flex-1"
+        >
+          Filtrar Questões
+        </Button>
+        
+        {activeFiltersCount > 0 && (
+          <Button 
+            onClick={clearAllFilters} 
+            variant="outline" 
+            className="flex items-center gap-1"
+          >
+            <X className="h-4 w-4" />
+            Remover filtros
+          </Button>
+        )}
+      </div>
     </>
   );
 
@@ -185,7 +317,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     <div className="bg-white rounded-lg p-6 mb-8">
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
         <CollapsibleTrigger asChild>
-          <div className="flex items-center justify-between cursor-pointer pb-2 mb-4 border-b border-gray-100">
+          <div className={`flex items-center justify-between cursor-pointer ${isOpen ? 'pb-4 mb-4 border-b border-gray-100' : ''}`}>
             <div className="flex items-center">
               <h3 className="text-lg font-medium text-[#272f3c]">Filtros</h3>
               {activeFiltersCount > 0 && (

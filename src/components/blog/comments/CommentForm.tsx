@@ -55,8 +55,8 @@ export const CommentForm: React.FC<CommentFormProps> = ({
         postId,
         userId: user.id,
         content: content.trim(),
-        authorName: authorName || user.user_metadata?.name || 'Usuário',
-        authorAvatar: authorAvatar || user.user_metadata?.avatar_url,
+        authorName: authorName || user.metadata?.name || 'Usuário',
+        authorAvatar: authorAvatar || user.metadata?.avatar_url,
         parentId
       });
 

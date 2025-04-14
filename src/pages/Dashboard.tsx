@@ -717,7 +717,7 @@ const Dashboard = () => {
   }, [selectedBanca]);
 
   return (
-    <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
       <main className="flex-grow px-4 py-6 md:px-8 max-w-7xl w-full mx-auto pt-8">
         <div className="w-full">
@@ -885,7 +885,7 @@ const Dashboard = () => {
             </div>
             
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex-1">
                   <CardTitle>Estatísticas por disciplina</CardTitle>
                   <CardDescription className="whitespace-nowrap">
@@ -896,9 +896,9 @@ const Dashboard = () => {
                     })`}
                   </CardDescription>
                 </div>
-                <div className="ml-auto">
+                <div className="w-full sm:w-auto sm:ml-auto">
                   <Select value={selectedBanca} onValueChange={setSelectedBanca}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Filtrar por banca" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1030,16 +1030,16 @@ const Dashboard = () => {
             </Card>
             
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex-1">
                   <CardTitle>Simulados</CardTitle>
                   <CardDescription className="whitespace-nowrap">
                     Resultados dos simulados realizados
                   </CardDescription>
                 </div>
-                <div className="ml-auto">
+                <div className="w-full sm:w-auto sm:ml-auto">
                   <Select value={filtroSimulado} onValueChange={setFiltroSimulado}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue placeholder="Filtrar simulados" />
                     </SelectTrigger>
                     <SelectContent>

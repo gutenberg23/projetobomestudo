@@ -195,9 +195,9 @@ export const CourseLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
-      <main className="flex-1">
+      <main className="flex-1 w-full">
         <CourseHeader courseId={courseId || ''} progress={progressPercentage} />
         <CourseNavigation
           activeTab={activeTab}
@@ -207,56 +207,62 @@ export const CourseLayout = () => {
         />
         
         {activeTab === 'disciplinas' && config.tabs.showDisciplinasTab && (
-          <div className="bg-[rgba(246,248,250,1)] flex w-full gap-5 py-0 flex-col xl:flex-row px-[10px] md:px-[32px] relative">
-            <div className="flex-1">
-              <SubjectsList courseId={courseId} onSubjectsCountChange={handleSubjectsCountChange} />
-            </div>
-            
-            {/* Card de Progresso Flutuante */}
-            <div 
-              ref={progressPanelRef}
-              className={cn(
-                "fixed top-[200px] right-[10px] md:right-[32px] z-[999] transition-transform duration-300 ease-in-out touch-none",
-                isProgressVisible ? "translate-x-0" : "translate-x-[100%]",
-                isDragging ? "transition-none" : ""
-              )}
-              style={{
-                transform: isDragging ? `translateX(${currentX}px)` : undefined,
-                visibility: isProgressVisible ? "visible" : "hidden"
-              }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
-              <div className="w-[350px] shadow-[0_0_15px_rgba(0,0,0,0.05)] bg-white rounded-[10px] max-h-[calc(100vh-220px)] overflow-y-auto">
-                <ProgressPanel subjectsFromCourse={subjectsData} />
+          <div className="bg-[rgb(242,244,246)] w-full flex justify-center relative">
+            <div className="max-w-[1400px] w-full flex gap-5 py-0 flex-col xl:flex-row px-[10px] md:px-[32px]">
+              <div className="flex-1">
+                <SubjectsList courseId={courseId} onSubjectsCountChange={handleSubjectsCountChange} />
               </div>
-            </div>
+              
+              {/* Card de Progresso Flutuante */}
+              <div 
+                ref={progressPanelRef}
+                className={cn(
+                  "fixed top-[200px] right-[10px] md:right-[32px] z-[999] transition-transform duration-300 ease-in-out touch-none",
+                  isProgressVisible ? "translate-x-0" : "translate-x-[100%]",
+                  isDragging ? "transition-none" : ""
+                )}
+                style={{
+                  transform: isDragging ? `translateX(${currentX}px)` : undefined,
+                  visibility: isProgressVisible ? "visible" : "hidden"
+                }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
+                <div className="w-[350px] shadow-[0_0_15px_rgba(0,0,0,0.05)] bg-white rounded-[10px] max-h-[calc(100vh-220px)] overflow-y-auto">
+                  <ProgressPanel subjectsFromCourse={subjectsData} />
+                </div>
+              </div>
 
-            {/* Overlay para detectar cliques fora */}
-            {isProgressVisible && (
-              <div
-                ref={overlayRef}
-                className="fixed inset-0 z-[998]"
-                style={{ backgroundColor: 'transparent' }}
-              />
-            )}
+              {/* Overlay para detectar cliques fora */}
+              {isProgressVisible && (
+                <div
+                  ref={overlayRef}
+                  className="fixed inset-0 z-[998]"
+                  style={{ backgroundColor: 'transparent' }}
+                />
+              )}
+            </div>
           </div>
         )}
         
         {activeTab === 'edital' && config.tabs.showEditalTab && (
-          <div className="w-full px-[10px] md:px-[32px]">
-            <EditorializedView activeTab="edital" />
+          <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
+            <div className="max-w-[1400px] w-full px-[10px] md:px-[32px]">
+              <EditorializedView activeTab="edital" />
+            </div>
           </div>
         )}
         
         {activeTab === 'simulados' && config.tabs.showSimuladosTab && (
-          <div className="w-full px-[10px] md:px-[32px]">
-            <EditorializedView activeTab="simulados" />
+          <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
+            <div className="max-w-[1400px] w-full px-[10px] md:px-[32px]">
+              <EditorializedView activeTab="simulados" />
+            </div>
           </div>
         )}
       </main>

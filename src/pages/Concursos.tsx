@@ -166,9 +166,9 @@ const Concursos = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
-      <main className="flex-1 bg-gray-50">
+      <main className="flex-1">
         <div className="container mx-auto px-4 py-8">
           <h1 className="text-2xl sm:text-3xl font-bold mb-6">Concursos abertos</h1>
           
@@ -279,67 +279,73 @@ const Concursos = () => {
                       <div>
                         <button 
                           onClick={() => navegarParaPost(concurso)}
-                          className="text-left text-lg sm:text-xl md:text-2xl font-bold text-blue-800 hover:text-blue-600 transition-colors line-clamp-2"
+                          className="text-left text-lg sm:text-xl md:text-2xl font-bold text-[#5f2ebe] hover:text-[#4924a1] transition-colors line-clamp-2"
                         >
                           {concurso.titulo}
                         </button>
                         
-                        <div className="mt-4 space-y-3 sm:space-y-2.5">
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                            <div className="flex items-center text-green-700 min-w-[90px]">
-                              <CalendarIcon className="h-4 w-4 mr-1.5" />
-                              <span className="text-xs sm:text-sm font-medium">Inscrições:</span>
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-2.5">
+                          {/* Coluna da esquerda */}
+                          <div className="space-y-3 sm:space-y-2.5">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                              <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                                <CalendarIcon className="h-4 w-4 mr-1.5" />
+                                <span className="text-xs sm:text-sm font-medium">Inscrições:</span>
+                              </div>
+                              <span className="text-xs sm:text-sm text-gray-700">
+                                {formatarPeriodo(concurso.dataInicioInscricao, concurso.dataFimInscricao)}
+                                {concurso.prorrogado && (
+                                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    Prorrogado
+                                  </span>
+                                )}
+                              </span>
                             </div>
-                            <span className="text-xs sm:text-sm text-gray-700">
-                              {formatarPeriodo(concurso.dataInicioInscricao, concurso.dataFimInscricao)}
-                              {concurso.prorrogado && (
-                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                  Prorrogado
-                                </span>
-                              )}
-                            </span>
+                            
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                              <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                                <BriefcaseIcon className="h-4 w-4 mr-1.5" />
+                                <span className="text-xs sm:text-sm font-medium">Cargos:</span>
+                              </div>
+                              <span className="text-xs sm:text-sm text-gray-700 line-clamp-1">
+                                {concurso.cargos.map(cargo => exibirTextoCargo(cargo)).join(', ')}
+                              </span>
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                              <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                                <MapPinIcon className="h-4 w-4 mr-1.5" />
+                                <span className="text-xs sm:text-sm font-medium">Estados:</span>
+                              </div>
+                              <span className="text-xs sm:text-sm text-gray-700">
+                                {concurso.estados.join(', ')}
+                              </span>
+                            </div>
                           </div>
                           
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                            <div className="flex items-center text-purple-700 min-w-[90px]">
-                              <BriefcaseIcon className="h-4 w-4 mr-1.5" />
-                              <span className="text-xs sm:text-sm font-medium">Cargos:</span>
+                          {/* Coluna da direita */}
+                          <div className="space-y-3 sm:space-y-2.5">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                              <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                                <CurrencyDollarIcon className="h-4 w-4 mr-1.5" />
+                                <span className="text-xs sm:text-sm font-medium">Salário:</span>
+                              </div>
+                              <span className="text-xs sm:text-sm text-gray-700">
+                                Até {concurso.salario}
+                              </span>
                             </div>
-                            <span className="text-xs sm:text-sm text-gray-700 line-clamp-1">
-                              {concurso.cargos.map(cargo => exibirTextoCargo(cargo)).join(', ')}
-                            </span>
-                          </div>
-                          
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                            <div className="flex items-center text-blue-700 min-w-[90px]">
-                              <CurrencyDollarIcon className="h-4 w-4 mr-1.5" />
-                              <span className="text-xs sm:text-sm font-medium">Salário:</span>
+                            
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                              <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                                <BriefcaseIcon className="h-4 w-4 mr-1.5" />
+                                <span className="text-xs sm:text-sm font-medium">Vagas:</span>
+                              </div>
+                              <span className="text-xs sm:text-sm text-gray-700">
+                                {concurso.vagas}
+                              </span>
                             </div>
-                            <span className="text-xs sm:text-sm text-gray-700">
-                              Até {concurso.salario}
-                            </span>
-                          </div>
-                          
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                            <div className="flex items-center text-red-700 min-w-[90px]">
-                              <MapPinIcon className="h-4 w-4 mr-1.5" />
-                              <span className="text-xs sm:text-sm font-medium">Estados:</span>
-                            </div>
-                            <span className="text-xs sm:text-sm text-gray-700">
-                              {concurso.estados.join(', ')}
-                            </span>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="pt-3 mt-1 border-t border-gray-100">
-                        <button 
-                          onClick={() => navegarParaPost(concurso)}
-                          className="inline-flex items-center text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-800"
-                        >
-                          Ver detalhes
-                          <ArrowRightIcon className="ml-1 h-3 w-3 sm:h-4 sm:w-4" />
-                        </button>
                       </div>
                     </div>
                   </div>

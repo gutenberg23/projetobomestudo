@@ -342,9 +342,9 @@ const Settings = () => {
   }, [user?.id]);
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
-      <main className="flex-1 bg-white">
+      <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto px-4 py-8">
           <h1 className="text-2xl font-bold text-[#272f3c] mb-4">Minha conta</h1>
           <p className="text-[#67748a] mb-6">

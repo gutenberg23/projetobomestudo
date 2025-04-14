@@ -286,24 +286,24 @@ const BlogPostPage = () => {
   
   if (loading) {
     return (
-      <>
+      <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
         <Header />
-        <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
+        <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Carregando...</h1>
             <p className="mb-6">Aguarde um momento enquanto carregamos o artigo.</p>
           </div>
         </main>
         <Footer />
-      </>
+      </div>
     );
   }
   
   if (!post) {
     return (
-      <>
+      <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
         <Header />
-        <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
+        <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl">
           <div className="text-center py-12">
             <h1 className="text-2xl font-bold mb-4">Artigo não encontrado</h1>
             <p className="mb-6">O artigo que você está procurando não existe ou foi removido.</p>
@@ -313,14 +313,14 @@ const BlogPostPage = () => {
           </div>
         </main>
         <Footer />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
-      <main className="container mx-auto px-4 py-12 pt-12 max-w-7xl bg-gray-50">
+      <main className="container mx-auto px-4 py-12 pt-12 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             {/* Artigo */}
@@ -676,7 +676,7 @@ const BlogPostPage = () => {
         </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 };
 

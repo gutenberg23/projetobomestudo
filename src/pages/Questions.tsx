@@ -28,6 +28,16 @@ const Questions = () => {
     educationLevels: [] as string[],
     difficulty: [] as string[]
   });
+  const [tempFilters, setTempFilters] = useState({
+    disciplines: [] as string[],
+    topics: [] as string[],
+    institutions: [] as string[],
+    organizations: [] as string[],
+    roles: [] as string[],
+    years: [] as string[],
+    educationLevels: [] as string[],
+    difficulty: [] as string[]
+  });
   const [questionsPerPage, setQuestionsPerPage] = useState("10");
   const [currentPage, setCurrentPage] = useState(1);
   const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
@@ -43,6 +53,7 @@ const Questions = () => {
     educationLevels: [] as string[],
     difficulty: [] as string[]
   });
+  const [totalCount, setTotalCount] = useState(0);
   
   // Função para converter options do banco para o formato esperado
   const parseOptions = (options: Json | null): any[] => {
@@ -87,46 +98,26 @@ const Questions = () => {
       });
       
       setSelectedFilters(newFilters);
+      setTempFilters(newFilters); // Inicializar filtros temporários com os mesmos valores
     };
     
     parseUrlParams();
   }, [searchParams]);
 
-  // Buscar questões do banco de dados
+  // Buscar opções de filtro (só uma vez)
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchFilterOptions = async () => {
       try {
-        setLoading(true);
-        
-        // Buscar todas as questões
+        // Buscar apenas os dados necessários para os filtros (max 100 registros mais recentes)
         const { data, error } = await supabase
           .from('questoes')
-          .select('*');
+          .select('discipline, topicos, institution, organization, role, year, level, difficulty')
+          .order('created_at', { ascending: false })
+          .limit(100);
         
         if (error) {
           throw error;
         }
-        
-        // Transformar os dados para o formato esperado pelo componente
-        const formattedQuestions = data.map(q => ({
-          id: q.id,
-          year: q.year,
-          institution: q.institution,
-          organization: q.organization,
-          role: q.role,
-          discipline: q.discipline,
-          level: q.level,
-          difficulty: q.difficulty,
-          questionType: q.questiontype,
-          content: q.content,
-          teacherExplanation: q.teacherexplanation,
-          aiExplanation: q.aiexplanation || "",
-          expandableContent: q.expandablecontent || "",
-          options: parseOptions(q.options),
-          topicos: Array.isArray(q.topicos) ? q.topicos : []
-        }));
-        
-        setQuestions(formattedQuestions);
         
         // Extrair valores únicos para cada dropdown
         const institutions = [...new Set(data.map(q => q.institution).filter(Boolean))].sort();
@@ -156,6 +147,102 @@ const Questions = () => {
         });
         
       } catch (error) {
+        console.error('Erro ao carregar opções de filtro:', error);
+      }
+    };
+    
+    fetchFilterOptions();
+  }, []);
+
+  // Buscar questões com base nos filtros e paginação
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        setLoading(true);
+        
+        // Calcular offset para paginação
+        const offset = (currentPage - 1) * parseInt(questionsPerPage);
+        const limit = parseInt(questionsPerPage);
+
+        // Construir a consulta básica
+        let query = supabase.from('questoes').select('*', { count: 'exact' });
+        
+        // Aplicar texto de pesquisa
+        if (searchQuery) {
+          query = query.ilike('content', `%${searchQuery}%`);
+        }
+        
+        // Aplicar filtros
+        if (selectedFilters.disciplines.length > 0) {
+          query = query.in('discipline', selectedFilters.disciplines);
+        }
+        
+        if (selectedFilters.institutions.length > 0) {
+          query = query.in('institution', selectedFilters.institutions);
+        }
+        
+        if (selectedFilters.organizations.length > 0) {
+          query = query.in('organization', selectedFilters.organizations);
+        }
+        
+        if (selectedFilters.roles.length > 0) {
+          query = query.in('role', selectedFilters.roles);
+        }
+        
+        if (selectedFilters.years.length > 0) {
+          query = query.in('year', selectedFilters.years);
+        }
+        
+        if (selectedFilters.educationLevels.length > 0) {
+          query = query.in('level', selectedFilters.educationLevels);
+        }
+        
+        if (selectedFilters.difficulty.length > 0) {
+          query = query.in('difficulty', selectedFilters.difficulty);
+        }
+        
+        // O filtro de tópicos é um caso especial (array)
+        if (selectedFilters.topics.length > 0) {
+          // Usar o filtro overlap para encontrar questões que contenham pelo menos um tópico
+          query = query.overlaps('topicos', selectedFilters.topics);
+        }
+        
+        // Aplicar paginação
+        query = query.range(offset, offset + limit - 1);
+        
+        // Executar a consulta
+        const { data, error, count } = await query;
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Atualizar a contagem total
+        if (count !== null) {
+          setTotalCount(count);
+        }
+        
+        // Transformar os dados para o formato esperado pelo componente
+        const formattedQuestions = data.map(q => ({
+          id: q.id,
+          year: q.year,
+          institution: q.institution,
+          organization: q.organization,
+          role: q.role,
+          discipline: q.discipline,
+          level: q.level,
+          difficulty: q.difficulty,
+          questionType: q.questiontype,
+          content: q.content,
+          teacherExplanation: q.teacherexplanation,
+          aiExplanation: q.aiexplanation || "",
+          expandableContent: q.expandablecontent || "",
+          options: parseOptions(q.options),
+          topicos: Array.isArray(q.topicos) ? q.topicos : []
+        }));
+        
+        setQuestions(formattedQuestions);
+      } catch (error) {
         console.error('Erro ao carregar questões:', error);
         toast.error('Erro ao carregar questões. Tente novamente.');
       } finally {
@@ -164,7 +251,7 @@ const Questions = () => {
     };
     
     fetchQuestions();
-  }, []);
+  }, [searchQuery, selectedFilters, currentPage, questionsPerPage]);
   
   const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
     event.preventDefault();
@@ -176,144 +263,129 @@ const Questions = () => {
   };
   
   const handleFilterChange = (
-    category: "topics" | "disciplines" | "institutions" | "organizations" | "roles" | "years" | "educationLevels" | "difficulty",
-    value: string
+    category: "topics" | "disciplines" | "institutions" | "organizations" | "roles" | "years" | "educationLevels" | "difficulty" | "reset_all",
+    value: string | any
   ) => {
-    setSelectedFilters(prev => {
+    // Caso especial para redefinir todos os filtros
+    if (category === "reset_all") {
+      setTempFilters({
+        disciplines: [],
+        topics: [],
+        institutions: [],
+        organizations: [],
+        roles: [],
+        years: [],
+        educationLevels: [],
+        difficulty: []
+      });
+      return;
+    }
+    
+    setTempFilters(prev => {
       const newFilters = { ...prev };
-      if (newFilters[category].includes(value)) {
-        newFilters[category] = newFilters[category].filter(item => item !== value);
-      } else {
-        newFilters[category] = [...newFilters[category], value];
+      
+      // Lógica especial para disciplinas e tópicos
+      if (category === "disciplines") {
+        // Verificar se estamos adicionando ou removendo a disciplina
+        const isAddingDiscipline = !prev.disciplines.includes(value);
+        
+        if (isAddingDiscipline) {
+          newFilters.disciplines = [...prev.disciplines, value];
+        } else {
+          newFilters.disciplines = prev.disciplines.filter(item => item !== value);
+          
+          // Se removeu todas as disciplinas, limpar os tópicos também
+          if (newFilters.disciplines.length === 0) {
+            newFilters.topics = [];
+          }
+        }
+      } 
+      // Para outras categorias, manter a lógica original
+      else {
+        if (newFilters[category].includes(value)) {
+          newFilters[category] = newFilters[category].filter(item => item !== value);
+        } else {
+          newFilters[category] = [...newFilters[category], value];
+        }
       }
+      
       return newFilters;
     });
   };
   
   const handleApplyFilters = () => {
-    setCurrentPage(1);
+    setSelectedFilters(tempFilters);
+    setCurrentPage(1); // Voltar para a primeira página ao aplicar novos filtros
   };
   
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
-
-  // Filtrar as questões com base nos filtros selecionados
-  const filteredQuestions = questions.filter(question => {
-    // Filtrar por texto de pesquisa
-    if (searchQuery && !question.content.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    
-    // Aplicar filtros de seleção
-    if (selectedFilters.disciplines.length > 0 && !selectedFilters.disciplines.includes(question.discipline)) {
-      return false;
-    }
-    
-    if (selectedFilters.topics.length > 0 && !selectedFilters.topics.some(topic => question.topicos?.includes(topic))) {
-      return false;
-    }
-    
-    if (selectedFilters.institutions.length > 0 && !selectedFilters.institutions.includes(question.institution)) {
-      return false;
-    }
-    
-    if (selectedFilters.organizations.length > 0 && !selectedFilters.organizations.includes(question.organization)) {
-      return false;
-    }
-    
-    if (selectedFilters.roles.length > 0 && !selectedFilters.roles.includes(question.role)) {
-      return false;
-    }
-    
-    if (selectedFilters.years.length > 0 && !selectedFilters.years.includes(question.year)) {
-      return false;
-    }
-    
-    if (selectedFilters.educationLevels.length > 0 && !selectedFilters.educationLevels.includes(question.level)) {
-      return false;
-    }
-    
-    if (selectedFilters.difficulty.length > 0 && !selectedFilters.difficulty.includes(question.difficulty)) {
-      return false;
-    }
-    
-    return true;
-  });
-
-  // Cálculo para paginação
-  const totalPages = Math.ceil(filteredQuestions.length / parseInt(questionsPerPage));
   
-  // Paginação
-  const paginatedQuestions = filteredQuestions.slice(
-    (currentPage - 1) * parseInt(questionsPerPage),
-    currentPage * parseInt(questionsPerPage)
-  );
+  // Cálculo para paginação com base na contagem total
+  const totalPages = Math.max(1, Math.ceil(totalCount / parseInt(questionsPerPage)));
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen bg-[rgb(242,244,246)]">
       <Header />
-      <div className="flex-1 bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold">Banco de Questões</h1>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowScoreCounter(!showScoreCounter)}
-                className="whitespace-nowrap flex items-center"
-              >
-                <Calculator className="h-4 w-4 mr-1" />
-                {showScoreCounter ? "Ocultar Contador" : "Mostrar Contador"}
-              </Button>
-            </div>
-          </div>
-          
-          <QuestionFiltersPanel
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            selectedFilters={selectedFilters}
-            handleFilterChange={handleFilterChange}
-            handleApplyFilters={handleApplyFilters}
-            questionsPerPage={questionsPerPage}
-            setQuestionsPerPage={setQuestionsPerPage}
-            filterOptions={filterOptions}
-            rightElement={
-              <Select
-                value={questionsPerPage}
-                onValueChange={setQuestionsPerPage}
-              >
-                <SelectTrigger className="h-8 w-[80px] text-xs">
-                  <SelectValue placeholder="10" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-            }
-          />
-            
-          <QuestionResults 
-            questions={paginatedQuestions}
-            loading={loading}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            handlePageChange={handlePageChange}
-            disabledOptions={disabledOptions}
-            onToggleDisabled={handleToggleDisabled}
-            hasFilters={Object.values(selectedFilters).some(arr => arr.length > 0)}
-          />
-          
-          {showScoreCounter && (
-            <ScoreCounter onClose={() => setShowScoreCounter(false)} />
-          )}
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-[#272f3c]">Banco de Questões</h1>
+          <Button
+            variant="outline"
+            onClick={() => setShowScoreCounter(!showScoreCounter)}
+            className="flex items-center"
+          >
+            <Calculator className="h-4 w-4 mr-2" />
+            {showScoreCounter ? "Desativar Pontuação" : "Ativar Pontuação"}
+          </Button>
         </div>
-      </div>
+
+        {showScoreCounter && (
+          <div className="mb-6">
+            <ScoreCounter />
+          </div>
+        )}
+
+        <QuestionFiltersPanel
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedFilters={tempFilters}
+          handleFilterChange={handleFilterChange}
+          handleApplyFilters={handleApplyFilters}
+          questionsPerPage={questionsPerPage}
+          setQuestionsPerPage={setQuestionsPerPage}
+          filterOptions={filterOptions}
+          rightElement={
+            <Select value={questionsPerPage} onValueChange={(value) => {
+              setQuestionsPerPage(value);
+              setCurrentPage(1); // Voltar para a primeira página quando mudar o número de itens por página
+            }}>
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="10" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          }
+        />
+
+        <QuestionResults
+          questions={questions} 
+          loading={loading}
+          disabledOptions={disabledOptions}
+          onToggleDisabled={handleToggleDisabled}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          hasFilters={Object.values(selectedFilters).some(arr => arr.length > 0)}
+        />
+      </main>
       <Footer />
     </div>
   );

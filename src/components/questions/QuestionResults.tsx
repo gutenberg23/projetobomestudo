@@ -9,7 +9,7 @@ interface QuestionResultsProps {
   onToggleDisabled: (optionId: string, event: React.MouseEvent) => void;
   currentPage: number;
   totalPages: number;
-  handlePageChange: (page: number) => void;
+  onPageChange: (page: number) => void;
   hasFilters: boolean;
   loading?: boolean;
 }
@@ -20,7 +20,7 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
   onToggleDisabled,
   currentPage,
   totalPages,
-  handlePageChange,
+  onPageChange,
   hasFilters,
   loading = false
 }) => {
@@ -81,7 +81,7 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
         <QuestionPagination
           currentPage={currentPage}
           totalPages={totalPages}
-          handlePageChange={handlePageChange}
+          handlePageChange={onPageChange}
         />
       )}
     </div>

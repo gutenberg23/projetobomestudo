@@ -5,7 +5,7 @@ import { X, Minimize2, Maximize2, Check, X as XIcon, Play, Pause, RotateCcw } fr
 import { cn } from '@/lib/utils';
 
 interface ScoreCounterProps {
-  onClose: () => void;
+  onClose?: () => void;
 }
 
 export function ScoreCounter({ onClose }: ScoreCounterProps) {
@@ -115,14 +115,16 @@ export function ScoreCounter({ onClose }: ScoreCounterProps) {
                 <Minimize2 className="h-4 w-4" />
               )}
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onClose}
-              className="h-6 w-6 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            {onClose && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onClose}
+                className="h-6 w-6 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 

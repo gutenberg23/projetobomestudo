@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LessonCard } from "../../new/LessonCard";
 import { Lesson, Section } from '../types/subjects';
@@ -9,7 +8,7 @@ interface SubjectLessonsProps {
 
 export const SubjectLessons: React.FC<SubjectLessonsProps> = ({ lessons }) => {
   return (
-    <div className="px-4 pb-8 md:px-[15px] bg-slate-50 py-[30px] border-l-2 border-r-2 border-[#fff] rounded-xl mb-1">
+    <div className="px-4 pb-8 md:px-[15px] bg-[rgb(242,244,246)] py-[30px] border-l-2 border-r-2 border-[#fff] rounded-xl mb-1">
       {lessons.map(lesson => {
         // Processamos as seções para garantir que contentType seja um dos valores permitidos
         const processedSections = lesson.sections?.map(section => ({

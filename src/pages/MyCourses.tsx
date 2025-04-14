@@ -240,9 +240,9 @@ const MyCourses = () => {
     }
   };
 
-  return <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
+  return <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
-      <main className="flex-grow px-4 md:px-8 w-full pt-8">
+      <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-3xl mb-2 text-[#272f3c] font-extrabold md:text-3xl">Minhas Matrículas</h1>
         <p className="text-[#67748a] mb-6">Aqui você encontra as suas disciplinas e seus concursos favoritos.</p>
 

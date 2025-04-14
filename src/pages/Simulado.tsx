@@ -531,184 +531,162 @@ const Simulado = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
-      <main className="flex-1 bg-[#f6f8fa]">
-        <div className="container mx-auto py-8 px-4">
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-              <div>
-                <h1 className="text-2xl font-bold text-[#272f3c] mb-2">{simulado.titulo}</h1>
-                <div className="text-[#67748a] mb-4">
-                  <p>Total de questões: {formattedQuestions.length}</p>
-                  {simulado.data_inicio && (
-                    <p>Disponível de: {new Date(simulado.data_inicio).toLocaleDateString('pt-BR')}</p>
-                  )}
-                  {simulado.data_fim && (
-                    <p>Até: {new Date(simulado.data_fim).toLocaleDateString('pt-BR')}</p>
-                  )}
-                </div>
-
-                {/* Botão de Ranking */}
-                {canViewRanking && (
-                  <div className="mt-4">
-                    <Link to={`/simulado-ranking/${simuladoId}`}>
-                      <Button 
-                        variant="outline" 
-                        className="flex items-center gap-2 bg-[#5f2ebe] text-white hover:bg-[#4e259b]"
-                      >
-                        <Trophy className="h-4 w-4" />
-                        <span>Ranking</span>
-                      </Button>
-                    </Link>
-                  </div>
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-[#272f3c] mb-2">{simulado.titulo}</h1>
+              <div className="text-[#67748a] mb-4">
+                <p>Total de questões: {formattedQuestions.length}</p>
+                {simulado.data_inicio && (
+                  <p>Disponível de: {new Date(simulado.data_inicio).toLocaleDateString('pt-BR')}</p>
                 )}
-
-                {/* Toggle para administradores */}
-                {isAdmin() && (
-                  <div className="mt-4 flex items-center space-x-2">
-                    <Switch 
-                      id="ranking-visibility" 
-                      checked={rankingIsPublic}
-                      onCheckedChange={handleToggleRankingVisibility}
-                      disabled={savingRankingVisibility}
-                    />
-                    <Label htmlFor="ranking-visibility">
-                      Ranking {rankingIsPublic ? "público" : "privado"}
-                    </Label>
-                  </div>
+                {simulado.data_fim && (
+                  <p>Até: {new Date(simulado.data_fim).toLocaleDateString('pt-BR')}</p>
                 )}
               </div>
-              
-              <div className="mt-4 md:mt-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[#67748a] whitespace-nowrap">Exibir questões:</span>
-                  <Select
-                    value={displayOption}
-                    onValueChange={handleDisplayOptionChange}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="single">1 por página</SelectItem>
-                      <SelectItem value="ten">10 por página</SelectItem>
-                      <SelectItem value="all">Todas de uma vez</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+              {/* Botão de Ranking */}
+              {canViewRanking && (
+                <div className="mt-4">
+                  <Link to={`/simulado-ranking/${simuladoId}`}>
+                    <Button 
+                      variant="outline" 
+                      className="flex items-center gap-2 bg-[#5f2ebe] text-white hover:bg-[#4e259b]"
+                    >
+                      <Trophy className="h-4 w-4" />
+                      <span>Ranking</span>
+                    </Button>
+                  </Link>
                 </div>
-              </div>
+              )}
+
+              {/* Toggle para administradores */}
+              {isAdmin() && (
+                <div className="mt-4 flex items-center space-x-2">
+                  <Switch 
+                    id="ranking-visibility" 
+                    checked={rankingIsPublic}
+                    onCheckedChange={handleToggleRankingVisibility}
+                    disabled={savingRankingVisibility}
+                  />
+                  <Label htmlFor="ranking-visibility">
+                    Ranking {rankingIsPublic ? "público" : "privado"}
+                  </Label>
+                </div>
+              )}
             </div>
             
-            <div className="bg-[#f6f8fa] p-4 rounded-lg mt-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-[#67748a]">Progresso:</span>
-                <span className="text-[#5f2ebe] font-semibold">
-                  {displayOption === "single" ? `${activeQuestion + 1} de ${formattedQuestions.length}` : 
-                   displayOption === "ten" ? `Página ${currentPage} de ${pageCount}` : 
-                   `Todas as ${formattedQuestions.length} questões`}
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-[#5f2ebe] h-2.5 rounded-full" 
-                  style={{ 
-                    width: displayOption === "single" 
-                      ? `${((activeQuestion + 1) / formattedQuestions.length) * 100}%`
-                      : displayOption === "ten"
-                      ? `${(currentPage / pageCount) * 100}%`
-                      : "100%" 
-                  }}
-                ></div>
+            <div className="mt-4 md:mt-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[#67748a] whitespace-nowrap">Exibir questões:</span>
+                <Select
+                  value={displayOption}
+                  onValueChange={handleDisplayOptionChange}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">1 por página</SelectItem>
+                    <SelectItem value="ten">10 por página</SelectItem>
+                    <SelectItem value="all">Todas de uma vez</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
+          
+          <div className="bg-[#f6f8fa] p-4 rounded-lg mt-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[#67748a]">Progresso:</span>
+              <span className="text-[#5f2ebe] font-semibold">
+                {displayOption === "single" ? `${activeQuestion + 1} de ${formattedQuestions.length}` : 
+                 displayOption === "ten" ? `Página ${currentPage} de ${pageCount}` : 
+                 `Todas as ${formattedQuestions.length} questões`}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div 
+                className="bg-[#5f2ebe] h-2.5 rounded-full" 
+                style={{ 
+                  width: displayOption === "single" 
+                    ? `${((activeQuestion + 1) / formattedQuestions.length) * 100}%`
+                    : displayOption === "ten"
+                    ? `${(currentPage / pageCount) * 100}%`
+                    : "100%" 
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
 
-          {formattedQuestions.length > 0 ? (
-            <div className="mb-8">
-              {displayedQuestions.map((question, index) => (
-                <div key={`question-${question.id}-${index}`} className="mb-8">
-                  {displayOption !== "single" && (
-                    <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                      <h2 className="text-lg font-semibold text-[#272f3c]">
-                        Questão {displayOption === "ten" ? (currentPage - 1) * 10 + index + 1 : index + 1} de {formattedQuestions.length}
-                      </h2>
-                    </div>
-                  )}
-                  
-                  <QuestionCard 
-                    question={question}
-                    disabledOptions={disabledOptions[question.id] || []}
-                    onToggleDisabled={(optionId, event) => {
-                      event.preventDefault();
+        {formattedQuestions.length > 0 ? (
+          <div className="mb-8">
+            {displayedQuestions.map((question, index) => (
+              <div key={`question-${question.id}-${index}`} className="mb-8">
+                {displayOption !== "single" && (
+                  <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
+                    <h2 className="text-lg font-semibold text-[#272f3c]">
+                      Questão {displayOption === "ten" ? (currentPage - 1) * 10 + index + 1 : index + 1} de {formattedQuestions.length}
+                    </h2>
+                  </div>
+                )}
+                
+                <QuestionCard 
+                  question={question}
+                  disabledOptions={disabledOptions[question.id] || []}
+                  onToggleDisabled={(optionId, event) => {
+                    event.preventDefault();
+                    
+                    setDisabledOptions(prev => {
+                      const questionDisabledOptions = prev[question.id] || [];
                       
-                      setDisabledOptions(prev => {
-                        const questionDisabledOptions = prev[question.id] || [];
-                        
-                        return {
-                          ...prev,
-                          [question.id]: questionDisabledOptions.includes(optionId)
-                            ? questionDisabledOptions.filter(id => id !== optionId)
-                            : [...questionDisabledOptions, optionId]
-                        };
-                      });
-
-                      // Atualizar o estado de userAnswers quando o usuário seleciona uma opção
-                      setUserAnswers(prev => ({
+                      return {
                         ...prev,
-                        [question.id]: optionId
-                      }));
-                    }}
-                  />
-                </div>
-              ))}
-              
-              {/* Paginação para modo de exibição "ten" */}
-              {displayOption === "ten" && pageCount > 1 && (
-                <div className="mt-6">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={pageCount}
-                    onPageChange={handlePageChange}
-                    itemsPerPage={10}
-                    totalItems={formattedQuestions.length}
-                  />
-                </div>
-              )}
-              
-              {/* Navegação para modo de exibição "single" */}
-              {displayOption === "single" && (
-                <div className="flex justify-between mt-8">
-                  <Button 
-                    onClick={handlePreviousQuestion}
-                    disabled={activeQuestion === 0}
-                    variant="secondary"
-                  >
-                    Questão Anterior
-                  </Button>
-                  
-                  {activeQuestion === formattedQuestions.length - 1 ? (
-                    <Button 
-                      onClick={calculateAndSaveResults}
-                      disabled={isFinishingSimulado}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {isFinishingSimulado ? "Finalizando..." : "Finalizar Simulado"}
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={handleNextQuestion}
-                      disabled={activeQuestion === formattedQuestions.length - 1}
-                    >
-                      Próxima Questão
-                    </Button>
-                  )}
-                </div>
-              )}
-              
-              {/* Botão de finalizar para modos "ten" e "all" */}
-              {(displayOption === "ten" || displayOption === "all") && (
-                <div className="flex justify-center mt-8">
+                        [question.id]: questionDisabledOptions.includes(optionId)
+                          ? questionDisabledOptions.filter(id => id !== optionId)
+                          : [...questionDisabledOptions, optionId]
+                      };
+                    });
+
+                    // Atualizar o estado de userAnswers quando o usuário seleciona uma opção
+                    setUserAnswers(prev => ({
+                      ...prev,
+                      [question.id]: optionId
+                    }));
+                  }}
+                />
+              </div>
+            ))}
+            
+            {/* Paginação para modo de exibição "ten" */}
+            {displayOption === "ten" && pageCount > 1 && (
+              <div className="mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={pageCount}
+                  onPageChange={handlePageChange}
+                  itemsPerPage={10}
+                  totalItems={formattedQuestions.length}
+                />
+              </div>
+            )}
+            
+            {/* Navegação para modo de exibição "single" */}
+            {displayOption === "single" && (
+              <div className="flex justify-between mt-8">
+                <Button 
+                  onClick={handlePreviousQuestion}
+                  disabled={activeQuestion === 0}
+                  variant="secondary"
+                >
+                  Questão Anterior
+                </Button>
+                
+                {activeQuestion === formattedQuestions.length - 1 ? (
                   <Button 
                     onClick={calculateAndSaveResults}
                     disabled={isFinishingSimulado}
@@ -716,15 +694,35 @@ const Simulado = () => {
                   >
                     {isFinishingSimulado ? "Finalizando..." : "Finalizar Simulado"}
                   </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-center">
-              <p className="text-[#67748a]">Este simulado não possui questões.</p>
-            </div>
-          )}
-        </div>
+                ) : (
+                  <Button 
+                    onClick={handleNextQuestion}
+                    disabled={activeQuestion === formattedQuestions.length - 1}
+                  >
+                    Próxima Questão
+                  </Button>
+                )}
+              </div>
+            )}
+            
+            {/* Botão de finalizar para modos "ten" e "all" */}
+            {(displayOption === "ten" || displayOption === "all") && (
+              <div className="flex justify-center mt-8">
+                <Button 
+                  onClick={calculateAndSaveResults}
+                  disabled={isFinishingSimulado}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isFinishingSimulado ? "Finalizando..." : "Finalizar Simulado"}
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-center">
+            <p className="text-[#67748a]">Este simulado não possui questões.</p>
+          </div>
+        )}
       </main>
       <Footer />
     </div>
