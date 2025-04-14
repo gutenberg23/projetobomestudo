@@ -719,7 +719,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
       <Header />
-      <main className="flex-grow px-4 md:px-8 lg:px-12 w-full">
+      <main className="flex-grow px-4 py-6 md:px-8 max-w-7xl w-full mx-auto pt-8">
         <div className="w-full">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -742,12 +742,9 @@ const Dashboard = () => {
             </div>
             
             {isLoading ? (
-              <Card className="p-8 flex justify-center items-center">
-                <div className="flex flex-col items-center">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#5f2ebe] mb-4"></div>
-                  <p className="text-gray-500">Carregando estatísticas...</p>
-                </div>
-              </Card>
+              <div className="flex items-center justify-center my-20">
+                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+              </div>
             ) : (
             <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

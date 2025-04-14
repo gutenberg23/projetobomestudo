@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
 import { useSearchParams } from "react-router-dom";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Questions = () => {
   const [searchParams] = useSearchParams();
@@ -250,52 +251,69 @@ const Questions = () => {
   );
   
   return (
-    <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-grow px-4 md:px-8 mx-auto w-full">
-        <div className="max-w-7xl mx-auto">
+      <div className="flex-1 bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl text-[#262f3c] font-extrabold md:text-3xl">Questões</h1>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={() => setShowScoreCounter(true)}
-            >
-              <Calculator className="h-4 w-4" />
-              Contador
-            </Button>
+            <h1 className="text-2xl sm:text-3xl font-bold">Banco de Questões</h1>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowScoreCounter(!showScoreCounter)}
+                className="whitespace-nowrap flex items-center"
+              >
+                <Calculator className="h-4 w-4 mr-1" />
+                {showScoreCounter ? "Ocultar Contador" : "Mostrar Contador"}
+              </Button>
+            </div>
           </div>
-
+          
           <QuestionFiltersPanel
-            filterOptions={filterOptions}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
             selectedFilters={selectedFilters}
             handleFilterChange={handleFilterChange}
             handleApplyFilters={handleApplyFilters}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
             questionsPerPage={questionsPerPage}
             setQuestionsPerPage={setQuestionsPerPage}
+            filterOptions={filterOptions}
+            rightElement={
+              <Select
+                value={questionsPerPage}
+                onValueChange={setQuestionsPerPage}
+              >
+                <SelectTrigger className="h-8 w-[80px] text-xs">
+                  <SelectValue placeholder="10" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            }
           />
-
-          <QuestionResults
+            
+          <QuestionResults 
             questions={paginatedQuestions}
+            loading={loading}
             currentPage={currentPage}
             totalPages={totalPages}
             handlePageChange={handlePageChange}
-            loading={loading}
             disabledOptions={disabledOptions}
             onToggleDisabled={handleToggleDisabled}
             hasFilters={Object.values(selectedFilters).some(arr => arr.length > 0)}
-            questionsPerPage={questionsPerPage}
-            setQuestionsPerPage={setQuestionsPerPage}
           />
+          
+          {showScoreCounter && (
+            <ScoreCounter onClose={() => setShowScoreCounter(false)} />
+          )}
         </div>
-
-        {showScoreCounter && (
-          <ScoreCounter onClose={() => setShowScoreCounter(false)} />
-        )}
-      </main>
+      </div>
       <Footer />
     </div>
   );

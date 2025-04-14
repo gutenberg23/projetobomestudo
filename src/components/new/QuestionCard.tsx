@@ -70,7 +70,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [creatingBook, setCreatingBook] = useState(false);
   const [newBookTitle, setNewBookTitle] = useState('');
   const [newBookType, setNewBookType] = useState<'public' | 'private'>('private');
-  const [showStats, setShowStats] = useState(false);
   const [teacherLikesCount, setTeacherLikesCount] = useState(0);
   const [aiLikesCount, setAILikesCount] = useState(0);
   const [gabaritoAvatar, setGabaritoAvatar] = useState<string>("/default-avatar.png");
@@ -619,46 +618,32 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const toggleAIAnswer = () => {
     setShowAIAnswer(!showAIAnswer);
   };
-  const toggleStats = () => {
-    setShowStats(!showStats);
-  };
+  
   const toggleLike = async (commentId: string) => {
     if (!userId) {
       toast.error("Você precisa estar logado para curtir comentários.");
       return;
     }
     try {
-      console.log("💗 CURTIDA INICIADA em:", commentId);
-      console.log("💗 Estado atual de likedComments:", likedComments);
-      
       // Verificar se é um comentário de professor/gabarito ou IA
       const isProfessorOrAI = commentId.startsWith('teacher-') || commentId.startsWith('ai-');
       
       // Verificar se já está nos likes (interface)
       const isLiked = likedComments.includes(commentId);
-      console.log("💗 Já está curtido?", isLiked);
       
       if (isProfessorOrAI) {
-        // Extrair o ID real da questão do formato "teacher-XXXX" ou "ai-XXXX"
-        // Aqui está o problema: temos que pegar todo o ID após o prefixo e o hífen
         const type = commentId.startsWith('teacher-') ? 'teacher' : 'ai';
         const questaoId = commentId.substring(type.length + 1); // +1 para o hífen
         
-        console.log("💗 Tipo de comentário especial:", type, "questaoId COMPLETO:", questaoId);
-        
         if (isLiked) {
-          console.log("💗 Removendo like de comentário especial");
-          // Remover o like - buscar o ID do like para deletar corretamente
+          // Remover o like
           const { data, error: findError } = await supabase
             .from('likes_gabaritos')
             .select('id')
             .eq('questao_id', questaoId)
             .eq('usuario_id', userId)
-            // Incluir type na busca para diferenciar entre teacher e ai
             .eq('type', type)
             .single();
-          
-          console.log("💗 Resultado da busca para remover like:", data, findError);
           
           if (findError && findError.code !== 'PGRST116') throw findError;
           
@@ -668,61 +653,40 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               .delete()
               .eq('id', data.id);
               
-            console.log("💗 Resultado da remoção do like:", error ? "Erro: " + error.message : "Sucesso");
-            
             if (error) throw error;
 
             // Atualizar estado local
-            setLikedComments(prev => {
-              const newState = prev.filter(id => id !== commentId);
-              console.log("💗 Novo estado de likedComments após remoção:", newState);
-              return newState;
-            });
+            setLikedComments(prev => prev.filter(id => id !== commentId));
             
             // Atualizar contadores específicos
             if (type === 'teacher') {
-              setTeacherLikesCount(prev => {
-                const newCount = Math.max(0, prev - 1);
-                console.log("💗 Contador de likes do professor atualizado:", newCount);
-                return newCount;
-              });
+              setTeacherLikesCount(prev => Math.max(0, prev - 1));
             } else if (type === 'ai') {
-              setAILikesCount(prev => {
-                const newCount = Math.max(0, prev - 1);
-                console.log("💗 Contador de likes da IA atualizado:", newCount);
-                return newCount;
-              });
+              setAILikesCount(prev => Math.max(0, prev - 1));
             }
           }
         } else {
-          console.log("💗 Adicionando like em comentário especial");
           // Verificar se já existe um like antes de tentar adicionar
           const { data: existingLike, error: checkError } = await supabase
             .from('likes_gabaritos')
             .select('id')
             .eq('questao_id', questaoId)
             .eq('usuario_id', userId)
-            // Incluir type na busca para diferenciar entre teacher e ai
             .eq('type', type)
             .maybeSingle();
-            
-          console.log("💗 Verificação de like existente:", existingLike, checkError);
             
           if (checkError) throw checkError;
           
           // Se não existir, adicionar o like
           if (!existingLike) {
-            console.log("💗 Like não existe, inserindo novo...");
-            const { /* data não utilizado */ error } = await supabase
+            const { error } = await supabase
               .from('likes_gabaritos')
               .insert({
                 questao_id: questaoId,
                 usuario_id: userId,
-                type: type // Incluir o tipo para diferenciar entre teacher e ai
+                type: type
               })
               .select();
-              
-            console.log("💗 Resultado da inserção do like:", /* data, */ error ? "Erro: " + error.message : "Sucesso");
               
             if (error) throw error;
             
@@ -731,43 +695,25 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             
             // Atualizar contadores específicos
             if (type === 'teacher') {
-              setTeacherLikesCount(prev => {
-                const newCount = prev + 1;
-                console.log("💗 Contador de likes do professor atualizado:", newCount);
-                return newCount;
-              });
+              setTeacherLikesCount(prev => prev + 1);
             } else if (type === 'ai') {
-              setAILikesCount(prev => {
-                const newCount = prev + 1;
-                console.log("💗 Contador de likes da IA atualizado:", newCount);
-                return newCount;
-              });
+              setAILikesCount(prev => prev + 1);
             }
-          } else {
-            console.log("💗 Like já existe no banco, não inserindo.");
           }
 
           // Atualizar estado local
-          setLikedComments(prev => {
-            const newState = [...prev, commentId];
-            console.log("💗 Novo estado de likedComments após adição:", newState);
-            return newState;
-          });
+          setLikedComments(prev => [...prev, commentId]);
         }
       } else {
-        console.log("💗 Processando like de comentário normal de usuário");
         // Para comentários normais/usuários
         if (isLiked) {
-          console.log("💗 Removendo like de comentário normal");
-          // Remover o like - buscar o ID do like para deletar corretamente
+          // Remover o like
           const { data, error: findError } = await supabase
             .from('likes_comentarios')
             .select('id')
             .eq('comentario_id', commentId)
             .eq('usuario_id', userId)
             .single();
-          
-          console.log("💗 Resultado da busca para remover like:", data, findError);
           
           if (findError && findError.code !== 'PGRST116') throw findError;
           
@@ -777,35 +723,25 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               .delete()
               .eq('id', data.id);
               
-            console.log("💗 Resultado da remoção do like:", error ? "Erro: " + error.message : "Sucesso");
-              
             if (error) throw error;
 
-            // Atualizar estado local somente se a operação no banco foi bem-sucedida
-            setLikedComments(prev => {
-              const newState = prev.filter(id => id !== commentId);
-              console.log("💗 Novo estado de likedComments após remoção:", newState);
-              return newState;
-            });
+            // Atualizar estado local
+            setLikedComments(prev => prev.filter(id => id !== commentId));
             
-            // Atualização visual somente se a operação no banco foi bem-sucedida
-            setComments(prevComments => {
-              console.log("💗 Atualizando contador visual de likes");
-              return prevComments.map(c => {
+            // Atualização visual
+            setComments(prevComments => 
+              prevComments.map(c => {
                 if (c.id === commentId) {
-                  const newLikes = Math.max(0, c.likes - 1);
-                  console.log("💗 Novo contador de likes para este comentário:", newLikes);
                   return {
                     ...c,
-                    likes: newLikes
+                    likes: Math.max(0, c.likes - 1)
                   };
                 }
                 return c;
-              });
-            });
+              })
+            );
           }
         } else {
-          console.log("💗 Adicionando like em comentário normal");
           // Verificar se já existe um like antes de tentar adicionar
           const { data: existingLike, error: checkError } = await supabase
             .from('likes_comentarios')
@@ -814,14 +750,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             .eq('usuario_id', userId)
             .maybeSingle();
             
-          console.log("💗 Verificação de like existente:", existingLike, checkError);
-            
           if (checkError) throw checkError;
           
           // Se não existir, adicionar o like
           if (!existingLike) {
-            console.log("💗 Like não existe, inserindo novo...");
-            const { /* data não utilizado */ error } = await supabase
+            const { error } = await supabase
               .from('likes_comentarios')
               .insert({
                 comentario_id: commentId,
@@ -829,45 +762,35 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               })
               .select();
             
-            console.log("💗 Resultado da inserção do like:", error ? "Erro: " + error.message : "Sucesso");
-              
             if (error) throw error;
             
             // Registrar atividade de curtida
             await ActivityLogger.logCommentLike(commentId);
             
             // Atualização visual
-            setComments(prevComments => {
-              console.log("💗 Atualizando contador visual de likes");
-              return prevComments.map(c => {
+            setComments(prevComments => 
+              prevComments.map(c => {
                 if (c.id === commentId) {
-                  console.log("💗 Novo contador de likes para este comentário:", c.likes + 1);
                   return {
                     ...c,
                     likes: c.likes + 1
                   };
                 }
                 return c;
-              });
-            });
-          } else {
-            console.log("💗 Like já existe no banco, não inserindo.");
+              })
+            );
           }
 
           // Atualizar estado local
-          setLikedComments(prev => {
-            const newState = [...prev, commentId];
-            console.log("💗 Novo estado de likedComments após adição:", newState);
-            return newState;
-          });
+          setLikedComments(prev => [...prev, commentId]);
         }
       }
-      console.log("💗 Operação de like concluída com sucesso");
     } catch (error) {
-      console.error("❌ Erro ao processar curtida:", error);
+      console.error("Erro ao processar curtida:", error);
       toast.error("Erro ao processar sua curtida. Tente novamente mais tarde.");
     }
   };
+  
   const handleOptionClick = (optionId: string) => {
     // Se a opção clicada já está selecionada, remover a seleção
     if (selectedOption === optionId) {
@@ -1264,32 +1187,23 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         <Button
           onClick={handleAnswer}
           disabled={!selectedOption || isSubmittingAnswer}
-          className={`px-8 py-2 rounded-full font-medium ${
-            !selectedOption || isSubmittingAnswer
-              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-              : "bg-purple-600 text-white hover:bg-purple-700"
-          }`}
+          variant="flat"
+          className={!selectedOption || isSubmittingAnswer ? "opacity-50" : ""}
         >
           {isSubmittingAnswer ? "Enviando..." : "Responder"}
         </Button>
       </div>
 
       <QuestionFooter 
-        commentsCount={commentsCount} 
-        showComments={showComments} 
-        showOfficialAnswer={showOfficialAnswer} 
-        showAIAnswer={showAIAnswer} 
-        showStats={showStats}
-        onToggleComments={toggleComments} 
-        onToggleOfficialAnswer={toggleOfficialAnswer} 
-        onToggleAIAnswer={toggleAIAnswer} 
-        onToggleStats={toggleStats}
-        hasTeacherExplanation={Boolean(question.teacherExplanation)} 
-        hasAIExplanation={Boolean(question.aiExplanation)} 
-        onRemove={onRemove ? () => onRemove(question.id) : undefined}
-        isAdmin={isAdmin}
-        isFixingMetadata={isFixingMetadata}
-        onFixMetadata={fixAllResponsesMetadata}
+        commentsCount={commentsCount}
+        showComments={showComments}
+        showOfficialAnswer={showOfficialAnswer}
+        showAIAnswer={showAIAnswer}
+        onToggleComments={toggleComments}
+        onToggleOfficialAnswer={toggleOfficialAnswer}
+        onToggleAIAnswer={toggleAIAnswer}
+        hasTeacherExplanation={Boolean(question.teacherExplanation)}
+        hasAIExplanation={Boolean(question.aiExplanation)}
         addToBookDialog={
           <Dialog open={openAddToBook} onOpenChange={setOpenAddToBook}>
             <DialogTrigger asChild>
@@ -1415,6 +1329,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             </DialogContent>
           </Dialog>
         }
+        onRemove={onRemove ? () => onRemove(question.id) : undefined}
+        isAdmin={isAdmin}
+        isFixingMetadata={isFixingMetadata}
+        onFixMetadata={isAdmin ? fixAllResponsesMetadata : undefined}
       />
 
       {showOfficialAnswer && question.teacherExplanation && <section className="py-3 md:py-5 w-full border-t border-gray-100">
@@ -1439,44 +1357,63 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       }} isLiked={likedComments.includes(`ai-${question.id}`)} onToggleLike={toggleLike} />
         </section>}
 
-      {showStats && <section className="py-3 md:py-5 w-full border-t border-gray-100">
-          <div className="px-5">
-            <h3 className="text-lg font-semibold mb-3">Estatísticas da Questão</h3>
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <p className="mb-2">Informações estatísticas sobre esta questão serão exibidas aqui.</p>
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center">
-                  <span>Taxa de acerto:</span>
-                  <span className="font-semibold">68%</span>
+      {/* Seção de comentários */}
+      {showComments && (
+        <section className="py-3 md:py-5 w-full border-t border-gray-100">
+          <div>
+            <h3 className="text-lg font-medium mb-4 px-5">Comentários ({commentsCount})</h3>
+            
+            {/* Formulário de comentário */}
+            {userId ? (
+              <div className="mb-6 px-5">
+                <div className="flex items-start gap-2">
+                  <textarea
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Escreva seu comentário..."
+                    className="flex-1 p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]/50 resize-none"
+                    rows={3}
+                    disabled={submittingComment}
+                  ></textarea>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span>Total de respostas:</span>
-                  <span className="font-semibold">42</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span>Média de tempo para resposta:</span>
-                  <span className="font-semibold">1m 30s</span>
+                <div className="flex justify-end mt-2">
+                  <Button
+                    onClick={handleSubmitComment}
+                    disabled={!comment.trim() || submittingComment}
+                    variant="flat"
+                    className="flex items-center"
+                  >
+                    {submittingComment ? "Enviando..." : "Comentar"}
+                    {!submittingComment && <Send className="ml-2 h-4 w-4" />}
+                  </Button>
                 </div>
               </div>
-            </div>
-            <p className="text-sm text-gray-500 mt-2">
-              Estas estatísticas são aproximadas e calculadas com base nas respostas dos estudantes.
-            </p>
+            ) : (
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg mx-5">
+                <p className="text-gray-600">Faça login para deixar seu comentário</p>
+              </div>
+            )}
+            
+            {/* Lista de comentários */}
+            {comments.length > 0 ? (
+              <div className="space-y-4 px-5">
+                {comments.map(comment => (
+                  <QuestionComment 
+                    key={comment.id} 
+                    comment={comment} 
+                    isLiked={likedComments.includes(comment.id)} 
+                    onToggleLike={toggleLike} 
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <p>Seja o primeiro a comentar!</p>
+              </div>
+            )}
           </div>
-        </section>}
-
-      {showComments && <section className="py-3 md:py-5 w-full border-t border-gray-100">
-          {comments.map(comment => <QuestionComment key={comment.id} comment={comment} isLiked={likedComments.includes(comment.id)} onToggleLike={toggleLike} />)}
-
-          <div className="flex justify-center items-center px-2 md:px-12 py-1.5 mt-2.5 w-full text-sm md:text-base leading-none text-slate-800 gap-2">
-            <div className="flex overflow-hidden flex-1 shrink justify-center items-start w-full basis-0 min-w-0">
-              <input type="text" placeholder="Escreva uma mensagem" value={comment} onChange={e => setComment(e.target.value)} className="overflow-hidden flex-1 shrink p-2 md:p-2.5 w-full rounded-3xl basis-0 min-w-0 border border-purple-300 focus:border-purple-500 focus:outline-none text-sm md:text-base" />
-            </div>
-            <button onClick={handleSubmitComment} className="p-2 md:p-2.5 rounded-full hover:bg-purple-50 flex-shrink-0" disabled={submittingComment || comment.trim() === ""}>
-              <Send className={`w-4 h-4 md:w-5 md:h-5 ${submittingComment ? 'text-gray-400' : 'text-purple-500'}`} />
-            </button>
-          </div>
-        </section>}
+        </section>
+      )}
     </div>
   );
 };

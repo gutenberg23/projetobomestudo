@@ -113,6 +113,7 @@ export const CommentForm: React.FC<CommentFormProps> = ({
         )}
         <Button 
           type="submit" 
+          variant="flat"
           disabled={isSubmitting || !content.trim()}
         >
           {isSubmitting ? 'Enviando...' : parentId ? 'Responder' : 'Comentar'}

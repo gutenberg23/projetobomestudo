@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, SlidersHorizontal } from "lucide-react";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -45,14 +44,12 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   handleFilterChange,
   handleApplyFilters,
   questionsPerPage,
-  setQuestionsPerPage,
   filterOptions,
   rightElement
 }) => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [_, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
-  const [isOpen, setIsOpen] = useState(!isMobile);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Ordenar todas as listas de opções em ordem alfabética
   const sortedOptions = {
@@ -186,32 +183,9 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
 
   return (
     <div className="bg-white rounded-lg p-6 mb-8">
-      {isMobile ? (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between cursor-pointer pb-2 mb-4 border-b border-gray-100">
-              <div className="flex items-center">
-                <h3 className="text-lg font-medium text-[#272f3c]">Filtros</h3>
-                {activeFiltersCount > 0 && (
-                  <span className="ml-2 bg-[#5f2ebe] text-white text-xs px-2 py-1 rounded-full">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </div>
-              {isOpen ? (
-                <ChevronUp className="h-5 w-5 text-[#5f2ebe]" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-[#5f2ebe]" />
-              )}
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            {filtersContent}
-          </CollapsibleContent>
-        </Collapsible>
-      ) : (
-        <>
-          <div className="flex justify-between items-center mb-6">
+      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+        <CollapsibleTrigger asChild>
+          <div className="flex items-center justify-between cursor-pointer pb-2 mb-4 border-b border-gray-100">
             <div className="flex items-center">
               <h3 className="text-lg font-medium text-[#272f3c]">Filtros</h3>
               {activeFiltersCount > 0 && (
@@ -220,11 +194,29 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
                 </span>
               )}
             </div>
-            {rightElement}
+            <div className="flex items-center">
+              {rightElement && <div className="flex items-center space-x-2 mr-3">
+                {!isMobile && <span className="text-sm text-gray-600">Questões por página:</span>}
+                {rightElement}
+              </div>}
+              <div className="flex items-center bg-gray-100 hover:bg-gray-200 rounded-md px-2 py-1 transition-colors">
+                <SlidersHorizontal className="h-4 w-4 mr-1 text-[#5f2ebe]" />
+                <span className="text-sm text-gray-700 mr-1">
+                  {isOpen ? "Ocultar filtros" : "Mostrar filtros"}
+                </span>
+                {isOpen ? (
+                  <ChevronUp className="h-4 w-4 text-[#5f2ebe]" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-[#5f2ebe]" />
+                )}
+              </div>
+            </div>
           </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
           {filtersContent}
-        </>
-      )}
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 };

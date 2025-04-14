@@ -9,8 +9,9 @@ import { STATES } from "@/data/blogFilters";
 import { fetchBlogPosts } from "@/services/blogService";
 import { BlogPost } from "@/components/blog/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, ArrowRight, Search } from "lucide-react";
 import { SidebarPosts } from "@/components/blog/SidebarPosts";
+import { Link } from "react-router-dom";
 
 const Blog = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,7 +97,7 @@ const Blog = () => {
   }, [searchTerm, activeState, allPosts]);
 
   // Posts destacados para o carrossel
-  const featuredPosts = allPosts.filter(post => post.featured).slice(0, 3);
+  const featuredPosts = allPosts.filter(post => post.featured).slice(0, 4);
 
   // Posts mais populares (baseado em curtidas)
   const popularPosts = [...allPosts].sort((a, b) => b.likesCount - a.likesCount).slice(0, 5);
@@ -151,18 +152,35 @@ const Blog = () => {
         <FeaturedPosts posts={featuredPosts} />
       )}
       
+      {/* Banner de concursos */}
+      <div className="my-8">
+        <Link to="/concursos" className="block">
+          <div className="bg-gradient-to-r from-[#5f2ebe] to-[#7e4beb] rounded-lg p-6 text-white shadow-md hover:shadow-lg transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Search className="w-8 h-8 mr-4" />
+                <h3 className="text-xl font-bold">Veja todos os concursos abertos</h3>
+              </div>
+              <div className="flex items-center">
+                <span className="mr-2">Acessar agora</span>
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+      
       {/* Layout de duas colunas abaixo dos destaques */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          {/* Título da seção de posts */}
-          <div className="flex items-center mb-6">
-            <h2 className="text-2xl font-bold text-[#272f3c]">Todos os Posts</h2>
-            <div className="ml-4 flex-1 h-0.5 bg-gray-200"></div>
-          </div>
-          
           {/* Listagem de posts */}
           <div>
-            <BlogList posts={filteredPosts} />
+            <BlogList posts={
+              // Remover os posts em destaque da lista principal
+              searchTerm || activeState 
+                ? filteredPosts 
+                : filteredPosts.filter(post => !post.featured)
+            } />
             
             {filteredPosts.length === 0 && (
               <div className="text-center py-12 bg-gray-50 rounded-lg">

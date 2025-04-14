@@ -11,9 +11,6 @@ import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions
 interface ItemProps {
   id: string;
   title: string;
-  description: string;
-  topics: number;
-  lessons: number;
   onRemove: (id: string) => void;
   banca?: string;
   cargo?: string;
@@ -22,9 +19,6 @@ interface ItemProps {
 const FavoriteItem: React.FC<ItemProps> = ({
   id,
   title,
-  description,
-  topics,
-  lessons,
   onRemove,
   banca,
   cargo
@@ -248,7 +242,7 @@ const MyCourses = () => {
 
   return <div className="min-h-screen bg-[#f6f8fa] flex flex-col">
       <Header />
-      <main className="flex-grow px-4 md:px-8 w-full">
+      <main className="flex-grow px-4 md:px-8 w-full pt-8">
         <h1 className="text-3xl mb-2 text-[#272f3c] font-extrabold md:text-3xl">Minhas Matrículas</h1>
         <p className="text-[#67748a] mb-6">Aqui você encontra as suas disciplinas e seus concursos favoritos.</p>
 
@@ -264,9 +258,6 @@ const MyCourses = () => {
                     key={course.id} 
                     id={course.id} 
                     title={course.titulo} 
-                    description={course.descricao || ""} 
-                    topics={course.topics} 
-                    lessons={course.lessons} 
                     onRemove={handleRemoveCourse}
                     cargo={course.descricao}
                   />) : <div className="p-8 text-center text-gray-500">
@@ -284,9 +275,6 @@ const MyCourses = () => {
                     key={subject.id} 
                     id={subject.id} 
                     title={subject.titulo} 
-                    description={subject.descricao || ""} 
-                    topics={subject.topics} 
-                    lessons={subject.lessons} 
                     onRemove={handleRemoveSubject}
                     banca={subject.banca} 
                   />) : <div className="p-8 text-center text-gray-500">

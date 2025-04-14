@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Concurso, ConcursoFormData, Estado, NivelEnsino } from '../../../../types/concurso';
-import { BlogPost } from '../../../../components/blog/types';
+import { Concurso, ConcursoFormData, Estado, NivelEnsino, Cargo } from '@/types/concurso';
+import { BlogPost } from '@/components/blog/types';
 import { XCircle, PlusCircle, HelpCircle } from 'lucide-react';
 import { 
   Tooltip,
@@ -118,6 +118,18 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
     });
   };
 
+  // Função para selecionar/desmarcar todos os estados
+  const toggleTodosEstados = () => {
+    // Se já tiver todos os estados selecionados, desmarca todos
+    // Caso contrário, seleciona todos
+    const todosEstadosSelecionados = ESTADOS.length === formData.estados.length;
+    
+    setFormData({
+      ...formData,
+      estados: todosEstadosSelecionados ? [] : [...ESTADOS]
+    });
+  };
+
   // Manipulador para seleção de post
   const handlePostChange = (value: string) => {
     setFormData({
@@ -128,7 +140,10 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   
   // Adicionar novo cargo
   const adicionarCargo = () => {
-    if (novoCargo.trim() && !formData.cargos.includes(novoCargo.trim())) {
+    if (novoCargo.trim() && !formData.cargos.some(c => 
+      (typeof c === 'string' && c === novoCargo.trim()) || 
+      (typeof c === 'object' && c.nome === novoCargo.trim())
+    )) {
       setFormData({
         ...formData,
         cargos: [...formData.cargos, novoCargo.trim()]
@@ -138,10 +153,20 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   };
   
   // Remover cargo
-  const removerCargo = (cargo: string) => {
+  const removerCargo = (cargoParaRemover: Cargo) => {
     setFormData({
       ...formData,
-      cargos: formData.cargos.filter(c => c !== cargo)
+      cargos: formData.cargos.filter(cargo => {
+        if (typeof cargo === 'string' && typeof cargoParaRemover === 'string') {
+          return cargo !== cargoParaRemover;
+        } else if (typeof cargo === 'object' && typeof cargoParaRemover === 'object') {
+          return cargo.nome !== cargoParaRemover.nome;
+        } else if (typeof cargo === 'string' && typeof cargoParaRemover === 'object') {
+          return cargo !== cargoParaRemover.nome;
+        } else {
+          return (cargo as {nome: string}).nome !== cargoParaRemover;
+        }
+      })
     });
   };
   
@@ -149,6 +174,11 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSalvar(formData);
+  };
+  
+  // Helper para exibir texto do cargo
+  const exibirTextoCargo = (cargo: Cargo): string => {
+    return typeof cargo === 'string' ? cargo : cargo.nome;
   };
   
   return (
@@ -270,12 +300,12 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
             
             {/* Tags de cargos adicionados */}
             <div className="flex flex-wrap gap-2 mt-3">
-              {formData.cargos.map((cargo) => (
+              {formData.cargos.map((cargo, index) => (
                 <div
-                  key={cargo}
+                  key={`cargo-${index}`}
                   className="flex items-center bg-gray-100 px-3 py-1 rounded-full text-sm"
                 >
-                  <span>{cargo}</span>
+                  <span>{exibirTextoCargo(cargo)}</span>
                   <button
                     type="button"
                     onClick={() => removerCargo(cargo)}
@@ -322,7 +352,18 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
           
           {/* Estados */}
           <div className="space-y-2">
+            <div className="flex justify-between items-center">
             <Label className="font-medium">Estados</Label>
+              <Button
+                type="button"
+                onClick={toggleTodosEstados}
+                variant="outline"
+                size="sm"
+                className="text-xs"
+              >
+                {ESTADOS.length === formData.estados.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+              </Button>
+            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
               {ESTADOS.map((estado) => (
                 <div key={estado} className="flex items-center space-x-2">
@@ -339,20 +380,20 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
             </div>
           </div>
           
-          {/* Post relacionado */}
+          {/* Post Relacionado */}
           <div className="space-y-2">
             <Label htmlFor="postId" className="font-medium">
-              Post do Blog
+              Post Relacionado
             </Label>
             <Select
               value={formData.postId || "none"}
               onValueChange={handlePostChange}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione um post" />
+                <SelectValue placeholder="Selecione um post relacionado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">Nenhum post relacionado</SelectItem>
+                <SelectItem value="none">Nenhum</SelectItem>
                 {posts.map((post) => (
                   <SelectItem key={post.id} value={post.id}>
                     {post.title}
@@ -360,22 +401,22 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-sm text-gray-500 mt-1">
+              Opcional. Você pode vincular um post do blog com mais detalhes sobre este concurso.
+            </p>
           </div>
           
           {/* Botões de ação */}
-          <div className="flex justify-end space-x-3 pt-4">
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               type="button"
+              variant="outline" 
               onClick={onCancelar}
-              variant="outline"
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              variant="default"
-            >
-              {concursoInicial ? 'Salvar Alterações' : 'Criar Concurso'}
+            <Button type="submit">
+              {concursoInicial ? 'Salvar alterações' : 'Criar concurso'}
             </Button>
           </div>
         </form>

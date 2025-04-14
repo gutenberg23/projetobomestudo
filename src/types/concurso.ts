@@ -6,6 +6,11 @@ export type Estado =
 
 export type NivelEnsino = "Ensino Fundamental" | "Ensino Médio" | "Ensino Superior";
 
+export type Cargo = string | {
+  nome: string;
+  [key: string]: any;
+};
+
 export interface Concurso {
   id: string;
   titulo: string;
@@ -13,7 +18,7 @@ export interface Concurso {
   dataFimInscricao: string;
   prorrogado: boolean;
   niveis: NivelEnsino[];
-  cargos: string[];
+  cargos: Cargo[];
   vagas: number;
   salario: string; // Usando string para permitir valores formatados como "Até R$ 10.450,00"
   estados: Estado[];
@@ -28,7 +33,7 @@ export interface ConcursoFormData {
   dataFimInscricao: string;
   prorrogado: boolean;
   niveis: NivelEnsino[];
-  cargos: string[];
+  cargos: Cargo[];
   vagas: number;
   salario: string;
   estados: Estado[];

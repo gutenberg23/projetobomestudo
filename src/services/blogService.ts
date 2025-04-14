@@ -18,6 +18,7 @@ function mapDatabasePostToAppPost(post: Database['public']['Tables']['blog_posts
     authorAvatar: post.author_avatar ?? undefined,
     commentCount: post.comment_count || 0,
     likesCount: post.likes_count || 0,
+    viewCount: post.view_count || 0,
     createdAt: post.created_at,
     slug: post.slug,
     category: post.category,
@@ -519,6 +520,45 @@ export const resetBlogPostLikes = async (postId: string): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error('Exceção ao resetar curtidas:', error);
+    return false;
+  }
+};
+
+/**
+ * Incrementa o contador de visualizações de um post
+ */
+export const incrementViewCount = async (postId: string): Promise<boolean> => {
+  try {
+    // Verificar se estamos usando dados mockados (IDs simples como "1", "2", etc.)
+    const isMockId = /^\d+$/.test(postId) || postId.length < 10;
+    
+    if (isMockId) {
+      console.info(`Usando ID mockado: ${postId}, simulando incremento de visualizações`);
+      // Para dados mockados, apenas simular sucesso
+      return true;
+    }
+    
+    // Para IDs reais, verificar se é um UUID válido
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(postId)) {
+      console.error(`ID inválido para incrementar visualizações: ${postId}`);
+      return false;
+    }
+
+    // Incrementar o contador de visualizações usando uma atualização direta
+    const { error } = await supabase
+      .from('blog_posts')
+      .update({ view_count: supabase.rpc('increment', { value: 1, row_id: postId, column_name: 'view_count' }) })
+      .eq('id', postId);
+
+    if (error) {
+      console.error('Erro ao incrementar visualizações:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Exceção ao incrementar visualizações:', error);
     return false;
   }
 };

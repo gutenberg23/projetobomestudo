@@ -10,6 +10,7 @@ export interface BlogPost {
   authorAvatar?: string;
   commentCount: number;
   likesCount: number;
+  viewCount: number;
   createdAt: string;
   slug: string;
   category: string;

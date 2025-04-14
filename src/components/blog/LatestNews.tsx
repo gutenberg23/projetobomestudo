@@ -1,19 +1,18 @@
-
 import React from "react";
 import { BlogPost } from "./types";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 
 interface LatestNewsProps {
   posts: BlogPost[];
   title?: string;
-  viewAllLink?: string;
+  viewAllLink?: string | null;
 }
 
 export const LatestNews: React.FC<LatestNewsProps> = ({
   posts,
   title = "Últimas notícias",
-  viewAllLink = "/blog"
+  viewAllLink = null
 }) => {
   return (
     <div className="mb-8">
@@ -36,7 +35,7 @@ export const LatestNews: React.FC<LatestNewsProps> = ({
             to={`/blog/${post.slug}`} 
             className="flex items-center gap-2 group"
           >
-            <div className="h-2 w-2 rounded-full bg-[#5f2ebe]"></div>
+            <ChevronRight className="h-5 w-5 text-[#5f2ebe] flex-shrink-0" />
             <span className="font-medium text-[#272f3c] group-hover:text-[#5f2ebe] transition-colors">
               {post.title}
             </span>

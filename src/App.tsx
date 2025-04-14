@@ -58,6 +58,7 @@ import EditQuestionBook from './pages/admin/EditQuestionBook';
 import AdminLogin from "./pages/admin/AdminLogin";
 import Concursos from "./pages/Concursos";
 import ConcursosAdmin from "./pages/admin/Concursos";
+import ConcursoDetalhes from "./pages/ConcursoDetalhes";
 
 // Componente para aplicar as configurações de estilo
 const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
@@ -95,7 +96,7 @@ export default function App() {
           <AuthProvider>
             <SiteConfigProvider>
               <ActivityTracker>
-                <div className="min-h-screen bg-background font-sans antialiased">
+                <div className="min-h-screen font-sans antialiased" style={{ backgroundColor: "rgb(249 250 251)" }}>
                   <ToastContainer position="top-right" autoClose={3000} />
                   <Routes>
                     <Route path="/settings" element={<Settings />} />
@@ -171,6 +172,12 @@ export default function App() {
                     <Route path="/concursos" element={
                       <ConfigGuard configKey="showBlogPage">
                         <Concursos />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/concursos/:id" element={
+                      <ConfigGuard configKey="showBlogPage">
+                        <ConcursoDetalhes />
                       </ConfigGuard>
                     } />
                     

@@ -1,4 +1,4 @@
-import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book, BarChart } from "lucide-react";
+import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book, BarChart, Search } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -45,12 +45,10 @@ export const Header = () => {
             <span className="font-extralight">Estude Grátis</span>
           </Link>
         )}
-        {user && (
-          <Link to="/dashboard" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
-            <BarChart className="w-4 h-4" />
-            <span className="font-extralight">Dashboard</span>
-          </Link>
-        )}
+        <Link to="/concursos" className="flex items-center gap-1 text-[#67748a] hover:text-[#5f2ebe] transition-colors">
+          <Search className="w-4 h-4" />
+          <span className="font-extralight">Concursos</span>
+        </Link>
       </div>
 
       <div className="flex items-center gap-2.5">
@@ -132,6 +130,10 @@ export const Header = () => {
                     Estude Grátis
                   </Link>
                 )}
+                <Link to="/concursos" className="px-4 py-3 text-sm font-light text-gray-700 hover:bg-slate-50 hover:text-[#5f2ebe] flex items-center gap-2">
+                  <Search className="w-4 h-4" />
+                  Concursos
+                </Link>
               </div>
               {user ? <div className="border-t border-gray-100">
                   <button onClick={signOut} className="w-full text-left px-4 py-3 text-sm font-light text-red-600 hover:bg-slate-50 flex items-center gap-2">

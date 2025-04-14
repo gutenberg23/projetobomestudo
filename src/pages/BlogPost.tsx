@@ -1,30 +1,22 @@
-import React, { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { 
-  MessageSquare, 
   Heart, 
   Clock, 
-  ArrowLeft, 
-  Tag, 
   BookOpen, 
   Share2, 
   User,
-  Bookmark,
   Calendar
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { BlogPost } from "@/components/blog/types";
 import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
-import { BlogPostCard } from "@/components/blog/BlogPostCard";
-import { SidebarPosts } from "@/components/blog/SidebarPosts";
 import { LatestNews } from "@/components/blog/LatestNews";
-import { CATEGORIES } from "@/data/blogFilters";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchBlogPostBySlug, fetchBlogPosts, incrementLikes } from "@/services/blogService";
-import { Skeleton } from "@/components/ui/skeleton";
+import { fetchBlogPostBySlug, fetchBlogPosts, incrementLikes, incrementViewCount } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,13 +25,9 @@ const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [post, setPost] = useState<BlogPost | null>(null);
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
-  const [commentCount, setCommentCount] = useState(0);
   const { user } = useAuth();
   
   // Buscar o post com base no slug
@@ -58,24 +46,20 @@ const BlogPostPage = () => {
         console.log('Post carregado:', fetchedPost);
         
         if (!fetchedPost) {
-          setError('Post não encontrado');
           setLoading(false);
           return;
         }
         
         setPost(fetchedPost);
-        setCommentCount(fetchedPost.commentCount || 0);
+
+        // Incrementar a contagem de visualizações
+        if (fetchedPost.id) {
+          await incrementViewCount(fetchedPost.id);
+        }
 
         // Buscar todos os posts para relacionados
         const posts = await fetchBlogPosts();
         setAllPosts(posts.length > 0 ? posts : MOCK_BLOG_POSTS);
-        
-        // Filtrar posts relacionados (mesma categoria, excluindo o atual)
-        const related = posts
-          .filter(p => p.id !== fetchedPost.id && p.category === fetchedPost.category)
-          .slice(0, 3);
-        
-        setRelatedPosts(related);
         
         // Verificar se o post está curtido
         const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
@@ -83,14 +67,9 @@ const BlogPostPage = () => {
         console.log('Verificação de curtida:', { postId: fetchedPost.id, likedPosts, hasLiked });
         setIsLiked(hasLiked);
         
-        // Verificar se o post está nos favoritos
-        const bookmarkedPosts = JSON.parse(localStorage.getItem('bookmarkedPosts') || '[]');
-        setIsBookmarked(bookmarkedPosts.includes(fetchedPost.id));
-        
         setLoading(false);
       } catch (error) {
         console.error('Erro ao carregar post:', error);
-        setError('Erro ao carregar o post');
         setLoading(false);
       }
     };
@@ -286,34 +265,6 @@ const BlogPostPage = () => {
       });
     }
   };
-
-  const handleBookmark = () => {
-    if (!post) return;
-    
-    // Atualizar estado local
-    setIsBookmarked(!isBookmarked);
-    
-    // Atualizar localStorage
-    const bookmarkedPosts = JSON.parse(localStorage.getItem('bookmarkedPosts') || '[]');
-    
-    if (isBookmarked) {
-      // Remover dos favoritos
-      const updatedBookmarks = bookmarkedPosts.filter((id: string) => id !== post.id);
-      localStorage.setItem('bookmarkedPosts', JSON.stringify(updatedBookmarks));
-      toast({
-        title: "Artigo removido dos favoritos",
-        description: "Este artigo foi removido da sua lista de favoritos.",
-      });
-    } else {
-      // Adicionar aos favoritos
-      bookmarkedPosts.push(post.id);
-      localStorage.setItem('bookmarkedPosts', JSON.stringify(bookmarkedPosts));
-      toast({
-        title: "Artigo salvo nos favoritos",
-        description: "Este artigo foi adicionado à sua lista de favoritos.",
-      });
-    }
-  };
   
   const handleShare = () => {
     if (navigator.share && post) {
@@ -369,7 +320,7 @@ const BlogPostPage = () => {
   return (
     <>
       <Header />
-      <main className="container mx-auto px-4 py-12 pt-24 max-w-7xl bg-gray-50">
+      <main className="container mx-auto px-4 py-12 pt-12 max-w-7xl bg-gray-50">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             {/* Artigo */}

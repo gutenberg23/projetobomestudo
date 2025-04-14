@@ -228,10 +228,10 @@ export const CommentItem: React.FC<CommentItemProps> = ({
           {comment.likesCount} {comment.likesCount === 1 ? 'curtida' : 'curtidas'}
         </Button>
         <Button 
-          variant="ghost" 
+          variant="flat" 
           size="sm" 
           onClick={handleReply}
-          className="flex items-center text-sm text-gray-500"
+          className="text-sm"
         >
           <Reply className="h-4 w-4 mr-1.5" />
           Responder

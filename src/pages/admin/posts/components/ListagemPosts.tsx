@@ -108,6 +108,7 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Comentários</th>
                 <th className="px-4 py-3">Curtidas</th>
+                <th className="px-4 py-3">Visualizações</th>
                 <th className="px-4 py-3">Destaque</th>
                 <th className="px-4 py-3">Ações</th>
               </tr>
@@ -122,6 +123,7 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
                   <td className="px-4 py-3">{format(new Date(post.createdAt), "dd/MM/yyyy")}</td>
                   <td className="px-4 py-3">{post.commentCount}</td>
                   <td className="px-4 py-3">{post.likesCount}</td>
+                  <td className="px-4 py-3">{post.viewCount || 0}</td>
                   <td className="px-4 py-3">
                     {post.featured ? (
                       <span className="bg-[#fce7fc] text-[#ea2be2] text-xs px-2 py-1 rounded-full">

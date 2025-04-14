@@ -1,7 +1,6 @@
-
 import React from "react";
 import { BlogPost } from "./types";
-import { MessageSquare, Heart, Clock, Tag, BookOpen, User } from "lucide-react";
+import { Heart, Clock, BookOpen, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -24,18 +23,20 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
     return (
       <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow group">
         <Link to={`/blog/${post.slug}`} className="block">
-          <div className="relative aspect-video overflow-hidden rounded-t-lg">
-            <img 
-              src={post.featuredImage || "/placeholder.svg"} 
-              alt={post.title} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-            />
-            {post.region && (
-              <div className="absolute top-2 right-2 bg-white/80 text-xs font-medium px-2 py-1 rounded">
-                {post.region}
-              </div>
-            )}
-          </div>
+          {post.featuredImage && (
+            <div className="relative aspect-video overflow-hidden rounded-t-lg">
+              <img 
+                src={post.featuredImage} 
+                alt={post.title} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+              />
+              {post.region && (
+                <div className="absolute top-2 right-2 bg-white/80 text-xs font-medium px-2 py-1 rounded">
+                  {post.region}
+                </div>
+              )}
+            </div>
+          )}
           <div className="p-4">
             <div className="flex flex-wrap gap-2 mb-2">
               <span className="text-xs font-medium bg-[#ede7f9] text-[#5f2ebe] px-2 py-1 rounded-full">
@@ -59,42 +60,74 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
     return (
       <div className="bg-white rounded-lg shadow-sm overflow-hidden group">
         <Link to={`/blog/${post.slug}`} className="block relative">
-          <div className="relative aspect-[16/9] overflow-hidden">
-            <img 
-              src={post.featuredImage || "/placeholder.svg"} 
-              alt={post.title} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
-          </div>
-          <div className="absolute bottom-0 left-0 p-4 text-white">
-            <div className="flex flex-wrap gap-2 mb-2">
-              <span className="text-xs font-medium bg-[#5f2ebe] px-2 py-1 rounded-full">
-                {post.category}
-              </span>
-              {post.region && (
-                <span className="text-xs font-medium bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                  {post.region}
+          {post.featuredImage ? (
+            <div className="relative aspect-[16/9] overflow-hidden">
+              <img 
+                src={post.featuredImage} 
+                alt={post.title} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
+              <div className="absolute bottom-0 left-0 p-4 text-white">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span className="text-xs font-medium bg-[#5f2ebe] px-2 py-1 rounded-full">
+                    {post.category}
+                  </span>
+                  {post.region && (
+                    <span className="text-xs font-medium bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+                      {post.region}
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-bold text-xl mb-2">{post.title}</h3>
+                <p className="text-sm text-white/80 line-clamp-2 mb-2">{post.summary}</p>
+                <div className="flex items-center text-sm text-white/70">
+                  {post.authorAvatar ? (
+                    <img 
+                      src={post.authorAvatar} 
+                      alt={post.author} 
+                      className="h-6 w-6 rounded-full mr-2 object-cover border border-white/30" 
+                    />
+                  ) : (
+                    <User className="h-4 w-4 mr-1.5" />
+                  )}
+                  <span className="mr-3">{post.author}</span>
+                  <Clock className="h-4 w-4 mr-1.5" />
+                  <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            // Versão sem imagem
+            <div className="p-4">
+              <div className="flex flex-wrap gap-2 mb-2">
+                <span className="text-xs font-medium bg-[#5f2ebe] text-white px-2 py-1 rounded-full">
+                  {post.category}
                 </span>
-              )}
+                {post.region && (
+                  <span className="text-xs font-medium bg-gray-100 text-[#67748a] px-2 py-1 rounded-full">
+                    {post.region}
+                  </span>
+                )}
+              </div>
+              <h3 className="font-bold text-xl text-[#272f3c] mb-2">{post.title}</h3>
+              <p className="text-sm text-[#67748a] line-clamp-2 mb-2">{post.summary}</p>
+              <div className="flex items-center text-sm text-[#67748a]">
+                {post.authorAvatar ? (
+                  <img 
+                    src={post.authorAvatar} 
+                    alt={post.author} 
+                    className="h-6 w-6 rounded-full mr-2 object-cover" 
+                  />
+                ) : (
+                  <User className="h-4 w-4 mr-1.5" />
+                )}
+                <span className="mr-3">{post.author}</span>
+                <Clock className="h-4 w-4 mr-1.5" />
+                <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
+              </div>
             </div>
-            <h3 className="font-bold text-xl mb-2">{post.title}</h3>
-            <p className="text-sm text-white/80 line-clamp-2 mb-2">{post.summary}</p>
-            <div className="flex items-center text-sm text-white/70">
-              {post.authorAvatar ? (
-                <img 
-                  src={post.authorAvatar} 
-                  alt={post.author} 
-                  className="h-6 w-6 rounded-full mr-2 object-cover border border-white/30" 
-                />
-              ) : (
-                <User className="h-4 w-4 mr-1.5" />
-              )}
-              <span className="mr-3">{post.author}</span>
-              <Clock className="h-4 w-4 mr-1.5" />
-              <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
-            </div>
-          </div>
+          )}
         </Link>
       </div>
     );
@@ -104,8 +137,8 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
   return (
     <div 
       className={cn(
-        "bg-white p-6 rounded-lg shadow-sm mb-4 hover:shadow-md transition-shadow border-t-4", 
-        post.featured ? "border-[#5f2ebe]" : "border-transparent"
+        "bg-white p-6 rounded-lg shadow-sm mb-4 hover:shadow-md transition-shadow", 
+        post.featured ? "border-t-0" : ""
       )}
     >
       <div className="flex flex-wrap gap-2 mb-3">
@@ -166,23 +199,12 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
             </h2>
           </Link>
           <p className="text-[#67748a] my-3">{post.summary}</p>
-          <div className="flex items-center gap-3 text-sm text-[#67748a] mb-4">
-            {post.authorAvatar ? (
-              <img 
-                src={post.authorAvatar} 
-                alt={post.author} 
-                className="h-6 w-6 rounded-full mr-1 object-cover" 
-              />
-            ) : (
-              <User className="h-4 w-4" />
-            )}
-            <span>{post.author}</span>
-          </div>
+          
           <div className="flex flex-wrap items-center justify-between mt-2 text-sm text-[#67748a]">
             <div className="flex items-center space-x-4 flex-wrap">
               <span className="flex items-center">
-                <MessageSquare className="h-4 w-4 mr-1.5" />
-                {post.commentCount} comentários
+                <User className="h-4 w-4 mr-1.5" />
+                {post.author}
               </span>
               <span className="flex items-center">
                 <Heart className="h-4 w-4 mr-1.5" />

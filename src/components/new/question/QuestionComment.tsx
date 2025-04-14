@@ -15,7 +15,7 @@ export const QuestionComment: React.FC<QuestionCommentProps> = ({
   onToggleLike,
 }) => {
   return (
-    <article className="flex flex-col justify-center px-3 md:px-12 py-2.5 w-full">
+    <article className="flex flex-col justify-center px-5 py-2.5 w-full">
       <div className="flex flex-wrap justify-between items-start w-full">
         <div className="flex flex-wrap flex-1 shrink items-start basis-0 min-w-60">
           <div className="hidden md:block">
