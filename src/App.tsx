@@ -56,6 +56,8 @@ import ConfiguracoesSite from "./pages/admin/ConfiguracoesSite";
 import Kanban from "./pages/admin/Kanban";
 import EditQuestionBook from './pages/admin/EditQuestionBook';
 import AdminLogin from "./pages/admin/AdminLogin";
+import Concursos from "./pages/Concursos";
+import ConcursosAdmin from "./pages/admin/Concursos";
 
 // Componente para aplicar as configurações de estilo
 const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
@@ -166,6 +168,12 @@ export default function App() {
                       </ConfigGuard>
                     } />
                     
+                    <Route path="/concursos" element={
+                      <ConfigGuard configKey="showBlogPage">
+                        <Concursos />
+                      </ConfigGuard>
+                    } />
+                    
                     <Route path="/blog/:slug" element={
                       <ConfigGuard configKey="showBlogPage">
                         <BlogPost />
@@ -193,6 +201,7 @@ export default function App() {
                             <Route path="aulas" element={<Aulas />} />
                             <Route path="disciplinas" element={<Disciplinas />} />
                             <Route path="cursos" element={<Cursos />} />
+                            <Route path="concursos" element={<ConcursosAdmin />} />
                             <Route path="professores" element={<Professores />} />
                             <Route path="configuracoes" element={<ConfiguracoesSite />} />
                           </Route>

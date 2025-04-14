@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Book, Home, Settings } from 'lucide-react';
+import { Book, Home, Settings, Award } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -30,6 +30,13 @@ export function Layout({ children }: LayoutProps) {
                 >
                   <Book className="h-4 w-4" />
                   Cadernos
+                </Link>
+                <Link
+                  to="/concursos"
+                  className="flex items-center gap-2 text-sm text-gray-600 hover:text-purple-600 transition-colors"
+                >
+                  <Award className="h-4 w-4" />
+                  Concursos
                 </Link>
                 <Link
                   to="/configuracoes"

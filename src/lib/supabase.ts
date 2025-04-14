@@ -5,6 +5,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
+  console.error('Erro crítico: Variáveis de ambiente do Supabase não configuradas!');
   throw new Error('As variáveis de ambiente VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY são necessárias');
 }
 
@@ -78,39 +79,56 @@ export const makeUserAdmin = async (email: string) => {
   }
 };
 
-// Teste de conexão - modificado para ser mais seguro
-(async () => {
+// Teste inicial de conexão
+const testSupabaseConnection = async () => {
+  console.log('Testando conexão com Supabase...');
   try {
-    // Primeiro testar sem autenticação para isolar problemas
-    const { error } = await supabase.from('profiles').select('count').limit(1);
+    // Testar acesso à tabela de concursos (foco deste contexto)
+    const { data, error } = await supabase
+      .from('concursos')
+      .select('count')
+      .limit(1);
     
     if (error) {
-      console.error('Erro ao conectar com o Supabase:', error.message);
+      console.error('Erro ao acessar tabela de concursos:', error.message);
       
-      // Se o erro for de permissão, testar se conseguimos acessar tabelas públicas
-      try {
-        const { error: authError } = await supabase.auth.getSession();
-        if (authError) {
-          console.error('Erro ao verificar sessão:', authError.message);
-        } else {
-          console.log('Sessão verificada com sucesso');
-        }
-      } catch (authErr) {
-        console.error('Exceção ao verificar sessão:', authErr);
+      if (error.code === 'PGRST301') {
+        console.error('ERRO DE PERMISSÃO: Verifique as políticas RLS da tabela concursos');
+      } else if (error.code === '42P01') {
+        console.error('ERRO DE TABELA: A tabela "concursos" não existe no banco de dados');
+      } else if (error.code?.startsWith('PGRST')) {
+        console.error('ERRO DO POSTGREST:', error.message);
+      }
+      
+      // Verificar se o token de autenticação está presente
+      const { data: session } = await supabase.auth.getSession();
+      console.log('Status da sessão:', session?.session ? 'Autenticado' : 'Não autenticado');
+      
+      // Tentar acessar outra tabela pública para diagnóstico
+      console.log('Tentando acessar outra tabela para diagnóstico...');
+      const { error: otherError } = await supabase
+        .from('profiles')
+        .select('count')
+        .limit(1);
+        
+      if (otherError) {
+        console.error('Também falhou ao acessar profiles:', otherError.message);
+      } else {
+        console.log('Acesso à tabela profiles funcionou, problema pode ser específico da tabela concursos');
       }
     } else {
-      console.log('Conexão com o Supabase testada com sucesso');
+      console.log('Conexão com tabela de concursos testada com sucesso!', data);
     }
     
     // Verificar site URLs permitidos (apenas log)
     console.log('IMPORTANTE: Verifique se o domínio', currentDomain, 'está na lista de Site URLs permitidos no Dashboard do Supabase -> Authentication -> URL Configuration');
-
-    // NÃO executar chamadas automáticas que possam gerar erros
-    // A chamada a makeUserAdmin foi removida para evitar erros
   } catch (err) {
-    console.error('Erro ao testar conexão com o Supabase:', err);
+    console.error('Erro crítico ao testar conexão com o Supabase:', err);
   }
-})();
+};
+
+// Executar teste de conexão após 1 segundo para não bloquear carregamento inicial
+setTimeout(testSupabaseConnection, 1000);
 
 // Exportando o cliente Supabase
 export { supabase };

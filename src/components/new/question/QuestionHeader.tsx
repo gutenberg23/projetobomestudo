@@ -69,7 +69,7 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
   };
 
   return (
-    <header className="flex flex-row justify-between items-center px-3 md:px-5 py-2 w-full rounded-t-xl rounded-b-none border border-gray-200 border-solid min-h-[60px] text-slate-800 bg-[#5f2ebe]">
+    <header className="flex flex-row justify-between items-center px-5 py-2 w-full rounded-t-xl rounded-b-none border border-gray-200 border-solid min-h-[60px] text-slate-800 bg-[#5f2ebe]">
       <div className="flex items-center text-white">
         <div className="flex items-center">
           <span className="text-sm max-sm:hidden">Disciplina:&nbsp;</span>

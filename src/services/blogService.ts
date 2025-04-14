@@ -183,6 +183,48 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
   }
 }
 
+// Função para buscar um post específico pelo ID
+export async function fetchBlogPostById(id: string): Promise<BlogPost | null> {
+  try {
+    console.log('Buscando post com ID:', id);
+    
+    // Primeiro, verificar no cache para evitar chamadas desnecessárias
+    if (postsCache.length > 0) {
+      const cachedPost = postsCache.find(post => post.id === id);
+      if (cachedPost) {
+        console.log('Post encontrado no cache:', cachedPost.title);
+        return cachedPost;
+      }
+    }
+    
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      console.error(`Erro ao buscar post com ID ${id}:`, error);
+      return null;
+    }
+
+    console.log('Post encontrado no banco:', data);
+    const post = data ? mapDatabasePostToAppPost(data) : null;
+    
+    // Se encontramos o post no banco de dados e não está no cache, 
+    // pode ser útil atualizar o cache geral para incluir este post
+    if (post && postsCache.length > 0 && !postsCache.some(p => p.id === post.id)) {
+      console.log('Adicionando post ao cache existente');
+      postsCache = [post, ...postsCache];
+    }
+    
+    return post;
+  } catch (error) {
+    console.error(`Exceção ao buscar post com ID ${id}:`, error);
+    return null;
+  }
+}
+
 // Função para criar um novo post
 export async function createBlogPost(post: Omit<BlogPost, 'id' | 'createdAt'>): Promise<BlogPost | null> {
   const dbPost = mapAppPostToDatabasePost(post);
