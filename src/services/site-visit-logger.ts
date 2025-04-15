@@ -13,6 +13,9 @@ export const SiteVisitLogger = {
       // Obter informações do navegador
       const userAgent = navigator.userAgent;
       
+      // Obter URL de referência
+      const referrer = document.referrer || null;
+      
       // Registrar visita
       const { error } = await supabase
         .from('site_visits')
@@ -20,6 +23,7 @@ export const SiteVisitLogger = {
           path,
           user_id: user?.id || null,
           user_agent: userAgent,
+          referrer,
           // Não podemos obter o IP diretamente do cliente por questões de segurança
           // No servidor isso seria possível
           ip_address: null
