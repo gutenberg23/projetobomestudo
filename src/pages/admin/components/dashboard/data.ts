@@ -1,55 +1,66 @@
-
 import { DashboardData } from './types';
 
 // Dados do dashboard
 export const dashboardData: DashboardData = {
-  dadosAssinantes: [
-    { name: 'Jan', ativos: 120, novos: 30, cancelados: 10 },
-    { name: 'Fev', ativos: 140, novos: 35, cancelados: 15 },
-    { name: 'Mar', ativos: 160, novos: 40, cancelados: 20 },
-    { name: 'Abr', ativos: 180, novos: 45, cancelados: 25 },
-    { name: 'Mai', ativos: 200, novos: 50, cancelados: 30 },
-    { name: 'Jun', ativos: 220, novos: 40, cancelados: 20 },
-    { name: 'Jul', ativos: 240, novos: 45, cancelados: 25 },
-    { name: 'Ago', ativos: 260, novos: 50, cancelados: 30 },
-    { name: 'Set', ativos: 280, novos: 55, cancelados: 35 },
-    { name: 'Out', ativos: 300, novos: 60, cancelados: 40 },
-    { name: 'Nov', ativos: 320, novos: 65, cancelados: 45 },
-    { name: 'Dez', ativos: 340, novos: 70, cancelados: 50 }
+  dadosCadastros: [
+    { name: 'Jan', usuarios: 120 },
+    { name: 'Fev', usuarios: 155 },
+    { name: 'Mar', usuarios: 190 },
+    { name: 'Abr', usuarios: 222 },
+    { name: 'Mai', usuarios: 252 },
+    { name: 'Jun', usuarios: 290 },
+    { name: 'Jul', usuarios: 332 },
+    { name: 'Ago', usuarios: 380 },
+    { name: 'Set', usuarios: 430 },
+    { name: 'Out', usuarios: 498 },
+    { name: 'Nov', usuarios: 552 },
+    { name: 'Dez', usuarios: 620 }
   ],
-  dadosReceita: [
-    { name: 'Jan', receita: 12000, mrr: 10000 },
-    { name: 'Fev', receita: 14000, mrr: 11000 },
-    { name: 'Mar', receita: 16000, mrr: 12000 },
-    { name: 'Abr', receita: 18000, mrr: 13000 },
-    { name: 'Mai', receita: 20000, mrr: 14000 },
-    { name: 'Jun', receita: 22000, mrr: 15000 },
-    { name: 'Jul', receita: 24000, mrr: 16000 },
-    { name: 'Ago', receita: 26000, mrr: 17000 },
-    { name: 'Set', receita: 28000, mrr: 18000 },
-    { name: 'Out', receita: 30000, mrr: 19000 },
-    { name: 'Nov', receita: 32000, mrr: 20000 },
-    { name: 'Dez', receita: 34000, mrr: 21000 }
+  dadosAcessos: [
+    { name: 'Jan', acessos: 420 },
+    { name: 'Fev', acessos: 540 },
+    { name: 'Mar', acessos: 670 },
+    { name: 'Abr', acessos: 810 },
+    { name: 'Mai', acessos: 950 },
+    { name: 'Jun', acessos: 1200 },
+    { name: 'Jul', acessos: 1350 },
+    { name: 'Ago', acessos: 1590 },
+    { name: 'Set', acessos: 1750 },
+    { name: 'Out', acessos: 2100 },
+    { name: 'Nov', acessos: 2350 },
+    { name: 'Dez', acessos: 2700 }
   ],
-  dadosPlanos: [
-    { name: 'Mensal', value: 65 },
-    { name: 'Trimestral', value: 15 },
-    { name: 'Anual', value: 20 }
-  ],
-  cuponsAtivos: [
-    { codigo: 'BEMVINDO10', desconto: '10%', validade: '30/06/2025', usos: 45, limite: 100 },
-    { codigo: 'VOLTA20', desconto: '20%', validade: '15/04/2025', usos: 23, limite: 50 },
-    { codigo: 'PROMO50', desconto: '50%', validade: '10/03/2025', usos: 18, limite: 20 }
+  disciplinasQuestoes: [
+    { name: 'Direito Constitucional', quantidade: 1200 },
+    { name: 'Direito Administrativo', quantidade: 950 },
+    { name: 'Português', quantidade: 850 },
+    { name: 'Matemática', quantidade: 780 },
+    { name: 'Direito Civil', quantidade: 730 },
+    { name: 'Raciocínio Lógico', quantidade: 650 },
+    { name: 'Direito Processual', quantidade: 560 },
+    { name: 'Informática', quantidade: 490 },
+    { name: 'Direito Penal', quantidade: 430 },
+    { name: 'Contabilidade', quantidade: 350 }
   ],
   estatisticas: {
-    assinantesAtivos: 340,
-    novosAssinantes: 70,
-    assinantesCancelados: 50,
-    receitaTotal: 'R$ 34.000,00',
-    receitaMensal: 'R$ 21.000,00',
-    crescimentoAssinantes: '+10.3%',
-    crescimentoReceita: '+7.8%',
-    taxaCancelamento: '4.2%',
-    projecaoProximoMes: 'R$ 37.000,00'
+    totalUsuarios: 620,
+    novosUsuariosAno: 500,
+    novosUsuariosMes: 68,
+    novosUsuariosSemana: 15,
+    novosUsuariosDia: 3,
+    totalAcessosAno: 15430,
+    totalAcessosMes: 2700,
+    totalAcessosSemana: 680,
+    totalAcessosDia: 98,
+    totalCursos: 25,
+    totalDisciplinas: 42,
+    totalAulas: 320,
+    totalTopicos: 1850,
+    totalCadernos: 342,
+    totalQuestoes: 7500,
+    totalConcursos: 85,
+    totalSimulados: 120,
+    totalEditaisVerticalizados: 35,
+    totalPostsBlog: 210
   }
 };

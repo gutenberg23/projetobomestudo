@@ -335,7 +335,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         // Primeiro buscar os comentários
         const { data: commentsData, error } = await supabase
           .from('comentarios_questoes')
-          .select('*')
+          .select('id,usuario_id,conteudo,created_at')
           .eq('questao_id', question.id)
           .order('created_at', { ascending: false });
 
@@ -347,10 +347,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         if (commentsData && commentsData.length > 0) {
           // Para cada comentário, buscar os dados do perfil e likes separadamente
           const formattedComments = await Promise.all(commentsData.map(async (comment: any) => {
-            // Buscar perfil do usuário
+            // Buscar perfil do usuário - campos específicos sem espaços
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
-              .select('nome, foto_perfil')
+              .select('id,nome,foto_perfil')
               .eq('id', comment.usuario_id)
               .single();
 
@@ -814,10 +814,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     try {
       setSubmittingComment(true);
       
-      // Buscar dados do perfil do usuário primeiro - corrigindo os campos selecionados
+      // Buscar dados do perfil do usuário primeiro - usando formato sem espaços
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('nome, foto_perfil')
+        .select('id,nome,foto_perfil')
         .eq('id', userId)
         .single();
 
@@ -947,44 +947,47 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       if (!question.id) return;
 
       try {
-        // Buscar a última atualização
-        const { data: updateData, error } = await supabase
-          .from('atualizacoes_questoes')
-          .select('*')
-          .eq('questao_id', question.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (error) {
-          if (error.code === 'PGRST116') {
-            // Nenhuma atualização encontrada, usar avatar padrão
-            console.log("Nenhuma atualização de professor encontrada para esta questão");
-            return;
-          }
-          console.error("Erro ao buscar última atualização:", error);
-          return;
-        }
-
-        // Buscar o perfil do professor separadamente
-        if (updateData && updateData.professor_id) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('foto_perfil')
-            .eq('id', updateData.professor_id)
+        try {
+          // Usar campos específicos e formato compacto sem espaços na consulta
+          const { data: updateData, error } = await supabase
+            .from('atualizacoes_questoes')
+            .select('id,questao_id,professor_id,created_at')
+            .eq('questao_id', question.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
             .single();
 
-          if (profileError) {
-            console.error("Erro ao buscar perfil do professor:", profileError);
+          if (error) {
+            if (error.code === 'PGRST116') {
+              console.log("Nenhuma atualização de professor encontrada para esta questão");
+              return;
+            }
+            console.error("Erro ao buscar última atualização:", error);
             return;
           }
 
-          if (profileData?.foto_perfil) {
-            setGabaritoAvatar(profileData.foto_perfil);
+          // Buscar o perfil do professor separadamente com campos específicos
+          if (updateData && updateData.professor_id) {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('id,foto_perfil')
+              .eq('id', updateData.professor_id)
+              .single();
+
+            if (profileError) {
+              console.error("Erro ao buscar perfil do professor:", profileError);
+              return;
+            }
+
+            if (profileData?.foto_perfil) {
+              setGabaritoAvatar(profileData.foto_perfil);
+            }
           }
+        } catch (innerError) {
+          console.error("Erro específico na consulta de atualizações:", innerError);
         }
       } catch (error) {
-        console.error("Erro ao buscar última atualização:", error);
+        console.error("Erro geral ao buscar última atualização:", error);
       }
     };
 
@@ -998,14 +1001,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         
-        // Buscar o perfil do usuário para verificar se é admin
-        const { data: profileData } = await supabase
+        // Buscar o perfil com campos específicos
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('is_admin')
+          .select('id,role')
           .eq('id', user.id)
           .single();
           
-        setIsAdmin(profileData?.is_admin || false);
+        if (profileError) {
+          console.error("Erro ao verificar permissões admin:", profileError);
+          return;
+        }
+          
+        setIsAdmin(profileData?.role === 'admin');
       } catch (error) {
         console.error("Erro ao verificar permissões admin:", error);
       }

@@ -1,7 +1,7 @@
-
-export * from './DashboardHeader';
-export * from './StatCards';
-export * from './ReceitaTab';
-export * from './AssinantesTab';
-export * from './types';
-export * from './data';
+export { DashboardHeader } from './DashboardHeader';
+export { StatCards } from './StatCards';
+export { UsuariosTab } from './UsuariosTab';
+export { AcessosTab } from './AcessosTab';
+export { QuestoesTab } from './QuestoesTab';
+export { dashboardData } from './data';
+export { useDashboardData } from './hooks/useDashboardData';

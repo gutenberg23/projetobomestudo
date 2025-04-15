@@ -6,21 +6,23 @@ import { concursosService } from '@/services/concursosService';
 import { fetchBlogPostById } from '@/services/blogService';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
-// Importando ícones individualmente
-import { CalendarIcon } from '@heroicons/react/24/outline';
-import { BriefcaseIcon } from '@heroicons/react/24/outline';
-import { CurrencyDollarIcon } from '@heroicons/react/24/outline';
-import { MapPinIcon } from '@heroicons/react/24/outline';
-import { ArrowRightIcon } from '@heroicons/react/24/outline';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+// Importando ícones
+import { CalendarIcon } from "@heroicons/react/24/outline";
+import { BriefcaseIcon } from "@heroicons/react/24/outline";
+import { CurrencyDollarIcon } from "@heroicons/react/24/outline";
+import { MapPinIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
+import { ChevronLeftIcon } from "@heroicons/react/24/outline";
+import { ChevronRightIcon } from "@heroicons/react/24/outline";
 
 // Lista de estados brasileiros para o filtro
 const ESTADOS: { id: string; name: string }[] = [
+  { id: 'Federal', name: 'Federal' },
+  { id: 'Nacional', name: 'Nacional' },
   { id: 'AC', name: 'AC' },
   { id: 'AL', name: 'AL' },
   { id: 'AM', name: 'AM' },
@@ -47,9 +49,7 @@ const ESTADOS: { id: string; name: string }[] = [
   { id: 'SC', name: 'SC' },
   { id: 'SE', name: 'SE' },
   { id: 'SP', name: 'SP' },
-  { id: 'TO', name: 'TO' },
-  { id: 'Federal', name: 'Federal' },
-  { id: 'Nacional', name: 'Nacional' }
+  { id: 'TO', name: 'TO' }
 ];
 
 const Concursos = () => {
@@ -57,7 +57,6 @@ const Concursos = () => {
   const [filtroAtivo, setFiltroAtivo] = useState<string | null>(null);
   const [termoPesquisa, setTermoPesquisa] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
-  const [scrollPosition, setScrollPosition] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -83,14 +82,12 @@ const Concursos = () => {
   const scrollLeft = () => {
     if (containerRef.current) {
       containerRef.current.scrollBy({ left: -200, behavior: 'smooth' });
-      setScrollPosition(containerRef.current.scrollLeft - 200);
     }
   };
 
   const scrollRight = () => {
     if (containerRef.current) {
       containerRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-      setScrollPosition(containerRef.current.scrollLeft + 200);
     }
   };
 
@@ -170,7 +167,7 @@ const Concursos = () => {
       <Header />
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8">
-          <h1 className="text-2xl sm:text-3xl font-bold mb-6">Concursos abertos</h1>
+          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Concursos abertos</h1>
           
           {/* Campo de pesquisa */}
           <div className="mb-6">

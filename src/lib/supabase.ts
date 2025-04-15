@@ -13,6 +13,45 @@ if (!supabaseUrl || !supabaseKey) {
 const currentDomain = window.location.origin;
 console.log(`Aplicação executando no domínio: ${currentDomain}`);
 
+// Função para modificar requisições para resolver problemas comuns
+const modifyFetch = (originalFetch: typeof fetch): typeof fetch => {
+  return async (input, init) => {
+    if (input instanceof Request || typeof input === 'string') {
+      // Verificar se é uma URL do Supabase
+      if (typeof input === 'string' && input.includes(supabaseUrl) && input.includes('select=')) {
+        try {
+          // Corrigir problemas comuns nas URLs de consulta
+          let url = new URL(input);
+          
+          // Problema específico com select=*, substituir por colunas específicas
+          // para tabelas problemáticas
+          if (url.searchParams.has('select') && url.pathname.includes('/atualizacoes_questoes')) {
+            // Se contém "select=*", substituir por colunas específicas
+            const selectValue = url.searchParams.get('select');
+            if (selectValue === '*') {
+              url.searchParams.set('select', 'id,questao_id,professor_id,created_at');
+              input = url.toString();
+              console.log('Corrigida consulta para atualizacoes_questoes:', input);
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao tentar modificar URL:', error);
+        }
+      }
+    }
+    
+    return originalFetch(input, init);
+  };
+};
+
+// Substituir o fetch global com nossa versão modificada
+// mas apenas no ambiente de desenvolvimento para depuração
+if (import.meta.env.DEV) {
+  // @ts-ignore - Sabemos que estamos substituindo o fetch global
+  window.fetch = modifyFetch(window.fetch);
+  console.log('Instalado interceptor de fetch para depuração');
+}
+
 // Criação do cliente Supabase com opções mais detalhadas
 const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   auth: {
@@ -26,6 +65,8 @@ const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
     headers: {
       'X-Client-Info': `bomestudo-app/${import.meta.env.VITE_APP_VERSION || 'dev'}`
     },
+    // Usar nossa função de fetch modificada
+    fetch: modifyFetch(fetch)
   },
   // Ajustes de timeout e retry
   realtime: {

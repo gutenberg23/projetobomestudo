@@ -15,6 +15,18 @@ export interface PagesConfig {
   showQuestionBooksPage: boolean;
 }
 
+export interface FooterLink {
+  id: string;
+  text: string;
+  url: string;
+}
+
+export interface FooterConfig {
+  navegacao: FooterLink[];
+  concurso: FooterLink[];
+  contato: FooterLink[];
+}
+
 interface VisualConfig {
   primaryColor: string;
   secondaryColor: string;
@@ -55,6 +67,7 @@ interface SiteConfig {
   visual: VisualConfig;
   general: GeneralConfig;
   seo: SeoConfig;
+  footer: FooterConfig;
 }
 
 // Valores padrão enquanto a tabela não existe
@@ -101,6 +114,24 @@ const DEFAULT_CONFIG: SiteConfig = {
     enableIndexing: true,
     structuredData: true,
     robotsTxt: ''
+  },
+  footer: {
+    navegacao: [
+      { id: '1', text: 'Home', url: '/' },
+      { id: '2', text: 'Explorar', url: '/explore' },
+      { id: '3', text: 'Meus Cursos', url: '/my-courses' },
+      { id: '4', text: 'Questões', url: '/questions' }
+    ],
+    concurso: [
+      { id: '1', text: 'Banco do Brasil', url: '#' },
+      { id: '2', text: 'Concurso INSS', url: '#' },
+      { id: '3', text: 'Concurso Receita Federal', url: '#' },
+      { id: '4', text: 'Concurso Caixa', url: '#' }
+    ],
+    contato: [
+      { id: '1', text: 'WhatsApp', url: '#' },
+      { id: '2', text: 'Email', url: 'mailto:contato@bomestudo.com.br' }
+    ]
   }
 };
 
@@ -264,6 +295,14 @@ export const useSiteConfig = () => {
                 ...newConfig.seo,
                 ...seoSettings,
                 siteKeywords: seoSettings.siteKeywords || DEFAULT_CONFIG.seo.siteKeywords
+              };
+            }
+            else if (item.chave === 'footer_config' && item.valor) {
+              const footerSettings = safeJSONParse(item.valor, {});
+              
+              newConfig.footer = {
+                ...newConfig.footer,
+                ...footerSettings
               };
             }
           } catch (e) {
@@ -624,6 +663,49 @@ export const useSiteConfig = () => {
     }
   }, [config]);
 
+  const updateFooterConfig = useCallback(
+    async (footerConfig: FooterConfig) => {
+      if (hasTableError) {
+        // Se a tabela não existe, apenas atualiza o estado local
+        setConfig(prevConfig => ({
+          ...prevConfig,
+          footer: footerConfig
+        }));
+        return;
+      }
+
+      try {
+        const { error } = await supabase
+          .from('configuracoes_site')
+          .upsert({
+            chave: 'footer_config',
+            valor: JSON.stringify(footerConfig),
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'chave'
+          });
+
+        if (error) throw error;
+
+        // Atualiza o cache global e o estado local
+        setConfig(prevConfig => {
+          const newConfig = {
+            ...prevConfig,
+            footer: footerConfig
+          };
+          globalConfigCache = newConfig;
+          return newConfig;
+        });
+
+        lastFetchTime = Date.now();
+      } catch (err) {
+        console.error('Erro ao atualizar configurações do footer:', err);
+        throw err;
+      }
+    },
+    [hasTableError, setConfig]
+  );
+
   // Funções auxiliares para aplicar as configurações
   const applyVisualChanges = (visualConfig: VisualConfig) => {
     // Aplicar variáveis CSS para cores
@@ -807,6 +889,7 @@ export const useSiteConfig = () => {
     updateVisualConfig,
     updateGeneralConfig,
     updateSeoConfig,
+    updateFooterConfig,
     hasTableError
   };
 }; 

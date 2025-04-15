@@ -271,9 +271,8 @@ const Explore = () => {
     <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold mb-4">Explorar</h1>
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Explore Conteúdos</h1>
+          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Buscar cursos e disciplinas</h1>
           <p className="text-[#67748a] mb-6">Encontre todos os concursos e disciplinas disponíveis para estudo.</p>
 
           <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">

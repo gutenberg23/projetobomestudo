@@ -330,7 +330,7 @@ const Questions = () => {
       <Header />
       <main className="flex-1 container mx-auto px-4 py-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#272f3c]">Banco de Questões</h1>
+          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Questões de Concursos</h1>
           <Button
             variant="outline"
             onClick={() => setShowScoreCounter(!showScoreCounter)}
@@ -357,21 +357,23 @@ const Questions = () => {
           setQuestionsPerPage={setQuestionsPerPage}
           filterOptions={filterOptions}
           rightElement={
-            <Select value={questionsPerPage} onValueChange={(value) => {
-              setQuestionsPerPage(value);
-              setCurrentPage(1); // Voltar para a primeira página quando mudar o número de itens por página
-            }}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="10" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="pr-3">
+              <Select value={questionsPerPage} onValueChange={(value) => {
+                setQuestionsPerPage(value);
+                setCurrentPage(1); // Voltar para a primeira página quando mudar o número de itens por página
+              }}>
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="10" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           }
         />
 

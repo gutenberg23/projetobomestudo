@@ -1,47 +1,44 @@
-
 // Tipos de dados para o dashboard
-export interface AssinanteData {
+export interface CadastrosData {
   name: string;
-  ativos: number;
-  novos: number;
-  cancelados: number;
+  usuarios: number;
 }
 
-export interface ReceitaData {
+export interface DisciplinasQuestoesData {
   name: string;
-  receita: number;
-  mrr: number;
+  quantidade: number;
 }
 
-export interface PlanosData {
+export interface AcessosData {
   name: string;
-  value: number;
-}
-
-export interface CupomData {
-  codigo: string;
-  desconto: string;
-  validade: string;
-  usos: number;
-  limite: number;
+  acessos: number;
 }
 
 export interface Estatisticas {
-  assinantesAtivos: number;
-  novosAssinantes: number;
-  assinantesCancelados: number;
-  receitaTotal: string;
-  receitaMensal: string;
-  crescimentoAssinantes: string;
-  crescimentoReceita: string;
-  taxaCancelamento: string;
-  projecaoProximoMes: string;
+  totalUsuarios: number;
+  novosUsuariosAno: number;
+  novosUsuariosMes: number;
+  novosUsuariosSemana: number;
+  novosUsuariosDia: number;
+  totalAcessosAno: number;
+  totalAcessosMes: number;
+  totalAcessosSemana: number;
+  totalAcessosDia: number;
+  totalCursos: number;
+  totalDisciplinas: number;
+  totalAulas: number;
+  totalTopicos: number;
+  totalCadernos: number;
+  totalQuestoes: number;
+  totalConcursos: number;
+  totalSimulados: number;
+  totalEditaisVerticalizados: number;
+  totalPostsBlog: number;
 }
 
 export interface DashboardData {
-  dadosAssinantes: AssinanteData[];
-  dadosReceita: ReceitaData[];
-  dadosPlanos: PlanosData[];
-  cuponsAtivos: CupomData[];
+  dadosCadastros: CadastrosData[];
+  dadosAcessos: AcessosData[];
+  disciplinasQuestoes: DisciplinasQuestoesData[];
   estatisticas: Estatisticas;
 }

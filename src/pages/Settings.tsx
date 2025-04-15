@@ -346,7 +346,7 @@ const Settings = () => {
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto px-4 py-8">
-          <h1 className="text-2xl font-bold text-[#272f3c] mb-4">Minha conta</h1>
+          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Minha conta</h1>
           <p className="text-[#67748a] mb-6">
             Mantendo sua conta atualizada, você nos ajuda a disponibilizar dados mais precisos sobre as aprovações pelo Brasil.
           </p>

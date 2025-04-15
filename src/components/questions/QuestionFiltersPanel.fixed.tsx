@@ -53,8 +53,8 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const [topicsByDiscipline, setTopicsByDiscipline] = useState<Record<string, string[]>>({});
-  const [_allQuestions, setAllQuestions] = useState<any[]>([]);
-  const [_isLoading, setIsLoading] = useState(false);
+  const [allQuestions, setAllQuestions] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Buscar questões para análise de tópicos por disciplina
   useEffect(() => {
@@ -314,39 +314,34 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   );
 
   return (
-    <div className="bg-white rounded-lg mb-8">
+    <div className="bg-white rounded-lg p-6 mb-8">
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
         <CollapsibleTrigger asChild>
-          <div className="flex items-center justify-between cursor-pointer py-6 pl-6 pr-0">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center">
-                <h3 className="text-lg font-medium text-[#272f3c]">Filtros</h3>
-                <div className="p-1.5 ml-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
-                  {isOpen ? (
-                    <ChevronUp className="h-4 w-4 text-[#5f2ebe]" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-[#5f2ebe]" />
-                  )}
-                </div>
-              </div>
+          <div className={`flex items-center justify-between cursor-pointer ${isOpen ? 'pb-4 mb-4 border-b border-gray-100' : ''}`}>
+            <div className="flex items-center">
+              <h3 className="text-lg font-medium text-[#272f3c]">Filtros</h3>
               {activeFiltersCount > 0 && (
-                <span className="bg-[#5f2ebe] text-white text-xs px-2 py-1 rounded-full">
+                <span className="ml-2 bg-[#5f2ebe] text-white text-xs px-2 py-1 rounded-full">
                   {activeFiltersCount}
                 </span>
               )}
             </div>
-            
-            {rightElement && 
-              <div className="flex items-center mr-0">
-                {!isMobile && <span className="text-sm text-gray-600 mr-2">Questões por página:</span>}
-                <div className="dropdown-wrapper" style={{width: "auto", marginRight: 0, paddingRight: 0}}>
-                  {rightElement}
-                </div>
+            <div className="flex items-center">
+              {rightElement && <div className="flex items-center space-x-2 mr-3">
+                {!isMobile && <span className="text-sm text-gray-600">Questões por página:</span>}
+                {rightElement}
+              </div>}
+              <div className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
+                {isOpen ? (
+                  <ChevronUp className="h-4 w-4 text-[#5f2ebe]" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-[#5f2ebe]" />
+                )}
               </div>
-            }
+            </div>
           </div>
         </CollapsibleTrigger>
-        <CollapsibleContent className={`px-6 pb-6 ${isOpen ? 'border-t border-gray-100 mt-4' : ''}`}>
+        <CollapsibleContent>
           {filtersContent}
         </CollapsibleContent>
       </Collapsible>

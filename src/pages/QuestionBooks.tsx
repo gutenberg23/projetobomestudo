@@ -283,10 +283,7 @@ export default function QuestionBooks() {
       <Header />
       <main className="flex-grow py-8 px-4 container mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <Book className="h-6 w-6 text-purple-500" />
-            <h1 className="text-2xl font-semibold text-gray-900">Meus cadernos de questões</h1>
-          </div>
+          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Meus cadernos de questões</h1>
 
           <Dialog open={open} onOpenChange={(isOpen) => {
             if (!isOpen) {
@@ -454,7 +451,7 @@ export default function QuestionBooks() {
 
         <div className="mt-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Cadernos públicos</h2>
+            <h2 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Cadernos públicos</h2>
             <div className="w-1/3">
               <Input
                 placeholder="Pesquisar cadernos públicos..."

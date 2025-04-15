@@ -1,5 +1,5 @@
 import React from "react";
-import { MessageSquare, GraduationCap, Sparkles, X, Bug } from "lucide-react";
+import { MessageSquare, GraduationCap, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface QuestionFooterProps {
@@ -93,19 +93,6 @@ export const QuestionFooter: React.FC<QuestionFooterProps> = ({
             <Sparkles className="w-4 w-4" />
             <span>BIA</span>
           </button>
-        )}
-        
-        {isAdmin && onFixMetadata && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onFixMetadata}
-            disabled={isFixingMetadata}
-            className="ml-2 text-xs flex items-center gap-1"
-          >
-            <Bug className="w-3 h-3" />
-            <span>{isFixingMetadata ? "Corrigindo..." : "Corrigir Dados"}</span>
-          </Button>
         )}
       </div>
     </div>
