@@ -34,6 +34,15 @@ import {
 import { RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 // Interface para as estatísticas diárias
 interface DailyStats {
@@ -106,6 +115,10 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   // Criar um mapa para armazenar a relação entre disciplinas e bancas
   const [disciplinasBancasMap, setDisciplinasBancasMap] = useState<Map<string, Set<string>>>(new Map());
+  // Estado para controlar o modal de confirmação
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  // Estado para controlar o carregamento da operação de apagar dados
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const CORES = ["#FF8042", "#5f2ebe"];
 
@@ -716,6 +729,72 @@ const Dashboard = () => {
     // Limpar qualquer log de debug
   }, [selectedBanca]);
 
+  // Função para apagar os dados do usuário no banco
+  const apagarDadosUsuario = async () => {
+    if (!user) return;
+    
+    setIsDeleting(true);
+    try {
+      // Deletar todas as respostas do aluno no banco
+      const { error: respostasError } = await supabase
+        .from("respostas_alunos")
+        .delete()
+        .eq("aluno_id", user.id);
+        
+      if (respostasError) throw respostasError;
+      
+      // Deletar resultados de simulados do usuário
+      try {
+        // Tentar deletar da primeira tabela de simulados
+        const { error: simuladosError } = await supabase
+          .from("user_simulado_results")
+          .delete()
+          .eq("user_id", user.id);
+          
+        // Se houver erro, tentar a tabela alternativa
+        if (simuladosError) {
+          console.log("Tentando deletar da tabela alternativa de simulados...");
+          
+          const { error: altSimuladosError } = await supabase
+            .from("simulado_results")
+            .delete()
+            .eq("user_id", user.id);
+            
+          if (altSimuladosError) {
+            console.log("Erro ao deletar da tabela alternativa:", altSimuladosError.message);
+          }
+        }
+      } catch (simuladoDeleteError) {
+        console.error("Erro ao deletar simulados:", simuladoDeleteError);
+      }
+      
+      // Atualizar a interface
+      setTotalStats({
+        total: 0,
+        acertos: 0,
+        erros: 0,
+        aproveitamento: 0,
+      });
+      
+      setDailyStats([]);
+      setDisciplinasStats([]);
+      setFilteredDisciplinasStats([]);
+      setSimulados([]);
+      setFilteredSimulados([]);
+      
+      // Recarregar os dados após a limpeza
+      setTimeout(() => setPeriodo(periodo), 100);
+      
+      toast.success("Estatísticas apagadas com sucesso");
+    } catch (error) {
+      console.error("Erro ao apagar estatísticas:", error);
+      toast.error("Erro ao apagar estatísticas. Tente novamente mais tarde.");
+    } finally {
+      setIsDeleting(false);
+      setShowConfirmDialog(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
@@ -748,7 +827,7 @@ const Dashboard = () => {
             ) : (
             <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-2">
+              <Card className="md:col-span-2 shadow-none border-0">
                 <CardHeader>
                   <CardTitle>Desempenho Geral</CardTitle>
                   <CardDescription>
@@ -758,19 +837,19 @@ const Dashboard = () => {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
                     <div className="text-center">
-                      <p className="text-sm text-gray-500">Total de Resoluções</p>
+                      <p className="text-sm text-gray-500">Questões</p>
                       <p className="text-2xl font-bold text-blue-600">{totalStats.total}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-500">Resoluções Certas</p>
+                      <p className="text-sm text-gray-500">Acertos</p>
                       <p className="text-2xl font-bold text-green-600">{totalStats.acertos}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-500">Resoluções Erradas</p>
+                      <p className="text-sm text-gray-500">Erros</p>
                       <p className="text-2xl font-bold text-red-600">{totalStats.erros}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-500">Taxa de Acerto</p>
+                      <p className="text-sm text-gray-500">Aproveitamento</p>
                       <p className="text-2xl font-bold text-purple-600">{totalStats.aproveitamento}%</p>
                     </div>
                   </div>
@@ -824,7 +903,7 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
               
-              <Card>
+              <Card className="shadow-none border-0">
                 <CardHeader>
                   <CardTitle>Percentual de rendimento</CardTitle>
                 </CardHeader>
@@ -865,18 +944,10 @@ const Dashboard = () => {
                   
                   <div className="flex justify-center mt-4">
                     <button 
-                      className="flex items-center text-sm text-[#5f2ebe]"
-                      onClick={() => {
-                        setTotalStats({
-                          total: 0,
-                          acertos: 0,
-                          erros: 0,
-                          aproveitamento: 0,
-                        });
-                        setTimeout(() => setPeriodo(periodo), 100);
-                      }}
+                      className="flex items-center text-sm bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-md transition-colors hover:bg-gray-50 focus:outline-none"
+                      onClick={() => setShowConfirmDialog(true)}
                     >
-                      <RotateCcw className="h-4 w-4 mr-1" />
+                      <RotateCcw className="h-4 w-4 mr-1.5" />
                       Zerar estatísticas
                     </button>
                   </div>
@@ -884,7 +955,7 @@ const Dashboard = () => {
               </Card>
             </div>
             
-            <Card>
+            <Card className="shadow-none border-0">
               <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex-1">
                   <CardTitle>Estatísticas por disciplina</CardTitle>
@@ -920,7 +991,6 @@ const Dashboard = () => {
                         <th className="py-2 text-left">Disciplina</th>
                         <th className="py-2 text-center">Certas</th>
                         <th className="py-2 text-center">Erradas</th>
-                        <th className="py-2 text-center">Em branco</th>
                         <th className="py-2 text-center">Total</th>
                         <th className="py-2 text-center">%</th>
                       </tr>
@@ -948,7 +1018,6 @@ const Dashboard = () => {
                               </td>
                             <td className="py-2 text-center">{disciplina.certas}</td>
                             <td className="py-2 text-center">{disciplina.erradas}</td>
-                            <td className="py-2 text-center">{disciplina.em_branco}</td>
                             <td className="py-2 text-center">{disciplina.total}</td>
                               <td className="py-2 text-center">
                                 <div className="flex items-center justify-center">
@@ -984,7 +1053,6 @@ const Dashboard = () => {
                                       </td>
                                       <td className="py-2 text-center text-gray-700">{topico.certas}</td>
                                       <td className="py-2 text-center text-gray-700">{topico.erradas}</td>
-                                      <td className="py-2 text-center text-gray-700">{topico.em_branco}</td>
                                       <td className="py-2 text-center text-gray-700">{topico.total}</td>
                                       <td className="py-2 text-center text-gray-700">
                                         <div className="flex items-center justify-center">
@@ -1029,7 +1097,7 @@ const Dashboard = () => {
               </CardContent>
             </Card>
             
-            <Card>
+            <Card className="shadow-none border-0">
               <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex-1">
                   <CardTitle>Simulados</CardTitle>
@@ -1062,7 +1130,6 @@ const Dashboard = () => {
                           <th className="py-2 text-center">Erros</th>
                           <th className="py-2 text-center">Aproveitamento</th>
                           <th className="py-2 text-center">Realizado</th>
-                          <th className="py-2 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1073,7 +1140,7 @@ const Dashboard = () => {
                             <td className="py-2 text-center">{simulado.acertos}</td>
                             <td className="py-2 text-center">{simulado.erros}</td>
                             <td className="py-2 text-center">
-                              <div className="flex items-center">
+                              <div className="flex items-center justify-center">
                                 <div className="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
                                   <div 
                                     className="bg-green-600 h-2.5 rounded-full" 
@@ -1087,14 +1154,6 @@ const Dashboard = () => {
                               <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                                 {simulado.realizado ? "Sim" : "Não"}
                               </span>
-                            </td>
-                            <td className="py-2 text-center">
-                              <a 
-                                href={`/simulado/${simulado.id}/refazer`} 
-                                className="text-blue-600 hover:text-blue-800 px-3 py-1 bg-blue-50 rounded-md text-sm font-medium"
-                              >
-                                Refazer
-                              </a>
                             </td>
                           </tr>
                         ))}
@@ -1124,6 +1183,34 @@ const Dashboard = () => {
             </>
             )}
           </div>
+          
+          {/* Dialog de confirmação */}
+          <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Zerar estatísticas</DialogTitle>
+                <DialogDescription>
+                  Esta ação irá apagar permanentemente todas as suas estatísticas de resolução de questões. Esta ação é irreversível.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="flex flex-row justify-end gap-2 mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConfirmDialog(false)}
+                  disabled={isDeleting}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  variant="destructive"
+                  onClick={apagarDadosUsuario}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? "Apagando..." : "Sim, apagar tudo"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
       <Footer />

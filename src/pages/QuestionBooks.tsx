@@ -283,7 +283,7 @@ export default function QuestionBooks() {
       <Header />
       <main className="flex-grow py-8 px-4 container mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Meus cadernos de questões</h1>
+          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Meus cadernos</h1>
 
           <Dialog open={open} onOpenChange={(isOpen) => {
             if (!isOpen) {
@@ -296,7 +296,7 @@ export default function QuestionBooks() {
             <DialogTrigger asChild>
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Criar Novo Caderno
+                Novo
               </Button>
             </DialogTrigger>
             <DialogContent>
