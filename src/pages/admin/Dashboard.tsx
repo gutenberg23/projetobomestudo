@@ -4,7 +4,6 @@ import {
   DashboardHeader, 
   StatCards, 
   UsuariosTab,
-  AcessosTab,
   QuestoesTab
 } from "./components/dashboard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -40,18 +39,13 @@ const Dashboard = () => {
       <StatCards estatisticas={data.estatisticas} />
 
       <Tabs defaultValue="usuarios">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
-          <TabsTrigger value="acessos">Acessos</TabsTrigger>
           <TabsTrigger value="questoes">Questões</TabsTrigger>
         </TabsList>
         
         <TabsContent value="usuarios">
           <UsuariosTab dadosCadastros={data.dadosCadastros} />
-        </TabsContent>
-
-        <TabsContent value="acessos">
-          <AcessosTab dadosAcessos={data.dadosAcessos} />
         </TabsContent>
 
         <TabsContent value="questoes">

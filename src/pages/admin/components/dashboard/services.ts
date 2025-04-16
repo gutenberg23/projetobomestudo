@@ -184,7 +184,7 @@ export const getTotalSimulados = async (): Promise<number> => {
 // Função para obter total de editais verticalizados
 export const getTotalEditaisVerticalizados = async (): Promise<number> => {
   const { count, error } = await supabase
-    .from('editais_verticalizados')
+    .from('cursoverticalizado')
     .select('*', { count: 'exact', head: true });
     
   if (error) {
@@ -353,17 +353,16 @@ export const getEstatisticas = async (): Promise<Estatisticas> => {
 
 // Função principal para carregar todos os dados do dashboard
 export const loadDashboardData = async (): Promise<DashboardData> => {
-  const [estatisticas, dadosCadastros, dadosAcessos, disciplinasQuestoes] = await Promise.all([
+  const [estatisticas, dadosCadastros, disciplinasQuestoes] = await Promise.all([
     getEstatisticas(),
     getEvolucaoUsuarios(),
-    getEvolucaoAcessos(),
     getDisciplinasQuestoes()
   ]);
   
   return {
     estatisticas,
     dadosCadastros,
-    dadosAcessos,
+    dadosAcessos: [], // Mantemos como array vazio para compatibilidade, já que removemos a aba
     disciplinasQuestoes
   };
 }; 

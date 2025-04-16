@@ -14,11 +14,12 @@ import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { useUserProgress } from "./hooks/useUserProgress";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { CicloTab } from "./ciclo/CicloTab";
 
 export const CourseLayout = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados'>('disciplinas');
+  const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados' | 'ciclo'>('disciplinas');
   const [isProgressVisible, setIsProgressVisible] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -37,13 +38,14 @@ export const CourseLayout = () => {
   useEffect(() => {
     if (isLoadingConfig) return;
     
-    const { showDisciplinasTab, showEditalTab, showSimuladosTab } = config.tabs;
+    const { showDisciplinasTab, showEditalTab, showSimuladosTab, showCicloTab } = config.tabs;
     
     // Se a aba atual está invisível, mudar para a primeira aba visível
     if (
       (activeTab === 'disciplinas' && !showDisciplinasTab) ||
       (activeTab === 'edital' && !showEditalTab) ||
-      (activeTab === 'simulados' && !showSimuladosTab)
+      (activeTab === 'simulados' && !showSimuladosTab) ||
+      (activeTab === 'ciclo' && !showCicloTab)
     ) {
       if (showDisciplinasTab) {
         setActiveTab('disciplinas');
@@ -51,6 +53,8 @@ export const CourseLayout = () => {
         setActiveTab('edital');
       } else if (showSimuladosTab) {
         setActiveTab('simulados');
+      } else if (showCicloTab) {
+        setActiveTab('ciclo');
       }
     }
   }, [config.tabs, activeTab, isLoadingConfig]);
@@ -252,16 +256,24 @@ export const CourseLayout = () => {
         
         {activeTab === 'edital' && config.tabs.showEditalTab && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
-            <div className="max-w-[1400px] w-full px-[10px] md:px-[32px]">
-              <EditorializedView activeTab="edital" />
+            <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
+              <EditorializedView courseId={courseId} activeTab={activeTab} />
             </div>
           </div>
         )}
         
         {activeTab === 'simulados' && config.tabs.showSimuladosTab && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
-            <div className="max-w-[1400px] w-full px-[10px] md:px-[32px]">
-              <EditorializedView activeTab="simulados" />
+            <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
+              <EditorializedView courseId={courseId} activeTab={activeTab} />
+            </div>
+          </div>
+        )}
+        
+        {activeTab === 'ciclo' && config.tabs.showCicloTab && (
+          <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
+            <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
+              <CicloTab courseId={courseId} subjects={subjectsData} />
             </div>
           </div>
         )}

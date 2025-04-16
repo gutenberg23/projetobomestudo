@@ -9,11 +9,6 @@ export interface DisciplinasQuestoesData {
   quantidade: number;
 }
 
-export interface AcessosData {
-  name: string;
-  acessos: number;
-}
-
 export interface Estatisticas {
   totalUsuarios: number;
   novosUsuariosAno: number;
@@ -38,7 +33,7 @@ export interface Estatisticas {
 
 export interface DashboardData {
   dadosCadastros: CadastrosData[];
-  dadosAcessos: AcessosData[];
+  dadosAcessos: any[]; // Mantido apenas para compatibilidade, mas não é mais usado
   disciplinasQuestoes: DisciplinasQuestoesData[];
   estatisticas: Estatisticas;
 }

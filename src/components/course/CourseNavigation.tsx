@@ -1,12 +1,12 @@
 import React, { useEffect, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
-import { BookOpen, FileText, Target, BarChart } from "lucide-react";
+import { BookOpen, FileText, Target, BarChart, RotateCcw } from "lucide-react";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { Spinner } from "@/components/ui/spinner";
 
 interface CourseNavigationProps {
-  activeTab: 'disciplinas' | 'edital' | 'simulados';
-  setActiveTab: (tab: 'disciplinas' | 'edital' | 'simulados') => void;
+  activeTab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo';
+  setActiveTab: (tab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo') => void;
   onProgressClick: () => void;
   isProgressVisible: boolean;
 }
@@ -23,13 +23,14 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   useEffect(() => {
     if (isLoading) return;
 
-    const { showDisciplinasTab, showEditalTab, showSimuladosTab } = config.tabs;
+    const { showDisciplinasTab, showEditalTab, showSimuladosTab, showCicloTab } = config.tabs;
 
     // Se a aba atual está invisível, mudar para a primeira aba visível
     if (
       (activeTab === 'disciplinas' && !showDisciplinasTab) ||
       (activeTab === 'edital' && !showEditalTab) ||
-      (activeTab === 'simulados' && !showSimuladosTab)
+      (activeTab === 'simulados' && !showSimuladosTab) ||
+      (activeTab === 'ciclo' && !showCicloTab)
     ) {
       if (showDisciplinasTab) {
         setActiveTab('disciplinas');
@@ -37,6 +38,8 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
         setActiveTab('edital');
       } else if (showSimuladosTab) {
         setActiveTab('simulados');
+      } else if (showCicloTab) {
+        setActiveTab('ciclo');
       }
       // Se nenhuma aba estiver visível, não muda nada - isso deveria ser evitado pelo admin
     }
@@ -53,6 +56,10 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
 
   const handleSimuladosClick = useCallback(() => {
     setActiveTab('simulados');
+  }, [setActiveTab]);
+  
+  const handleCicloClick = useCallback(() => {
+    setActiveTab('ciclo');
   }, [setActiveTab]);
 
   const handleProgressClick = useCallback(() => {
@@ -72,10 +79,10 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
     );
   }
 
-  const { showDisciplinasTab, showEditalTab, showSimuladosTab } = config.tabs;
+  const { showDisciplinasTab, showEditalTab, showSimuladosTab, showCicloTab } = config.tabs;
 
   // Se nenhuma aba estiver visível, mostrar mensagem
-  if (!showDisciplinasTab && !showEditalTab && !showSimuladosTab) {
+  if (!showDisciplinasTab && !showEditalTab && !showSimuladosTab && !showCicloTab) {
     return (
       <div className="bg-white border-b border-[rgba(239,239,239,1)] mb-5">
         <div className="w-full flex justify-center">
@@ -128,6 +135,18 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
               >
                 <Target className="w-5 h-5" />
                 <span className="hidden md:inline">Simulados</span>
+              </button>
+            )}
+            {showCicloTab && (
+              <button
+                onClick={handleCicloClick}
+                className={cn(
+                  "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  activeTab === 'ciclo' && "text-[#5f2ebe] border-[#5f2ebe]"
+                )}
+              >
+                <RotateCcw className="w-5 h-5" />
+                <span className="hidden md:inline">Ciclo</span>
               </button>
             )}
           </div>

@@ -12,6 +12,7 @@ const CourseConfig = () => {
   const [showDisciplinasTab, setShowDisciplinasTab] = useState(config.tabs.showDisciplinasTab);
   const [showEditalTab, setShowEditalTab] = useState(config.tabs.showEditalTab);
   const [showSimuladosTab, setShowSimuladosTab] = useState(config.tabs.showSimuladosTab);
+  const [showCicloTab, setShowCicloTab] = useState(config.tabs.showCicloTab);
   const [isSaving, setIsSaving] = useState(false);
 
   // Atualizar estados locais quando as configurações forem carregadas
@@ -20,6 +21,7 @@ const CourseConfig = () => {
       setShowDisciplinasTab(config.tabs.showDisciplinasTab);
       setShowEditalTab(config.tabs.showEditalTab);
       setShowSimuladosTab(config.tabs.showSimuladosTab);
+      setShowCicloTab(config.tabs.showCicloTab);
     }
   }, [config, isLoading]);
 
@@ -32,7 +34,8 @@ const CourseConfig = () => {
       const tabsConfig = {
         showDisciplinasTab,
         showEditalTab,
-        showSimuladosTab
+        showSimuladosTab,
+        showCicloTab
       };
       
       await updateTabsConfig(tabsConfig);
@@ -131,6 +134,21 @@ const CourseConfig = () => {
                 id="simulados-tab"
                 checked={showSimuladosTab}
                 onCheckedChange={setShowSimuladosTab}
+                disabled={isSaving}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="ciclo-tab">Aba de Ciclo</Label>
+                <p className="text-[#67748a] text-xs">
+                  Permite a criação e gestão do ciclo de estudos personalizado
+                </p>
+              </div>
+              <Switch
+                id="ciclo-tab"
+                checked={showCicloTab}
+                onCheckedChange={setShowCicloTab}
                 disabled={isSaving}
               />
             </div>

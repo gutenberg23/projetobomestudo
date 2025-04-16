@@ -5,6 +5,7 @@ interface TabsConfig {
   showDisciplinasTab: boolean;
   showEditalTab: boolean;
   showSimuladosTab: boolean;
+  showCicloTab: boolean;
 }
 
 export interface PagesConfig {
@@ -76,6 +77,7 @@ const DEFAULT_CONFIG: SiteConfig = {
     showDisciplinasTab: true,
     showEditalTab: true,
     showSimuladosTab: true,
+    showCicloTab: true,
   },
   pages: {
     showBlogPage: true,
@@ -258,7 +260,8 @@ export const useSiteConfig = () => {
               newConfig.tabs = {
                 showDisciplinasTab: tabsSettings.showDisciplinasTab ?? true,
                 showEditalTab: tabsSettings.showEditalTab ?? true,
-                showSimuladosTab: tabsSettings.showSimuladosTab ?? true
+                showSimuladosTab: tabsSettings.showSimuladosTab ?? true,
+                showCicloTab: tabsSettings.showCicloTab ?? true
               };
             } 
             else if (item.chave === 'pages_visibility' && item.valor) {
