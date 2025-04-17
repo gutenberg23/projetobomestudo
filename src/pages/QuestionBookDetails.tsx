@@ -346,6 +346,31 @@ export default function QuestionBookDetails() {
                 )}
               </div>
             </div>
+            
+            <Button
+              variant="outline"
+              onClick={async () => {
+                try {
+                  if (!id) return;
+                  
+                  toast.info('Atualizando estatísticas do caderno...');
+                  
+                  const { error } = await supabase.rpc('recalculate_caderno_statistics', {
+                    caderno_id: id
+                  });
+                  
+                  if (error) throw error;
+                  
+                  await fetchBookDetails();
+                  toast.success('Estatísticas atualizadas com sucesso!');
+                } catch (error) {
+                  console.error('Erro ao atualizar estatísticas:', error);
+                  toast.error('Erro ao atualizar as estatísticas');
+                }
+              }}
+            >
+              Atualizar Estatísticas
+            </Button>
           </div>
 
           <div className="space-y-6">

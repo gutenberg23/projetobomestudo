@@ -14,6 +14,9 @@ const PagesConfig = () => {
   const [showExplorePage, setShowExplorePage] = useState(config.pages.showExplorePage);
   const [showMyCoursesPage, setShowMyCoursesPage] = useState(config.pages.showMyCoursesPage);
   const [showQuestionBooksPage, setShowQuestionBooksPage] = useState(config.pages.showQuestionBooksPage);
+  const [showCommentRankingPage, setShowCommentRankingPage] = useState(config.pages.showCommentRankingPage);
+  const [showQuestionRankingPage, setShowQuestionRankingPage] = useState(config.pages.showQuestionRankingPage);
+  const [showSimuladoRankingPage, setShowSimuladoRankingPage] = useState(config.pages.showSimuladoRankingPage);
   const [isSaving, setIsSaving] = useState(false);
 
   // Atualizar estados locais quando as configurações forem carregadas
@@ -24,6 +27,9 @@ const PagesConfig = () => {
       setShowExplorePage(config.pages.showExplorePage);
       setShowMyCoursesPage(config.pages.showMyCoursesPage);
       setShowQuestionBooksPage(config.pages.showQuestionBooksPage);
+      setShowCommentRankingPage(config.pages.showCommentRankingPage);
+      setShowQuestionRankingPage(config.pages.showQuestionRankingPage);
+      setShowSimuladoRankingPage(config.pages.showSimuladoRankingPage);
     }
   }, [config, isLoading]);
 
@@ -38,7 +44,10 @@ const PagesConfig = () => {
         showQuestionsPage,
         showExplorePage,
         showMyCoursesPage,
-        showQuestionBooksPage
+        showQuestionBooksPage,
+        showCommentRankingPage,
+        showQuestionRankingPage,
+        showSimuladoRankingPage
       };
       
       await updatePagesConfig(pagesConfig);
@@ -169,6 +178,57 @@ const PagesConfig = () => {
                 onCheckedChange={setShowQuestionBooksPage}
                 disabled={isSaving}
               />
+            </div>
+            
+            <div className="pt-4 border-t mt-4">
+              <h4 className="text-sm font-medium mb-3">Páginas de Rankings</h4>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="comment-ranking-page">Ranking de Comentários</Label>
+                    <p className="text-[#67748a] text-xs">
+                      Controla a visibilidade da página de ranking de comentários
+                    </p>
+                  </div>
+                  <Switch
+                    id="comment-ranking-page"
+                    checked={showCommentRankingPage}
+                    onCheckedChange={setShowCommentRankingPage}
+                    disabled={isSaving}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="question-ranking-page">Ranking de Questões</Label>
+                    <p className="text-[#67748a] text-xs">
+                      Controla a visibilidade da página de ranking de questões respondidas
+                    </p>
+                  </div>
+                  <Switch
+                    id="question-ranking-page"
+                    checked={showQuestionRankingPage}
+                    onCheckedChange={setShowQuestionRankingPage}
+                    disabled={isSaving}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="simulado-ranking-page">Ranking de Simulados</Label>
+                    <p className="text-[#67748a] text-xs">
+                      Controla a visibilidade da página de ranking de simulados
+                    </p>
+                  </div>
+                  <Switch
+                    id="simulado-ranking-page"
+                    checked={showSimuladoRankingPage}
+                    onCheckedChange={setShowSimuladoRankingPage}
+                    disabled={isSaving}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>

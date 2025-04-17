@@ -28,6 +28,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { useLocation } from "react-router-dom";
+import { useQuestionAttempts } from '@/hooks/useQuestionAttempts';
 
 // Declarar o tipo global
 declare global {
@@ -77,6 +79,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [isAdmin, setIsAdmin] = useState(false);
   const [isFixingMetadata, setIsFixingMetadata] = useState(false);
   const [loadedTopics, setLoadedTopics] = useState<string[]>([]);
+  
+  // Hook para registrar tentativas de questões
+  const { recordQuestionAttempt } = useQuestionAttempts();
+  
+  // Obter a localização atual para verificar se estamos na página de simulados
+  const location = useLocation();
+  const isSimuladoPage = location.pathname.includes('/simulado');
+  
+  // Verificar se os botões devem estar visíveis
+  const shouldShowButtons = !isSimuladoPage || hasAnswered;
 
   // Verificar se há conteúdo expansível
   const hasExpandableContent = Boolean(question.expandableContent);
@@ -228,9 +240,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           } = await supabase.from('respostas_alunos').select('*').eq('questao_id', question.id).eq('aluno_id', userId);
           if (respostaData && respostaData.length > 0) {
             setHasAnswered(true);
-
-            // Não selecionamos automaticamente nenhuma opção para permitir
-            // que o usuário responda novamente
+            
+            // Se estiver na página de simulado e já tiver respondido, mostrar a resposta automaticamente
+            if (isSimuladoPage) {
+              setShowAnswer(true);
+              
+              // Tentar selecionar a opção que o usuário escolheu anteriormente
+              if (respostaData[0].opcao_id) {
+                setSelectedOption(respostaData[0].opcao_id);
+              }
+            } else {
+              // Na página de questões, não mostrar a resposta automaticamente
+              setShowAnswer(false);
+            }
           } else {
             setHasAnswered(false);
           }
@@ -240,7 +262,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       }
     };
     checkUserAnswer();
-  }, [question.id, userId]);
+  }, [question.id, userId, isSimuladoPage]);
 
   // Obter o usuário atual
   useEffect(() => {
@@ -532,6 +554,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
   
   const handleAnswer = async () => {
+    // Se o usuário já respondeu na página de simulado, não permitir nova resposta
+    if (isSimuladoPage && hasAnswered) {
+      return;
+    }
+    
     if (selectedOption !== null) {
       // Verificar se a opção selecionada é a correta
       const correctOption = question.options.find(opt => opt.isCorrect);
@@ -539,6 +566,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
       try {
         setIsSubmittingAnswer(true);
+        
+        // Mostrar a resposta correta imediatamente após responder
+        setShowAnswer(true);
 
         // Atualizar o contador
         if (window.handleQuestionAnswer) {
@@ -600,13 +630,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             is_correct: isCorrect
           });
           
+          // Registrar tentativa na tabela user_question_attempts para o ranking
+          await recordQuestionAttempt(userId, question.id, isCorrect);
+          
           setHasAnswered(true);
-          setShowAnswer(true);
           toast.success("Resposta registrada com sucesso!");
         }
       } catch (error) {
         console.error("Erro ao registrar resposta:", error);
         toast.error("Erro ao registrar resposta. Tente novamente.");
+        // Em caso de erro, reverter a exibição da resposta
+        setShowAnswer(false);
       } finally {
         setIsSubmittingAnswer(false);
       }
@@ -1147,6 +1181,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             discipline={question.discipline || ""}
             topics={loadedTopics.length > 0 ? loadedTopics : (question.topics || [])}
             questionId={question.id}
+            hideInfo={isSimuladoPage && !hasAnswered}
           />
         </div>
       </div>
@@ -1189,18 +1224,33 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         <div className="mb-4 px-4 text-gray-700" dangerouslySetInnerHTML={{ __html: question.command }} />
       )}
 
-      {question.options.map((option, index) => <QuestionOption key={option.id} id={option.id} text={option.text} index={index} isDisabled={disabledOptions.includes(option.id)} isSelected={selectedOption === option.id} isCorrect={Boolean(option.isCorrect)} onToggleDisabled={handleToggleDisabled} onSelect={handleOptionClick} showAnswer={showAnswer} />)}
+      {question.options.map((option, index) => (
+        <QuestionOption 
+          key={option.id} 
+          id={option.id} 
+          text={option.text} 
+          index={index} 
+          isDisabled={disabledOptions.includes(option.id) || (isSimuladoPage && hasAnswered)} 
+          isSelected={selectedOption === option.id} 
+          isCorrect={Boolean(option.isCorrect)} 
+          onToggleDisabled={handleToggleDisabled} 
+          onSelect={handleOptionClick} 
+          showAnswer={showAnswer} 
+        />
+      ))}
 
-      <div className="flex justify-start px-4 mt-4 mb-4">
-        <Button
-          onClick={handleAnswer}
-          disabled={!selectedOption || isSubmittingAnswer}
-          variant="flat"
-          className={!selectedOption || isSubmittingAnswer ? "opacity-50" : ""}
-        >
-          {isSubmittingAnswer ? "Enviando..." : "Responder"}
-        </Button>
-      </div>
+      {(!isSimuladoPage || !hasAnswered) && (
+        <div className="flex justify-start px-4 mt-4 mb-4">
+          <Button
+            onClick={handleAnswer}
+            disabled={!selectedOption || isSubmittingAnswer}
+            variant="flat"
+            className={!selectedOption || isSubmittingAnswer ? "opacity-50" : ""}
+          >
+            {isSubmittingAnswer ? "Enviando..." : "Responder"}
+          </Button>
+        </div>
+      )}
 
       <QuestionFooter 
         commentsCount={commentsCount}
@@ -1213,94 +1263,65 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         hasTeacherExplanation={Boolean(question.teacherExplanation)}
         hasAIExplanation={Boolean(question.aiExplanation)}
         addToBookDialog={
-          <Dialog open={openAddToBook} onOpenChange={setOpenAddToBook}>
+          shouldShowButtons && <Dialog open={openAddToBook} onOpenChange={setOpenAddToBook}>
             <DialogTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-purple-500 hover:text-purple-600 hover:bg-purple-50"
-              >
-                <BookPlus className="h-4 w-4" />
-              </Button>
+              <button className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-full text-gray-600 hover:bg-gray-100 transition-colors">
+                <BookPlus className="w-4 h-4" />
+                <span>Salvar</span>
+              </button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Adicionar ao Caderno</DialogTitle>
+                <DialogTitle>Adicionar ao Caderno de Questões</DialogTitle>
                 <DialogDescription>
-                  Selecione um caderno para adicionar esta questão
+                  Escolha um caderno existente ou crie um novo.
                 </DialogDescription>
               </DialogHeader>
-              
-              <div className="space-y-4">
-                {loadingBooks ? (
-                  <div className="flex justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500" />
-                  </div>
-                ) : books.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500">Você ainda não tem nenhum caderno.</p>
-                    <Button
-                      variant="link"
-                      onClick={() => setCreatingBook(true)}
-                      className="mt-2"
-                    >
-                      Criar novo caderno
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">
-                        Caderno
-                      </label>
-                      <Select
-                        value={selectedBookId}
-                        onValueChange={setSelectedBookId}
-                      >
-                        <SelectTrigger>
+
+              <div className="flex flex-col gap-4 mt-4">
+                {!creatingBook && (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Caderno de Questões</label>
+                    <div className="flex gap-2">
+                      <Select value={selectedBookId} onValueChange={setSelectedBookId}>
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Selecione um caderno" />
                         </SelectTrigger>
                         <SelectContent>
-                          {books.map((book) => (
+                          {books.map(book => (
                             <SelectItem key={book.id} value={book.id}>
                               {book.nome}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setCreatingBook(true)}
+                      >
+                        Novo
+                      </Button>
                     </div>
-                    <Button
-                      variant="link"
-                      onClick={() => setCreatingBook(true)}
-                      className="px-0"
-                    >
-                      Ou criar novo caderno
-                    </Button>
-                  </>
+                    {loadingBooks && <p className="text-sm text-gray-500 mt-2">Carregando cadernos...</p>}
+                  </div>
                 )}
 
                 {creatingBook && (
-                  <div className="space-y-4 border-t pt-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">
-                        Nome do Novo Caderno
-                      </label>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Nome do Caderno</label>
                       <Input
-                        placeholder="Digite o nome do caderno"
                         value={newBookTitle}
-                        onChange={(e) => setNewBookTitle(e.target.value)}
+                        onChange={e => setNewBookTitle(e.target.value)}
+                        placeholder="Ex: Questões de Português"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">
-                        Tipo
-                      </label>
-                      <Select
-                        value={newBookType}
-                        onValueChange={(value: 'public' | 'private') => setNewBookType(value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
+                    
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Visibilidade</label>
+                      <Select value={newBookType} onValueChange={(value: 'public' | 'private') => setNewBookType(value)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Selecione a visibilidade" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="private">Privado</SelectItem>
@@ -1308,6 +1329,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                         </SelectContent>
                       </Select>
                     </div>
+
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="outline"
@@ -1341,9 +1363,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         isAdmin={isAdmin}
         isFixingMetadata={isFixingMetadata}
         onFixMetadata={isAdmin ? fixAllResponsesMetadata : undefined}
+        hideButtons={isSimuladoPage && !hasAnswered}
       />
 
-      {showOfficialAnswer && question.teacherExplanation && <section className="py-3 md:py-5 w-full border-t border-gray-100">
+      {showOfficialAnswer && question.teacherExplanation && shouldShowButtons && <section className="py-3 md:py-5 w-full border-t border-gray-100">
           <QuestionComment comment={{
         id: `teacher-${question.id}`,
         author: "Professor",
@@ -1354,7 +1377,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       }} isLiked={likedComments.includes(`teacher-${question.id}`)} onToggleLike={toggleLike} />
         </section>}
 
-      {showAIAnswer && question.aiExplanation && <section className="py-3 md:py-5 w-full border-t border-gray-100">
+      {showAIAnswer && question.aiExplanation && shouldShowButtons && <section className="py-3 md:py-5 w-full border-t border-gray-100">
           <QuestionComment comment={{
         id: `ai-${question.id}`,
         author: "BIA (BomEstudo IA)",
@@ -1366,7 +1389,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         </section>}
 
       {/* Seção de comentários */}
-      {showComments && (
+      {showComments && shouldShowButtons && (
         <section className="py-3 md:py-5 w-full border-t border-gray-100">
           <div>
             <h3 className="text-lg font-medium mb-4 px-5">Comentários ({commentsCount})</h3>

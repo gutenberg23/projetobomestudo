@@ -240,3 +240,35 @@ export const incrementCommentLikes = async (commentId: string): Promise<void> =>
 export const canModifyComment = (userId: string, commentUserId: string): boolean => {
   return userId === commentUserId;
 };
+
+// Adicionado para o Ranking de Comentários
+export interface CommentRankingUser {
+  user_id: string;
+  display_name: string | null; // Nome pode ser nulo
+  avatar_url: string | null;   // Avatar pode ser nulo
+  comment_count: number;
+  total_likes: number;
+}
+
+/**
+ * Busca o ranking de usuários por comentários e likes
+ */
+export const fetchCommentRanking = async (): Promise<CommentRankingUser[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_comment_ranking');
+
+    if (error) {
+      console.error('Erro ao buscar ranking de comentários:', error);
+      // Considerar retornar um array vazio ou lançar o erro dependendo da necessidade
+      return [];
+    }
+
+    // O Supabase pode retornar `null` se a função não retornar linhas.
+    // A RPC retorna as colunas como definidas na função SQL, então podemos tipar diretamente.
+    return (data as CommentRankingUser[] | null) || [];
+
+  } catch (error) {
+    console.error('Exceção ao buscar ranking de comentários:', error);
+    return []; // Retornar array vazio em caso de exceção
+  }
+};

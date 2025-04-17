@@ -21,6 +21,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Trophy } from "lucide-react";
 import { ActivityLogger } from "@/services/activity-logger";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSiteConfig } from "@/hooks/useSiteConfig";
 
 // Opções de exibição de questões
 type DisplayOption = "single" | "ten" | "all";
@@ -51,6 +53,8 @@ const Simulado = () => {
   
   const [searchParams] = useSearchParams();
   const { isAdmin } = usePermissions();
+  const { user } = useAuth();
+  const { config } = useSiteConfig();
   
   // Calcular o número de páginas com base na opção de exibição
   const getPageCount = () => {
@@ -495,6 +499,11 @@ const Simulado = () => {
   // Verificar se o usuário pode ver o botão de ranking
   const canViewRanking = rankingIsPublic || isAdmin();
 
+  // Botão de Ranking deve ser mostrado apenas se:
+  // 1. O usuário puder ver o ranking (admin ou ranking público)
+  // 2. A configuração showSimuladoRankingPage estiver habilitada
+  const showRankingButton = canViewRanking && config.pages.showSimuladoRankingPage;
+
   const pageCount = getPageCount();
   const displayedQuestions = getDisplayedQuestions();
   
@@ -549,7 +558,7 @@ const Simulado = () => {
               </div>
 
               {/* Botão de Ranking */}
-              {canViewRanking && (
+              {showRankingButton && (
                 <div className="mt-4">
                   <Link to={`/simulado-ranking/${simuladoId}`}>
                     <Button 

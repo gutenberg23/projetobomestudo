@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 
 const VisualizacaoConfig = () => {
-  const { config, isLoading, updateVisualConfig, hasTableError } = useSiteConfig();
+  const { config, isLoading, updateVisualConfig, hasTableError, updatePagesConfig } = useSiteConfig();
   const [primaryColor, setPrimaryColor] = useState(config.visual.primaryColor);
   const [secondaryColor, setSecondaryColor] = useState(config.visual.secondaryColor);
   const [accentColor, setAccentColor] = useState(config.visual.accentColor);

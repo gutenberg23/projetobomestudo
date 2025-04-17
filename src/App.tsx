@@ -59,6 +59,9 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import Concursos from "./pages/Concursos";
 import ConcursosAdmin from "./pages/admin/Concursos";
 import ConcursoDetalhes from "./pages/ConcursoDetalhes";
+import RankingComentarios from "./pages/RankingComentarios";
+import RankingQuestoes from "./pages/RankingQuestoes";
+import UpdateRankingFunction from "./pages/admin/UpdateRankingFunction";
 
 // Componente para aplicar as configurações de estilo
 const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
@@ -211,6 +214,7 @@ export default function App() {
                             <Route path="concursos" element={<ConcursosAdmin />} />
                             <Route path="professores" element={<Professores />} />
                             <Route path="configuracoes" element={<ConfiguracoesSite />} />
+                            <Route path="update-ranking-function" element={<UpdateRankingFunction />} />
                           </Route>
                         </Routes>
                       </AdminGuard>
@@ -219,6 +223,16 @@ export default function App() {
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="/simulado/:simuladoId" element={<Simulado />} />
                     <Route path="/simulado-ranking/:simuladoId" element={<SimuladoRankingPage />} />
+                    <Route path="/ranking-comentarios" element={
+                      <ConfigGuard configKey="showQuestionsPage">
+                        <RankingComentarios />
+                      </ConfigGuard>
+                    } />
+                    <Route path="/ranking-questoes" element={
+                      <ConfigGuard configKey="showQuestionsPage">
+                        <RankingQuestoes />
+                      </ConfigGuard>
+                    } />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster />

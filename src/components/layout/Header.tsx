@@ -1,4 +1,4 @@
-import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book, BarChart, Search } from "lucide-react";
+import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book, BarChart, Search, Award, ChevronDown } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -70,6 +70,27 @@ export const Header = () => {
               <Book className="w-4 h-4" />
               <span>Cadernos</span>
             </Link>
+          )}
+          {config.pages.showQuestionsPage && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className={getLinkClasses("/ranking")}>
+                  <Award className="w-4 h-4" />
+                  <span>Rankings</span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-0">
+                <div className="flex flex-col">
+                  <Link to="/ranking-comentarios" className="px-4 py-2 text-sm hover:bg-slate-50 hover:text-[#5f2ebe]">
+                    Ranking de Comentários
+                  </Link>
+                  <Link to="/ranking-questoes" className="px-4 py-2 text-sm hover:bg-slate-50 hover:text-[#5f2ebe]">
+                    Ranking de Questões
+                  </Link>
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
           {config.pages.showExplorePage && (
             <Link to="/explore" className={getLinkClasses("/explore")}>
@@ -154,6 +175,18 @@ export const Header = () => {
                     <Link to="/questions" className={getMobileLinkClasses("/questions")}>
                       <FileText className="w-4 h-4" />
                       Questões
+                    </Link>
+                  )}
+                  {config.pages.showQuestionsPage && (
+                    <Link to="/ranking-comentarios" className={getMobileLinkClasses("/ranking-comentarios")}>
+                      <Award className="w-4 h-4" />
+                      Ranking de Comentários
+                    </Link>
+                  )}
+                  {config.pages.showQuestionsPage && (
+                    <Link to="/ranking-questoes" className={getMobileLinkClasses("/ranking-questoes")}>
+                      <Award className="w-4 h-4" />
+                      Ranking de Questões
                     </Link>
                   )}
                   {config.pages.showExplorePage && (

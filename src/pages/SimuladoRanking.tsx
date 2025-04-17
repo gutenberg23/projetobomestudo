@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { SimuladoRanking } from "@/components/simulado/SimuladoRanking";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
+import { useSiteConfig } from "@/hooks/useSiteConfig";
 
 interface SimuladoData {
   id: string;
@@ -18,6 +19,15 @@ const SimuladoRankingPage = () => {
   const { simuladoId } = useParams<{ simuladoId: string }>();
   const [simulado, setSimulado] = useState<SimuladoData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { config } = useSiteConfig();
+  const navigate = useNavigate();
+
+  // Verificar se a página de ranking de simulados está habilitada
+  useEffect(() => {
+    if (!config.pages.showSimuladoRankingPage) {
+      navigate("/404");
+    }
+  }, [config.pages.showSimuladoRankingPage, navigate]);
 
   useEffect(() => {
     const fetchSimulado = async () => {

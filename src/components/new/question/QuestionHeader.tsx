@@ -18,7 +18,8 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
   role,
   discipline,
   topics = [],
-  questionId
+  questionId,
+  hideInfo = false
 }) => {
   const [statsOpen, setStatsOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -83,89 +84,91 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
         </div>
       </div>
 
-      <div className="flex gap-2 items-center">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <Popover open={infoOpen} onOpenChange={setInfoOpen}>
-                  <PopoverTrigger asChild>
-                    <button className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors">
-                      <Info className="h-4 w-4 text-white" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-3">
-                    <div className="space-y-2">
-                      <h4 className="font-medium text-sm">Informações da Questão</h4>
-                      <div className="text-xs space-y-1.5">
-                        <div className="sm:hidden">
-                          <span className="font-medium">Assunto:</span> {Array.isArray(topics) && topics.length > 0 ? topics.join(", ") : "Não informado"}
-                        </div>
-                        <div>
-                          <span className="font-medium">ID:</span> {questionId || "Não informado"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Ano:</span> {year || "Não informado"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Banca:</span> {institution || "Não informado"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Órgão:</span> {organization || "Não informado"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Prova:</span> {role || "Não informado"}
+      {!hideInfo && (
+        <div className="flex gap-2 items-center">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Popover open={infoOpen} onOpenChange={setInfoOpen}>
+                    <PopoverTrigger asChild>
+                      <button className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors">
+                        <Info className="h-4 w-4 text-white" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-3">
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">Informações da Questão</h4>
+                        <div className="text-xs space-y-1.5">
+                          <div className="sm:hidden">
+                            <span className="font-medium">Assunto:</span> {Array.isArray(topics) && topics.length > 0 ? topics.join(", ") : "Não informado"}
+                          </div>
+                          <div>
+                            <span className="font-medium">ID:</span> {questionId || "Não informado"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Ano:</span> {year || "Não informado"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Banca:</span> {institution || "Não informado"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Órgão:</span> {organization || "Não informado"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Prova:</span> {role || "Não informado"}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Informações da Questão</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Informações da Questão</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <Popover open={statsOpen} onOpenChange={setStatsOpen}>
-                  <PopoverTrigger asChild>
-                    <button className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors">
-                      <BarChart className="h-4 w-4 text-white" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0">
-                    <QuestionStats questionId={questionId} />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Estatísticas da Questão</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Popover open={statsOpen} onOpenChange={setStatsOpen}>
+                    <PopoverTrigger asChild>
+                      <button className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors">
+                        <BarChart className="h-4 w-4 text-white" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0">
+                      <QuestionStats questionId={questionId} />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Estatísticas da Questão</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors"
-                onClick={() => setReportDialogOpen(true)}
-              >
-                <AlertTriangle className="h-4 w-4 text-white" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Reportar erro na questão</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  className="p-1 hover:bg-[#3a4253] rounded-full focus:outline-none transition-colors"
+                  onClick={() => setReportDialogOpen(true)}
+                >
+                  <AlertTriangle className="h-4 w-4 text-white" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Reportar erro na questão</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
 
       <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
         <DialogContent>

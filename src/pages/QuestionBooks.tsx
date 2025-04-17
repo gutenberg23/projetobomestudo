@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Book, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Book, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -42,6 +42,7 @@ interface QuestionBook {
   answered_questions: number;
   correct_answers: number;
   wrong_answers: number;
+  is_favorite?: boolean;
 }
 
 export default function QuestionBooks() {
@@ -55,13 +56,38 @@ export default function QuestionBooks() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [publicCurrentPage, setPublicCurrentPage] = useState(1);
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const itemsPerPage = 10;
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchBooks();
     fetchPublicBooks();
+    fetchFavorites();
   }, []);
+
+  const fetchFavorites = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('cadernos_favoritos')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      if (data && data.cadernos_favoritos) {
+        setFavoriteIds(data.cadernos_favoritos);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar favoritos:', error);
+    }
+  };
 
   const fetchBooks = async () => {
     try {
@@ -99,16 +125,40 @@ export default function QuestionBooks() {
 
       if (error) throw error;
 
-      setPublicBooks(data || []);
+      // Marcar cadernos favoritos
+      const booksWithFavorites = (data || []).map(book => ({
+        ...book,
+        is_favorite: favoriteIds.includes(book.id)
+      }));
+
+      setPublicBooks(booksWithFavorites);
     } catch (error) {
       console.error('Erro ao buscar cadernos públicos:', error);
       toast.error('Erro ao carregar os cadernos públicos');
     }
   };
 
+  useEffect(() => {
+    // Atualizar flag de favorito quando favoriteIds mudar
+    setPublicBooks(prevBooks => 
+      prevBooks.map(book => ({
+        ...book,
+        is_favorite: favoriteIds.includes(book.id)
+      }))
+    );
+  }, [favoriteIds]);
+
   const filteredPublicBooks = publicBooks.filter(book => 
-    book.nome.toLowerCase().includes(searchQuery.toLowerCase())
+    book.nome.toLowerCase().includes(searchQuery.toLowerCase()) && 
+    (!showOnlyFavorites || book.is_favorite)
   );
+
+  // Ordenar para mostrar favoritos no topo
+  const sortedPublicBooks = [...filteredPublicBooks].sort((a, b) => {
+    if (a.is_favorite && !b.is_favorite) return -1;
+    if (!a.is_favorite && b.is_favorite) return 1;
+    return 0;
+  });
 
   // Cálculos para paginação dos meus cadernos
   const totalPages = Math.ceil(books.length / itemsPerPage);
@@ -117,10 +167,10 @@ export default function QuestionBooks() {
   const currentBooks = books.slice(startIndex, endIndex);
 
   // Cálculos para paginação dos cadernos públicos
-  const totalPublicPages = Math.ceil(filteredPublicBooks.length / itemsPerPage);
+  const totalPublicPages = Math.ceil(sortedPublicBooks.length / itemsPerPage);
   const publicStartIndex = (publicCurrentPage - 1) * itemsPerPage;
   const publicEndIndex = publicStartIndex + itemsPerPage;
-  const currentPublicBooks = filteredPublicBooks.slice(publicStartIndex, publicEndIndex);
+  const currentPublicBooks = sortedPublicBooks.slice(publicStartIndex, publicEndIndex);
 
   const PaginationControls = ({ 
     currentPage, 
@@ -278,80 +328,120 @@ export default function QuestionBooks() {
     setOpen(true);
   };
 
-  return (
-    <div className="flex flex-col min-h-screen bg-[rgb(242,244,246)]">
-      <Header />
-      <main className="flex-grow py-8 px-4 container mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Meus cadernos</h1>
+  const handleToggleFavorite = async (book: QuestionBook) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Você precisa estar logado para favoritar um caderno');
+        return;
+      }
 
-          <Dialog open={open} onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setEditingBook(null);
-              setNewBookTitle('');
-              setNewBookType('private');
-            }
-            setOpen(isOpen);
-          }}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {editingBook ? 'Editar Caderno' : 'Criar Novo Caderno'}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingBook 
-                    ? 'Edite as informações do seu caderno.'
-                    : 'Crie um novo caderno para organizar suas questões.'
-                  }
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="title" className="text-sm font-medium text-gray-700">
-                    Título
-                  </label>
-                  <Input
-                    id="title"
-                    placeholder="Digite o título do caderno"
-                    value={newBookTitle}
-                    onChange={(e) => setNewBookTitle(e.target.value)}
-                  />
+      const isCurrentlyFavorite = favoriteIds.includes(book.id);
+      let newFavoriteIds: string[];
+      
+      if (isCurrentlyFavorite) {
+        // Remover dos favoritos
+        newFavoriteIds = favoriteIds.filter(id => id !== book.id);
+      } else {
+        // Adicionar aos favoritos
+        newFavoriteIds = [...favoriteIds, book.id];
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          cadernos_favoritos: newFavoriteIds
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setFavoriteIds(newFavoriteIds);
+      toast.success(isCurrentlyFavorite 
+        ? 'Caderno removido dos favoritos' 
+        : 'Caderno adicionado aos favoritos');
+    } catch (error) {
+      console.error('Erro ao atualizar favoritos:', error);
+      toast.error('Erro ao atualizar favoritos');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-[#272f3c]">
+      <Header />
+      <main className="container mx-auto py-10 px-4 sm:px-6 lg:px-8 max-w-screen-xl">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl">Meus cadernos</h1>
+          <div>
+            <Dialog open={open} onOpenChange={(isOpen) => {
+              if (!isOpen) {
+                setEditingBook(null);
+                setNewBookTitle('');
+                setNewBookType('private');
+              }
+              setOpen(isOpen);
+            }}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Novo
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingBook ? 'Editar Caderno' : 'Criar Novo Caderno'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingBook 
+                      ? 'Edite as informações do seu caderno.'
+                      : 'Crie um novo caderno para organizar suas questões.'
+                    }
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="title" className="text-sm font-medium text-gray-700">
+                      Título
+                    </label>
+                    <Input
+                      id="title"
+                      placeholder="Digite o título do caderno"
+                      value={newBookTitle}
+                      onChange={(e) => setNewBookTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="type" className="text-sm font-medium text-gray-700">
+                      Tipo
+                    </label>
+                    <Select
+                      value={newBookType}
+                      onValueChange={(value: 'public' | 'private') => setNewBookType(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="private">Privado</SelectItem>
+                        <SelectItem value="public">Público</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button onClick={editingBook ? handleEditBook : handleCreateBook}>
+                      {editingBook ? 'Salvar Alterações' : 'Criar Caderno'}
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="type" className="text-sm font-medium text-gray-700">
-                    Tipo
-                  </label>
-                  <Select
-                    value={newBookType}
-                    onValueChange={(value: 'public' | 'private') => setNewBookType(value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="private">Privado</SelectItem>
-                      <SelectItem value="public">Público</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex justify-end">
-                  <Button onClick={editingBook ? handleEditBook : handleCreateBook}>
-                    {editingBook ? 'Salvar Alterações' : 'Criar Caderno'}
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border">
+        <div className="bg-white rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
@@ -450,9 +540,25 @@ export default function QuestionBooks() {
         </div>
 
         <div className="mt-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Cadernos públicos</h2>
-            <div className="w-1/3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <h2 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl">Cadernos públicos</h2>
+              
+              <div className="flex items-center gap-2">
+                <label htmlFor="showFavorites" className="text-sm font-medium text-gray-700 cursor-pointer flex items-center gap-1">
+                  <input
+                    id="showFavorites"
+                    type="checkbox"
+                    checked={showOnlyFavorites}
+                    onChange={(e) => setShowOnlyFavorites(e.target.checked)}
+                    className="rounded text-purple-600 focus:ring-purple-500"
+                  />
+                  <Heart className="h-4 w-4 text-[#5f2ebe]" />
+                  Apenas favoritos
+                </label>
+              </div>
+            </div>
+            <div className="w-full md:w-1/3">
               <Input
                 placeholder="Pesquisar cadernos públicos..."
                 value={searchQuery}
@@ -462,7 +568,7 @@ export default function QuestionBooks() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border">
+          <div className="bg-white rounded-lg">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -473,47 +579,79 @@ export default function QuestionBooks() {
                   <TableHead>Acertos</TableHead>
                   <TableHead>Erros</TableHead>
                   <TableHead>Aproveitamento</TableHead>
+                  <TableHead>Favorito</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4">
+                    <TableCell colSpan={8} className="text-center py-4">
                       Carregando...
                     </TableCell>
                   </TableRow>
-                ) : filteredPublicBooks.length === 0 ? (
+                ) : sortedPublicBooks.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-4">
+                    <TableCell colSpan={8} className="text-center py-4">
                       Nenhum caderno público encontrado
                     </TableCell>
                   </TableRow>
                 ) : (
-                  currentPublicBooks.map((book) => (
-                    <TableRow
-                      key={book.id}
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => navigate(`/cadernos/${book.id}`)}
-                    >
-                      <TableCell>{book.nome}</TableCell>
-                      <TableCell>
-                        {new Date(book.created_at).toLocaleDateString('pt-BR')}
-                      </TableCell>
-                      <TableCell>{book.total_questions}</TableCell>
-                      <TableCell>{book.answered_questions}</TableCell>
-                      <TableCell>{book.correct_answers}</TableCell>
-                      <TableCell>{book.wrong_answers}</TableCell>
-                      <TableCell>
-                        <span className={`text-${book.correct_answers === 0 ? 'gray' : book.correct_answers / book.answered_questions >= 0.7 ? 'green' : 'red'}-500`}>
-                          {book.answered_questions === 0 ? '0.0%' : ((book.correct_answers / book.answered_questions) * 100).toFixed(1) + '%'}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  currentPublicBooks.map((book) => {
+                    const aproveitamento = book.answered_questions > 0
+                      ? ((book.correct_answers / book.answered_questions) * 100).toFixed(1)
+                      : '0.0';
+                      
+                    return (
+                      <TableRow
+                        key={book.id}
+                        className={`hover:bg-gray-50 ${book.is_favorite ? 'bg-purple-50' : ''}`}
+                      >
+                        <TableCell>
+                          <button
+                            onClick={() => navigate(`/cadernos/${book.id}`)}
+                            className="font-medium text-purple-600 hover:text-purple-800 transition-colors"
+                          >
+                            {book.nome}
+                          </button>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(book.created_at).toLocaleDateString('pt-BR')}
+                        </TableCell>
+                        <TableCell className="text-center">{book.total_questions}</TableCell>
+                        <TableCell className="text-center">{book.answered_questions}</TableCell>
+                        <TableCell className="text-center">{book.correct_answers}</TableCell>
+                        <TableCell className="text-center">{book.wrong_answers}</TableCell>
+                        <TableCell className="text-center">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            Number(aproveitamento) >= 70
+                              ? 'bg-green-100 text-green-800'
+                              : Number(aproveitamento) >= 50
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {aproveitamento}%
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleFavorite(book);
+                            }}
+                            className={`${book.is_favorite ? 'text-[#5f2ebe]' : 'text-gray-400'} hover:text-[#5f2ebe]`}
+                          >
+                            <Heart className="h-5 w-5" fill={book.is_favorite ? "currentColor" : "none"} />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
-            {filteredPublicBooks.length > 0 && (
+            {sortedPublicBooks.length > 0 && (
               <PaginationControls
                 currentPage={publicCurrentPage}
                 totalPages={totalPublicPages}

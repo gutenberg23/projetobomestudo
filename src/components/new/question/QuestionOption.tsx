@@ -33,22 +33,26 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
         text: ""
       };
     }
-    if (isCorrect && !isDisabled) {
+    
+    // Quando a resposta está sendo mostrada
+    if (isCorrect) {
       return {
         container: "border-[#40CE5A] bg-[#EDFFF0]",
         letter: "text-white bg-[#40CE5A] border-[#40CE5A]",
         background: "",
-        text: ""
+        text: "font-medium"
       };
     }
+    
     if (isSelected && !isCorrect) {
       return {
-        container: "border-[#F4E8F0] bg-[#FBF8FA]",
-        letter: "text-[#BEB5BB] bg-[#FBF8FA] border-[#E5D7E1]",
+        container: "border-[#FF5A5A] bg-[#FFF0F0]",
+        letter: "text-white bg-[#FF5A5A] border-[#FF5A5A]",
         background: "",
-        text: "line-through decoration-[#E5D7E1] decoration-2"
+        text: "line-through decoration-[#FF5A5A] decoration-1"
       };
     }
+    
     return {
       container: "border-[#F4E8F0] bg-[#FBF8FA]",
       letter: "text-[#BEB5BB] bg-[#FBF8FA] border-[#E5D7E1]",
@@ -64,14 +68,15 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
       <button 
         onClick={e => onToggleDisabled(id, e)} 
         className="flex gap-5 justify-center items-center self-stretch rounded-xl min-h-[30px] w-[30px] hover:bg-slate-50"
+        disabled={showAnswer}
       >
         <X className={`w-4 h-4 ${isDisabled ? "text-red-500" : "text-slate-400"}`} />
       </button>
       
       <button 
         onClick={() => onSelect(id)} 
-        className={`flex flex-1 gap-4 items-center self-stretch p-3 text-base max-sm:text-sm whitespace-normal rounded-xl border border-solid ${styles.container} ${styles.background} ${isDisabled ? "opacity-50 line-through" : ""}`} 
-        disabled={isDisabled}
+        className={`flex flex-1 gap-4 items-center self-stretch p-3 text-base max-sm:text-sm whitespace-normal rounded-xl border border-solid ${styles.container} ${styles.background} ${isDisabled && !showAnswer ? "opacity-50 line-through" : ""}`} 
+        disabled={isDisabled || showAnswer}
       >
         <span className={`gap-2.5 self-stretch font-bold text-center rounded border border-solid min-h-[30px] w-[30px] flex items-center justify-center ${styles.letter}`}>
           {String.fromCharCode(65 + index)}

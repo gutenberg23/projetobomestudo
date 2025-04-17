@@ -81,6 +81,7 @@ export interface QuestionHeaderProps {
   discipline?: string;
   topics?: string[];
   questionId: string;
+  hideInfo?: boolean;
 }
 
 export interface QuestionBook {
