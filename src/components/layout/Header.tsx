@@ -122,9 +122,9 @@ export const Header = () => {
                       <AvatarImage src={user.foto_perfil || "https://github.com/shadcn.png"} />
                       <AvatarFallback>{user.nome ? user.nome.substring(0, 2).toUpperCase() : "US"}</AvatarFallback>
                     </Avatar>
-                    <div>
-                      <p className="font-medium text-gray-900">{user.nome || "Usuário"}</p>
-                      <p className="text-sm text-gray-500">{user.email}</p>
+                    <div className="overflow-hidden">
+                      <p className="font-medium text-gray-900 truncate">{user.nome || "Usuário"}</p>
+                      <p className="text-sm text-gray-500 truncate">{user.email}</p>
                     </div>
                   </div>
                 </div> : null}

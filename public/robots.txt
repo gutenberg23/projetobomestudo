@@ -5,4 +5,4 @@ Disallow: /dashboard/
 Disallow: */admin/*
 
 # Sitemap
-Sitemap: https://seusite.com.br/sitemap.xml 
+Sitemap: https://bomestudo.com.br/sitemap.xml 
