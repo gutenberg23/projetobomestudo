@@ -15,9 +15,11 @@ export interface Question {
   educationLevel?: string;
   discipline?: string;
   topics?: string[];
+  assunto?: string;
   expandableContent?: string;
   teacherExplanation?: string;
   aiExplanation?: string;
+  questionType?: string;
   comments: Array<{
     id: string;
     author: string;
@@ -80,6 +82,7 @@ export interface QuestionHeaderProps {
   educationLevel?: string;
   discipline?: string;
   topics?: string[];
+  assunto?: string;
   questionId: string;
   hideInfo?: boolean;
 }

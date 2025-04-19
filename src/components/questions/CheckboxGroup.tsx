@@ -1,185 +1,179 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { CheckIcon, ChevronDownIcon, Search, Edit, Trash, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import React, { useState, useEffect, useMemo, ChangeEvent } from "react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, Search, Edit, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
-interface CheckboxGroupProps {
-  title: string;
+export interface CheckboxGroupProps {
+  title?: string;
   options: string[];
   selectedValues: string[];
+  placeholder?: string;
   onChange: (value: string, checked: boolean) => void;
-  handleEditOption?: (oldValue: string) => void;
+  handleEditOption?: (value: string) => void;
   handleDeleteOption?: (value: string) => void;
   openAddDialog?: () => void;
-  placeholder?: string;
 }
 
-export const CheckboxGroup: React.FC<CheckboxGroupProps> = ({
-  title,
-  options,
-  selectedValues,
+export function CheckboxGroup({
+  title = '',
+  options = [],
+  selectedValues = [],
+  placeholder = 'Filtrar opções...',
   onChange,
   handleEditOption,
   handleDeleteOption,
   openAddDialog,
-  placeholder = "Selecione os itens"
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredOptions, setFilteredOptions] = useState<string[]>([]);
-  const [selectedOption, setSelectedOption] = useState<string>('');
-
-  const toggleDropdown = () => setIsOpen(!isOpen);
-  const closeDropdown = () => setIsOpen(false);
-
-  // Memoize sortedOptions para evitar recriação a cada renderização
-  const sortedOptions = useMemo(() => {
-    return [...options].sort((a, b) => a.localeCompare(b));
-  }, [options]);
-
-  // Filtrar opções quando o termo de busca ou sortedOptions mudar
-  useEffect(() => {
-    if (searchTerm.trim() === '') {
-      setFilteredOptions(sortedOptions);
-    } else {
-      const filtered = sortedOptions.filter(option => 
-        option.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredOptions(filtered);
+}: CheckboxGroupProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Garantir que options e selectedValues sejam arrays
+  const safeOptions = Array.isArray(options) ? options : [];
+  const safeSelectedValues = Array.isArray(selectedValues) ? selectedValues : [];
+  
+  // Filtra as opções com base na consulta de pesquisa
+  const filteredOptions = useMemo(() => {
+    // Se não houver consulta, retorna todas as opções que não estejam selecionadas
+    if (!searchQuery) {
+      return safeOptions.filter(option => !safeSelectedValues.includes(option));
     }
-  }, [searchTerm, sortedOptions]);
+    
+    // Filtrar baseado na consulta e excluir itens já selecionados
+    const query = searchQuery.toLowerCase();
+    return safeOptions.filter(
+      option => 
+        option.toLowerCase().includes(query) && 
+        !safeSelectedValues.includes(option)
+    );
+  }, [searchQuery, safeOptions, safeSelectedValues]);
 
-  // Inicializar as opções filtradas quando o componente montar
-  useEffect(() => {
-    setFilteredOptions(sortedOptions);
-  }, []); // Executa apenas na montagem do componente
-
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+  
+  // Remover item selecionado
+  const handleRemoveSelected = (value: string) => {
+    onChange(value, false);
+  };
+  
   return (
-    <div className="flex flex-col gap-2">
-      {title && <div className="font-medium text-sm">{title}</div>}
+    <div className="space-y-4">
+      {title && <h3 className="text-sm font-medium">{title}</h3>}
       
-      <div className="relative w-full">
-        <Button
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={isOpen}
-          className="w-full justify-between"
-          onClick={toggleDropdown}
-        >
-          <span className="truncate">
-            {selectedValues.length > 0 
-              ? `${selectedValues.length} ${selectedValues.length === 1 ? 'item selecionado' : 'itens selecionados'}`
-              : placeholder}
-          </span>
-          <ChevronDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-        
-        {isOpen && (
-          <>
-            <div 
-              className="fixed inset-0 z-10" 
-              onClick={closeDropdown}
-            />
-            <div 
-              className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-white py-1 shadow-lg"
-            >
-              <div className="p-2">
-                <div className="relative mb-2">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
-                </div>
-                
-                {filteredOptions.length > 0 ? (
-                  <div className="space-y-1">
-                    {filteredOptions.map((option) => (
-                      <div 
-                        key={option} 
-                        className={cn(
-                          "flex items-center space-x-2 p-2 rounded-md hover:bg-gray-100",
-                          selectedOption === option && "bg-gray-100"
-                        )}
-                        onClick={() => {
-                          const isSelected = selectedValues.includes(option);
-                          onChange(option, !isSelected);
-                          setSelectedOption(option);
-                        }}
-                      >
-                        <div
-                          className={cn(
-                            "h-4 w-4 rounded border flex items-center justify-center",
-                            selectedValues.includes(option)
-                              ? "bg-[#5f2ebe] border-[#5f2ebe]"
-                              : "border-gray-300"
-                          )}
-                        >
-                          {selectedValues.includes(option) && (
-                            <CheckIcon className="h-3 w-3 text-white" />
-                          )}
-                        </div>
-                        <label
-                          className="text-sm font-medium text-[#67748a] cursor-pointer"
-                        >
-                          {option}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-gray-500 p-2">
-                    Nenhuma opção encontrada
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
+      {/* Campo de pesquisa */}
+      <div className="relative">
+        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder={placeholder}
+          className="pl-8 h-9"
+          value={searchQuery}
+          onChange={handleSearchChange}
+        />
       </div>
-
-      {(handleEditOption || handleDeleteOption || openAddDialog) && (
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => selectedOption && handleEditOption?.(selectedOption)}
-            disabled={!selectedOption || !handleEditOption}
-            title="Editar"
-            type="button"
-            className="h-8 w-8 p-0"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="icon"
-            onClick={() => selectedOption && handleDeleteOption?.(selectedOption)}
-            disabled={!selectedOption || !handleDeleteOption}
-            title="Excluir"
-            type="button"
-            className="h-8 w-8 p-0"
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-          {openAddDialog && (
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={openAddDialog}
-              title="Adicionar"
-              type="button"
-              className="h-8 w-8 p-0"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          )}
+      
+      {/* Exibir itens selecionados */}
+      {safeSelectedValues.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2">
+          {safeSelectedValues.map((value) => (
+            <Badge key={value} variant="secondary" className="flex items-center gap-1">
+              {value}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-4 w-4 p-0 text-muted-foreground hover:text-foreground"
+                onClick={() => handleRemoveSelected(value)}
+              >
+                <span className="sr-only">Remover {value}</span>
+                ×
+              </Button>
+            </Badge>
+          ))}
         </div>
       )}
+      
+      {/* Filtro */}
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder={placeholder}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="h-8"
+        />
+        
+        {openAddDialog && (
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="h-8"
+            onClick={openAddDialog}
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
+            Adicionar
+          </Button>
+        )}
+      </div>
+      
+      {/* Lista de opções */}
+      <div className="border rounded-md">
+        <ScrollArea className="h-[200px]">
+          {filteredOptions.length === 0 ? (
+            <div className="p-4 text-sm text-muted-foreground text-center">
+              Nenhuma opção encontrada
+            </div>
+          ) : (
+            <div className="p-2">
+              {filteredOptions.map((option) => (
+                <div key={option} className="flex items-center justify-between py-1 px-2 hover:bg-muted rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={`option-${option}`}
+                      checked={safeSelectedValues.includes(option)}
+                      onCheckedChange={(checked) => onChange(option, checked === true)}
+                    />
+                    <Label 
+                      htmlFor={`option-${option}`}
+                      className="text-sm cursor-pointer"
+                    >
+                      {option}
+                    </Label>
+                  </div>
+                  
+                  {/* Botões de editar e excluir */}
+                  {(handleEditOption || handleDeleteOption) && (
+                    <div className="flex items-center gap-1">
+                      {handleEditOption && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEditOption(option)}
+                        >
+                          <Edit className="h-3 w-3" />
+                          <span className="sr-only">Editar {option}</span>
+                        </Button>
+                      )}
+                      
+                      {handleDeleteOption && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeleteOption(option)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          <span className="sr-only">Excluir {option}</span>
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </div>
     </div>
   );
-};
+}

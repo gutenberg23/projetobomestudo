@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useQuestionManagementStore } from '@/stores/questionManagementStore';
 import SelectField from "./SelectField";
 import AssuntosField from "./AssuntosField";
+import TopicosFieldWrapper from "./TopicosFieldWrapper";
 import { useSelectFieldState } from "./useSelectFieldState";
 import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
 import AddValueDialog from "./AddValueDialog";
@@ -11,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isEqual } from 'lodash';
 
 interface QuestionMetadataFieldsProps {
   institution: string;
@@ -29,6 +31,8 @@ interface QuestionMetadataFieldsProps {
   setDifficulty: (value: string) => void;
   questionType: string;
   setQuestionType: (value: string) => void;
+  assuntos: string[];
+  setAssuntos: (value: string[]) => void;
   topicos: string[];
   setTopicos: (value: string[]) => void;
   showValidation?: boolean;
@@ -51,11 +55,66 @@ export const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
   setDifficulty,
   questionType,
   setQuestionType,
+  assuntos,
+  setAssuntos,
   topicos,
   setTopicos,
   showValidation = false,
 }) => {
   const dropdownData = useQuestionManagementStore((state) => state.dropdownData);
+  
+  // Criar estados locais de backup para quando as props não funcionarem
+  const [localAssuntos, setLocalAssuntos] = React.useState<string[]>(Array.isArray(assuntos) ? assuntos : []);
+  const [localTopicos, setLocalTopicos] = React.useState<string[]>(Array.isArray(topicos) ? topicos : []);
+  
+  // Referências para evitar atualizações desnecessárias
+  const lastAssuntosRef = useRef<string[]>(Array.isArray(assuntos) ? [...assuntos] : []);
+  const lastTopicosRef = useRef<string[]>(topicos || []);
+  
+  // Sincronizar estados locais com props quando elas mudarem
+  React.useEffect(() => {
+    if (Array.isArray(assuntos) && !isEqual(assuntos, lastAssuntosRef.current)) {
+      lastAssuntosRef.current = [...assuntos];
+      setLocalAssuntos(assuntos);
+    }
+  }, [assuntos]);
+  
+  React.useEffect(() => {
+    if (Array.isArray(topicos) && !isEqual(topicos, lastTopicosRef.current)) {
+      lastTopicosRef.current = [...topicos];
+      setLocalTopicos(topicos);
+    }
+  }, [topicos]);
+  
+  // Funções seguras para atualizar os estados
+  const safeSetAssuntos = React.useCallback((newAssuntos: string[]) => {
+    // Verificar se realmente houve mudança para evitar atualizações desnecessárias
+    if (!isEqual(newAssuntos, lastAssuntosRef.current)) {
+      lastAssuntosRef.current = [...newAssuntos];
+      setLocalAssuntos(newAssuntos);
+      
+      if (typeof setAssuntos === 'function') {
+        try {
+          setAssuntos(newAssuntos);
+        } catch (error) {
+          console.error('Erro ao chamar setAssuntos:', error);
+        }
+      } else {
+        console.warn('setAssuntos não é uma função', typeof setAssuntos);
+      }
+    }
+  }, [setAssuntos]);
+  
+  const safeSetTopicos = (newTopicos: string[]) => {
+    // Só atualiza se houver uma mudança real
+    if (!isEqual(newTopicos, lastTopicosRef.current)) {
+      console.log("Atualizando tópicos para:", newTopicos);
+      lastTopicosRef.current = [...newTopicos];
+      if (typeof setTopicos === 'function') {
+        setTopicos(newTopicos);
+      }
+    }
+  };
 
   // Estados para os campos de seleção
   const institutionState = useSelectFieldState(
@@ -134,194 +193,151 @@ export const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
     setRole(newRoles.join(','));
   };
 
+  // Função para passar ao setValue do TopicosFieldWrapper
+  const handleSetValue = (name: string, value: any) => {
+    if (name === 'topicos') {
+      safeSetTopicos(value);
+    }
+  };
+
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Banca */}
-        <CheckboxGroup
-          title="Banca"
-          options={dropdownData.institutions}
-          selectedValues={institution.split(',').filter(i => i !== '')}
-          onChange={setInstitution}
-          handleEditOption={institutionState.handleEditOption}
-          handleDeleteOption={institutionState.handleDeleteOption}
-          openAddDialog={institutionState.openAddDialog}
-          placeholder="Selecione as bancas"
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      {/* Primeira coluna */}
+      <div className="space-y-4">
+        <SelectField
+          label="Banca"
+          value={institutionState.value}
+          options={institutionState.options}
+          onChange={institutionState.handleChange}
+          onAddOption={institutionState.handleAddOption}
+          placeholder="Selecione a banca"
+          error={showValidation && !institution ? "Selecione uma banca" : undefined}
         />
-
-        {/* Órgão */}
-        <CheckboxGroup
-          title="Órgão"
-          options={dropdownData.organizations}
-          selectedValues={organization.split(',').filter(o => o !== '')}
-          onChange={setOrganization}
-          handleEditOption={organizationState.handleEditOption}
-          handleDeleteOption={organizationState.handleDeleteOption}
-          openAddDialog={organizationState.openAddDialog}
-          placeholder="Selecione os órgãos"
+        
+        <SelectField
+          label="Órgão"
+          value={organizationState.value}
+          options={organizationState.options}
+          onChange={organizationState.handleChange}
+          onAddOption={organizationState.handleAddOption}
+          placeholder="Selecione o órgão"
+          error={showValidation && !organization ? "Selecione um órgão" : undefined}
         />
-
-        {/* Ano */}
-        <CheckboxGroup
-          title="Ano"
-          options={dropdownData.years}
-          selectedValues={year.split(',').filter(y => y !== '')}
-          onChange={setYear}
-          handleEditOption={yearState.handleEditOption}
-          handleDeleteOption={yearState.handleDeleteOption}
-          openAddDialog={yearState.openAddDialog}
-          placeholder="Selecione os anos"
+        
+        <SelectField
+          label="Ano"
+          value={yearState.value}
+          options={yearState.options}
+          onChange={yearState.handleChange}
+          onAddOption={yearState.handleAddOption}
+          placeholder="Selecione o ano"
+          error={showValidation && !year ? "Selecione um ano" : undefined}
         />
-
-        {/* Disciplina */}
-        <CheckboxGroup
-          title="Disciplina"
-          options={dropdownData.disciplines}
-          selectedValues={discipline.split(',').filter(d => d !== '')}
-          onChange={setDiscipline}
-          handleEditOption={disciplineState.handleEditOption}
-          handleDeleteOption={disciplineState.handleDeleteOption}
-          openAddDialog={disciplineState.openAddDialog}
-          placeholder="Selecione as disciplinas"
+        
+        {/* Seleção múltipla de cargos */}
+        <div className="space-y-1">
+          <div className="flex justify-between">
+            <Label htmlFor="role">Cargo</Label>
+            <AddValueDialog
+              title="Adicionar Cargo"
+              onAdd={rolesState.handleAddOption}
+              buttonLabel="+"
+              label="Nome do Cargo"
+              placeholder="Digite o nome do cargo"
+            />
+          </div>
+          
+          <Select onValueChange={rolesState.handleChange} value={rolesState.value}>
+            <SelectTrigger className={cn(showValidation && !role && "border-red-500")}>
+              <SelectValue placeholder="Selecione o cargo" />
+            </SelectTrigger>
+            <SelectContent>
+              {rolesState.options.map((option) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {showValidation && !role && <p className="text-red-500 text-sm">Selecione um cargo</p>}
+          
+          {/* Exibir cargos selecionados como badges */}
+          {role && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {role.split(',').filter(r => r !== '').map((r) => (
+                <Badge key={r} variant="outline" className="flex items-center gap-1">
+                  {r}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => handleRoleChange(r)}
+                  />
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Segunda coluna */}
+      <div className="space-y-4">
+        <SelectField
+          label="Disciplina"
+          value={disciplineState.value}
+          options={disciplineState.options}
+          onChange={disciplineState.handleChange}
+          onAddOption={disciplineState.handleAddOption}
+          placeholder="Selecione a disciplina"
+          error={showValidation && !discipline ? "Selecione uma disciplina" : undefined}
         />
-
-        {/* Nível */}
-        <CheckboxGroup
-          title="Nível"
-          options={dropdownData.levels}
-          selectedValues={level.split(',').filter(l => l !== '')}
-          onChange={setLevel}
-          handleEditOption={levelState.handleEditOption}
-          handleDeleteOption={levelState.handleDeleteOption}
-          openAddDialog={levelState.openAddDialog}
-          placeholder="Selecione os níveis"
+        
+        <SelectField
+          label="Dificuldade"
+          value={difficultyState.value}
+          options={difficultyState.options}
+          onChange={difficultyState.handleChange}
+          onAddOption={difficultyState.handleAddOption}
+          placeholder="Selecione a dificuldade"
         />
-
-        {/* Dificuldade */}
-        <CheckboxGroup
-          title="Dificuldade"
-          options={dropdownData.difficulties}
-          selectedValues={difficulty.split(',').filter(d => d !== '')}
-          onChange={setDifficulty}
-          handleEditOption={difficultyState.handleEditOption}
-          handleDeleteOption={difficultyState.handleDeleteOption}
-          openAddDialog={difficultyState.openAddDialog}
-          placeholder="Selecione as dificuldades"
+        
+        <SelectField
+          label="Nível"
+          value={levelState.value}
+          options={levelState.options}
+          onChange={levelState.handleChange}
+          onAddOption={levelState.handleAddOption}
+          placeholder="Selecione o nível"
         />
-
-        {/* Tipo de Questão */}
-        <CheckboxGroup
-          title="Tipo de Questão"
-          options={dropdownData.questionTypes}
-          selectedValues={questionType.split(',').filter(t => t !== '')}
-          onChange={setQuestionType}
-          handleEditOption={questionTypeState.handleEditOption}
-          handleDeleteOption={questionTypeState.handleDeleteOption}
-          openAddDialog={questionTypeState.openAddDialog}
-          placeholder="Selecione os tipos"
-        />
-
-        {/* Cargo */}
-        <CheckboxGroup
-          title="Cargo"
-          options={dropdownData.roles}
-          selectedValues={role.split(',').filter(r => r !== '')}
-          onChange={handleRoleChange}
-          handleEditOption={rolesState.handleEditOption}
-          handleDeleteOption={rolesState.handleDeleteOption}
-          openAddDialog={rolesState.openAddDialog}
-          placeholder="Selecione os cargos"
-        />
-
-        {/* Assuntos */}
-        <AssuntosField
-          disciplina={discipline}
-          assuntos={topicos}
-          setAssuntos={setTopicos}
+        
+        <SelectField
+          label="Tipo de Questão"
+          value={questionTypeState.value}
+          options={questionTypeState.options}
+          onChange={questionTypeState.handleChange}
+          onAddOption={questionTypeState.handleAddOption}
+          placeholder="Selecione o tipo"
         />
       </div>
-
-      {/* Diálogos para adicionar valores */}
-      <AddValueDialog
-        isOpen={institutionState.isAddDialogOpen}
-        setIsOpen={institutionState.setIsOpen}
-        onAdd={institutionState.handleAddOption}
-        title="Adicionar Banca"
-        value={institutionState.newValue}
-        setValue={institutionState.setNewValue}
-        placeholder="Digite o nome da banca"
-      />
-
-      <AddValueDialog
-        isOpen={organizationState.isAddDialogOpen}
-        setIsOpen={organizationState.setIsOpen}
-        onAdd={organizationState.handleAddOption}
-        title="Adicionar Órgão"
-        value={organizationState.newValue}
-        setValue={organizationState.setNewValue}
-        placeholder="Digite o nome do órgão"
-      />
-
-      <AddValueDialog
-        isOpen={yearState.isAddDialogOpen}
-        setIsOpen={yearState.setIsOpen}
-        onAdd={yearState.handleAddOption}
-        title="Adicionar Ano"
-        value={yearState.newValue}
-        setValue={yearState.setNewValue}
-        placeholder="Digite o ano"
-      />
-
-      <AddValueDialog
-        isOpen={disciplineState.isAddDialogOpen}
-        setIsOpen={disciplineState.setIsOpen}
-        onAdd={disciplineState.handleAddOption}
-        title="Adicionar Disciplina"
-        value={disciplineState.newValue}
-        setValue={disciplineState.setNewValue}
-        placeholder="Digite o nome da disciplina"
-      />
-
-      <AddValueDialog
-        isOpen={levelState.isAddDialogOpen}
-        setIsOpen={levelState.setIsOpen}
-        onAdd={levelState.handleAddOption}
-        title="Adicionar Nível"
-        value={levelState.newValue}
-        setValue={levelState.setNewValue}
-        placeholder="Digite o nível"
-      />
-
-      <AddValueDialog
-        isOpen={difficultyState.isAddDialogOpen}
-        setIsOpen={difficultyState.setIsOpen}
-        onAdd={difficultyState.handleAddOption}
-        title="Adicionar Dificuldade"
-        value={difficultyState.newValue}
-        setValue={difficultyState.setNewValue}
-        placeholder="Digite a dificuldade"
-      />
-
-      <AddValueDialog
-        isOpen={questionTypeState.isAddDialogOpen}
-        setIsOpen={questionTypeState.setIsOpen}
-        onAdd={questionTypeState.handleAddOption}
-        title="Adicionar Tipo de Questão"
-        value={questionTypeState.newValue}
-        setValue={questionTypeState.setNewValue}
-        placeholder="Digite o tipo de questão"
-      />
-
-      <AddValueDialog
-        isOpen={rolesState.isAddDialogOpen}
-        setIsOpen={rolesState.setIsOpen}
-        onAdd={rolesState.handleAddOption}
-        title="Adicionar Cargo"
-        value={rolesState.newValue}
-        setValue={rolesState.setNewValue}
-        placeholder="Digite o cargo"
-      />
-    </>
+      
+      {/* Seleção de assuntos - full width */}
+      <div className="col-span-1 md:col-span-2">
+        <AssuntosField
+          disciplina={discipline}
+          assuntos={Array.isArray(assuntos) ? assuntos : localAssuntos}
+          onChange={safeSetAssuntos}
+        />
+      </div>
+      
+      {/* Seleção de tópicos - full width */}
+      <div className="col-span-1 md:col-span-2">
+        <Label>Tópicos</Label>
+        <TopicosFieldWrapper
+          control={null}
+          disciplina={discipline}
+          assuntos={Array.isArray(assuntos) ? assuntos : localAssuntos}
+          topicos={Array.isArray(topicos) ? topicos : localTopicos}
+          setValue={handleSetValue}
+        />
+      </div>
+    </div>
   );
 };
 

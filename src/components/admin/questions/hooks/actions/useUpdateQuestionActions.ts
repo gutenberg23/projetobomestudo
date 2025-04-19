@@ -15,8 +15,14 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
       setQuestionId, setYear, setInstitution, setOrganization, setRole, 
       setDiscipline, setLevel, setDifficulty, setQuestionType, setQuestionText, 
       setTeacherExplanation, setAIExplanation, setExpandableContent, setOptions, 
-      topicos, setTopicos
+      assuntos, setAssuntos, topicos, setTopicos
     } = state;
+
+    console.log("Dados sendo atualizados:", {
+      teacherExplanation,
+      expandableContent,
+      aiExplanation
+    });
 
     // Validar apenas campos obrigatórios
     if (!year || !institution || !organization || !discipline || !questionType || !questionText) {
@@ -48,12 +54,27 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
     }
 
     try {
+      // Buscar IDs dos tópicos selecionados
+      let topicos_ids: string[] = [];
+      if (topicos && topicos.length > 0) {
+        const { data, error } = await supabase
+          .from('topicos')
+          .select('id, nome')
+          .in('nome', topicos);
+        
+        if (error) {
+          console.error("Erro ao buscar IDs dos tópicos:", error);
+        } else if (data) {
+          topicos_ids = data.map(item => item.id);
+        }
+      }
+
       // Construir objeto para atualizar no banco de dados
       const questionData = {
         year,
         institution,
         organization,
-        role: role || "",
+        role: role || [],
         discipline,
         level: level || "",
         difficulty: difficulty || "",
@@ -63,6 +84,7 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
         aiexplanation: aiExplanation || "",
         expandablecontent: expandableContent || "",
         options: options as unknown as Json,
+        assuntos: assuntos || [],
         topicos: topicos || [],
         updated_at: new Date().toISOString()
       };
@@ -93,6 +115,7 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
         aiExplanation,
         expandableContent,
         options,
+        assuntos,
         topicos
       } : q);
       
@@ -107,7 +130,7 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
       setYear("");
       setInstitution("");
       setOrganization("");
-      setRole("");
+      setRole([]);
       setDiscipline("");
       setLevel("");
       setDifficulty("");
@@ -117,6 +140,7 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
       setAIExplanation("");
       setExpandableContent("");
       setOptions([]);
+      setAssuntos([]);
       setTopicos([]);
     } catch (error) {
       console.error("Erro ao atualizar questão:", error);

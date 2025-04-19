@@ -12,7 +12,7 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
       year, institution, organization, role, discipline,
       level, difficulty, questionType, questionText, teacherExplanation,
       aiExplanation, expandableContent, options, setQuestionText, 
-      setTeacherExplanation, setAIExplanation, setOptions, topicos, setTopicos, setExpandableContent,
+      setTeacherExplanation, setAIExplanation, setOptions, assuntos, setAssuntos, topicos, setTopicos, setExpandableContent,
       setYear, setInstitution, setOrganization, setRole, setDiscipline, setLevel, setDifficulty, setQuestionType
     } = state;
 
@@ -70,17 +70,20 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
         year,
         institution,
         organization,
-        role,
+        role: role || [],
         discipline,
-        level,
-        difficulty,
+        level: level || "",
+        difficulty: difficulty || "",
         questiontype: questionType,
         content: questionText,
-        teacherexplanation: teacherExplanation || null,
-        aiexplanation: aiExplanation || null,
-        expandablecontent: expandableContent || null,
+        teacherexplanation: teacherExplanation || "",
+        aiexplanation: aiExplanation || "",
+        expandablecontent: expandableContent || "",
         options: options as unknown as Json,
-        topicos: topicos || []
+        assuntos: assuntos || [],
+        topicos: topicos || [],
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
       // Inserir no banco de dados
@@ -108,7 +111,7 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
       setYear("");
       setInstitution("");
       setOrganization("");
-      setRole("");
+      setRole([]);
       setDiscipline("");
       setLevel("");
       setDifficulty("");
@@ -118,6 +121,7 @@ export const useSaveQuestionActions = (state: ReturnType<typeof import("../useQu
       setAIExplanation("");
       setExpandableContent("");
       setOptions([]);
+      setAssuntos([]);
       setTopicos([]);
 
     } catch (error) {

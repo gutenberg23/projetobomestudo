@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Assunto } from "../../types";
 import { toast } from "sonner";
+import { buscarAssuntos, adicionarAssunto, atualizarAssunto, removerAssunto } from "@/lib/admin/supabaseAdmin";
 
 export const useAssuntosService = (disciplina: string, selectedAssuntos: string[], setSelectedAssuntos: (assuntos: string[]) => void) => {
   const [assuntosList, setAssuntosList] = useState<Assunto[]>([]);
@@ -14,8 +15,27 @@ export const useAssuntosService = (disciplina: string, selectedAssuntos: string[
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
+  // Referência para evitar chamadas duplicadas
+  const previousDisciplina = useRef<string>('');
+
+  // Garantir que setSelectedAssuntos é sempre uma função válida
+  const safeSetSelectedAssuntos = useCallback((assuntos: string[]) => {
+    if (typeof setSelectedAssuntos === 'function') {
+      setSelectedAssuntos(assuntos);
+    } else {
+      console.error('useAssuntosService: setSelectedAssuntos não é uma função', setSelectedAssuntos);
+    }
+  }, [setSelectedAssuntos]);
+
   // Fetch assuntos when discipline changes
   useEffect(() => {
+    // Evita re-fetch desnecessário
+    if (disciplina === previousDisciplina.current) {
+      return;
+    }
+    
+    previousDisciplina.current = disciplina;
+
     const fetchAssuntos = async () => {
       if (!disciplina) {
         setAssuntosList([]);
@@ -24,27 +44,15 @@ export const useAssuntosService = (disciplina: string, selectedAssuntos: string[
 
       setLoading(true);
       try {
-        console.log("Buscando tópicos para disciplina:", disciplina);
-        const { data, error } = await supabase
-          .from('questoes')
-          .select('topicos')
-          .eq('discipline', disciplina);
-
-        if (error) {
-          throw error;
-        }
-
-        // Extrair tópicos únicos de todas as questões
-        const topicos = data
-          .flatMap(q => q.topicos || [])
-          .filter((value, index, self) => self.indexOf(value) === index)
-          .sort();
-
-        console.log("Tópicos retornados:", topicos);
-        setAssuntosList(topicos.map(nome => ({ id: nome, nome, disciplina })));
+        console.log("Buscando assuntos para disciplina:", disciplina);
+        
+        // Usar a função administrativa para buscar assuntos
+        const data = await buscarAssuntos(disciplina);
+        console.log("Assuntos retornados:", data);
+        setAssuntosList(data || []);
       } catch (error) {
-        console.error("Erro ao buscar tópicos:", error);
-        toast.error("Erro ao carregar tópicos. Tente novamente.");
+        console.error("Erro ao buscar assuntos:", error);
+        toast.error("Erro ao carregar assuntos. Tente novamente.");
       } finally {
         setLoading(false);
       }
@@ -53,59 +61,84 @@ export const useAssuntosService = (disciplina: string, selectedAssuntos: string[
     fetchAssuntos();
   }, [disciplina]);
 
-  const handleAssuntosChange = (assunto: string) => {
-    if (selectedAssuntos.includes(assunto)) {
-      setSelectedAssuntos(selectedAssuntos.filter(t => t !== assunto));
+  const handleAssuntosChange = useCallback((assunto: string, checked?: boolean) => {
+    // Garantir que selectedAssuntos seja sempre um array
+    const safeSelectedAssuntos = Array.isArray(selectedAssuntos) ? selectedAssuntos : [];
+    
+    // Se checked foi passado, usamos ele diretamente
+    if (checked !== undefined) {
+      if (checked) {
+        // Adicionar
+        if (!safeSelectedAssuntos.includes(assunto)) {
+          safeSetSelectedAssuntos([...safeSelectedAssuntos, assunto]);
+        }
+      } else {
+        // Remover
+        safeSetSelectedAssuntos(safeSelectedAssuntos.filter(t => t !== assunto));
+      }
     } else {
-      setSelectedAssuntos([...selectedAssuntos, assunto]);
+      // Comportamento toggle (antigo)
+      if (safeSelectedAssuntos.includes(assunto)) {
+        safeSetSelectedAssuntos(safeSelectedAssuntos.filter(t => t !== assunto));
+      } else {
+        safeSetSelectedAssuntos([...safeSelectedAssuntos, assunto]);
+      }
     }
-  };
+  }, [selectedAssuntos, safeSetSelectedAssuntos]);
 
   const handleAddAssunto = async () => {
     if (!newAssuntoNome.trim()) {
-      toast.error("O nome do tópico não pode estar vazio");
+      toast.error("O nome do assunto não pode estar vazio");
       return;
     }
 
     try {
-      // Adicionar o novo tópico à lista local
-      const newAssunto = { id: newAssuntoNome, nome: newAssuntoNome, disciplina };
-      setAssuntosList([...assuntosList, newAssunto]);
-      toast.success("Tópico adicionado com sucesso!");
+      // Usar a função administrativa para adicionar assunto
+      const data = await adicionarAssunto({
+        nome: newAssuntoNome,
+        disciplina
+      });
+
+      // Adicionar o novo assunto à lista local
+      setAssuntosList(prevList => [...prevList, data]);
+      toast.success("Assunto adicionado com sucesso!");
       setNewAssuntoNome("");
       setIsAddDialogOpen(false);
     } catch (error) {
-      console.error("Erro ao adicionar tópico:", error);
-      toast.error("Erro ao adicionar tópico. Tente novamente.");
+      console.error("Erro ao adicionar assunto:", error);
+      toast.error("Erro ao adicionar assunto. Tente novamente.");
     }
   };
 
   const handleEditAssunto = async () => {
     if (!currentAssunto || !newAssuntoNome.trim()) {
-      toast.error("O nome do tópico não pode estar vazio");
+      toast.error("O nome do assunto não pode estar vazio");
       return;
     }
 
     try {
-      // Atualizar o tópico na lista local
-      setAssuntosList(assuntosList.map(t => 
-        t.id === currentAssunto.id ? { ...t, nome: newAssuntoNome } : t
-      ));
+      // Usar a função administrativa para atualizar assunto
+      await atualizarAssunto(currentAssunto.id, newAssuntoNome);
       
-      // Atualizar também no array de tópicos selecionados
+      // Atualizar o assunto na lista local
+      setAssuntosList(prevList => 
+        prevList.map(t => t.id === currentAssunto.id ? { ...t, nome: newAssuntoNome } : t)
+      );
+      
+      // Atualizar também no array de assuntos selecionados
       if (selectedAssuntos.includes(currentAssunto.nome)) {
         const newAssuntos = selectedAssuntos.filter(t => t !== currentAssunto.nome);
         newAssuntos.push(newAssuntoNome);
-        setSelectedAssuntos(newAssuntos);
+        safeSetSelectedAssuntos(newAssuntos);
       }
 
-      toast.success("Tópico atualizado com sucesso!");
+      toast.success("Assunto atualizado com sucesso!");
       setNewAssuntoNome("");
       setCurrentAssunto(null);
       setIsEditDialogOpen(false);
     } catch (error) {
-      console.error("Erro ao editar tópico:", error);
-      toast.error("Erro ao editar tópico. Tente novamente.");
+      console.error("Erro ao editar assunto:", error);
+      toast.error("Erro ao editar assunto. Tente novamente.");
     }
   };
 
@@ -113,20 +146,23 @@ export const useAssuntosService = (disciplina: string, selectedAssuntos: string[
     if (!currentAssunto) return;
 
     try {
-      // Remover o tópico da lista local
-      setAssuntosList(assuntosList.filter(t => t.id !== currentAssunto.id));
+      // Usar a função administrativa para remover assunto
+      await removerAssunto(currentAssunto.id);
       
-      // Remover do array de tópicos selecionados
+      // Remover o assunto da lista local
+      setAssuntosList(prevList => prevList.filter(t => t.id !== currentAssunto.id));
+      
+      // Remover do array de assuntos selecionados
       if (selectedAssuntos.includes(currentAssunto.nome)) {
-        setSelectedAssuntos(selectedAssuntos.filter(t => t !== currentAssunto.nome));
+        safeSetSelectedAssuntos(selectedAssuntos.filter(t => t !== currentAssunto.nome));
       }
 
-      toast.success("Tópico removido com sucesso!");
+      toast.success("Assunto removido com sucesso!");
       setCurrentAssunto(null);
       setIsDeleteDialogOpen(false);
     } catch (error) {
-      console.error("Erro ao excluir tópico:", error);
-      toast.error("Erro ao excluir tópico. Tente novamente.");
+      console.error("Erro ao excluir assunto:", error);
+      toast.error("Erro ao excluir assunto. Tente novamente.");
     }
   };
 

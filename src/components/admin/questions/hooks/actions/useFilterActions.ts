@@ -16,6 +16,7 @@ const initialFilters: Filters = {
   dificuldade: emptyFilter,
   questionType: emptyFilter,
   topicos: emptyFilter,
+  subtopicos: emptyFilter,
   conteudo: emptyFilter,
 };
 
@@ -49,6 +50,7 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
     
     Object.entries(newFilters).forEach(([key, filter]) => {
       if (filter.isActive && filter.value) {
+        // Manter compatibilidade: se for JSON, manter como está, caso contrário converter
         params.set(key, filter.value);
       }
     });
@@ -58,26 +60,40 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
 
   const getFilteredQuestions = (questions: QuestionItemType[]): QuestionItemType[] => {
     return questions.filter(question => {
-      const disciplinaValues = filters.disciplina.value ? filters.disciplina.value.split(',').filter(v => v !== '') : [];
-      const nivelValues = filters.nivel.value ? filters.nivel.value.split(',').filter(v => v !== '') : [];
-      const institutionValues = filters.institution.value ? filters.institution.value.split(',').filter(v => v !== '') : [];
-      const organizationValues = filters.organization.value ? filters.organization.value.split(',').filter(v => v !== '') : [];
-      const roleValues = filters.role.value ? filters.role.value.split(',').filter(v => v !== '') : [];
-      const anoValues = filters.ano.value ? filters.ano.value.split(',').filter(v => v !== '') : [];
-      const dificuldadeValues = filters.dificuldade.value ? filters.dificuldade.value.split(',').filter(v => v !== '') : [];
-      const questionTypeValues = filters.questionType.value ? filters.questionType.value.split(',').filter(v => v !== '') : [];
-      const topicosValues = filters.topicos.value ? filters.topicos.value.split(',').filter(v => v !== '') : [];
+      // Função auxiliar para extrair valores do filtro (compatível com JSON e formato antigo)
+      const getFilterValues = (filterValue: string): string[] => {
+        if (!filterValue) return [];
+        
+        try {
+          // Tentar analisar como JSON primeiro (formato novo)
+          return JSON.parse(filterValue);
+        } catch (e) {
+          // Caso não seja JSON (formato antigo com vírgulas), usar o método antigo
+          return filterValue.split(',').filter(v => v !== '');
+        }
+      };
+
+      const disciplinaValues = getFilterValues(filters.disciplina.value);
+      const nivelValues = getFilterValues(filters.nivel.value);
+      const institutionValues = getFilterValues(filters.institution.value);
+      const organizationValues = getFilterValues(filters.organization.value);
+      const roleValues = getFilterValues(filters.role.value);
+      const anoValues = getFilterValues(filters.ano.value);
+      const dificuldadeValues = getFilterValues(filters.dificuldade.value);
+      const questionTypeValues = getFilterValues(filters.questionType.value);
+      const topicosValues = getFilterValues(filters.topicos.value);
       const searchTerm = filters.conteudo.value ? filters.conteudo.value.toLowerCase() : '';
 
       const matchesDisciplina = !filters.disciplina.isActive || disciplinaValues.length === 0 || disciplinaValues.includes(question.discipline);
       const matchesNivel = !filters.nivel.isActive || nivelValues.length === 0 || nivelValues.includes(question.level);
       const matchesInstitution = !filters.institution.isActive || institutionValues.length === 0 || institutionValues.includes(question.institution);
       const matchesOrganization = !filters.organization.isActive || organizationValues.length === 0 || organizationValues.includes(question.organization);
-      const matchesRole = !filters.role.isActive || roleValues.length === 0 || roleValues.includes(question.role);
+      const matchesRole = !filters.role.isActive || roleValues.length === 0 || 
+        (Array.isArray(question.role) && question.role.some(r => roleValues.includes(r)));
       const matchesAno = !filters.ano.isActive || anoValues.length === 0 || anoValues.includes(question.year);
       const matchesDificuldade = !filters.dificuldade.isActive || dificuldadeValues.length === 0 || dificuldadeValues.includes(question.difficulty);
       const matchesQuestionType = !filters.questionType.isActive || questionTypeValues.length === 0 || questionTypeValues.includes(question.questionType);
-      const matchesTopicos = !filters.topicos.isActive || topicosValues.length === 0 || topicosValues.some(topico => question.topicos?.includes(topico));
+      const matchesTopicos = !filters.topicos.isActive || topicosValues.length === 0 || topicosValues.some(topico => question.assuntos?.includes(topico) || question.topicos?.includes(topico));
       const matchesContent = !filters.conteudo.isActive || !searchTerm || question.content.toLowerCase().includes(searchTerm);
 
       return (

@@ -28,9 +28,43 @@ export const useFetchQuestionsActions = () => {
 
   const fetchQuestionsAndRelatedData = async () => {
     try {
+      console.log("Iniciando busca de questões e dados relacionados...");
       const { questions, dropdownData } = await fetchQuestionsData();
-      setQuestions(questions);
+      
+      console.log("Dados de dropdown recebidos:", {
+        years: dropdownData.years?.length || 0,
+        institutions: dropdownData.institutions?.length || 0,
+        organizations: dropdownData.organizations?.length || 0,
+        roles: dropdownData.roles?.length || 0,
+        disciplines: dropdownData.disciplines?.length || 0,
+        levels: dropdownData.levels?.length || 0,
+        difficulties: dropdownData.difficulties?.length || 0,
+        questionTypes: dropdownData.questionTypes?.length || 0,
+        assuntos: dropdownData.assuntos?.length || 0,
+        topicos: dropdownData.topicos?.length || 0
+      });
+      
+      const formattedQuestions = questions.map(questao => ({
+        id: questao.id,
+        year: questao.year || '',
+        institution: questao.institution || '',
+        organization: questao.organization || '',
+        role: questao.role || '',
+        discipline: questao.discipline || '',
+        level: questao.level || '',
+        difficulty: questao.difficulty || '',
+        questionType: questao.questiontype || '',
+        content: questao.content || '',
+        teacherExplanation: questao.teacherexplanation || '',
+        aiExplanation: questao.aiexplanation || '',
+        expandableContent: questao.expandablecontent || '',
+        options: parseOptions(questao.options || []),
+        assuntos: questao.assuntos || [],
+        topicos: questao.topicos || []
+      }));
+      setQuestions(formattedQuestions);
       setDropdownData(dropdownData);
+      console.log("Dados salvos no store com sucesso!");
     } catch (error) {
       console.error('Erro ao buscar questões:', error);
       throw error;

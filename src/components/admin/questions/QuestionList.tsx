@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import CriarSimuladoModal from "./modals/CriarSimuladoModal";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { prepareHtmlContent } from "@/utils/text-utils";
 
 interface QuestionListProps {
   questions: QuestionItemType[];
@@ -134,10 +135,12 @@ const QuestionList: React.FC<QuestionListProps> = ({
                   <TableCell>
                     <div className="text-sm text-gray-900 prose prose-sm max-w-none">
                       {showFullContent ? (
-                        <div dangerouslySetInnerHTML={{ __html: question.content }} />
+                        <div dangerouslySetInnerHTML={{ __html: prepareHtmlContent(question.content) }} />
                       ) : (
                         <div>
-                          <div dangerouslySetInnerHTML={{ __html: question.content.substring(0, 100) + '...' }} />
+                          <div dangerouslySetInnerHTML={{ 
+                            __html: prepareHtmlContent(question.content.substring(0, 100) + '...') 
+                          }} />
                           <Button
                             variant="ghost"
                             size="sm"

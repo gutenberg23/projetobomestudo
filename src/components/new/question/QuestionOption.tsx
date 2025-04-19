@@ -1,5 +1,6 @@
 import React from "react";
 import { X } from "lucide-react";
+import { prepareHtmlContent } from "@/utils/text-utils";
 
 interface QuestionOptionProps {
   id: string;
@@ -11,6 +12,7 @@ interface QuestionOptionProps {
   onToggleDisabled: (optionId: string, event: React.MouseEvent) => void;
   onSelect: (optionId: string) => void;
   showAnswer: boolean;
+  questionType?: string;
 }
 
 export const QuestionOption: React.FC<QuestionOptionProps> = ({
@@ -22,7 +24,8 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
   isCorrect,
   onToggleDisabled,
   onSelect,
-  showAnswer
+  showAnswer,
+  questionType
 }) => {
   const getOptionStyles = () => {
     if (!showAnswer) {
@@ -63,6 +66,19 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
   
   const styles = getOptionStyles();
   
+  // Determinar o texto da letra da opção
+  const getOptionLetter = () => {
+    // Se for questão do tipo Certo ou Errado, use C e E
+    if (questionType === "Certo ou Errado") {
+      return index === 0 ? "C" : "E";
+    }
+    // Para outros tipos, use as letras comuns (A, B, C, etc.)
+    return String.fromCharCode(65 + index);
+  };
+  
+  // Preparar o texto da opção, garantindo que glifos sejam preservados
+  const preparedText = prepareHtmlContent(text);
+  
   return (
     <div className="flex gap-1 items-center md:px-5 py-1 w-full rounded-none min-h-16 px-[6px]">
       <button 
@@ -79,12 +95,12 @@ export const QuestionOption: React.FC<QuestionOptionProps> = ({
         disabled={isDisabled || showAnswer}
       >
         <span className={`gap-2.5 self-stretch font-bold text-center rounded border border-solid min-h-[30px] w-[30px] flex items-center justify-center ${styles.letter}`}>
-          {String.fromCharCode(65 + index)}
+          {getOptionLetter()}
         </span>
         
         <span 
           className={`flex-1 text-slate-800 text-left ${styles.text}`}
-          dangerouslySetInnerHTML={{ __html: text }}
+          dangerouslySetInnerHTML={{ __html: preparedText }}
         />
       </button>
     </div>

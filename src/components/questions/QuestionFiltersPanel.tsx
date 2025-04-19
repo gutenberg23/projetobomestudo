@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
-import { CheckboxGroup } from "@/components/questions/CheckboxGroup";
+import { FilterGroup } from "@/components/questions/FilterGroup";
 import { useSearchParams } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,8 +20,9 @@ interface QuestionFiltersPanelProps {
     years: string[];
     educationLevels: string[];
     difficulty: string[];
+    subtopics?: string[];
   };
-  handleFilterChange: (category: "topics" | "disciplines" | "institutions" | "organizations" | "roles" | "years" | "educationLevels" | "difficulty", value: string) => void;
+  handleFilterChange: (category: "topics" | "disciplines" | "institutions" | "organizations" | "roles" | "years" | "educationLevels" | "difficulty" | "subtopics", value: string) => void;
   handleApplyFilters: () => void;
   questionsPerPage: string;
   setQuestionsPerPage: (value: string) => void;
@@ -53,50 +54,100 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const [topicsByDiscipline, setTopicsByDiscipline] = useState<Record<string, string[]>>({});
+  const [subjectsByDiscipline, setSubjectsByDiscipline] = useState<Record<string, string[]>>({});
+  const [topicsBySubject, setTopicsBySubject] = useState<Record<string, string[]>>({});
   const [_allQuestions, setAllQuestions] = useState<any[]>([]);
   const [_isLoading, setIsLoading] = useState(false);
 
-  // Buscar questões para análise de tópicos por disciplina
+  // Buscar questões para análise de disciplinas, assuntos e tópicos
   useEffect(() => {
     const fetchQuestions = async () => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('questoes')
-          .select('discipline, topicos');
+          .select('discipline, assuntos, topicos');
           
         if (error) throw error;
         
         if (data) {
           setAllQuestions(data);
           
-          // Criar mapeamento de disciplinas para tópicos
-          const topicsMap: Record<string, Set<string>> = {};
+          // Criar mapeamento de disciplinas para assuntos e tópicos
+          const disciplineToSubjectsMap: Record<string, Set<string>> = {};
+          const disciplineToTopicsMap: Record<string, Set<string>> = {};
+          const subjectToTopicsMap: Record<string, Set<string>> = {};
           
           data.forEach(question => {
             const discipline = question.discipline;
-            const topics = question.topicos || [];
+            const subjects = Array.isArray(question.assuntos) ? question.assuntos : [];
+            const topics = Array.isArray(question.topicos) ? question.topicos : [];
             
+            // Mapear disciplina para assuntos
+            if (discipline && subjects.length > 0) {
+              if (!disciplineToSubjectsMap[discipline]) {
+                disciplineToSubjectsMap[discipline] = new Set();
+              }
+              
+              subjects.forEach((subject: string) => {
+                if (subject) {
+                  disciplineToSubjectsMap[discipline].add(subject);
+                  
+                  // Mapear assunto para tópicos
+                  if (topics.length > 0) {
+                    if (!subjectToTopicsMap[subject]) {
+                      subjectToTopicsMap[subject] = new Set();
+                    }
+                    
+                    topics.forEach((topic: string) => {
+                      if (topic) {
+                        subjectToTopicsMap[subject].add(topic);
+                      }
+                    });
+                  }
+                }
+              });
+            }
+            
+            // Mapear disciplina para tópicos
             if (discipline && topics.length > 0) {
-              if (!topicsMap[discipline]) {
-                topicsMap[discipline] = new Set();
+              if (!disciplineToTopicsMap[discipline]) {
+                disciplineToTopicsMap[discipline] = new Set();
               }
               
               topics.forEach((topic: string) => {
-                topicsMap[discipline].add(topic);
+                if (topic) {
+                  disciplineToTopicsMap[discipline].add(topic);
+                }
               });
             }
           });
           
           // Converter Sets para arrays e ordenar
-          const formattedMap: Record<string, string[]> = {};
-          Object.keys(topicsMap).forEach(discipline => {
-            formattedMap[discipline] = [...topicsMap[discipline]].sort((a, b) => 
-              a.localeCompare(b)
-            );
+          const formattedSubjectsMap: Record<string, string[]> = {};
+          Object.keys(disciplineToSubjectsMap).forEach(discipline => {
+            formattedSubjectsMap[discipline] = [...disciplineToSubjectsMap[discipline]]
+              .filter(Boolean)
+              .sort((a, b) => String(a).localeCompare(String(b)));
           });
           
-          setTopicsByDiscipline(formattedMap);
+          const formattedTopicsMap: Record<string, string[]> = {};
+          Object.keys(disciplineToTopicsMap).forEach(discipline => {
+            formattedTopicsMap[discipline] = [...disciplineToTopicsMap[discipline]]
+              .filter(Boolean)
+              .sort((a, b) => String(a).localeCompare(String(b)));
+          });
+
+          const formattedSubjectToTopicsMap: Record<string, string[]> = {};
+          Object.keys(subjectToTopicsMap).forEach(subject => {
+            formattedSubjectToTopicsMap[subject] = [...subjectToTopicsMap[subject]]
+              .filter(Boolean)
+              .sort((a, b) => String(a).localeCompare(String(b)));
+          });
+          
+          setSubjectsByDiscipline(formattedSubjectsMap);
+          setTopicsByDiscipline(formattedTopicsMap);
+          setTopicsBySubject(formattedSubjectToTopicsMap);
         }
       } catch (error) {
         console.error('Erro ao carregar questões:', error);
@@ -110,32 +161,60 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
 
   // Ordenar todas as listas de opções em ordem alfabética
   const sortedOptions = {
-    disciplines: [...filterOptions.disciplines].sort((a, b) => a.localeCompare(b)),
-    topics: [...filterOptions.topics].sort((a, b) => a.localeCompare(b)),
-    institutions: [...filterOptions.institutions].sort((a, b) => a.localeCompare(b)),
-    organizations: [...filterOptions.organizations].sort((a, b) => a.localeCompare(b)),
-    roles: [...filterOptions.roles].sort((a, b) => a.localeCompare(b)),
-    years: [...filterOptions.years].sort((a, b) => b.localeCompare(a)), // Anos em ordem decrescente
-    educationLevels: [...filterOptions.educationLevels].sort((a, b) => a.localeCompare(b)),
-    difficulty: [...filterOptions.difficulty].sort((a, b) => a.localeCompare(b))
+    disciplines: [...filterOptions.disciplines].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    topics: [...filterOptions.topics].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    institutions: [...filterOptions.institutions].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    organizations: [...filterOptions.organizations].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    roles: [...filterOptions.roles].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    years: [...filterOptions.years].filter(Boolean).sort((a, b) => String(b).localeCompare(String(a))), // Anos em ordem decrescente
+    educationLevels: [...filterOptions.educationLevels].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    difficulty: [...filterOptions.difficulty].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)))
   };
 
-  // Filtrar tópicos com base nas disciplinas selecionadas
-  const filteredTopics = useMemo(() => {
+  // Filtrar assuntos com base nas disciplinas selecionadas
+  const filteredSubjects = useMemo(() => {
     if (selectedFilters.disciplines.length === 0) {
       return [];
     }
     
-    // Se tiver disciplinas selecionadas, mostrar apenas tópicos relacionados
-    const topicsSet = new Set<string>();
+    // Se tiver disciplinas selecionadas, mostrar apenas assuntos relacionados
+    const subjectsSet = new Set<string>();
     
     selectedFilters.disciplines.forEach(discipline => {
-      const topics = topicsByDiscipline[discipline] || [];
+      const subjects = subjectsByDiscipline[discipline] || [];
+      subjects.forEach(subject => subjectsSet.add(subject));
+    });
+    
+    return [...subjectsSet].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)));
+  }, [selectedFilters.disciplines, subjectsByDiscipline]);
+
+  // Filtrar tópicos com base nos assuntos selecionados
+  const filteredTopicsBySubject = useMemo(() => {
+    if (selectedFilters.topics.length === 0) {
+      // Se não houver assuntos selecionados, mostrar tópicos baseados na disciplina
+      if (selectedFilters.disciplines.length > 0) {
+        const topicsSet = new Set<string>();
+        
+        selectedFilters.disciplines.forEach(discipline => {
+          const topics = topicsByDiscipline[discipline] || [];
+          topics.forEach(topic => topicsSet.add(topic));
+        });
+        
+        return [...topicsSet].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)));
+      }
+      return [];
+    }
+    
+    // Se tiver assuntos selecionados, mostrar apenas tópicos relacionados
+    const topicsSet = new Set<string>();
+    
+    selectedFilters.topics.forEach(subject => {
+      const topics = topicsBySubject[subject] || [];
       topics.forEach(topic => topicsSet.add(topic));
     });
     
-    return [...topicsSet].sort((a, b) => a.localeCompare(b));
-  }, [selectedFilters.disciplines, topicsByDiscipline]);
+    return [...topicsSet].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)));
+  }, [selectedFilters.topics, selectedFilters.disciplines, topicsBySubject, topicsByDiscipline]);
 
   // Atualizar a URL com os filtros selecionados
   const updateUrlWithFilters = () => {
@@ -149,7 +228,8 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     // Adicionar filtros selecionados
     Object.entries(selectedFilters).forEach(([key, values]) => {
       if (values.length) {
-        params.set(key, values.join(','));
+        // Usar JSON para evitar problemas com valores que contêm vírgulas
+        params.set(key, JSON.stringify(values));
       }
     });
     
@@ -191,7 +271,8 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       roles: [],
       years: [],
       educationLevels: [],
-      difficulty: []
+      difficulty: [],
+      subtopics: []
     };
     
     // Atualizar a URL sem filtros
@@ -228,18 +309,21 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-        <CheckboxGroup 
+        <FilterGroup 
           title="Disciplina" 
           options={sortedOptions.disciplines} 
           selectedValues={selectedFilters.disciplines} 
-          onChange={value => handleFilterChange("disciplines", value)} 
+          onChange={handleFilterChange} 
+          category="disciplines"
+          placeholder="Selecione as disciplinas"
         />
         
-        <CheckboxGroup 
+        <FilterGroup 
           title="Assunto" 
-          options={filteredTopics} 
+          options={filteredSubjects} 
           selectedValues={selectedFilters.topics} 
-          onChange={value => handleFilterChange("topics", value)} 
+          onChange={handleFilterChange} 
+          category="topics"
           placeholder={
             selectedFilters.disciplines.length === 0 
               ? "Selecione uma disciplina primeiro" 
@@ -247,68 +331,92 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           }
         />
         
-        <CheckboxGroup 
+        <FilterGroup 
+          title="Tópicos" 
+          options={filteredTopicsBySubject} 
+          selectedValues={selectedFilters.subtopics || []} 
+          onChange={handleFilterChange} 
+          category="subtopics"
+          placeholder={
+            (selectedFilters.disciplines.length === 0)
+              ? "Selecione uma disciplina primeiro"
+              : (selectedFilters.topics.length === 0)
+                ? "Selecione um assunto primeiro"
+                : "Selecione os tópicos"
+          }
+        />
+        
+        <FilterGroup 
           title="Banca" 
           options={sortedOptions.institutions} 
           selectedValues={selectedFilters.institutions} 
-          onChange={value => handleFilterChange("institutions", value)} 
+          onChange={handleFilterChange} 
+          category="institutions"
+          placeholder="Selecione as bancas"
         />
         
-        <CheckboxGroup 
+        <FilterGroup 
           title="Instituição" 
           options={sortedOptions.organizations} 
           selectedValues={selectedFilters.organizations} 
-          onChange={value => handleFilterChange("organizations", value)} 
+          onChange={handleFilterChange} 
+          category="organizations"
+          placeholder="Selecione as instituições"
         />
         
-        <CheckboxGroup 
+        <FilterGroup 
           title="Cargo" 
           options={sortedOptions.roles} 
           selectedValues={selectedFilters.roles} 
-          onChange={value => handleFilterChange("roles", value)} 
+          onChange={handleFilterChange} 
+          category="roles"
+          placeholder="Selecione os cargos"
         />
         
-        <CheckboxGroup 
+        <FilterGroup 
           title="Ano" 
           options={sortedOptions.years} 
           selectedValues={selectedFilters.years} 
-          onChange={value => handleFilterChange("years", value)} 
+          onChange={handleFilterChange} 
+          category="years"
+          placeholder="Selecione os anos"
         />
         
-        <CheckboxGroup 
+        <FilterGroup 
           title="Escolaridade" 
           options={sortedOptions.educationLevels} 
           selectedValues={selectedFilters.educationLevels} 
-          onChange={value => handleFilterChange("educationLevels", value)} 
+          onChange={handleFilterChange} 
+          category="educationLevels"
+          placeholder="Selecione a escolaridade"
         />
-
-        <CheckboxGroup 
+        
+        <FilterGroup 
           title="Dificuldade" 
           options={sortedOptions.difficulty} 
           selectedValues={selectedFilters.difficulty} 
-          onChange={value => handleFilterChange("difficulty", value)} 
+          onChange={handleFilterChange} 
+          category="difficulty"
+          placeholder="Selecione a dificuldade"
         />
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex justify-between">
         <Button 
-          onClick={applyFiltersWithUrl} 
-          variant="flat" 
-          className="flex-1"
+          variant="outline" 
+          className="text-gray-600 border-gray-300 hover:bg-gray-50" 
+          onClick={clearAllFilters}
         >
-          Filtrar Questões
+          <X className="h-4 w-4 mr-2" />
+          Limpar filtros
         </Button>
         
-        {activeFiltersCount > 0 && (
-          <Button 
-            onClick={clearAllFilters} 
-            variant="outline" 
-            className="flex items-center gap-1"
-          >
-            <X className="h-4 w-4" />
-            Remover filtros
-          </Button>
-        )}
+        <Button 
+          className="bg-[#5f2ebe] hover:bg-[#4f25a0] text-white" 
+          onClick={applyFiltersWithUrl}
+        >
+          Aplicar filtros
+        </Button>
       </div>
     </>
   );

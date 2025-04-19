@@ -1,4 +1,4 @@
-import React, { forwardRef, ForwardRefRenderFunction, useEffect } from 'react';
+import React, { forwardRef, ForwardRefRenderFunction } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -17,8 +17,6 @@ import {
   Image as ImageIcon,
   List,
   ListOrdered,
-  Heading1,
-  Heading2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,22 +27,16 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 
-interface QuestionTiptapEditorProps {
+interface TipTapEditorProps {
   content: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  minHeight?: string;
 }
 
-const QuestionTiptapEditorComponent: ForwardRefRenderFunction<HTMLDivElement, QuestionTiptapEditorProps> = (
-  { content, onChange, placeholder = 'Digite o conteúdo aqui...', minHeight = '150px' },
+const TipTapEditorComponent: ForwardRefRenderFunction<HTMLDivElement, TipTapEditorProps> = (
+  { content, onChange, placeholder = 'Digite o conteúdo aqui...' },
   ref
 ) => {
-  // Armazenar a última atualização feita pelo usuário para evitar ciclo
-  const lastUserUpdate = React.useRef('');
-  // Armazenar se estamos no meio de uma atualização pelo useEffect
-  const isUpdatingFromProp = React.useRef(false);
-  
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -60,51 +52,14 @@ const QuestionTiptapEditorComponent: ForwardRefRenderFunction<HTMLDivElement, Qu
     ],
     content: content || '',
     onUpdate: ({ editor }) => {
-      // Só propagar a mudança se não estiver sendo causada pelo useEffect
-      if (!isUpdatingFromProp.current) {
-        const html = editor.getHTML();
-        lastUserUpdate.current = html;
-        onChange(html);
-      }
+      onChange(editor.getHTML());
     },
     editorProps: {
       attributes: {
-        class: `min-h-[${minHeight}] border border-input bg-background rounded-md p-3 focus-within:ring-1 focus-within:ring-ring focus-within:border-input outline-none`,
+        class: 'min-h-[150px] border border-input bg-background rounded-md p-3 focus-within:ring-1 focus-within:ring-ring focus-within:border-input outline-none',
       },
     },
   });
-
-  // Atualizar o conteúdo do editor apenas quando a prop content for explicitamente alterada
-  // e não quando for resultado da própria digitação do usuário
-  useEffect(() => {
-    if (editor && content !== null && content !== undefined) {
-      // Se o conteúdo recebido for igual à última atualização do usuário, ignorar
-      // Isso evita o ciclo: digitar -> onChange -> prop content mudou -> atualizar editor -> perder foco
-      if (content === lastUserUpdate.current) {
-        return;
-      }
-
-      // Verificar se é uma mudança significativa (não apenas whitespace ou formatação)
-      // Normalizar para evitar diferenças triviais que não justificam reiniciar o editor
-      const normalizedContent = content.replace(/\s+/g, ' ').trim();
-      const currentContent = editor.getHTML().replace(/\s+/g, ' ').trim();
-      
-      if (normalizedContent !== currentContent) {
-        // Marcar que estamos atualizando a partir de uma prop para evitar
-        // que o callback onUpdate dispare novamente durante essa atualização
-        isUpdatingFromProp.current = true;
-        
-        // Atualizar o conteúdo
-        editor.commands.setContent(content);
-        
-        // Após um breve período, permitir atualizações pelo usuário novamente
-        // O timeout é necessário para garantir que a atualização do editor seja concluída
-        setTimeout(() => {
-          isUpdatingFromProp.current = false;
-        }, 50);
-      }
-    }
-  }, [content, editor]);
 
   const [linkUrl, setLinkUrl] = React.useState('');
   const [imageUrl, setImageUrl] = React.useState('');
@@ -159,28 +114,6 @@ const QuestionTiptapEditorComponent: ForwardRefRenderFunction<HTMLDivElement, Qu
           aria-label="Sublinhado"
         >
           <UnderlineIcon className="h-4 w-4" />
-        </Toggle>
-
-        <Toggle
-          pressed={editor.isActive('heading', { level: 1 })}
-          onPressedChange={() => 
-            editor.chain().focus().toggleHeading({ level: 1 }).run()
-          }
-          size="sm"
-          aria-label="Título 1"
-        >
-          <Heading1 className="h-4 w-4" />
-        </Toggle>
-
-        <Toggle
-          pressed={editor.isActive('heading', { level: 2 })}
-          onPressedChange={() => 
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
-          size="sm"
-          aria-label="Título 2"
-        >
-          <Heading2 className="h-4 w-4" />
         </Toggle>
 
         <Toggle
@@ -281,13 +214,13 @@ const QuestionTiptapEditorComponent: ForwardRefRenderFunction<HTMLDivElement, Qu
 
       <EditorContent 
         editor={editor} 
-        className={`min-h-[${minHeight}] focus:outline-none`}
+        className="min-h-[150px] focus:outline-none"
         placeholder={placeholder}
       />
     </div>
   );
 };
 
-const QuestionTiptapEditor = forwardRef(QuestionTiptapEditorComponent);
+const TipTapEditor = forwardRef(TipTapEditorComponent);
 
-export default QuestionTiptapEditor; 
+export default TipTapEditor; 

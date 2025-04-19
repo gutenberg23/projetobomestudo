@@ -76,6 +76,14 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
     );
   };
 
+  // Função para obter a letra da opção de acordo com o tipo de questão
+  const getOptionLetter = (index: number) => {
+    if (questionType === "Certo ou Errado") {
+      return index === 0 ? "C" : "E";
+    }
+    return String.fromCharCode(65 + index);
+  };
+
   if (!questionType || !["Múltipla Escolha", "Certo ou Errado"].includes(questionType)) {
     return null;
   }
@@ -89,7 +97,7 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
           onValueChange={handleCorrectChange}
           className="space-y-2"
         >
-          {options.map((option) => (
+          {options.map((option, index) => (
             <div key={option.id} className="flex items-center gap-2">
               <RadioGroupItem
                 id={option.id}
@@ -124,11 +132,11 @@ const QuestionOptions: React.FC<QuestionOptionsProps> = ({
       <div className="space-y-2">
         {options.map((option, index) => (
           <div key={option.id} className="flex items-center gap-2">
-            <span className="font-medium">{String.fromCharCode(65 + index)}.</span>
+            <span className="font-medium">{getOptionLetter(index)}.</span>
             <Input
               value={option.text}
               onChange={(e) => handleOptionChange(option.id, e.target.value)}
-              placeholder={`Digite a alternativa ${String.fromCharCode(65 + index)}`}
+              placeholder={`Digite a alternativa ${getOptionLetter(index)}`}
               className={`flex-1 ${index === 4 ? 'border-gray-300' : ''}`}
             />
             <Checkbox

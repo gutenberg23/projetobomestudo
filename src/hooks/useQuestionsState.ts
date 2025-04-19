@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { QuestionOption, QuestionItemType } from '../types';
+import { QuestionOption, QuestionItemType } from '@/components/admin/questions/types';
 import { useQuestionManagementStore } from '@/stores/questionManagementStore';
 import { ITEMS_PER_PAGE } from "@/services/questoesService";
 
@@ -15,7 +15,7 @@ export const useQuestionsState = () => {
   const [year, setYear] = useState('');
   const [institution, setInstitution] = useState('');
   const [organization, setOrganization] = useState('');
-  const [role, setRole] = useState<string[]>([]);
+  const [role, setRole] = useState('');
   const [discipline, setDiscipline] = useState('');
   const [level, setLevel] = useState('');
   const [difficulty, setDifficulty] = useState('');
@@ -60,28 +60,25 @@ export const useQuestionsState = () => {
 
   // Limpar as opções quando o tipo de questão mudar
   useEffect(() => {
-    if (questionType === 'Múltipla Escolha' && options.length === 0) {
-      const initialOptions = Array(5).fill(0).map((_, i) => ({
-        id: `option-${Math.random().toString(36).substr(2, 9)}`,
-        text: '',
-        isCorrect: false
-      }));
-      setOptions(initialOptions);
-    } else if (questionType === 'Certo ou Errado' && options.length === 0) {
-      setOptions([
-        {
-          id: `option-${Math.random().toString(36).substr(2, 9)}`,
-          text: 'Certo',
-          isCorrect: false
-        },
-        {
-          id: `option-${Math.random().toString(36).substr(2, 9)}`,
-          text: 'Errado',
-          isCorrect: false
-        }
-      ]);
+    if (questionType === 'Múltipla Escolha') {
+      setOptions([]);
     }
   }, [questionType]);
+
+  // Garantir que sempre existam 5 opções para questões de múltipla escolha
+  useEffect(() => {
+    if (questionType === 'Múltipla Escolha') {
+      const currentOptions = [...options];
+      while (currentOptions.length < 5) {
+        currentOptions.push({
+          id: `option-${Math.random().toString(36).substr(2, 9)}`,
+          text: '',
+          isCorrect: false
+        });
+      }
+      setOptions(currentOptions);
+    }
+  }, [questionType, options]);
 
   return {
     questions,
@@ -135,4 +132,4 @@ export const useQuestionsState = () => {
     setTopicosIds,
     dropdownData
   };
-};
+}; 

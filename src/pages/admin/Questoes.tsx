@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import Card from "@/components/admin/questions/Card";
 import QuestionFilters from "@/components/admin/questions/QuestionFilters";
 import QuestionList from "@/components/admin/questions/QuestionList";
-import QuestionForm from "@/components/admin/questions/QuestionForm";
+import { QuestionForm } from "@/components/admin/questions/QuestionForm";
 import { useQuestionsState } from "@/components/admin/questions/hooks/useQuestionsState";
 import { useQuestionActions } from "@/components/admin/questions/hooks/useQuestionActions";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,23 +65,33 @@ const Questoes: React.FC = () => {
   const handleEditFromError = async (questionId: string) => {
     try {
       const questionData = await fetchQuestionById(questionId);
+      
+      console.log("Dados recebidos para edição:", {
+        teacherExplanation: questionData.teacherexplanation,
+        expandableContent: questionData.expandablecontent,
+        aiExplanation: questionData.aiexplanation
+      });
 
       // Atualizar o estado com os dados da questão
       state.setQuestionId(questionData.id);
       state.setYear(questionData.year || '');
       state.setInstitution(questionData.institution || '');
       state.setOrganization(questionData.organization || '');
-      state.setRole(questionData.role || '');
+      state.setRole(Array.isArray(questionData.role) ? questionData.role : []);
       state.setDiscipline(questionData.discipline || '');
       state.setLevel(questionData.level || '');
       state.setDifficulty(questionData.difficulty || '');
       state.setQuestionType(questionData.questiontype || '');
       state.setQuestionText(questionData.content || '');
+      
+      // Corrigir os nomes dos campos para exibição nos editores TipTap
       state.setTeacherExplanation(questionData.teacherexplanation || '');
       state.setExpandableContent(questionData.expandablecontent || '');
       state.setAIExplanation(questionData.aiexplanation || '');
+      
       state.setOptions(questionData.options);
-      state.setTopicos(questionData.topicos);
+      state.setAssuntos(questionData.assuntos || []);
+      state.setTopicos(questionData.topicos || []);
 
       // Abrir o card de edição
       state.setIsEditQuestionCardOpen(true);
@@ -149,6 +159,8 @@ const Questoes: React.FC = () => {
             setAIExplanation={state.setAIExplanation}
             options={state.options}
             setOptions={state.setOptions}
+            assuntos={state.assuntos}
+            setAssuntos={state.setAssuntos}
             topicos={state.topicos}
             setTopicos={state.setTopicos}
             onSubmit={actions.handleUpdateQuestion}
@@ -203,6 +215,8 @@ const Questoes: React.FC = () => {
           setAIExplanation={state.setAIExplanation}
           options={state.options}
           setOptions={state.setOptions}
+          assuntos={state.assuntos}
+          setAssuntos={state.setAssuntos}
           topicos={state.topicos}
           setTopicos={state.setTopicos}
           onSubmit={actions.handleSaveQuestion}

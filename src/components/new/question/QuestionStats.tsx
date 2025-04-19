@@ -35,13 +35,55 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
           { name: "Erros", value: 0, color: "#ef4444" },
         ]);
         
-        setAlternativesData([
-          { name: "A", value: 0, color: "#F8C471" },
-          { name: "B", value: 0, color: "#5DADE2" },
-          { name: "C", value: 0, color: "#F4D03F" },
-          { name: "D", value: 0, color: "#ABEBC6" },
-          { name: "E", value: 0, color: "#E59866" },
-        ]);
+        // Verificar o tipo de questão para definir o formato correto de alternativas
+        if (questionId) {
+          // Tentar buscar o tipo da questão usando async/await em uma IIFE
+          (async () => {
+            try {
+              const { data, error } = await supabase
+                .from('questoes')
+                .select('questiontype')
+                .eq('id', questionId)
+                .single();
+              
+              if (error) throw error;
+              
+              if (data && data.questiontype === "Certo ou Errado") {
+                setAlternativesData([
+                  { name: "C", value: 0, color: "#F4D03F" },
+                  { name: "E", value: 0, color: "#E59866" },
+                ]);
+              } else {
+                setAlternativesData([
+                  { name: "A", value: 0, color: "#F8C471" },
+                  { name: "B", value: 0, color: "#5DADE2" },
+                  { name: "C", value: 0, color: "#F4D03F" },
+                  { name: "D", value: 0, color: "#ABEBC6" },
+                  { name: "E", value: 0, color: "#E59866" },
+                ]);
+              }
+            } catch (error) {
+              console.error("Erro ao buscar tipo da questão:", error);
+              // Em caso de erro, usar o formato padrão
+              setAlternativesData([
+                { name: "A", value: 0, color: "#F8C471" },
+                { name: "B", value: 0, color: "#5DADE2" },
+                { name: "C", value: 0, color: "#F4D03F" },
+                { name: "D", value: 0, color: "#ABEBC6" },
+                { name: "E", value: 0, color: "#E59866" },
+              ]);
+            }
+          })();
+        } else {
+          // Se não temos ID da questão, usar o formato padrão
+          setAlternativesData([
+            { name: "A", value: 0, color: "#F8C471" },
+            { name: "B", value: 0, color: "#5DADE2" },
+            { name: "C", value: 0, color: "#F4D03F" },
+            { name: "D", value: 0, color: "#ABEBC6" },
+            { name: "E", value: 0, color: "#E59866" },
+          ]);
+        }
       }
     };
 
@@ -73,6 +115,7 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
             { name: "Erros", value: 0, color: "#ef4444" },
           ]);
           
+          // Como não sabemos o tipo da questão, usamos o formato padrão
           setAlternativesData([
             { name: "A", value: 0, color: "#F8C471" },
             { name: "B", value: 0, color: "#5DADE2" },
@@ -141,23 +184,32 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
         });
         
         // Buscar informações das alternativas disponíveis
-        let alternativas = [];
+        type AlternativaItem = { name: string; id?: string; value: number; color: string };
+        let alternativas: AlternativaItem[] = [];
         
         if (Object.keys(alternativasCounts).length > 0) {
           // Obter a questão para mapear os IDs às letras
           const { data: questaoData } = await supabase
             .from('questoes')
-            .select('options')
+            .select('options, questiontype')
             .eq('id', questionId)
             .single();
             
           if (questaoData && questaoData.options) {
             const options = Array.isArray(questaoData.options) ? questaoData.options : [];
+            const questionType = questaoData.questiontype;
             
-            // Mapear os IDs das opções para letras (A, B, C, D, E)
-            // e usar isso para plotar os resultados
+            // Mapear os IDs das opções para letras
+            // Usar C e E para questões do tipo "Certo ou Errado"
             alternativas = options.map((option: any, index: number) => {
-              const letter = String.fromCharCode(65 + index); // A, B, C, D, E
+              let letter;
+              if (questionType === "Certo ou Errado") {
+                letter = index === 0 ? "C" : "E";
+              } else {
+                // Para outros tipos, use as letras comuns (A, B, C, etc.)
+                letter = String.fromCharCode(65 + index); // A, B, C, D, E
+              }
+              
               const optionId = typeof option === 'object' && option !== null ? option.id : option;
               return {
                 name: letter,
@@ -170,13 +222,27 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
         }
         
         if (alternativas.length === 0) {
-          alternativas = [
-            { name: "A", value: 0, color: "#F8C471" },
-            { name: "B", value: 0, color: "#5DADE2" },
-            { name: "C", value: 0, color: "#F4D03F" },
-            { name: "D", value: 0, color: "#ABEBC6" },
-            { name: "E", value: 0, color: "#E59866" },
-          ];
+          // Verificar o tipo de questão para determinar as alternativas padrão
+          const { data: questaoType } = await supabase
+            .from('questoes')
+            .select('questiontype')
+            .eq('id', questionId)
+            .single();
+            
+            if (questaoType && questaoType.questiontype === "Certo ou Errado") {
+              alternativas = [
+                { name: "C", value: 0, color: "#F4D03F" },
+                { name: "E", value: 0, color: "#E59866" },
+              ];
+            } else {
+              alternativas = [
+                { name: "A", value: 0, color: "#F8C471" },
+                { name: "B", value: 0, color: "#5DADE2" },
+                { name: "C", value: 0, color: "#F4D03F" },
+                { name: "D", value: 0, color: "#ABEBC6" },
+                { name: "E", value: 0, color: "#E59866" },
+              ];
+            }
         }
         
         setAlternativesData(alternativas);
@@ -192,13 +258,38 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
           { name: "Erros", value: 0, color: "#ef4444" },
         ]);
         
-        setAlternativesData([
-          { name: "A", value: 0, color: "#F8C471" },
-          { name: "B", value: 0, color: "#5DADE2" },
-          { name: "C", value: 0, color: "#F4D03F" },
-          { name: "D", value: 0, color: "#ABEBC6" },
-          { name: "E", value: 0, color: "#E59866" },
-        ]);
+        try {
+          // Tentar buscar o tipo de questão mesmo no caso de erro nas estatísticas
+          const { data: questaoType } = await supabase
+            .from('questoes')
+            .select('questiontype')
+            .eq('id', questionId)
+            .single();
+            
+          if (questaoType && questaoType.questiontype === "Certo ou Errado") {
+            setAlternativesData([
+              { name: "C", value: 0, color: "#F4D03F" },
+              { name: "E", value: 0, color: "#E59866" },
+            ]);
+          } else {
+            setAlternativesData([
+              { name: "A", value: 0, color: "#F8C471" },
+              { name: "B", value: 0, color: "#5DADE2" },
+              { name: "C", value: 0, color: "#F4D03F" },
+              { name: "D", value: 0, color: "#ABEBC6" },
+              { name: "E", value: 0, color: "#E59866" },
+            ]);
+          }
+        } catch {
+          // Se falhar ao buscar o tipo, usar formato padrão
+          setAlternativesData([
+            { name: "A", value: 0, color: "#F8C471" },
+            { name: "B", value: 0, color: "#5DADE2" },
+            { name: "C", value: 0, color: "#F4D03F" },
+            { name: "D", value: 0, color: "#ABEBC6" },
+            { name: "E", value: 0, color: "#E59866" },
+          ]);
+        }
       } finally {
         setIsLoading(false);
       }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -6,26 +6,31 @@ import { Input } from "@/components/ui/input";
 
 interface AddTopicoDialogProps {
   isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  newTopicoNome: string;
-  setNewTopicoNome: (nome: string) => void;
-  handleAddTopico: () => void;
+  onClose: () => void;
+  onAdd: (topico: string) => Promise<boolean> | void;
+  isLoading?: boolean;
 }
 
-const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
+export function AddTopicoDialog({
   isOpen,
-  setIsOpen,
-  newTopicoNome,
-  setNewTopicoNome,
-  handleAddTopico
-}) => {
-  const handleSubmit = (e: React.FormEvent) => {
+  onClose,
+  onAdd,
+  isLoading = false
+}: AddTopicoDialogProps) {
+  const [newTopicoNome, setNewTopicoNome] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleAddTopico();
+    if (newTopicoNome.trim()) {
+      const success = await onAdd(newTopicoNome);
+      if (success) {
+        setNewTopicoNome("");
+      }
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Adicionar Tópico</DialogTitle>
@@ -46,15 +51,15 @@ const AddTopicoDialog: React.FC<AddTopicoDialogProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancelar
             </Button>
-            <Button type="submit">Adicionar</Button>
+            <Button type="submit" disabled={isLoading || !newTopicoNome.trim()}>
+              {isLoading ? "Adicionando..." : "Adicionar"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default AddTopicoDialog;
+} 

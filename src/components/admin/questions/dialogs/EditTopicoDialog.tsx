@@ -1,45 +1,42 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Topico } from "../../../types";
 
 interface EditTopicoDialogProps {
   isOpen: boolean;
-  setIsOpen: (isOpen: boolean) => void;
-  topicosList: Topico[];
-  currentTopico: Topico | null;
-  setCurrentTopico: (topico: Topico | null) => void;
-  newTopicoNome: string;
-  setNewTopicoNome: (nome: string) => void;
-  handleEditTopico: () => void;
+  onClose: () => void;
+  onEdit: (newTopico: string) => Promise<boolean> | void;
+  currentValue: string;
+  isLoading?: boolean;
 }
 
-const EditTopicoDialog: React.FC<EditTopicoDialogProps> = ({
+export function EditTopicoDialog({
   isOpen,
-  setIsOpen,
-  topicosList,
-  currentTopico,
-  setCurrentTopico,
-  newTopicoNome,
-  setNewTopicoNome,
-  handleEditTopico
-}) => {
+  onClose,
+  onEdit,
+  currentValue,
+  isLoading = false
+}: EditTopicoDialogProps) {
+  const [newTopicoNome, setNewTopicoNome] = useState("");
+
   // Atualizar o campo de nome quando um tópico for selecionado
   useEffect(() => {
-    if (currentTopico) {
-      setNewTopicoNome(currentTopico.nome);
+    if (currentValue) {
+      setNewTopicoNome(currentValue);
     }
-  }, [currentTopico, setNewTopicoNome]);
+  }, [currentValue]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleEditTopico();
+    if (newTopicoNome.trim()) {
+      await onEdit(newTopicoNome);
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Editar Tópico</DialogTitle>
@@ -60,15 +57,15 @@ const EditTopicoDialog: React.FC<EditTopicoDialogProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancelar
             </Button>
-            <Button type="submit">Salvar</Button>
+            <Button type="submit" disabled={isLoading || !newTopicoNome.trim()}>
+              {isLoading ? "Salvando..." : "Salvar"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default EditTopicoDialog;
+} 

@@ -1,15 +1,17 @@
-import React from "react";
-import { QuestionTiptapEditor } from "./QuestionTiptapEditor";
+import React, { useEffect } from "react";
+import { Label } from "@/components/ui/label";
+import QuestionTiptapEditor from "./QuestionTiptapEditor";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface QuestionTextFieldsProps {
   questionText: string | null;
   setQuestionText: ((value: string) => void) | null;
   teacherExplanation: string | null;
   setTeacherExplanation: ((value: string) => void) | null;
-  expandableContent?: string | null;
-  setExpandableContent?: ((value: string) => void) | null;
-  aiExplanation?: string | null;
-  setAIExplanation?: ((value: string) => void) | null;
+  expandableContent: string | null;
+  setExpandableContent: ((value: string) => void) | null;
+  aiExplanation: string | null;
+  setAIExplanation: ((value: string) => void) | null;
 }
 
 const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
@@ -22,56 +24,67 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
   aiExplanation,
   setAIExplanation
 }) => {
+  // Log para depuração (apenas uma vez na montagem)
+  useEffect(() => {
+    console.log("QuestionTextFields montado com valores iniciais");
+  }, []);
+
+  // Gerar IDs estáveis para cada instância do editor TipTap para evitar problemas de reinicialização
+  const questionTextId = React.useMemo(() => `question-text-${Math.random().toString(36).substring(2, 9)}`, []);
+  const teacherExplanationId = React.useMemo(() => `teacher-explanation-${Math.random().toString(36).substring(2, 9)}`, []);
+  const expandableContentId = React.useMemo(() => `expandable-content-${Math.random().toString(36).substring(2, 9)}`, []);
+  const aiExplanationId = React.useMemo(() => `ai-explanation-${Math.random().toString(36).substring(2, 9)}`, []);
+
   return (
-    <div className="space-y-4">
-      {expandableContent !== undefined && expandableContent !== null && setExpandableContent !== undefined && setExpandableContent !== null && (
-        <div>
-          <label htmlFor="expandable-content" className="block text-sm font-medium text-[#67748a] mb-1">
-            Conteúdo Expansível
-          </label>
-          <QuestionTiptapEditor
-            content={expandableContent}
-            onChange={setExpandableContent}
-            placeholder="Digite textos ou adicione imagens que serão exibidos ao expandir..."
-          />
-        </div>
-      )}
-      
+    <div className="space-y-6 w-full">
       {questionText !== null && setQuestionText !== null && (
-        <div>
-          <label htmlFor="question-text" className="block text-sm font-medium text-[#67748a] mb-1">
-            Texto da Questão
-          </label>
+        <div className="space-y-2">
+          <Label htmlFor="questionText">Texto da Questão</Label>
           <QuestionTiptapEditor
-            content={questionText}
+            key={questionTextId}
+            content={questionText || ''}
             onChange={setQuestionText}
-            placeholder="Digite o texto da questão..."
+            placeholder="Digite o texto da questão aqui..."
+            minHeight="200px"
           />
         </div>
       )}
-      
+
       {teacherExplanation !== null && setTeacherExplanation !== null && (
-        <div>
-          <label htmlFor="teacher-explanation" className="block text-sm font-medium text-[#67748a] mb-1">
-            Explicação do Professor
-          </label>
+        <div className="space-y-2">
+          <Label htmlFor="teacherExplanation">Explicação do Professor</Label>
           <QuestionTiptapEditor
-            content={teacherExplanation}
+            key={teacherExplanationId}
+            content={teacherExplanation || ''}
             onChange={setTeacherExplanation}
-            placeholder="Digite a explicação do professor..."
+            placeholder="Digite a explicação do professor aqui..."
+            minHeight="150px"
           />
         </div>
       )}
-      
-      {aiExplanation !== null && setAIExplanation !== null && (
-        <div>
-          <label htmlFor="ai-explanation" className="block text-sm font-medium text-[#67748a] mb-1">
-            Resposta da BIA (BomEstudo IA)
-          </label>
+
+      {expandableContent !== null && setExpandableContent !== null && (
+        <div className="space-y-2">
+          <Label htmlFor="expandableContent">Texto/Imagem Expansível</Label>
           <QuestionTiptapEditor
-            content={aiExplanation}
+            key={expandableContentId}
+            content={expandableContent || ''}
+            onChange={setExpandableContent}
+            placeholder="Digite o conteúdo expansível aqui..."
+            minHeight="150px"
+          />
+        </div>
+      )}
+
+      {aiExplanation !== null && setAIExplanation !== null && (
+        <div className="space-y-2">
+          <Label htmlFor="aiExplanation">Explicação da IA</Label>
+          <QuestionTiptapEditor
+            key={aiExplanationId}
+            content={aiExplanation || ''}
             onChange={setAIExplanation}
-            placeholder="Digite a resposta da BIA..."
+            placeholder="Digite a explicação da IA aqui..."
+            minHeight="150px"
           />
         </div>
       )}

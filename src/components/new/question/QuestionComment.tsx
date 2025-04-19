@@ -2,6 +2,7 @@ import React from "react";
 import { Heart } from "lucide-react";
 import type { Comment } from "../types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { prepareHtmlContent } from "@/utils/text-utils";
 
 interface QuestionCommentProps {
   comment: Comment;
@@ -14,6 +15,9 @@ export const QuestionComment: React.FC<QuestionCommentProps> = ({
   isLiked,
   onToggleLike,
 }) => {
+  // Preparar o conteúdo HTML para exibição correta de glifos
+  const preparedContent = prepareHtmlContent(comment.content);
+  
   return (
     <article className="flex flex-col justify-center px-5 py-2.5 w-full">
       <div className="flex flex-wrap justify-between items-start w-full">
@@ -35,7 +39,7 @@ export const QuestionComment: React.FC<QuestionCommentProps> = ({
             </div>
             <div 
               className="flex-1 shrink w-full text-base leading-6 basis-0 text-neutral-800"
-              dangerouslySetInnerHTML={{ __html: comment.content }}
+              dangerouslySetInnerHTML={{ __html: preparedContent }}
             />
           </div>
         </div>

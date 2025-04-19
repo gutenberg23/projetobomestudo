@@ -1,10 +1,15 @@
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Topico } from "../../types";
 import { toast } from "sonner";
+import { buscarTopicos, adicionarTopico, atualizarTopico, removerTopico } from "@/lib/admin/supabaseAdmin";
 
-export const useTopicosService = (disciplina: string, selectedTopicos: string[], setSelectedTopicos: (topicos: string[]) => void) => {
+export const useTopicosService = (
+  disciplina: string,
+  assuntos: string[],
+  selectedTopicos: string[],
+  setSelectedTopicos: (topicos: string[]) => void
+) => {
   const [topicosList, setTopicosList] = useState<Topico[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentTopico, setCurrentTopico] = useState<Topico | null>(null);
@@ -15,25 +20,50 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  // Fetch topics when discipline changes
+  // Referência para evitar chamadas duplicadas
+  const prevDisciplinaRef = useRef<string>('');
+  const prevAssuntosRef = useRef<string[]>([]);
+
+  // Garantir que setSelectedTopicos é sempre uma função válida
+  const safeSetSelectedTopicos = useCallback((topicos: string[]) => {
+    if (typeof setSelectedTopicos === 'function') {
+      setSelectedTopicos(topicos);
+    } else {
+      console.error('useTopicosService: setSelectedTopicos não é uma função', setSelectedTopicos);
+    }
+  }, [setSelectedTopicos]);
+
+  // Fetch tópicos quando disciplina ou assuntos mudam
   useEffect(() => {
+    // Verificar se os assuntos realmente mudaram para evitar re-fetchs desnecessários
+    const prevAssuntosStr = JSON.stringify(prevAssuntosRef.current.sort());
+    const currentAssuntosStr = JSON.stringify([...(assuntos || [])].sort());
+    
+    // Evita re-fetch desnecessário
+    if (
+      disciplina === prevDisciplinaRef.current && 
+      prevAssuntosStr === currentAssuntosStr
+    ) {
+      return;
+    }
+    
+    // Atualizar as referências
+    prevDisciplinaRef.current = disciplina;
+    prevAssuntosRef.current = [...(assuntos || [])];
+
     const fetchTopicos = async () => {
-      if (!disciplina) {
+      // Se não temos disciplina ou assuntos, resetamos a lista
+      if (!disciplina || !assuntos || !Array.isArray(assuntos) || assuntos.length === 0) {
         setTopicosList([]);
         return;
       }
 
       setLoading(true);
       try {
-        console.log("Buscando tópicos para disciplina:", disciplina);
-        const { data, error } = await supabase
-          .from('topicos')
-          .select('*')
-          .eq('disciplina', disciplina);
-
-        if (error) {
-          throw error;
-        }
+        console.log("Buscando tópicos para disciplina:", disciplina, "e assuntos:", assuntos);
+        
+        // Usar a função administrativa para buscar tópicos
+        const data = await buscarTopicos(disciplina, assuntos);
 
         console.log("Tópicos retornados:", data);
         setTopicosList(data || []);
@@ -46,15 +76,32 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
     };
 
     fetchTopicos();
-  }, [disciplina]);
+  }, [disciplina, assuntos]);
 
-  const handleTopicosChange = (topico: string) => {
-    if (selectedTopicos.includes(topico)) {
-      setSelectedTopicos(selectedTopicos.filter(t => t !== topico));
+  const handleTopicosChange = useCallback((topico: string, checked?: boolean) => {
+    // Garantir que selectedTopicos seja sempre um array
+    const safeSelectedTopicos = Array.isArray(selectedTopicos) ? selectedTopicos : [];
+    
+    // Se checked foi passado, usamos ele diretamente
+    if (checked !== undefined) {
+      if (checked) {
+        // Adicionar
+        if (!safeSelectedTopicos.includes(topico)) {
+          safeSetSelectedTopicos([...safeSelectedTopicos, topico]);
+        }
+      } else {
+        // Remover
+        safeSetSelectedTopicos(safeSelectedTopicos.filter(t => t !== topico));
+      }
     } else {
-      setSelectedTopicos([...selectedTopicos, topico]);
+      // Comportamento toggle (antigo)
+      if (safeSelectedTopicos.includes(topico)) {
+        safeSetSelectedTopicos(safeSelectedTopicos.filter(t => t !== topico));
+      } else {
+        safeSetSelectedTopicos([...safeSelectedTopicos, topico]);
+      }
     }
-  };
+  }, [selectedTopicos, safeSetSelectedTopicos]);
 
   const handleAddTopico = async () => {
     if (!newTopicoNome.trim()) {
@@ -62,27 +109,27 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
       return;
     }
 
+    if (!assuntos || !Array.isArray(assuntos) || assuntos.length === 0) {
+      toast.error("Selecione pelo menos um assunto antes de adicionar um tópico");
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
-        .from('topicos')
-        .insert([{ 
-          nome: newTopicoNome, 
-          disciplina,
-          patrocinador: "",
-          questoes_ids: []
-        }])
-        .select();
+      // Usamos o primeiro assunto selecionado para o novo tópico
+      const assunto = assuntos[0];
+      
+      // Usar a função administrativa para adicionar tópico
+      const data = await adicionarTopico({
+        nome: newTopicoNome,
+        assunto,
+        disciplina
+      });
 
-      if (error) {
-        throw error;
-      }
-
-      if (data && data.length > 0) {
-        setTopicosList([...topicosList, data[0]]);
-        toast.success("Tópico adicionado com sucesso!");
-        setNewTopicoNome("");
-        setIsAddDialogOpen(false);
-      }
+      // Adicionar o novo tópico à lista local
+      setTopicosList(prevList => [...prevList, data]);
+      toast.success("Tópico adicionado com sucesso!");
+      setNewTopicoNome("");
+      setIsAddDialogOpen(false);
     } catch (error) {
       console.error("Erro ao adicionar tópico:", error);
       toast.error("Erro ao adicionar tópico. Tente novamente.");
@@ -96,26 +143,20 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
     }
 
     try {
-      const { error } = await supabase
-        .from('topicos')
-        .update({ 
-          nome: newTopicoNome
-        })
-        .eq('id', currentTopico.id);
+      // Usar a função administrativa para atualizar tópico
+      await atualizarTopico(currentTopico.id, newTopicoNome);
 
-      if (error) {
-        throw error;
-      }
-
-      setTopicosList(topicosList.map(t => 
-        t.id === currentTopico.id ? { ...t, nome: newTopicoNome } : t
-      ));
+      // Atualizar o tópico na lista local
+      setTopicosList(prevList => 
+        prevList.map(t => t.id === currentTopico.id ? { ...t, nome: newTopicoNome } : t)
+      );
       
       // Atualizar também no array de tópicos selecionados
-      if (selectedTopicos.includes(currentTopico.nome)) {
-        const newTopicos = selectedTopicos.filter(t => t !== currentTopico.nome);
+      const safeSelectedTopicos = Array.isArray(selectedTopicos) ? selectedTopicos : [];
+      if (safeSelectedTopicos.includes(currentTopico.nome)) {
+        const newTopicos = safeSelectedTopicos.filter(t => t !== currentTopico.nome);
         newTopicos.push(newTopicoNome);
-        setSelectedTopicos(newTopicos);
+        safeSetSelectedTopicos(newTopicos);
       }
 
       toast.success("Tópico atualizado com sucesso!");
@@ -132,20 +173,16 @@ export const useTopicosService = (disciplina: string, selectedTopicos: string[],
     if (!currentTopico) return;
 
     try {
-      const { error } = await supabase
-        .from('topicos')
-        .delete()
-        .eq('id', currentTopico.id);
+      // Usar a função administrativa para remover tópico
+      await removerTopico(currentTopico.id);
 
-      if (error) {
-        throw error;
-      }
-
-      setTopicosList(topicosList.filter(t => t.id !== currentTopico.id));
+      // Remover o tópico da lista local
+      setTopicosList(prevList => prevList.filter(t => t.id !== currentTopico.id));
       
       // Remover do array de tópicos selecionados
-      if (selectedTopicos.includes(currentTopico.nome)) {
-        setSelectedTopicos(selectedTopicos.filter(t => t !== currentTopico.nome));
+      const safeSelectedTopicos = Array.isArray(selectedTopicos) ? selectedTopicos : [];
+      if (safeSelectedTopicos.includes(currentTopico.nome)) {
+        safeSetSelectedTopicos(safeSelectedTopicos.filter(t => t !== currentTopico.nome));
       }
 
       toast.success("Tópico removido com sucesso!");

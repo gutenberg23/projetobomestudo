@@ -30,6 +30,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useLocation } from "react-router-dom";
 import { useQuestionAttempts } from '@/hooks/useQuestionAttempts';
+import { prepareHtmlContent } from "@/utils/text-utils";
 
 // Declarar o tipo global
 declare global {
@@ -1180,6 +1181,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             educationLevel={question.educationLevel || ""}
             discipline={question.discipline || ""}
             topics={loadedTopics.length > 0 ? loadedTopics : (question.topics || [])}
+            assunto={question.assunto}
             questionId={question.id}
             hideInfo={isSimuladoPage && !hasAnswered}
           />
@@ -1205,7 +1207,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             )}
           </div>
           {showExpandedContent && (
-            <div className="mt-2 p-4 bg-gray-50 rounded-lg" dangerouslySetInnerHTML={{ __html: question.expandableContent || '' }} />
+            <div className="mt-2 p-4 bg-gray-50 rounded-lg" 
+              dangerouslySetInnerHTML={{ __html: prepareHtmlContent(question.expandableContent || '') }} 
+            />
           )}
         </div>
       )}
@@ -1213,15 +1217,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       {/* Conteúdo da questão */}
       <div className="flex gap-2.5 items-start px-5 py-2.5 w-full text-base text-slate-800">
         <div className="flex flex-col w-full py-5 rounded-md relative">
-          <p className="text-left text-sm md:text-base" dangerouslySetInnerHTML={{
-            __html: question.content
-          }} />
+          <p className="text-left text-sm md:text-base" 
+            dangerouslySetInnerHTML={{
+              __html: prepareHtmlContent(question.content)
+            }} 
+          />
         </div>
       </div>
 
       {/* Comando da questão */}
       {question.command && (
-        <div className="mb-4 px-4 text-gray-700" dangerouslySetInnerHTML={{ __html: question.command }} />
+        <div className="mb-4 px-4 text-gray-700" 
+          dangerouslySetInnerHTML={{ __html: prepareHtmlContent(question.command) }} 
+        />
       )}
 
       {question.options.map((option, index) => (
@@ -1236,6 +1244,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           onToggleDisabled={handleToggleDisabled} 
           onSelect={handleOptionClick} 
           showAnswer={showAnswer} 
+          questionType={question.questionType}
         />
       ))}
 
@@ -1371,7 +1380,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         id: `teacher-${question.id}`,
         author: "Professor",
         avatar: gabaritoAvatar,
-        content: question.teacherExplanation,
+        content: prepareHtmlContent(question.teacherExplanation),
         timestamp: "Gabarito oficial",
         likes: teacherLikesCount
       }} isLiked={likedComments.includes(`teacher-${question.id}`)} onToggleLike={toggleLike} />
@@ -1382,7 +1391,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         id: `ai-${question.id}`,
         author: "BIA (BomEstudo IA)",
         avatar: "/lovable-uploads/BIA.jpg",
-        content: question.aiExplanation,
+        content: prepareHtmlContent(question.aiExplanation),
         timestamp: "Resposta da IA",
         likes: aiLikesCount
       }} isLiked={likedComments.includes(`ai-${question.id}`)} onToggleLike={toggleLike} />

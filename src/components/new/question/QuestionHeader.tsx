@@ -18,6 +18,7 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
   role,
   discipline,
   topics = [],
+  assunto = "",
   questionId,
   hideInfo = false
 }) => {
@@ -30,7 +31,8 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
   // Log para debug dos tópicos
   useEffect(() => {
     console.log("Topics recebidos no QuestionHeader:", topics);
-  }, [topics]);
+    console.log("Assunto recebido no QuestionHeader:", assunto);
+  }, [topics, assunto]);
 
   const handleReportSubmit = async () => {
     if (!reportDescription.trim()) {
@@ -75,10 +77,10 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
         <div className="flex items-center">
           <span className="text-sm max-sm:hidden">Disciplina:&nbsp;</span>
           <span className="font-normal text-sm max-sm:text-xs">{discipline || "Não informado"}</span>
-          {Array.isArray(topics) && topics.length > 0 && (
+          {assunto && (
             <>
               <MoveRight className="h-3 w-3 mx-1.5 text-gray-300 max-sm:hidden" />
-              <span className="font-normal text-sm max-sm:hidden text-white font-medium">{topics.join(", ")}</span>
+              <span className="font-normal text-sm max-sm:hidden text-white font-medium">{assunto}</span>
             </>
           )}
         </div>
@@ -101,7 +103,10 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
                         <h4 className="font-medium text-sm">Informações da Questão</h4>
                         <div className="text-xs space-y-1.5">
                           <div className="sm:hidden">
-                            <span className="font-medium">Assunto:</span> {Array.isArray(topics) && topics.length > 0 ? topics.join(", ") : "Não informado"}
+                            <span className="font-medium">Assunto:</span> {assunto || "Não informado"}
+                          </div>
+                          <div>
+                            <span className="font-medium">Tópicos:</span> {Array.isArray(topics) && topics.length > 0 ? topics.join(", ") : "Não informado"}
                           </div>
                           <div>
                             <span className="font-medium">ID:</span> {questionId || "Não informado"}

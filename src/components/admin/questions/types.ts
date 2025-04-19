@@ -3,7 +3,7 @@ export interface QuestionItemType {
   year: string;
   institution: string;
   organization: string;
-  role: string;
+  role: string[];
   discipline: string;
   level: string;
   difficulty: string;
@@ -13,6 +13,7 @@ export interface QuestionItemType {
   aiExplanation: string;
   expandableContent: string;
   options: QuestionOption[];
+  assuntos: string[];
   topicos: string[];
 }
 
@@ -37,10 +38,8 @@ export interface QuestionOption {
 export interface Topico {
   id: string;
   nome: string;
+  assunto: string;
   disciplina: string;
-  professor_id: string;
-  professor_nome: string;
-  created_at?: string;
 }
 
 export interface CourseItemType {
@@ -90,5 +89,6 @@ export interface Filters {
   dificuldade: FilterItem;
   questionType: FilterItem;
   topicos: FilterItem;
+  subtopicos: FilterItem;
   conteudo: FilterItem;
 }

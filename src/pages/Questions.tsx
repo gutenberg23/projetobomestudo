@@ -91,7 +91,13 @@ const Questions = () => {
       Object.keys(selectedFilters).forEach(key => {
         const param = searchParams.get(key);
         if (param) {
-          newFilters[key as keyof typeof selectedFilters] = param.split(',');
+          try {
+            // Primeiro tentar interpretar como JSON (novo formato)
+            newFilters[key as keyof typeof selectedFilters] = JSON.parse(param);
+          } catch (e) {
+            // Caso falhe, usar o formato antigo com split
+            newFilters[key as keyof typeof selectedFilters] = param.split(',');
+          }
         } else {
           newFilters[key as keyof typeof selectedFilters] = [];
         }
@@ -125,7 +131,7 @@ const Questions = () => {
         const roles = [...new Set(data.map(q => q.role).filter(Boolean))].sort();
         const disciplines = [...new Set(data.map(q => q.discipline).filter(Boolean))].sort();
         const levels = [...new Set(data.map(q => q.level).filter(Boolean))].sort();
-        const years = [...new Set(data.map(q => q.year).filter(Boolean))].sort((a, b) => b.localeCompare(a));
+        const years = [...new Set(data.map(q => q.year).filter(Boolean))].sort((a, b) => String(b).localeCompare(String(a)));
         const difficulties = [...new Set(data.map(q => q.difficulty).filter(Boolean))].sort();
         
         // Coletar todos os tópicos únicos
@@ -238,7 +244,8 @@ const Questions = () => {
           aiExplanation: q.aiexplanation || "",
           expandableContent: q.expandablecontent || "",
           options: parseOptions(q.options),
-          topicos: Array.isArray(q.topicos) ? q.topicos : []
+          topicos: Array.isArray(q.topicos) ? q.topicos : [],
+          assunto: q.assuntos || ""
         }));
         
         setQuestions(formattedQuestions);
