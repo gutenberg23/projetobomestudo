@@ -209,8 +209,62 @@ const Questions = () => {
         
         // O filtro de tópicos é um caso especial (array)
         if (selectedFilters.topics.length > 0) {
-          // Usar o filtro overlap para encontrar questões que contenham pelo menos um tópico
-          query = query.overlaps('topicos', selectedFilters.topics);
+          console.log("Buscando questões com assuntos:", selectedFilters.topics);
+          
+          // Fazer a consulta para obter todos os IDs de questões com os assuntos selecionados
+          let idsQuestoes: string[] = [];
+          
+          try {
+            // Buscar todas as questões com um único query
+            const { data: todasQuestoes, error: erroConsulta } = await supabase
+              .from('questoes')
+              .select('id, assuntos');
+            
+            if (erroConsulta) {
+              console.error("Erro ao buscar questões para filtrar por assuntos:", erroConsulta);
+            } else if (todasQuestoes && todasQuestoes.length > 0) {
+              // Filtrar questões que contêm qualquer um dos assuntos selecionados
+              const assuntosSelecionados = selectedFilters.topics;
+              
+              for (const questao of todasQuestoes) {
+                if (questao.assuntos && Array.isArray(questao.assuntos)) {
+                  // Verificar correspondência mais flexível entre assuntos
+                  const temAssuntoSelecionado = assuntosSelecionados.some(assuntoSelecionado => {
+                    // Normalizar o assunto selecionado
+                    const assuntoNormalizado = assuntoSelecionado.toLowerCase().trim();
+                    
+                    return questao.assuntos.some((assuntoQuestao: string) => {
+                      // Normalizar o assunto da questão
+                      const questaoNormalizada = assuntoQuestao.toLowerCase().trim();
+                      
+                      // Verificar correspondência exata ou se um contém o outro
+                      return questaoNormalizada === assuntoNormalizado || 
+                             questaoNormalizada.includes(assuntoNormalizado) || 
+                             assuntoNormalizado.includes(questaoNormalizada);
+                    });
+                  });
+                  
+                  if (temAssuntoSelecionado) {
+                    idsQuestoes.push(questao.id);
+                  }
+                }
+              }
+            }
+            
+            console.log(`Total de ${idsQuestoes.length} questões encontradas para os assuntos selecionados`);
+            
+            // Adicionar filtro de IDs à consulta principal
+            if (idsQuestoes.length > 0) {
+              query = query.in('id', idsQuestoes);
+            } else {
+              // Caso não encontremos nenhuma questão, forçar um resultado vazio
+              query = query.eq('id', 'id_inexistente');
+            }
+          } catch (e) {
+            console.error("Erro ao processar busca por assuntos:", e);
+            // Em caso de erro, retornar resultado vazio
+            query = query.eq('id', 'id_inexistente');
+          }
         }
         
         // Aplicar paginação
@@ -245,7 +299,7 @@ const Questions = () => {
           expandableContent: q.expandablecontent || "",
           options: parseOptions(q.options),
           topicos: Array.isArray(q.topicos) ? q.topicos : [],
-          assunto: q.assuntos || ""
+          assuntos: Array.isArray(q.assuntos) ? q.assuntos : []
         }));
         
         setQuestions(formattedQuestions);
