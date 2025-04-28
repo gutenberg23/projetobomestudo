@@ -1,8 +1,13 @@
+
 /// <reference types="vite/client" />
 
-// Adicionar definição para suporte ao shim do router Next.js
-declare module 'next/router' {
-  import { useRouter, Router } from '../lib/next-router-shim';
-  export { useRouter, Router };
-  export default { useRouter, Router };
+interface ImportMetaEnv {
+  readonly VITE_SUPABASE_URL: string;
+  readonly VITE_SUPABASE_ANON_KEY: string;
+  readonly VITE_SUPABASE_SERVICE_ROLE_KEY: string;
+  readonly OPENAI_API_KEY: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }
