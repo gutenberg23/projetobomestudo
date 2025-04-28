@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { auth } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 
 const RedefinirSenha = () => {
@@ -17,7 +18,7 @@ const RedefinirSenha = () => {
   useEffect(() => {
     // Verificar se o usuário chegou a esta página via link de redefinição de senha
     const checkSession = async () => {
-      const { data, error } = await auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
       
       if (error || !data.session) {
         // Se não houver sessão, redirecionar para a página de login
@@ -46,7 +47,7 @@ const RedefinirSenha = () => {
     setIsSubmitting(true);
     
     try {
-      const { error } = await auth.updateUser({ password });
+      const { error } = await supabase.auth.updateUser({ password });
       
       if (error) {
         setError(error.message);
@@ -141,4 +142,4 @@ const RedefinirSenha = () => {
   );
 };
 
-export default RedefinirSenha; 
+export default RedefinirSenha;
