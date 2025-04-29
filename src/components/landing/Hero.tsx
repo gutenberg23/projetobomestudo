@@ -1,123 +1,103 @@
-import React, { useState } from "react";
+
+import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Youtube, Award, BarChart } from "lucide-react";
-import { TeacherSignupDialog } from "./TeacherSignupDialog";
+import { BookOpen, BarChart, Award } from "lucide-react";
 
 export const Hero = () => {
-  const [teacherDialogOpen, setTeacherDialogOpen] = useState(false);
   return (
-    <div className="w-full min-h-screen relative overflow-hidden bg-white">
-      {/* Background Effect - Degradê Radial Moderno */}
-      <div className="absolute inset-0 w-full h-full overflow-hidden">
-        {/* Primeiro círculo de degradê - maior, mais suave */}
-        <div className="absolute w-[800px] h-[800px] rounded-full 
-          bg-gradient-to-r from-[#5f2ebe]/40 via-[#5f2ebe]/20 to-transparent 
-          -top-[200px] -left-[200px] blur-[60px]">
-        </div>
-        
-        {/* Segundo círculo de degradê - médio */}
-        <div className="absolute w-[600px] h-[600px] rounded-full 
-          bg-gradient-to-r from-[#5f2ebe]/30 via-[#5f2ebe]/15 to-transparent 
-          top-[40%] -right-[200px] blur-[50px]">
-        </div>
-        
-        {/* Terceiro círculo de degradê - menor, mais intenso */}
-        <div className="absolute w-[400px] h-[400px] rounded-full 
-          bg-gradient-to-r from-[#5f2ebe]/25 via-[#5f2ebe]/10 to-transparent 
-          bottom-[10%] left-[20%] blur-[40px]">
-        </div>
-        
-        {/* Overlay para suavizar a transição */}
-        <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-white/20 to-white/90 pointer-events-none"></div>
-        
-        {/* Pontos decorativos com animação */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[20%] left-[30%] animate-pulse" style={{
-          animationDelay: "0.5s"
-        }}></div>
-          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[50%] left-[70%] animate-pulse" style={{
-          animationDelay: "0.7s"
-        }}></div>
-          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[70%] left-[20%] animate-pulse" style={{
-          animationDelay: "1s"
-        }}></div>
-          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[30%] left-[80%] animate-pulse" style={{
-          animationDelay: "1.2s"
-        }}></div>
-          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[80%] left-[50%] animate-pulse" style={{
-          animationDelay: "0.8s"
-        }}></div>
-          <div className="absolute w-2 h-2 bg-[#5f2ebe] rounded-full top-[40%] left-[40%] animate-pulse" style={{
-          animationDelay: "1.5s"
-        }}></div>
-          
-          {/* Adicionando mais pontos para melhorar o efeito visual */}
-          <div className="absolute w-1 h-1 bg-[#5f2ebe] rounded-full top-[25%] left-[55%] animate-pulse" style={{
-          animationDelay: "1.8s"
-        }}></div>
-          <div className="absolute w-1 h-1 bg-[#5f2ebe] rounded-full top-[65%] left-[35%] animate-pulse" style={{
-          animationDelay: "2s"
-        }}></div>
-          <div className="absolute w-1 h-1 bg-[#5f2ebe] rounded-full top-[45%] left-[85%] animate-pulse" style={{
-          animationDelay: "1.3s"
-        }}></div>
-        </div>
-      </div>
+    <section className="w-full py-16 md:py-24 lg:py-32 bg-white relative overflow-hidden">
+      {/* Detalhes decorativos */}
+      <div className="absolute top-20 right-0 w-64 h-64 bg-[#f2f4f6] rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute bottom-20 left-0 w-32 h-32 bg-[#f2f4f6] rounded-full translate-x-1/2 translate-y-1/2"></div>
       
-      {/* Conteúdo centralizado */}
-      <div className="mx-auto px-4 min-h-screen flex flex-col justify-center items-center relative z-20 py-16 bg-white">
-        <div className="text-center space-y-6 max-w-3xl px-4">
-          <div className="flex justify-center items-center">
-            <img 
-              src="/lovable-uploads/hero.svg" 
-              alt="Conectando Alunos a Professores" 
-              className="w-full max-w-xl mx-auto h-auto"
-            />
+      <div className="container px-4 md:px-6 mx-auto max-w-7xl relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="flex flex-col space-y-6">
+            <div className="inline-flex px-4 py-2 rounded-full bg-[#f2f4f6] text-[#f52ebe] font-medium text-sm">
+              <span className="flex items-center">
+                <Award className="w-4 h-4 mr-2" />
+                Estudando para ser aprovado
+              </span>
+            </div>
+            
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
+              Conquiste sua 
+              <span className="text-[#f52ebe] block">aprovação</span> 
+              nos concursos públicos
+            </h1>
+            
+            <p className="text-lg text-gray-600 max-w-lg">
+              Estude gratuitamente com milhares de questões comentadas, 
+              estatísticas de desempenho e aulas organizadas por editais.
+            </p>
+            
+            <div className="flex flex-wrap gap-4 mt-4">
+              <Link to="/login">
+                <Button className="bg-[#f52ebe] hover:bg-[#f52ebe]/90 text-white px-8 py-6">
+                  Começar agora
+                </Button>
+              </Link>
+              <Link to="/explore">
+                <Button variant="outline" className="border-[#f52ebe] text-[#f52ebe] hover:bg-[#f52ebe]/5 px-8 py-6">
+                  Explorar recursos
+                </Button>
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4 pt-8 border-t border-gray-100 mt-4">
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold text-[#f52ebe]">+1.3M</span>
+                <span className="text-gray-500 text-sm">Questões disponíveis</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold text-[#f52ebe]">+5.000</span>
+                <span className="text-gray-500 text-sm">Aulas gratuitas</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-bold text-[#f52ebe]">97%</span>
+                <span className="text-gray-500 text-sm">Taxa de aprovação</span>
+              </div>
+            </div>
           </div>
           
-          <p className="text-base sm:text-lg text-[#67748a] max-w-2xl mx-auto leading-relaxed md:text-xl font-light">
-            Estude de graça com os melhores professores do YouTube e utilize ferramentas avançadas para potencializar seus estudos para concursos públicos.
-          </p>
-          
-          {/* Feature Icons */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-4 sm:py-6 max-w-2xl mx-auto">
-            {[{
-            icon: <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-[#5f2ebe]" />,
-            label: "Cursos Gratuitos"
-          }, {
-            icon: <Youtube className="h-5 w-5 sm:h-6 sm:w-6 text-[#5f2ebe]" />,
-            label: "Professores YouTubers"
-          }, {
-            icon: <BarChart className="h-5 w-5 sm:h-6 sm:w-6 text-[#5f2ebe]" />,
-            label: "Estatísticas Detalhadas"
-          }, {
-            icon: <Award className="h-5 w-5 sm:h-6 sm:w-6 text-[#5f2ebe]" />,
-            label: "Acompanhamento Completo"
-          }].map((item, index) => <div key={index} className="flex flex-col items-center gap-2 p-2 sm:p-4">
-                <div className="p-2 bg-white rounded-full shadow-none">
-                  {item.icon}
+          <div className="flex justify-center lg:justify-end">
+            <div className="relative">
+              <div className="w-full max-w-md overflow-hidden relative">
+                <img 
+                  src="/lovable-uploads/hero.svg" 
+                  alt="Estudantes aprovados" 
+                  className="w-full h-auto" 
+                />
+                
+                <div className="absolute -bottom-2 -right-2 bg-white p-4 rounded-lg border border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-[#c9ff33] p-2 rounded-full">
+                      <BarChart className="w-5 h-5 text-gray-800" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Acompanhe seu progresso</p>
+                      <p className="text-xs text-gray-500">Estatísticas detalhadas</p>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-xs sm:text-sm text-[#67748a] font-normal">{item.label}</span>
-              </div>)}
-          </div>
-          
-          {/* Botões com design melhorado */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
-            <Link to="/login" className="w-auto">
-              <Button variant="hero" className="text-white rounded-lg text-sm sm:text-base tracking-wider hover:bg-opacity-90 transition-all px-5 bg-gradient-to-r from-[#5f2ebe] to-[#7344d4] hover:shadow-lg hover:shadow-[#5f2ebe]/30 hover:-translate-y-1 border-b-2 border-[#491aa4] font-normal w-auto py-[20px]">
-                QUERO ESTUDAR GRÁTIS
-              </Button>
-            </Link>
-            <Button onClick={() => setTeacherDialogOpen(true)} variant="secondary" className="rounded-lg text-sm sm:text-base tracking-wider transition-all px-5 bg-white border-2 border-[#5f2ebe] text-[#5f2ebe] hover:bg-[#5f2ebe]/10 hover:shadow-lg hover:shadow-[#5f2ebe]/20 hover:-translate-y-1 w-auto font-normal py-[20px]">
-              QUERO SER PROFESSOR
-            </Button>
+                
+                <div className="absolute -top-2 -left-2 bg-white p-4 rounded-lg border border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-[#f52ebe]/10 p-2 rounded-full">
+                      <BookOpen className="w-5 h-5 text-[#f52ebe]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Conteúdo organizado</p>
+                      <p className="text-xs text-gray-500">Por editais de concursos</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      
-      {/* Diálogo de cadastro de professor */}
-      <TeacherSignupDialog open={teacherDialogOpen} onOpenChange={setTeacherDialogOpen} />
-    </div>
+    </section>
   );
 };

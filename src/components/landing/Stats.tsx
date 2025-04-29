@@ -2,27 +2,25 @@
 import React from "react";
 
 export const Stats = () => {
+  const stats = [
+    { number: "1.3M+", label: "questões disponíveis" },
+    { number: "165K+", label: "vagas em concursos públicos em 2025" },
+    { number: "5.000+", label: "aulas gratuitas" },
+    { number: "97%", label: "dos aprovados usaram nossa plataforma" }
+  ];
+
   return (
-    <div className="w-full px-2.5 py-16 bg-gray-50">
-      <div className="max-w-4xl mx-auto text-center mb-16">
-        <p className="text-xl md:text-2xl text-[#67748a]">
-          A plataforma mais completa de estudos para concursos públicos, com milhares de questões e conteúdos atualizados para sua aprovação.
-        </p>
-      </div>
-      <div className="max-w-7xl mx-auto flex flex-wrap justify-around gap-8">
-        <div className="text-center">
-          <div className="text-[#ea2be2] text-4xl md:text-5xl font-bold mb-2">1,3M</div>
-          <p className="text-[#67748a]">de questões para você praticar</p>
-        </div>
-        <div className="text-center">
-          <div className="text-[#ea2be2] text-4xl md:text-5xl font-bold mb-2">+165k</div>
-          <p className="text-[#67748a]">vagas disponíveis em concursos públicos em 2025</p>
-        </div>
-        <div className="text-center">
-          <div className="text-[#ea2be2] text-4xl md:text-5xl font-bold mb-2">97%</div>
-          <p className="text-[#67748a]">dos aprovados usaram nossa plataforma</p>
+    <section className="w-full py-12 bg-[#f52ebe]">
+      <div className="container px-4 md:px-6 mx-auto max-w-7xl">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
+          {stats.map((stat, index) => (
+            <div key={index} className="flex flex-col items-center text-white">
+              <span className="text-3xl md:text-4xl font-bold">{stat.number}</span>
+              <span className="text-sm md:text-base text-white/80 text-center">{stat.label}</span>
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };

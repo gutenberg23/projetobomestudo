@@ -1,24 +1,27 @@
+
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Hero } from "@/components/landing/Hero";
-import { StudentBenefits } from "@/components/landing/StudentBenefits";
-import { TeacherBenefits } from "@/components/landing/TeacherBenefits";
+import { Features } from "@/components/landing/Features";
+import { Benefits } from "@/components/landing/Benefits";
 import { FAQ } from "@/components/landing/FAQ";
+import { Stats } from "@/components/landing/Stats";
 import { Testimonials } from "@/components/landing/Testimonials";
-import { PricingPlans } from "@/components/landing/PricingPlans";
 import { Newsletter } from "@/components/landing/Newsletter";
+import { ConcursoPreview } from "@/components/landing/ConcursoPreview";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Header />
       <main>
         <Hero />
-        <StudentBenefits />
-        <TeacherBenefits />
-        <FAQ />
+        <Stats />
+        <Features />
+        <Benefits />
+        <ConcursoPreview />
         <Testimonials />
-        <PricingPlans />
+        <FAQ />
         <Newsletter />
       </main>
       <Footer />
