@@ -33,7 +33,7 @@ export const Benefits = () => {
                 <ul className="space-y-3">
                   {benefitsLeft.map((benefit, index) => (
                     <li key={index} className="flex items-start space-x-2">
-                      <Check className="w-5 h-5 text-[#f52ebe] mt-0.5 flex-shrink-0" />
+                      <Check className="w-5 h-5 text-[#5f2ebe] mt-0.5 flex-shrink-0" />
                       <span>{benefit}</span>
                     </li>
                   ))}
@@ -42,13 +42,13 @@ export const Benefits = () => {
               
               <div>
                 <h3 className="text-lg font-bold mb-4 inline-flex items-center">
-                  <span className="bg-[#f52ebe] w-1.5 h-8 mr-2"></span>
+                  <span className="bg-[#5f2ebe] w-1.5 h-8 mr-2"></span>
                   Por que usar
                 </h3>
                 <ul className="space-y-3">
                   {benefitsRight.map((benefit, index) => (
                     <li key={index} className="flex items-start space-x-2">
-                      <Check className="w-5 h-5 text-[#f52ebe] mt-0.5 flex-shrink-0" />
+                      <Check className="w-5 h-5 text-[#5f2ebe] mt-0.5 flex-shrink-0" />
                       <span>{benefit}</span>
                     </li>
                   ))}
@@ -65,8 +65,8 @@ export const Benefits = () => {
             <p className="text-lg text-gray-600 mb-6">
               Nossa plataforma oferece tudo que você precisa para maximizar seu tempo de estudo e aumentar suas chances de aprovação, sem custo algum.
             </p>
-            <div className="inline-flex items-center space-x-2 py-2 px-4 bg-[#f52ebe]/10 rounded-lg">
-              <span className="text-[#f52ebe] font-medium">97%</span>
+            <div className="inline-flex items-center space-x-2 py-2 px-4 bg-[#5f2ebe]/10 rounded-lg">
+              <span className="text-[#5f2ebe] font-medium">97%</span>
               <span>dos aprovados utilizaram o BomEstudo em sua preparação</span>
             </div>
           </div>

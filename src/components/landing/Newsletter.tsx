@@ -9,7 +9,7 @@ export const Newsletter = () => {
       <div className="container px-4 md:px-6 mx-auto max-w-7xl">
         <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-start">
           <div className="flex-1">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Prepare-se para o <span className="text-[#f52ebe]">seu futuro</span></h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">Prepare-se para o <span className="text-[#5f2ebe]">seu futuro</span></h2>
             <p className="text-lg text-gray-600 mb-8 max-w-xl">
               Receba novidades sobre concursos, dicas de estudo e conteúdos exclusivos diretamente no seu email.
             </p>
@@ -18,9 +18,9 @@ export const Newsletter = () => {
               <Input 
                 type="email" 
                 placeholder="Seu melhor e-mail" 
-                className="flex-1 bg-[#f2f4f6] border-0 focus-visible:ring-[#f52ebe] focus-visible:ring-offset-0"
+                className="flex-1 bg-[#f2f4f6] border-0 focus-visible:ring-[#5f2ebe] focus-visible:ring-offset-0"
               />
-              <Button className="bg-[#f52ebe] hover:bg-[#f52ebe]/90 text-white">
+              <Button className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 text-white">
                 Inscrever-se
               </Button>
             </div>

@@ -10,7 +10,7 @@ export const Stats = () => {
   ];
 
   return (
-    <section className="w-full py-12 bg-[#f52ebe]">
+    <section className="w-full py-12 bg-[#5f2ebe]">
       <div className="container px-4 md:px-6 mx-auto max-w-7xl">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-10">
           {stats.map((stat, index) => (
