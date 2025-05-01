@@ -43,7 +43,7 @@ export const FAQ = () => {
           <p className="text-lg text-gray-600 max-w-2xl">
             Tire suas dúvidas sobre o BomEstudo e maximize sua experiência
           </p>
-          <div className="w-20 h-1.5 bg-[#f52ebe] mt-2"></div>
+          <div className="w-20 h-1.5 bg-[#5f2ebe] mt-2"></div>
         </div>
 
         <div className="mt-8">
@@ -51,7 +51,7 @@ export const FAQ = () => {
             {faqs.map((faq, index) => (
               <AccordionItem key={index} value={`item-${index}`} className="mb-4 border border-gray-100 rounded-lg bg-white overflow-hidden">
                 <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-gray-50 group">
-                  <span className="text-left font-medium group-hover:text-[#f52ebe]">{faq.question}</span>
+                  <span className="text-left font-medium group-hover:text-[#5f2ebe]">{faq.question}</span>
                 </AccordionTrigger>
                 <AccordionContent className="px-6 pb-4 pt-2 text-gray-600">
                   {faq.answer}
