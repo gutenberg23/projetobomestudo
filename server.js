@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -64,6 +65,66 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
+// Endpoint para proxy de conteúdo web (contornar CORS)
+app.get('/api/proxy-content', async (req, res) => {
+  try {
+    const targetUrl = req.query.url;
+
+    if (!targetUrl) {
+      return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    // Validar se é uma URL válida
+    try {
+      new URL(targetUrl);
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL' });
+    }
+
+    // Fazer a requisição para a URL alvo com axios
+    const response = await axios.get(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+      },
+      responseType: 'text',
+      timeout: 15000, // Aumentar timeout para 15 segundos
+    });
+
+    res.set({
+      'Content-Type': response.headers['content-type'] || 'text/html; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+
+    res.send(response.data);
+  } catch (error) {
+    console.error('Proxy error details:', {
+      message: error.message,
+      url: targetUrl,
+      response: error.response ? {
+        status: error.response.status,
+        data: error.response.data
+      } : 'No response received'
+    });
+
+    if (axios.isAxiosError(error)) {
+      res.status(error.response?.status || 500).json({ 
+        error: `Failed to fetch content: ${error.message}`,
+        details: error.response?.data
+      });
+    } else {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+});
+
 app.listen(port, () => {
-  console.log(`Servidor API rodando em http://localhost:${port}`);
-}); 
+  console.log(`Servidor rodando em http://localhost:${port}`);
+});

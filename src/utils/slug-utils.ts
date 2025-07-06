@@ -86,8 +86,16 @@ export const createSlug = (text: string): string => {
     .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
     .replace(/\s+/g, '-') // Substitui espaços por hífens
     .replace(/-+/g, '-') // Remove hífens consecutivos
-    .trim();
+    .trim()
+    .substring(0, 100) // Limita o slug a 100 caracteres
+    .replace(/-$/, ''); // Remove hífen no final se houver
 };
+
+/**
+ * Alias para createSlug - gera slug a partir de texto
+ * Mantido para compatibilidade com imports existentes
+ */
+export const generateSlug = createSlug;
 
 /**
  * Gera um ID único para URL combinando slug e ID

@@ -110,6 +110,56 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
+// Endpoint para proxy de conteúdo web (contornar CORS)
+app.get('/api/proxy-content', async (req, res) => {
+  try {
+    const targetUrl = req.query.url;
+
+    if (!targetUrl) {
+      return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    // Validar se é uma URL válida
+    try {
+      new URL(targetUrl);
+    } catch {
+      return res.status(400).json({ error: 'Invalid URL' });
+    }
+
+    // Fazer a requisição para a URL alvo
+    const fetch = (await import('node-fetch')).default;
+    const response = await fetch(targetUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+      },
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).json({ error: `Failed to fetch: ${response.status}` });
+    }
+
+    const content = await response.text();
+
+    res.set({
+      'Content-Type': 'text/html; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    });
+
+    res.send(content);
+  } catch (error) {
+    console.error('Proxy error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Atualizar o endpoint update-robots-txt para salvar apenas no banco de dados
 app.post('/api/update-robots-txt', async (req, res) => {
   try {
@@ -165,4 +215,4 @@ app.post('/api/update-robots-txt', async (req, res) => {
 
 app.listen(port, () => {
   console.log(`Servidor API rodando em http://localhost:${port}`);
-}); 
+});

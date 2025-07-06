@@ -45,14 +45,14 @@ ${questionData.prompt}` : ''}`;
     console.log('Enviando requisição para a API...', API_URL);
 
     // Fazer a chamada à API
-    const response = await fetch(`${API_URL}/generate`, {
+    const response = await fetch(`${API_URL}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         prompt: basePrompt,
-        max_tokens: 1000,
+        max_tokens: 100000,
         temperature: 0.7,
         top_p: 0.9,
         frequency_penalty: 0.5,
@@ -77,4 +77,4 @@ ${questionData.prompt}` : ''}`;
     console.error("Erro ao gerar resposta da IA:", error);
     throw error instanceof Error ? error : new Error('Erro ao gerar resposta da IA');
   }
-}; 
+};

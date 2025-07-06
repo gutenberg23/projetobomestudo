@@ -1,11 +1,12 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Info, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, Info, Plus, Search, Trash2, Rss } from "lucide-react";
 import { format } from "date-fns";
 import { BlogPost } from "@/components/blog/types";
 import { diagnoseBlogPostsTable } from "@/services/blogService";
 import { useToast } from "@/hooks/use-toast";
+import RSSManager from "@/components/admin/RSSManager";
 
 interface ListagemPostsProps {
   postsFiltrados: BlogPost[];
@@ -26,6 +27,7 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
 }) => {
   const { toast } = useToast();
   const [isRunningDiagnostic, setIsRunningDiagnostic] = React.useState(false);
+  const [showRSSManager, setShowRSSManager] = React.useState(false);
   
   const runDiagnostic = async () => {
     setIsRunningDiagnostic(true);
@@ -78,6 +80,14 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
           >
             <Info className="h-4 w-4 mr-2" />
             Diagnóstico
+          </Button>
+          <Button 
+            onClick={() => setShowRSSManager(!showRSSManager)}
+            variant="outline"
+            className={showRSSManager ? "bg-[#ea2be2] text-white hover:bg-[#d029d5]" : ""}
+          >
+            <Rss className="h-4 w-4 mr-2" />
+            RSS Manager
           </Button>
           <Button onClick={onIniciarCriacaoPost} className="bg-[#ea2be2] hover:bg-[#d029d5]">
             <Plus className="h-4 w-4 mr-2" />
@@ -165,6 +175,12 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
           </table>
         </div>
       </div>
+      
+      {showRSSManager && (
+        <div className="mt-8">
+          <RSSManager />
+        </div>
+      )}
     </div>
   );
 };
