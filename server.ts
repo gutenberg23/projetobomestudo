@@ -113,9 +113,11 @@ app.post('/api/generate', async (req, res) => {
 // Endpoint para proxy de conteúdo web (contornar CORS)
 app.get('/api/proxy-content', async (req, res) => {
   try {
-    const targetUrl = req.query.url;
+    const targetUrl = req.query.url as string;
+    console.log('Proxy request for URL:', targetUrl);
 
     if (!targetUrl) {
+      console.log('Missing URL parameter');
       return res.status(400).json({ error: 'URL parameter is required' });
     }
 
@@ -123,40 +125,89 @@ app.get('/api/proxy-content', async (req, res) => {
     try {
       new URL(targetUrl);
     } catch {
+      console.log('Invalid URL format:', targetUrl);
       return res.status(400).json({ error: 'Invalid URL' });
     }
 
-    // Fazer a requisição para a URL alvo
+    // Fazer a requisição para a URL alvo com timeout e retry
     const fetch = (await import('node-fetch')).default;
-    const response = await fetch(targetUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'DNT': '1',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-      },
-    });
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout
+    
+    try {
+      console.log('Fetching content from:', targetUrl);
+      const response = await fetch(targetUrl, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en;q=0.8',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+          'Sec-Ch-Ua-Mobile': '?0',
+          'Sec-Ch-Ua-Platform': '"Windows"',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Sec-Fetch-User': '?1',
+          'Upgrade-Insecure-Requests': '1',
+        },
+        follow: 5, // Seguir até 5 redirects
+        timeout: 30000, // 30 segundos
+      });
+      
+      clearTimeout(timeoutId);
+      
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
-    if (!response.ok) {
-      return res.status(response.status).json({ error: `Failed to fetch: ${response.status}` });
+      if (!response.ok) {
+        console.log(`Failed to fetch content: ${response.status} ${response.statusText}`);
+        return res.status(response.status).json({ 
+          error: `Failed to fetch: ${response.status} ${response.statusText}` 
+        });
+      }
+
+      const content = await response.text();
+      console.log('Content length:', content.length);
+      
+      // Verificar se o conteúdo não está vazio
+      if (!content || content.trim().length === 0) {
+        console.log('Empty content received');
+        return res.status(204).json({ error: 'Empty content received' });
+      }
+
+      res.set({
+        'Content-Type': 'text/html; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      });
+
+      res.send(content);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      console.error('Fetch error:', fetchError);
+      
+      if (fetchError.name === 'AbortError') {
+        return res.status(408).json({ error: 'Request timeout' });
+      }
+      
+      throw fetchError;
     }
-
-    const content = await response.text();
-
-    res.set({
-      'Content-Type': 'text/html; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    });
-
-    res.send(content);
   } catch (error) {
-    console.error('Proxy error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Proxy error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
   }
 });
 

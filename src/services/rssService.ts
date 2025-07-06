@@ -91,7 +91,7 @@ export async function fetchRSSFeed(url: string): Promise<RSSFeed | null> {
 export async function extractWebContent(url: string): Promise<string | null> {
   try {
     // Usar um proxy ou serviço para contornar CORS
-    const proxyUrl = `/api/proxy-content?url=${encodeURIComponent(url)}`;
+    const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
     const response = await fetch(proxyUrl);
     
     if (!response.ok) {
