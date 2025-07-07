@@ -149,6 +149,160 @@ export async function extractWebContent(url: string): Promise<string | null> {
   }
 }
 
+// Função para processar um chunk individual usando Netlify Function
+async function processChunkWithNetlify(
+  content: string, 
+  originalTitle: string, 
+  isFirstChunk: boolean, 
+  chunkNumber: number, 
+  totalChunks: number
+): Promise<{ title: string; content: string; summary: string } | null> {
+  try {
+    let prompt;
+    
+    if (totalChunks > 1) {
+      // Prompt para chunks de conteúdo longo
+      prompt = `Reescreva esta parte (${chunkNumber}/${totalChunks}) do artigo sobre concursos públicos:
+
+Título: ${originalTitle}
+
+Conteúdo:
+${content}
+
+${isFirstChunk ? 'Inclua título <h1>.' : 'NÃO inclua título, apenas conteúdo.'} Retorne HTML formatado.`;
+    } else {
+      // Prompt para conteúdo normal
+      prompt = `Reescreva o artigo sobre concursos públicos:
+
+Título: ${originalTitle}
+
+Conteúdo:
+${content}
+
+Retorne HTML formatado com título <h1>.`;
+    }
+
+    const response = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: prompt,
+        max_tokens: 2500, // Reduzir tokens para chunks
+        temperature: 0.3
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Erro no chunk ${chunkNumber}:`, response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    const processedContent = data.choices?.[0]?.text || '';
+
+    if (!processedContent) {
+      console.error(`Resposta vazia para chunk ${chunkNumber}`);
+      return null;
+    }
+
+    // Extrair título se for o primeiro chunk
+    let extractedTitle = originalTitle;
+    if (isFirstChunk) {
+      const titleMatch = processedContent.match(/<h1[^>]*>([^<]+)<\/h1>/);
+      if (titleMatch) {
+        extractedTitle = titleMatch[1].trim();
+      }
+    }
+
+    // Criar resumo
+    const textContent = processedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
+
+    return {
+      title: extractedTitle,
+      content: processedContent,
+      summary: summary
+    };
+  } catch (error) {
+    console.error(`Erro ao processar chunk ${chunkNumber} via Netlify:`, error);
+    return null;
+  }
+}
+
+// Função para processar conteúdo longo em chunks usando Netlify Function
+async function processLongContentWithNetlify(content: string, title: string): Promise<{ title: string; content: string; summary: string } | null> {
+  const maxChunkSize = 6000; // Tamanho menor para Netlify Function
+  const chunks: string[] = [];
+  
+  // Dividir o conteúdo em chunks
+  let currentPosition = 0;
+  while (currentPosition < content.length) {
+    let chunkEnd = Math.min(currentPosition + maxChunkSize, content.length);
+    
+    // Tentar quebrar em um parágrafo ou sentença próxima ao limite
+    if (chunkEnd < content.length) {
+      const lastParagraph = content.lastIndexOf('\n\n', chunkEnd);
+      const lastSentence = content.lastIndexOf('.', chunkEnd);
+      
+      if (lastParagraph > currentPosition + maxChunkSize * 0.7) {
+        chunkEnd = lastParagraph + 2;
+      } else if (lastSentence > currentPosition + maxChunkSize * 0.7) {
+        chunkEnd = lastSentence + 1;
+      }
+    }
+    
+    chunks.push(content.slice(currentPosition, chunkEnd));
+    currentPosition = chunkEnd;
+  }
+  
+  console.log(`Conteúdo dividido em ${chunks.length} chunks para Netlify Function`);
+  
+  // Processar cada chunk
+  const processedChunks: string[] = [];
+  let newTitle = title;
+  
+  for (let i = 0; i < chunks.length; i++) {
+    console.log(`Processando chunk ${i + 1}/${chunks.length} via Netlify Function`);
+    
+    const isFirstChunk = i === 0;
+    const result = await processChunkWithNetlify(
+      chunks[i], 
+      title,
+      isFirstChunk,
+      i + 1, 
+      chunks.length
+    );
+    
+    if (result) {
+      if (isFirstChunk && result.title !== title) {
+        newTitle = result.title;
+      }
+      processedChunks.push(result.content);
+    }
+    
+    // Pausa maior entre chunks para Netlify Function
+    if (i < chunks.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+  
+  // Combinar os chunks processados
+  const combinedContent = processedChunks.join('\n\n');
+  
+  // Criar resumo do conteúdo final
+  const textContent = combinedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
+  
+  return {
+    title: newTitle,
+    content: combinedContent,
+    summary: summary
+  };
+}
+
 // Função para processar conteúdo longo em chunks
 async function processLongContent(content: string, title: string, apiKey: string): Promise<{ title: string; content: string; summary: string } | null> {
   const maxChunkSize = 8000; // Tamanho máximo por chunk
@@ -432,6 +586,14 @@ Certifique-se de:
 async function rewriteContentWithNetlifyFunction(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string } | null> {
   try {
     console.log('Usando Netlify Function para reescrever conteúdo...');
+    
+    // Para Netlify Function, usar chunks menores para evitar timeout
+    const maxContentLength = 6000; // Reduzir para 6000 caracteres para Netlify Function
+    
+    if (originalContent.length > maxContentLength) {
+      console.log(`Conteúdo muito longo para Netlify Function (${originalContent.length} chars), processando em chunks...`);
+      return await processLongContentWithNetlify(originalContent, originalTitle);
+    }
     
     const prompt = `
 Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright.

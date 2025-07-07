@@ -3,8 +3,8 @@ import OpenAI from 'openai';
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
-    timeout: 8000, // Timeout global de 8 segundos
-    maxRetries: 1, // Reduzir tentativas para evitar timeout
+    timeout: 15000, // Aumentar timeout para 15 segundos
+    maxRetries: 0, // Sem retentativas para evitar timeout
   });
 
 export const handler: Handler = async (event) => {
@@ -63,13 +63,13 @@ export const handler: Handler = async (event) => {
     }
 
     // Validar tamanho do prompt para evitar timeouts
-    if (prompt.length > 10000) {
+    if (prompt.length > 15000) {
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ 
           error: 'Prompt muito longo',
-          details: 'O prompt deve ter no máximo 10.000 caracteres para evitar timeouts.'
+          details: 'O prompt deve ter no máximo 15.000 caracteres para evitar timeouts.'
         }),
       };
     }
@@ -84,7 +84,7 @@ export const handler: Handler = async (event) => {
       messages: [
         {
           role: "system",
-          content: "Você é um assistente especializado em ajudar com questões de estudo. Seja conciso e direto."
+          content: "Reescreva artigos de forma concisa e direta."
         },
         {
           role: "user",
@@ -96,7 +96,7 @@ export const handler: Handler = async (event) => {
       top_p: top_p || 0.9,
       frequency_penalty: frequency_penalty || 0.5,
       presence_penalty: presence_penalty || 0.5,
-      timeout: 8000, // Timeout de 8 segundos para deixar margem
+      timeout: 15000, // Aumentar timeout para 15 segundos
     });
 
     console.log('Resposta recebida da OpenAI');
