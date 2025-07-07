@@ -189,7 +189,7 @@ Retorne HTML formatado com título <h1>.`;
       },
       body: JSON.stringify({
         prompt: prompt,
-        max_tokens: 2500, // Reduzir tokens para chunks
+        max_tokens: 1500, // Reduzir tokens para chunks
         temperature: 0.3
       })
     });
@@ -234,7 +234,7 @@ Retorne HTML formatado com título <h1>.`;
 
 // Função para processar conteúdo longo em chunks usando Netlify Function
 async function processLongContentWithNetlify(content: string, title: string): Promise<{ title: string; content: string; summary: string } | null> {
-  const maxChunkSize = 6000; // Tamanho menor para Netlify Function
+  const maxChunkSize = 3500; // Tamanho menor para Netlify Function
   const chunks: string[] = [];
   
   // Dividir o conteúdo em chunks
