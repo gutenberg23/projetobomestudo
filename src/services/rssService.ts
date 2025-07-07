@@ -152,9 +152,36 @@ export async function extractWebContent(url: string): Promise<string | null> {
 // Função para reescrever conteúdo usando OpenAI
 export async function rewriteContentWithAI(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string } | null> {
   try {
-    const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
+    // Tentar múltiplas formas de acessar a variável de ambiente
+    let openaiApiKey = '';
+    
+    // Debug: verificar todas as possíveis fontes de variáveis
+    console.log('=== DEBUG VARIÁVEIS DE AMBIENTE ===');
+    console.log('import.meta.env.VITE_OPENAI_API_KEY:', !!import.meta.env.VITE_OPENAI_API_KEY);
+    console.log('process.env.OPENAI_API_KEY:', !!process.env.OPENAI_API_KEY);
+    console.log('process.env.VITE_OPENAI_API_KEY:', !!process.env.VITE_OPENAI_API_KEY);
+    console.log('window.process?.env?.OPENAI_API_KEY:', !!(typeof window !== 'undefined' && (window as any).process?.env?.OPENAI_API_KEY));
+    
+    // Tentar diferentes formas de acessar a chave
+    if (import.meta.env.VITE_OPENAI_API_KEY) {
+      openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
+      console.log('Chave encontrada via import.meta.env.VITE_OPENAI_API_KEY');
+    } else if (process.env.OPENAI_API_KEY) {
+      openaiApiKey = process.env.OPENAI_API_KEY;
+      console.log('Chave encontrada via process.env.OPENAI_API_KEY');
+    } else if (process.env.VITE_OPENAI_API_KEY) {
+      openaiApiKey = process.env.VITE_OPENAI_API_KEY;
+      console.log('Chave encontrada via process.env.VITE_OPENAI_API_KEY');
+    } else if (typeof window !== 'undefined' && (window as any).process?.env?.OPENAI_API_KEY) {
+      openaiApiKey = (window as any).process.env.OPENAI_API_KEY;
+      console.log('Chave encontrada via window.process.env.OPENAI_API_KEY');
+    }
     
     if (!openaiApiKey) {
+      console.error('=== ERRO: Nenhuma chave OpenAI encontrada ===');
+      console.error('Verifique se as variáveis de ambiente estão configuradas no Netlify:');
+      console.error('- VITE_OPENAI_API_KEY');
+      console.error('- OPENAI_API_KEY');
       throw new Error('Chave da API OpenAI não configurada');
     }
     
@@ -168,6 +195,12 @@ export async function rewriteContentWithAI(originalContent: string, originalTitl
       throw new Error('Formato da chave OpenAI inválido - deve começar com um prefixo válido como "sk-", "sk-admin-", "sk-proj-", etc.');
     }
     
+    // Se não encontrou a chave, tentar usar a Netlify Function
+    if (!openaiApiKey) {
+      console.log('Tentando usar Netlify Function para OpenAI...');
+      return await rewriteContentWithNetlifyFunction(originalContent, originalTitle);
+    }
+
     const prompt = `
 Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright. 
 
@@ -269,6 +302,90 @@ Certifique-se de:
     }
   } catch (error) {
     console.error('Erro ao reescrever conteúdo com IA:', error);
+    return null;
+  }
+}
+
+// Função auxiliar para usar a Netlify Function quando as variáveis de ambiente não estão disponíveis no frontend
+async function rewriteContentWithNetlifyFunction(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string } | null> {
+  try {
+    console.log('Usando Netlify Function para reescrever conteúdo...');
+    
+    const prompt = `
+Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright. 
+
+Título original: ${originalTitle}
+
+Conteúdo original:
+${originalContent}
+
+Por favor, retorne um JSON com a seguinte estrutura:
+{
+  "title": "Novo título reescrito",
+  "summary": "Resumo do artigo em 2-3 frases",
+  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc."
+}
+
+Certifique-se de:
+1. Reescrever completamente o conteúdo, não apenas parafrasear
+2. Manter todas as informações importantes (datas, valores, requisitos, etc.)
+3. Usar linguagem clara e profissional
+4. Formatar o conteúdo em HTML válido
+5. Criar um título atrativo e informativo
+6. Fazer um resumo conciso e envolvente`;
+
+    const response = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'system',
+            content: 'Você é um especialista em concursos públicos e redação jornalística. Sua tarefa é reescrever artigos mantendo a precisão das informações mas evitando problemas de copyright. Remova toda referência a direitos autorais e remova tags json, pois o conteúdo vai para um blog. Se possível, mantenha tabelas e listas de dados.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 16384,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Erro na Netlify Function:', response.status, errorText);
+      throw new Error(`Erro na Netlify Function: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    const content = data.content;
+
+    if (!content) {
+      throw new Error('Resposta vazia da Netlify Function');
+    }
+
+    // Tentar fazer parse do JSON retornado
+    try {
+      const result = JSON.parse(content);
+      return {
+        title: result.title || originalTitle,
+        content: result.content || '',
+        summary: result.summary || ''
+      };
+    } catch (parseError) {
+      // Se não conseguir fazer parse do JSON, retornar o conteúdo como está
+      return {
+        title: originalTitle,
+        content: content,
+        summary: content.substring(0, 200) + '...'
+      };
+    }
+  } catch (error) {
+    console.error('Erro ao usar Netlify Function:', error);
     return null;
   }
 }
