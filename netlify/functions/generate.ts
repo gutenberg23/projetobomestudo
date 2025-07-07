@@ -68,7 +68,7 @@ export const handler: Handler = async (event: HandlerEvent) => {
           content: prompt
         }
       ],
-      max_tokens: max_tokens || 60000, // gpt-4o-mini supports up to 128k tokens, but output is limited to 4096
+      max_tokens: max_tokens || 16384, // gpt-4o-mini supports up to 128k tokens, but output is limited to 4096
       temperature: temperature || 0.7,
       top_p: top_p || 0.9,
       frequency_penalty: frequency_penalty || 0.5,

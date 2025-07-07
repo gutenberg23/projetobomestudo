@@ -241,7 +241,7 @@ Certifique-se de:
           content: prompt
         }
       ],
-      max_tokens: 60000,
+      max_tokens: 16384,
       temperature: 0.7
     };
     
