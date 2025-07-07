@@ -212,7 +212,7 @@ Certifique-se de:
 4. Formatar o conteúdo em HTML válido para blogs com ênfase em SEO e com parágrafos, listas ou tabelas quando apropriado, etc.
 5. Incluir um título como primeiro elemento <h1>
 6. NÃO incluir tags JSON ou estruturas de dados
-7. Manter tabelas e listas';
+7. Manter tabelas e listas`;
 
     // Debug: verificar headers da requisição
     const headers = {
