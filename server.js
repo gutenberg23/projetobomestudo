@@ -31,7 +31,7 @@ app.post('/api/generate', async (req, res) => {
 
     // Fazer a chamada à API do OpenAI
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -42,7 +42,7 @@ app.post('/api/generate', async (req, res) => {
           content: prompt
         }
       ],
-      max_tokens: max_tokens || 1000,
+      max_tokens: max_tokens || 16384,
       temperature: temperature || 0.7,
       top_p: top_p || 0.9,
       frequency_penalty: frequency_penalty || 0.5,

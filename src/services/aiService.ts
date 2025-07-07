@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+// Remove unused import
 
 interface QuestionData {
   text: string;
@@ -52,7 +52,7 @@ ${questionData.prompt}` : ''}`;
       },
       body: JSON.stringify({
         prompt: basePrompt,
-        max_tokens: 100000,
+        max_tokens: 16384,
         temperature: 0.7,
         top_p: 0.9,
         frequency_penalty: 0.5,
