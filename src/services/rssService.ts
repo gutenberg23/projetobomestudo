@@ -149,232 +149,6 @@ export async function extractWebContent(url: string): Promise<string | null> {
   }
 }
 
-// Função para processar um chunk individual usando Netlify Function
-async function processChunkWithNetlify(
-  content: string, 
-  originalTitle: string, 
-  isFirstChunk: boolean, 
-  chunkNumber: number, 
-  totalChunks: number
-): Promise<{ title: string; content: string; summary: string } | null> {
-  try {
-    let prompt;
-    
-    if (totalChunks > 1) {
-      // Prompt para chunks de conteúdo longo
-      prompt = `Reescreva esta parte (${chunkNumber}/${totalChunks}) do artigo sobre concursos públicos:
-
-Título: ${originalTitle}
-
-Conteúdo:
-${content}
-
-${isFirstChunk ? 'Inclua título <h1>.' : 'NÃO inclua título, apenas conteúdo.'} Retorne HTML formatado.`;
-    } else {
-      // Prompt para conteúdo normal
-      prompt = `Reescreva o artigo sobre concursos públicos:
-
-Título: ${originalTitle}
-
-Conteúdo:
-${content}
-
-Retorne HTML formatado com título <h1>.`;
-    }
-
-    const response = await fetch('/.netlify/functions/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt: prompt,
-        max_tokens: 1500, // Reduzir tokens para chunks
-        temperature: 0.3
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Erro no chunk ${chunkNumber}:`, response.status, errorText);
-      return null;
-    }
-
-    const data = await response.json();
-    const processedContent = data.choices?.[0]?.text || '';
-
-    if (!processedContent) {
-      console.error(`Resposta vazia para chunk ${chunkNumber}`);
-      return null;
-    }
-
-    // Extrair título se for o primeiro chunk
-    let extractedTitle = originalTitle;
-    if (isFirstChunk) {
-      const titleMatch = processedContent.match(/<h1[^>]*>([^<]+)<\/h1>/);
-      if (titleMatch) {
-        extractedTitle = titleMatch[1].trim();
-      }
-    }
-
-    // Criar resumo
-    const textContent = processedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
-
-    return {
-      title: extractedTitle,
-      content: processedContent,
-      summary: summary
-    };
-  } catch (error) {
-    console.error(`Erro ao processar chunk ${chunkNumber} via Netlify:`, error);
-    return null;
-  }
-}
-
-// Função para processar conteúdo longo em chunks usando Netlify Function
-async function processLongContentWithNetlify(content: string, title: string): Promise<{ title: string; content: string; summary: string } | null> {
-  const maxChunkSize = 3500; // Tamanho menor para Netlify Function
-  const chunks: string[] = [];
-  
-  // Dividir o conteúdo em chunks
-  let currentPosition = 0;
-  while (currentPosition < content.length) {
-    let chunkEnd = Math.min(currentPosition + maxChunkSize, content.length);
-    
-    // Tentar quebrar em um parágrafo ou sentença próxima ao limite
-    if (chunkEnd < content.length) {
-      const lastParagraph = content.lastIndexOf('\n\n', chunkEnd);
-      const lastSentence = content.lastIndexOf('.', chunkEnd);
-      
-      if (lastParagraph > currentPosition + maxChunkSize * 0.7) {
-        chunkEnd = lastParagraph + 2;
-      } else if (lastSentence > currentPosition + maxChunkSize * 0.7) {
-        chunkEnd = lastSentence + 1;
-      }
-    }
-    
-    chunks.push(content.slice(currentPosition, chunkEnd));
-    currentPosition = chunkEnd;
-  }
-  
-  console.log(`Conteúdo dividido em ${chunks.length} chunks para Netlify Function`);
-  
-  // Processar cada chunk
-  const processedChunks: string[] = [];
-  let newTitle = title;
-  
-  for (let i = 0; i < chunks.length; i++) {
-    console.log(`Processando chunk ${i + 1}/${chunks.length} via Netlify Function`);
-    
-    const isFirstChunk = i === 0;
-    const result = await processChunkWithNetlify(
-      chunks[i], 
-      title,
-      isFirstChunk,
-      i + 1, 
-      chunks.length
-    );
-    
-    if (result) {
-      if (isFirstChunk && result.title !== title) {
-        newTitle = result.title;
-      }
-      processedChunks.push(result.content);
-    }
-    
-    // Pausa maior entre chunks para Netlify Function
-    if (i < chunks.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-    }
-  }
-  
-  // Combinar os chunks processados
-  const combinedContent = processedChunks.join('\n\n');
-  
-  // Criar resumo do conteúdo final
-  const textContent = combinedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
-  
-  return {
-    title: newTitle,
-    content: combinedContent,
-    summary: summary
-  };
-}
-
-// Função para processar conteúdo longo em chunks
-async function processLongContent(content: string, title: string, apiKey: string): Promise<{ title: string; content: string; summary: string } | null> {
-  const maxChunkSize = 8000; // Tamanho máximo por chunk
-  const chunks: string[] = [];
-  
-  // Dividir o conteúdo em chunks
-  let currentPosition = 0;
-  while (currentPosition < content.length) {
-    let chunkEnd = Math.min(currentPosition + maxChunkSize, content.length);
-    
-    // Tentar quebrar em um parágrafo ou sentença próxima ao limite
-    if (chunkEnd < content.length) {
-      const lastParagraph = content.lastIndexOf('\n\n', chunkEnd);
-      const lastSentence = content.lastIndexOf('.', chunkEnd);
-      
-      if (lastParagraph > currentPosition + maxChunkSize * 0.7) {
-        chunkEnd = lastParagraph + 2;
-      } else if (lastSentence > currentPosition + maxChunkSize * 0.7) {
-        chunkEnd = lastSentence + 1;
-      }
-    }
-    
-    chunks.push(content.slice(currentPosition, chunkEnd));
-    currentPosition = chunkEnd;
-  }
-  
-  console.log(`Conteúdo dividido em ${chunks.length} chunks`);
-  
-  // Processar cada chunk
-  const processedChunks: string[] = [];
-  let newTitle = title;
-  
-  for (let i = 0; i < chunks.length; i++) {
-    console.log(`Processando chunk ${i + 1}/${chunks.length}`);
-    
-    const isFirstChunk = i === 0;
-    const result = await processContentChunk(
-      chunks[i], 
-      title,
-      apiKey,
-      isFirstChunk,
-      i + 1, 
-      chunks.length
-    );
-    
-    if (result) {
-      if (isFirstChunk && result.title !== title) {
-        newTitle = result.title;
-      }
-      processedChunks.push(result.content);
-    }
-    
-    // Pausa entre chunks para evitar rate limiting
-    if (i < chunks.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-  }
-  
-  // Combinar os chunks processados
-  const combinedContent = processedChunks.join('\n\n');
-  
-  // Criar resumo do conteúdo final
-  const textContent = combinedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
-  
-  return {
-    title: newTitle,
-    content: combinedContent,
-    summary: summary
-  };
-}
-
 // Função para reescrever conteúdo usando OpenAI
 export async function rewriteContentWithAI(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string } | null> {
   try {
@@ -421,78 +195,28 @@ export async function rewriteContentWithAI(originalContent: string, originalTitl
       return await rewriteContentWithNetlifyFunction(originalContent, originalTitle);
     }
 
-    // Estratégia para conteúdo longo: processamento em chunks
-    const maxChunkLength = 8000; // Tamanho máximo por chunk
-    
-    if (originalContent.length <= maxChunkLength) {
-      // Conteúdo pequeno - processar normalmente
-      console.log(`Processando conteúdo normal: ${originalContent.length} caracteres`);
-      return await processContentChunk(originalContent, originalTitle, openaiApiKey, true);
-    } else {
-      // Conteúdo longo - processar em chunks
-      console.log(`Processando conteúdo longo: ${originalContent.length} caracteres em chunks`);
-      return await processLongContent(originalContent, originalTitle, openaiApiKey);
-    }
-  } catch (error) {
-    console.error('Erro ao usar API OpenAI direta:', error);
-    return null;
-  }
-}
-
-
-
-// Função para processar um chunk individual
-async function processContentChunk(content: string, originalTitle: string, openaiApiKey: string, isFirstChunk: boolean = true, chunkNumber?: number, totalChunks?: number): Promise<{ title: string; content: string; summary: string } | null> {
-  try {
-    const chunkInfo = totalChunks ? ` (parte ${chunkNumber} de ${totalChunks})` : '';
-    console.log(`Processando chunk${chunkInfo}: ${content.length} caracteres`);
-
-    let prompt;
-    
-    if (totalChunks && totalChunks > 1) {
-      // Prompt para chunks de conteúdo longo
-      prompt = `
-Reescreva completamente esta parte (${chunkNumber}/${totalChunks}) do seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright.
+    const prompt = `
+Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright. 
 
 Título original: ${originalTitle}
 
-Conteúdo desta parte:
-${content}
+Conteúdo original:
+${originalContent}
 
-IMPORTANTE: 
-- Retorne APENAS o conteúdo reescrito em HTML bem formatado
-- ${isFirstChunk ? 'Como é a primeira parte, inclua um título <h1>' : 'NÃO inclua título <h1>, apenas o conteúdo da seção'}
-- SEM tags JSON, SEM estruturas de dados, SEM metadados
-- Mantenha a continuidade com outras partes do artigo
+Por favor, retorne um JSON com a seguinte estrutura:
+{
+  "title": "Novo título reescrito",
+  "summary": "Resumo do artigo em 2-3 frases",
+  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc."
+}
 
 Certifique-se de:
 1. Reescrever completamente o conteúdo, não apenas parafrasear
 2. Manter todas as informações importantes (datas, valores, requisitos, etc.)
 3. Usar linguagem clara e profissional
-4. Formatar em HTML válido com parágrafos, listas quando apropriado
-5. ${isFirstChunk ? 'Incluir título como <h1>' : 'NÃO incluir título, apenas conteúdo'}
-6. NÃO incluir tags JSON ou estruturas de dados`;
-    } else {
-      // Prompt para conteúdo normal (não dividido)
-      prompt = `
-Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright.
-
-Título original: ${originalTitle}
-
-Conteúdo original:
-${content}
-
-IMPORTANTE: Retorne APENAS o conteúdo reescrito em HTML bem formatado, SEM tags JSON, SEM estruturas de dados, SEM metadados. Apenas o artigo reescrito pronto para publicação.
-
-Certifique-se de:
-1. Reescrever completamente o conteúdo, não apenas parafrasear
-2. Manter todas as informações importantes de forma correta (datas, valores, requisitos, cargos, etc.)
-3. Usar linguagem clara e profissional
-4. Formatar o conteúdo em HTML válido para blogs com ênfase em SEO e com parágrafos, listas ou tabelas quando apropriado, etc.
-5. Incluir um título como primeiro elemento <h1>
-6. NÃO incluir tags JSON ou estruturas de dados
-7. Manter tabelas e listas`;
-    }
+4. Formatar o conteúdo em HTML válido
+5. Criar um título atrativo e informativo
+6. Fazer um resumo conciso e envolvente`;
 
     // Debug: verificar headers da requisição
     const headers = {
@@ -510,15 +234,15 @@ Certifique-se de:
       messages: [
         {
           role: 'system',
-          content: 'Você é um especialista em concursos públicos e redação jornalística. Sua tarefa é reescrever artigos mantendo a precisão das informações mas evitando problemas de copyright. IMPORTANTE: Retorne APENAS o conteúdo HTML reescrito, SEM tags JSON, SEM estruturas de dados. O conteúdo vai diretamente para um blog. Mantenha tabelas e listas de dados quando apropriado.'
+          content: 'Você é um especialista em concursos públicos e redação jornalística. Sua tarefa é reescrever artigos mantendo a precisão das informações mas evitando problemas de copyright. Remova toda referência a direitos autorais e remova tags json, pois o conteúdo vai para um blog. Se possível, mantenha tabelas e listas de dados.'
         },
         {
           role: 'user',
           content: prompt
         }
       ],
-      max_tokens: 3000, // Reduzido para acelerar resposta
-      temperature: 0.3  // Reduzido para respostas mais rápidas e consistentes
+      max_tokens: 16384,
+      temperature: 0.7
     };
     
     console.log('Fazendo requisição para OpenAI...');
@@ -554,28 +278,22 @@ Certifique-se de:
       throw new Error('Resposta vazia da OpenAI');
     }
     
-    // Extrair título do HTML se existir
-    let extractedTitle = originalTitle;
-    let cleanContent = content;
-    
-    // Procurar por tag h1 no início do conteúdo
-    const h1Match = content.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-    if (h1Match) {
-      extractedTitle = h1Match[1].trim();
-      // Remover a tag h1 do conteúdo
-      cleanContent = content.replace(/<h1[^>]*>[^<]+<\/h1>/i, '').trim();
+    // Tentar fazer parse do JSON retornado
+    try {
+      const result = JSON.parse(content);
+      return {
+        title: result.title || originalTitle,
+        content: result.content || '',
+        summary: result.summary || ''
+      };
+    } catch (parseError) {
+      // Se não conseguir fazer parse do JSON, retornar o conteúdo como está
+      return {
+        title: originalTitle,
+        content: content,
+        summary: content.substring(0, 200) + '...'
+      };
     }
-    
-    // Criar um resumo a partir do conteúdo
-    const textContent = cleanContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
-    
-    return {
-      title: extractedTitle,
-      content: cleanContent,
-      summary: summary
-    };
-    
   } catch (error) {
     console.error('Erro ao reescrever conteúdo com IA:', error);
     return null;
@@ -587,31 +305,28 @@ async function rewriteContentWithNetlifyFunction(originalContent: string, origin
   try {
     console.log('Usando Netlify Function para reescrever conteúdo...');
     
-    // Para Netlify Function, usar chunks menores para evitar timeout
-    const maxContentLength = 6000; // Reduzir para 6000 caracteres para Netlify Function
-    
-    if (originalContent.length > maxContentLength) {
-      console.log(`Conteúdo muito longo para Netlify Function (${originalContent.length} chars), processando em chunks...`);
-      return await processLongContentWithNetlify(originalContent, originalTitle);
-    }
-    
     const prompt = `
-Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright.
+Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright. 
 
 Título original: ${originalTitle}
 
 Conteúdo original:
 ${originalContent}
 
-IMPORTANTE: Retorne APENAS o conteúdo reescrito em HTML bem formatado, SEM tags JSON, SEM estruturas de dados, SEM metadados. Apenas o artigo reescrito pronto para publicação.
+Por favor, retorne um JSON com a seguinte estrutura:
+{
+  "title": "Novo título reescrito",
+  "summary": "Resumo do artigo em 2-3 frases",
+  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc."
+}
 
 Certifique-se de:
 1. Reescrever completamente o conteúdo, não apenas parafrasear
 2. Manter todas as informações importantes (datas, valores, requisitos, etc.)
 3. Usar linguagem clara e profissional
-4. Formatar o conteúdo em HTML válido com parágrafos, listas quando apropriado, etc.
-5. Incluir um título como primeiro elemento <h1>
-6. NÃO incluir tags JSON ou estruturas de dados`;
+4. Formatar o conteúdo em HTML válido
+5. Criar um título atrativo e informativo
+6. Fazer um resumo conciso e envolvente`;
 
     const response = await fetch('/.netlify/functions/generate', {
       method: 'POST',
@@ -620,8 +335,8 @@ Certifique-se de:
       },
       body: JSON.stringify({
         prompt: prompt,
-        max_tokens: 3000,
-        temperature: 0.3
+        max_tokens: 16384,
+        temperature: 0.7
       })
     });
 
@@ -638,37 +353,27 @@ Certifique-se de:
       throw new Error('Resposta vazia da Netlify Function');
     }
 
-    // Extrair título do HTML se existir
-    let extractedTitle = originalTitle;
-    let cleanContent = content;
-    
-    // Procurar por tag h1 no início do conteúdo
-    const h1Match = content.match(/<h1[^>]*>([^<]+)<\/h1>/i);
-    if (h1Match) {
-      extractedTitle = h1Match[1].trim();
-      // Remover a tag h1 do conteúdo
-      cleanContent = content.replace(/<h1[^>]*>[^<]+<\/h1>/i, '').trim();
+    // Tentar fazer parse do JSON retornado
+    try {
+      const result = JSON.parse(content);
+      return {
+        title: result.title || originalTitle,
+        content: result.content || '',
+        summary: result.summary || ''
+      };
+    } catch (parseError) {
+      // Se não conseguir fazer parse do JSON, retornar o conteúdo como está
+      return {
+        title: originalTitle,
+        content: content,
+        summary: content.substring(0, 200) + '...'
+      };
     }
-    
-    // Criar um resumo a partir do conteúdo
-    const textContent = cleanContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-    const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
-    
-    return {
-      title: extractedTitle,
-      content: cleanContent,
-      summary: summary
-    };
-    
   } catch (error) {
     console.error('Erro ao usar Netlify Function:', error);
     return null;
   }
 }
-
-
-
-
 
 // Função para processar um item do RSS e criar um post
 export async function processRSSItem(item: RSSItem, authorName: string = 'BomEstudo Bot'): Promise<BlogPost | null> {
