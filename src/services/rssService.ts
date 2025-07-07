@@ -149,6 +149,78 @@ export async function extractWebContent(url: string): Promise<string | null> {
   }
 }
 
+// Função para processar conteúdo longo em chunks
+async function processLongContent(content: string, title: string, apiKey: string): Promise<{ title: string; content: string; summary: string } | null> {
+  const maxChunkSize = 8000; // Tamanho máximo por chunk
+  const chunks: string[] = [];
+  
+  // Dividir o conteúdo em chunks
+  let currentPosition = 0;
+  while (currentPosition < content.length) {
+    let chunkEnd = Math.min(currentPosition + maxChunkSize, content.length);
+    
+    // Tentar quebrar em um parágrafo ou sentença próxima ao limite
+    if (chunkEnd < content.length) {
+      const lastParagraph = content.lastIndexOf('\n\n', chunkEnd);
+      const lastSentence = content.lastIndexOf('.', chunkEnd);
+      
+      if (lastParagraph > currentPosition + maxChunkSize * 0.7) {
+        chunkEnd = lastParagraph + 2;
+      } else if (lastSentence > currentPosition + maxChunkSize * 0.7) {
+        chunkEnd = lastSentence + 1;
+      }
+    }
+    
+    chunks.push(content.slice(currentPosition, chunkEnd));
+    currentPosition = chunkEnd;
+  }
+  
+  console.log(`Conteúdo dividido em ${chunks.length} chunks`);
+  
+  // Processar cada chunk
+  const processedChunks: string[] = [];
+  let newTitle = title;
+  
+  for (let i = 0; i < chunks.length; i++) {
+    console.log(`Processando chunk ${i + 1}/${chunks.length}`);
+    
+    const isFirstChunk = i === 0;
+    const result = await processContentChunk(
+      chunks[i], 
+      title,
+      apiKey,
+      isFirstChunk,
+      i + 1, 
+      chunks.length
+    );
+    
+    if (result) {
+      if (isFirstChunk && result.title !== title) {
+        newTitle = result.title;
+      }
+      processedChunks.push(result.content);
+    }
+    
+    // Pausa entre chunks para evitar rate limiting
+    if (i < chunks.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+  
+  // Combinar os chunks processados
+  const combinedContent = processedChunks.join('\n\n');
+  
+  // Criar resumo do conteúdo final
+  const textContent = combinedContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
+  
+  return {
+    title: newTitle,
+    content: combinedContent,
+    summary: summary
+  };
+}
+
 // Função para reescrever conteúdo usando OpenAI
 export async function rewriteContentWithAI(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string } | null> {
   try {
@@ -195,13 +267,66 @@ export async function rewriteContentWithAI(originalContent: string, originalTitl
       return await rewriteContentWithNetlifyFunction(originalContent, originalTitle);
     }
 
-    const prompt = `
-Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright. 
+    // Estratégia para conteúdo longo: processamento em chunks
+    const maxChunkLength = 8000; // Tamanho máximo por chunk
+    
+    if (originalContent.length <= maxChunkLength) {
+      // Conteúdo pequeno - processar normalmente
+      console.log(`Processando conteúdo normal: ${originalContent.length} caracteres`);
+      return await processContentChunk(originalContent, originalTitle, openaiApiKey, true);
+    } else {
+      // Conteúdo longo - processar em chunks
+      console.log(`Processando conteúdo longo: ${originalContent.length} caracteres em chunks`);
+      return await processLongContent(originalContent, originalTitle, openaiApiKey);
+    }
+  } catch (error) {
+    console.error('Erro ao usar API OpenAI direta:', error);
+    return null;
+  }
+}
+
+
+
+// Função para processar um chunk individual
+async function processContentChunk(content: string, originalTitle: string, openaiApiKey: string, isFirstChunk: boolean = true, chunkNumber?: number, totalChunks?: number): Promise<{ title: string; content: string; summary: string } | null> {
+  try {
+    const chunkInfo = totalChunks ? ` (parte ${chunkNumber} de ${totalChunks})` : '';
+    console.log(`Processando chunk${chunkInfo}: ${content.length} caracteres`);
+
+    let prompt;
+    
+    if (totalChunks && totalChunks > 1) {
+      // Prompt para chunks de conteúdo longo
+      prompt = `
+Reescreva completamente esta parte (${chunkNumber}/${totalChunks}) do seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright.
+
+Título original: ${originalTitle}
+
+Conteúdo desta parte:
+${content}
+
+IMPORTANTE: 
+- Retorne APENAS o conteúdo reescrito em HTML bem formatado
+- ${isFirstChunk ? 'Como é a primeira parte, inclua um título <h1>' : 'NÃO inclua título <h1>, apenas o conteúdo da seção'}
+- SEM tags JSON, SEM estruturas de dados, SEM metadados
+- Mantenha a continuidade com outras partes do artigo
+
+Certifique-se de:
+1. Reescrever completamente o conteúdo, não apenas parafrasear
+2. Manter todas as informações importantes (datas, valores, requisitos, etc.)
+3. Usar linguagem clara e profissional
+4. Formatar em HTML válido com parágrafos, listas quando apropriado
+5. ${isFirstChunk ? 'Incluir título como <h1>' : 'NÃO incluir título, apenas conteúdo'}
+6. NÃO incluir tags JSON ou estruturas de dados`;
+    } else {
+      // Prompt para conteúdo normal (não dividido)
+      prompt = `
+Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright.
 
 Título original: ${originalTitle}
 
 Conteúdo original:
-${originalContent}
+${content}
 
 IMPORTANTE: Retorne APENAS o conteúdo reescrito em HTML bem formatado, SEM tags JSON, SEM estruturas de dados, SEM metadados. Apenas o artigo reescrito pronto para publicação.
 
@@ -213,6 +338,7 @@ Certifique-se de:
 5. Incluir um título como primeiro elemento <h1>
 6. NÃO incluir tags JSON ou estruturas de dados
 7. Manter tabelas e listas`;
+    }
 
     // Debug: verificar headers da requisição
     const headers = {
@@ -237,8 +363,8 @@ Certifique-se de:
           content: prompt
         }
       ],
-      max_tokens: 16384,
-      temperature: 0.7
+      max_tokens: 3000, // Reduzido para acelerar resposta
+      temperature: 0.3  // Reduzido para respostas mais rápidas e consistentes
     };
     
     console.log('Fazendo requisição para OpenAI...');
@@ -308,7 +434,7 @@ async function rewriteContentWithNetlifyFunction(originalContent: string, origin
     console.log('Usando Netlify Function para reescrever conteúdo...');
     
     const prompt = `
-Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright. 
+Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright.
 
 Título original: ${originalTitle}
 
@@ -332,8 +458,8 @@ Certifique-se de:
       },
       body: JSON.stringify({
         prompt: prompt,
-        max_tokens: 16384,
-        temperature: 0.7
+        max_tokens: 3000,
+        temperature: 0.3
       })
     });
 
@@ -377,6 +503,10 @@ Certifique-se de:
     return null;
   }
 }
+
+
+
+
 
 // Função para processar um item do RSS e criar um post
 export async function processRSSItem(item: RSSItem, authorName: string = 'BomEstudo Bot'): Promise<BlogPost | null> {
