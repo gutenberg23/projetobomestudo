@@ -1,11 +1,11 @@
-import { Handler } from '@netlify/functions';
+import { Handler, HandlerEvent } from '@netlify/functions';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export const handler: Handler = async (event) => {
+export const handler: Handler = async (event: HandlerEvent) => {
   // Adicionar headers CORS em todas as respostas
   const headers = {
     'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ export const handler: Handler = async (event) => {
           content: prompt
         }
       ],
-      max_tokens: max_tokens || 128000, // gpt-4o-mini supports up to 128k tokens, but output is limited to 4096
+      max_tokens: max_tokens || 60000, // gpt-4o-mini supports up to 128k tokens, but output is limited to 4096
       temperature: temperature || 0.7,
       top_p: top_p || 0.9,
       frequency_penalty: frequency_penalty || 0.5,
@@ -86,11 +86,11 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    let content = completion.choices[0].message.content;
+    let content = completion.choices[0].message.content || '';
 
     // Tenta remover o wrapper JSON se ele ainda estiver presente
     try {
-      if (content.trim().startsWith('```json')) {
+      if (content && content.trim().startsWith('```json')) {
         content = content.trim().replace(/^```json\n|\n```$/g, '');
         const parsed = JSON.parse(content);
         // Assumindo que o conteúdo real está em uma propriedade como 'text' ou 'content'

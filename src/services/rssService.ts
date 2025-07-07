@@ -241,7 +241,7 @@ Certifique-se de:
           content: prompt
         }
       ],
-      max_tokens: 16384,
+      max_tokens: 60000,
       temperature: 0.7
     };
     
@@ -335,7 +335,7 @@ Certifique-se de:
       },
       body: JSON.stringify({
         prompt: prompt,
-        max_tokens: 16384,
+        max_tokens: 60000,
         temperature: 0.7
       })
     });
