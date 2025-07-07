@@ -203,20 +203,16 @@ Título original: ${originalTitle}
 Conteúdo original:
 ${originalContent}
 
-Por favor, retorne um JSON com a seguinte estrutura:
-{
-  "title": "Novo título reescrito",
-  "summary": "Resumo do artigo em 2-3 frases",
-  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc."
-}
+IMPORTANTE: Retorne APENAS o conteúdo reescrito em HTML bem formatado, SEM tags JSON, SEM estruturas de dados, SEM metadados. Apenas o artigo reescrito pronto para publicação.
 
 Certifique-se de:
 1. Reescrever completamente o conteúdo, não apenas parafrasear
-2. Manter todas as informações importantes (datas, valores, requisitos, etc.)
+2. Manter todas as informações importantes de forma correta (datas, valores, requisitos, cargos, etc.)
 3. Usar linguagem clara e profissional
-4. Formatar o conteúdo em HTML válido
-5. Criar um título atrativo e informativo
-6. Fazer um resumo conciso e envolvente`;
+4. Formatar o conteúdo em HTML válido para blogs com ênfase em SEO e com parágrafos, listas ou tabelas quando apropriado, etc.
+5. Incluir um título como primeiro elemento <h1>
+6. NÃO incluir tags JSON ou estruturas de dados
+7. Manter tabelas e listas';
 
     // Debug: verificar headers da requisição
     const headers = {
@@ -234,7 +230,7 @@ Certifique-se de:
       messages: [
         {
           role: 'system',
-          content: 'Você é um especialista em concursos públicos e redação jornalística. Sua tarefa é reescrever artigos mantendo a precisão das informações mas evitando problemas de copyright. Remova toda referência a direitos autorais e remova tags json, pois o conteúdo vai para um blog. Se possível, mantenha tabelas e listas de dados.'
+          content: 'Você é um especialista em concursos públicos e redação jornalística. Sua tarefa é reescrever artigos mantendo a precisão das informações mas evitando problemas de copyright. IMPORTANTE: Retorne APENAS o conteúdo HTML reescrito, SEM tags JSON, SEM estruturas de dados. O conteúdo vai diretamente para um blog. Mantenha tabelas e listas de dados quando apropriado.'
         },
         {
           role: 'user',
@@ -278,22 +274,28 @@ Certifique-se de:
       throw new Error('Resposta vazia da OpenAI');
     }
     
-    // Tentar fazer parse do JSON retornado
-    try {
-      const result = JSON.parse(content);
-      return {
-        title: result.title || originalTitle,
-        content: result.content || '',
-        summary: result.summary || ''
-      };
-    } catch (parseError) {
-      // Se não conseguir fazer parse do JSON, retornar o conteúdo como está
-      return {
-        title: originalTitle,
-        content: content,
-        summary: content.substring(0, 200) + '...'
-      };
+    // Extrair título do HTML se existir
+    let extractedTitle = originalTitle;
+    let cleanContent = content;
+    
+    // Procurar por tag h1 no início do conteúdo
+    const h1Match = content.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (h1Match) {
+      extractedTitle = h1Match[1].trim();
+      // Remover a tag h1 do conteúdo
+      cleanContent = content.replace(/<h1[^>]*>[^<]+<\/h1>/i, '').trim();
     }
+    
+    // Criar um resumo a partir do conteúdo
+    const textContent = cleanContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
+    
+    return {
+      title: extractedTitle,
+      content: cleanContent,
+      summary: summary
+    };
+    
   } catch (error) {
     console.error('Erro ao reescrever conteúdo com IA:', error);
     return null;
@@ -313,20 +315,15 @@ Título original: ${originalTitle}
 Conteúdo original:
 ${originalContent}
 
-Por favor, retorne um JSON com a seguinte estrutura:
-{
-  "title": "Novo título reescrito",
-  "summary": "Resumo do artigo em 2-3 frases",
-  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc."
-}
+IMPORTANTE: Retorne APENAS o conteúdo reescrito em HTML bem formatado, SEM tags JSON, SEM estruturas de dados, SEM metadados. Apenas o artigo reescrito pronto para publicação.
 
 Certifique-se de:
 1. Reescrever completamente o conteúdo, não apenas parafrasear
 2. Manter todas as informações importantes (datas, valores, requisitos, etc.)
 3. Usar linguagem clara e profissional
-4. Formatar o conteúdo em HTML válido
-5. Criar um título atrativo e informativo
-6. Fazer um resumo conciso e envolvente`;
+4. Formatar o conteúdo em HTML válido com parágrafos, listas quando apropriado, etc.
+5. Incluir um título como primeiro elemento <h1>
+6. NÃO incluir tags JSON ou estruturas de dados`;
 
     const response = await fetch('/.netlify/functions/generate', {
       method: 'POST',
@@ -353,22 +350,28 @@ Certifique-se de:
       throw new Error('Resposta vazia da Netlify Function');
     }
 
-    // Tentar fazer parse do JSON retornado
-    try {
-      const result = JSON.parse(content);
-      return {
-        title: result.title || originalTitle,
-        content: result.content || '',
-        summary: result.summary || ''
-      };
-    } catch (parseError) {
-      // Se não conseguir fazer parse do JSON, retornar o conteúdo como está
-      return {
-        title: originalTitle,
-        content: content,
-        summary: content.substring(0, 200) + '...'
-      };
+    // Extrair título do HTML se existir
+    let extractedTitle = originalTitle;
+    let cleanContent = content;
+    
+    // Procurar por tag h1 no início do conteúdo
+    const h1Match = content.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    if (h1Match) {
+      extractedTitle = h1Match[1].trim();
+      // Remover a tag h1 do conteúdo
+      cleanContent = content.replace(/<h1[^>]*>[^<]+<\/h1>/i, '').trim();
     }
+    
+    // Criar um resumo a partir do conteúdo
+    const textContent = cleanContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const summary = textContent.length > 200 ? textContent.substring(0, 200) + '...' : textContent;
+    
+    return {
+      title: extractedTitle,
+      content: cleanContent,
+      summary: summary
+    };
+    
   } catch (error) {
     console.error('Erro ao usar Netlify Function:', error);
     return null;
