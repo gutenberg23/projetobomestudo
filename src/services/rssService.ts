@@ -177,12 +177,11 @@ export async function rewriteContentWithAI(originalContent: string, originalTitl
       console.log('Chave encontrada via window.process.env.OPENAI_API_KEY');
     }
     
+    // Se não encontrou a chave, tentar usar a Netlify Function
     if (!openaiApiKey) {
-      console.error('=== ERRO: Nenhuma chave OpenAI encontrada ===');
-      console.error('Verifique se as variáveis de ambiente estão configuradas no Netlify:');
-      console.error('- VITE_OPENAI_API_KEY');
-      console.error('- OPENAI_API_KEY');
-      throw new Error('Chave da API OpenAI não configurada');
+      console.warn('=== Chave OpenAI não encontrada no frontend ===');
+      console.warn('Tentando usar Netlify Function como fallback...');
+      return await rewriteContentWithNetlifyFunction(originalContent, originalTitle);
     }
     
     // Debug: verificar se a chave está sendo lida corretamente
@@ -192,12 +191,7 @@ export async function rewriteContentWithAI(originalContent: string, originalTitl
     
     // Verificar se a chave tem um formato válido (aceita diferentes prefixos)
     if (!openaiApiKey.startsWith('sk-') && !openaiApiKey.startsWith('sk-admin-') && !openaiApiKey.startsWith('sk-proj-') && !openaiApiKey.startsWith('sk-None-') && !openaiApiKey.startsWith('sk-svcacct-')) {
-      throw new Error('Formato da chave OpenAI inválido - deve começar com um prefixo válido como "sk-", "sk-admin-", "sk-proj-", etc.');
-    }
-    
-    // Se não encontrou a chave, tentar usar a Netlify Function
-    if (!openaiApiKey) {
-      console.log('Tentando usar Netlify Function para OpenAI...');
+      console.warn('Formato da chave OpenAI inválido, tentando Netlify Function...');
       return await rewriteContentWithNetlifyFunction(originalContent, originalTitle);
     }
 
