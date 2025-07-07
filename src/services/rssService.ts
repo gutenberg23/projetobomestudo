@@ -334,16 +334,7 @@ Certifique-se de:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        messages: [
-          {
-            role: 'system',
-            content: 'Você é um especialista em concursos públicos e redação jornalística. Sua tarefa é reescrever artigos mantendo a precisão das informações mas evitando problemas de copyright. Remova toda referência a direitos autorais e remova tags json, pois o conteúdo vai para um blog. Se possível, mantenha tabelas e listas de dados.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
+        prompt: prompt,
         max_tokens: 16384,
         temperature: 0.7
       })
@@ -356,7 +347,7 @@ Certifique-se de:
     }
 
     const data = await response.json();
-    const content = data.content;
+    const content = data.choices?.[0]?.text || '';
 
     if (!content) {
       throw new Error('Resposta vazia da Netlify Function');
