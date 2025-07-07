@@ -57,18 +57,18 @@ export const handler: Handler = async (event) => {
     console.log('Prompt:', prompt);
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: "Você é um assistente especializado em ajudar com questões de estudo."
+          content: "Você é um assistente de redação de notícias. Sua tarefa é gerar uma postagem de blog completa e bem formatada com base no prompt do usuário. A saída deve ser apenas o texto da postagem do blog, sem nenhuma marcação JSON ou qualquer outro formato de dados estruturados. A postagem deve ter um título claro, parágrafos bem escritos e uma conclusão. Não inclua nada como `json { ... }` na sua resposta."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      max_tokens: max_tokens || 1000,
+      max_tokens: max_tokens || 128000, // gpt-4o-mini supports up to 128k tokens, but output is limited to 4096
       temperature: temperature || 0.7,
       top_p: top_p || 0.9,
       frequency_penalty: frequency_penalty || 0.5,
@@ -86,12 +86,27 @@ export const handler: Handler = async (event) => {
       };
     }
 
+    let content = completion.choices[0].message.content;
+
+    // Tenta remover o wrapper JSON se ele ainda estiver presente
+    try {
+      if (content.trim().startsWith('```json')) {
+        content = content.trim().replace(/^```json\n|\n```$/g, '');
+        const parsed = JSON.parse(content);
+        // Assumindo que o conteúdo real está em uma propriedade como 'text' ou 'content'
+        content = parsed.text || parsed.content || parsed.title || JSON.stringify(parsed, null, 2);
+      }
+    } catch (e) {
+      // Se não for um JSON válido, use o conteúdo como está
+      console.warn('Não foi possível analisar o JSON da resposta, usando o conteúdo bruto.');
+    }
+
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         choices: [{
-          text: completion.choices[0].message.content
+          text: content
         }]
       }),
     };
@@ -115,4 +130,4 @@ export const handler: Handler = async (event) => {
       }),
     };
   }
-}; 
+};
