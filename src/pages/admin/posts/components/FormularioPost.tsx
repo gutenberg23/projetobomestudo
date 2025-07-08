@@ -7,6 +7,7 @@ import { FormularioRegiao } from "./formulario/FormularioRegiao";
 import { FormularioMetadados } from "./formulario/FormularioMetadados";
 import { FormularioMidia } from "./formulario/FormularioMidia";
 import { FormularioDestaque } from "./formulario/FormularioDestaque";
+import { FormularioStatus } from "./formulario/FormularioStatus";
 import { Region } from "@/components/blog/types";
 import { resetBlogPostLikes } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
@@ -30,6 +31,8 @@ interface FormularioPostProps {
   onChangeCategoria: (value: string) => void;
   destacado: boolean;
   onChangeDestacado: (value: boolean) => void;
+  isDraft: boolean;
+  onChangeIsDraft: (value: boolean) => void;
   tags: string;
   onChangeTags: (value: string) => void;
   metaDescricao: string;
@@ -67,6 +70,8 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
   onChangeCategoria,
   destacado,
   onChangeDestacado,
+  isDraft,
+  onChangeIsDraft,
   tags,
   onChangeTags,
   metaDescricao,
@@ -199,6 +204,12 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
           <FormularioDestaque 
             destacado={destacado}
             onChangeDestacado={onChangeDestacado}
+          />
+          
+          {/* Status de Publicação */}
+          <FormularioStatus 
+            isDraft={isDraft}
+            onChangeIsDraft={onChangeIsDraft}
           />
           
           <div className="pt-4 flex justify-end space-x-2">

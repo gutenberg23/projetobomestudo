@@ -116,9 +116,8 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
                 <th className="px-4 py-3">Categoria</th>
                 <th className="px-4 py-3">Região</th>
                 <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3">Comentários</th>
                 <th className="px-4 py-3">Curtidas</th>
-                <th className="px-4 py-3">Visualizações</th>
+                <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Destaque</th>
                 <th className="px-4 py-3">Ações</th>
               </tr>
@@ -131,9 +130,18 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
                   <td className="px-4 py-3">{post.category}</td>
                   <td className="px-4 py-3">{post.region || '—'}</td>
                   <td className="px-4 py-3">{format(new Date(post.createdAt), "dd/MM/yyyy")}</td>
-                  <td className="px-4 py-3">{post.commentCount}</td>
                   <td className="px-4 py-3">{post.likesCount}</td>
-                  <td className="px-4 py-3">{post.viewCount || 0}</td>
+                  <td className="px-4 py-3">
+                    {post.isDraft ? (
+                      <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                        Rascunho
+                      </span>
+                    ) : (
+                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                        Publicado
+                      </span>
+                    )}
+                  </td>
                   <td className="px-4 py-3">
                     {post.featured ? (
                       <span className="bg-[#fce7fc] text-[#ea2be2] text-xs px-2 py-1 rounded-full">
@@ -166,7 +174,7 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
               
               {postsFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="px-4 py-8 text-center text-[#67748a]">
+                  <td colSpan={10} className="px-4 py-8 text-center text-[#67748a]">
                     Nenhum post encontrado.
                   </td>
                 </tr>

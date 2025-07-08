@@ -358,16 +358,7 @@ const BlogPostPage = () => {
                 </div>
               </div>
               
-              {/* Imagem destacada */}
-              {post.featuredImage && (
-                <div className="mb-6">
-                  <img 
-                    src={post.featuredImage} 
-                    alt={post.title} 
-                    className="w-full h-auto rounded-lg object-cover"
-                  />
-                </div>
-              )}
+              {/* Imagem destacada removida - aparece apenas na página principal do blog */}
               
               {/* Resumo */}
               <div className="mb-6 text-lg font-medium text-[#67748a] border-l-4 border-primary pl-4 py-2">

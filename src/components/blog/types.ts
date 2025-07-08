@@ -24,6 +24,7 @@ export interface BlogPost {
   relatedPosts?: string[];
   featured?: boolean;
   isLiked?: boolean;
+  isDraft?: boolean;
 }
 
 export interface BlogComment {

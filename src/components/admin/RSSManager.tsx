@@ -27,7 +27,9 @@ import {
   fetchRSSFeed,
   syncAllRSSFeeds,
   fetchAllRSSPosts,
-  processIndividualRSSItem
+  processIndividualRSSItem,
+  clearRewriteCache,
+  getRewriteCacheStats
 } from '@/services/rssService';
 
 interface RSSConfig {
@@ -299,6 +301,25 @@ const RSSManager: React.FC = () => {
     }
   };
 
+  const handleClearCache = () => {
+    try {
+      const stats = getRewriteCacheStats();
+      clearRewriteCache();
+      
+      toast({
+        title: 'Cache limpo com sucesso',
+        description: `${stats.size} entradas removidas do cache de reescrita da IA.`,
+      });
+    } catch (error) {
+      console.error('Erro ao limpar cache:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível limpar o cache.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const formatDateOptional = (dateString?: string) => {
     if (!dateString) return 'Nunca';
     return new Date(dateString).toLocaleString('pt-BR');
@@ -444,6 +465,14 @@ const RSSManager: React.FC = () => {
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
             Sincronização Automática
+          </Button>
+          <Button
+            onClick={handleClearCache}
+            variant="outline"
+            className="text-orange-600 hover:text-orange-700"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Limpar Cache IA
           </Button>
           <Button
             onClick={() => setShowAddForm(!showAddForm)}

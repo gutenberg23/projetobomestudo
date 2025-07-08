@@ -22,6 +22,7 @@ export function usePostsState() {
   const [autorAvatar, setAutorAvatar] = useState("");
   const [categoria, setCategoria] = useState("");
   const [destacado, setDestacado] = useState(false);
+  const [isDraft, setIsDraft] = useState(false);
   const [tags, setTags] = useState("");
   const [metaDescricao, setMetaDescricao] = useState("");
   const [metaKeywords, setMetaKeywords] = useState("");
@@ -43,7 +44,7 @@ export function usePostsState() {
     const carregarPosts = async () => {
       setLoading(true);
       try {
-        const postsData = await fetchBlogPosts();
+        const postsData = await fetchBlogPosts(undefined, true);
         setPosts(postsData.length > 0 ? postsData : MOCK_POSTS);
       } catch (error) {
         console.error("Erro ao carregar posts:", error);
@@ -99,6 +100,8 @@ export function usePostsState() {
     setCategoria,
     destacado,
     setDestacado,
+    isDraft,
+    setIsDraft,
     tags,
     setTags,
     metaDescricao,

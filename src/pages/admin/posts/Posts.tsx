@@ -27,6 +27,8 @@ const Posts = () => {
     setCategoria,
     destacado,
     setDestacado,
+    isDraft,
+    setIsDraft,
     tags,
     setTags,
     metaDescricao,
@@ -91,6 +93,8 @@ const Posts = () => {
           onChangeCategoria={setCategoria}
           destacado={destacado}
           onChangeDestacado={setDestacado}
+          isDraft={isDraft}
+          onChangeIsDraft={setIsDraft}
           tags={tags}
           onChangeTags={setTags}
           metaDescricao={metaDescricao}

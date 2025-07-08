@@ -30,7 +30,8 @@ function mapDatabasePostToAppPost(post: Database['public']['Tables']['blog_posts
     featuredImage: post.featured_image ?? undefined,
     readingTime: post.reading_time ? String(post.reading_time) : undefined,
     relatedPosts: Array.isArray(post.related_posts) ? post.related_posts.map(String) : [],
-    featured: post.featured ?? undefined
+    featured: post.featured ?? undefined,
+    isDraft: post.is_draft ?? false
   };
 }
 
@@ -54,12 +55,13 @@ function mapAppPostToDatabasePost(post: Omit<BlogPost, 'id' | 'createdAt'>): Omi
     featured_image: post.featuredImage,
     reading_time: post.readingTime ? parseInt(String(post.readingTime), 10) || 0 : 0,
     related_posts: post.relatedPosts ? post.relatedPosts.map(String) : [],
-    featured: post.featured
+    featured: post.featured,
+    is_draft: post.isDraft ?? false
   };
 }
 
 // Função para buscar todos os posts do blog
-export async function fetchBlogPosts(authorFilter?: string): Promise<BlogPost[]> {
+export async function fetchBlogPosts(authorFilter?: string, includeDrafts: boolean = false): Promise<BlogPost[]> {
   try {
     const now = Date.now();
     console.log("fetchBlogPosts chamada com filtro:", authorFilter);
@@ -74,6 +76,11 @@ export async function fetchBlogPosts(authorFilter?: string): Promise<BlogPost[]>
       .from('blog_posts')
       .select('*')
       .order('created_at', { ascending: false });
+    
+    // Filtrar rascunhos por padrão, exceto se explicitamente solicitado
+    if (!includeDrafts) {
+      query = query.eq('is_draft', false);
+    }
     
     // Se tiver um filtro de autor, aplicar
     if (authorFilter) {
@@ -274,6 +281,7 @@ export async function updateBlogPost(id: string, post: Partial<BlogPost>): Promi
   }
   if (post.relatedPosts !== undefined) updateData.related_posts = post.relatedPosts.map(String);
   if (post.featured !== undefined) updateData.featured = post.featured;
+  if (post.isDraft !== undefined) updateData.is_draft = post.isDraft;
 
   const { data, error } = await supabase
     .from('blog_posts')
@@ -709,5 +717,85 @@ export async function diagnoseBlogPostsTable(): Promise<any> {
       success: false,
       error
     };
+  }
+}
+
+// Função para buscar apenas rascunhos
+export async function fetchDraftPosts(authorFilter?: string): Promise<BlogPost[]> {
+  try {
+    let query = supabase
+      .from('blog_posts')
+      .select('*')
+      .eq('is_draft', true)
+      .order('created_at', { ascending: false });
+    
+    // Se tiver um filtro de autor, aplicar
+    if (authorFilter) {
+      query = query.eq('author', authorFilter);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Erro ao buscar rascunhos:', error);
+      return [];
+    }
+
+    return data ? data.map(mapDatabasePostToAppPost) : [];
+  } catch (error) {
+    console.error('Erro ao buscar rascunhos:', error);
+    return [];
+  }
+}
+
+// Função para publicar um rascunho
+export async function publishDraft(postId: string): Promise<BlogPost | null> {
+  try {
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .update({ is_draft: false })
+      .eq('id', postId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao publicar rascunho:', error);
+      return null;
+    }
+
+    // Limpar cache para forçar atualização
+    postsCache = [];
+    lastCacheTime = 0;
+
+    return data ? mapDatabasePostToAppPost(data) : null;
+  } catch (error) {
+    console.error('Erro ao publicar rascunho:', error);
+    return null;
+  }
+}
+
+// Função para converter um post publicado em rascunho
+export async function convertToDraft(postId: string): Promise<BlogPost | null> {
+  try {
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .update({ is_draft: true })
+      .eq('id', postId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao converter para rascunho:', error);
+      return null;
+    }
+
+    // Limpar cache para forçar atualização
+    postsCache = [];
+    lastCacheTime = 0;
+
+    return data ? mapDatabasePostToAppPost(data) : null;
+  } catch (error) {
+    console.error('Erro ao converter para rascunho:', error);
+    return null;
   }
 }

@@ -19,6 +19,7 @@ export function usePostsActions(state: PostsState) {
     setAutorAvatar,
     setCategoria,
     setDestacado,
+    setIsDraft,
     setTags,
     setMetaDescricao,
     setMetaKeywords,
@@ -34,6 +35,7 @@ export function usePostsActions(state: PostsState) {
     autor,
     categoria,
     destacado,
+    isDraft,
     tags,
     metaDescricao,
     metaKeywords,
@@ -65,6 +67,7 @@ export function usePostsActions(state: PostsState) {
     setAutorAvatar("");
     setCategoria("");
     setDestacado(false);
+    setIsDraft(false);
     setTags("");
     setMetaDescricao("");
     setMetaKeywords("");
@@ -96,6 +99,7 @@ export function usePostsActions(state: PostsState) {
     setAutorAvatar(post.authorAvatar || "");
     setCategoria(post.category);
     setDestacado(post.featured || false);
+    setIsDraft(post.isDraft || false);
     setTags(post.tags ? post.tags.join(", ") : "");
     setMetaDescricao(post.metaDescription || "");
     setMetaKeywords(post.metaKeywords ? post.metaKeywords.join(", ") : "");
@@ -174,6 +178,7 @@ export function usePostsActions(state: PostsState) {
         readingTime: readingTimeString,
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
         featured: destacado,
+        isDraft: isDraft,
         commentCount: postEditando?.commentCount || 0,
         likesCount: postEditando?.likesCount || 0
       };

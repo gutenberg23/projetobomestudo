@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { createBlogPost } from './blogService';
-import { BlogPost } from '@/components/blog/types';
+import { BlogPost, Region } from '@/components/blog/types';
 import { generateSlug } from '@/utils/slug-utils';
 
 interface RSSItem {
@@ -30,7 +30,14 @@ interface RSSConfig {
 // Função para buscar e parsear RSS feed
 export async function fetchRSSFeed(url: string): Promise<RSSFeed | null> {
   try {
-    const response = await fetch(url);
+    // Usar proxy para contornar CORS se necessário
+    let fetchUrl = url;
+    if (url.includes('politepol.com') || url.includes('rss.app')) {
+      // Para URLs que não têm CORS habilitado, usar proxy
+      fetchUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    }
+    
+    const response = await fetch(fetchUrl);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -45,7 +52,13 @@ export async function fetchRSSFeed(url: string): Promise<RSSFeed | null> {
       throw new Error('Erro ao fazer parse do XML');
     }
     
-    const channel = xmlDoc.querySelector('channel');
+    // Tentar encontrar o canal RSS (pode estar em diferentes estruturas)
+    let channel = xmlDoc.querySelector('channel');
+    if (!channel) {
+      // Se não encontrar channel, pode ser um feed RSS 2.0 ou Atom
+      channel = xmlDoc.querySelector('rss channel') || xmlDoc.documentElement;
+    }
+    
     if (!channel) {
       throw new Error('Canal RSS não encontrado');
     }
@@ -60,25 +73,35 @@ export async function fetchRSSFeed(url: string): Promise<RSSFeed | null> {
     itemElements.forEach(item => {
       const itemTitle = item.querySelector('title')?.textContent || '';
       const itemLink = item.querySelector('link')?.textContent || '';
-      const itemDescription = item.querySelector('description')?.textContent || '';
+      let itemDescription = item.querySelector('description')?.textContent || '';
       const itemPubDate = item.querySelector('pubDate')?.textContent || '';
-      const itemGuid = item.querySelector('guid')?.textContent || itemLink;
+      let itemGuid = item.querySelector('guid')?.textContent || itemLink;
+      
+      // Limpar descrição se estiver vazia ou só com espaços
+      if (!itemDescription || itemDescription.trim() === '') {
+        itemDescription = 'Sem descrição disponível';
+      }
+      
+      // Garantir que o GUID seja único
+      if (!itemGuid || itemGuid.trim() === '') {
+        itemGuid = itemLink || `item-${Date.now()}-${Math.random()}`;
+      }
       
       if (itemTitle && itemLink) {
         items.push({
-          title: itemTitle,
-          link: itemLink,
-          description: itemDescription,
-          pubDate: itemPubDate,
-          guid: itemGuid
+          title: itemTitle.trim(),
+          link: itemLink.trim(),
+          description: itemDescription.trim(),
+          pubDate: itemPubDate.trim(),
+          guid: itemGuid.trim()
         });
       }
     });
     
     return {
-      title,
-      description,
-      link,
+      title: title.trim(),
+      description: description.trim(),
+      link: link.trim(),
       items
     };
   } catch (error) {
@@ -149,9 +172,47 @@ export async function extractWebContent(url: string): Promise<string | null> {
   }
 }
 
+// Cache para evitar reprocessar o mesmo conteúdo múltiplas vezes
+const rewriteCache = new Map<string, { title: string; content: string; summary: string; tags: string[] }>();
+const REWRITE_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas em ms
+const rewriteCacheTimestamps = new Map<string, number>();
+
+// Função para limpar o cache de reescrita (útil para testes ou limpeza manual)
+export function clearRewriteCache(): void {
+  rewriteCache.clear();
+  rewriteCacheTimestamps.clear();
+  console.log('Cache de reescrita limpo');
+}
+
+// Função para obter estatísticas do cache
+export function getRewriteCacheStats(): { size: number; oldestEntry: number | null; newestEntry: number | null } {
+  const timestamps = Array.from(rewriteCacheTimestamps.values());
+  return {
+    size: rewriteCache.size,
+    oldestEntry: timestamps.length > 0 ? Math.min(...timestamps) : null,
+    newestEntry: timestamps.length > 0 ? Math.max(...timestamps) : null
+  };
+}
+
 // Função para reescrever conteúdo usando OpenAI
-export async function rewriteContentWithAI(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string } | null> {
+export async function rewriteContentWithAI(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string; tags: string[]; region: string; state: string; metaKeywords: string[] } | null> {
   try {
+    // Criar uma chave única baseada no título e conteúdo
+    const cacheKey = `${originalTitle}_${originalContent.substring(0, 100)}`;
+    const now = Date.now();
+    
+    // Verificar se já temos este conteúdo em cache e se não expirou
+    if (rewriteCache.has(cacheKey)) {
+      const cacheTime = rewriteCacheTimestamps.get(cacheKey) || 0;
+      if (now - cacheTime < REWRITE_CACHE_TTL) {
+        console.log('Usando conteúdo reescrito do cache para:', originalTitle);
+        return rewriteCache.get(cacheKey)!;
+      } else {
+        // Cache expirado, remover
+        rewriteCache.delete(cacheKey);
+        rewriteCacheTimestamps.delete(cacheKey);
+      }
+    }
     // Tentar múltiplas formas de acessar a variável de ambiente
     let openaiApiKey = '';
     
@@ -207,7 +268,11 @@ Por favor, retorne um JSON com a seguinte estrutura:
 {
   "title": "Novo título reescrito",
   "summary": "Resumo do artigo em 2-3 frases",
-  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc."
+  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc.",
+  "tags": ["tag1", "tag2", "tag3"],
+  "region": "região do concurso",
+  "state": "estado do concurso",
+  "metaKeywords": ["palavra-chave1", "palavra-chave2", "palavra-chave3"]
 }
 
 Certifique-se de:
@@ -216,7 +281,12 @@ Certifique-se de:
 3. Usar linguagem clara e profissional
 4. Formatar o conteúdo em HTML válido
 5. Criar um título atrativo e informativo
-6. Fazer um resumo conciso e envolvente`;
+6. Fazer um resumo conciso e envolvente
+7. NÃO incluir tags H1 no conteúdo, pois o título já será usado como H1
+8. Gerar 3-5 tags relevantes baseadas no conteúdo (ex: nome do órgão, tipo de concurso, área, etc.) - evite termos como "automatizado", "RSS", "bot"
+9. Para "region", use uma das opções: "norte", "nordeste", "centro-oeste", "sul", "sudeste", "nacional", "federal" (baseado no escopo geográfico do concurso)
+10. Para "state", use a sigla do estado brasileiro em maiúsculo (ex: "SP", "RJ", "MG") ou deixe vazio se for nacional/federal
+11. Para "metaKeywords", gere 5-10 palavras-chave relevantes separadas em array (ex: nome do órgão, área de atuação, tipo de cargo, nível de escolaridade, etc.)`;
 
     // Debug: verificar headers da requisição
     const headers = {
@@ -281,18 +351,56 @@ Certifique-se de:
     // Tentar fazer parse do JSON retornado
     try {
       const result = JSON.parse(content);
-      return {
+      
+      // Processar o conteúdo para remover H1s duplicados
+      let processedContent = result.content || '';
+      
+      // Remover tags H1 que contenham o título ou sejam similares
+      const titleWords = (result.title || originalTitle).toLowerCase().split(' ');
+      processedContent = processedContent.replace(/<h1[^>]*>.*?<\/h1>/gi, (match) => {
+        const h1Content = match.replace(/<[^>]*>/g, '').toLowerCase();
+        const similarity = titleWords.filter(word => word.length > 3 && h1Content.includes(word)).length;
+        
+        // Se mais de 50% das palavras do título estão no H1, remove
+        if (similarity > titleWords.length * 0.5) {
+          return '';
+        }
+        return match;
+      });
+      
+      const finalResult = {
         title: result.title || originalTitle,
-        content: result.content || '',
-        summary: result.summary || ''
+        content: processedContent,
+        summary: result.summary || '',
+        tags: result.tags || ['Concursos', 'Educação'],
+        region: result.region || 'nacional',
+        state: result.state || '',
+        metaKeywords: result.metaKeywords || ['concursos', 'educação', 'vagas']
       };
+      
+      // Armazenar no cache
+      rewriteCache.set(cacheKey, finalResult);
+      rewriteCacheTimestamps.set(cacheKey, now);
+      console.log('Conteúdo reescrito armazenado no cache para:', originalTitle);
+      
+      return finalResult;
     } catch (parseError) {
       // Se não conseguir fazer parse do JSON, retornar o conteúdo como está
-      return {
+      const fallbackResult = {
         title: originalTitle,
         content: content,
-        summary: content.substring(0, 200) + '...'
+        summary: content.substring(0, 200) + '...',
+        tags: ['Concursos', 'Educação'],
+        region: 'nacional',
+        state: '',
+        metaKeywords: ['concursos', 'educação', 'vagas']
       };
+      
+      // Armazenar no cache mesmo o resultado de fallback
+      rewriteCache.set(cacheKey, fallbackResult);
+      rewriteCacheTimestamps.set(cacheKey, now);
+      
+      return fallbackResult;
     }
   } catch (error) {
     console.error('Erro ao reescrever conteúdo com IA:', error);
@@ -301,8 +409,24 @@ Certifique-se de:
 }
 
 // Função auxiliar para usar a Netlify Function quando as variáveis de ambiente não estão disponíveis no frontend
-async function rewriteContentWithNetlifyFunction(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string } | null> {
+async function rewriteContentWithNetlifyFunction(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string; tags: string[]; region: string; state: string; metaKeywords: string[] } | null> {
   try {
+    // Verificar cache primeiro (usando o mesmo sistema de cache)
+    const cacheKey = `${originalTitle}_${originalContent.substring(0, 100)}`;
+    const now = Date.now();
+    
+    if (rewriteCache.has(cacheKey)) {
+      const cacheTime = rewriteCacheTimestamps.get(cacheKey) || 0;
+      if (now - cacheTime < REWRITE_CACHE_TTL) {
+        console.log('Usando conteúdo reescrito do cache (Netlify Function) para:', originalTitle);
+        return rewriteCache.get(cacheKey)!;
+      } else {
+        // Cache expirado, remover
+        rewriteCache.delete(cacheKey);
+        rewriteCacheTimestamps.delete(cacheKey);
+      }
+    }
+    
     console.log('Usando Netlify Function para reescrever conteúdo...');
     
     const prompt = `
@@ -317,7 +441,11 @@ Por favor, retorne um JSON com a seguinte estrutura:
 {
   "title": "Novo título reescrito",
   "summary": "Resumo do artigo em 2-3 frases",
-  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc."
+  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc.",
+  "tags": ["tag1", "tag2", "tag3"],
+  "region": "região do concurso",
+  "state": "estado do concurso",
+  "metaKeywords": ["palavra-chave1", "palavra-chave2", "palavra-chave3"]
 }
 
 Certifique-se de:
@@ -326,7 +454,12 @@ Certifique-se de:
 3. Usar linguagem clara e profissional
 4. Formatar o conteúdo em HTML válido
 5. Criar um título atrativo e informativo
-6. Fazer um resumo conciso e envolvente`;
+6. Fazer um resumo conciso e envolvente
+7. NÃO incluir tags H1 no conteúdo, pois o título já será usado como H1
+8. Gerar 3-5 tags relevantes baseadas no conteúdo (ex: nome do órgão, tipo de concurso, área, etc.) - evite termos como "automatizado", "RSS", "bot"
+9. Para "region", use uma das opções: "norte", "nordeste", "centro-oeste", "sul", "sudeste", "nacional", "federal" (baseado no escopo geográfico do concurso)
+10. Para "state", use a sigla do estado brasileiro em maiúsculo (ex: "SP", "RJ", "MG") ou deixe vazio se for nacional/federal
+11. Para "metaKeywords", gere 5-10 palavras-chave relevantes separadas em array (ex: nome do órgão, área de atuação, tipo de cargo, nível de escolaridade, etc.)`;
 
     const response = await fetch('/.netlify/functions/generate', {
       method: 'POST',
@@ -356,18 +489,56 @@ Certifique-se de:
     // Tentar fazer parse do JSON retornado
     try {
       const result = JSON.parse(content);
-      return {
+      
+      // Processar o conteúdo para remover H1s duplicados
+      let processedContent = result.content || '';
+      
+      // Remover tags H1 que contenham o título ou sejam similares
+      const titleWords = (result.title || originalTitle).toLowerCase().split(' ');
+      processedContent = processedContent.replace(/<h1[^>]*>.*?<\/h1>/gi, (match) => {
+        const h1Content = match.replace(/<[^>]*>/g, '').toLowerCase();
+        const similarity = titleWords.filter(word => word.length > 3 && h1Content.includes(word)).length;
+        
+        // Se mais de 50% das palavras do título estão no H1, remove
+        if (similarity > titleWords.length * 0.5) {
+          return '';
+        }
+        return match;
+      });
+      
+      const finalResult = {
         title: result.title || originalTitle,
-        content: result.content || '',
-        summary: result.summary || ''
+        content: processedContent,
+        summary: result.summary || '',
+        tags: result.tags || ['Concursos', 'Educação'],
+        region: result.region || 'nacional',
+        state: result.state || '',
+        metaKeywords: result.metaKeywords || ['concursos', 'educação', 'vagas']
       };
+      
+      // Armazenar no cache
+      rewriteCache.set(cacheKey, finalResult);
+      rewriteCacheTimestamps.set(cacheKey, now);
+      console.log('Conteúdo reescrito armazenado no cache para:', originalTitle);
+      
+      return finalResult;
     } catch (parseError) {
       // Se não conseguir fazer parse do JSON, retornar o conteúdo como está
-      return {
+      const fallbackResult = {
         title: originalTitle,
         content: content,
-        summary: content.substring(0, 200) + '...'
+        summary: content.substring(0, 200) + '...',
+        tags: ['Concursos', 'Educação'],
+        region: 'nacional',
+        state: '',
+        metaKeywords: ['concursos', 'educação', 'vagas']
       };
+      
+      // Armazenar no cache mesmo o resultado de fallback
+      rewriteCache.set(cacheKey, fallbackResult);
+      rewriteCacheTimestamps.set(cacheKey, now);
+      
+      return fallbackResult;
     }
   } catch (error) {
     console.error('Erro ao usar Netlify Function:', error);
@@ -383,21 +554,29 @@ export async function processRSSItem(item: RSSItem, authorName: string = 'BomEst
     // Gerar slug base do título original
     const baseSlug = generateSlug(item.title);
     
-    // Verificar se já existe um post com este slug
-    const { data: existingPost, error: checkError } = await supabase
+    // Verificar se já existe um post com este slug ou título similar
+    const { data: existingPosts, error: checkError } = await supabase
       .from('blog_posts')
-      .select('id')
-      .eq('slug', baseSlug)
-      .maybeSingle();
+      .select('id, title, slug')
+      .or(`slug.eq.${baseSlug},title.ilike.%${item.title.substring(0, 50)}%`)
+      .limit(5);
     
     if (checkError && checkError.code !== 'PGRST116') {
       console.error('Erro ao verificar post existente:', checkError);
       return null;
     }
     
-    if (existingPost) {
-      console.log('Post já existe, pulando:', item.title);
-      return null;
+    if (existingPosts && existingPosts.length > 0) {
+      // Verificar se algum dos posts encontrados é realmente uma duplicata
+      const isDuplicate = existingPosts.some(post => 
+        post.slug === baseSlug || 
+        post.title.toLowerCase().includes(item.title.toLowerCase().substring(0, 30))
+      );
+      
+      if (isDuplicate) {
+        console.log('Post similar já existe, pulando:', item.title);
+        return null;
+      }
     }
     
     // Extrair conteúdo da página
@@ -414,7 +593,7 @@ export async function processRSSItem(item: RSSItem, authorName: string = 'BomEst
       return null;
     }
     
-    // Criar o post
+    // Criar o post como rascunho
     const newPost: Omit<BlogPost, 'id' | 'createdAt'> = {
       title: rewrittenContent.title,
       summary: rewrittenContent.summary,
@@ -425,16 +604,20 @@ export async function processRSSItem(item: RSSItem, authorName: string = 'BomEst
       commentCount: 0,
       likesCount: 0,
       viewCount: 0,
-      tags: ['RSS', 'Automatizado'],
+      tags: rewrittenContent.tags || ['Concursos', 'Educação'],
       metaDescription: rewrittenContent.summary,
-      featured: false
+      region: rewrittenContent.region as Region || 'nacional',
+      state: rewrittenContent.state || '',
+      metaKeywords: rewrittenContent.metaKeywords || ['concursos', 'educação', 'vagas'],
+      featured: false,
+      isDraft: true // Salvar automaticamente como rascunho
     };
     
-    // Salvar como rascunho (você pode adicionar um campo 'status' na tabela)
+    // Salvar como rascunho
     const createdPost = await createBlogPost(newPost);
     
     if (createdPost) {
-      console.log('Post criado com sucesso:', createdPost.title);
+      console.log('Post criado como rascunho:', createdPost.title);
     }
     
     return createdPost;

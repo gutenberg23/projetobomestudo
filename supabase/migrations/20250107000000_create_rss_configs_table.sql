@@ -62,5 +62,5 @@ CREATE POLICY "Allow admins to delete RSS configs" ON public.rss_configs
 
 -- Inserir configuração padrão para o RSS fornecido
 INSERT INTO public.rss_configs (name, url, active) 
-VALUES ('PCI Concursos', 'https://rss.app/feeds/HazoFE0VRZPei40O.xml', true)
+VALUES ('PCI Concursos', 'https://politepol.com/fd/88t0mcUiNvfb.xml', true)
 ON CONFLICT DO NOTHING;
