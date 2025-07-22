@@ -182,7 +182,8 @@ export const useEditorializedData = () => {
               (userTopicoData.hits / userTopicoData.exercisesDone) * 100 : 0,
             totalExercises: userTopicoData?.exercisesDone || userTopicoData?.totalExercises || 0,
             correctAnswers: userTopicoData?.hits || userTopicoData?.correctAnswers || 0,
-            isReviewed: userTopicoData?.isReviewed || false
+            isReviewed: userTopicoData?.isReviewed || false,
+            link: userTopicoData?.link || null
           };
           
           logWithTimestamp(`Tópico ${index + 1} formatado`, topic);
@@ -263,7 +264,8 @@ export const useEditorializedData = () => {
             correctAnswers: topic.hits || 0,
             exercisesDone: topic.exercisesDone || 0,
             hits: topic.hits || 0,
-            isReviewed: topic.isReviewed || false
+            isReviewed: topic.isReviewed || false,
+            link: topic.link || null
           };
           logWithTimestamp(`Salvando dados do tópico ${topic.id}`, data);
           return data;
@@ -377,8 +379,8 @@ export const useEditorializedData = () => {
             logWithTimestamp("Erro ao salvar no localStorage", error);
           }
         } else {
-          // Se mudou o valor de isDone, exercisesDone ou hits, salvamos automaticamente
-          if (field === 'isDone' || field === 'exercisesDone' || field === 'hits') {
+          // Se mudou o valor de isDone, exercisesDone, hits ou link, salvamos automaticamente
+          if (field === 'isDone' || field === 'exercisesDone' || field === 'hits' || field === 'link') {
             logWithTimestamp(`Campo ${field} modificado, salvando automaticamente`);
             // Vamos salvar com um pequeno delay para permitir que a UI seja atualizada primeiro
             setTimeout(() => {
