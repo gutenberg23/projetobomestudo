@@ -97,19 +97,29 @@ export const SubjectTable = ({
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center justify-center">
-                      {topic.link ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 px-2 text-blue-600"
-                          onClick={() => window.open(topic.link, '_blank')}
-                          title="Abrir link de questões"
-                        >
-                          <ExternalLink className="h-4 w-4 mr-1" />
-                          <span className="text-xs">Questões</span>
-                        </Button>
+                      {isEditMode ? (
+                        <input 
+                          type="url" 
+                          value={topic.link || ''} 
+                          onChange={e => onTopicChange(subject.id, topic.id, 'link', e.target.value)} 
+                          placeholder="https://exemplo.com"
+                          className="w-40 text-center border rounded p-1 text-xs" 
+                        />
                       ) : (
-                        <span className="text-xs text-gray-400">Sem link</span>
+                        topic.link ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-blue-600"
+                            onClick={() => window.open(topic.link, '_blank')}
+                            title="Abrir link de questões"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            <span className="text-xs">Questões</span>
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-gray-400">Sem link</span>
+                        )
                       )}
                     </div>
                   </td>

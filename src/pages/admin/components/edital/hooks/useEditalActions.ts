@@ -44,20 +44,27 @@ export const useEditalActions = () => {
   const atualizarDisciplina = async (id: string, disciplina: Omit<Disciplina, 'id' | 'selecionada'>) => {
     try {
       setIsLoading(true);
+      console.log('🔄 Iniciando atualização da disciplina:', { id, disciplina });
+      
       const { data, error } = await supabase
         .from('disciplinaverticalizada')
         .update({
           titulo: disciplina.titulo,
           descricao: disciplina.descricao,
           topicos: disciplina.topicos,
+          links: disciplina.links,
           importancia: disciplina.importancia
         })
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro do Supabase:', error);
+        throw error;
+      }
 
+      console.log('✅ Disciplina atualizada com sucesso:', data);
       toast({
         title: "Sucesso",
         description: "Disciplina atualizada com sucesso!",
@@ -65,12 +72,13 @@ export const useEditalActions = () => {
 
       return data;
     } catch (error) {
-      console.error('Erro ao atualizar disciplina:', error);
+      console.error('❌ Erro ao atualizar disciplina:', error);
       toast({
         title: "Erro",
         description: "Erro ao atualizar disciplina. Tente novamente.",
         variant: "destructive"
       });
+      return null;
     } finally {
       setIsLoading(false);
     }

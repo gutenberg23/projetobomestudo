@@ -64,12 +64,17 @@ const DisciplinasTab: React.FC = () => {
   };
 
   const handleEditDisciplina = async (disciplina: Disciplina) => {
+    console.log('🔄 handleEditDisciplina chamada com:', disciplina);
     const disciplinaAtualizada = await atualizarDisciplina(disciplina.id, disciplina);
+    console.log('📝 Resultado da atualização:', disciplinaAtualizada);
     if (disciplinaAtualizada) {
       setDisciplinas(prev => 
         prev.map(d => d.id === disciplina.id ? { ...disciplinaAtualizada, selecionada: d.selecionada } : d)
       );
       setDisciplinaParaEditar(null);
+      console.log('✅ Estado local atualizado e modal fechado');
+    } else {
+      console.log('❌ Falha na atualização - disciplina não foi atualizada');
     }
   };
 

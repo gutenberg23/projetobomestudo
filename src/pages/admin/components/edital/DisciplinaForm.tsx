@@ -51,6 +51,18 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
     setLinks(links.filter((_, i) => i !== index));
   };
 
+  const handleEditTopico = (index: number, novoTopico: string) => {
+    const novosTopicos = [...topicos];
+    novosTopicos[index] = novoTopico;
+    setTopicos(novosTopicos);
+  };
+
+  const handleEditLink = (index: number, novoLink: string) => {
+    const novosLinks = [...links];
+    novosLinks[index] = novoLink;
+    setLinks(novosLinks);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -90,12 +102,18 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
     };
 
     if (disciplinaParaEditar) {
+      console.log('📝 Editando disciplina:', {
+        ...disciplina,
+        id: disciplinaParaEditar.id,
+        selecionada: disciplinaParaEditar.selecionada
+      });
       onEditDisciplina?.({
         ...disciplina,
         id: disciplinaParaEditar.id,
         selecionada: disciplinaParaEditar.selecionada
       });
     } else {
+      console.log('➕ Adicionando nova disciplina:', disciplina);
       onAddDisciplina(disciplina);
     }
 
@@ -183,15 +201,26 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
               <div className="mt-4 space-y-2">
                 {topicos.map((topico, index) => (
                   <div key={index} className="flex items-center gap-2 bg-gray-50 p-2 rounded">
-                    <span className="flex-1">{topico}</span>
+                    <Input
+                      value={topico}
+                      onChange={(e) => handleEditTopico(index, e.target.value)}
+                      placeholder="Nome do tópico"
+                      className="flex-1"
+                    />
+                    <Input
+                      value={links[index] || ""}
+                      onChange={(e) => handleEditLink(index, e.target.value)}
+                      placeholder="Link (opcional)"
+                      className="w-48"
+                    />
                     {links[index] && (
                       <a
                         href={links[index]}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-500 hover:underline"
+                        className="text-blue-500 hover:underline text-sm px-2"
                       >
-                        Link
+                        Abrir
                       </a>
                     )}
                     <Button
