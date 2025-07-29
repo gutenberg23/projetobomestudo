@@ -5,6 +5,10 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import axios from 'axios';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,8 +18,43 @@ dotenv.config();
 const app = express();
 const port = 3000;
 
+// Configurar cliente do Supabase (opcional)
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+let supabase = null;
+
+if (supabaseUrl && supabaseKey) {
+  supabase = createClient(supabaseUrl, supabaseKey);
+  console.log('Supabase configurado com sucesso');
+} else {
+  console.log('Supabase não configurado - variáveis de ambiente não encontradas');
+}
+
 app.use(cors());
 app.use(express.json());
+// Servir arquivos de upload
+app.use('/uploads', express.static('uploads'));
+
+// Configuração do multer para upload de arquivos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const { rootFolder, path: uploadPath } = req.body;
+    const fullPath = path.join('uploads', rootFolder, uploadPath || '');
+    
+    // Criar diretório se não existir
+    if (!fs.existsSync(fullPath)) {
+      fs.mkdirSync(fullPath, { recursive: true });
+    }
+    
+    cb(null, fullPath);
+  },
+  filename: (req, file, cb) => {
+    // Manter o nome original do arquivo
+    cb(null, file.originalname);
+  }
+});
+
+const upload = multer({ storage });
 
 // Inicializar o cliente OpenAI
 const openai = new OpenAI({
@@ -122,6 +161,120 @@ app.get('/api/proxy-content', async (req, res) => {
     } else {
       res.status(500).json({ error: 'Internal server error' });
     }
+  }
+});
+
+// Endpoint para listar arquivos e pastas
+app.get('/api/files', (req, res) => {
+  try {
+    const { path: requestPath, rootFolder } = req.query;
+    const fullPath = path.join('uploads', rootFolder, requestPath || '');
+    
+    // Criar diretório se não existir
+    if (!fs.existsSync(fullPath)) {
+      fs.mkdirSync(fullPath, { recursive: true });
+      return res.json({ files: [] });
+    }
+    
+    const items = fs.readdirSync(fullPath, { withFileTypes: true });
+    const files = items.map((item, index) => {
+      const itemPath = path.join(fullPath, item.name);
+      const stats = fs.statSync(itemPath);
+      const relativePath = path.join(requestPath || '', item.name).replace(/\\/g, '/');
+      
+      return {
+        id: `${Date.now()}-${index}`,
+        name: item.name,
+        type: item.isDirectory() ? 'folder' : 'file',
+        path: relativePath,
+        url: item.isFile() ? `http://localhost:3000/uploads/${rootFolder}/${relativePath}` : undefined,
+        size: item.isFile() ? stats.size : undefined,
+        createdAt: stats.birthtime
+      };
+    });
+    
+    res.json({ files });
+  } catch (error) {
+    console.error('Erro ao listar arquivos:', error);
+    res.status(500).json({ error: 'Erro ao listar arquivos' });
+  }
+});
+
+// Endpoint para upload de arquivos
+app.post('/api/files/upload', upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+    }
+    
+    const { rootFolder, path: uploadPath } = req.body;
+    const relativePath = path.join(uploadPath || '', req.file.filename).replace(/\\/g, '/');
+    const url = `http://localhost:3000/uploads/${rootFolder}/${relativePath}`;
+    
+    res.json({
+      id: Date.now().toString(),
+      filename: req.file.filename,
+      url: url,
+      size: req.file.size
+    });
+  } catch (error) {
+    console.error('Erro no upload:', error);
+    res.status(500).json({ error: 'Erro no upload do arquivo' });
+  }
+});
+
+// Endpoint para criar pasta
+app.post('/api/files/folder', (req, res) => {
+  try {
+    const { name, path: requestPath, rootFolder } = req.body;
+    const fullPath = path.join('uploads', rootFolder, requestPath || '', name);
+    
+    if (fs.existsSync(fullPath)) {
+      return res.status(400).json({ error: 'Pasta já existe' });
+    }
+    
+    fs.mkdirSync(fullPath, { recursive: true });
+    res.json({ success: true, path: fullPath });
+  } catch (error) {
+    console.error('Erro ao criar pasta:', error);
+    res.status(500).json({ error: 'Erro ao criar pasta' });
+  }
+});
+
+// Endpoint para excluir arquivo
+app.delete('/api/files/file', (req, res) => {
+  try {
+    const { path: filePath, rootFolder } = req.body;
+    const fullPath = path.join('uploads', rootFolder, filePath);
+    
+    if (!fs.existsSync(fullPath)) {
+      return res.status(404).json({ error: 'Arquivo não encontrado' });
+    }
+    
+    fs.unlinkSync(fullPath);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erro ao excluir arquivo:', error);
+    res.status(500).json({ error: 'Erro ao excluir arquivo' });
+  }
+});
+
+// Endpoint para excluir pasta
+app.delete('/api/files/folder', (req, res) => {
+  try {
+    const { path: folderPath, rootFolder } = req.body;
+    const fullPath = path.join('uploads', rootFolder, folderPath);
+    
+    if (!fs.existsSync(fullPath)) {
+      return res.status(404).json({ error: 'Pasta não encontrada' });
+    }
+    
+    // Excluir pasta recursivamente
+    fs.rmSync(fullPath, { recursive: true, force: true });
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Erro ao excluir pasta:', error);
+    res.status(500).json({ error: 'Erro ao excluir pasta' });
   }
 });
 

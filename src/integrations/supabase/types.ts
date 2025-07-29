@@ -1520,6 +1520,7 @@ export type Database = {
           professor_nome: string | null
           questoes_ids: string[] | null
           resumo_url: string | null
+          resumo_audio_url: string | null
           video_url: string | null
         }
         Insert: {
@@ -1538,6 +1539,7 @@ export type Database = {
           professor_nome?: string | null
           questoes_ids?: string[] | null
           resumo_url?: string | null
+          resumo_audio_url?: string | null
           video_url?: string | null
         }
         Update: {
@@ -1556,6 +1558,7 @@ export type Database = {
           professor_nome?: string | null
           questoes_ids?: string[] | null
           resumo_url?: string | null
+          resumo_audio_url?: string | null
           video_url?: string | null
         }
         Relationships: []

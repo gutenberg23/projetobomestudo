@@ -11,9 +11,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FileUploadField } from "@/components/ui/file-upload-field";
 import { Topico } from "../TopicosTypes";
 import { QuestionsManager } from "./components/QuestionsManager";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface EditTopicoModalProps {
@@ -273,41 +273,51 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
               Abrir aula em nova guia
             </Label>
           </div>
-          <div>
-            <Label htmlFor="edit-pdf-url">Link da Aula em PDF</Label>
-            <Input
-              id="edit-pdf-url"
-              value={editedTopico.pdfUrl}
-              onChange={(e) => setEditedTopico({ ...editedTopico, pdfUrl: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="edit-mapa-url">Link do Mapa Mental</Label>
-            <Input
-              id="edit-mapa-url"
-              value={editedTopico.mapaUrl}
-              onChange={(e) => setEditedTopico({ ...editedTopico, mapaUrl: e.target.value })}
-              placeholder="https://exemplo.com/mapa"
-            />
-          </div>
-          <div>
-            <Label htmlFor="edit-resumo-url">Link do Resumo</Label>
-            <Input
-              id="edit-resumo-url"
-              value={editedTopico.resumoUrl}
-              onChange={(e) => setEditedTopico({ ...editedTopico, resumoUrl: e.target.value })}
-              placeholder="https://exemplo.com/resumo"
-            />
-          </div>
-          <div>
-            <Label htmlFor="edit-musicaUrl">Link da Música</Label>
-            <Input
-              id="edit-musicaUrl"
-              value={editedTopico.musicaUrl || ""}
-              onChange={(e) => setEditedTopico({ ...editedTopico, musicaUrl: e.target.value })}
-              placeholder="URL da música"
-            />
-          </div>
+          <FileUploadField
+            id="edit-pdf-url"
+            label="Link da Aula em PDF"
+            value={editedTopico.pdfUrl}
+            onChange={(value) => setEditedTopico({ ...editedTopico, pdfUrl: value })}
+            placeholder="URL do arquivo PDF ou faça upload"
+            allowedTypes={['pdf']}
+            rootFolder="pdf"
+          />
+          <FileUploadField
+            id="edit-mapa-url"
+            label="Link do Mapa Mental"
+            value={editedTopico.mapaUrl}
+            onChange={(value) => setEditedTopico({ ...editedTopico, mapaUrl: value })}
+            placeholder="URL do mapa mental ou faça upload"
+            allowedTypes={['pdf', 'jpg', 'jpeg', 'png', 'gif']}
+            rootFolder="mapa-mental"
+          />
+          <FileUploadField
+            id="edit-resumo-url"
+            label="Link do Resumo"
+            value={editedTopico.resumoUrl}
+            onChange={(value) => setEditedTopico({ ...editedTopico, resumoUrl: value })}
+            placeholder="URL do resumo ou faça upload"
+            allowedTypes={['pdf', 'doc', 'docx']}
+            rootFolder="resumo"
+          />
+          <FileUploadField
+            id="edit-musicaUrl"
+            label="Link da Música"
+            value={editedTopico.musicaUrl || ""}
+            onChange={(value) => setEditedTopico({ ...editedTopico, musicaUrl: value })}
+            placeholder="URL da música ou faça upload"
+            allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
+            rootFolder="musica"
+          />
+          <FileUploadField
+            id="edit-resumoAudioUrl"
+            label="Link do Resumo em Áudio"
+            value={editedTopico.resumoAudioUrl || ""}
+            onChange={(value) => setEditedTopico({ ...editedTopico, resumoAudioUrl: value })}
+            placeholder="URL do resumo em áudio ou faça upload"
+            allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
+            rootFolder="resumo-audio"
+          />
           <div>
             <Label htmlFor="edit-cadernoQuestoesUrl">Link do Caderno de Questões</Label>
             <Input

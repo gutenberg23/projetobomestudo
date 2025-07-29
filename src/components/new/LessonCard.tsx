@@ -29,6 +29,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   const [hasHorizontalScroll, setHasHorizontalScroll] = useState(false);
   const [isLessonCompleted, setIsLessonCompleted] = useState(false);
   const [topicData, setTopicData] = useState<any>(null);
+  const [hasQuestions, setHasQuestions] = useState<boolean>(false);
   const sectionsContainerRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLElement>(null);
   const [videoHeight, setVideoHeight] = useState<number>(0);
@@ -241,8 +242,19 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         }
         
         setTopicData(data);
+        
+        // Verificar se há questões cadastradas para este tópico
+        const hasQuestionsForTopic = data && data.questoes_ids && (
+          (Array.isArray(data.questoes_ids) && data.questoes_ids.length > 0) ||
+          (typeof data.questoes_ids === 'object' && Object.keys(data.questoes_ids).length > 0) ||
+          (typeof data.questoes_ids === 'string' && data.questoes_ids.trim() !== '')
+        );
+        
+        setHasQuestions(Boolean(hasQuestionsForTopic));
+        console.log('Tópico tem questões:', hasQuestionsForTopic);
       } catch (error) {
         console.error('Erro ao buscar dados do tópico:', error);
+        setHasQuestions(false);
       }
     };
     
@@ -343,7 +355,9 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             mapaUrl={topicData?.mapa_url}
             resumoUrl={topicData?.resumo_url}
             musicaUrl={topicData?.musica_url}
+            resumoAudioUrl={topicData?.resumo_audio_url}
             cadernoQuestoesUrl={topicData?.caderno_questoes_url}
+            hasQuestions={hasQuestions}
           />
           {showQuestions && (
             <div className="mt-4 px-[20px]">

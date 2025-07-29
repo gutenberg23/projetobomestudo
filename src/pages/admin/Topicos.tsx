@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileUploadField } from "@/components/ui/file-upload-field";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Topico } from "./components/topicos/TopicosTypes";
@@ -70,6 +71,7 @@ const Topicos = () => {
     mapaUrl: "",
     resumoUrl: "",
     musicaUrl: "",
+    resumoAudioUrl: "",
     cadernoQuestoesUrl: "",
     abrirEmNovaGuia: false
   });
@@ -195,6 +197,7 @@ const Topicos = () => {
           mapa_url: newTopico.mapaUrl,
           resumo_url: newTopico.resumoUrl,
           musica_url: newTopico.musicaUrl,
+          resumo_audio_url: newTopico.resumoAudioUrl,
           caderno_questoes_url: newTopico.cadernoQuestoesUrl,
           abrir_em_nova_guia: newTopico.abrirEmNovaGuia
         })
@@ -214,6 +217,7 @@ const Topicos = () => {
           mapaUrl: data[0].mapa_url,
           resumoUrl: data[0].resumo_url,
           musicaUrl: data[0].musica_url,
+          resumoAudioUrl: data[0].resumo_audio_url,
           cadernoQuestoesUrl: data[0].caderno_questoes_url,
           questoesIds: data[0].questoes_ids,
           professor_id: data[0].professor_id,
@@ -229,14 +233,18 @@ const Topicos = () => {
           titulo: "",
           disciplina: "",
           patrocinador: "",
-          questoesIds: [],
-          professor_id: "",
           videoUrl: "",
           pdfUrl: "",
           mapaUrl: "",
           resumoUrl: "",
           musicaUrl: "",
+          resumoAudioUrl: "",
           cadernoQuestoesUrl: "",
+          questoesIds: [],
+          professor_id: "",
+          professor_nome: "",
+          thumbnail: "",
+          abrirVideoEm: "site",
           abrirEmNovaGuia: false
         });
         
@@ -412,45 +420,55 @@ const Topicos = () => {
               </Label>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="topico-pdf-url">Link da Aula em PDF</Label>
-              <Input
-                id="topico-pdf-url"
-                value={newTopico.pdfUrl}
-                onChange={(e) => setNewTopico({ ...newTopico, pdfUrl: e.target.value })}
-                placeholder="https://exemplo.com/aula.pdf"
-              />
-            </div>
+            <FileUploadField
+              id="topico-pdf-url"
+              label="Link da Aula em PDF"
+              value={newTopico.pdfUrl}
+              onChange={(value) => setNewTopico({ ...newTopico, pdfUrl: value })}
+              placeholder="URL do arquivo PDF ou faça upload"
+              allowedTypes={['pdf']}
+              rootFolder="pdf"
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="topico-mapa-url">Link do Mapa Mental</Label>
-              <Input
-                id="topico-mapa-url"
-                value={newTopico.mapaUrl}
-                onChange={(e) => setNewTopico({ ...newTopico, mapaUrl: e.target.value })}
-                placeholder="https://exemplo.com/mapa"
-              />
-            </div>
+            <FileUploadField
+              id="topico-mapa-url"
+              label="Link do Mapa Mental"
+              value={newTopico.mapaUrl}
+              onChange={(value) => setNewTopico({ ...newTopico, mapaUrl: value })}
+              placeholder="URL do mapa mental ou faça upload"
+              allowedTypes={['pdf', 'jpg', 'jpeg', 'png', 'gif']}
+              rootFolder="mapa-mental"
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="topico-resumo-url">Link do Resumo</Label>
-              <Input
-                id="topico-resumo-url"
-                value={newTopico.resumoUrl}
-                onChange={(e) => setNewTopico({ ...newTopico, resumoUrl: e.target.value })}
-                placeholder="https://exemplo.com/resumo"
-              />
-            </div>
+            <FileUploadField
+              id="topico-resumo-url"
+              label="Link do Resumo"
+              value={newTopico.resumoUrl}
+              onChange={(value) => setNewTopico({ ...newTopico, resumoUrl: value })}
+              placeholder="URL do resumo ou faça upload"
+              allowedTypes={['pdf', 'doc', 'docx']}
+              rootFolder="resumo"
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="topico-musica-url">Link da Música</Label>
-              <Input
-                id="topico-musica-url"
-                value={newTopico.musicaUrl}
-                onChange={(e) => setNewTopico({ ...newTopico, musicaUrl: e.target.value })}
-                placeholder="https://exemplo.com/musica"
-              />
-            </div>
+            <FileUploadField
+              id="topico-musica-url"
+              label="Link da Música"
+              value={newTopico.musicaUrl}
+              onChange={(value) => setNewTopico({ ...newTopico, musicaUrl: value })}
+              placeholder="URL da música ou faça upload"
+              allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
+              rootFolder="musica"
+            />
+            
+            <FileUploadField
+              id="topico-resumo-audio-url"
+              label="Link do Resumo em Áudio"
+              value={newTopico.resumoAudioUrl}
+              onChange={(value) => setNewTopico({ ...newTopico, resumoAudioUrl: value })}
+              placeholder="URL do resumo em áudio ou faça upload"
+              allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
+              rootFolder="resumo-audio"
+            />
             
             <div className="space-y-2">
               <Label htmlFor="topico-caderno-questoes-url">Link do Caderno de Questões</Label>

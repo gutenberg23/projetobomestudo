@@ -10,7 +10,9 @@ interface ItensDaAulaProps {
   mapaUrl?: string | null;
   resumoUrl?: string | null;
   musicaUrl?: string | null;
+  resumoAudioUrl?: string | null;
   cadernoQuestoesUrl?: string | null;
+  hasQuestions?: boolean;
 }
 
 const ItensDaAula: React.FC<ItensDaAulaProps> = ({
@@ -20,10 +22,12 @@ const ItensDaAula: React.FC<ItensDaAulaProps> = ({
   mapaUrl,
   resumoUrl,
   musicaUrl,
-  cadernoQuestoesUrl
+  resumoAudioUrl,
+  cadernoQuestoesUrl,
+  hasQuestions = false
 }) => {
   return (
-    <main className="flex justify-between mt-5 w-full text-base font-medium text-center min-h-[74px] text-slate-800 max-md:max-w-full px-0 mx-0">
+    <main className="flex justify-between w-full text-base font-medium text-center min-h-[74px] text-slate-800 max-md:max-w-full px-0 mx-0">
       <ButtonContainer 
         setShowQuestions={setShowQuestions} 
         showQuestions={showQuestions}
@@ -31,7 +35,9 @@ const ItensDaAula: React.FC<ItensDaAulaProps> = ({
         mapaUrl={mapaUrl}
         resumoUrl={resumoUrl}
         musicaUrl={musicaUrl}
+        resumoAudioUrl={resumoAudioUrl}
         cadernoQuestoesUrl={cadernoQuestoesUrl}
+        hasQuestions={hasQuestions}
       />
     </main>
   );

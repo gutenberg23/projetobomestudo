@@ -11,7 +11,7 @@ export const useTopicosState = () => {
   const [disciplinaFiltro, setDisciplinaFiltro] = useState("");
   const [professorFiltro, setProfessorFiltro] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 20;
 
   // Estados para a adição de aula
   const [tituloNovaAula, setTituloNovaAula] = useState("");
@@ -29,7 +29,8 @@ export const useTopicosState = () => {
         setLoading(true);
         const { data, error } = await supabase
           .from('topicos')
-          .select('*');
+          .select('*')
+          .order('created_at', { ascending: false });
         
         if (error) throw error;
         
@@ -45,6 +46,7 @@ export const useTopicosState = () => {
           mapaUrl: item.mapa_url || "",
           resumoUrl: item.resumo_url || "",
           musicaUrl: item.musica_url || "",
+          resumoAudioUrl: item.resumo_audio_url || "",
           cadernoQuestoesUrl: item.caderno_questoes_url || "",
           questoesIds: item.questoes_ids || [],
           professor_id: item.professor_id || "",

@@ -9,8 +9,9 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pencil, Trash, Check, X } from "lucide-react";
+import { Pencil, Trash, Check, X, Copy } from "lucide-react";
 import { Topico } from "./TopicosTypes";
+import { toast } from "sonner";
 
 interface TopicosTableProps {
   topicos: Topico[];
@@ -61,6 +62,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
             <TableHead className="w-[90px]">Mapa</TableHead>
             <TableHead className="w-[90px]">Resumo</TableHead>
             <TableHead className="w-[90px]">Música</TableHead>
+            <TableHead className="w-[90px]">Resumo Áudio</TableHead>
             <TableHead className="w-[90px]">Caderno</TableHead>
             <TableHead className="w-[80px]">Questões</TableHead>
             <TableHead className="w-[100px]">Ações</TableHead>
@@ -77,7 +79,20 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
                     onCheckedChange={() => handleSelecaoTopico(topico.id)}
                   />
                 </TableCell>
-                <TableCell className="font-medium">{topico.id}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                       navigator.clipboard.writeText(topico.id);
+                       toast.success(`ID ${topico.id} copiado para a área de transferência`);
+                     }}
+                    className="h-8 w-8 p-0"
+                    title={`Copiar ID: ${topico.id}`}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </TableCell>
                 <TableCell>{topico.titulo}</TableCell>
                 <TableCell>{topico.disciplina}</TableCell>
                 <TableCell>{topico.professor_nome || "Não atribuído"}</TableCell>
@@ -95,6 +110,9 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
                 </TableCell>
                 <TableCell className="text-center">
                   <StatusIcon filled={!!topico.musicaUrl} />
+                </TableCell>
+                <TableCell className="text-center">
+                  <StatusIcon filled={!!topico.resumoAudioUrl} />
                 </TableCell>
                 <TableCell className="text-center">
                   <StatusIcon filled={!!topico.cadernoQuestoesUrl} />
@@ -123,7 +141,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={13} className="text-center py-4 text-[#67748a]">
+              <TableCell colSpan={14} className="text-center py-4 text-[#67748a]">
                 Nenhum tópico encontrado com os filtros aplicados.
               </TableCell>
             </TableRow>

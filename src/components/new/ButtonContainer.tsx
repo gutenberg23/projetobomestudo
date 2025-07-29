@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
+import { AudioPlayer } from "./AudioPlayer";
 
 interface ButtonContainerProps {
   setShowQuestions: () => void;
@@ -10,7 +11,9 @@ interface ButtonContainerProps {
   mapaUrl?: string | null;
   resumoUrl?: string | null;
   musicaUrl?: string | null;
+  resumoAudioUrl?: string | null;
   cadernoQuestoesUrl?: string | null;
+  hasQuestions?: boolean;
 }
 
 export const ButtonContainer: React.FC<ButtonContainerProps> = ({
@@ -20,7 +23,9 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
   mapaUrl,
   resumoUrl,
   musicaUrl,
-  cadernoQuestoesUrl
+  resumoAudioUrl,
+  cadernoQuestoesUrl,
+  hasQuestions = false
 }) => {
   const openResource = (url: string | null | undefined) => {
     if (url) {
@@ -31,17 +36,19 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
   return (
     <div className="flex items-center justify-between w-full max-md:flex-wrap max-md:max-w-full px-[20px]">
       <div className="flex gap-5 justify-center items-center flex-wrap">
-        <ActionButton 
-          icon="/lovable-uploads/interroga.svg" 
-          label="Questões" 
-          variant="highlight" 
-          isActive={showQuestions} 
-          onClick={setShowQuestions} 
-        />
+        {hasQuestions && (
+          <ActionButton 
+            iconType="questoes" 
+            label="Questões" 
+            variant="highlight" 
+            isActive={showQuestions} 
+            onClick={setShowQuestions} 
+          />
+        )}
         
         {pdfUrl && (
           <ActionButton 
-            icon="/lovable-uploads/pdf.svg" 
+            iconType="pdf" 
             label="Aula em PDF" 
             onClick={() => openResource(pdfUrl)} 
           />
@@ -49,7 +56,7 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
         
         {mapaUrl && (
           <ActionButton 
-            icon="/lovable-uploads/mapa.svg" 
+            iconType="mapa" 
             label="Mapa Mental" 
             onClick={() => openResource(mapaUrl)} 
           />
@@ -57,23 +64,29 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
         
         {resumoUrl && (
           <ActionButton 
-            icon="/lovable-uploads/resumo.svg" 
+            iconType="resumo" 
             label="Resumo" 
             onClick={() => openResource(resumoUrl)} 
           />
         )}
         
         {musicaUrl && (
-          <ActionButton 
-            icon="/lovable-uploads/musica.svg" 
+          <AudioPlayer 
+            audioUrl={musicaUrl} 
             label="Música" 
-            onClick={() => openResource(musicaUrl)} 
+          />
+        )}
+        
+        {resumoAudioUrl && (
+          <AudioPlayer 
+            audioUrl={resumoAudioUrl} 
+            label="Resumo em Áudio" 
           />
         )}
         
         {cadernoQuestoesUrl && (
           <ActionButton 
-            icon="/lovable-uploads/interroga.svg" 
+            iconType="questoes" 
             label="Caderno de Questões" 
             onClick={() => openResource(cadernoQuestoesUrl)} 
           />

@@ -9,6 +9,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FileUploadField } from "@/components/ui/file-upload-field";
 import { Topico } from "../../TopicosTypes";
 
 interface MediaFieldsProps {
@@ -59,45 +60,55 @@ export const MediaFields: React.FC<MediaFieldsProps> = ({
         </Label>
       </div>
 
-      <div>
-        <Label htmlFor="pdfUrl">Link do PDF</Label>
-        <Input
-          id="pdfUrl"
-          value={newTopico.pdfUrl}
-          onChange={(e) => setNewTopico({ ...newTopico, pdfUrl: e.target.value })}
-          placeholder="URL do arquivo PDF"
-        />
-      </div>
+      <FileUploadField
+        id="pdfUrl"
+        label="Link da Aula em PDF"
+        value={newTopico.pdfUrl}
+        onChange={(value) => setNewTopico({ ...newTopico, pdfUrl: value })}
+        placeholder="URL do arquivo PDF ou faça upload"
+        allowedTypes={['pdf']}
+        rootFolder="pdf"
+      />
 
-      <div>
-        <Label htmlFor="mapaUrl">Link do Mapa Mental</Label>
-        <Input
-          id="mapaUrl"
-          value={newTopico.mapaUrl}
-          onChange={(e) => setNewTopico({ ...newTopico, mapaUrl: e.target.value })}
-          placeholder="URL do mapa mental"
-        />
-      </div>
+      <FileUploadField
+        id="mapaUrl"
+        label="Link do Mapa Mental"
+        value={newTopico.mapaUrl}
+        onChange={(value) => setNewTopico({ ...newTopico, mapaUrl: value })}
+        placeholder="URL do mapa mental ou faça upload"
+        allowedTypes={['pdf', 'jpg', 'jpeg', 'png', 'gif']}
+        rootFolder="mapa-mental"
+      />
 
-      <div>
-        <Label htmlFor="resumoUrl">Link do Resumo</Label>
-        <Input
-          id="resumoUrl"
-          value={newTopico.resumoUrl}
-          onChange={(e) => setNewTopico({ ...newTopico, resumoUrl: e.target.value })}
-          placeholder="URL do resumo"
-        />
-      </div>
+      <FileUploadField
+        id="resumoUrl"
+        label="Link do Resumo"
+        value={newTopico.resumoUrl}
+        onChange={(value) => setNewTopico({ ...newTopico, resumoUrl: value })}
+        placeholder="URL do resumo ou faça upload"
+        allowedTypes={['pdf', 'doc', 'docx']}
+        rootFolder="resumo"
+      />
 
-      <div>
-        <Label htmlFor="musicaUrl">Link da Música</Label>
-        <Input
-          id="musicaUrl"
-          value={newTopico.musicaUrl}
-          onChange={(e) => setNewTopico({ ...newTopico, musicaUrl: e.target.value })}
-          placeholder="URL da música"
-        />
-      </div>
+      <FileUploadField
+        id="musicaUrl"
+        label="Link da Música"
+        value={newTopico.musicaUrl}
+        onChange={(value) => setNewTopico({ ...newTopico, musicaUrl: value })}
+        placeholder="URL da música ou faça upload"
+        allowedTypes={['mp3', 'wav', 'ogg', 'm4a']}
+        rootFolder="musica"
+      />
+
+      <FileUploadField
+        id="resumoAudioUrl"
+        label="Link do Resumo em Áudio"
+        value={newTopico.resumoAudioUrl}
+        onChange={(value) => setNewTopico({ ...newTopico, resumoAudioUrl: value })}
+        placeholder="URL do resumo em áudio ou faça upload"
+        allowedTypes={['mp3', 'wav', 'ogg', 'm4a']}
+        rootFolder="resumo-audio"
+      />
 
       <div>
         <Label htmlFor="cadernoQuestoesUrl">Link do Caderno de Questões</Label>

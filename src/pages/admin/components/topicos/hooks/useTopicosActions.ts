@@ -54,11 +54,12 @@ export const useTopicosActions = (
           professor_id: updatedTopico.professor_id,
           professor_nome: updatedTopico.professor_nome,
           video_url: updatedTopico.videoUrl,
-          pdf_url: updatedTopico.pdfUrl,
-          mapa_url: updatedTopico.mapaUrl,
-          resumo_url: updatedTopico.resumoUrl,
-          musica_url: updatedTopico.musicaUrl,
-          caderno_questoes_url: updatedTopico.cadernoQuestoesUrl,
+        pdf_url: updatedTopico.pdfUrl,
+        mapa_url: updatedTopico.mapaUrl,
+        resumo_url: updatedTopico.resumoUrl,
+        musica_url: updatedTopico.musicaUrl,
+        resumo_audio_url: updatedTopico.resumoAudioUrl,
+        caderno_questoes_url: updatedTopico.cadernoQuestoesUrl,
           abrir_em_nova_guia: updatedTopico.abrirEmNovaGuia
         })
         .eq('id', updatedTopico.id);
