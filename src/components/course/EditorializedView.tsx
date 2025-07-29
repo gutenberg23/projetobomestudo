@@ -379,7 +379,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
 
   logWithTimestamp("Renderizando view principal");
   return (
-    <div className="bg-[#f6f8fa] rounded-[10px] pb-5 w-full">
+    <div className="bg-[rgb(242,244,246)] rounded-[10px] pb-5 w-full">
       {(activeTab !== 'edital' || (activeTab === 'edital' && hasEdital)) && (
         <DashboardSummary 
           overallStats={calculateOverallStats(subjects)} 

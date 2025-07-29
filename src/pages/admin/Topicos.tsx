@@ -73,8 +73,7 @@ const Topicos = () => {
     cadernoQuestoesUrl: "",
     abrirEmNovaGuia: false
   });
-  const [disciplinas, setDisciplinas] = useState<string[]>([]);
-  const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
+
   const [teachers, setTeachers] = useState<TeacherData[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   
@@ -109,30 +108,11 @@ const Topicos = () => {
 
   useEffect(() => {
     if (isCreateModalOpen) {
-      fetchDisciplinas();
       fetchTeachers();
     }
   }, [isCreateModalOpen]);
 
-  const fetchDisciplinas = async () => {
-    setLoadingDisciplinas(true);
-    try {
-      const { data, error } = await supabase
-        .from('questoes')
-        .select('discipline')
-        .order('discipline');
-      
-      if (error) throw error;
-      
-      const uniqueDisciplinas = [...new Set(data?.map(item => item.discipline) || [])];
-      setDisciplinas(uniqueDisciplinas);
-    } catch (error) {
-      console.error("Erro ao buscar disciplinas:", error);
-      toast.error("Erro ao carregar as disciplinas.");
-    } finally {
-      setLoadingDisciplinas(false);
-    }
-  };
+
 
   const fetchTeachers = async () => {
     setLoadingTeachers(true);
@@ -344,27 +324,12 @@ const Topicos = () => {
             
             <div className="space-y-2">
               <Label htmlFor="topico-disciplina">Disciplina</Label>
-              {loadingDisciplinas ? (
-                <div className="text-sm text-[#67748a] p-2 border rounded flex items-center">
-                  Carregando disciplinas...
-                </div>
-              ) : (
-                <Select 
-                  value={newTopico.disciplina} 
-                  onValueChange={(value) => setNewTopico({ ...newTopico, disciplina: value })}
-                >
-                  <SelectTrigger id="topico-disciplina">
-                    <SelectValue placeholder="Selecione uma disciplina" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {disciplinas.map((disciplina) => (
-                      <SelectItem key={disciplina} value={disciplina}>
-                        {disciplina}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
+              <Input
+                id="topico-disciplina"
+                value={newTopico.disciplina}
+                onChange={(e) => setNewTopico({ ...newTopico, disciplina: e.target.value })}
+                placeholder="Digite o nome da disciplina"
+              />
             </div>
             
             <div className="space-y-2">
