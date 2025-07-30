@@ -8,8 +8,8 @@ export interface Topico {
   pdfUrl: string;
   mapaUrl: string;
   resumoUrl: string;
-  musicaUrl: string;
-  resumoAudioUrl: string;
+  musicaUrl: string | string[];
+  resumoAudioUrl: string | string[];
   cadernoQuestoesUrl: string;
   questoesIds: string[];
   professor_id: string;

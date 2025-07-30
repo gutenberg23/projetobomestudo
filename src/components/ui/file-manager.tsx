@@ -251,19 +251,29 @@ export const FileManager: React.FC<FileManagerProps> = ({
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
-    // Verificar tipos permitidos
+    const fileArray = Array.from(files);
+    
+    // Verificar tipos permitidos para todos os arquivos
     if (allowedTypes[0] !== '*') {
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      if (!allowedTypes.includes(fileExtension || '')) {
-        toast.error(`Tipo de arquivo não permitido. Tipos aceitos: ${allowedTypes.join(', ')}`);
+      const invalidFiles = fileArray.filter(file => {
+        const fileExtension = file.name.split('.').pop()?.toLowerCase();
+        return !allowedTypes.includes(fileExtension || '');
+      });
+      
+      if (invalidFiles.length > 0) {
+        toast.error(`Alguns arquivos têm tipos não permitidos. Tipos aceitos: ${allowedTypes.join(', ')}`);
         return;
       }
     }
 
     setIsLoading(true);
+    let successCount = 0;
+    let errorCount = 0;
+    const newFiles: FileItem[] = [];
+
     try {
       // Validar se o bucket existe
       const bucketExists = await validateBucket(BUCKET_NAME);
@@ -272,53 +282,80 @@ export const FileManager: React.FC<FileManagerProps> = ({
         return;
       }
 
-      // Sanitizar o nome do arquivo
-      const sanitizedFileName = sanitizeFileName(file.name);
-      if (!sanitizedFileName) {
-        toast.error('Nome do arquivo inválido');
-        return;
-      }
-
-      // Construir o caminho completo no bucket usando a função de validação
+      // Construir o caminho base no bucket
       const bucketPath = buildBucketPath(rootFolder, currentPath);
-      const filePath = `${bucketPath}/${sanitizedFileName}`;
 
-      // Upload para o Supabase Storage
-      const { data, error } = await supabase.storage
-        .from(BUCKET_NAME)
-        .upload(filePath, file, {
-          cacheControl: CACHE_CONTROL,
-          upsert: true
-        });
+      // Processar cada arquivo
+      for (const file of fileArray) {
+        try {
+          // Sanitizar o nome do arquivo
+          const sanitizedFileName = sanitizeFileName(file.name);
+          if (!sanitizedFileName) {
+            console.error(`Nome do arquivo inválido: ${file.name}`);
+            errorCount++;
+            continue;
+          }
 
-      if (error) {
-        console.error('Erro no upload para Supabase:', error);
-        toast.error(handleStorageError(error, 'enviar arquivo'));
-        return;
+          // Construir o caminho completo do arquivo
+          const filePath = `${bucketPath}/${sanitizedFileName}`;
+
+          // Upload para o Supabase Storage
+          const { data, error } = await supabase.storage
+            .from(BUCKET_NAME)
+            .upload(filePath, file, {
+              cacheControl: CACHE_CONTROL,
+              upsert: true
+            });
+
+          if (error) {
+            console.error(`Erro no upload do arquivo ${file.name}:`, error);
+            errorCount++;
+            continue;
+          }
+
+          // Obter URL pública do arquivo
+          const { data: urlData } = supabase.storage
+            .from(BUCKET_NAME)
+            .getPublicUrl(filePath);
+
+          const newFile: FileItem = {
+            id: data.path || `${Date.now()}-${Math.random()}`,
+            name: sanitizedFileName,
+            type: 'file',
+            path: `${currentPath}/${sanitizedFileName}`,
+            url: urlData.publicUrl,
+            size: file.size,
+            createdAt: new Date()
+          };
+          
+          newFiles.push(newFile);
+          successCount++;
+        } catch (fileError) {
+          console.error(`Erro ao processar arquivo ${file.name}:`, fileError);
+          errorCount++;
+        }
       }
 
-      // Obter URL pública do arquivo
-      const { data: urlData } = supabase.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(filePath);
+      // Adicionar os novos arquivos à lista
+      if (newFiles.length > 0) {
+        setFiles(prev => [...prev, ...newFiles]);
+      }
 
-      const newFile: FileItem = {
-        id: data.path || Date.now().toString(),
-        name: sanitizedFileName,
-        type: 'file',
-        path: `${currentPath}/${sanitizedFileName}`,
-        url: urlData.publicUrl,
-        size: file.size,
-        createdAt: new Date()
-      };
-      
-      setFiles(prev => [...prev, newFile]);
-      toast.success('Arquivo enviado com sucesso!');
+      // Mostrar mensagem de resultado
+      if (successCount > 0 && errorCount === 0) {
+        toast.success(`${successCount} arquivo(s) enviado(s) com sucesso!`);
+      } else if (successCount > 0 && errorCount > 0) {
+        toast.warning(`${successCount} arquivo(s) enviado(s) com sucesso, ${errorCount} falharam.`);
+      } else {
+        toast.error('Falha ao enviar todos os arquivos.');
+      }
     } catch (error) {
-      console.error('Erro ao fazer upload:', error);
-      toast.error('Erro inesperado ao enviar arquivo');
+      console.error('Erro geral ao fazer upload:', error);
+      toast.error('Erro inesperado ao enviar arquivos');
     } finally {
       setIsLoading(false);
+      // Limpar o input para permitir reenvio dos mesmos arquivos
+      event.target.value = '';
     }
   };
 
@@ -519,6 +556,7 @@ export const FileManager: React.FC<FileManagerProps> = ({
                   className="hidden"
                   onChange={handleFileUpload}
                   accept={allowedTypes[0] === '*' ? undefined : allowedTypes.map(t => `.${t}`).join(',')}
+                  multiple
                 />
               </label>
             </div>

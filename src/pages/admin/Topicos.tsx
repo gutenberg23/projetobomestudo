@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileUploadField } from "@/components/ui/file-upload-field";
+import { MultiFileUploadField } from "@/components/ui/multi-file-upload-field";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Topico } from "./components/topicos/TopicosTypes";
@@ -70,8 +71,8 @@ const Topicos = () => {
     pdfUrl: "",
     mapaUrl: "",
     resumoUrl: "",
-    musicaUrl: "",
-    resumoAudioUrl: "",
+    musicaUrl: [],
+    resumoAudioUrl: [],
     cadernoQuestoesUrl: "",
     abrirEmNovaGuia: false
   });
@@ -196,8 +197,8 @@ const Topicos = () => {
           pdf_url: newTopico.pdfUrl,
           mapa_url: newTopico.mapaUrl,
           resumo_url: newTopico.resumoUrl,
-          musica_url: newTopico.musicaUrl,
-          resumo_audio_url: newTopico.resumoAudioUrl,
+          musica_url: Array.isArray(newTopico.musicaUrl) ? newTopico.musicaUrl.join(',') : newTopico.musicaUrl,
+      resumo_audio_url: Array.isArray(newTopico.resumoAudioUrl) ? newTopico.resumoAudioUrl.join(',') : newTopico.resumoAudioUrl,
           caderno_questoes_url: newTopico.cadernoQuestoesUrl,
           abrir_em_nova_guia: newTopico.abrirEmNovaGuia
         })
@@ -216,8 +217,8 @@ const Topicos = () => {
           pdfUrl: data[0].pdf_url,
           mapaUrl: data[0].mapa_url,
           resumoUrl: data[0].resumo_url,
-          musicaUrl: data[0].musica_url,
-          resumoAudioUrl: data[0].resumo_audio_url,
+          musicaUrl: data[0].musica_url ? data[0].musica_url.split(',').filter(Boolean) : [],
+        resumoAudioUrl: data[0].resumo_audio_url ? data[0].resumo_audio_url.split(',').filter(Boolean) : [],
           cadernoQuestoesUrl: data[0].caderno_questoes_url,
           questoesIds: data[0].questoes_ids,
           professor_id: data[0].professor_id,
@@ -237,8 +238,8 @@ const Topicos = () => {
           pdfUrl: "",
           mapaUrl: "",
           resumoUrl: "",
-          musicaUrl: "",
-          resumoAudioUrl: "",
+          musicaUrl: [],
+      resumoAudioUrl: [],
           cadernoQuestoesUrl: "",
           questoesIds: [],
           professor_id: "",
@@ -450,22 +451,22 @@ const Topicos = () => {
               rootFolder="resumo"
             />
             
-            <FileUploadField
+            <MultiFileUploadField
               id="topico-musica-url"
               label="Link da Música"
-              value={newTopico.musicaUrl}
-              onChange={(value) => setNewTopico({ ...newTopico, musicaUrl: value })}
-              placeholder="URL da música ou faça upload"
+              values={Array.isArray(newTopico.musicaUrl) ? newTopico.musicaUrl : newTopico.musicaUrl ? [newTopico.musicaUrl] : []}
+              onChange={(values) => setNewTopico({ ...newTopico, musicaUrl: values })}
+              placeholder="URLs das músicas ou faça upload"
               allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
               rootFolder="musica"
             />
             
-            <FileUploadField
+            <MultiFileUploadField
               id="topico-resumo-audio-url"
               label="Link do Resumo em Áudio"
-              value={newTopico.resumoAudioUrl}
-              onChange={(value) => setNewTopico({ ...newTopico, resumoAudioUrl: value })}
-              placeholder="URL do resumo em áudio ou faça upload"
+              values={Array.isArray(newTopico.resumoAudioUrl) ? newTopico.resumoAudioUrl : newTopico.resumoAudioUrl ? [newTopico.resumoAudioUrl] : []}
+              onChange={(values) => setNewTopico({ ...newTopico, resumoAudioUrl: values })}
+              placeholder="URLs dos resumos em áudio ou faça upload"
               allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
               rootFolder="resumo-audio"
             />

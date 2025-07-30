@@ -57,8 +57,8 @@ export const useTopicosActions = (
         pdf_url: updatedTopico.pdfUrl,
         mapa_url: updatedTopico.mapaUrl,
         resumo_url: updatedTopico.resumoUrl,
-        musica_url: updatedTopico.musicaUrl,
-        resumo_audio_url: updatedTopico.resumoAudioUrl,
+        musica_url: Array.isArray(updatedTopico.musicaUrl) ? updatedTopico.musicaUrl.join(',') : updatedTopico.musicaUrl,
+      resumo_audio_url: Array.isArray(updatedTopico.resumoAudioUrl) ? updatedTopico.resumoAudioUrl.join(',') : updatedTopico.resumoAudioUrl,
         caderno_questoes_url: updatedTopico.cadernoQuestoesUrl,
           abrir_em_nova_guia: updatedTopico.abrirEmNovaGuia
         })

@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FileUploadField } from "@/components/ui/file-upload-field";
+import { MultiFileUploadField } from "@/components/ui/multi-file-upload-field";
 import { Topico } from "../TopicosTypes";
 import { QuestionsManager } from "./components/QuestionsManager";
 import { toast } from "sonner";
@@ -300,24 +301,27 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
             allowedTypes={['pdf', 'doc', 'docx']}
             rootFolder="resumo"
           />
-          <FileUploadField
-            id="edit-musicaUrl"
-            label="Link da Música"
-            value={editedTopico.musicaUrl || ""}
-            onChange={(value) => setEditedTopico({ ...editedTopico, musicaUrl: value })}
-            placeholder="URL da música ou faça upload"
-            allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
-            rootFolder="musica"
-          />
-          <FileUploadField
-            id="edit-resumoAudioUrl"
-            label="Link do Resumo em Áudio"
-            value={editedTopico.resumoAudioUrl || ""}
-            onChange={(value) => setEditedTopico({ ...editedTopico, resumoAudioUrl: value })}
-            placeholder="URL do resumo em áudio ou faça upload"
-            allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
-            rootFolder="resumo-audio"
-          />
+          <MultiFileUploadField
+                id="edit-musicaUrl"
+                label="Link da Música"
+                values={Array.isArray(editedTopico.musicaUrl) ? editedTopico.musicaUrl : editedTopico.musicaUrl ? [editedTopico.musicaUrl] : []}
+                onChange={(values) => setEditedTopico({ ...editedTopico, musicaUrl: values })}
+                placeholder="URL da música ou faça upload"
+                allowedTypes={['mp3', 'wav', 'ogg', 'm4a']}
+                rootFolder="musica"
+                maxFiles={3}
+              />
+
+              <MultiFileUploadField
+                id="edit-resumoAudioUrl"
+                label="Link do Resumo em Áudio"
+                values={Array.isArray(editedTopico.resumoAudioUrl) ? editedTopico.resumoAudioUrl : editedTopico.resumoAudioUrl ? [editedTopico.resumoAudioUrl] : []}
+                onChange={(values) => setEditedTopico({ ...editedTopico, resumoAudioUrl: values })}
+                placeholder="URL do resumo em áudio ou faça upload"
+                allowedTypes={['mp3', 'wav', 'ogg', 'm4a']}
+                rootFolder="resumo-audio"
+                maxFiles={3}
+              />
           <div>
             <Label htmlFor="edit-cadernoQuestoesUrl">Link do Caderno de Questões</Label>
             <Input

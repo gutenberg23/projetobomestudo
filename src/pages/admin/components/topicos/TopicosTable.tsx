@@ -109,10 +109,10 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
                   <StatusIcon filled={!!topico.resumoUrl} />
                 </TableCell>
                 <TableCell className="text-center">
-                  <StatusIcon filled={!!topico.musicaUrl} />
+                  <StatusIcon filled={Array.isArray(topico.musicaUrl) ? topico.musicaUrl.length > 0 : !!topico.musicaUrl} />
                 </TableCell>
                 <TableCell className="text-center">
-                  <StatusIcon filled={!!topico.resumoAudioUrl} />
+                  <StatusIcon filled={Array.isArray(topico.resumoAudioUrl) ? topico.resumoAudioUrl.length > 0 : !!topico.resumoAudioUrl} />
                 </TableCell>
                 <TableCell className="text-center">
                   <StatusIcon filled={!!topico.cadernoQuestoesUrl} />

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
 import { AudioPlayer } from "./AudioPlayer";
+import { MultiAudioPlayer } from "./MultiAudioPlayer";
 
 interface ButtonContainerProps {
   setShowQuestions: () => void;
@@ -10,8 +11,8 @@ interface ButtonContainerProps {
   pdfUrl?: string | null;
   mapaUrl?: string | null;
   resumoUrl?: string | null;
-  musicaUrl?: string | null;
-  resumoAudioUrl?: string | null;
+  musicaUrl?: string | string[] | null;
+  resumoAudioUrl?: string | string[] | null;
   cadernoQuestoesUrl?: string | null;
   hasQuestions?: boolean;
 }
@@ -70,18 +71,38 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
           />
         )}
         
+        {/* Música - suporte a múltiplos arquivos */}
         {musicaUrl && (
-          <AudioPlayer 
-            audioUrl={musicaUrl} 
-            label="Música" 
-          />
+          <>
+            {Array.isArray(musicaUrl) ? (
+              <MultiAudioPlayer
+                audioUrls={musicaUrl}
+                label="Música"
+              />
+            ) : (
+              <AudioPlayer
+                label="Música"
+                audioUrl={musicaUrl}
+              />
+            )}
+          </>
         )}
         
+        {/* Resumo em Áudio - suporte a múltiplos arquivos */}
         {resumoAudioUrl && (
-          <AudioPlayer 
-            audioUrl={resumoAudioUrl} 
-            label="Resumo em Áudio" 
-          />
+          <>
+            {Array.isArray(resumoAudioUrl) ? (
+              <MultiAudioPlayer
+                audioUrls={resumoAudioUrl}
+                label="Resumo em Áudio"
+              />
+            ) : (
+              <AudioPlayer
+                label="Resumo em Áudio"
+                audioUrl={resumoAudioUrl}
+              />
+            )}
+          </>
         )}
         
         {cadernoQuestoesUrl && (

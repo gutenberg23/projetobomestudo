@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FileUploadField } from "@/components/ui/file-upload-field";
+import { MultiFileUploadField } from "@/components/ui/multi-file-upload-field";
 import { Topico } from "../../TopicosTypes";
 
 interface MediaFieldsProps {
@@ -90,24 +91,26 @@ export const MediaFields: React.FC<MediaFieldsProps> = ({
         rootFolder="resumo"
       />
 
-      <FileUploadField
+      <MultiFileUploadField
         id="musicaUrl"
         label="Link da Música"
-        value={newTopico.musicaUrl}
-        onChange={(value) => setNewTopico({ ...newTopico, musicaUrl: value })}
+        values={Array.isArray(newTopico.musicaUrl) ? newTopico.musicaUrl : newTopico.musicaUrl ? [newTopico.musicaUrl] : []}
+        onChange={(values) => setNewTopico({ ...newTopico, musicaUrl: values })}
         placeholder="URL da música ou faça upload"
         allowedTypes={['mp3', 'wav', 'ogg', 'm4a']}
         rootFolder="musica"
+        maxFiles={3}
       />
 
-      <FileUploadField
+      <MultiFileUploadField
         id="resumoAudioUrl"
         label="Link do Resumo em Áudio"
-        value={newTopico.resumoAudioUrl}
-        onChange={(value) => setNewTopico({ ...newTopico, resumoAudioUrl: value })}
+        values={Array.isArray(newTopico.resumoAudioUrl) ? newTopico.resumoAudioUrl : newTopico.resumoAudioUrl ? [newTopico.resumoAudioUrl] : []}
+        onChange={(values) => setNewTopico({ ...newTopico, resumoAudioUrl: values })}
         placeholder="URL do resumo em áudio ou faça upload"
         allowedTypes={['mp3', 'wav', 'ogg', 'm4a']}
         rootFolder="resumo-audio"
+        maxFiles={3}
       />
 
       <div>

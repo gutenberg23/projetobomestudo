@@ -9,8 +9,8 @@ interface ItensDaAulaProps {
   pdfUrl?: string | null;
   mapaUrl?: string | null;
   resumoUrl?: string | null;
-  musicaUrl?: string | null;
-  resumoAudioUrl?: string | null;
+  musicaUrl?: string | string[] | null;
+  resumoAudioUrl?: string | string[] | null;
   cadernoQuestoesUrl?: string | null;
   hasQuestions?: boolean;
 }

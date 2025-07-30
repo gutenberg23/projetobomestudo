@@ -161,9 +161,16 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                         console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
                         
                         if (topicosData && !topicosError) {
+                          // Ordenar tópicos por data de criação (do mais antigo para o mais recente)
+                          const topicosOrdenados = topicosData.sort((a: any, b: any) => {
+                            const dateA = new Date(a.created_at || 0);
+                            const dateB = new Date(b.created_at || 0);
+                            return dateA.getTime() - dateB.getTime();
+                          });
+                          
                           return {
                             ...aula,
-                            topicos: topicosData.map((topico: any) => ({
+                            topicos: topicosOrdenados.map((topico: any) => ({
                               ...topico,
                               // Mapear explicitamente o campo abrir_em_nova_guia para abrirEmNovaGuia
                               // Garantir que seja um valor booleano
@@ -308,9 +315,16 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                             console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
                             
                             if (topicosData && !topicosError) {
+                              // Ordenar tópicos por data de criação (do mais antigo para o mais recente)
+                              const topicosOrdenados = topicosData.sort((a: any, b: any) => {
+                                const dateA = new Date(a.created_at || 0);
+                                const dateB = new Date(b.created_at || 0);
+                                return dateA.getTime() - dateB.getTime();
+                              });
+                              
                               return {
                                 ...aula,
-                                topicos: topicosData.map((topico: any) => ({
+                                topicos: topicosOrdenados.map((topico: any) => ({
                                   ...topico,
                                   // Mapear explicitamente o campo abrir_em_nova_guia para abrirEmNovaGuia
                                   // Garantir que seja um valor booleano

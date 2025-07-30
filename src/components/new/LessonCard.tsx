@@ -354,8 +354,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             pdfUrl={topicData?.pdf_url}
             mapaUrl={topicData?.mapa_url}
             resumoUrl={topicData?.resumo_url}
-            musicaUrl={topicData?.musica_url}
-            resumoAudioUrl={topicData?.resumo_audio_url}
+            musicaUrl={topicData?.musica_url ? (topicData.musica_url.includes(',') ? topicData.musica_url.split(',').filter(Boolean) : topicData.musica_url) : null}
+        resumoAudioUrl={topicData?.resumo_audio_url ? (topicData.resumo_audio_url.includes(',') ? topicData.resumo_audio_url.split(',').filter(Boolean) : topicData.resumo_audio_url) : null}
             cadernoQuestoesUrl={topicData?.caderno_questoes_url}
             hasQuestions={hasQuestions}
           />
