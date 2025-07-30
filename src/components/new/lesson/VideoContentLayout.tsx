@@ -52,8 +52,8 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
   }, [setVideoHeight]);
 
   return (
-    <div className={`flex flex-col md:flex-row px-3 sm:px-5 mt-3 sm:mt-5`}>
-      <div className={`w-full md:w-2/3 md:pr-5`}>
+    <div className={`flex flex-col md:flex-row gap-3 md:gap-4 px-3 sm:px-5 mt-3 sm:mt-5`}>
+      <div className={`w-full`}>
         <div ref={videoRef}>
           <VideoSection 
             selectedSection={selectedSection} 
@@ -64,7 +64,7 @@ export const VideoContentLayout: React.FC<VideoContentLayoutProps> = ({
         </div>
       </div>
 
-      <div className={`w-full md:w-1/3 mt-3 sm:mt-4 md:mt-0`}>
+      <div className={`w-full`}>
         <SectionsNavigation
           sections={sections}
           selectedSection={selectedSection}
