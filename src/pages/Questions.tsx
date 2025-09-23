@@ -345,6 +345,11 @@ const Questions = () => {
     setTempFilters(prev => {
       const newFilters = { ...prev };
       
+      // Safety check to ensure the category exists and is an array
+      if (!newFilters[category] || !Array.isArray(newFilters[category])) {
+        newFilters[category] = [];
+      }
+      
       // Lógica especial para disciplinas e tópicos
       if (category === "disciplines") {
         // Verificar se estamos adicionando ou removendo a disciplina
