@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -50,12 +49,6 @@ export function MultiSelect({
     }
   }, [inputValue, safeOptions]);
 
-  const displaySelectedOptions = maxDisplayItems 
-    ? safeSelected.slice(0, maxDisplayItems) 
-    : safeSelected;
-  
-  const remainingCount = safeSelected.length - displaySelectedOptions.length;
-  
   const handleAddCustomOption = () => {
     if (inputValue.trim() && onAdd) {
       onAdd(inputValue.trim());
@@ -64,10 +57,6 @@ export function MultiSelect({
         inputRef.current.focus();
       }
     }
-  };
-
-  const handleUnselect = (option: string) => {
-    onChange(safeSelected.filter(item => item !== option));
   };
 
   const handleClear = () => {
@@ -108,43 +97,12 @@ export function MultiSelect({
           disabled={disabled}
         >
           {safeSelected.length > 0 ? (
-            <div className="flex flex-wrap gap-1 max-w-[90%] overflow-hidden">
-              {displaySelectedOptions.map((option) => (
-                <Badge
-                  key={option}
-                  variant="secondary"
-                  className="mr-1"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUnselect(option);
-                  }}
-                >
-                  {option}
-                  <button
-                    className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        handleUnselect(option);
-                      }
-                    }}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleUnselect(option);
-                    }}
-                  >
-                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
-                  </button>
-                </Badge>
-              ))}
-              {remainingCount > 0 && (
-                <Badge variant="secondary">+{remainingCount}</Badge>
-              )}
-            </div>
+            <span className="text-foreground">
+              {safeSelected.length === 1 
+                ? `1 item selecionado` 
+                : `${safeSelected.length} itens selecionados`
+              }
+            </span>
           ) : (
             <span className="text-muted-foreground">{placeholder}</span>
           )}

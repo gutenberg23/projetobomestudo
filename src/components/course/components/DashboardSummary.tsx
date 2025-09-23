@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { OverallStats, Subject } from "../types/editorialized";
@@ -13,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { extractIdFromFriendlyUrl } from '@/utils/slug-utils';
 import { useToast } from "@/hooks/use-toast";
 
 interface DashboardSummaryProps {
@@ -60,7 +58,6 @@ export const DashboardSummary = ({
   isSaving,
   unsavedChanges,
   setUnsavedChanges,
-  saveAllDataToDatabase,
   examDate,
   updateExamDate,
   lastSaveTime
@@ -69,8 +66,213 @@ export const DashboardSummary = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const userId = user?.id || 'guest';
+  
+  // Estados para as estatísticas reais
+  const [realStats, setRealStats] = useState({
+    totalHits: 0,
+    totalErrors: 0,
+    totalExercises: 0,
+    overallPerformance: 0
+  });
+
+  // Efeito para buscar estatísticas reais quando os subjects mudam
+  useEffect(() => {
+    const fetchRealStats = async () => {
+      if (!userId || userId === 'guest' || activeTab !== 'edital' || !subjects.length) {
+        // Se não houver usuário ou não estiver na aba edital, usar as estatísticas gerais
+        setRealStats({
+          totalHits: overallStats.totalHits,
+          totalErrors: overallStats.totalErrors,
+          totalExercises: overallStats.totalExercises,
+          overallPerformance: Math.round(overallStats.totalHits / Math.max(overallStats.totalExercises, 1) * 100) || 0
+        });
+        return;
+      }
+      
+      try {
+        // Coletar todos os links dos tópicos
+        const allLinks = subjects.flatMap(subject => 
+          subject.topics.map(topic => topic.link).filter((link): link is string => link !== undefined && link !== null)
+        );
+
+        if (allLinks.length === 0) {
+          // Se não houver links, usar as estatísticas gerais
+          setRealStats({
+            totalHits: overallStats.totalHits,
+            totalErrors: overallStats.totalErrors,
+            totalExercises: overallStats.totalExercises,
+            overallPerformance: Math.round(overallStats.totalHits / Math.max(overallStats.totalExercises, 1) * 100) || 0
+          });
+          return;
+        }
+
+        // Extrair IDs das questões de todos os links
+        let allQuestionIds: string[] = [];
+        
+        for (const link of allLinks) {
+          try {
+            // Verificar se o link é válido antes de criar o URL
+            if (!link) continue;
+            
+            const url = new URL(link);
+            const searchParams = url.searchParams;
+            
+            // Construir query baseada nos filtros
+            let query = supabase.from('questoes').select('id');
+
+            // Aplicar filtros baseados nos parâmetros da URL
+            if (searchParams.has('disciplines')) {
+              const disciplines = JSON.parse(decodeURIComponent(searchParams.get('disciplines') || '[]'));
+              if (disciplines.length > 0) {
+                query = query.in('discipline', disciplines);
+              }
+            }
+
+            if (searchParams.has('years')) {
+              const years = JSON.parse(decodeURIComponent(searchParams.get('years') || '[]'));
+              if (years.length > 0) {
+                query = query.in('year', years);
+              }
+            }
+
+            if (searchParams.has('institutions')) {
+              const institutions = JSON.parse(decodeURIComponent(searchParams.get('institutions') || '[]'));
+              if (institutions.length > 0) {
+                query = query.in('institution', institutions);
+              }
+            }
+
+            if (searchParams.has('organizations')) {
+              const organizations = JSON.parse(decodeURIComponent(searchParams.get('organizations') || '[]'));
+              if (organizations.length > 0) {
+                query = query.in('organization', organizations);
+              }
+            }
+
+            if (searchParams.has('roles')) {
+              const roles = JSON.parse(decodeURIComponent(searchParams.get('roles') || '[]'));
+              if (roles.length > 0) {
+                query = query.contains('role', roles);
+              }
+            }
+
+            if (searchParams.has('levels')) {
+              const levels = JSON.parse(decodeURIComponent(searchParams.get('levels') || '[]'));
+              if (levels.length > 0) {
+                query = query.in('level', levels);
+              }
+            }
+
+            if (searchParams.has('difficulties')) {
+              const difficulties = JSON.parse(decodeURIComponent(searchParams.get('difficulties') || '[]'));
+              if (difficulties.length > 0) {
+                query = query.in('difficulty', difficulties);
+              }
+            }
+
+            if (searchParams.has('subjects')) {
+              const subjects = JSON.parse(decodeURIComponent(searchParams.get('subjects') || '[]'));
+              if (subjects.length > 0) {
+                query = query.overlaps('assuntos', subjects);
+              }
+            }
+
+            if (searchParams.has('topics')) {
+              const topics = JSON.parse(decodeURIComponent(searchParams.get('topics') || '[]'));
+              if (topics.length > 0) {
+                query = query.overlaps('assuntos', topics);
+              }
+            }
+
+            if (searchParams.has('subtopics')) {
+              const subtopics = JSON.parse(decodeURIComponent(searchParams.get('subtopics') || '[]'));
+              if (subtopics.length > 0) {
+                query = query.overlaps('topicos', subtopics);
+              }
+            }
+
+            if (searchParams.has('educationLevels')) {
+              const educationLevels = JSON.parse(decodeURIComponent(searchParams.get('educationLevels') || '[]'));
+              if (educationLevels.length > 0) {
+                query = query.in('level', educationLevels);
+              }
+            }
+
+            // Buscar questões que correspondem aos filtros
+            const { data: questions, error: questionsError } = await query;
+
+            if (!questionsError && questions) {
+              const questionIds = questions.map(q => q.id);
+              allQuestionIds = [...allQuestionIds, ...questionIds];
+            }
+          } catch (error) {
+            console.error('Erro ao processar link:', link, error);
+          }
+        }
+
+        // Remover duplicatas
+        allQuestionIds = [...new Set(allQuestionIds)];
+
+        if (allQuestionIds.length === 0) {
+          // Se não houver questões, usar as estatísticas gerais
+          setRealStats({
+            totalHits: overallStats.totalHits,
+            totalErrors: overallStats.totalErrors,
+            totalExercises: overallStats.totalExercises,
+            overallPerformance: Math.round(overallStats.totalHits / Math.max(overallStats.totalExercises, 1) * 100) || 0
+          });
+          return;
+        }
+
+        // Buscar tentativas do usuário para essas questões
+        const { data: attempts, error: attemptsError } = await supabase
+          .from('user_question_attempts')
+          .select('question_id, is_correct')
+          .eq('user_id', userId)
+          .in('question_id', allQuestionIds);
+
+        if (attemptsError) {
+          console.error('Erro ao buscar tentativas:', attemptsError);
+          // Usar as estatísticas gerais em caso de erro
+          setRealStats({
+            totalHits: overallStats.totalHits,
+            totalErrors: overallStats.totalErrors,
+            totalExercises: overallStats.totalExercises,
+            overallPerformance: Math.round(overallStats.totalHits / Math.max(overallStats.totalExercises, 1) * 100) || 0
+          });
+          return;
+        }
+
+        // Calcular estatísticas
+        const totalAttempts = attempts?.length || 0;
+        const correctAnswers = attempts?.filter(a => a.is_correct).length || 0;
+        const wrongAnswers = totalAttempts - correctAnswers;
+        const performance = totalAttempts > 0 ? Math.round(correctAnswers / totalAttempts * 100) : 0;
+
+        setRealStats({
+          totalHits: correctAnswers,
+          totalErrors: wrongAnswers,
+          totalExercises: totalAttempts,
+          overallPerformance: performance
+        });
+      } catch (error) {
+        console.error('Erro ao calcular estatísticas reais:', error);
+        // Usar as estatísticas gerais em caso de erro
+        setRealStats({
+          totalHits: overallStats.totalHits,
+          totalErrors: overallStats.totalErrors,
+          totalExercises: overallStats.totalExercises,
+          overallPerformance: Math.round(overallStats.totalHits / Math.max(overallStats.totalExercises, 1) * 100) || 0
+        });
+      }
+    };
+
+    fetchRealStats();
+  }, [subjects, userId, activeTab, overallStats]);
+
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
-  const overallPerformance = Math.round(overallStats.totalHits / overallStats.totalExercises * 100) || 0;
+  // Usar as estatísticas reais calculadas
+  const overallPerformance = realStats.overallPerformance;
 
   const handlePerformanceGoalChange = (value: number) => {
     const newValue = Math.max(1, Math.min(100, value || 1));
@@ -241,7 +443,7 @@ export const DashboardSummary = ({
             <div className="p-4 rounded-[10px] bg-[#f6f8fa]">
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Aulas Concluídas</span>
+                  <span className="text-gray-600">Tópicos Concluídos</span>
                   <span className="font-semibold">
                     {overallStats.completedTopics}/{overallStats.totalTopics}
                   </span>
@@ -261,13 +463,13 @@ export const DashboardSummary = ({
                 <div className="flex justify-between">
                   <span className="text-gray-600">Acertos</span>
                   <span className="font-semibold text-[#5f2ebe]">
-                    {overallStats.totalHits}
+                    {realStats.totalHits}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Erros</span>
                   <span className="font-semibold text-[#ffac33]">
-                    {overallStats.totalErrors}
+                    {realStats.totalErrors}
                   </span>
                 </div>
                 <div className="flex justify-between">

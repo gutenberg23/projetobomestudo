@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Search, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, X, ChevronsUpDown, Check } from "lucide-react";
 import { FilterGroup } from "@/components/questions/FilterGroup";
 import { useSearchParams } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface QuestionFiltersPanelProps {
   searchQuery: string;
@@ -171,6 +173,65 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     difficulty: [...filterOptions.difficulty].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)))
   };
 
+  // Organizar assuntos por disciplina para exibição hierárquica
+  const organizedSubjects = useMemo(() => {
+    if (selectedFilters.disciplines.length === 0) {
+      return [];
+    }
+    
+    const result: Array<{discipline: string, subjects: string[]}> = [];
+    
+    selectedFilters.disciplines.forEach(discipline => {
+      const subjects = subjectsByDiscipline[discipline] || [];
+      if (subjects.length > 0) {
+        result.push({
+          discipline,
+          subjects: subjects.sort((a, b) => String(a).localeCompare(String(b)))
+        });
+      }
+    });
+    
+    return result;
+  }, [selectedFilters.disciplines, subjectsByDiscipline]);
+
+  // Organizar tópicos por assunto para exibição hierárquica  
+  const organizedTopics = useMemo(() => {
+    if (selectedFilters.topics.length === 0) {
+      // Se não houver assuntos selecionados, mostrar tópicos agrupados por disciplina
+      if (selectedFilters.disciplines.length > 0) {
+        const result: Array<{groupName: string, topics: string[]}> = [];
+        
+        selectedFilters.disciplines.forEach(discipline => {
+          const topics = topicsByDiscipline[discipline] || [];
+          if (topics.length > 0) {
+            result.push({
+              groupName: `Disciplina: ${discipline}`,
+              topics: topics.sort((a, b) => String(a).localeCompare(String(b)))
+            });
+          }
+        });
+        
+        return result;
+      }
+      return [];
+    }
+    
+    // Se tiver assuntos selecionados, mostrar tópicos agrupados por assunto
+    const result: Array<{groupName: string, topics: string[]}> = [];
+    
+    selectedFilters.topics.forEach(subject => {
+      const topics = topicsBySubject[subject] || [];
+      if (topics.length > 0) {
+        result.push({
+          groupName: `Assunto: ${subject}`,
+          topics: topics.sort((a, b) => String(a).localeCompare(String(b)))
+        });
+      }
+    });
+    
+    return result;
+  }, [selectedFilters.topics, selectedFilters.disciplines, topicsBySubject, topicsByDiscipline]);
+
   // Filtrar assuntos com base nas disciplinas selecionadas
   const filteredSubjects = useMemo(() => {
     if (selectedFilters.disciplines.length === 0) {
@@ -293,6 +354,194 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     handleApplyFilters();
   };
   
+  // Componente para exibir filtros hierárquicos
+  const HierarchicalFilter = ({ 
+    title, 
+    groups, 
+    selectedValues, 
+    onChange, 
+    category,
+    placeholder 
+  }: {
+    title: string;
+    groups: Array<{groupName: string, topics?: string[], subjects?: string[]}>;
+    selectedValues: string[];
+    onChange: (category: any, value: string) => void;
+    category: any;
+    placeholder: string;
+  }) => {
+    const [open, setOpen] = useState(false);
+    const hasItems = groups.length > 0 && groups.some(group => (group.topics || group.subjects || []).length > 0);
+    
+    return (
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium">{title}</h3>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-full justify-between"
+              disabled={!hasItems}
+            >
+              {selectedValues.length > 0 ? (
+                <span className="text-foreground">
+                  {selectedValues.length === 1 
+                    ? `1 item selecionado` 
+                    : `${selectedValues.length} itens selecionados`
+                  }
+                </span>
+              ) : (
+                <span className="text-muted-foreground">{placeholder}</span>
+              )}
+              <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0">
+            <div className="flex flex-col w-full rounded-md border border-input bg-transparent">
+              {!hasItems ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  {placeholder}
+                </div>
+              ) : (
+                <div className="max-h-[300px] overflow-y-auto">
+                  {groups.map((group, groupIndex) => {
+                    const items = group.topics || group.subjects || [];
+                    if (items.length === 0) return null;
+                    
+                    return (
+                      <div key={groupIndex} className="border-b last:border-b-0">
+                        <div className="px-3 py-2 bg-gray-50 border-b text-xs font-medium text-gray-600 sticky top-0">
+                          {group.groupName}
+                        </div>
+                        <div className="p-1">
+                          {items.map((item) => {
+                            const isSelected = selectedValues.includes(item);
+                            return (
+                              <div 
+                                key={item}
+                                onClick={() => onChange(category, item)}
+                                className={cn(
+                                  "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                  isSelected ? "bg-accent text-accent-foreground" : ""
+                                )}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    isSelected ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {item}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  };
+
+  // Função para criar o mapeamento de nomes dos filtros
+  const getFilterDisplayNames = () => {
+    return {
+      disciplines: 'Disciplina',
+      topics: 'Assunto',
+      subtopics: 'Tópicos',
+      institutions: 'Banca',
+      organizations: 'Instituição',
+      roles: 'Cargo',
+      years: 'Ano',
+      educationLevels: 'Escolaridade',
+      difficulty: 'Dificuldade'
+    };
+  };
+
+  // Função para remover um filtro específico
+  const removeSpecificFilter = (filterKey: string, valueToRemove: string) => {
+    if (filterKey === 'search') {
+      setLocalSearchQuery("");
+      setSearchQuery("");
+    } else {
+      // Usar handleFilterChange para atualizar o filtro
+      handleFilterChange(filterKey as any, valueToRemove); // Isso vai toggle/remover o item
+    }
+    
+    // Aplicar as mudanças
+    setTimeout(() => handleApplyFilters(), 100);
+  };
+
+  // Função para renderizar os filtros aplicados
+  const renderAppliedFilters = () => {
+    const filterDisplayNames = getFilterDisplayNames();
+    const appliedFilters = [];
+
+    // Adicionar query de pesquisa se existir
+    if (localSearchQuery.trim()) {
+      appliedFilters.push({
+        key: 'search',
+        label: 'Pesquisa',
+        values: [localSearchQuery.trim()]
+      });
+    }
+
+    // Adicionar filtros selecionados
+    Object.entries(selectedFilters).forEach(([key, values]) => {
+      if (values && values.length > 0) {
+        const displayName = filterDisplayNames[key as keyof typeof filterDisplayNames];
+        if (displayName) {
+          appliedFilters.push({
+            key: key,
+            label: displayName,
+            values: values
+          });
+        }
+      }
+    });
+
+    if (appliedFilters.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Filtros Aplicados:</h4>
+        <div className="space-y-3">
+          {appliedFilters.map((filter, index) => (
+            <div key={index} className="text-sm">
+              <span className="font-medium text-gray-900">{filter.label}: </span>
+              <div className="inline-flex flex-wrap gap-2 mt-1">
+                {filter.values.map((value, valueIndex) => (
+                  <span 
+                    key={valueIndex}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-[#5f2ebe] text-white text-xs rounded-full"
+                  >
+                    {value}
+                    <button
+                      onClick={() => removeSpecificFilter(filter.key, value)}
+                      className="ml-1 hover:bg-[#4f25a0] rounded-full p-0.5 transition-colors"
+                      title={`Remover ${value}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   const filtersContent = (
     <>
       <div className="grid grid-cols-1 gap-6 mb-6">
@@ -318,31 +567,30 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           placeholder="Selecione as disciplinas"
         />
         
-        <FilterGroup 
-          title="Assunto" 
-          options={filteredSubjects} 
-          selectedValues={selectedFilters.topics} 
-          onChange={handleFilterChange} 
+        <HierarchicalFilter
+          title="Assunto"
+          groups={organizedSubjects.map(item => ({
+            groupName: `Disciplina: ${item.discipline}`,
+            subjects: item.subjects
+          }))}
+          selectedValues={selectedFilters.topics}
+          onChange={handleFilterChange}
           category="topics"
-          placeholder={
-            selectedFilters.disciplines.length === 0 
-              ? "Selecione uma disciplina primeiro" 
-              : "Selecione os assuntos"
-          }
+          placeholder="Selecione uma disciplina primeiro"
         />
         
-        <FilterGroup 
-          title="Tópicos" 
-          options={filteredTopicsBySubject} 
-          selectedValues={selectedFilters.subtopics || []} 
-          onChange={handleFilterChange} 
+        <HierarchicalFilter
+          title="Tópicos"
+          groups={organizedTopics}
+          selectedValues={selectedFilters.subtopics || []}
+          onChange={handleFilterChange}
           category="subtopics"
           placeholder={
-            (selectedFilters.disciplines.length === 0)
+            selectedFilters.disciplines.length === 0
               ? "Selecione uma disciplina primeiro"
-              : (selectedFilters.topics.length === 0)
+              : selectedFilters.topics.length === 0
                 ? "Selecione um assunto primeiro"
-                : "Selecione os tópicos"
+                : "Nenhum tópico disponível"
           }
         />
         
@@ -400,6 +648,9 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           placeholder="Selecione a dificuldade"
         />
       </div>
+
+      {/* Mostrar filtros aplicados */}
+      {renderAppliedFilters()}
 
       <div className="flex justify-between">
         <Button 

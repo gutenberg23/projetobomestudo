@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Subject } from "../types/editorialized";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface StatisticsCardProps {
   subjects: Subject[];
@@ -13,15 +15,224 @@ export const StatisticsCard = ({
 }: StatisticsCardProps) => {
   const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.name || "");
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const { user } = useAuth();
+  const userId = user?.id || 'guest';
+
+  // Estados para os dados reais
+  const [realTopicStats, setRealTopicStats] = useState<Record<string, { 
+    hits: number; 
+    errors: number; 
+    totalExercises: number;
+    performance: number;
+  }>>({});
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
   };
 
-  // Data for radar chart
+  // Efeito para buscar estatísticas reais quando os subjects mudam
+  useEffect(() => {
+    const fetchRealStats = async () => {
+      if (!userId || userId === 'guest' || !subjects.length) {
+        return;
+      }
+      
+      try {
+        // Criar um mapa para armazenar as estatísticas por tópico
+        const statsMap: Record<string, { 
+          hits: number; 
+          errors: number; 
+          totalExercises: number;
+          performance: number;
+        }> = {};
+
+        // Processar cada subject e seus tópicos
+        for (const subject of subjects) {
+          for (const topic of subject.topics) {
+            if (!topic.link) continue;
+            
+            try {
+              const url = new URL(topic.link);
+              const searchParams = url.searchParams;
+              
+              // Construir query baseada nos filtros
+              let query = supabase.from('questoes').select('id');
+
+              // Aplicar filtros baseados nos parâmetros da URL
+              if (searchParams.has('disciplines')) {
+                const disciplines = JSON.parse(decodeURIComponent(searchParams.get('disciplines') || '[]'));
+                if (disciplines.length > 0) {
+                  query = query.in('discipline', disciplines);
+                }
+              }
+
+              if (searchParams.has('years')) {
+                const years = JSON.parse(decodeURIComponent(searchParams.get('years') || '[]'));
+                if (years.length > 0) {
+                  query = query.in('year', years);
+                }
+              }
+
+              if (searchParams.has('institutions')) {
+                const institutions = JSON.parse(decodeURIComponent(searchParams.get('institutions') || '[]'));
+                if (institutions.length > 0) {
+                  query = query.in('institution', institutions);
+                }
+              }
+
+              if (searchParams.has('organizations')) {
+                const organizations = JSON.parse(decodeURIComponent(searchParams.get('organizations') || '[]'));
+                if (organizations.length > 0) {
+                  query = query.in('organization', organizations);
+                }
+              }
+
+              if (searchParams.has('roles')) {
+                const roles = JSON.parse(decodeURIComponent(searchParams.get('roles') || '[]'));
+                if (roles.length > 0) {
+                  query = query.contains('role', roles);
+                }
+              }
+
+              if (searchParams.has('levels')) {
+                const levels = JSON.parse(decodeURIComponent(searchParams.get('levels') || '[]'));
+                if (levels.length > 0) {
+                  query = query.in('level', levels);
+                }
+              }
+
+              if (searchParams.has('difficulties')) {
+                const difficulties = JSON.parse(decodeURIComponent(searchParams.get('difficulties') || '[]'));
+                if (difficulties.length > 0) {
+                  query = query.in('difficulty', difficulties);
+                }
+              }
+
+              if (searchParams.has('subjects')) {
+                const subjects = JSON.parse(decodeURIComponent(searchParams.get('subjects') || '[]'));
+                if (subjects.length > 0) {
+                  query = query.overlaps('assuntos', subjects);
+                }
+              }
+
+              if (searchParams.has('topics')) {
+                const topics = JSON.parse(decodeURIComponent(searchParams.get('topics') || '[]'));
+                if (topics.length > 0) {
+                  query = query.overlaps('assuntos', topics);
+                }
+              }
+
+              if (searchParams.has('subtopics')) {
+                const subtopics = JSON.parse(decodeURIComponent(searchParams.get('subtopics') || '[]'));
+                if (subtopics.length > 0) {
+                  query = query.overlaps('topicos', subtopics);
+                }
+              }
+
+              if (searchParams.has('educationLevels')) {
+                const educationLevels = JSON.parse(decodeURIComponent(searchParams.get('educationLevels') || '[]'));
+                if (educationLevels.length > 0) {
+                  query = query.in('level', educationLevels);
+                }
+              }
+
+              // Buscar questões que correspondem aos filtros
+              const { data: questions, error: questionsError } = await query;
+
+              if (questionsError || !questions) {
+                // Usar os dados locais se houver erro
+                statsMap[`${subject.id}-${topic.id}`] = {
+                  hits: topic.hits,
+                  errors: topic.exercisesDone - topic.hits,
+                  totalExercises: topic.exercisesDone,
+                  performance: topic.exercisesDone > 0 ? Math.round((topic.hits / topic.exercisesDone) * 100) : 0
+                };
+                continue;
+              }
+
+              const questionIds = questions.map(q => q.id);
+              
+              if (questionIds.length === 0) {
+                // Usar os dados locais se não houver questões
+                statsMap[`${subject.id}-${topic.id}`] = {
+                  hits: topic.hits,
+                  errors: topic.exercisesDone - topic.hits,
+                  totalExercises: topic.exercisesDone,
+                  performance: topic.exercisesDone > 0 ? Math.round((topic.hits / topic.exercisesDone) * 100) : 0
+                };
+                continue;
+              }
+
+              // Buscar tentativas do usuário para essas questões
+              const { data: attempts, error: attemptsError } = await supabase
+                .from('user_question_attempts')
+                .select('question_id, is_correct')
+                .eq('user_id', userId)
+                .in('question_id', questionIds);
+
+              if (attemptsError) {
+                // Usar os dados locais se houver erro
+                statsMap[`${subject.id}-${topic.id}`] = {
+                  hits: topic.hits,
+                  errors: topic.exercisesDone - topic.hits,
+                  totalExercises: topic.exercisesDone,
+                  performance: topic.exercisesDone > 0 ? Math.round((topic.hits / topic.exercisesDone) * 100) : 0
+                };
+                continue;
+              }
+
+              // Calcular estatísticas
+              const totalAttempts = attempts?.length || 0;
+              const correctAnswers = attempts?.filter(a => a.is_correct).length || 0;
+              const wrongAnswers = totalAttempts - correctAnswers;
+              const performance = totalAttempts > 0 ? Math.round(correctAnswers / totalAttempts * 100) : 0;
+
+              statsMap[`${subject.id}-${topic.id}`] = {
+                hits: correctAnswers,
+                errors: wrongAnswers,
+                totalExercises: totalAttempts,
+                performance
+              };
+            } catch (error) {
+              console.error('Erro ao processar tópico:', topic, error);
+              // Usar os dados locais em caso de erro
+              statsMap[`${subject.id}-${topic.id}`] = {
+                hits: topic.hits,
+                errors: topic.exercisesDone - topic.hits,
+                totalExercises: topic.exercisesDone,
+                performance: topic.exercisesDone > 0 ? Math.round((topic.hits / topic.exercisesDone) * 100) : 0
+              };
+            }
+          }
+        }
+
+        setRealTopicStats(statsMap);
+      } catch (error) {
+        console.error('Erro ao calcular estatísticas reais:', error);
+      }
+    };
+
+    fetchRealStats();
+  }, [subjects, userId]);
+
+  // Data for radar chart - usando dados reais
   const radarData = subjects.map(subject => {
-    const totalHits = subject.topics.reduce((acc, topic) => acc + topic.hits, 0);
-    const totalExercises = subject.topics.reduce((acc, topic) => acc + topic.exercisesDone, 0);
+    // Calcular estatísticas usando dados reais
+    let totalHits = 0;
+    let totalExercises = 0;
+    
+    subject.topics.forEach(topic => {
+      const stats = realTopicStats[`${subject.id}-${topic.id}`];
+      if (stats) {
+        totalHits += stats.hits;
+        totalExercises += stats.totalExercises;
+      } else {
+        // Fallback para dados locais
+        totalHits += topic.hits;
+        totalExercises += topic.exercisesDone;
+      }
+    });
+    
     const performance = totalExercises > 0 ? Math.round(totalHits / totalExercises * 100) : 0;
     return {
       subject: subject.name,
@@ -29,17 +240,28 @@ export const StatisticsCard = ({
     };
   });
 
-  // Dados para a lista de tópicos que precisam de melhoria
+  // Dados para a lista de tópicos que precisam de melhoria - usando dados reais
   const topicsNeedingImprovement = subjects.flatMap(subject => 
     subject.topics.map(topic => {
-      const performance = topic.exercisesDone > 0 
-        ? Math.round((topic.hits / topic.exercisesDone) * 100) 
-        : 0;
+      const stats = realTopicStats[`${subject.id}-${topic.id}`];
+      let performance, exercisesDone;
+      
+      if (stats) {
+        performance = stats.performance;
+        exercisesDone = stats.totalExercises;
+      } else {
+        // Fallback para dados locais
+        performance = topic.exercisesDone > 0 
+          ? Math.round((topic.hits / topic.exercisesDone) * 100) 
+          : 0;
+        exercisesDone = topic.exercisesDone;
+      }
+      
       return {
         name: topic.name,
         subject: subject.name,
         performance,
-        exercisesDone: topic.exercisesDone
+        exercisesDone
       };
     })
   )
@@ -53,12 +275,27 @@ export const StatisticsCard = ({
     erros: '#ffac33'
   };
 
-  // Data for stacked bar chart
-  const selectedSubjectData = subjects.find(s => s.name === selectedSubject)?.topics.map(topic => ({
-    name: topic.name.substring(0, 20) + "...",
-    acertos: topic.hits,
-    erros: topic.exercisesDone - topic.hits
-  })) || [];
+  // Data for stacked bar chart - usando dados reais
+  const selectedSubjectData = subjects.find(s => s.name === selectedSubject)?.topics.map(topic => {
+    const subject = subjects.find(s => s.name === selectedSubject);
+    if (!subject) return { name: '', acertos: 0, erros: 0 };
+    
+    const stats = realTopicStats[`${subject.id}-${topic.id}`];
+    if (stats) {
+      return {
+        name: topic.name.substring(0, 20) + "...",
+        acertos: stats.hits,
+        erros: stats.errors
+      };
+    } else {
+      // Fallback para dados locais
+      return {
+        name: topic.name.substring(0, 20) + "...",
+        acertos: topic.hits,
+        erros: topic.exercisesDone - topic.hits
+      };
+    }
+  }) || [];
 
   return (
     <div className={`bg-gradient-to-br from-[#5f2ebe10] to-[#5f2ebe20] rounded-[16px] ${isExpanded ? 'p-4 my-[15px] py-[17px]' : 'p-0 mb-4 py-0'}`}>

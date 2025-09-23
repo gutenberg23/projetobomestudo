@@ -65,6 +65,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const [userId, setUserId] = useState<string | null>(null);
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [hasAnswered, setHasAnswered] = useState(false);
+  const [hasAnsweredInCurrentSession, setHasAnsweredInCurrentSession] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [openAddToBook, setOpenAddToBook] = useState(false);
   const [books, setBooks] = useState<QuestionBook[]>([]);
@@ -87,6 +88,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   // Obter a localização atual para verificar se estamos na página de simulados
   const location = useLocation();
   const isSimuladoPage = location.pathname.includes('/simulado');
+  const isQuestionsPage = location.pathname.includes('/questions');
   
   // Verificar se os botões devem estar visíveis
   const shouldShowButtons = !isSimuladoPage || hasAnswered;
@@ -223,6 +225,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     setShowAnswer(false);
     setShowOfficialAnswer(false);
     setShowAIAnswer(false);
+    setHasAnsweredInCurrentSession(false); // Resetar estado da sessão atual
 
     // Log para depuração - verificar se a questão tem tópicos
     console.log("Question object:", {
@@ -635,7 +638,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           await recordQuestionAttempt(userId, question.id, isCorrect);
           
           setHasAnswered(true);
-          toast.success("Resposta registrada com sucesso!");
+          setHasAnsweredInCurrentSession(true); // Marcar que respondeu na sessão atual
         }
       } catch (error) {
         console.error("Erro ao registrar resposta:", error);
@@ -1252,11 +1255,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         <div className="flex justify-start px-4 mt-4 mb-4">
           <Button
             onClick={handleAnswer}
-            disabled={!selectedOption || isSubmittingAnswer}
+            disabled={!selectedOption || isSubmittingAnswer || (isQuestionsPage && hasAnsweredInCurrentSession)}
             variant="flat"
-            className={!selectedOption || isSubmittingAnswer ? "opacity-50" : ""}
+            className={(!selectedOption || isSubmittingAnswer || (isQuestionsPage && hasAnsweredInCurrentSession)) ? "opacity-50" : ""}
           >
-            {isSubmittingAnswer ? "Enviando..." : "Responder"}
+            {isSubmittingAnswer ? "Enviando..." : (isQuestionsPage && hasAnsweredInCurrentSession) ? "Respondido" : "Responder"}
           </Button>
         </div>
       )}
