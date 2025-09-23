@@ -16,6 +16,7 @@ export const useEditalActions = () => {
           titulo: disciplina.titulo,
           descricao: disciplina.descricao,
           topicos: disciplina.topicos,
+          links: disciplina.links,
           importancia: disciplina.importancia
         })
         .select()

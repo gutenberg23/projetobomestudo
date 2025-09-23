@@ -183,7 +183,7 @@ export const useEditorializedData = () => {
             totalExercises: userTopicoData?.exercisesDone || userTopicoData?.totalExercises || 0,
             correctAnswers: userTopicoData?.hits || userTopicoData?.correctAnswers || 0,
             isReviewed: userTopicoData?.isReviewed || false,
-            link: userTopicoData?.link || null
+            link: userTopicoData?.link || disciplina.links?.[index] || null
           };
           
           logWithTimestamp(`Tópico ${index + 1} formatado`, topic);
