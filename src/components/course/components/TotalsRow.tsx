@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Topic } from "../types/editorialized";
 import { calculatePerformance } from "../utils/statsCalculations";
@@ -11,26 +11,18 @@ interface TotalsRowProps {
 }
 
 export const TotalsRow = ({ topics, performanceGoal, currentUserId }: TotalsRowProps) => {
-  const [totalStats, setTotalStats] = useState({
-    totalAttempts: 0,
-    correctAnswers: 0,
-    wrongAnswers: 0
-  });
-
   // Get stats for each topic and calculate totals
   const topicStatsArray = topics.map(topic => {
     const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
     return stats;
   });
 
-  useEffect(() => {
-    const newTotalStats = topicStatsArray.reduce((acc, stats) => ({
+  const totalStats = useMemo(() => {
+    return topicStatsArray.reduce((acc, stats) => ({
       totalAttempts: acc.totalAttempts + stats.totalAttempts,
       correctAnswers: acc.correctAnswers + stats.correctAnswers,
       wrongAnswers: acc.wrongAnswers + stats.wrongAnswers,
     }), { totalAttempts: 0, correctAnswers: 0, wrongAnswers: 0 });
-
-    setTotalStats(newTotalStats);
   }, [topicStatsArray]);
 
   const performance = totalStats.totalAttempts > 0 ? calculatePerformance(totalStats.correctAnswers, totalStats.totalAttempts) : 0;

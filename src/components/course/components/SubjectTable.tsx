@@ -25,7 +25,6 @@ export const SubjectTable = ({
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
-  const subjectPerformance = calculatePerformance(subjectTotals.hits, subjectTotals.exercisesDone);
 
   // Buscar o usuário atual
   useEffect(() => {
