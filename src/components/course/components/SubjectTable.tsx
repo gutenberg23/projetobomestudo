@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Subject, Topic } from "../types/editorialized";
 import { calculateErrors, calculatePerformance, calculateSubjectTotals } from "../utils/statsCalculations";
-import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useQuestionStatsFromLink } from "@/hooks/useQuestionStatsFromLink";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { TopicRow } from "./TopicRow";
+import { TotalsRow } from "./TotalsRow";
 
 interface SubjectTableProps {
   subject: Subject;
@@ -71,124 +71,23 @@ export const SubjectTable = ({
               </tr>
             </thead>
             <tbody>
-              {subject.topics.map((topic, index) => {
-                const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-                return (
-                  <tr key={topic.id} className={cn("border-t border-gray-200", index % 2 === 0 ? "bg-white" : "bg-gray-50")}>
-                    <td className="py-3 px-4">{topic.id}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center">
-                        {isEditMode ? (
-                          <div onClick={e => {
-                            e.stopPropagation();
-                            onTopicChange(subject.id, topic.id, 'isDone', !topic.isDone);
-                          }} className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded cursor-pointer ${topic.isDone ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
-                            {topic.isDone && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
-                                <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>}
-                          </div>
-                        ) : (
-                          <div className={`flex shrink-0 self-stretch my-auto w-5 h-5 rounded ${topic.isDone ? "bg-[#5f2ebe] border-[#5f2ebe]" : "bg-white border border-gray-200"}`}>
-                            {topic.isDone && <svg viewBox="0 0 14 14" fill="none" className="w-4 h-4 m-auto">
-                                <path d="M11.083 2.917L4.375 9.625 1.917 7.167" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 max-w-xs">
-                      <p className="text-sm text-gray-600">{topic.topic}</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-center">
-                        {topic.link ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 px-2 text-blue-600"
-                            onClick={() => window.open(topic.link, '_blank')}
-                            title="Abrir link de questões"
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            <span className="text-xs">Questões</span>
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-gray-400">Sem link</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span>{stats.totalAttempts}</span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span>{stats.correctAnswers}</span>
-                    </td>
-                    <td className="py-3 px-4 text-center">{stats.wrongAnswers}</td>
-                    <td className={cn(
-                      "py-3 px-4 text-center", 
-                      stats.totalAttempts === 0 
-                        ? "" 
-                        : calculatePerformance(stats.correctAnswers, stats.totalAttempts) < performanceGoal 
-                          ? "bg-[#fceadf]" 
-                          : "bg-[#e4e0f3]"
-                    )}>
-                      {stats.totalAttempts > 0 ? calculatePerformance(stats.correctAnswers, stats.totalAttempts) : 0}%
-                    </td>
-                  </tr>
-                );
-              })}
-              <tr className="border-t border-gray-200 bg-gray-50 font-medium">
-                <td colSpan={4} className="py-3 px-4 text-right">Totais:</td>
-                <td className="py-3 px-4 text-center">
-                  {subject.topics.reduce((acc, topic) => {
-                    const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-                    return acc + stats.totalAttempts;
-                  }, 0)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {subject.topics.reduce((acc, topic) => {
-                    const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-                    return acc + stats.correctAnswers;
-                  }, 0)}
-                </td>
-                <td className="py-3 px-4 text-center">
-                  {subject.topics.reduce((acc, topic) => {
-                    const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-                    return acc + stats.wrongAnswers;
-                  }, 0)}
-                </td>
-                <td className={cn(
-                  "py-3 px-4 text-center", 
-                  (() => {
-                    const totalAttempts = subject.topics.reduce((acc, topic) => {
-                      const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-                      return acc + stats.totalAttempts;
-                    }, 0);
-                    const totalCorrect = subject.topics.reduce((acc, topic) => {
-                      const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-                      return acc + stats.correctAnswers;
-                    }, 0);
-                    const performance = totalAttempts > 0 ? calculatePerformance(totalCorrect, totalAttempts) : 0;
-                    return performance === 0 
-                      ? "" 
-                      : performance < performanceGoal 
-                        ? "bg-[#fceadf]" 
-                        : "bg-[#e4e0f3]";
-                  })()
-                )}>
-                  {(() => {
-                    const totalAttempts = subject.topics.reduce((acc, topic) => {
-                      const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-                      return acc + stats.totalAttempts;
-                    }, 0);
-                    const totalCorrect = subject.topics.reduce((acc, topic) => {
-                      const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-                      return acc + stats.correctAnswers;
-                    }, 0);
-                    return totalAttempts > 0 ? calculatePerformance(totalCorrect, totalAttempts) : 0;
-                  })()}%
-                </td>
-              </tr>
+              {subject.topics.map((topic, index) => (
+                <TopicRow
+                  key={topic.id}
+                  topic={topic}
+                  index={index}
+                  subjectId={subject.id}
+                  performanceGoal={performanceGoal}
+                  currentUserId={currentUserId}
+                  onTopicChange={onTopicChange}
+                  isEditMode={isEditMode}
+                />
+              ))}
+              <TotalsRow
+                topics={subject.topics}
+                performanceGoal={performanceGoal}
+                currentUserId={currentUserId}
+              />
             </tbody>
           </table>
         </div>
