@@ -32,6 +32,10 @@ import { useLocation } from "react-router-dom";
 import { useQuestionAttempts } from '@/hooks/useQuestionAttempts';
 import { prepareHtmlContent } from "@/utils/text-utils";
 
+// Global flag to prevent multiple simultaneous requests to non-existent table
+let atualizacoesQuestoesTableExists: boolean | null = null;
+let tableCheckInProgress = false;
+
 // Declarar o tipo global
 declare global {
   interface Window {
@@ -984,9 +988,33 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     const fetchLastUpdatedBy = async () => {
       if (!question.id) return;
 
-      try {
+      // Check global flag first - if we know table doesn't exist, skip entirely
+      if (atualizacoesQuestoesTableExists === false) {
+        return;
+      }
+
+      // If a check is already in progress, wait and skip
+      if (tableCheckInProgress) {
+        return;
+      }
+
+      // If we haven't checked yet, check with localStorage cache first
+      if (atualizacoesQuestoesTableExists === null) {
+        const cached = localStorage.getItem('atualizacoes_questoes_exists');
+        if (cached === 'false') {
+          atualizacoesQuestoesTableExists = false;
+          return;
+        } else if (cached === 'true') {
+          atualizacoesQuestoesTableExists = true;
+        } else {
+          // If no cache exists, set in progress immediately to prevent race conditions
+          tableCheckInProgress = true;
+        }
+      }
+
+      // If table is confirmed to exist, proceed with the request
+      if (atualizacoesQuestoesTableExists === true) {
         try {
-          // Usar campos específicos e formato compacto sem espaços na consulta
           const { data: updateData, error } = await supabase
             .from('atualizacoes_questoes')
             .select('id,questao_id,professor_id,created_at')
@@ -996,15 +1024,24 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             .single();
 
           if (error) {
+            // If we get a 406 here, table was deleted - update cache
+            if (error.code === '406' || 
+                error.code === 'PGRST101' || 
+                error.message?.includes('does not exist') ||
+                error.message?.includes('Not Acceptable')) {
+              atualizacoesQuestoesTableExists = false;
+              localStorage.setItem('atualizacoes_questoes_exists', 'false');
+              return;
+            }
+            // No records found but table exists
             if (error.code === 'PGRST116') {
-              console.log("Nenhuma atualização de professor encontrada para esta questão");
               return;
             }
             console.error("Erro ao buscar última atualização:", error);
             return;
           }
 
-          // Buscar o perfil do professor separadamente com campos específicos
+          // Fetch teacher profile if we have data
           if (updateData && updateData.professor_id) {
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
@@ -1021,11 +1058,86 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               setGabaritoAvatar(profileData.foto_perfil);
             }
           }
-        } catch (innerError) {
-          console.error("Erro específico na consulta de atualizações:", innerError);
+        } catch (error: any) {
+          if (error?.code === '406' ||
+              error?.message?.includes('does not exist') || 
+              error?.message?.includes('Not Acceptable')) {
+            atualizacoesQuestoesTableExists = false;
+            localStorage.setItem('atualizacoes_questoes_exists', 'false');
+            return;
+          }
+          console.error("Erro geral ao buscar última atualização:", error);
         }
-      } catch (error) {
-        console.error("Erro geral ao buscar última atualização:", error);
+        return;
+      }
+
+      // Only make the initial check if we don't know the table status
+      if (atualizacoesQuestoesTableExists === null && tableCheckInProgress) {
+        try {
+          const { data: updateData, error } = await supabase
+            .from('atualizacoes_questoes')
+            .select('id,questao_id,professor_id,created_at')
+            .eq('questao_id', question.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (error) {
+            // Table doesn't exist - mark globally and in cache
+            if (error.code === '406' || 
+                error.code === 'PGRST101' || 
+                error.message?.includes('does not exist') ||
+                error.message?.includes('Not Acceptable')) {
+              atualizacoesQuestoesTableExists = false;
+              localStorage.setItem('atualizacoes_questoes_exists', 'false');
+              console.log("ℹ️ Tabela atualizacoes_questoes confirmada como inexistente - todas as futuras consultas serão ignoradas");
+              return;
+            }
+            // No records found but table exists
+            if (error.code === 'PGRST116') {
+              atualizacoesQuestoesTableExists = true;
+              localStorage.setItem('atualizacoes_questoes_exists', 'true');
+              return;
+            }
+            console.error("Erro ao buscar última atualização:", error);
+            return;
+          }
+
+          // Success - table exists
+          atualizacoesQuestoesTableExists = true;
+          localStorage.setItem('atualizacoes_questoes_exists', 'true');
+
+          // Fetch teacher profile if we have data
+          if (updateData && updateData.professor_id) {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('id,foto_perfil')
+              .eq('id', updateData.professor_id)
+              .single();
+
+            if (profileError) {
+              console.error("Erro ao buscar perfil do professor:", profileError);
+              return;
+            }
+
+            if (profileData?.foto_perfil) {
+              setGabaritoAvatar(profileData.foto_perfil);
+            }
+          }
+        } catch (error: any) {
+          // Catch any other table-related errors
+          if (error?.code === '406' ||
+              error?.message?.includes('does not exist') || 
+              error?.message?.includes('Not Acceptable')) {
+            atualizacoesQuestoesTableExists = false;
+            localStorage.setItem('atualizacoes_questoes_exists', 'false');
+            console.log("ℹ️ Tabela atualizacoes_questoes confirmada como inexistente (catch) - todas as futuras consultas serão ignoradas");
+            return;
+          }
+          console.error("Erro geral ao buscar última atualização:", error);
+        } finally {
+          tableCheckInProgress = false;
+        }
       }
     };
 
@@ -1184,7 +1296,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             educationLevel={question.educationLevel || ""}
             discipline={question.discipline || ""}
             topics={loadedTopics.length > 0 ? loadedTopics : (question.topics || [])}
-            assunto={question.assunto}
+            assunto={(question as any).assuntos && Array.isArray((question as any).assuntos) && (question as any).assuntos.length > 0 ? (question as any).assuntos[0] : ""}
             questionId={question.id}
             hideInfo={isSimuladoPage && !hasAnswered}
           />

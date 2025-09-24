@@ -1,4 +1,3 @@
-import React from "react";
 import { MultiSelect } from "@/components/admin/questions/form/MultiSelect";
 
 export interface FilterGroupProps {
@@ -49,7 +48,6 @@ export function FilterGroup({
         selected={safeSelectedValues}
         onChange={handleChange}
         placeholder={placeholder}
-        maxDisplayItems={10}
         clearable={true}
       />
     </div>

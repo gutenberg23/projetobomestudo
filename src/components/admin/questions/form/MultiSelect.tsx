@@ -12,7 +12,6 @@ export interface MultiSelectProps {
   placeholder?: string;
   disabled?: boolean;
   className?: string;
-  maxDisplayItems?: number;
   clearable?: boolean;
   onAdd?: (value: string) => void;
 }
@@ -24,7 +23,6 @@ export function MultiSelect({
   placeholder = "Selecione...",
   disabled = false,
   className,
-  maxDisplayItems = 3,
   clearable = true,
   onAdd,
 }: MultiSelectProps) {

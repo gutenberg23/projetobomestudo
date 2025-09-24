@@ -213,8 +213,7 @@ const Simulado = () => {
         // Busca questões aleatórias
         questionsQuery = supabase
           .from('questoes')
-          .select('*')
-          .limit(10);
+          .select('*');
       }
 
       const { data: questionsData, error: questionsError } = await questionsQuery;

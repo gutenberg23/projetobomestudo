@@ -163,14 +163,14 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
 
   // Ordenar todas as listas de opções em ordem alfabética
   const sortedOptions = {
-    disciplines: [...filterOptions.disciplines].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
-    topics: [...filterOptions.topics].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
-    institutions: [...filterOptions.institutions].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
-    organizations: [...filterOptions.organizations].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
-    roles: [...filterOptions.roles].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
-    years: [...filterOptions.years].filter(Boolean).sort((a, b) => String(b).localeCompare(String(a))), // Anos em ordem decrescente
-    educationLevels: [...filterOptions.educationLevels].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
-    difficulty: [...filterOptions.difficulty].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)))
+    disciplines: [...new Set(filterOptions.disciplines)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    topics: [...new Set(filterOptions.topics)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    institutions: [...new Set(filterOptions.institutions)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    organizations: [...new Set(filterOptions.organizations)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    roles: [...new Set(filterOptions.roles)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    years: [...new Set(filterOptions.years)].filter(Boolean).sort((a, b) => String(b).localeCompare(String(a))), // Anos em ordem decrescente
+    educationLevels: [...new Set(filterOptions.educationLevels)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
+    difficulty: [...new Set(filterOptions.difficulty)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)))
   };
 
   // Organizar assuntos por disciplina para exibição hierárquica
@@ -232,129 +232,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     return result;
   }, [selectedFilters.topics, selectedFilters.disciplines, topicsBySubject, topicsByDiscipline]);
 
-  // Filtrar assuntos com base nas disciplinas selecionadas
-  const filteredSubjects = useMemo(() => {
-    if (selectedFilters.disciplines.length === 0) {
-      return [];
-    }
-    
-    // Se tiver disciplinas selecionadas, mostrar apenas assuntos relacionados
-    const subjectsSet = new Set<string>();
-    
-    selectedFilters.disciplines.forEach(discipline => {
-      const subjects = subjectsByDiscipline[discipline] || [];
-      subjects.forEach(subject => subjectsSet.add(subject));
-    });
-    
-    return [...subjectsSet].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)));
-  }, [selectedFilters.disciplines, subjectsByDiscipline]);
-
-  // Filtrar tópicos com base nos assuntos selecionados
-  const filteredTopicsBySubject = useMemo(() => {
-    if (selectedFilters.topics.length === 0) {
-      // Se não houver assuntos selecionados, mostrar tópicos baseados na disciplina
-      if (selectedFilters.disciplines.length > 0) {
-        const topicsSet = new Set<string>();
-        
-        selectedFilters.disciplines.forEach(discipline => {
-          const topics = topicsByDiscipline[discipline] || [];
-          topics.forEach(topic => topicsSet.add(topic));
-        });
-        
-        return [...topicsSet].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)));
-      }
-      return [];
-    }
-    
-    // Se tiver assuntos selecionados, mostrar apenas tópicos relacionados
-    const topicsSet = new Set<string>();
-    
-    selectedFilters.topics.forEach(subject => {
-      const topics = topicsBySubject[subject] || [];
-      topics.forEach(topic => topicsSet.add(topic));
-    });
-    
-    return [...topicsSet].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)));
-  }, [selectedFilters.topics, selectedFilters.disciplines, topicsBySubject, topicsByDiscipline]);
-
-  // Atualizar a URL com os filtros selecionados
-  const updateUrlWithFilters = () => {
-    const params = new URLSearchParams();
-    
-    // Adicionar consulta de pesquisa
-    if (localSearchQuery) {
-      params.set('q', localSearchQuery);
-    }
-    
-    // Adicionar filtros selecionados
-    Object.entries(selectedFilters).forEach(([key, values]) => {
-      if (values.length) {
-        // Usar JSON para evitar problemas com valores que contêm vírgulas
-        params.set(key, JSON.stringify(values));
-      }
-    });
-    
-    // Adicionar questões por página
-    params.set('perPage', questionsPerPage);
-    
-    // Atualizar a URL sem recarregar a página
-    setSearchParams(params);
-  };
-
-  // Aplicar filtros e atualizar URL
-  const applyFiltersWithUrl = () => {
-    setSearchQuery(localSearchQuery);
-    updateUrlWithFilters();
-    handleApplyFilters();
-    if (isMobile) {
-      setIsOpen(false);
-    }
-  };
-
-  // Contar quantos filtros estão ativos
-  const countActiveFilters = () => {
-    return Object.values(selectedFilters).reduce((count, filters) => count + filters.length, 0);
-  };
-
-  const activeFiltersCount = countActiveFilters();
-  
-  // Função para remover todos os filtros
-  const clearAllFilters = () => {
-    // Resetar a pesquisa local
-    setLocalSearchQuery("");
-    
-    // Criar um objeto com todos os filtros vazios
-    const emptyFilters = {
-      disciplines: [],
-      topics: [],
-      institutions: [],
-      organizations: [],
-      roles: [],
-      years: [],
-      educationLevels: [],
-      difficulty: [],
-      subtopics: []
-    };
-    
-    // Atualizar a URL sem filtros
-    const params = new URLSearchParams();
-    params.set('perPage', questionsPerPage);
-    setSearchParams(params);
-    
-    // Propagar as mudanças para o componente pai
-    setSearchQuery("");
-    
-    // Usar evento de retorno para atualizar todos os filtros
-    const handler = handleFilterChange as any;
-    if (typeof handler === 'function') {
-      handler("reset_all", emptyFilters);
-    }
-    
-    // Aplicar os filtros vazios
-    handleApplyFilters();
-  };
-  
-  // Componente para exibir filtros hierárquicos
+  // Componente para exibir filtros hierárquicos com busca
   const HierarchicalFilter = ({ 
     title, 
     groups, 
@@ -371,7 +249,49 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     placeholder: string;
   }) => {
     const [open, setOpen] = useState(false);
+    const [searchValue, setSearchValue] = useState("");
     const hasItems = groups.length > 0 && groups.some(group => (group.topics || group.subjects || []).length > 0);
+    
+    // Filtrar grupos baseado na busca
+    const filteredGroups = useMemo(() => {
+      if (!searchValue.trim()) return groups;
+      
+      return groups.map(group => {
+        const items = group.topics || group.subjects || [];
+        const filteredItems = items.filter(item => 
+          item.toLowerCase().includes(searchValue.toLowerCase())
+        );
+        
+        return {
+          ...group,
+          topics: group.topics ? filteredItems : undefined,
+          subjects: group.subjects ? filteredItems : undefined
+        };
+      }).filter(group => {
+        const items = group.topics || group.subjects || [];
+        return items.length > 0;
+      });
+    }, [groups, searchValue]);
+    
+    // Limpar busca quando fechar dropdown
+    useEffect(() => {
+      if (!open) {
+        setSearchValue("");
+      }
+    }, [open]);
+    
+    const handleItemClick = (item: string) => {
+      onChange(category, item);
+      // NÃO fechar o dropdown para permitir seleção múltipla
+      // setOpen(false);
+    };
+    
+    const handleClear = () => {
+      // Limpar todos os itens selecionados
+      selectedValues.forEach(value => {
+        onChange(category, value);
+      });
+    };
     
     return (
       <div className="space-y-2">
@@ -400,19 +320,35 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           </PopoverTrigger>
           <PopoverContent className="w-full p-0">
             <div className="flex flex-col w-full rounded-md border border-input bg-transparent">
+              {hasItems && (
+                <div className="flex items-center border-b px-3">
+                  <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                  <Input
+                    placeholder="Pesquisar..."
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+              )}
+              
               {!hasItems ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">
                   {placeholder}
                 </div>
+              ) : filteredGroups.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  Nenhum item encontrado.
+                </div>
               ) : (
                 <div className="max-h-[300px] overflow-y-auto">
-                  {groups.map((group, groupIndex) => {
+                  {filteredGroups.map((group, groupIndex) => {
                     const items = group.topics || group.subjects || [];
                     if (items.length === 0) return null;
                     
                     return (
                       <div key={groupIndex} className="border-b last:border-b-0">
-                        <div className="px-3 py-2 bg-gray-50 border-b text-xs font-medium text-gray-600 sticky top-0">
+                        <div className="px-3 py-2 bg-gray-50 border-b text-xs font-medium text-gray-600 sticky top-0 z-10">
                           {group.groupName}
                         </div>
                         <div className="p-1">
@@ -421,7 +357,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
                             return (
                               <div 
                                 key={item}
-                                onClick={() => onChange(category, item)}
+                                onClick={() => handleItemClick(item)}
                                 className={cn(
                                   "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
                                   isSelected ? "bg-accent text-accent-foreground" : ""
@@ -441,6 +377,20 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
                       </div>
                     );
                   })}
+                </div>
+              )}
+              
+              {selectedValues.length > 0 && (
+                <div className="px-2 py-1.5 text-sm border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start font-normal text-destructive"
+                    onClick={handleClear}
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Limpar seleção
+                  </Button>
                 </div>
               )}
             </div>
@@ -540,6 +490,83 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
         </div>
       </div>
     );
+  };
+
+  // Atualizar a URL com os filtros selecionados
+  const updateUrlWithFilters = () => {
+    const params = new URLSearchParams();
+    
+    // Adicionar consulta de pesquisa
+    if (localSearchQuery) {
+      params.set('q', localSearchQuery);
+    }
+    
+    // Adicionar filtros selecionados
+    Object.entries(selectedFilters).forEach(([key, values]) => {
+      if (values.length) {
+        // Usar JSON para evitar problemas com valores que contêm vírgulas
+        params.set(key, JSON.stringify(values));
+      }
+    });
+    
+    // Adicionar questões por página
+    params.set('perPage', questionsPerPage);
+    
+    // Atualizar a URL sem recarregar a página
+    setSearchParams(params);
+  };
+
+  // Aplicar filtros e atualizar URL
+  const applyFiltersWithUrl = () => {
+    setSearchQuery(localSearchQuery);
+    updateUrlWithFilters();
+    handleApplyFilters();
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  };
+
+  // Contar quantos filtros estão ativos
+  const countActiveFilters = () => {
+    return Object.values(selectedFilters).reduce((count, filters) => count + filters.length, 0);
+  };
+
+  const activeFiltersCount = countActiveFilters();
+  
+  // Função para remover todos os filtros
+  const clearAllFilters = () => {
+    // Resetar a pesquisa local
+    setLocalSearchQuery("");
+    
+    // Criar um objeto com todos os filtros vazios
+    const emptyFilters = {
+      disciplines: [],
+      topics: [],
+      institutions: [],
+      organizations: [],
+      roles: [],
+      years: [],
+      educationLevels: [],
+      difficulty: [],
+      subtopics: []
+    };
+    
+    // Atualizar a URL sem filtros
+    const params = new URLSearchParams();
+    params.set('perPage', questionsPerPage);
+    setSearchParams(params);
+    
+    // Propagar as mudanças para o componente pai
+    setSearchQuery("");
+    
+    // Usar evento de retorno para atualizar todos os filtros
+    const handler = handleFilterChange as any;
+    if (typeof handler === 'function') {
+      handler("reset_all", emptyFilters);
+    }
+    
+    // Aplicar os filtros vazios
+    handleApplyFilters();
   };
 
   const filtersContent = (
