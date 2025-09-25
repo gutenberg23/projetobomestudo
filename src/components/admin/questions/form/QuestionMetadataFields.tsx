@@ -183,14 +183,14 @@ export const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
 
   // Função para gerenciar seleção múltipla de cargos
   const handleRoleChange = (value: string) => {
-    const newRoles = role.split(',').filter(r => r !== '');
+    const newRoles = role.split(';').filter(r => r !== '');
     const index = newRoles.indexOf(value);
     if (index === -1) {
       newRoles.push(value);
     } else {
       newRoles.splice(index, 1);
     }
-    setRole(newRoles.join(','));
+    setRole(newRoles.join(';'));
   };
 
   // Função para passar ao setValue do TopicosFieldWrapper
@@ -263,7 +263,7 @@ export const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
           {/* Exibir cargos selecionados como badges */}
           {role && (
             <div className="flex flex-wrap gap-1 mt-2">
-              {role.split(',').filter(r => r !== '').map((r) => (
+              {role.split(';').filter(r => r !== '').map((r) => (
                 <Badge key={r} variant="outline" className="flex items-center gap-1">
                   {r}
                   <X

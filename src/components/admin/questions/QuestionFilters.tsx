@@ -222,8 +222,8 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
     try {
       return JSON.parse(value);
     } catch (e) {
-      // Caso não seja JSON (formato antigo com vírgulas), usar o método antigo
-      return value.split(',').filter(v => v !== '');
+    // Caso não seja JSON (formato antigo), usar ponto e vírgula como separador
+      return value.split(';').filter(v => v !== '');
     }
   };
 
@@ -262,7 +262,7 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
     const disciplinaValue = filters.disciplina.value;
     if (!disciplinaValue) return [];
     
-    const selectedDisciplines = disciplinaValue.toString().split(',').filter(v => v !== '');
+    const selectedDisciplines = disciplinaValue.toString().split(';').filter(v => v !== '');
     if (selectedDisciplines.length === 0) return [];
     
     // Unir todos os assuntos das disciplinas selecionadas
@@ -281,7 +281,7 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
     const topicosValue = filters.topicos.value;
     if (!topicosValue) return [];
     
-    const selectedSubjects = topicosValue.toString().split(',').filter(v => v !== '');
+    const selectedSubjects = topicosValue.toString().split(';').filter(v => v !== '');
     if (selectedSubjects.length === 0) return [];
     
     // Unir todos os tópicos dos assuntos selecionados

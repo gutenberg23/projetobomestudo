@@ -26,7 +26,7 @@ export const generateAIResponse = async (questionData: QuestionData): Promise<st
     // Construir o prompt baseado nos dados da questão
     const basePrompt = `Você é um assistente especializado em explicar questões de concursos.
 A questão é da disciplina ${questionData.discipline}, nível ${questionData.level} e dificuldade ${questionData.difficulty}.
-Os tópicos relacionados são: ${questionData.topicos.join(', ')}.
+Os tópicos relacionados são: ${questionData.topicos.join('; ')}.
 
 Questão:
 ${questionData.text}

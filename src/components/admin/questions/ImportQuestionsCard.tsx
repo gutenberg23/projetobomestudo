@@ -276,9 +276,9 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
           console.log('Alternativas disponíveis:', options.map(o => o.id));
         }
 
-        // Transformar tópicos em array
+        // Transformar tópicos em array usando ponto e vírgula como separador
         const topicos = row.topicos 
-          ? row.topicos.split(',')
+          ? row.topicos.split(';')
             .map(t => t.trim())
             .filter(Boolean)
           : [];

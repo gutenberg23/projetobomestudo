@@ -68,8 +68,8 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
           // Tentar analisar como JSON primeiro (formato novo)
           return JSON.parse(filterValue);
         } catch (e) {
-          // Caso não seja JSON (formato antigo com vírgulas), usar o método antigo
-          return filterValue.split(',').filter(v => v !== '');
+          // Caso não seja JSON (formato antigo), usar ponto e vírgula como separador
+          return filterValue.split(';').filter(v => v !== '');
         }
       };
 
