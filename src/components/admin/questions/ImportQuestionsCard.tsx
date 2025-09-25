@@ -290,10 +290,10 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
             .filter(Boolean)
           : [];
           
-        // Transformar role em array (pode ser uma única string separada por vírgulas ou valor único)
+        // Transformar role em array (pode ser uma única string separada por ponto e vírgula ou valor único)
         const role = row.role
-          ? row.role.includes(',')
-            ? row.role.split(',').map(r => r.trim()).filter(Boolean)
+          ? row.role.includes(';')
+            ? row.role.split(';').map(r => r.trim()).filter(Boolean)
             : [row.role.trim()]
           : [];
 
@@ -454,9 +454,9 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
             <li>optionA, optionB, optionC, optionD, optionE</li>
             <li>correctanswer (A, B, C, D ou E)</li>
           </ul>
-          <p className="mt-2 text-xs text-gray-400">Obs: Os tópicos devem ser separados por vírgula dentro da coluna topicos</p>
+          <p className="mt-2 text-xs text-gray-400">Obs: Os tópicos devem ser separados por ponto e vírgula (;) dentro da coluna topicos</p>
           <p className="text-xs text-gray-400">Obs: Os assuntos devem ser separados por ponto e vírgula (;) dentro da coluna assuntos</p>
-          <p className="text-xs text-gray-400">Obs: O campo 'role' pode conter múltiplos valores separados por vírgula</p>
+          <p className="text-xs text-gray-400">Obs: O campo 'role' pode conter múltiplos valores separados por ponto e vírgula (;)</p>
         </div>
       </div>
     </Card>
