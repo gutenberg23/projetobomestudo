@@ -181,7 +181,10 @@ const Questoes: React.FC = () => {
           setShowFilters={setShowFilters}
           resetFilters={resetFilters}
           handleClearAllQuestionStats={actions.handleClearAllQuestionStats}
+          handleDeleteAllQuestions={actions.handleDeleteAllQuestions}
           dropdownData={dropdownData}
+          onChange={() => {}}
+          onFiltersClean={() => {}}
         />
         
         {renderQuestionList()}

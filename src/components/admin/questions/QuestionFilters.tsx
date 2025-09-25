@@ -1,10 +1,11 @@
 import React, { Dispatch, SetStateAction, useState, useEffect, useMemo } from "react";
-import { ChevronDown, ChevronUp, Filter, XCircle, Eraser, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Filter, XCircle, Eraser, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Filters, FilterItem } from './types';
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/admin/questions/form/MultiSelect";
 import { supabase } from "@/integrations/supabase/client";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface QuestionFiltersProps {
   filters: Filters;
@@ -13,6 +14,7 @@ interface QuestionFiltersProps {
   setShowFilters: Dispatch<SetStateAction<boolean>>;
   resetFilters: () => void;
   handleClearAllQuestionStats: () => Promise<void>;
+  handleDeleteAllQuestions?: () => Promise<void>;
   dropdownData: {
     years: string[];
     institutions: string[];
@@ -35,6 +37,7 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
   setShowFilters,
   resetFilters,
   handleClearAllQuestionStats,
+  handleDeleteAllQuestions,
   dropdownData,
   onChange,
   onFiltersClean
@@ -44,6 +47,8 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
   const [searchValue, setSearchValue] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Estados para disciplinas, assuntos e tópicos
   const [disciplines, setDisciplines] = useState<string[]>([]);
@@ -295,6 +300,18 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
     return [...new Set(topics)].sort((a, b) => a.localeCompare(b)); // Remover duplicatas e ordenar
   }, [filters.topicos.value, topicsBySubject]);
 
+  const handleDeleteAllQuestionsConfirm = async () => {
+    if (!handleDeleteAllQuestions) return;
+    
+    setIsDeleting(true);
+    try {
+      await handleDeleteAllQuestions();
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="relative">
@@ -331,6 +348,17 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
             >
               <Eraser className="h-4 w-4" />
               Limpar Todas Estatísticas
+            </Button>
+          )}
+          
+          {handleDeleteAllQuestions && (
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex items-center gap-2 border-red-500 text-red-500 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              Excluir Todas Questões
             </Button>
           )}
         </div>
@@ -464,6 +492,15 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
           </div>
         </div>
       )}
+      
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={setShowDeleteConfirm}
+        onConfirm={handleDeleteAllQuestionsConfirm}
+        title="Excluir Todas as Questões"
+        description="Tem certeza que deseja excluir TODAS as questões? Esta ação é irreversível e todos os dados serão perdidos permanentemente."
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

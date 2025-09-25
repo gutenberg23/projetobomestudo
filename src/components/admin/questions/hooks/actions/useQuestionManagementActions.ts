@@ -78,6 +78,26 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
     }
   };
 
+  const handleDeleteAllQuestions = async () => {
+    try {
+      const { error } = await supabase
+        .from("questoes")
+        .delete()
+        .gte('id', '');
+
+      if (error) throw error;
+
+      // Limpar o estado local
+      setQuestions([]);
+      clearSelectedQuestions();
+
+      toast.success("Todas as questões foram excluídas com sucesso!");
+    } catch (error) {
+      console.error("Erro ao excluir todas as questões:", error);
+      toast.error("Erro ao excluir todas as questões.");
+    }
+  };
+
   const handleEditQuestion = async (question: QuestionItemType) => {
     try {
       console.log("Iniciando edição da questão ID:", question.id);
@@ -152,6 +172,7 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
     handleRemoveQuestion,
     handleEditQuestion,
     handleClearQuestionStats,
-    handleClearAllQuestionStats
+    handleClearAllQuestionStats,
+    handleDeleteAllQuestions
   };
 };
