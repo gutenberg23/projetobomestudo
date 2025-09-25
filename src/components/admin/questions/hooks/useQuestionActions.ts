@@ -17,7 +17,8 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     handleRemoveQuestion, 
     handleEditQuestion, 
     handleClearQuestionStats,
-    handleClearAllQuestionStats
+    handleClearAllQuestionStats,
+    handleDeleteAllQuestions
   } = useQuestionManagementActions(state);
   const { getFilteredQuestions, resetFilters } = useFilterActions(state);
   const { fetchQuestionsAndRelatedData } = useFetchQuestionsActions(state);
@@ -35,6 +36,7 @@ export const useQuestionActions = (state: ReturnType<typeof import("./useQuestio
     resetFilters,
     handleClearQuestionStats,
     handleClearAllQuestionStats,
+    handleDeleteAllQuestions,
     fetchQuestionsAndRelatedData
   };
 };
