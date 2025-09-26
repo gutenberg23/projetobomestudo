@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RotateCcw, ChevronDown, ChevronRight } from "lucide-react";
+import { RotateCcw, ChevronDown, ChevronRight, FileX } from "lucide-react";
 import { toast } from "sonner";
 import React from "react";
 import {
@@ -1374,11 +1374,7 @@ const Dashboard = () => {
                 ) : (
                   <div className="text-center py-8">
                     <div className="flex justify-center mb-4">
-                      <img
-                        src="/lovable-uploads/no-data.svg"
-                        alt="Nada por aqui"
-                        className="w-32 h-32"
-                      />
+                      <FileX className="h-16 w-16 text-muted-foreground" />
                     </div>
                     <p className="text-gray-500 mb-2">Nada por aqui</p>
                     <p className="text-gray-500 text-sm">
