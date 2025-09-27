@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TopicRow } from "./TopicRow";
 import { TotalsRow } from "./TotalsRow";
 import { useQuestionStatsFromLink } from "@/hooks/useQuestionStatsFromLink";
+import { useSubjectImportanceStats } from "@/hooks/useSubjectImportanceStats";
 
 interface SubjectTableProps {
   subject: Subject;
@@ -26,6 +27,8 @@ export const SubjectTable = ({
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
+  
+  const { importanceStats } = useSubjectImportanceStats(allSubjects, currentUserId);
 
   // Calcular total de questões de todos os tópicos de todos os assuntos
   const totalQuestionsAllSubjects = useMemo(() => {
@@ -44,11 +47,15 @@ export const SubjectTable = ({
   const sortedTopics = useMemo(() => {
     if (sortOrder === 'id') {
       return [...subject.topics].sort((a, b) => a.id - b.id);
+    } else {
+      // Ordenação por importância - usar os dados reais do hook
+      return [...subject.topics].sort((a, b) => {
+        const aImportance = importanceStats[a.id]?.percentage || 0;
+        const bImportance = importanceStats[b.id]?.percentage || 0;
+        return bImportance - aImportance; // Ordem decrescente (mais importante primeiro)
+      });
     }
-    // Para ordenação por importância, precisamos dos dados de questões
-    // Será ordenado pelo componente pai que tem acesso a essas informações
-    return subject.topics;
-  }, [subject.topics, sortOrder]);
+  }, [subject.topics, sortOrder, importanceStats]);
 
   // Buscar o usuário atual
   useEffect(() => {

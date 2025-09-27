@@ -143,13 +143,16 @@ export const useSubjectImportanceStats = (allSubjects: Subject[], currentUserId:
           const percentage = totalQuestions > 0 ? Math.round((count / totalQuestions) * 100) : 0;
           stats[topicId] = {
             questionsCount: count,
-            percentage
+            percentage: Math.max(0, percentage) // Garantir que não seja negativo
           };
         });
 
+        console.log('Estatísticas de importância calculadas:', stats);
+        console.log('Total de questões para cálculo de percentual:', totalQuestions);
+
         setImportanceStats(stats);
       } catch (error) {
-        console.error('Error calculating importance stats:', error);
+        console.error('Erro calculating importance stats:', error);
         setImportanceStats({});
       } finally {
         setIsLoading(false);

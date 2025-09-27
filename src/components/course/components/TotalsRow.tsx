@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Topic } from "../types/editorialized";
 import { calculatePerformance } from "../utils/statsCalculations";
 import { useQuestionStatsFromLink } from "@/hooks/useQuestionStatsFromLink";
+import { useSubjectImportanceStats } from "@/hooks/useSubjectImportanceStats";
 
 interface TotalsRowProps {
   topics: Topic[];
@@ -18,6 +19,8 @@ export const TotalsRow = ({ topics, performanceGoal, currentUserId, allSubjects 
     return stats;
   });
 
+  const { importanceStats } = useSubjectImportanceStats(allSubjects, currentUserId);
+
   const totalStats = useMemo(() => {
     return topicStatsArray.reduce((acc, stats) => ({
       totalQuestions: acc.totalQuestions + stats.totalQuestions,
@@ -27,12 +30,20 @@ export const TotalsRow = ({ topics, performanceGoal, currentUserId, allSubjects 
     }), { totalQuestions: 0, totalAttempts: 0, correctAnswers: 0, wrongAnswers: 0 });
   }, [topicStatsArray]);
 
+  // Calculate total importance questions count
+  const totalImportanceQuestions = useMemo(() => {
+    return topics.reduce((acc, topic) => {
+      const topicImportance = importanceStats[topic.id] || { questionsCount: 0, percentage: 0 };
+      return acc + topicImportance.questionsCount;
+    }, 0);
+  }, [topics, importanceStats]);
+
   const performance = totalStats.totalAttempts > 0 ? calculatePerformance(totalStats.correctAnswers, totalStats.totalAttempts) : 0;
 
   return (
     <tr className="bg-gray-100 font-semibold border-t border-gray-300">
       <td className="py-3 px-4">Total</td>
-      <td className="py-3 px-4 text-center">{totalStats.totalQuestions} (100%)</td>
+      <td className="py-3 px-4 text-center">{totalImportanceQuestions} (100%)</td>
       <td className="py-3 px-4"></td>
       <td className="py-3 px-4">-</td>
       <td className="py-3 px-4 text-center">-</td>

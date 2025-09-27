@@ -37,7 +37,7 @@ export const TopicRow = ({
       <td className="py-3 px-4">{topic.id}</td>
       <td className="py-3 px-4 text-center">
         <span className="text-sm">
-          {importanceData.questionsCount} ({importanceData.percentage}%)
+          {importanceData.questionsCount > 0 ? importanceData.questionsCount : stats.totalQuestions} ({importanceData.percentage}%)
         </span>
       </td>
       <td className="py-3 px-4">
