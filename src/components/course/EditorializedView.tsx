@@ -63,7 +63,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
   const [isLoadingEdital, setIsLoadingEdital] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [sortOrder, setSortOrder] = useState<'id' | 'importance'>('id');
 
   // Função para log com timestamp
   const logWithTimestamp = (message: string, data?: any) => {
@@ -397,8 +396,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
           examDate={examDate}
           updateExamDate={updateExamDate}
           lastSaveTime={lastSaveTime}
-          sortOrder={sortOrder}
-          onSortOrderChange={setSortOrder}
         />
       )}
 
@@ -413,8 +410,6 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
               performanceGoal={performanceGoal}
               onTopicChange={updateTopicProgress}
               isEditMode={isEditMode}
-              sortOrder={sortOrder}
-              allSubjects={subjects}
             />
           ))}
           
