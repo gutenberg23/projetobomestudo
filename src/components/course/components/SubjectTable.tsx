@@ -1,26 +1,54 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Subject, Topic } from "../types/editorialized";
 import { calculateSubjectTotals } from "../utils/statsCalculations";
 import { supabase } from "@/integrations/supabase/client";
 import { TopicRow } from "./TopicRow";
 import { TotalsRow } from "./TotalsRow";
+import { useQuestionStatsFromLink } from "@/hooks/useQuestionStatsFromLink";
 
 interface SubjectTableProps {
   subject: Subject;
   performanceGoal: number;
   onTopicChange: (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => void;
   isEditMode: boolean;
+  sortOrder: 'id' | 'importance';
+  allSubjects: Subject[];
 }
 
 export const SubjectTable = ({
   subject,
   performanceGoal,
   onTopicChange,
-  isEditMode
+  isEditMode,
+  sortOrder,
+  allSubjects
 }: SubjectTableProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
+
+  // Calcular total de questões de todos os tópicos de todos os assuntos
+  const totalQuestionsAllSubjects = useMemo(() => {
+    let total = 0;
+    allSubjects.forEach(subj => {
+      subj.topics.forEach(topic => {
+        if (topic.link) {
+          // Estimativa baseada no link - será calculado individualmente por cada TopicRow
+        }
+      });
+    });
+    return total;
+  }, [allSubjects]);
+
+  // Ordenar tópicos baseado na ordem selecionada
+  const sortedTopics = useMemo(() => {
+    if (sortOrder === 'id') {
+      return [...subject.topics].sort((a, b) => a.id - b.id);
+    }
+    // Para ordenação por importância, precisamos dos dados de questões
+    // Será ordenado pelo componente pai que tem acesso a essas informações
+    return subject.topics;
+  }, [subject.topics, sortOrder]);
 
   // Buscar o usuário atual
   useEffect(() => {
@@ -50,6 +78,7 @@ export const SubjectTable = ({
           <thead className="bg-gray-50">
             <tr className="text-sm text-gray-600">
               <th className="py-3 px-4 text-left font-medium w-8">#</th>
+              <th className="py-3 px-4 text-center font-medium">Importância</th>
               <th className="py-3 px-4 text-left font-medium">Conclusão</th>
               <th className="py-3 px-4 text-left font-medium">Tópicos</th>
               <th className="py-3 px-4 text-center font-medium">Questões</th>
@@ -60,7 +89,7 @@ export const SubjectTable = ({
             </tr>
           </thead>
           <tbody>
-            {subject.topics.map((topic, index) => (
+            {sortedTopics.map((topic, index) => (
               <TopicRow
                 key={topic.id}
                 topic={topic}
@@ -70,12 +99,14 @@ export const SubjectTable = ({
                 currentUserId={currentUserId}
                 onTopicChange={onTopicChange}
                 isEditMode={isEditMode}
+                allSubjects={allSubjects}
               />
             ))}
             <TotalsRow
-              topics={subject.topics}
+              topics={sortedTopics}
               performanceGoal={performanceGoal}
               currentUserId={currentUserId}
+              allSubjects={allSubjects}
             />
           </tbody>
         </table>

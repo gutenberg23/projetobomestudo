@@ -4,6 +4,7 @@ import { calculatePerformance } from "../utils/statsCalculations";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuestionStatsFromLink } from "@/hooks/useQuestionStatsFromLink";
+import { useSubjectImportanceStats } from "@/hooks/useSubjectImportanceStats";
 
 interface TopicRowProps {
   topic: Topic;
@@ -13,6 +14,7 @@ interface TopicRowProps {
   currentUserId: string | undefined;
   onTopicChange: (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => void;
   isEditMode: boolean;
+  allSubjects: any[];
 }
 
 export const TopicRow = ({
@@ -22,13 +24,22 @@ export const TopicRow = ({
   performanceGoal,
   currentUserId,
   onTopicChange,
-  isEditMode
+  isEditMode,
+  allSubjects
 }: TopicRowProps) => {
   const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
+  const { importanceStats } = useSubjectImportanceStats(allSubjects, currentUserId);
+  
+  const importanceData = importanceStats[topic.id] || { questionsCount: stats.totalQuestions, percentage: 0 };
 
   return (
     <tr className={cn("border-t border-gray-200", index % 2 === 0 ? "bg-white" : "bg-gray-50")}>
       <td className="py-3 px-4">{topic.id}</td>
+      <td className="py-3 px-4 text-center">
+        <span className="text-sm">
+          {importanceData.questionsCount} ({importanceData.percentage}%)
+        </span>
+      </td>
       <td className="py-3 px-4">
         <div className="flex items-center">
           {isEditMode ? (

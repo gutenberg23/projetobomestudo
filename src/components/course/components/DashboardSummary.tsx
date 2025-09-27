@@ -5,7 +5,7 @@ import { OverallStats, Subject } from "../types/editorialized";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, PencilIcon, Loader2, Save, Clock } from "lucide-react";
+import { CalendarIcon, PencilIcon, Loader2, Save, Clock, ArrowUpDown } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,8 @@ interface DashboardSummaryProps {
   examDate?: Date;
   updateExamDate: (date: Date | undefined) => void;
   lastSaveTime?: string | null;
+  sortOrder: 'id' | 'importance';
+  onSortOrderChange: (order: 'id' | 'importance') => void;
 }
 
 export const DashboardSummary = ({
@@ -60,7 +62,9 @@ export const DashboardSummary = ({
   setUnsavedChanges,
   examDate,
   updateExamDate,
-  lastSaveTime
+  lastSaveTime,
+  sortOrder,
+  onSortOrderChange
 }: DashboardSummaryProps) => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
@@ -332,6 +336,16 @@ export const DashboardSummary = ({
         <div className="flex justify-between items-center">
           <h3 className="text-2xl font-bold">Resumo Geral</h3>
           <div className="flex gap-2">
+            {activeTab === 'edital' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSortOrderChange(sortOrder === 'id' ? 'importance' : 'id')}
+              >
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                {sortOrder === 'id' ? 'Ordenar por Importância' : 'Ordenar por #'}
+              </Button>
+            )}
             <Button
               variant={isEditMode ? "default" : "outline"}
               size="sm"
