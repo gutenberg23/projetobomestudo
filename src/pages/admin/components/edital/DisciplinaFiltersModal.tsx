@@ -224,6 +224,9 @@ export const DisciplinaFiltersModal: React.FC<DisciplinaFiltersModalProps> = ({
       params.set('subtopics', JSON.stringify(tempFilters.subtopics));
     }
     
+    // Adicionar o parâmetro perPage para garantir consistência
+    params.set('perPage', '10');
+    
     const link = `/questions?${params.toString()}`;
     
     onApplyFilters({

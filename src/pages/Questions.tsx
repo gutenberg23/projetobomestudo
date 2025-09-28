@@ -85,6 +85,9 @@ const Questions = () => {
       const perPage = searchParams.get('perPage');
       if (perPage && ['5', '10', '20', '50', '100'].includes(perPage)) {
         setQuestionsPerPage(perPage);
+      } else {
+        // Definir valor padrão se não houver parâmetro ou se for inválido
+        setQuestionsPerPage('10');
       }
       
       // Configurar filtros selecionados
