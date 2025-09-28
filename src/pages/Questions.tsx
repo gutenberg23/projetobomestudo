@@ -73,6 +73,15 @@ const Questions = () => {
     return [];
   };
 
+  // Função para remover acentos e normalizar strings
+  const normalizeString = (str: string): string => {
+    return str
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  };
+
   // Carregar filtros a partir da URL
   useEffect(() => {
     // Função para analisar parâmetros da URL
@@ -200,19 +209,131 @@ const Questions = () => {
         
         // Aplicar filtros
         if (selectedFilters.disciplines.length > 0) {
-          query = query.in('discipline', selectedFilters.disciplines);
+          // Normalizar as disciplinas antes de aplicar o filtro
+          const normalizedDisciplines = selectedFilters.disciplines.map(discipline => 
+            normalizeString(discipline)
+          );
+          
+          // Buscar todas as questões e filtrar localmente para lidar com acentos
+          const { data: allQuestions, error: disciplineError } = await supabase
+            .from('questoes')
+            .select('id, discipline');
+            
+          if (disciplineError) {
+            throw disciplineError;
+          }
+          
+          // Filtrar localmente as questões que correspondem às disciplinas
+          const matchingIds = allQuestions
+            .filter(q => 
+              normalizedDisciplines.some(discipline => 
+                normalizeString(q.discipline) === discipline
+              )
+            )
+            .map(q => q.id);
+            
+          if (matchingIds.length > 0) {
+            query = query.in('id', matchingIds);
+          } else {
+            // Caso não encontremos nenhuma questão, forçar um resultado vazio
+            query = query.eq('id', 'id_inexistente');
+          }
         }
         
         if (selectedFilters.institutions.length > 0) {
-          query = query.in('institution', selectedFilters.institutions);
+          // Normalizar as instituições antes de aplicar o filtro
+          const normalizedInstitutions = selectedFilters.institutions.map(institution => 
+            normalizeString(institution)
+          );
+          
+          // Buscar todas as questões e filtrar localmente para lidar com acentos
+          const { data: allQuestions, error: institutionError } = await supabase
+            .from('questoes')
+            .select('id, institution');
+            
+          if (institutionError) {
+            throw institutionError;
+          }
+          
+          // Filtrar localmente as questões que correspondem às instituições
+          const matchingIds = allQuestions
+            .filter(q => 
+              normalizedInstitutions.some(institution => 
+                normalizeString(q.institution) === institution
+              )
+            )
+            .map(q => q.id);
+            
+          if (matchingIds.length > 0) {
+            query = query.in('id', matchingIds);
+          } else {
+            // Caso não encontremos nenhuma questão, forçar um resultado vazio
+            query = query.eq('id', 'id_inexistente');
+          }
         }
         
         if (selectedFilters.organizations.length > 0) {
-          query = query.in('organization', selectedFilters.organizations);
+          // Normalizar as organizações antes de aplicar o filtro
+          const normalizedOrganizations = selectedFilters.organizations.map(organization => 
+            normalizeString(organization)
+          );
+          
+          // Buscar todas as questões e filtrar localmente para lidar com acentos
+          const { data: allQuestions, error: organizationError } = await supabase
+            .from('questoes')
+            .select('id, organization');
+            
+          if (organizationError) {
+            throw organizationError;
+          }
+          
+          // Filtrar localmente as questões que correspondem às organizações
+          const matchingIds = allQuestions
+            .filter(q => 
+              normalizedOrganizations.some(organization => 
+                normalizeString(q.organization) === organization
+              )
+            )
+            .map(q => q.id);
+            
+          if (matchingIds.length > 0) {
+            query = query.in('id', matchingIds);
+          } else {
+            // Caso não encontremos nenhuma questão, forçar um resultado vazio
+            query = query.eq('id', 'id_inexistente');
+          }
         }
         
         if (selectedFilters.roles.length > 0) {
-          query = query.in('role', selectedFilters.roles);
+          // Normalizar os cargos antes de aplicar o filtro
+          const normalizedRoles = selectedFilters.roles.map(role => 
+            normalizeString(role)
+          );
+          
+          // Buscar todas as questões e filtrar localmente para lidar com acentos
+          const { data: allQuestions, error: roleError } = await supabase
+            .from('questoes')
+            .select('id, role');
+            
+          if (roleError) {
+            throw roleError;
+          }
+          
+          // Filtrar localmente as questões que correspondem aos cargos
+          const matchingIds = allQuestions
+            .filter(q => 
+              normalizedRoles.some(role => 
+                normalizeString(q.role) === role
+              )
+            )
+            .map(q => q.id);
+            
+          if (matchingIds.length > 0) {
+            query = query.in('id', matchingIds);
+          } else {
+            // Caso não encontremos nenhuma questão, forçar um resultado vazio
+            query = query.eq('id', 'id_inexistente');
+          }
         }
         
         if (selectedFilters.years.length > 0) {
@@ -220,11 +341,67 @@ const Questions = () => {
         }
         
         if (selectedFilters.educationLevels.length > 0) {
-          query = query.in('level', selectedFilters.educationLevels);
+          // Normalizar os níveis de educação antes de aplicar o filtro
+          const normalizedLevels = selectedFilters.educationLevels.map(level => 
+            normalizeString(level)
+          );
+          
+          // Buscar todas as questões e filtrar localmente para lidar com acentos
+          const { data: allQuestions, error: levelError } = await supabase
+            .from('questoes')
+            .select('id, level');
+            
+          if (levelError) {
+            throw levelError;
+          }
+          
+          // Filtrar localmente as questões que correspondem aos níveis de educação
+          const matchingIds = allQuestions
+            .filter(q => 
+              normalizedLevels.some(level => 
+                normalizeString(q.level) === level
+              )
+            )
+            .map(q => q.id);
+            
+          if (matchingIds.length > 0) {
+            query = query.in('id', matchingIds);
+          } else {
+            // Caso não encontremos nenhuma questão, forçar um resultado vazio
+            query = query.eq('id', 'id_inexistente');
+          }
         }
         
         if (selectedFilters.difficulty.length > 0) {
-          query = query.in('difficulty', selectedFilters.difficulty);
+          // Normalizar as dificuldades antes de aplicar o filtro
+          const normalizedDifficulties = selectedFilters.difficulty.map(difficulty => 
+            normalizeString(difficulty)
+          );
+          
+          // Buscar todas as questões e filtrar localmente para lidar com acentos
+          const { data: allQuestions, error: difficultyError } = await supabase
+            .from('questoes')
+            .select('id, difficulty');
+            
+          if (difficultyError) {
+            throw difficultyError;
+          }
+          
+          // Filtrar localmente as questões que correspondem às dificuldades
+          const matchingIds = allQuestions
+            .filter(q => 
+              normalizedDifficulties.some(difficulty => 
+                normalizeString(q.difficulty) === difficulty
+              )
+            )
+            .map(q => q.id);
+            
+          if (matchingIds.length > 0) {
+            query = query.in('id', matchingIds);
+          } else {
+            // Caso não encontremos nenhuma questão, forçar um resultado vazio
+            query = query.eq('id', 'id_inexistente');
+          }
         }
         
         // O filtro de tópicos é um caso especial (array)
@@ -251,14 +428,14 @@ const Questions = () => {
                   // Verificar correspondência mais flexível entre assuntos
                   const temAssuntoSelecionado = assuntosSelecionados.some(assuntoSelecionado => {
                     // Normalizar o assunto selecionado
-                    const assuntoNormalizado = assuntoSelecionado.toLowerCase().trim();
+                    const assuntoNormalizado = normalizeString(assuntoSelecionado);
                     
                     // Também criar uma versão sem numeração (remove "1. ", "2. ", etc.)
                     const assuntoSemNumero = assuntoNormalizado.replace(/^\d+\.\s*/, '');
                     
                     return questao.assuntos.some((assuntoQuestao: string) => {
                       // Normalizar o assunto da questão
-                      const questaoNormalizada = assuntoQuestao.toLowerCase().trim();
+                      const questaoNormalizada = normalizeString(assuntoQuestao);
                       const questaoSemNumero = questaoNormalizada.replace(/^\d+\.\s*/, '');
                       
                       // Adicionar log específico para "1. Interpretação de Texto"
@@ -281,18 +458,18 @@ const Questions = () => {
                              questaoSemNumero === assuntoSemNumero ||
                              questaoSemNumero.includes(assuntoSemNumero) ||
                              assuntoSemNumero.includes(questaoSemNumero);
-                             
-                      if (assuntoSelecionado.includes('interpretação') && matches) {
-                        console.log('Match encontrado para Interpretação de Texto!');
-                      }
+                                 
+                          if (assuntoSelecionado.includes('interpretação') && matches) {
+                            console.log('Match encontrado para Interpretação de Texto!');
+                          }
+                          
+                          return matches;
+                        });
+                      });
                       
-                      return matches;
-                    });
-                  });
-                  
-                  if (temAssuntoSelecionado) {
-                    idsQuestoes.push(questao.id);
-                  }
+                      if (temAssuntoSelecionado) {
+                        idsQuestoes.push(questao.id);
+                      }
                 }
               }
             }
@@ -349,14 +526,14 @@ const Questions = () => {
                   // Verificar correspondência mais flexível entre tópicos
                   const temTopicoSelecionado = topicosSelecionados.some(topicoSelecionado => {
                     // Normalizar o tópico selecionado
-                    const topicoNormalizado = topicoSelecionado.toLowerCase().trim();
+                    const topicoNormalizado = normalizeString(topicoSelecionado);
                     
                     // Também criar uma versão sem numeração (remove "1. ", "2. ", etc.)
                     const topicoSemNumero = topicoNormalizado.replace(/^\d+\.\s*/, '');
                     
                     return questao.topicos.some((topicoQuestao: string) => {
                       // Normalizar o tópico da questão
-                      const questaoNormalizada = topicoQuestao.toLowerCase().trim();
+                      const questaoNormalizada = normalizeString(topicoQuestao);
                       const questaoSemNumero = questaoNormalizada.replace(/^\d+\.\s*/, '');
                       
                       // Verificar correspondência exata ou se um contém o outro
