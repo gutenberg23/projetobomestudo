@@ -24,16 +24,7 @@ export const TopicRow = ({
   onTopicChange,
   isEditMode
 }: TopicRowProps) => {
-  const { stats, isLoading } = useQuestionStatsFromLink(topic.link, currentUserId);
-
-  // Log para debug
-  console.log(`TopicRow ${topic.id} - Stats:`, {
-    totalAttempts: stats.totalAttempts,
-    correctAnswers: stats.correctAnswers,
-    wrongAnswers: stats.wrongAnswers,
-    link: topic.link,
-    userId: currentUserId
-  });
+  const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
 
   return (
     <tr className={cn("border-t border-gray-200", index % 2 === 0 ? "bg-white" : "bg-gray-50")}>
@@ -80,14 +71,12 @@ export const TopicRow = ({
         </div>
       </td>
       <td className="py-3 px-4 text-center">
-        <span className={isLoading ? "text-gray-400" : ""}>{stats.totalAttempts}</span>
+        <span>{stats.totalAttempts}</span>
       </td>
       <td className="py-3 px-4 text-center">
-        <span className={isLoading ? "text-gray-400" : ""}>{stats.correctAnswers}</span>
+        <span>{stats.correctAnswers}</span>
       </td>
-      <td className="py-3 px-4 text-center">
-        <span className={isLoading ? "text-gray-400" : ""}>{stats.wrongAnswers}</span>
-      </td>
+      <td className="py-3 px-4 text-center">{stats.wrongAnswers}</td>
       <td className={cn(
         "py-3 px-4 text-center", 
         stats.totalAttempts === 0 

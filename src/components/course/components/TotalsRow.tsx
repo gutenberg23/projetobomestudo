@@ -11,14 +11,14 @@ interface TotalsRowProps {
 }
 
 export const TotalsRow = ({ topics, performanceGoal, currentUserId }: TotalsRowProps) => {
-  // Obter estatísticas para cada tópico
+  // Get stats for each topic and calculate totals
   const topicStatsArray = topics.map(topic => {
-    const { stats, isLoading } = useQuestionStatsFromLink(topic.link, currentUserId);
-    return { stats, isLoading };
+    const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
+    return stats;
   });
 
   const totalStats = useMemo(() => {
-    return topicStatsArray.reduce((acc, { stats }) => ({
+    return topicStatsArray.reduce((acc, stats) => ({
       totalAttempts: acc.totalAttempts + stats.totalAttempts,
       correctAnswers: acc.correctAnswers + stats.correctAnswers,
       wrongAnswers: acc.wrongAnswers + stats.wrongAnswers,
@@ -26,13 +26,6 @@ export const TotalsRow = ({ topics, performanceGoal, currentUserId }: TotalsRowP
   }, [topicStatsArray]);
 
   const performance = totalStats.totalAttempts > 0 ? calculatePerformance(totalStats.correctAnswers, totalStats.totalAttempts) : 0;
-  
-  // Log para debug
-  console.log('TotalsRow - Stats:', {
-    totalStats,
-    performance,
-    topicsCount: topics.length
-  });
 
   return (
     <tr className="border-t border-gray-200 bg-gray-50 font-medium">
