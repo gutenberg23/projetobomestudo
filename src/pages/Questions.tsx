@@ -574,6 +574,7 @@ const Questions = () => {
           questionsPerPage={questionsPerPage}
           setQuestionsPerPage={setQuestionsPerPage}
           filterOptions={filterOptions}
+          totalCount={totalCount} // Passando a contagem total de questões
           rightElement={
             <div className="pr-3">
               <Select value={questionsPerPage} onValueChange={(value) => {

@@ -39,6 +39,7 @@ interface QuestionFiltersPanelProps {
     difficulty: string[];
   };
   rightElement?: React.ReactNode;
+  totalCount?: number; // Nova prop para o total de questões
 }
 
 const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
@@ -49,7 +50,8 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   handleApplyFilters,
   questionsPerPage,
   filterOptions,
-  rightElement
+  rightElement,
+  totalCount // Nova prop
 }) => {
   const [_, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
@@ -639,14 +641,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           placeholder="Selecione as instituições"
         />
         
-        <FilterGroup 
-          title="Cargo" 
-          options={sortedOptions.roles} 
-          selectedValues={selectedFilters.roles} 
-          onChange={handleFilterChange} 
-          category="roles"
-          placeholder="Selecione os cargos"
-        />
+        {/* Filtro de Cargo removido conforme solicitado */}
         
         <FilterGroup 
           title="Ano" 
@@ -679,7 +674,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       {/* Mostrar filtros aplicados */}
       {renderAppliedFilters()}
 
-      <div className="flex justify-between">
+      <div className="flex justify-between items-center">
         <Button 
           variant="outline" 
           className="text-gray-600 border-gray-300 hover:bg-gray-50" 
@@ -689,12 +684,21 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           Limpar filtros
         </Button>
         
-        <Button 
-          className="bg-[#5f2ebe] hover:bg-[#4f25a0] text-white" 
-          onClick={applyFiltersWithUrl}
-        >
-          Aplicar filtros
-        </Button>
+        <div className="flex items-center gap-4">
+          {/* Mostrar o total de questões encontradas */}
+          {totalCount !== undefined && (
+            <div className="text-sm text-gray-600">
+              {totalCount} {totalCount === 1 ? 'questão encontrada' : 'questões encontradas'}
+            </div>
+          )}
+          
+          <Button 
+            className="bg-[#5f2ebe] hover:bg-[#4f25a0] text-white" 
+            onClick={applyFiltersWithUrl}
+          >
+            Aplicar filtros
+          </Button>
+        </div>
       </div>
     </>
   );
@@ -740,4 +744,4 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   );
 };
 
-export default QuestionFiltersPanel; 
+export default QuestionFiltersPanel;
