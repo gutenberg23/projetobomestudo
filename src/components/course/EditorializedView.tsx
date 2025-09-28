@@ -3,6 +3,7 @@ import { DashboardSummary } from "./components/DashboardSummary";
 import { SubjectTable } from "./components/SubjectTable";
 import { SimuladosTable } from "./components/SimuladosTable";
 import { StatisticsCard } from "./components/StatisticsCard";
+import { TestStatsComponent } from "./test/TestStatsComponent";
 import { useEditorializedData } from "./hooks/useEditorializedData";
 import { useParams } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
@@ -402,6 +403,13 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
       {activeTab === 'edital' && hasEdital && (
         <>
           <StatisticsCard subjects={subjects} />
+          
+          {/* Componente de teste temporário */}
+          {user && (
+            <div className="mb-4">
+              <TestStatsComponent userId={user.id} />
+            </div>
+          )}
           
           {subjects.map(subject => (
             <SubjectTable

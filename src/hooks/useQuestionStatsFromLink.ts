@@ -31,11 +31,12 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
     const fetchStats = async () => {
       setIsLoading(true);
       try {
+        console.log('Processando link para usuário:', { link, userId });
+        
         // Extrair filtros da URL
         const url = new URL(link);
         const searchParams = url.searchParams;
         
-        console.log('Processando link:', link);
         console.log('Parâmetros da URL:', Array.from(searchParams.entries()));
         
         // Construir query baseada nos filtros
@@ -45,6 +46,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('disciplines')) {
           const disciplines = JSON.parse(decodeURIComponent(searchParams.get('disciplines') || '[]'));
           if (disciplines.length > 0) {
+            console.log('Filtro disciplines:', disciplines);
             query = query.in('discipline', disciplines);
           }
         }
@@ -52,6 +54,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('years')) {
           const years = JSON.parse(decodeURIComponent(searchParams.get('years') || '[]'));
           if (years.length > 0) {
+            console.log('Filtro years:', years);
             query = query.in('year', years);
           }
         }
@@ -59,6 +62,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('institutions')) {
           const institutions = JSON.parse(decodeURIComponent(searchParams.get('institutions') || '[]'));
           if (institutions.length > 0) {
+            console.log('Filtro institutions:', institutions);
             query = query.in('institution', institutions);
           }
         }
@@ -66,6 +70,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('organizations')) {
           const organizations = JSON.parse(decodeURIComponent(searchParams.get('organizations') || '[]'));
           if (organizations.length > 0) {
+            console.log('Filtro organizations:', organizations);
             query = query.in('organization', organizations);
           }
         }
@@ -73,6 +78,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('roles')) {
           const roles = JSON.parse(decodeURIComponent(searchParams.get('roles') || '[]'));
           if (roles.length > 0) {
+            console.log('Filtro roles:', roles);
             query = query.contains('role', roles);
           }
         }
@@ -80,6 +86,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('levels')) {
           const levels = JSON.parse(decodeURIComponent(searchParams.get('levels') || '[]'));
           if (levels.length > 0) {
+            console.log('Filtro levels:', levels);
             query = query.in('level', levels);
           }
         }
@@ -87,6 +94,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('difficulties')) {
           const difficulties = JSON.parse(decodeURIComponent(searchParams.get('difficulties') || '[]'));
           if (difficulties.length > 0) {
+            console.log('Filtro difficulties:', difficulties);
             query = query.in('difficulty', difficulties);
           }
         }
@@ -94,6 +102,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('subjects')) {
           const subjects = JSON.parse(decodeURIComponent(searchParams.get('subjects') || '[]'));
           if (subjects.length > 0) {
+            console.log('Filtro subjects:', subjects);
             query = query.overlaps('assuntos', subjects);
           }
         }
@@ -101,6 +110,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('topics')) {
           const topics = JSON.parse(decodeURIComponent(searchParams.get('topics') || '[]'));
           if (topics.length > 0) {
+            console.log('Filtro topics:', topics);
             query = query.overlaps('assuntos', topics);
           }
         }
@@ -108,6 +118,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('subtopics')) {
           const subtopics = JSON.parse(decodeURIComponent(searchParams.get('subtopics') || '[]'));
           if (subtopics.length > 0) {
+            console.log('Filtro subtopics:', subtopics);
             query = query.overlaps('topicos', subtopics);
           }
         }
@@ -115,15 +126,23 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         if (searchParams.has('educationLevels')) {
           const educationLevels = JSON.parse(decodeURIComponent(searchParams.get('educationLevels') || '[]'));
           if (educationLevels.length > 0) {
+            console.log('Filtro educationLevels:', educationLevels);
             query = query.in('level', educationLevels);
           }
         }
 
         // Buscar questões que correspondem aos filtros
+        console.log('Query construída, buscando questões...');
         const { data: questions, error: questionsError } = await query;
 
         if (questionsError) {
           console.error('Erro ao buscar questões:', questionsError);
+          setStats({
+            totalQuestions: 0,
+            totalAttempts: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0
+          });
           return;
         }
 
@@ -141,9 +160,11 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         }
 
         const questionIds = questions.map(q => q.id);
-        console.log('IDs das questões:', questionIds.slice(0, 5), '...'); // Mostra apenas as primeiras 5
+        console.log('IDs das questões (primeiras 5):', questionIds.slice(0, 5));
 
-        // Buscar tentativas do usuário para essas questões
+        // Buscar tentativas do usuário para essas questões usando uma consulta que respeita RLS
+        console.log('Buscando tentativas para', questionIds.length, 'questões');
+        
         const { data: attempts, error: attemptsError } = await supabase
           .from('user_question_attempts')
           .select('question_id, is_correct')
@@ -152,6 +173,56 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
 
         if (attemptsError) {
           console.error('Erro ao buscar tentativas:', attemptsError);
+          
+          // Fallback: tentar buscar de respostas_alunos caso haja erro com user_question_attempts
+          console.log('Tentando fallback com respostas_alunos...');
+          const { data: fallbackAttempts, error: fallbackError } = await supabase
+            .from('respostas_alunos')
+            .select('questao_id, is_correta')
+            .eq('aluno_id', userId)
+            .in('questao_id', questionIds)
+            .order('created_at', { ascending: false });
+
+          if (fallbackError) {
+            console.error('Erro no fallback também:', fallbackError);
+            setStats({
+              totalQuestions: questions.length,
+              totalAttempts: 0,
+              correctAnswers: 0,
+              wrongAnswers: 0
+            });
+            return;
+          }
+
+          // Processar dados do fallback (removendo duplicatas - apenas a última resposta por questão)
+          const uniqueAttempts = new Map();
+          fallbackAttempts?.forEach(attempt => {
+            if (!uniqueAttempts.has(attempt.questao_id)) {
+              uniqueAttempts.set(attempt.questao_id, {
+                question_id: attempt.questao_id,
+                is_correct: attempt.is_correta
+              });
+            }
+          });
+
+          const processedAttempts = Array.from(uniqueAttempts.values());
+          const totalAttempts = processedAttempts.length;
+          const correctAnswers = processedAttempts.filter(a => a.is_correct).length;
+          const wrongAnswers = totalAttempts - correctAnswers;
+
+          console.log('Estatísticas do fallback calculadas:', {
+            totalQuestions: questions.length,
+            totalAttempts,
+            correctAnswers,
+            wrongAnswers
+          });
+
+          setStats({
+            totalQuestions: questions.length,
+            totalAttempts,
+            correctAnswers,
+            wrongAnswers
+          });
           return;
         }
 
