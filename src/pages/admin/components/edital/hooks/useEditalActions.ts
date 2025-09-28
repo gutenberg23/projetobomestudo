@@ -17,6 +17,11 @@ export const useEditalActions = () => {
           descricao: disciplina.descricao,
           topicos: disciplina.topicos,
           links: disciplina.links,
+          assuntos: disciplina.assuntos,
+          topicos_filtro: disciplina.topicos_filtro,
+          disciplinas_filtro: disciplina.disciplinas_filtro,
+          bancas_filtro: disciplina.bancas_filtro,
+          quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro,
           importancia: disciplina.importancia
         })
         .select()
@@ -54,6 +59,11 @@ export const useEditalActions = () => {
           descricao: disciplina.descricao,
           topicos: disciplina.topicos,
           links: disciplina.links,
+          assuntos: disciplina.assuntos,
+          topicos_filtro: disciplina.topicos_filtro,
+          disciplinas_filtro: disciplina.disciplinas_filtro,
+          bancas_filtro: disciplina.bancas_filtro,
+          quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro,
           importancia: disciplina.importancia
         })
         .eq('id', id)
@@ -95,7 +105,15 @@ export const useEditalActions = () => {
 
       if (error) throw error;
 
-      return data.map(d => ({ ...d, selecionada: false }));
+      return data.map(d => ({ 
+        ...d, 
+        selecionada: false,
+        assuntos: d.assuntos || [],
+        topicos_filtro: d.topicos_filtro || [],
+        disciplinas_filtro: d.disciplinas_filtro || [],
+        bancas_filtro: d.bancas_filtro || [],
+        quantidade_questoes_filtro: d.quantidade_questoes_filtro || []
+      }));
     } catch (error) {
       console.error('Erro ao listar disciplinas:', error);
       toast({

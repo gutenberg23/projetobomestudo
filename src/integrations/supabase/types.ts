@@ -597,6 +597,7 @@ export type Database = {
       }
       disciplinaverticalizada: {
         Row: {
+          assuntos: string[] | null
           created_at: string
           descricao: string | null
           id: string
@@ -604,8 +605,10 @@ export type Database = {
           links: string[] | null
           titulo: string
           topicos: string[] | null
+          topicos_filtro: string[] | null
         }
         Insert: {
+          assuntos?: string[] | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -613,8 +616,10 @@ export type Database = {
           links?: string[] | null
           titulo: string
           topicos?: string[] | null
+          topicos_filtro?: string[] | null
         }
         Update: {
+          assuntos?: string[] | null
           created_at?: string
           descricao?: string | null
           id?: string
@@ -622,6 +627,7 @@ export type Database = {
           links?: string[] | null
           titulo?: string
           topicos?: string[] | null
+          topicos_filtro?: string[] | null
         }
         Relationships: []
       }

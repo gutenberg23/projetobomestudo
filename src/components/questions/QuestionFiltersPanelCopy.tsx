@@ -5,12 +5,11 @@ import { ChevronDown, ChevronUp, Search, X, ChevronsUpDown, Check } from "lucide
 import { FilterGroup } from "@/components/questions/FilterGroup";
 import { useSearchParams } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-interface QuestionFiltersPanelProps {
+interface QuestionFiltersPanelCopyProps {
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   selectedFilters: {
@@ -42,7 +41,7 @@ interface QuestionFiltersPanelProps {
   totalCount?: number; // Nova prop para o total de questões
 }
 
-const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
+const QuestionFiltersPanelCopy: React.FC<QuestionFiltersPanelCopyProps> = ({
   searchQuery,
   setSearchQuery,
   selectedFilters,
@@ -50,18 +49,74 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   handleApplyFilters,
   questionsPerPage,
   filterOptions,
-  rightElement,
-  totalCount // Nova prop
+  rightElement
+  // Removido totalCount das props
 }) => {
   const [_, setSearchParams] = useSearchParams();
-  const isMobile = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
+  const [, updateState] = useState({});
+  const forceUpdate = React.useCallback(() => updateState({}), []);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
   const [topicsByDiscipline, setTopicsByDiscipline] = useState<Record<string, string[]>>({});
   const [subjectsByDiscipline, setSubjectsByDiscipline] = useState<Record<string, string[]>>({});
   const [topicsBySubject, setTopicsBySubject] = useState<Record<string, string[]>>({});
   const [_allQuestions, setAllQuestions] = useState<any[]>([]);
   const [_isLoading, setIsLoading] = useState(false);
+  const [filteredQuestionsCount, setFilteredQuestionsCount] = useState<number>(0);
+  const [isCounting, setIsCounting] = useState(false);
+
+  // Buscar o total de questões com base nos filtros atuais
+  const fetchFilteredQuestionsCount = useCallback(async () => {
+    setIsCounting(true);
+    try {
+      let query = supabase
+        .from('questoes')
+        .select('*', { count: 'exact', head: true });
+
+      // Aplicar filtros
+      if (localSearchQuery.trim()) {
+        query = query.ilike('text', `%${localSearchQuery.trim()}%`);
+      }
+
+      if (selectedFilters.disciplines.length > 0) {
+        query = query.in('discipline', selectedFilters.disciplines);
+      }
+
+      if (selectedFilters.topics.length > 0) {
+        // Para assuntos, usamos overlaps para verificar interseção entre arrays
+        query = query.overlaps('assuntos', selectedFilters.topics);
+      }
+
+      if (selectedFilters.institutions.length > 0) {
+        query = query.in('institution', selectedFilters.institutions);
+      }
+
+      if (selectedFilters.organizations.length > 0) {
+        query = query.in('organization', selectedFilters.organizations);
+      }
+
+      if (selectedFilters.subtopics && selectedFilters.subtopics.length > 0) {
+        // Para tópicos, usamos overlaps para verificar interseção entre arrays
+        query = query.overlaps('topicos', selectedFilters.subtopics);
+      }
+
+      const { count, error } = await query;
+
+      if (error) throw error;
+
+      setFilteredQuestionsCount(count || 0);
+    } catch (error) {
+      console.error('Erro ao contar questões filtradas:', error);
+      setFilteredQuestionsCount(0);
+    } finally {
+      setIsCounting(false);
+    }
+  }, [localSearchQuery, selectedFilters]);
+
+  // Atualizar o total de questões quando os filtros mudarem
+  useEffect(() => {
+    fetchFilteredQuestionsCount();
+  }, [fetchFilteredQuestionsCount]);
 
   // Buscar questões para análise de disciplinas, assuntos e tópicos
   useEffect(() => {
@@ -169,10 +224,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     topics: [...new Set(filterOptions.topics)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
     institutions: [...new Set(filterOptions.institutions)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
     organizations: [...new Set(filterOptions.organizations)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
-    roles: [...new Set(filterOptions.roles)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
-    years: [...new Set(filterOptions.years)].filter(Boolean).sort((a, b) => String(b).localeCompare(String(a))), // Anos em ordem decrescente
-    educationLevels: [...new Set(filterOptions.educationLevels)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b))),
-    difficulty: [...new Set(filterOptions.difficulty)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)))
+    roles: [...new Set(filterOptions.roles)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)))
   };
 
   // Organizar assuntos por disciplina para exibição hierárquica
@@ -288,6 +340,10 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       onChange(category, item);
       // NÃO fechar o dropdown para permitir seleção múltipla
       // setOpen(false);
+      // Garantir que o popover permaneça aberto
+      setTimeout(() => setOpen(true), 0);
+      // Forçar re-renderização
+      forceUpdate();
     };
     
     const handleClear = (e: React.MouseEvent) => {
@@ -297,14 +353,16 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       selectedValues.forEach(value => {
         onChange(category, value);
       });
+      // Garantir que o popover permaneça aberto
+      setTimeout(() => setOpen(true), 0);
+      // Forçar re-renderização
+      forceUpdate();
     };
     
     // Função para lidar com mudanças no estado do popover
     const handleOpenChange = (isOpen: boolean) => {
-      // Evitar fechamento automático em alguns casos
-      if (isOpen || selectedValues.length > 0) {
-        setOpen(isOpen);
-      }
+      // Sempre permitir mudanças de estado
+      setOpen(isOpen);
     };
     
     return (
@@ -320,6 +378,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
               disabled={!hasItems}
               onClick={(e) => {
                 e.stopPropagation();
+                e.preventDefault();
                 setOpen(!open);
               }}
             >
@@ -411,7 +470,11 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start font-normal text-destructive"
-                    onClick={(e) => handleClear(e)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      handleClear(e);
+                    }}
                   >
                     <X className="mr-2 h-4 w-4" />
                     Limpar seleção
@@ -433,10 +496,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       subtopics: 'Tópicos',
       institutions: 'Banca',
       organizations: 'Instituição',
-      roles: 'Cargo',
-      years: 'Ano',
-      educationLevels: 'Escolaridade',
-      difficulty: 'Dificuldade'
+      roles: 'Cargo'
     };
   };
 
@@ -522,20 +582,22 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     const params = new URLSearchParams();
     
     // Adicionar consulta de pesquisa
-    if (localSearchQuery) {
-      params.set('q', localSearchQuery);
+    if (localSearchQuery.trim()) {
+      params.set('q', localSearchQuery.trim());
     }
     
     // Adicionar filtros selecionados
     Object.entries(selectedFilters).forEach(([key, values]) => {
-      if (values.length) {
+      if (values.length > 0) {
         // Usar JSON para evitar problemas com valores que contêm vírgulas
         params.set(key, JSON.stringify(values));
       }
     });
     
     // Adicionar questões por página
-    params.set('perPage', questionsPerPage);
+    if (questionsPerPage) {
+      params.set('perPage', questionsPerPage);
+    }
     
     // Atualizar a URL sem recarregar a página
     setSearchParams(params);
@@ -565,9 +627,6 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       institutions: [],
       organizations: [],
       roles: [],
-      years: [],
-      educationLevels: [],
-      difficulty: [],
       subtopics: []
     };
     
@@ -650,43 +709,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
           placeholder="Selecione as bancas"
         />
         
-        <FilterGroup 
-          title="Instituição" 
-          options={sortedOptions.organizations} 
-          selectedValues={selectedFilters.organizations} 
-          onChange={handleFilterChange} 
-          category="organizations"
-          placeholder="Selecione as instituições"
-        />
-        
-        {/* Filtro de Cargo removido conforme solicitado */}
-        
-        <FilterGroup 
-          title="Ano" 
-          options={sortedOptions.years} 
-          selectedValues={selectedFilters.years} 
-          onChange={handleFilterChange} 
-          category="years"
-          placeholder="Selecione os anos"
-        />
-        
-        <FilterGroup 
-          title="Escolaridade" 
-          options={sortedOptions.educationLevels} 
-          selectedValues={selectedFilters.educationLevels} 
-          onChange={handleFilterChange} 
-          category="educationLevels"
-          placeholder="Selecione a escolaridade"
-        />
-        
-        <FilterGroup 
-          title="Dificuldade" 
-          options={sortedOptions.difficulty} 
-          selectedValues={selectedFilters.difficulty} 
-          onChange={handleFilterChange} 
-          category="difficulty"
-          placeholder="Selecione a dificuldade"
-        />
+        {/* Removido: Instituição, Ano, Escolaridade e Dificuldade */}
       </div>
 
       {/* Mostrar filtros aplicados */}
@@ -703,14 +726,16 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
         </Button>
         
         <div className="flex items-center gap-4">
-          {/* Mostrar o total de questões encontradas */}
-          {totalCount !== undefined && (
-            <div className="text-sm text-gray-600">
-              {totalCount} {totalCount === 1 ? 'questão encontrada' : 'questões encontradas'}
-            </div>
-          )}
-          
-
+          {/* Mostrar o total de questões encontradas em tempo real */}
+          <div className="text-sm text-gray-600">
+            {isCounting ? (
+              <span>Calculando...</span>
+            ) : (
+              <span>
+                {filteredQuestionsCount} {filteredQuestionsCount === 1 ? 'questão encontrada' : 'questões encontradas'}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </>
@@ -741,7 +766,6 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
             
             {rightElement && 
               <div className="flex items-center mr-0">
-                {!isMobile && <span className="text-sm text-gray-600 mr-2">Questões por página:</span>}
                 <div className="dropdown-wrapper" style={{width: "auto", marginRight: 0, paddingRight: 0}}>
                   {rightElement}
                 </div>
@@ -757,4 +781,4 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
   );
 };
 
-export default QuestionFiltersPanel;
+export default QuestionFiltersPanelCopy;

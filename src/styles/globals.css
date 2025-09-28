@@ -152,4 +152,10 @@ button.course-nav-button,
   border-top-right-radius: 0 !important;
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
+}
+
+/* Estilos para resolver problemas de interação com Popover */
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
 } 

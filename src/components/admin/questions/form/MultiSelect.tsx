@@ -47,7 +47,8 @@ export function MultiSelect({
     }
   }, [inputValue, safeOptions]);
 
-  const handleAddCustomOption = () => {
+  const handleAddCustomOption = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (inputValue.trim() && onAdd) {
       onAdd(inputValue.trim());
       setInputValue("");
@@ -57,23 +58,31 @@ export function MultiSelect({
     }
   };
 
-  const handleClear = () => {
+  const handleClear = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     onChange([]);
   };
 
-  const handleToggleOption = (option: string) => {
+  const handleToggleOption = (option: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    e.nativeEvent.stopImmediatePropagation();
     const isSelected = safeSelected.includes(option);
-    onChange(
-      isSelected
-        ? safeSelected.filter(item => item !== option)
-        : [...safeSelected, option]
-    );
+    const newSelected = isSelected
+      ? safeSelected.filter(item => item !== option)
+      : [...safeSelected, option];
+    
+    onChange(newSelected);
+    // Manter o dropdown aberto para permitir seleção múltipla
+    // setOpen(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && inputValue && !safeOptions.includes(inputValue) && onAdd) {
       e.preventDefault();
-      handleAddCustomOption();
+      e.stopPropagation();
+      handleAddCustomOption(e as any);
     }
   };
 
@@ -84,8 +93,16 @@ export function MultiSelect({
     }
   }, [open]);
 
+  // Função para lidar com mudanças no estado do popover
+  const handleOpenChange = (isOpen: boolean) => {
+    // Evitar fechamento automático em alguns casos
+    if (isOpen || safeSelected.length > 0) {
+      setOpen(isOpen);
+    }
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -93,6 +110,11 @@ export function MultiSelect({
           aria-expanded={open}
           className={cn("w-full justify-between", className)}
           disabled={disabled}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setOpen(!open);
+          }}
         >
           {safeSelected.length > 0 ? (
             <span className="text-foreground">
@@ -107,7 +129,7 @@ export function MultiSelect({
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent className="w-full p-0" align="start">
         <div className="flex flex-col w-full rounded-md border border-input bg-transparent">
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
@@ -118,6 +140,10 @@ export function MultiSelect({
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
               className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+              }}
             />
           </div>
 
@@ -148,7 +174,7 @@ export function MultiSelect({
               return (
                 <div
                   key={option}
-                  onClick={() => handleToggleOption(option)}
+                  onClick={(e) => handleToggleOption(option, e)}
                   className={cn(
                     "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
                     isSelected ? "bg-accent text-accent-foreground" : ""
@@ -172,7 +198,7 @@ export function MultiSelect({
                 variant="ghost"
                 size="sm"
                 className="w-full justify-start font-normal text-destructive"
-                onClick={handleClear}
+                onClick={(e) => handleClear(e)}
               >
                 <X className="mr-2 h-4 w-4" />
                 Limpar seleção
@@ -183,4 +209,4 @@ export function MultiSelect({
       </PopoverContent>
     </Popover>
   );
-} 
+}

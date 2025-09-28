@@ -4,6 +4,11 @@ export interface Disciplina {
   descricao: string;
   topicos: string[];
   links: string[];
+  assuntos: string[][];
+  topicos_filtro: string[][];
+  disciplinas_filtro: string[][];  // Nova propriedade para filtros de disciplina
+  bancas_filtro: string[][];       // Nova propriedade para filtros de banca
+  quantidade_questoes_filtro: number[]; // Nova propriedade para quantidade de questões
   importancia: number[];
   selecionada: boolean;
 }
