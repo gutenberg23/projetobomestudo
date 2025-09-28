@@ -209,131 +209,19 @@ const Questions = () => {
         
         // Aplicar filtros
         if (selectedFilters.disciplines.length > 0) {
-          // Normalizar as disciplinas antes de aplicar o filtro
-          const normalizedDisciplines = selectedFilters.disciplines.map(discipline => 
-            normalizeString(discipline)
-          );
-          
-          // Buscar todas as questões e filtrar localmente para lidar com acentos
-          const { data: allQuestions, error: disciplineError } = await supabase
-            .from('questoes')
-            .select('id, discipline');
-            
-          if (disciplineError) {
-            throw disciplineError;
-          }
-          
-          // Filtrar localmente as questões que correspondem às disciplinas
-          const matchingIds = allQuestions
-            .filter(q => 
-              normalizedDisciplines.some(discipline => 
-                normalizeString(q.discipline) === discipline
-              )
-            )
-            .map(q => q.id);
-            
-          if (matchingIds.length > 0) {
-            query = query.in('id', matchingIds);
-          } else {
-            // Caso não encontremos nenhuma questão, forçar um resultado vazio
-            query = query.eq('id', 'id_inexistente');
-          }
+          query = query.in('discipline', selectedFilters.disciplines);
         }
         
         if (selectedFilters.institutions.length > 0) {
-          // Normalizar as instituições antes de aplicar o filtro
-          const normalizedInstitutions = selectedFilters.institutions.map(institution => 
-            normalizeString(institution)
-          );
-          
-          // Buscar todas as questões e filtrar localmente para lidar com acentos
-          const { data: allQuestions, error: institutionError } = await supabase
-            .from('questoes')
-            .select('id, institution');
-            
-          if (institutionError) {
-            throw institutionError;
-          }
-          
-          // Filtrar localmente as questões que correspondem às instituições
-          const matchingIds = allQuestions
-            .filter(q => 
-              normalizedInstitutions.some(institution => 
-                normalizeString(q.institution) === institution
-              )
-            )
-            .map(q => q.id);
-            
-          if (matchingIds.length > 0) {
-            query = query.in('id', matchingIds);
-          } else {
-            // Caso não encontremos nenhuma questão, forçar um resultado vazio
-            query = query.eq('id', 'id_inexistente');
-          }
+          query = query.in('institution', selectedFilters.institutions);
         }
         
         if (selectedFilters.organizations.length > 0) {
-          // Normalizar as organizações antes de aplicar o filtro
-          const normalizedOrganizations = selectedFilters.organizations.map(organization => 
-            normalizeString(organization)
-          );
-          
-          // Buscar todas as questões e filtrar localmente para lidar com acentos
-          const { data: allQuestions, error: organizationError } = await supabase
-            .from('questoes')
-            .select('id, organization');
-            
-          if (organizationError) {
-            throw organizationError;
-          }
-          
-          // Filtrar localmente as questões que correspondem às organizações
-          const matchingIds = allQuestions
-            .filter(q => 
-              normalizedOrganizations.some(organization => 
-                normalizeString(q.organization) === organization
-              )
-            )
-            .map(q => q.id);
-            
-          if (matchingIds.length > 0) {
-            query = query.in('id', matchingIds);
-          } else {
-            // Caso não encontremos nenhuma questão, forçar um resultado vazio
-            query = query.eq('id', 'id_inexistente');
-          }
+          query = query.in('organization', selectedFilters.organizations);
         }
         
         if (selectedFilters.roles.length > 0) {
-          // Normalizar os cargos antes de aplicar o filtro
-          const normalizedRoles = selectedFilters.roles.map(role => 
-            normalizeString(role)
-          );
-          
-          // Buscar todas as questões e filtrar localmente para lidar com acentos
-          const { data: allQuestions, error: roleError } = await supabase
-            .from('questoes')
-            .select('id, role');
-            
-          if (roleError) {
-            throw roleError;
-          }
-          
-          // Filtrar localmente as questões que correspondem aos cargos
-          const matchingIds = allQuestions
-            .filter(q => 
-              normalizedRoles.some(role => 
-                normalizeString(q.role) === role
-              )
-            )
-            .map(q => q.id);
-            
-          if (matchingIds.length > 0) {
-            query = query.in('id', matchingIds);
-          } else {
-            // Caso não encontremos nenhuma questão, forçar um resultado vazio
-            query = query.eq('id', 'id_inexistente');
-          }
+          query = query.in('role', selectedFilters.roles);
         }
         
         if (selectedFilters.years.length > 0) {
@@ -341,240 +229,25 @@ const Questions = () => {
         }
         
         if (selectedFilters.educationLevels.length > 0) {
-          // Normalizar os níveis de educação antes de aplicar o filtro
-          const normalizedLevels = selectedFilters.educationLevels.map(level => 
-            normalizeString(level)
-          );
-          
-          // Buscar todas as questões e filtrar localmente para lidar com acentos
-          const { data: allQuestions, error: levelError } = await supabase
-            .from('questoes')
-            .select('id, level');
-            
-          if (levelError) {
-            throw levelError;
-          }
-          
-          // Filtrar localmente as questões que correspondem aos níveis de educação
-          const matchingIds = allQuestions
-            .filter(q => 
-              normalizedLevels.some(level => 
-                normalizeString(q.level) === level
-              )
-            )
-            .map(q => q.id);
-            
-          if (matchingIds.length > 0) {
-            query = query.in('id', matchingIds);
-          } else {
-            // Caso não encontremos nenhuma questão, forçar um resultado vazio
-            query = query.eq('id', 'id_inexistente');
-          }
+          query = query.in('level', selectedFilters.educationLevels);
         }
         
         if (selectedFilters.difficulty.length > 0) {
-          // Normalizar as dificuldades antes de aplicar o filtro
-          const normalizedDifficulties = selectedFilters.difficulty.map(difficulty => 
-            normalizeString(difficulty)
-          );
-          
-          // Buscar todas as questões e filtrar localmente para lidar com acentos
-          const { data: allQuestions, error: difficultyError } = await supabase
-            .from('questoes')
-            .select('id, difficulty');
-            
-          if (difficultyError) {
-            throw difficultyError;
-          }
-          
-          // Filtrar localmente as questões que correspondem às dificuldades
-          const matchingIds = allQuestions
-            .filter(q => 
-              normalizedDifficulties.some(difficulty => 
-                normalizeString(q.difficulty) === difficulty
-              )
-            )
-            .map(q => q.id);
-            
-          if (matchingIds.length > 0) {
-            query = query.in('id', matchingIds);
-          } else {
-            // Caso não encontremos nenhuma questão, forçar um resultado vazio
-            query = query.eq('id', 'id_inexistente');
-          }
+          query = query.in('difficulty', selectedFilters.difficulty);
         }
         
         // O filtro de tópicos é um caso especial (array)
         if (selectedFilters.topics.length > 0) {
           console.log("Buscando questões com assuntos:", selectedFilters.topics);
-          
-          // Fazer a consulta para obter todos os IDs de questões com os assuntos selecionados
-          let idsQuestoes: string[] = [];
-          
-          try {
-            // Buscar todas as questões com um único query
-            const { data: todasQuestoes, error: erroConsulta } = await supabase
-              .from('questoes')
-              .select('id, assuntos');
-            
-            if (erroConsulta) {
-              console.error("Erro ao buscar questões para filtrar por assuntos:", erroConsulta);
-            } else if (todasQuestoes && todasQuestoes.length > 0) {
-              // Filtrar questões que contêm qualquer um dos assuntos selecionados
-              const assuntosSelecionados = selectedFilters.topics;
-              
-              for (const questao of todasQuestoes) {
-                if (questao.assuntos && Array.isArray(questao.assuntos)) {
-                  // Verificar correspondência mais flexível entre assuntos
-                  const temAssuntoSelecionado = assuntosSelecionados.some(assuntoSelecionado => {
-                    // Normalizar o assunto selecionado
-                    const assuntoNormalizado = normalizeString(assuntoSelecionado);
-                    
-                    // Também criar uma versão sem numeração (remove "1. ", "2. ", etc.)
-                    const assuntoSemNumero = assuntoNormalizado.replace(/^\d+\.\s*/, '');
-                    
-                    return questao.assuntos.some((assuntoQuestao: string) => {
-                      // Normalizar o assunto da questão
-                      const questaoNormalizada = normalizeString(assuntoQuestao);
-                      const questaoSemNumero = questaoNormalizada.replace(/^\d+\.\s*/, '');
-                      
-                      // Adicionar log específico para "1. Interpretação de Texto"
-                      if (assuntoSelecionado.includes('interpretação')) {
-                        console.log('Debug Interpretação de Texto:', {
-                          assuntoSelecionado,
-                          assuntoNormalizado,
-                          assuntoSemNumero,
-                          assuntoQuestao,
-                          questaoNormalizada,
-                          questaoSemNumero
-                        });
-                      }
-                      
-                      // Verificar correspondência exata ou se um contém o outro
-                      // Incluindo as versões sem numeração
-                      const matches = questaoNormalizada === assuntoNormalizado || 
-                             questaoNormalizada.includes(assuntoNormalizado) || 
-                             assuntoNormalizado.includes(questaoNormalizada) ||
-                             questaoSemNumero === assuntoSemNumero ||
-                             questaoSemNumero.includes(assuntoSemNumero) ||
-                             assuntoSemNumero.includes(questaoSemNumero);
-                                 
-                          if (assuntoSelecionado.includes('interpretação') && matches) {
-                            console.log('Match encontrado para Interpretação de Texto!');
-                          }
-                          
-                          return matches;
-                        });
-                      });
-                      
-                      if (temAssuntoSelecionado) {
-                        idsQuestoes.push(questao.id);
-                      }
-                }
-              }
-            }
-            
-            console.log(`Total de ${idsQuestoes.length} questões encontradas para os assuntos selecionados`);
-            
-            // Adicionar filtro de IDs à consulta principal
-            if (idsQuestoes.length > 0) {
-              // Se temos muitos IDs (mais de 500), dividir em lotes para evitar URLs muito longas
-              if (idsQuestoes.length > 500) {
-                console.log(`Muitos IDs (${idsQuestoes.length}), usando abordagem alternativa`);
-                // Em vez de usar .in() com muitos IDs, vamos usar uma abordagem diferente
-                // Aplicar filtro por disciplina primeiro para reduzir o dataset
-                if (selectedFilters.disciplines.length > 0) {
-                  query = query.in('discipline', selectedFilters.disciplines);
-                }
-                // Depois filtrar por assuntos usando overlaps (mais eficiente)
-                query = query.overlaps('assuntos', selectedFilters.topics);
-              } else {
-                query = query.in('id', idsQuestoes);
-              }
-            } else {
-              // Caso não encontremos nenhuma questão, forçar um resultado vazio
-              query = query.eq('id', 'id_inexistente');
-            }
-          } catch (e) {
-            console.error("Erro ao processar busca por assuntos:", e);
-            // Em caso de erro, retornar resultado vazio
-            query = query.eq('id', 'id_inexistente');
-          }
+          // Usar overlaps para filtrar arrays de assuntos
+          query = query.overlaps('assuntos', selectedFilters.topics);
         }
         
         // O filtro de subtópicos é um caso especial (array) - mapeia para topicos no banco
         if (selectedFilters.subtopics && selectedFilters.subtopics.length > 0) {
           console.log("Buscando questões com tópicos:", selectedFilters.subtopics);
-          
-          // Fazer a consulta para obter todos os IDs de questões com os tópicos selecionados
-          let idsQuestoesTopicos: string[] = [];
-          
-          try {
-            // Buscar todas as questões com um único query
-            const { data: todasQuestoes, error: erroConsulta } = await supabase
-              .from('questoes')
-              .select('id, topicos');
-            
-            if (erroConsulta) {
-              console.error("Erro ao buscar questões para filtrar por tópicos:", erroConsulta);
-            } else if (todasQuestoes && todasQuestoes.length > 0) {
-              // Filtrar questões que contêm qualquer um dos tópicos selecionados
-              const topicosSelecionados = selectedFilters.subtopics;
-              
-              for (const questao of todasQuestoes) {
-                if (questao.topicos && Array.isArray(questao.topicos)) {
-                  // Verificar correspondência mais flexível entre tópicos
-                  const temTopicoSelecionado = topicosSelecionados.some(topicoSelecionado => {
-                    // Normalizar o tópico selecionado
-                    const topicoNormalizado = normalizeString(topicoSelecionado);
-                    
-                    // Também criar uma versão sem numeração (remove "1. ", "2. ", etc.)
-                    const topicoSemNumero = topicoNormalizado.replace(/^\d+\.\s*/, '');
-                    
-                    return questao.topicos.some((topicoQuestao: string) => {
-                      // Normalizar o tópico da questão
-                      const questaoNormalizada = normalizeString(topicoQuestao);
-                      const questaoSemNumero = questaoNormalizada.replace(/^\d+\.\s*/, '');
-                      
-                      // Verificar correspondência exata ou se um contém o outro
-                      // Incluindo as versões sem numeração
-                      return questaoNormalizada === topicoNormalizado || 
-                             questaoNormalizada.includes(topicoNormalizado) || 
-                             topicoNormalizado.includes(questaoNormalizada) ||
-                             questaoSemNumero === topicoSemNumero ||
-                             questaoSemNumero.includes(topicoSemNumero) ||
-                             topicoSemNumero.includes(questaoSemNumero);
-                    });
-                  });
-                  
-                  if (temTopicoSelecionado) {
-                    idsQuestoesTopicos.push(questao.id);
-                  }
-                }
-              }
-            }
-            
-            console.log(`Total de ${idsQuestoesTopicos.length} questões encontradas para os tópicos selecionados`);
-            
-            // Adicionar filtro de IDs à consulta principal
-            if (idsQuestoesTopicos.length > 0) {
-              // Se temos muitos IDs (mais de 500), dividir em lotes para evitar URLs muito longas
-              if (idsQuestoesTopicos.length > 500) {
-                console.log(`Muitos IDs de tópicos (${idsQuestoesTopicos.length}), usando abordagem alternativa`);
-                // Usar overlaps em vez de .in() com muitos IDs
-                query = query.overlaps('topicos', selectedFilters.subtopics);
-              } else {
-                query = query.in('id', idsQuestoesTopicos);
-              }
-            } else {
-              // Caso não encontremos nenhuma questão, forçar um resultado vazio
-              query = query.eq('id', 'id_inexistente');
-            }
-          } catch (e) {
-            console.error("Erro ao processar busca por tópicos:", e);
-            // Em caso de erro, retornar resultado vazio
-            query = query.eq('id', 'id_inexistente');
-          }
+          // Usar overlaps para filtrar arrays de tópicos
+          query = query.overlaps('topicos', selectedFilters.subtopics);
         }
         
         // Aplicar paginação

@@ -183,7 +183,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     
     const result: Array<{discipline: string, subjects: string[]}> = [];
     
-    selectedFilters.disciplines.forEach(discipline => {
+    selectedFilters.disciplines.forEach((discipline: string) => {
       const subjects = subjectsByDiscipline[discipline] || [];
       if (subjects.length > 0) {
         result.push({
@@ -203,7 +203,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       if (selectedFilters.disciplines.length > 0) {
         const result: Array<{groupName: string, topics: string[]}> = [];
         
-        selectedFilters.disciplines.forEach(discipline => {
+        selectedFilters.disciplines.forEach((discipline: string) => {
           const topics = topicsByDiscipline[discipline] || [];
           if (topics.length > 0) {
             result.push({
@@ -221,7 +221,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     // Se tiver assuntos selecionados, mostrar tópicos agrupados por assunto
     const result: Array<{groupName: string, topics: string[]}> = [];
     
-    selectedFilters.topics.forEach(subject => {
+    selectedFilters.topics.forEach((subject: string) => {
       const topics = topicsBySubject[subject] || [];
       if (topics.length > 0) {
         result.push({
@@ -450,8 +450,10 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       handleFilterChange(filterKey as any, valueToRemove); // Isso vai toggle/remover o item
     }
     
-    // Aplicar as mudanças
-    setTimeout(() => handleApplyFilters(), 100);
+    // Atualizar a URL após remover o filtro
+    setTimeout(() => {
+      updateUrlWithFilters();
+    }, 100);
   };
 
   // Função para renderizar os filtros aplicados
@@ -517,35 +519,6 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     );
   };
 
-  // Atualizar a URL com os filtros selecionados
-  const updateUrlWithFilters = useCallback(() => {
-    const params = new URLSearchParams();
-    
-    // Adicionar consulta de pesquisa
-    if (localSearchQuery) {
-      params.set('q', localSearchQuery);
-    }
-    
-    // Adicionar filtros selecionados
-    Object.entries(selectedFilters).forEach(([key, values]) => {
-      if (values.length) {
-        // Usar JSON para evitar problemas com valores que contêm vírgulas
-        params.set(key, JSON.stringify(values));
-      }
-    });
-    
-    // Adicionar questões por página
-    params.set('perPage', questionsPerPage);
-    
-    // Atualizar a URL sem recarregar a página
-    setSearchParams(params);
-  }, [localSearchQuery, selectedFilters, questionsPerPage, setSearchParams]);
-
-  // Adicionar useEffect para atualizar a URL sempre que os filtros mudarem
-  useEffect(() => {
-    updateUrlWithFilters();
-  }, [updateUrlWithFilters]);
-
   // Contar quantos filtros estão ativos
   const countActiveFilters = () => {
     return Object.values(selectedFilters).reduce((count, filters) => count + filters.length, 0);
@@ -585,9 +558,56 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       handler("reset_all", emptyFilters);
     }
     
-    // Aplicar os filtros vazios
-    handleApplyFilters();
+    // Atualizar a URL e aplicar os filtros vazios
+    setTimeout(() => {
+      updateUrlWithFilters();
+      handleApplyFilters();
+    }, 100);
   };
+
+  // Atualizar a URL com os filtros selecionados (otimizado para evitar URLs muito longas)
+  const updateUrlWithFilters = useCallback(() => {
+    const params = new URLSearchParams();
+    
+    // Adicionar consulta de pesquisa
+    if (localSearchQuery) {
+      params.set('q', localSearchQuery);
+    }
+    
+    // Adicionar filtros selecionados (apenas os primeiros 100 itens de cada categoria para evitar URLs muito longas)
+    Object.entries(selectedFilters).forEach(([key, values]) => {
+      if (values.length) {
+        // Limitar a 100 itens por categoria para evitar URLs muito longas
+        const limitedValues = values.slice(0, 100);
+        params.set(key, limitedValues.join(','));
+      }
+    });
+    
+    // Adicionar questões por página
+    params.set('perPage', questionsPerPage);
+    
+    // Atualizar a URL sem recarregar a página
+    setSearchParams(params);
+  }, [localSearchQuery, selectedFilters, questionsPerPage, setSearchParams]);
+
+  // Aplicar filtros e atualizar URL
+  const applyFiltersWithUrl = () => {
+    setSearchQuery(localSearchQuery);
+    updateUrlWithFilters();
+    handleApplyFilters();
+    if (isMobile) {
+      setIsOpen(false);
+    }
+  };
+
+  // Atualizar URL quando os filtros mudarem (com debounce para evitar atualizações frequentes)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      updateUrlWithFilters();
+    }, 1000); // Atualizar a URL após 1 segundo de inatividade nos filtros
+    
+    return () => clearTimeout(timer);
+  }, [localSearchQuery, selectedFilters, questionsPerPage, updateUrlWithFilters]);
 
   const filtersContent = (
     <>
@@ -693,14 +713,23 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       {renderAppliedFilters()}
 
       <div className="flex justify-between items-center">
-        <Button 
-          variant="outline" 
-          className="text-gray-600 border-gray-300 hover:bg-gray-50" 
-          onClick={clearAllFilters}
-        >
-          <X className="h-4 w-4 mr-2" />
-          Limpar filtros
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="text-gray-600 border-gray-300 hover:bg-gray-50" 
+            onClick={clearAllFilters}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Limpar filtros
+          </Button>
+          
+          <Button 
+            className="bg-[#5f2ebe] text-white hover:bg-[#4f25a0]" 
+            onClick={applyFiltersWithUrl}
+          >
+            Aplicar filtros
+          </Button>
+        </div>
         
         <div className="flex items-center gap-4">
           {/* Mostrar o total de questões encontradas */}
@@ -709,8 +738,6 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
               {totalCount} {totalCount === 1 ? 'questão encontrada' : 'questões encontradas'}
             </div>
           )}
-          
-
         </div>
       </div>
     </>
