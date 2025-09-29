@@ -12,6 +12,7 @@ import { FileX, Loader2 } from "lucide-react";
 import { calculateOverallStats } from "./utils/statsCalculations";
 import { toast } from "@/components/ui/use-toast";
 
+
 declare global {
   interface Window {
     forceRefreshEdital?: () => void;
@@ -19,6 +20,7 @@ declare global {
 }
 
 interface EditorializedViewProps {
+  courseId: string;
   activeTab?: string;
 }
 
@@ -48,7 +50,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
   from(table: 'user_simulado_results'): any;
 };
 
-export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewProps) => {
+export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, activeTab = 'edital' }) => {
   const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase, performanceGoal, updatePerformanceGoal, examDate, updateExamDate, lastSaveTime } = useEditorializedData();
   const [sortBy, setSortBy] = useState<'id' | 'importance'>('id');
   const [simuladosStats, setSimuladosStats] = useState({
@@ -58,12 +60,12 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
     hits: 0,
     errors: 0
   });
-  const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
   const [hasEdital, setHasEdital] = useState<boolean | null>(null);
   const [isLoadingEdital, setIsLoadingEdital] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Função para log com timestamp
   const logWithTimestamp = (message: string, data?: any) => {
@@ -360,24 +362,22 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
   // Removendo a ordenação de disciplinas, pois agora ordenamos apenas os tópicos dentro de cada disciplina
   const sortedSubjects = subjects; // Usar as disciplinas na ordem original
 
-  if ((loading && activeTab === 'edital') || (isLoadingEdital && activeTab === 'edital')) {
-    logWithTimestamp("Renderizando tela de carregamento");
+  if (loading || isLoadingEdital) {
     return (
-      <div className="flex flex-col items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground mt-2">Carregando edital...</p>
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-[#5f2ebe]" />
       </div>
     );
   }
 
-  if (hasEdital === false && activeTab === 'edital') {
-    logWithTimestamp("Renderizando tela de edital não encontrado");
+  // Se não temos dados e não há erro, mostrar mensagem apropriada
+  if (hasEdital === false) {
     return (
-      <div className="flex flex-col items-center justify-center h-full">
-        <FileX className="h-16 w-16 text-muted-foreground mb-4" />
-        <h2 className="text-xl font-bold">Edital não encontrado</h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          Não foi possível encontrar o edital para este curso.
+      <div className="bg-white rounded-[10px] p-6 text-center">
+        <FileX className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum edital encontrado</h3>
+        <p className="text-gray-500">
+          Este curso ainda não tem um edital configurado.
         </p>
       </div>
     );
@@ -386,6 +386,8 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
   logWithTimestamp("Renderizando view principal");
   return (
     <div className="bg-[rgb(242,244,246)] rounded-[10px] pb-5 w-full">
+
+      
       {(activeTab !== 'edital' || (activeTab === 'edital' && hasEdital)) && (
         <DashboardSummary 
           overallStats={calculateOverallStats(subjects)} 

@@ -3,7 +3,6 @@ import { Topic } from "../types/editorialized";
 import { calculatePerformance } from "../utils/statsCalculations";
 import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useQuestionStatsFromLink } from "@/hooks/useQuestionStatsFromLink";
 
 interface UserStats {
   totalAttempts: number;
@@ -34,10 +33,16 @@ export const TopicRow = ({
   importancePercentage = 0,
   userStats
 }: TopicRowProps) => {
-  const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-
-  // Usar stats da disciplina se disponível, senão usar stats do link individual
-  const displayStats = userStats || stats;
+  // Usar stats da disciplina se disponível
+  const displayStats = userStats || {
+    totalAttempts: 0,
+    correctAnswers: 0,
+    wrongAnswers: 0
+  };
+  
+  // Adicionar log para verificar estatísticas exibidas
+  console.log(`[TopicRow] Tópico ${topic.id} (${topic.topic}):`, displayStats);
+  
   const performance = displayStats.totalAttempts > 0 
     ? calculatePerformance(displayStats.correctAnswers, displayStats.totalAttempts) 
     : 0;

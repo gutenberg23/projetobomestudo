@@ -598,33 +598,42 @@ export type Database = {
       disciplinaverticalizada: {
         Row: {
           assuntos: string[] | null
+          bancas_filtro: string[] | null
           created_at: string
           descricao: string | null
+          disciplinas_filtro: string[] | null
           id: string
           importancia: number[] | null
           links: string[] | null
+          quantidade_questoes_filtro: number[] | null
           titulo: string
           topicos: string[] | null
           topicos_filtro: string[] | null
         }
         Insert: {
           assuntos?: string[] | null
+          bancas_filtro?: string[] | null
           created_at?: string
           descricao?: string | null
+          disciplinas_filtro?: string[] | null
           id?: string
           importancia?: number[] | null
           links?: string[] | null
+          quantidade_questoes_filtro?: number[] | null
           titulo: string
           topicos?: string[] | null
           topicos_filtro?: string[] | null
         }
         Update: {
           assuntos?: string[] | null
+          bancas_filtro?: string[] | null
           created_at?: string
           descricao?: string | null
+          disciplinas_filtro?: string[] | null
           id?: string
           importancia?: number[] | null
           links?: string[] | null
+          quantidade_questoes_filtro?: number[] | null
           titulo?: string
           topicos?: string[] | null
           topicos_filtro?: string[] | null
@@ -1313,6 +1322,7 @@ export type Database = {
       respostas_alunos: {
         Row: {
           aluno_id: string
+          assuntos: string[] | null
           banca: string | null
           created_at: string
           data_resposta: string | null
@@ -1325,6 +1335,7 @@ export type Database = {
         }
         Insert: {
           aluno_id: string
+          assuntos?: string[] | null
           banca?: string | null
           created_at?: string
           data_resposta?: string | null
@@ -1337,6 +1348,7 @@ export type Database = {
         }
         Update: {
           aluno_id?: string
+          assuntos?: string[] | null
           banca?: string | null
           created_at?: string
           data_resposta?: string | null

@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Topic } from "../types/editorialized";
 import { calculatePerformance } from "../utils/statsCalculations";
-import { useQuestionStatsFromLink } from "@/hooks/useQuestionStatsFromLink";
+import { Topic } from "../types/editorialized";
 
 interface UserStats {
   totalAttempts: number;
@@ -19,25 +18,23 @@ interface TotalsRowProps {
 }
 
 export const TotalsRow = ({ topics, performanceGoal, currentUserId, importancePercentage = 0, userStats }: TotalsRowProps) => {
-  // Use disciplina stats if available, otherwise calculate from topics
+  // Use disciplina stats if available, otherwise use zero values
   const totalStats = useMemo(() => {
     if (userStats) {
       return userStats;
     }
     
-    // Fallback to individual topic stats
-    const topicStatsArray = topics.map(topic => {
-      const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
-      return stats;
-    });
+    // Return zero values if no stats available
+    return { 
+      totalAttempts: 0, 
+      correctAnswers: 0, 
+      wrongAnswers: 0 
+    };
+  }, [userStats]);
 
-    return topicStatsArray.reduce((acc, stats) => ({
-      totalAttempts: acc.totalAttempts + stats.totalAttempts,
-      correctAnswers: acc.correctAnswers + stats.correctAnswers,
-      wrongAnswers: acc.wrongAnswers + stats.wrongAnswers,
-    }), { totalAttempts: 0, correctAnswers: 0, wrongAnswers: 0 });
-  }, [userStats, topics, currentUserId]);
-
+  // Adicionar log para verificar estatísticas totais
+  console.log(`[TotalsRow] Estatísticas totais:`, totalStats);
+  
   const performance = totalStats.totalAttempts > 0 ? calculatePerformance(totalStats.correctAnswers, totalStats.totalAttempts) : 0;
 
   return (

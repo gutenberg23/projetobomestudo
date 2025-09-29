@@ -116,6 +116,7 @@
     "@types/react-input-mask": "^3.0.6",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.20",
+    "chrome-devtools-mcp": "^0.5.1",
     "concurrently": "^9.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",

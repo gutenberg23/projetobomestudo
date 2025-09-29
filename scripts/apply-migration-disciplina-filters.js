@@ -27,15 +27,23 @@ const runCommand = (command) => {
 // Função principal
 async function main() {
   try {
-    console.log('Iniciando aplicação da migração...');
+    console.log('Iniciando aplicação das migrações...');
     
-    // Aplicar a migração específica
-    const migrationPath = path.join(__dirname, '..', 'supabase', 'migrations', '20250428000000_add_assuntos_topicos_to_disciplinaverticalizada.sql');
-    await runCommand(`${supabaseCLI} migration up --file ${migrationPath}`);
+    // Aplicar a migração das colunas na tabela disciplinaverticalizada
+    const migrationPath1 = path.join(__dirname, '..', 'supabase', 'supabase', 'migrations', '20250428000000_add_assuntos_topicos_to_disciplinaverticalizada.sql');
+    await runCommand(`${supabaseCLI} migration up --file ${migrationPath1}`);
     
-    console.log('Migração aplicada com sucesso!');
+    // Aplicar a migração da coluna assuntos na tabela respostas_alunos
+    const migrationPath2 = path.join(__dirname, '..', 'supabase', 'supabase', 'migrations', '20250428000001_add_assuntos_to_respostas_alunos.sql');
+    await runCommand(`${supabaseCLI} migration up --file ${migrationPath2}`);
+    
+    // Aplicar a migração para corrigir formato de dados
+    const migrationPath3 = path.join(__dirname, '..', 'supabase', 'supabase', 'migrations', '20250428000002_fix_array_data_format.sql');
+    await runCommand(`${supabaseCLI} migration up --file ${migrationPath3}`);
+    
+    console.log('Migrações aplicadas com sucesso!');
   } catch (error) {
-    console.error('Falha ao aplicar a migração:', error);
+    console.error('Falha ao aplicar as migrações:', error);
     process.exit(1);
   }
 }

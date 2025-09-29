@@ -35,7 +35,10 @@ export const SubjectTable = ({
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
   
-  const { importanceStats, userStats, loading } = useSubjectImportanceStats(subjects, currentUserId);
+  const { importanceStats, userStats, topicUserStats, loading } = useSubjectImportanceStats(subjects, currentUserId);
+  
+  // Verificar se há dados disponíveis
+  console.log('Dados do hook no SubjectTable:', { importanceStats, userStats, topicUserStats, loading });
 
   // Buscar o usuário atual
   useEffect(() => {
@@ -52,6 +55,12 @@ export const SubjectTable = ({
     wrongAnswers: 0
   };
 
+  // Adicionar log para verificar estatísticas da disciplina
+  useEffect(() => {
+    console.log(`[SubjectTable] Disciplina: ${subject.name} (${subject.id})`);
+    console.log(`[SubjectTable] Estatísticas gerais:`, currentSubjectStats);
+  }, [subject, currentSubjectStats]);
+
   const currentImportanceStats = importanceStats[subject.id.toString()] || {
     percentage: 0,
     rawCount: 0
@@ -62,6 +71,21 @@ export const SubjectTable = ({
     const topicKey = `${subject.id}-${topicIndex}`;
     const topicImportanceStats = importanceStats[topicKey];
     return topicImportanceStats ? topicImportanceStats.percentage : 0;
+  };
+
+  // Função para obter as estatísticas de um tópico específico
+  const getTopicUserStats = (topicIndex: number) => {
+    const topicKey = `${subject.id}-${topicIndex}`;
+    const stats = topicUserStats[topicKey] || {
+      totalAttempts: 0,
+      correctAnswers: 0,
+      wrongAnswers: 0
+    };
+    
+    // Adicionar log para verificar estatísticas do tópico
+    console.log(`[SubjectTable] Tópico ${topicIndex + 1}:`, stats);
+    
+    return stats;
   };
 
   // Ordenar os tópicos com base no critério de ordenação
@@ -122,7 +146,7 @@ export const SubjectTable = ({
                 onTopicChange={onTopicChange}
                 isEditMode={isEditMode}
                 importancePercentage={getTopicImportancePercentage(topic.id - 1)}
-                userStats={currentSubjectStats}
+                userStats={getTopicUserStats(topic.id - 1)}
               />
             ))}
             <TotalsRow

@@ -259,7 +259,7 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="titulo">Título</Label>
+            <Label htmlFor="titulo">Título da disciplina</Label>
             <Input
               id="titulo"
               value={titulo}
@@ -269,12 +269,12 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="descricao">Descrição</Label>
+            <Label htmlFor="descricao">Concurso/Cargo</Label>
             <Input
               id="descricao"
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Digite a descrição da disciplina"
+              placeholder="Digite o concurso/cargo"
             />
           </div>
 
@@ -300,11 +300,12 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
                 placeholder="Digite um tópico"
                 className="flex-1"
               />
+              {/* Input de Link (opcional) escondido conforme solicitado */}
               <Input
                 value={novoLink}
                 onChange={(e) => setNovoLink(e.target.value)}
                 placeholder="Link (opcional)"
-                className="w-48"
+                className="w-48 hidden"
               />
               <Button
                 type="button"
@@ -327,6 +328,7 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
                       placeholder="Nome do tópico"
                       className="flex-1"
                     />
+                    {/* Input de Link (opcional) escondido conforme solicitado */}
                     <Input
                       value={links[index] || ""}
                       onChange={(e) => handleEditLink(index, e.target.value)}

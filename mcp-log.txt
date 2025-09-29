@@ -1,0 +1,2 @@
+  [38;5;40;1mmcp:log [0mStarting Chrome DevTools MCP Server v0.5.1 [38;5;40m+0ms[0m
+  [38;5;40;1mmcp:log [0mChrome DevTools MCP Server connected [38;5;40m+1ms[0m
