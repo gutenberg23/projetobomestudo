@@ -159,7 +159,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           // Buscar informações completas da questão do banco de dados
           const { data: questionData, error } = await supabase
             .from('questoes')
-            .select('discipline, topicos')
+            .select('discipline, topicos, assuntos')
             .eq('id', question.id)
             .single();
             
@@ -172,11 +172,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             // Verificar se temos dados mais completos no banco
             const disciplineBD = questionData.discipline || "";
             const topicsBD = questionData.topicos || [];
+            const subjectsBD = questionData.assuntos || [];
             
             if (disciplineBD || (topicsBD && topicsBD.length > 0)) {
               console.log("Dados recuperados do banco:", {
                 discipline: disciplineBD,
-                topics: topicsBD
+                topics: topicsBD,
+                subjects: subjectsBD
               });
               
               // Atualizar as questões respondidas que estão faltando metadados
@@ -198,7 +200,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       .from('respostas_alunos')
                       .update({
                         disciplina: disciplineBD || resposta.disciplina || "",
-                        topicos: topicsBD?.length > 0 ? topicsBD : (resposta.topicos || [])
+                        topicos: topicsBD?.length > 0 ? topicsBD : (resposta.topicos || []),
+                        assuntos: subjectsBD?.length > 0 ? subjectsBD : (resposta.assuntos || [])
                       })
                       .eq('id', resposta.id);
                       
@@ -590,6 +593,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           // Usar loadedTopics se disponível, senão usar topics da question
           const topicos = loadedTopics.length > 0 ? loadedTopics : (question.topics || []);
           const banca = normalizarBanca(question.institution || "");
+          // Obter assuntos da questão
+          const assuntos = question.assuntos || [];
           
           // Verificar se temos os dados necessários
           if (!disciplina) {
@@ -610,7 +615,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             is_correta: isCorrect,
             topicos,
             disciplina,
-            banca
+            banca,
+            assuntos
           });
 
           const { error } = await supabase
@@ -622,7 +628,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               is_correta: isCorrect,
               topicos: topicos,
               disciplina: disciplina,
-              banca: banca
+              banca: banca,
+              assuntos: assuntos
             });
             
           if (error) {

@@ -16,6 +16,7 @@ export interface Question {
   discipline?: string;
   topics?: string[];
   assunto?: string;
+  assuntos?: string[];
   expandableContent?: string;
   teacherExplanation?: string;
   aiExplanation?: string;
