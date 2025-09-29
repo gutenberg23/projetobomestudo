@@ -4,6 +4,11 @@ export interface Disciplina {
   descricao: string;
   topicos: string[];
   links: string[];
+  assuntos: string[][];
+  topicos_filtro: string[][];
+  disciplinas_filtro: string[][];
+  bancas_filtro: string[][];
+  quantidade_questoes_filtro: number[];
   importancia: number[];
   selecionada: boolean;
 }
@@ -26,4 +31,4 @@ export interface CursoVerticalizado {
   ativo: boolean;
   created_at: string;
   updated_at?: string;
-} 
+}

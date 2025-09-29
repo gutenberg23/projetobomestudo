@@ -357,20 +357,8 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
     setSortBy(newSortBy);
   };
 
-  // Sortear subjects baseado no critério escolhido
-  const sortedSubjects = [...subjects].sort((a, b) => {
-    if (sortBy === 'importance') {
-      // Ordenar por importância (maior para menor)
-      const aImportance = 0; // A importância será calculada no hook useSubjectImportanceStats
-      const bImportance = 0;
-      return bImportance - aImportance;
-    } else {
-      // Ordenar por ID (menor para maior)
-      const aId = typeof a.id === 'string' ? parseInt(a.id) || 0 : a.id;
-      const bId = typeof b.id === 'string' ? parseInt(b.id) || 0 : b.id;
-      return aId - bId;
-    }
-  });
+  // Removendo a ordenação de disciplinas, pois agora ordenamos apenas os tópicos dentro de cada disciplina
+  const sortedSubjects = subjects; // Usar as disciplinas na ordem original
 
   if ((loading && activeTab === 'edital') || (isLoadingEdital && activeTab === 'edital')) {
     logWithTimestamp("Renderizando tela de carregamento");
@@ -416,6 +404,9 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
           examDate={examDate}
           updateExamDate={updateExamDate}
           lastSaveTime={lastSaveTime}
+          // Passando as propriedades de ordenação
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
         />
       )}
 
@@ -432,6 +423,7 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
               onTopicChange={updateTopicProgress}
               isEditMode={isEditMode}
               onSortChange={handleSortChange}
+              sortBy={sortBy} // Passando a informação de ordenação
             />
           ))}
           

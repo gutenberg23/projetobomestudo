@@ -17,10 +17,11 @@ export const useEditalActions = () => {
           descricao: disciplina.descricao,
           topicos: disciplina.topicos,
           links: disciplina.links,
-          assuntos: disciplina.assuntos,
-          topicos_filtro: disciplina.topicos_filtro,
-          disciplinas_filtro: disciplina.disciplinas_filtro,
-          bancas_filtro: disciplina.bancas_filtro,
+          // Corrigindo arrays multidimensionais para arrays simples
+          assuntos: disciplina.assuntos ? disciplina.assuntos.flat() : [],
+          topicos_filtro: disciplina.topicos_filtro ? disciplina.topicos_filtro.flat() : [],
+          disciplinas_filtro: disciplina.disciplinas_filtro ? disciplina.disciplinas_filtro.flat() : [],
+          bancas_filtro: disciplina.bancas_filtro ? disciplina.bancas_filtro.flat() : [],
           quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro,
           importancia: disciplina.importancia
         })
@@ -59,10 +60,11 @@ export const useEditalActions = () => {
           descricao: disciplina.descricao,
           topicos: disciplina.topicos,
           links: disciplina.links,
-          assuntos: disciplina.assuntos,
-          topicos_filtro: disciplina.topicos_filtro,
-          disciplinas_filtro: disciplina.disciplinas_filtro,
-          bancas_filtro: disciplina.bancas_filtro,
+          // Corrigindo arrays multidimensionais para arrays simples
+          assuntos: disciplina.assuntos ? disciplina.assuntos.flat() : [],
+          topicos_filtro: disciplina.topicos_filtro ? disciplina.topicos_filtro.flat() : [],
+          disciplinas_filtro: disciplina.disciplinas_filtro ? disciplina.disciplinas_filtro.flat() : [],
+          bancas_filtro: disciplina.bancas_filtro ? disciplina.bancas_filtro.flat() : [],
           quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro,
           importancia: disciplina.importancia
         })

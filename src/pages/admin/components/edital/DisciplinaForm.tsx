@@ -12,7 +12,7 @@ import { DisciplinaFiltersModal } from "./DisciplinaFiltersModal";
 interface DisciplinaFormProps {
   onAddDisciplina: (disciplina: Omit<Disciplina, 'id' | 'selecionada'>) => void;
   onEditDisciplina?: (disciplina: Disciplina) => void;
-  disciplinaParaEditar?: Disciplina;
+  disciplinaParaEditar?: Disciplina | null;
 }
 
 const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
@@ -38,35 +38,51 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
 
   useEffect(() => {
     if (disciplinaParaEditar) {
-      setTitulo(disciplinaParaEditar.titulo);
-      setDescricao(disciplinaParaEditar.descricao);
-      setTopicos(disciplinaParaEditar.topicos);
-      setLinks(disciplinaParaEditar.links);
+      setTitulo(disciplinaParaEditar.titulo || "");
+      setDescricao(disciplinaParaEditar.descricao || "");
+      setTopicos(disciplinaParaEditar.topicos || []);
+      setLinks(disciplinaParaEditar.links || []);
       
       // Inicializar os arrays de assuntos e tópicos por tópico
-      const assuntos = disciplinaParaEditar.assuntos || Array(disciplinaParaEditar.topicos.length).fill([]);
-      const topicosFiltro = disciplinaParaEditar.topicos_filtro || Array(disciplinaParaEditar.topicos.length).fill([]);
-      const disciplinasFiltro = disciplinaParaEditar.disciplinas_filtro || Array(disciplinaParaEditar.topicos.length).fill([]);
-      const bancasFiltro = disciplinaParaEditar.bancas_filtro || Array(disciplinaParaEditar.topicos.length).fill([]);
-      const quantidadeQuestoes = disciplinaParaEditar.quantidade_questoes_filtro || Array(disciplinaParaEditar.topicos.length).fill(0);
+      const topicosLength = (disciplinaParaEditar.topicos || []).length;
+      const assuntos = disciplinaParaEditar.assuntos || Array(topicosLength).fill([]).map(() => []);
+      const topicosFiltro = disciplinaParaEditar.topicos_filtro || Array(topicosLength).fill([]).map(() => []);
+      const disciplinasFiltro = disciplinaParaEditar.disciplinas_filtro || Array(topicosLength).fill([]).map(() => []);
+      const bancasFiltro = disciplinaParaEditar.bancas_filtro || Array(topicosLength).fill([]).map(() => []);
+      const quantidadeQuestoes = disciplinaParaEditar.quantidade_questoes_filtro || Array(topicosLength).fill(0);
       
       setAssuntosPorTopico(assuntos);
       setTopicosPorTopico(topicosFiltro);
       setDisciplinasPorTopico(disciplinasFiltro);
       setBancasPorTopico(bancasFiltro);
       setQuantidadeQuestoesPorTopico(quantidadeQuestoes);
+    } else {
+      // Limpar formulário quando não há disciplina para editar
+      setTitulo("");
+      setDescricao("");
+      setTopicos([]);
+      setLinks([]);
+      setAssuntosPorTopico([]);
+      setTopicosPorTopico([]);
+      setDisciplinasPorTopico([]);
+      setBancasPorTopico([]);
+      setQuantidadeQuestoesPorTopico([]);
     }
   }, [disciplinaParaEditar]);
 
   const handleAddTopico = () => {
     if (novoTopico.trim()) {
-      setTopicos([...topicos, novoTopico.trim()]);
-      setLinks([...links, novoLink.trim()]);
-      setAssuntosPorTopico([...assuntosPorTopico, []]);
-      setTopicosPorTopico([...topicosPorTopico, []]);
-      setDisciplinasPorTopico([...disciplinasPorTopico, []]);
-      setBancasPorTopico([...bancasPorTopico, []]);
-      setQuantidadeQuestoesPorTopico([...quantidadeQuestoesPorTopico, 0]);
+      const novoTopicoTrim = novoTopico.trim();
+      const novoLinkTrim = novoLink.trim();
+      
+      setTopicos(prev => [...prev, novoTopicoTrim]);
+      setLinks(prev => [...prev, novoLinkTrim]);
+      setAssuntosPorTopico(prev => [...prev, []]);
+      setTopicosPorTopico(prev => [...prev, []]);
+      setDisciplinasPorTopico(prev => [...prev, []]);
+      setBancasPorTopico(prev => [...prev, []]);
+      setQuantidadeQuestoesPorTopico(prev => [...prev, 0]);
+      
       setNovoTopico("");
       setNovoLink("");
     }
@@ -100,13 +116,13 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
 
   const handleEditTopico = (index: number, novoTopico: string) => {
     const novosTopicos = [...topicos];
-    novosTopicos[index] = novoTopico;
+    novosTopicos[index] = novoTopico.trim();
     setTopicos(novosTopicos);
   };
 
   const handleEditLink = (index: number, novoLink: string) => {
     const novosLinks = [...links];
-    novosLinks[index] = novoLink;
+    novosLinks[index] = novoLink.trim();
     setLinks(novosLinks);
   };
 
@@ -121,25 +137,25 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
     if (currentTopicIndex !== null) {
       // Atualizar o link com o link gerado
       const novosLinks = [...links];
-      novosLinks[currentTopicIndex] = link;
+      novosLinks[currentTopicIndex] = link.trim();
       setLinks(novosLinks);
       
       // Atualizar os arrays de assuntos e tópicos
       const novosAssuntos = [...assuntosPorTopico];
-      novosAssuntos[currentTopicIndex] = filters.assuntos;
+      novosAssuntos[currentTopicIndex] = filters.assuntos ? [...filters.assuntos] : [];
       setAssuntosPorTopico(novosAssuntos);
       
       const novosTopicos = [...topicosPorTopico];
-      novosTopicos[currentTopicIndex] = filters.topicos;
+      novosTopicos[currentTopicIndex] = filters.topicos ? [...filters.topicos] : [];
       setTopicosPorTopico(novosTopicos);
       
       // Atualizar os arrays de disciplinas e bancas
       const novasDisciplinas = [...disciplinasPorTopico];
-      novasDisciplinas[currentTopicIndex] = filters.disciplinas;
+      novasDisciplinas[currentTopicIndex] = filters.disciplinas ? [...filters.disciplinas] : [];
       setDisciplinasPorTopico(novasDisciplinas);
       
       const novasBancas = [...bancasPorTopico];
-      novasBancas[currentTopicIndex] = filters.bancas;
+      novasBancas[currentTopicIndex] = filters.bancas ? [...filters.bancas] : [];
       setBancasPorTopico(novasBancas);
       
       // Atualizar a quantidade de questões se fornecida
@@ -182,15 +198,15 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
     }
 
     const disciplina: Omit<Disciplina, 'id' | 'selecionada'> = {
-      titulo,
-      descricao,
-      topicos: topicos.map(t => t.trim()),
+      titulo: titulo.trim(),
+      descricao: descricao.trim(),
+      topicos: topicos.map(t => t.trim()).filter(t => t.length > 0),
       links: links.map(l => l.trim()),
-      assuntos: assuntosPorTopico,
-      topicos_filtro: topicosPorTopico,
-      disciplinas_filtro: disciplinasPorTopico,
-      bancas_filtro: bancasPorTopico,
-      quantidade_questoes_filtro: quantidadeQuestoesPorTopico,
+      assuntos: assuntosPorTopico.map(a => [...a]),
+      topicos_filtro: topicosPorTopico.map(t => [...t]),
+      disciplinas_filtro: disciplinasPorTopico.map(d => [...d]),
+      bancas_filtro: bancasPorTopico.map(b => [...b]),
+      quantidade_questoes_filtro: [...quantidadeQuestoesPorTopico],
       importancia: topicos.map(() => 0)
     };
 
@@ -223,13 +239,14 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
   };
 
   const handleDistribuirTopicos = (novosTopicos: string[]) => {
-    setTopicos(novosTopicos);
-    setLinks(Array(novosTopicos.length).fill(""));
-    setAssuntosPorTopico(Array(novosTopicos.length).fill([]));
-    setTopicosPorTopico(Array(novosTopicos.length).fill([]));
-    setDisciplinasPorTopico(Array(novosTopicos.length).fill([]));
-    setBancasPorTopico(Array(novosTopicos.length).fill([]));
-    setQuantidadeQuestoesPorTopico(Array(novosTopicos.length).fill(0));
+    const topicosTrim = novosTopicos.map(t => t.trim()).filter(t => t.length > 0);
+    setTopicos(topicosTrim);
+    setLinks(Array(topicosTrim.length).fill(""));
+    setAssuntosPorTopico(Array(topicosTrim.length).fill([]));
+    setTopicosPorTopico(Array(topicosTrim.length).fill([]));
+    setDisciplinasPorTopico(Array(topicosTrim.length).fill([]));
+    setBancasPorTopico(Array(topicosTrim.length).fill([]));
+    setQuantidadeQuestoesPorTopico(Array(topicosTrim.length).fill(0));
   };
 
   return (
@@ -371,10 +388,10 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
         isOpen={isFiltersModalOpen}
         onClose={() => setIsFiltersModalOpen(false)}
         onApplyFilters={handleApplyFilters}
-        initialAssuntos={currentTopicIndex !== null ? assuntosPorTopico[currentTopicIndex] || [] : []}
-        initialTopicos={currentTopicIndex !== null ? topicosPorTopico[currentTopicIndex] || [] : []}
-        initialDisciplinas={currentTopicIndex !== null ? disciplinasPorTopico[currentTopicIndex] || [] : []}
-        initialBancas={currentTopicIndex !== null ? bancasPorTopico[currentTopicIndex] || [] : []}
+        initialAssuntos={currentTopicIndex !== null && disciplinaParaEditar ? (assuntosPorTopico[currentTopicIndex] || []) : []}
+        initialTopicos={currentTopicIndex !== null && disciplinaParaEditar ? (topicosPorTopico[currentTopicIndex] || []) : []}
+        initialDisciplinas={currentTopicIndex !== null && disciplinaParaEditar ? (disciplinasPorTopico[currentTopicIndex] || []) : []}
+        initialBancas={currentTopicIndex !== null && disciplinaParaEditar ? (bancasPorTopico[currentTopicIndex] || []) : []}
       />
     </Card>
   );

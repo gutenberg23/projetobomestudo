@@ -5,8 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { TopicRow } from "./TopicRow";
 import { TotalsRow } from "./TotalsRow";
 import { useSubjectImportanceStats } from "@/hooks/useSubjectImportanceStats";
-import { Button } from "@/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
+
+interface UserStats {
+  totalAttempts: number;
+  correctAnswers: number;
+  wrongAnswers: number;
+}
 
 interface SubjectTableProps {
   subject: Subject;
@@ -15,6 +19,7 @@ interface SubjectTableProps {
   isEditMode: boolean;
   subjects: Subject[];
   onSortChange?: (sortBy: 'id' | 'importance') => void;
+  sortBy?: 'id' | 'importance'; // Adicionando propriedade para ordenação
 }
 
 export const SubjectTable = ({
@@ -23,14 +28,14 @@ export const SubjectTable = ({
   onTopicChange,
   isEditMode,
   subjects,
-  onSortChange
+  onSortChange,
+  sortBy = 'id' // Valor padrão
 }: SubjectTableProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
-  const [sortBy, setSortBy] = useState<'id' | 'importance'>('id');
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
   
-  const { importanceStats, userStats } = useSubjectImportanceStats(subjects, currentUserId);
+  const { importanceStats, userStats, loading } = useSubjectImportanceStats(subjects, currentUserId);
 
   // Buscar o usuário atual
   useEffect(() => {
@@ -40,12 +45,6 @@ export const SubjectTable = ({
     };
     getCurrentUser();
   }, []);
-
-  const handleSortToggle = () => {
-    const newSortBy = sortBy === 'id' ? 'importance' : 'id';
-    setSortBy(newSortBy);
-    onSortChange?.(newSortBy);
-  };
 
   const currentSubjectStats = userStats[subject.id.toString()] || {
     totalAttempts: 0,
@@ -58,21 +57,34 @@ export const SubjectTable = ({
     rawCount: 0
   };
 
+  // Função para obter a porcentagem de importância de um tópico específico
+  const getTopicImportancePercentage = (topicIndex: number) => {
+    const topicKey = `${subject.id}-${topicIndex}`;
+    const topicImportanceStats = importanceStats[topicKey];
+    return topicImportanceStats ? topicImportanceStats.percentage : 0;
+  };
+
+  // Ordenar os tópicos com base no critério de ordenação
+  const sortedTopics = [...subject.topics].sort((a, b) => {
+    if (sortBy === 'importance') {
+      // Ordenar por importância (maior para menor)
+      const aImportance = getTopicImportancePercentage(a.id - 1);
+      const bImportance = getTopicImportancePercentage(b.id - 1);
+      return bImportance - aImportance;
+    } else {
+      // Ordenar por ID (menor para maior)
+      return a.id - b.id;
+    }
+  });
+
+  if (loading) {
+    return <div>Carregando estatísticas...</div>;
+  }
+
   return <div className="mb-8 last:mb-0">
       <div className="flex items-center justify-between bg-white text-gray-800 p-3 rounded-lg">
         <div className="flex items-center gap-2">
           <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
-          {isEditMode && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSortToggle}
-              className="ml-2 h-8 px-3 text-xs"
-            >
-              <ArrowUpDown className="h-3 w-3 mr-1" />
-              {sortBy === 'id' ? 'Ordenar por importância' : 'Ordenar por #'}
-            </Button>
-          )}
         </div>
         <div className="flex items-center gap-3">
           <div className="w-16 md:w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -99,7 +111,7 @@ export const SubjectTable = ({
             </tr>
           </thead>
           <tbody>
-            {subject.topics.map((topic, index) => (
+            {sortedTopics.map((topic, index) => (
               <TopicRow
                 key={topic.id}
                 topic={topic}
@@ -109,12 +121,12 @@ export const SubjectTable = ({
                 currentUserId={currentUserId}
                 onTopicChange={onTopicChange}
                 isEditMode={isEditMode}
-                importancePercentage={currentImportanceStats.percentage}
+                importancePercentage={getTopicImportancePercentage(topic.id - 1)}
                 userStats={currentSubjectStats}
               />
             ))}
             <TotalsRow
-              topics={subject.topics}
+              topics={sortedTopics}
               performanceGoal={performanceGoal}
               currentUserId={currentUserId}
               importancePercentage={currentImportanceStats.percentage}

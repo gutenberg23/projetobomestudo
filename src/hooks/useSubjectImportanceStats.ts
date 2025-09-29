@@ -25,11 +25,16 @@ export const useSubjectImportanceStats = (subjects: Subject[], currentUserId?: s
     const fetchStats = async () => {
       setLoading(true);
       try {
+        console.log('Iniciando busca de estatísticas de importância para subjects:', subjects);
+        
         // Buscar dados de importância das disciplinas
         const subjectIds = subjects.map(s => s.id.toString());
+        console.log('IDs das disciplinas a buscar:', subjectIds);
+        
+        // CORREÇÃO: Buscar a coluna correta 'quantidade_questoes_filtro' em vez de 'importancia'
         const { data: disciplinas, error } = await supabase
           .from('disciplinaverticalizada')
-          .select('id, quantidade_questoes_filtro')
+          .select('id, titulo, quantidade_questoes_filtro')
           .in('id', subjectIds);
 
         if (error) {
@@ -37,27 +42,56 @@ export const useSubjectImportanceStats = (subjects: Subject[], currentUserId?: s
           return;
         }
 
-        // Calcular percentuais de importância
-        const totalQuestions = disciplinas?.reduce((sum, d) => {
-          const count = Array.isArray(d.quantidade_questoes_filtro) 
-            ? d.quantidade_questoes_filtro.reduce((a, b) => a + b, 0)
-            : 0;
-          return sum + count;
-        }, 0) || 0;
+        console.log('Disciplinas buscadas do banco:', disciplinas);
 
+        // Calcular percentuais de importância para cada disciplina individualmente
         const importanceData: Record<string, ImportanceStats> = {};
+        
         disciplinas?.forEach(disciplina => {
-          const rawCount = Array.isArray(disciplina.quantidade_questoes_filtro)
-            ? disciplina.quantidade_questoes_filtro.reduce((a, b) => a + b, 0)
-            : 0;
+          console.log(`Processando disciplina ${disciplina.id}:`, disciplina);
           
+          // Verificar se quantidade_questoes_filtro existe e é um array
+          if (!Array.isArray(disciplina.quantidade_questoes_filtro)) {
+            console.warn(`Dados de quantidade_questoes_filtro inválidos para disciplina ${disciplina.id}:`, disciplina.quantidade_questoes_filtro);
+            // Criar entrada com valores zerados
+            importanceData[disciplina.id] = {
+              subjectId: disciplina.id,
+              percentage: 100,
+              rawCount: 0
+            };
+            return;
+          }
+
+          // Calcular o total de questões para esta disciplina
+          const totalQuestions = disciplina.quantidade_questoes_filtro.reduce((sum, value) => sum + (value || 0), 0);
+          console.log(`Total de questões para ${disciplina.id}:`, totalQuestions);
+
+          // Para cada tópico, calcular sua porcentagem em relação ao total da disciplina
+          disciplina.quantidade_questoes_filtro.forEach((questionCount, index) => {
+            const percentage = totalQuestions > 0 
+              ? Math.round(((questionCount || 0) / totalQuestions) * 100)
+              : 0;
+            
+            // Criar uma chave única para cada tópico da disciplina
+            const topicKey = `${disciplina.id}-${index}`;
+            importanceData[topicKey] = {
+              subjectId: disciplina.id,
+              percentage,
+              rawCount: questionCount || 0
+            };
+            
+            console.log(`Tópico ${index} da disciplina ${disciplina.id}: ${questionCount} (${percentage}%)`);
+          });
+          
+          // Também armazenar o total da disciplina
           importanceData[disciplina.id] = {
             subjectId: disciplina.id,
-            percentage: totalQuestions > 0 ? Math.round((rawCount / totalQuestions) * 100) : 0,
-            rawCount
+            percentage: 100, // A disciplina como um todo é 100%
+            rawCount: totalQuestions
           };
         });
 
+        console.log('Dados de importância processados:', importanceData);
         setImportanceStats(importanceData);
 
         // Se houver usuário logado, buscar estatísticas de respostas

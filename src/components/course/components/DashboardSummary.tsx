@@ -5,7 +5,7 @@ import { OverallStats, Subject } from "../types/editorialized";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, PencilIcon, Loader2, Save, Clock } from "lucide-react";
+import { CalendarIcon, PencilIcon, Loader2, Save, Clock, ArrowUpDown } from "lucide-react";
 import { format, differenceInDays, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,9 @@ interface DashboardSummaryProps {
   examDate?: Date;
   updateExamDate: (date: Date | undefined) => void;
   lastSaveTime?: string | null;
+  // Adicionando propriedades para ordenação
+  sortBy?: 'id' | 'importance';
+  onSortChange?: (sortBy: 'id' | 'importance') => void;
 }
 
 export const DashboardSummary = ({
@@ -60,7 +63,10 @@ export const DashboardSummary = ({
   setUnsavedChanges,
   examDate,
   updateExamDate,
-  lastSaveTime
+  lastSaveTime,
+  // Desestruturando as novas propriedades
+  sortBy = 'id',
+  onSortChange
 }: DashboardSummaryProps) => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
@@ -332,6 +338,18 @@ export const DashboardSummary = ({
         <div className="flex justify-between items-center">
           <h3 className="text-2xl font-bold">Resumo Geral</h3>
           <div className="flex gap-2">
+            {/* Botão de ordenação - aparece na aba edital tanto no modo de edição quanto visualização */}
+            {activeTab === 'edital' && onSortChange && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onSortChange(sortBy === 'id' ? 'importance' : 'id')}
+                className="flex items-center gap-2"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+                {sortBy === 'id' ? 'Ordenar tópicos por importância' : 'Ordenar tópicos por #'}
+              </Button>
+            )}
             <Button
               variant={isEditMode ? "default" : "outline"}
               size="sm"

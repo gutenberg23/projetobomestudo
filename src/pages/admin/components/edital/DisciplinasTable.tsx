@@ -216,7 +216,14 @@ const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
           <DisciplinaForm
             onAddDisciplina={() => {}}
             onEditDisciplina={handleEditDisciplina}
-            disciplinaParaEditar={disciplinaParaEditar}
+            disciplinaParaEditar={{
+              ...disciplinaParaEditar,
+              assuntos: disciplinaParaEditar.assuntos || [],
+              topicos_filtro: disciplinaParaEditar.topicos_filtro || [],
+              disciplinas_filtro: disciplinaParaEditar.disciplinas_filtro || [],
+              bancas_filtro: disciplinaParaEditar.bancas_filtro || [],
+              quantidade_questoes_filtro: disciplinaParaEditar.quantidade_questoes_filtro || []
+            }}
           />
         </div>
       )}
