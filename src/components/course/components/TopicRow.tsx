@@ -5,6 +5,12 @@ import { ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuestionStatsFromLink } from "@/hooks/useQuestionStatsFromLink";
 
+interface UserStats {
+  totalAttempts: number;
+  correctAnswers: number;
+  wrongAnswers: number;
+}
+
 interface TopicRowProps {
   topic: Topic;
   index: number;
@@ -13,6 +19,8 @@ interface TopicRowProps {
   currentUserId: string | undefined;
   onTopicChange: (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => void;
   isEditMode: boolean;
+  importancePercentage?: number;
+  userStats?: UserStats;
 }
 
 export const TopicRow = ({
@@ -22,9 +30,17 @@ export const TopicRow = ({
   performanceGoal,
   currentUserId,
   onTopicChange,
-  isEditMode
+  isEditMode,
+  importancePercentage = 0,
+  userStats
 }: TopicRowProps) => {
   const { stats } = useQuestionStatsFromLink(topic.link, currentUserId);
+
+  // Usar stats da disciplina se disponível, senão usar stats do link individual
+  const displayStats = userStats || stats;
+  const performance = displayStats.totalAttempts > 0 
+    ? calculatePerformance(displayStats.correctAnswers, displayStats.totalAttempts) 
+    : 0;
 
   return (
     <tr className={cn("border-t border-gray-200", index % 2 === 0 ? "bg-white" : "bg-gray-50")}>
@@ -71,21 +87,24 @@ export const TopicRow = ({
         </div>
       </td>
       <td className="py-3 px-4 text-center">
-        <span>{stats.totalAttempts}</span>
+        <span className="font-medium">{importancePercentage}%</span>
       </td>
       <td className="py-3 px-4 text-center">
-        <span>{stats.correctAnswers}</span>
+        <span>{displayStats.totalAttempts}</span>
       </td>
-      <td className="py-3 px-4 text-center">{stats.wrongAnswers}</td>
+      <td className="py-3 px-4 text-center">
+        <span>{displayStats.correctAnswers}</span>
+      </td>
+      <td className="py-3 px-4 text-center">{displayStats.wrongAnswers}</td>
       <td className={cn(
         "py-3 px-4 text-center", 
-        stats.totalAttempts === 0 
+        displayStats.totalAttempts === 0 
           ? "" 
-          : calculatePerformance(stats.correctAnswers, stats.totalAttempts) < performanceGoal 
+          : performance < performanceGoal 
             ? "bg-[#fceadf]" 
             : "bg-[#e4e0f3]"
       )}>
-        {stats.totalAttempts > 0 ? calculatePerformance(stats.correctAnswers, stats.totalAttempts) : 0}%
+        {performance}%
       </td>
     </tr>
   );

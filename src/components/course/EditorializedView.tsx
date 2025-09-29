@@ -50,6 +50,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
 
 export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewProps) => {
   const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase, performanceGoal, updatePerformanceGoal, examDate, updateExamDate, lastSaveTime } = useEditorializedData();
+  const [sortBy, setSortBy] = useState<'id' | 'importance'>('id');
   const [simuladosStats, setSimuladosStats] = useState({
     total: 0,
     realizados: 0,
@@ -352,6 +353,25 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
     }
   };
 
+  const handleSortChange = (newSortBy: 'id' | 'importance') => {
+    setSortBy(newSortBy);
+  };
+
+  // Sortear subjects baseado no critério escolhido
+  const sortedSubjects = [...subjects].sort((a, b) => {
+    if (sortBy === 'importance') {
+      // Ordenar por importância (maior para menor)
+      const aImportance = 0; // A importância será calculada no hook useSubjectImportanceStats
+      const bImportance = 0;
+      return bImportance - aImportance;
+    } else {
+      // Ordenar por ID (menor para maior)
+      const aId = typeof a.id === 'string' ? parseInt(a.id) || 0 : a.id;
+      const bId = typeof b.id === 'string' ? parseInt(b.id) || 0 : b.id;
+      return aId - bId;
+    }
+  });
+
   if ((loading && activeTab === 'edital') || (isLoadingEdital && activeTab === 'edital')) {
     logWithTimestamp("Renderizando tela de carregamento");
     return (
@@ -403,13 +423,15 @@ export const EditorializedView = ({ activeTab = 'edital' }: EditorializedViewPro
         <>
           <StatisticsCard subjects={subjects} />
           
-          {subjects.map(subject => (
+          {sortedSubjects.map(subject => (
             <SubjectTable
               key={subject.id}
               subject={subject}
+              subjects={subjects}
               performanceGoal={performanceGoal}
               onTopicChange={updateTopicProgress}
               isEditMode={isEditMode}
+              onSortChange={handleSortChange}
             />
           ))}
           
