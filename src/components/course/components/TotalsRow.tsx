@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { calculatePerformance } from "../utils/statsCalculations";
-import { Topic } from "../types/editorialized";
+
 
 interface UserStats {
   totalAttempts: number;
@@ -10,13 +10,12 @@ interface UserStats {
 }
 
 interface TotalsRowProps {
-  topics: Topic[];
   performanceGoal: number;
   importancePercentage?: number;
   userStats?: UserStats;
 }
 
-export const TotalsRow = ({ topics, performanceGoal, importancePercentage = 0, userStats }: TotalsRowProps) => {
+export const TotalsRow = ({ performanceGoal, importancePercentage = 0, userStats }: TotalsRowProps) => {
   // Use disciplina stats if available, otherwise use zero values
   const totalStats = useMemo(() => {
     if (userStats) {

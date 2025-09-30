@@ -9,7 +9,6 @@ export interface Disciplina {
   disciplinas_filtro: string[][];
   bancas_filtro: string[][];
   quantidade_questoes_filtro: number[];
-  importancia: number[];
   selecionada: boolean;
 }
 

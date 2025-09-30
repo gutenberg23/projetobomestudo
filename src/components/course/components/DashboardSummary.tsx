@@ -11,8 +11,8 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { calculateOverallStats } from "../utils/statsCalculations";
 
 interface DashboardSummaryProps {
   overallStats: OverallStats;
@@ -83,14 +83,32 @@ export const DashboardSummary = ({
 
   // Efeito para buscar estatísticas reais quando os subjects mudam
   useEffect(() => {
-    // Não usar mais os links para contagens, usar diretamente as estatísticas do banco de dados
+    console.log("[DashboardSummary] Subjects data received:", subjects);
+    
+    // Calcular estatísticas reais com base nos dados da SubjectTable
+    const calculatedStats = calculateOverallStats(subjects);
+    console.log("[DashboardSummary] Calculated stats:", calculatedStats);
+    
+    const overallPerformance = calculatedStats.totalExercises > 0 
+      ? Math.round((calculatedStats.totalHits / calculatedStats.totalExercises) * 100) 
+      : 0;
+    
+    console.log("[DashboardSummary] Overall performance calculated:", overallPerformance);
+    
     setRealStats({
-      totalHits: overallStats.totalHits,
-      totalErrors: overallStats.totalErrors,
-      totalExercises: overallStats.totalExercises,
-      overallPerformance: Math.round(overallStats.totalHits / Math.max(overallStats.totalExercises, 1) * 100) || 0
+      totalHits: calculatedStats.totalHits,
+      totalErrors: calculatedStats.totalErrors,
+      totalExercises: calculatedStats.totalExercises,
+      overallPerformance
     });
-  }, [overallStats]);
+    
+    console.log("[DashboardSummary] Real stats state updated:", {
+      totalHits: calculatedStats.totalHits,
+      totalErrors: calculatedStats.totalErrors,
+      totalExercises: calculatedStats.totalExercises,
+      overallPerformance
+    });
+  }, [subjects]);
 
   const overallProgress = Math.round(overallStats.completedTopics / overallStats.totalTopics * 100) || 0;
   // Usar as estatísticas reais calculadas

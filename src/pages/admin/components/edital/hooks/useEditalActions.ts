@@ -22,8 +22,7 @@ export const useEditalActions = () => {
           topicos_filtro: disciplina.topicos_filtro ? disciplina.topicos_filtro.flat() : [],
           disciplinas_filtro: disciplina.disciplinas_filtro ? disciplina.disciplinas_filtro.flat() : [],
           bancas_filtro: disciplina.bancas_filtro ? disciplina.bancas_filtro.flat() : [],
-          quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro,
-          importancia: disciplina.importancia
+          quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro
         })
         .select()
         .single();
@@ -65,8 +64,7 @@ export const useEditalActions = () => {
           topicos_filtro: disciplina.topicos_filtro ? disciplina.topicos_filtro.flat() : [],
           disciplinas_filtro: disciplina.disciplinas_filtro ? disciplina.disciplinas_filtro.flat() : [],
           bancas_filtro: disciplina.bancas_filtro ? disciplina.bancas_filtro.flat() : [],
-          quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro,
-          importancia: disciplina.importancia
+          quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro
         })
         .eq('id', id)
         .select()

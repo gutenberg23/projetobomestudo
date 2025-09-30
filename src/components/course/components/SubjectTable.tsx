@@ -194,7 +194,6 @@ export const SubjectTable = ({
               />
             ))}
             <TotalsRow
-              topics={sortedTopics}
               performanceGoal={performanceGoal}
               importancePercentage={currentImportanceStats.percentage}
               userStats={currentSubjectStats}

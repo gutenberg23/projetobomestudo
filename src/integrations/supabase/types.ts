@@ -603,7 +603,6 @@ export type Database = {
           descricao: string | null
           disciplinas_filtro: string[] | null
           id: string
-          importancia: number[] | null
           links: string[] | null
           quantidade_questoes_filtro: number[] | null
           titulo: string
@@ -617,7 +616,6 @@ export type Database = {
           descricao?: string | null
           disciplinas_filtro?: string[] | null
           id?: string
-          importancia?: number[] | null
           links?: string[] | null
           quantidade_questoes_filtro?: number[] | null
           titulo: string
@@ -631,7 +629,6 @@ export type Database = {
           descricao?: string | null
           disciplinas_filtro?: string[] | null
           id?: string
-          importancia?: number[] | null
           links?: string[] | null
           quantidade_questoes_filtro?: number[] | null
           titulo?: string

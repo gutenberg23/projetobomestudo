@@ -72,8 +72,7 @@ CREATE TABLE IF NOT EXISTS disciplinaverticalizada (
   titulo VARCHAR(255) NOT NULL,
   descricao TEXT,
   topicos TEXT[],
-  links TEXT[],
-  importancia INTEGER[]
+  links TEXT[]
 );
 ```
 

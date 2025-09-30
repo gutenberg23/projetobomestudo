@@ -12,7 +12,7 @@ async function testImportanceData() {
     // Buscar algumas disciplinas para verificar os dados
     const { data, error } = await supabase
       .from('disciplinaverticalizada')
-      .select('id, titulo, importancia')
+      .select('id, titulo')
       .limit(5);
 
     if (error) {
@@ -24,20 +24,6 @@ async function testImportanceData() {
     data?.forEach(disciplina => {
       console.log(`ID: ${disciplina.id}`);
       console.log(`Título: ${disciplina.titulo}`);
-      console.log(`Importância:`, disciplina.importancia);
-      
-      // Verificar se importancia é um array válido
-      if (Array.isArray(disciplina.importancia)) {
-        const total = disciplina.importancia.reduce((sum, value) => sum + (value || 0), 0);
-        console.log(`Total de importância: ${total}`);
-        
-        disciplina.importancia.forEach((value, index) => {
-          const percentage = total > 0 ? Math.round(((value || 0) / total) * 100) : 0;
-          console.log(`  Tópico ${index}: ${value} (${percentage}%)`);
-        });
-      } else {
-        console.log('  Dados de importância inválidos ou ausentes');
-      }
       console.log('---');
     });
   } catch (error) {

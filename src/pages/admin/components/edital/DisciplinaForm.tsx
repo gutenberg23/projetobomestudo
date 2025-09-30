@@ -206,8 +206,7 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
       topicos_filtro: topicosPorTopico.map(t => [...t]),
       disciplinas_filtro: disciplinasPorTopico.map(d => [...d]),
       bancas_filtro: bancasPorTopico.map(b => [...b]),
-      quantidade_questoes_filtro: [...quantidadeQuestoesPorTopico],
-      importancia: topicos.map(() => 0)
+      quantidade_questoes_filtro: [...quantidadeQuestoesPorTopico]
     };
 
     if (disciplinaParaEditar) {

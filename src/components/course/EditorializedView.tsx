@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { FileX, Loader2 } from "lucide-react";
 import { calculateOverallStats } from "./utils/statsCalculations";
 import { toast } from "@/components/ui/use-toast";
+import { useSubjectImportanceStats } from "@/hooks/useSubjectImportanceStats";
+import { Subject } from "./types/editorialized";
 
 
 declare global {
@@ -21,6 +23,7 @@ declare global {
 interface EditorializedViewProps {
   courseId: string;
   activeTab?: string;
+  subjectsData?: any[]; // Adicionando prop para dados das disciplinas
 }
 
 interface UserSimuladoResult {
@@ -49,7 +52,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
   from(table: 'user_simulado_results'): any;
 };
 
-export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, activeTab = 'edital' }) => {
+export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, activeTab = 'edital', subjectsData = [] }) => {
   const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase, performanceGoal, updatePerformanceGoal, examDate, updateExamDate, lastSaveTime } = useEditorializedData();
   const [sortBy, setSortBy] = useState<'id' | 'importance'>('id');
   const [simuladosStats, setSimuladosStats] = useState({
@@ -64,6 +67,47 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
   const [isLoadingEdital, setIsLoadingEdital] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  
+  // Usar o hook useSubjectImportanceStats para obter dados atualizados
+  const { userStats, topicUserStats, loading: statsLoading } = useSubjectImportanceStats(subjects, user?.id);
+
+  // Combinar os dados do useEditorializedData com os dados atualizados do useSubjectImportanceStats
+  const updatedSubjects = subjects.map(subject => {
+    // Obter estatísticas da disciplina
+    const subjectStats = userStats[subject.id.toString()] || {
+      totalAttempts: 0,
+      correctAnswers: 0,
+      wrongAnswers: 0
+    };
+    
+    // Atualizar os tópicos com estatísticas reais
+    const updatedTopics = subject.topics.map((topic, index) => {
+      // Obter estatísticas do tópico
+      const topicKey = `${subject.id}-${index}`;
+      const topicStats = topicUserStats[topicKey] || {
+        totalAttempts: 0,
+        correctAnswers: 0,
+        wrongAnswers: 0
+      };
+      
+      // Retornar tópico atualizado com dados reais
+      return {
+        ...topic,
+        exercisesDone: topicStats.totalAttempts,
+        hits: topicStats.correctAnswers,
+        errors: topicStats.wrongAnswers
+      };
+    });
+    
+    // Retornar disciplina atualizada
+    return {
+      ...subject,
+      topics: updatedTopics,
+      totalExercises: subjectStats.totalAttempts,
+      correctAnswers: subjectStats.correctAnswers,
+      errors: subjectStats.wrongAnswers
+    };
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -300,9 +344,9 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
   };
 
   // Removendo a ordenação de disciplinas, pois agora ordenamos apenas os tópicos dentro de cada disciplina
-  const sortedSubjects = subjects; // Usar as disciplinas na ordem original
+  const sortedSubjects = updatedSubjects; // Usar as disciplinas atualizadas
 
-  if (loading || isLoadingEdital) {
+  if (loading || isLoadingEdital || statsLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-[#5f2ebe]" />
@@ -329,13 +373,13 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
       
       {(activeTab !== 'edital' || (activeTab === 'edital' && hasEdital)) && (
         <DashboardSummary 
-          overallStats={calculateOverallStats(subjects)} 
+          overallStats={calculateOverallStats(updatedSubjects)} 
           performanceGoal={performanceGoal} 
           setPerformanceGoal={updatePerformanceGoal}
           activeTab={activeTab}
-          subjects={subjects}
+          subjects={updatedSubjects}
           simuladosStats={simuladosStats}
-          loading={loading}
+          loading={loading || statsLoading}
           isEditMode={isEditMode}
           onToggleEditMode={handleEditModeToggle}
           isSaving={isSaving}
@@ -353,13 +397,13 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
 
       {activeTab === 'edital' && hasEdital && (
         <>
-          <StatisticsCard subjects={subjects} />
+          <StatisticsCard subjects={updatedSubjects} />
           
           {sortedSubjects.map(subject => (
             <SubjectTable
               key={subject.id}
               subject={subject}
-              subjects={subjects}
+              subjects={updatedSubjects}
               performanceGoal={performanceGoal}
               onTopicChange={updateTopicProgress}
               isEditMode={isEditMode}
@@ -368,7 +412,7 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
             />
           ))}
           
-          {subjects.length === 0 && (
+          {updatedSubjects.length === 0 && (
             <div className="text-center py-8 text-[#67748a]">
               Nenhuma disciplina encontrada para este edital.
             </div>
