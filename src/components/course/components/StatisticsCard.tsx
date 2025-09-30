@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Subject } from "../types/editorialized";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { useAuth } from "@/contexts/AuthContext";
 
 interface StatisticsCardProps {
   subjects: Subject[];
@@ -14,7 +13,6 @@ export const StatisticsCard = ({
 }: StatisticsCardProps) => {
   const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.name || "");
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const { user } = useAuth();
 
   console.log("[StatisticsCard] Subjects data received:", subjects);
 

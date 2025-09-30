@@ -42,7 +42,7 @@ const Questions = () => {
   });
   const [questionsPerPage, setQuestionsPerPage] = useState("10");
   const [currentPage, setCurrentPage] = useState(1);
-  const [disabledOptions, setDisabledOptions] = useState<string[]>([]);
+  const [disabledOptions, setDisabledOptions] = useState<{ [key: string]: string[] }>({});
   const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterOptions, setFilterOptions] = useState({
@@ -308,13 +308,19 @@ const Questions = () => {
     fetchQuestions();
   }, [searchQuery, selectedFilters, currentPage, questionsPerPage]);
   
-  const handleToggleDisabled = (optionId: string, event: React.MouseEvent) => {
+  const handleToggleDisabled = (questionId: string, optionId: string, event: React.MouseEvent) => {
     event.preventDefault();
-    setDisabledOptions(prev => 
-      prev.includes(optionId) 
-        ? prev.filter(id => id !== optionId) 
-        : [...prev, optionId]
-    );
+    setDisabledOptions(prev => {
+      const questionDisabled = prev[questionId] || [];
+      const isDisabled = questionDisabled.includes(optionId);
+      
+      return {
+        ...prev,
+        [questionId]: isDisabled
+          ? questionDisabled.filter(id => id !== optionId)
+          : [...questionDisabled, optionId]
+      };
+    });
   };
   
   const handleFilterChange = (

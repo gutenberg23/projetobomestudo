@@ -5,8 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 interface QuestionResultsProps {
   questions: any[];
-  disabledOptions: string[];
-  onToggleDisabled: (optionId: string, event: React.MouseEvent) => void;
+  disabledOptions: { [key: string]: string[] };
+  onToggleDisabled: (questionId: string, optionId: string, event: React.MouseEvent) => void;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -72,8 +72,8 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
         <QuestionCard
           key={question.id}
           question={question}
-          disabledOptions={disabledOptions}
-          onToggleDisabled={onToggleDisabled}
+          disabledOptions={disabledOptions[question.id] || []}
+          onToggleDisabled={(optionId, event) => onToggleDisabled(question.id, optionId, event)}
         />
       ))}
       

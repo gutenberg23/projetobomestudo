@@ -11,8 +11,6 @@ import { FileX, Loader2 } from "lucide-react";
 import { calculateOverallStats } from "./utils/statsCalculations";
 import { toast } from "@/components/ui/use-toast";
 import { useSubjectImportanceStats } from "@/hooks/useSubjectImportanceStats";
-import { Subject } from "./types/editorialized";
-
 
 declare global {
   interface Window {
@@ -23,7 +21,6 @@ declare global {
 interface EditorializedViewProps {
   courseId: string;
   activeTab?: string;
-  subjectsData?: any[]; // Adicionando prop para dados das disciplinas
 }
 
 interface UserSimuladoResult {
@@ -52,7 +49,7 @@ type SupabaseClientWithCustomTables = typeof supabase & {
   from(table: 'user_simulado_results'): any;
 };
 
-export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, activeTab = 'edital', subjectsData = [] }) => {
+export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, activeTab = 'edital' }) => {
   const { subjects, loading, updateTopicProgress, forceRefresh, unsavedChanges, setUnsavedChanges, saveAllDataToDatabase, performanceGoal, updatePerformanceGoal, examDate, updateExamDate, lastSaveTime } = useEditorializedData();
   const [sortBy, setSortBy] = useState<'id' | 'importance'>('id');
   const [simuladosStats, setSimuladosStats] = useState({
@@ -145,10 +142,10 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
       const sessionCheckInterval = setInterval(async () => {
         if (user) {
           try {
-            const { data, error } = await supabase.auth.getSession();
+            const { data: sessionData, error } = await supabase.auth.getSession();
             if (error) {
-            } else if (!data.session) {
-              const refreshResult = await supabase.auth.refreshSession();
+            } else if (!sessionData.session) {
+              await supabase.auth.refreshSession();
             } else {
             }
           } catch (error) {
