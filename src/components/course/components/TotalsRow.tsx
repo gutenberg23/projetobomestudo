@@ -12,12 +12,11 @@ interface UserStats {
 interface TotalsRowProps {
   topics: Topic[];
   performanceGoal: number;
-  currentUserId: string | undefined;
   importancePercentage?: number;
   userStats?: UserStats;
 }
 
-export const TotalsRow = ({ topics, performanceGoal, currentUserId, importancePercentage = 0, userStats }: TotalsRowProps) => {
+export const TotalsRow = ({ topics, performanceGoal, importancePercentage = 0, userStats }: TotalsRowProps) => {
   // Use disciplina stats if available, otherwise use zero values
   const totalStats = useMemo(() => {
     if (userStats) {

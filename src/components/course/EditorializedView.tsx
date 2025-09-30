@@ -4,7 +4,6 @@ import { SubjectTable } from "./components/SubjectTable";
 import { SimuladosTable } from "./components/SimuladosTable";
 import { StatisticsCard } from "./components/StatisticsCard";
 import { useEditorializedData } from "./hooks/useEditorializedData";
-import { useParams } from "react-router-dom";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -65,23 +64,11 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
   const [isLoadingEdital, setIsLoadingEdital] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Função para log com timestamp
-  const logWithTimestamp = (message: string, data?: any) => {
-    const timestamp = new Date().toISOString();
-    if (data) {
-      console.log(`[${timestamp}] EditorializedView: ${message}:`, data);
-    } else {
-      console.log(`[${timestamp}] EditorializedView: ${message}`);
-    }
-  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.forceRefreshEdital = () => {
         if (forceRefresh) {
-          logWithTimestamp("forceRefreshEdital chamado pela janela global");
           forceRefresh();
           checkEditalExists();
         }
@@ -92,32 +79,19 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
           if (courseId) {
             const realId = extractIdFromFriendlyUrl(courseId);
             localStorage.removeItem(`edital_${realId}`);
-            logWithTimestamp(`Cache do localStorage para edital_${realId} removido`);
           }
           
           if (user) {
             const { data: sessionData } = await supabase.auth.getSession();
             if (!sessionData.session) {
-              logWithTimestamp("Sessão expirada, tentando renovar");
               const { data, error } = await supabase.auth.refreshSession();
               if (error) {
-                logWithTimestamp("Erro ao renovar sessão", error);
-                logWithTimestamp("Usuário continuará com funcionalidade limitada");
               } else {
-                logWithTimestamp("Sessão renovada com sucesso", {
-                  userId: data.session?.user.id,
-                  expiresAt: data.session?.expires_at
-                });
               }
             } else {
-              logWithTimestamp("Sessão válida encontrada", {
-                userId: sessionData.session.user.id,
-                expiresAt: sessionData.session.expires_at
-              });
             }
           }
         } catch (error) {
-          logWithTimestamp("Erro ao atualizar sessão", error);
         }
       };
       
@@ -129,19 +103,11 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
           try {
             const { data, error } = await supabase.auth.getSession();
             if (error) {
-              logWithTimestamp("Erro ao verificar sessão no intervalo", error);
             } else if (!data.session) {
-              logWithTimestamp("Sessão expirada em verificação de intervalo, tentando renovar");
               const refreshResult = await supabase.auth.refreshSession();
-              logWithTimestamp("Resultado da renovação de sessão", refreshResult);
             } else {
-              logWithTimestamp("Verificação de intervalo: sessão válida", {
-                userId: data.session.user.id,
-                expiresAt: data.session.expires_at
-              });
             }
           } catch (error) {
-            logWithTimestamp("Erro na verificação de intervalo da sessão", error);
           }
         }
       }, 10 * 60 * 1000);
@@ -157,10 +123,7 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
   useEffect(() => {
     if (!unsavedChanges || !user || !courseId) return;
     
-    logWithTimestamp("Detectadas alterações não salvas, configurando auto-save");
-    
     const autoSaveTimer = setTimeout(() => {
-      logWithTimestamp("Executando auto-save após timeout");
       handleSaveData();
     }, 2 * 60 * 1000); // Auto-save após 2 minutos
     
@@ -188,9 +151,6 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
     try {
       const realId = extractIdFromFriendlyUrl(courseId);
       
-      const timestamp = new Date().getTime();
-      logWithTimestamp(`Verificando existência do edital (timestamp: ${timestamp})`);
-      
       const { data, error } = await supabase
         .from('cursoverticalizado')
         .select('id, curso_id')
@@ -198,19 +158,15 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
         .maybeSingle();
         
       if (error && error.code !== 'PGRST116') {
-        logWithTimestamp('Erro ao verificar existência do edital', error);
       }
       
       const editalExists = !!data && !!data.id && data.curso_id === realId;
       setHasEdital(editalExists);
-      logWithTimestamp('Edital existe?', { exists: editalExists, data });
       
       if (!editalExists && forceRefresh) {
-        logWithTimestamp('Edital não existe, forçando refresh');
         forceRefresh();
       }
     } catch (error) {
-      logWithTimestamp('Erro ao verificar existência do edital', error);
       setHasEdital(false);
     } finally {
       setIsLoadingEdital(false);
@@ -222,7 +178,6 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
       if (!courseId || !user) return;
 
       const realId = extractIdFromFriendlyUrl(courseId);
-      logWithTimestamp('Buscando estatísticas de simulados', { courseId: realId, userId: user.id });
       
       const { data: simuladosData, error: simuladosError } = await supabase
         .from("simulados")
@@ -231,12 +186,10 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
         .eq("ativo", true);
 
       if (simuladosError) {
-        logWithTimestamp("Erro ao buscar simulados", simuladosError);
         return;
       }
 
       const simulados = simuladosData as Simulado[];
-      logWithTimestamp("Simulados encontrados", { count: simulados.length });
 
       const supabaseWithCustomTables = supabase as SupabaseClientWithCustomTables;
       const { data: resultsData, error: resultsError } = await supabaseWithCustomTables
@@ -245,12 +198,10 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
         .eq("user_id", user.id);
 
       if (resultsError) {
-        logWithTimestamp("Erro ao buscar resultados de simulados", resultsError);
         return;
       }
 
       const userResults = resultsData as UserSimuladoResult[];
-      logWithTimestamp("Resultados de simulados encontrados", { count: userResults.length });
 
       const total = simulados.length;
       const realizados = userResults.filter(result => 
@@ -278,20 +229,16 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
         errors
       };
       
-      logWithTimestamp("Estatísticas de simulados calculadas", newStats);
       setSimuladosStats(newStats);
     } catch (error) {
-      logWithTimestamp("Erro ao calcular estatísticas de simulados", error);
     }
   };
 
   const handleSaveData = async () => {
     setIsSaving(true);
-    logWithTimestamp("Iniciando salvamento de dados");
     
     try {
       if (await saveAllDataToDatabase()) {
-        logWithTimestamp("Dados salvos com sucesso");
         toast({
           title: "Sucesso",
           description: "Dados salvos com sucesso!",
@@ -299,7 +246,6 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
         });
         setIsEditMode(false);
       } else {
-        logWithTimestamp("Falha ao salvar dados");
         toast({
           title: "Erro",
           description: "Não foi possível salvar os dados. Tentando novamente...",
@@ -308,9 +254,7 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
         
         // Tentar uma segunda vez após um curto delay
         setTimeout(async () => {
-          logWithTimestamp("Segunda tentativa de salvamento");
           if (await saveAllDataToDatabase()) {
-            logWithTimestamp("Segunda tentativa bem sucedida");
             toast({
               title: "Sucesso",
               description: "Dados salvos com sucesso na segunda tentativa!",
@@ -318,7 +262,6 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
             });
             setIsEditMode(false);
           } else {
-            logWithTimestamp("Segunda tentativa falhou");
             toast({
               title: "Erro",
               description: "Não foi possível salvar os dados mesmo após nova tentativa. Por favor, tente novamente mais tarde.",
@@ -329,7 +272,6 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
         }, 3000);
       }
     } catch (error) {
-      logWithTimestamp("Erro ao salvar dados", error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao salvar os dados. Tente novamente.",
@@ -346,11 +288,9 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
   const handleEditModeToggle = () => {
     if (isEditMode) {
       // Se estamos no modo de edição, iremos salvar e sair
-      logWithTimestamp("Saindo do modo de edição e salvando dados");
       handleSaveData();
     } else {
       // Se não estamos no modo de edição, iremos entrar
-      logWithTimestamp("Entrando no modo de edição");
       setIsEditMode(true);
     }
   };
@@ -383,7 +323,6 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
     );
   }
 
-  logWithTimestamp("Renderizando view principal");
   return (
     <div className="bg-[rgb(242,244,246)] rounded-[10px] pb-5 w-full">
 

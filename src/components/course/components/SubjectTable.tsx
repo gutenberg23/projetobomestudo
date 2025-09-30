@@ -6,12 +6,6 @@ import { TopicRow } from "./TopicRow";
 import { TotalsRow } from "./TotalsRow";
 import { useSubjectImportanceStats } from "@/hooks/useSubjectImportanceStats";
 
-interface UserStats {
-  totalAttempts: number;
-  correctAnswers: number;
-  wrongAnswers: number;
-}
-
 interface SubjectTableProps {
   subject: Subject;
   performanceGoal: number;
@@ -28,17 +22,20 @@ export const SubjectTable = ({
   onTopicChange,
   isEditMode,
   subjects,
-  onSortChange,
   sortBy = 'id' // Valor padrão
 }: SubjectTableProps) => {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
+  const [disciplinaFilters, setDisciplinaFilters] = useState<{ 
+    disciplinas_filtro: string[] | null; 
+    topicos_filtro: string[] | null; 
+    bancas_filtro: string[] | null; 
+    assuntos: string[] | null; 
+  } | null>(null);
+  
   const subjectTotals = calculateSubjectTotals(subject.topics);
   const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
   
   const { importanceStats, userStats, topicUserStats, loading } = useSubjectImportanceStats(subjects, currentUserId);
-  
-  // Verificar se há dados disponíveis
-  console.log('Dados do hook no SubjectTable:', { importanceStats, userStats, topicUserStats, loading });
 
   // Buscar o usuário atual
   useEffect(() => {
@@ -48,6 +45,28 @@ export const SubjectTable = ({
     };
     getCurrentUser();
   }, []);
+
+  // Buscar filtros da disciplina
+  useEffect(() => {
+    const fetchDisciplinaFilters = async () => {
+      if (!subject.id) return;
+      
+      const { data, error } = await supabase
+        .from('disciplinaverticalizada')
+        .select('disciplinas_filtro, topicos_filtro, bancas_filtro, assuntos')
+        .eq('id', subject.id)
+        .single();
+        
+      if (error) {
+        console.error('Erro ao buscar filtros da disciplina:', error);
+        return;
+      }
+      
+      setDisciplinaFilters(data);
+    };
+    
+    fetchDisciplinaFilters();
+  }, [subject.id]);
 
   const currentSubjectStats = userStats[subject.id.toString()] || {
     totalAttempts: 0,
@@ -105,16 +124,42 @@ export const SubjectTable = ({
     return <div>Carregando estatísticas...</div>;
   }
 
-  return <div className="mb-8 last:mb-0">
+  return (
+    <div className="mb-8 last:mb-0">
+      {/* Invisible inputs to hold filter values */}
+      <div style={{ display: 'none' }}>
+        <input 
+          id={`disciplinas_filtro_${subject.id}`} 
+          value={disciplinaFilters?.disciplinas_filtro?.join(',') || ''} 
+          readOnly 
+        />
+        <input 
+          id={`topicos_filtro_${subject.id}`} 
+          value={disciplinaFilters?.topicos_filtro?.join(',') || ''} 
+          readOnly 
+        />
+        <input 
+          id={`bancas_filtro_${subject.id}`} 
+          value={disciplinaFilters?.bancas_filtro?.join(',') || ''} 
+          readOnly 
+        />
+        <input 
+          id={`assuntos_${subject.id}`} 
+          value={disciplinaFilters?.assuntos?.join(',') || ''} 
+          readOnly 
+        />
+      </div>
+      
       <div className="flex items-center justify-between bg-white text-gray-800 p-3 rounded-lg">
         <div className="flex items-center gap-2">
           <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-16 md:w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-[#5f2ebe] transition-all" style={{
-            width: `${subjectProgress}%`
-          }} />
+            <div 
+              className="h-full bg-[#5f2ebe] transition-all" 
+              style={{ width: `${subjectProgress}%` }}
+            />
           </div>
           <span className="text-xs md:text-sm">{subjectProgress}%</span>
         </div>
@@ -142,7 +187,6 @@ export const SubjectTable = ({
                 index={index}
                 subjectId={subject.id}
                 performanceGoal={performanceGoal}
-                currentUserId={currentUserId}
                 onTopicChange={onTopicChange}
                 isEditMode={isEditMode}
                 importancePercentage={getTopicImportancePercentage(topic.id - 1)}
@@ -152,12 +196,12 @@ export const SubjectTable = ({
             <TotalsRow
               topics={sortedTopics}
               performanceGoal={performanceGoal}
-              currentUserId={currentUserId}
               importancePercentage={currentImportanceStats.percentage}
               userStats={currentSubjectStats}
             />
           </tbody>
         </table>
       </div>
-    </div>;
+    </div>
+  );
 };

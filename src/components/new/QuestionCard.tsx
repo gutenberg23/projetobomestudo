@@ -561,7 +561,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   
   // Função para normalizar o nome da banca
   const normalizarBanca = (banca: string): string => {
-    return banca?.trim().toUpperCase() || '';
+    return banca?.trim() || '';
   };
   
   const handleAnswer = async () => {
@@ -1256,7 +1256,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         const topicos = questaoData?.topicos || [];
         
         // Se a questão não tem metadados, ignoramos
-        if (!discipline && (!topicos || topicos.length === 0)) {
+        if (!disciplina && (!topicos || topicos.length === 0)) {
           console.warn(`Questão ${questaoId} não tem metadados para atualizar`);
           falhas += respostasPorQuestao[questaoId].length;
           continue;

@@ -15,7 +15,6 @@ interface TopicRowProps {
   index: number;
   subjectId: string | number;
   performanceGoal: number;
-  currentUserId: string | undefined;
   onTopicChange: (subjectId: string | number, topicId: number, field: keyof Topic, value: any) => void;
   isEditMode: boolean;
   importancePercentage?: number;
@@ -27,7 +26,6 @@ export const TopicRow = ({
   index,
   subjectId,
   performanceGoal,
-  currentUserId,
   onTopicChange,
   isEditMode,
   importancePercentage = 0,
