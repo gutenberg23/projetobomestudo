@@ -219,95 +219,112 @@ export const useSubjectImportanceStats = (subjects: Subject[], currentUserId?: s
           continue;
         }
         
-        // Processar cada tópico individualmente
-        for (let i = 0; i < disciplina.quantidade_questoes_filtro.length; i++) {
-          // Obter os filtros para este tópico específico
-          const topico = disciplina.topicos_filtro && disciplina.topicos_filtro[i] ? disciplina.topicos_filtro[i] : null;
-          const assunto = disciplina.assuntos && disciplina.assuntos[i] ? disciplina.assuntos[i] : null;
-          const disciplinaFiltro = disciplina.disciplinas_filtro && disciplina.disciplinas_filtro[i] ? disciplina.disciplinas_filtro[i] : null;
-          const banca = disciplina.bancas_filtro && disciplina.bancas_filtro[i] ? disciplina.bancas_filtro[i] : null;
-          
-          console.log(`\n[TÓPICO ${i + 1}]`);
-          console.log(`  Filtros: disciplina="${disciplinaFiltro}", banca="${banca}", assunto="${assunto}", topico="${topico}"`);
-          
-          // Construir query para buscar respostas que correspondam aos filtros
-          let query = supabase
-            .from('respostas_alunos')
-            .select('is_correta')
-            .eq('aluno_id', userId);
+      // Processar cada tópico individualmente
+      for (let i = 0; i < disciplina.quantidade_questoes_filtro.length; i++) {
+        // Obter os filtros para este tópico específico
+        const topico = disciplina.topicos_filtro && disciplina.topicos_filtro[i] ? disciplina.topicos_filtro[i] : null;
+        const assunto = disciplina.assuntos && disciplina.assuntos[i] ? disciplina.assuntos[i] : null;
+        const disciplinaFiltro = disciplina.disciplinas_filtro && disciplina.disciplinas_filtro[i] ? disciplina.disciplinas_filtro[i] : null;
+        const banca = disciplina.bancas_filtro && disciplina.bancas_filtro[i] ? disciplina.bancas_filtro[i] : null;
+        
+        console.log(`\n[TÓPICO ${i + 1}]`);
+        console.log(`  Filtros originais:`, { disciplina: disciplinaFiltro, banca, assunto, topico });
+        
+        // Construir query base
+        let query = supabase
+          .from('respostas_alunos')
+          .select('is_correta, questao_id, disciplina, banca, assuntos, topicos')
+          .eq('aluno_id', userId);
 
-          let hasFilters = false;
+        let hasFilters = false;
+        const appliedFilters: string[] = [];
 
-          // Aplicar filtro de disciplina (string simples, usar .eq())
-          if (disciplinaFiltro && disciplinaFiltro.trim() !== '') {
-            query = query.eq('disciplina', disciplinaFiltro.trim());
-            hasFilters = true;
-          }
+        // Aplicar filtro de disciplina
+        if (disciplinaFiltro && disciplinaFiltro.trim() !== '') {
+          query = query.eq('disciplina', disciplinaFiltro.trim());
+          hasFilters = true;
+          appliedFilters.push(`disciplina="${disciplinaFiltro.trim()}"`);
+        }
 
-          // Aplicar filtro de banca (string simples, usar .eq())
-          if (banca && banca.trim() !== '') {
-            query = query.eq('banca', banca.trim());
-            hasFilters = true;
-          }
+        // Aplicar filtro de banca
+        if (banca && banca.trim() !== '') {
+          query = query.eq('banca', banca.trim());
+          hasFilters = true;
+          appliedFilters.push(`banca="${banca.trim()}"`);
+        }
 
-          // Aplicar filtro de assunto (array em respostas_alunos, usar .contains())
-          if (assunto && assunto.trim() !== '') {
-            query = query.contains('assuntos', [assunto.trim()]);
-            hasFilters = true;
-          }
+        // Aplicar filtro de assunto
+        if (assunto && assunto.trim() !== '') {
+          query = query.contains('assuntos', [assunto.trim()]);
+          hasFilters = true;
+          appliedFilters.push(`assuntos contém "${assunto.trim()}"`);
+        }
 
-          // Aplicar filtro de tópico (array em respostas_alunos, usar .contains())
-          if (topico && topico.trim() !== '') {
-            query = query.contains('topicos', [topico.trim()]);
-            hasFilters = true;
-          }
+        // Aplicar filtro de tópico
+        if (topico && topico.trim() !== '') {
+          query = query.contains('topicos', [topico.trim()]);
+          hasFilters = true;
+          appliedFilters.push(`topicos contém "${topico.trim()}"`);
+        }
 
-          // Se não houver nenhum filtro, não buscar nada para este tópico
-          if (!hasFilters) {
-            console.log(`  ⚠ Nenhum filtro definido - contabilizando 0 questões`);
-            const topicKey = `${disciplina.id}-${i}`;
-            topicStatsData[topicKey] = {
-              totalAttempts: 0,
-              correctAnswers: 0,
-              wrongAnswers: 0
-            };
-            continue;
-          }
+        console.log(`  Filtros aplicados: ${appliedFilters.join(', ')}`);
 
-          // Executar query
-          const { data: respostas, error } = await query;
-
-          if (error) {
-            console.error(`  ❌ Erro ao buscar respostas:`, error);
-            const topicKey = `${disciplina.id}-${i}`;
-            topicStatsData[topicKey] = {
-              totalAttempts: 0,
-              correctAnswers: 0,
-              wrongAnswers: 0
-            };
-            continue;
-          }
-
-          // Calcular estatísticas
-          const totalAttempts = respostas?.length || 0;
-          const correctAnswers = respostas?.filter((r: UserAnswer) => r.is_correta).length || 0;
-          const wrongAnswers = totalAttempts - correctAnswers;
-
-          console.log(`  ✓ Resultados: ${totalAttempts} questões | ${correctAnswers} acertos | ${wrongAnswers} erros`);
-
-          // Armazenar estatísticas do tópico
+        // Se não houver nenhum filtro, não buscar nada para este tópico
+        if (!hasFilters) {
+          console.log(`  ⚠️ Nenhum filtro definido - contabilizando 0 questões`);
           const topicKey = `${disciplina.id}-${i}`;
           topicStatsData[topicKey] = {
-            totalAttempts,
-            correctAnswers,
-            wrongAnswers
+            totalAttempts: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0
           };
-
-          // Acumular para o total da disciplina
-          totalDisciplinaAttempts += totalAttempts;
-          totalDisciplinaCorrect += correctAnswers;
-          totalDisciplinaWrong += wrongAnswers;
+          continue;
         }
+
+        // Executar query
+        const { data: respostas, error } = await query;
+
+        if (error) {
+          console.error(`  ❌ Erro ao buscar respostas:`, error);
+          const topicKey = `${disciplina.id}-${i}`;
+          topicStatsData[topicKey] = {
+            totalAttempts: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0
+          };
+          continue;
+        }
+
+        // Log detalhado das respostas encontradas
+        if (respostas && respostas.length > 0) {
+          console.log(`  📊 ${respostas.length} questões encontradas:`);
+          respostas.forEach((r: any, idx: number) => {
+            console.log(`    ${idx + 1}. ID: ${r.questao_id}, Correta: ${r.is_correta}, Tópicos: ${JSON.stringify(r.topicos)}, Assuntos: ${JSON.stringify(r.assuntos)}`);
+          });
+        } else {
+          console.log(`  📊 Nenhuma questão encontrada com esses filtros`);
+        }
+
+        // Calcular estatísticas
+        const totalAttempts = respostas?.length || 0;
+        const correctAnswers = respostas?.filter((r: UserAnswer) => r.is_correta).length || 0;
+        const wrongAnswers = totalAttempts - correctAnswers;
+
+        console.log(`  ✅ Resultado final: ${totalAttempts} questões | ${correctAnswers} acertos | ${wrongAnswers} erros`);
+
+        // Armazenar estatísticas do tópico
+        const topicKey = `${disciplina.id}-${i}`;
+        topicStatsData[topicKey] = {
+          totalAttempts,
+          correctAnswers,
+          wrongAnswers
+        };
+
+        // Acumular para o total da disciplina
+        totalDisciplinaAttempts += totalAttempts;
+        totalDisciplinaCorrect += correctAnswers;
+        totalDisciplinaWrong += wrongAnswers;
+      }
         
         // Armazenar estatísticas totais da disciplina
         userStatsData[disciplina.id] = {
