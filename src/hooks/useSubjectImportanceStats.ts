@@ -200,234 +200,134 @@ export const useSubjectImportanceStats = (subjects: Subject[], currentUserId?: s
 
       // Para cada disciplina, buscar dados dos filtros e calcular estatísticas
       for (const disciplina of disciplinas) {
-        console.log(`linha 1 da tabela '${disciplina.titulo}'`);
-        console.log(`(disciplinaverticalizada) -> filtros a buscar: 'disciplinas_filtro' = ${JSON.stringify(disciplina.disciplinas_filtro)}, 'assuntos' = ${JSON.stringify(disciplina.assuntos)}, 'topicos_filtro' = ${JSON.stringify(disciplina.topicos_filtro)}, 'bancas_filtro' = ${JSON.stringify(disciplina.bancas_filtro)}`);
-      
-      // Inicializar acumuladores para o total da disciplina
-      let totalDisciplinaAttempts = 0;
-      let totalDisciplinaCorrect = 0;
-      let totalDisciplinaWrong = 0;
+        console.log(`\n[DISCIPLINA: ${disciplina.titulo}]`);
+        console.log(`ID: ${disciplina.id}`);
+        
+        // Inicializar acumuladores para o total da disciplina
+        let totalDisciplinaAttempts = 0;
+        let totalDisciplinaCorrect = 0;
+        let totalDisciplinaWrong = 0;
 
-      // Agora buscar estatísticas para cada tópico individualmente
-      // Para isso, aplicamos os filtros da disciplina + banca + tópico específico
-      // Processar tópicos com base na quantidade de tópicos ou na quantidade de filtros
-      
-      // Sempre processar os tópicos se houver quantidade_questoes_filtro definido
-      // Isso garante que mesmo sem filtros específicos, os tópicos sejam processados
-      if (disciplina.quantidade_questoes_filtro && disciplina.quantidade_questoes_filtro.length > 0) {
-        // Verificar se topicos_filtro é um array válido (se existir)
-        if (disciplina.topicos_filtro && !Array.isArray(disciplina.topicos_filtro)) {
-          console.error(`Estrutura inválida para topicos_filtro na disciplina ${disciplina.id}:`, disciplina.topicos_filtro);
-          // Continuar processando com arrays vazios
+        // Verificar se há tópicos para processar
+        if (!disciplina.quantidade_questoes_filtro || disciplina.quantidade_questoes_filtro.length === 0) {
+          console.log(`Disciplina ${disciplina.id} não tem tópicos para processar`);
+          userStatsData[disciplina.id] = {
+            totalAttempts: 0,
+            correctAnswers: 0,
+            wrongAnswers: 0
+          };
+          continue;
         }
         
+        // Processar cada tópico individualmente
         for (let i = 0; i < disciplina.quantidade_questoes_filtro.length; i++) {
-          // Obter filtros para este tópico específico (pode ser undefined/null se não houver)
-          let topicFilters = null;
-          let assuntoFilters = null;
-          let disciplinaFilters = null;
-          let bancaFilters = null;
+          // Obter os filtros para este tópico específico
+          const topico = disciplina.topicos_filtro && disciplina.topicos_filtro[i] ? disciplina.topicos_filtro[i] : null;
+          const assunto = disciplina.assuntos && disciplina.assuntos[i] ? disciplina.assuntos[i] : null;
+          const disciplinaFiltro = disciplina.disciplinas_filtro && disciplina.disciplinas_filtro[i] ? disciplina.disciplinas_filtro[i] : null;
+          const banca = disciplina.bancas_filtro && disciplina.bancas_filtro[i] ? disciplina.bancas_filtro[i] : null;
           
-          // Verificar se temos filtros específicos para este tópico
-          if (disciplina.topicos_filtro && Array.isArray(disciplina.topicos_filtro)) {
-            // Se topicos_filtro é um array bidimensional, pegar o subarray para este tópico
-            if (disciplina.topicos_filtro.length > i && 
-                (Array.isArray(disciplina.topicos_filtro[i]) || 
-                 (typeof disciplina.topicos_filtro[i] === 'string' && disciplina.topicos_filtro[i] !== null))) {
-              topicFilters = disciplina.topicos_filtro[i];
-            } else if (disciplina.topicos_filtro.length > i) {
-              // Se for um array unidimensional, usar o elemento específico
-              topicFilters = disciplina.topicos_filtro[i];
-            }
-          }
+          console.log(`\n[TÓPICO ${i + 1}]`);
+          console.log(`  Filtros: disciplina="${disciplinaFiltro}", banca="${banca}", assunto="${assunto}", topico="${topico}"`);
           
-          // Verificar se temos assuntos específicos para este tópico
-          if (disciplina.assuntos && Array.isArray(disciplina.assuntos)) {
-            // Se assuntos é um array bidimensional, pegar o subarray para este tópico
-            if (disciplina.assuntos.length > i && 
-                (Array.isArray(disciplina.assuntos[i]) || 
-                 (typeof disciplina.assuntos[i] === 'string' && disciplina.assuntos[i] !== null))) {
-              assuntoFilters = disciplina.assuntos[i];
-            } else if (disciplina.assuntos.length > i) {
-              // Se for um array unidimensional, usar o elemento específico
-              assuntoFilters = disciplina.assuntos[i];
-            }
-          }
-          
-          // Verificar se temos disciplinas específicas para este tópico
-          if (disciplina.disciplinas_filtro && Array.isArray(disciplina.disciplinas_filtro)) {
-            // Se disciplinas_filtro é um array bidimensional, pegar o subarray para este tópico
-            if (disciplina.disciplinas_filtro.length > i && 
-                (Array.isArray(disciplina.disciplinas_filtro[i]) || 
-                 (typeof disciplina.disciplinas_filtro[i] === 'string' && disciplina.disciplinas_filtro[i] !== null))) {
-              disciplinaFilters = disciplina.disciplinas_filtro[i];
-            } else if (disciplina.disciplinas_filtro.length > i) {
-              // Se for um array unidimensional, usar o elemento específico
-              disciplinaFilters = disciplina.disciplinas_filtro[i];
-            }
-          }
-          
-          // Verificar se temos bancas específicas para este tópico
-          if (disciplina.bancas_filtro && Array.isArray(disciplina.bancas_filtro)) {
-            // Se bancas_filtro é um array bidimensional, pegar o subarray para este tópico
-            if (disciplina.bancas_filtro.length > i && 
-                (Array.isArray(disciplina.bancas_filtro[i]) || 
-                 (typeof disciplina.bancas_filtro[i] === 'string' && disciplina.bancas_filtro[i] !== null))) {
-              bancaFilters = disciplina.bancas_filtro[i];
-            } else if (disciplina.bancas_filtro.length > i) {
-              // Se for um array unidimensional, usar o elemento específico
-              bancaFilters = disciplina.bancas_filtro[i];
-            }
-          }
-          
-          console.log(`[DISCIPLINA ${disciplina.id} - TÓPICO ${i}] Filtros específicos - topicos: ${JSON.stringify(topicFilters)}, assuntos: ${JSON.stringify(assuntoFilters)}, disciplinas: ${JSON.stringify(disciplinaFilters)}, bancas: ${JSON.stringify(bancaFilters)}`);
-          
-          // Construir query para este tópico específico
-          let topicQuery = supabase
+          // Construir query para buscar respostas que correspondam aos filtros
+          let query = supabase
             .from('respostas_alunos')
             .select('is_correta')
             .eq('aluno_id', userId);
 
-          let topicHasFilters = false;
+          let hasFilters = false;
 
-          // Aplicar os filtros da disciplina (se não houver filtros específicos para este tópico)
-          if (!disciplinaFilters && disciplina.disciplinas_filtro && disciplina.disciplinas_filtro.length > 0) {
-            const disciplinasArray = ensureArray(disciplina.disciplinas_filtro);
-            const flatDisciplinas = disciplinasArray.flat();
-            if (flatDisciplinas.length > 0) {
-              const validDisciplinas = flatDisciplinas.filter((d: string) => d && d.trim() !== '');
-              if (validDisciplinas.length > 0) {
-                topicQuery = topicQuery.in('disciplina', validDisciplinas);
-                topicHasFilters = true;
-              }
-            }
-          } else if (disciplinaFilters) {
-            // Aplicar filtros específicos deste tópico
-            const disciplinasArray = ensureArray(disciplinaFilters);
-            if (disciplinasArray.length > 0) {
-              const validDisciplinas = disciplinasArray.filter((d: string) => d && d.trim() !== '');
-              if (validDisciplinas.length > 0) {
-                topicQuery = topicQuery.in('disciplina', validDisciplinas);
-                topicHasFilters = true;
-              }
-            }
+          // Aplicar filtro de disciplina (string simples, usar .eq())
+          if (disciplinaFiltro && disciplinaFiltro.trim() !== '') {
+            query = query.eq('disciplina', disciplinaFiltro.trim());
+            hasFilters = true;
           }
 
-          // Aplicar filtros de banca (se não houver filtros específicos para este tópico)
-          if (!bancaFilters && disciplina.bancas_filtro && disciplina.bancas_filtro.length > 0) {
-            const bancasArray = ensureArray(disciplina.bancas_filtro);
-            const flatBancas = bancasArray.flat();
-            if (flatBancas.length > 0) {
-              const validBancas = flatBancas.filter((b: string) => b && b.trim() !== '');
-              if (validBancas.length > 0) {
-                topicQuery = topicQuery.in('banca', validBancas);
-                topicHasFilters = true;
-              }
-            }
-          } else if (bancaFilters) {
-            // Aplicar filtros específicos deste tópico
-            const bancasArray = ensureArray(bancaFilters);
-            if (bancasArray.length > 0) {
-              const validBancas = bancasArray.filter((b: string) => b && b.trim() !== '');
-              if (validBancas.length > 0) {
-                topicQuery = topicQuery.in('banca', validBancas);
-                topicHasFilters = true;
-              }
-            }
+          // Aplicar filtro de banca (string simples, usar .eq())
+          if (banca && banca.trim() !== '') {
+            query = query.eq('banca', banca.trim());
+            hasFilters = true;
           }
 
-          // Aplicar filtro específico de tópicos (se houver)
-          if (topicFilters !== null && topicFilters !== undefined) {
-            const topicFiltersArray = ensureArray(topicFilters);
-            if (topicFiltersArray.length > 0) {
-              const validTopicFilters = topicFiltersArray.filter((t: string) => t && t.trim() !== '');
-              if (validTopicFilters.length > 0) {
-                topicQuery = topicQuery.overlaps('topicos', validTopicFilters);
-                topicHasFilters = true;
-              }
-            }
+          // Aplicar filtro de assunto (array em respostas_alunos, usar .contains())
+          if (assunto && assunto.trim() !== '') {
+            query = query.contains('assuntos', [assunto.trim()]);
+            hasFilters = true;
           }
 
-          // Aplicar filtros de assuntos (se não houver filtros específicos para este tópico)
-          if (!assuntoFilters && disciplina.assuntos && disciplina.assuntos.length > 0) {
-            const assuntosArray = ensureArray(disciplina.assuntos);
-            const flatAssuntos = assuntosArray.flat();
-            if (flatAssuntos.length > 0) {
-              const validAssuntos = flatAssuntos.filter((a: string) => a && a.trim() !== '');
-              if (validAssuntos.length > 0) {
-                topicQuery = topicQuery.overlaps('assuntos', validAssuntos);
-                topicHasFilters = true;
-              }
-            }
-          } else if (assuntoFilters) {
-            // Aplicar filtros específicos deste tópico
-            const assuntosArray = ensureArray(assuntoFilters);
-            if (assuntosArray.length > 0) {
-              const validAssuntos = assuntosArray.filter((a: string) => a && a.trim() !== '');
-              if (validAssuntos.length > 0) {
-                topicQuery = topicQuery.overlaps('assuntos', validAssuntos);
-                topicHasFilters = true;
-              }
-            }
+          // Aplicar filtro de tópico (array em respostas_alunos, usar .contains())
+          if (topico && topico.trim() !== '') {
+            query = query.contains('topicos', [topico.trim()]);
+            hasFilters = true;
           }
 
-          console.log(`[DISCIPLINA ${disciplina.id} - TÓPICO ${i}] filtros aplicados: 'disciplina' = ${disciplinaFilters ? ensureArray(disciplinaFilters).length : (disciplina.disciplinas_filtro?.length || 0)}, 'assuntos' = ${assuntoFilters ? ensureArray(assuntoFilters).length : (disciplina.assuntos?.length || 0)}, 'topicos' = ${topicFilters ? ensureArray(topicFilters).length : 0}, 'banca' = ${bancaFilters ? ensureArray(bancaFilters).length : (disciplina.bancas_filtro?.length || 0)}`);
-
-          // Se não houver filtros, buscar todas as respostas do usuário para este tópico
-          if (!topicHasFilters) {
-            console.log(`[DISCIPLINA ${disciplina.id} - TÓPICO ${i}] Nenhum filtro aplicado, buscando todas as respostas do usuário`);
-            topicQuery = supabase
-              .from('respostas_alunos')
-              .select('is_correta')
-              .eq('aluno_id', userId);
-          }
-
-          const { data: topicRespostas, error: topicError } = await topicQuery;
-          console.log(`Query executada para disciplina ${disciplina.id} tópico ${i}: ${topicRespostas?.length || 0} resultados`);
-
-          if (!topicError && topicRespostas) {
-            const totalAttempts = topicRespostas.length;
-            const correctAnswers = topicRespostas.filter((r: UserAnswer) => r.is_correta).length;
-            const wrongAnswers = totalAttempts - correctAnswers;
-
-            // Adicionar log para verificar contagem de exercícios feitos, acertos e erros por tópico
-            console.log(`[DISCIPLINA ${disciplina.id} - TÓPICO ${i}] Exercícios feitos: ${totalAttempts}, Acertos: ${correctAnswers}, Erros: ${wrongAnswers}`);
-
+          // Se não houver nenhum filtro, não buscar nada para este tópico
+          if (!hasFilters) {
+            console.log(`  ⚠ Nenhum filtro definido - contabilizando 0 questões`);
             const topicKey = `${disciplina.id}-${i}`;
             topicStatsData[topicKey] = {
-              totalAttempts,
-              correctAnswers,
-              wrongAnswers
+              totalAttempts: 0,
+              correctAnswers: 0,
+              wrongAnswers: 0
             };
-            
-            // Acumular estatísticas para o total da disciplina
-            totalDisciplinaAttempts += totalAttempts;
-            totalDisciplinaCorrect += correctAnswers;
-            totalDisciplinaWrong += wrongAnswers;
-          } else if (topicError) {
-            console.error(`Erro ao buscar respostas para tópico ${i} da disciplina ${disciplina.id}:`, topicError);
+            continue;
           }
-        }
-      }
-      
-      // Definir as estatísticas gerais da disciplina como a soma dos tópicos
-      userStatsData[disciplina.id] = {
-        totalAttempts: totalDisciplinaAttempts,
-        correctAnswers: totalDisciplinaCorrect,
-        wrongAnswers: totalDisciplinaWrong
-      };
-      
-      console.log(`[DISCIPLINA ${disciplina.id}] Total acumulado: Exercícios feitos: ${totalDisciplinaAttempts}, Acertos: ${totalDisciplinaCorrect}, Erros: ${totalDisciplinaWrong}`);
-    }
 
-    setUserStats(userStatsData);
-    setTopicUserStats(topicStatsData);
-    setLoading(false);
-  } catch (error) {
-    console.error('Erro ao buscar estatísticas do usuário:', error);
-    setLoading(false);
-  }
-};
+          // Executar query
+          const { data: respostas, error } = await query;
+
+          if (error) {
+            console.error(`  ❌ Erro ao buscar respostas:`, error);
+            const topicKey = `${disciplina.id}-${i}`;
+            topicStatsData[topicKey] = {
+              totalAttempts: 0,
+              correctAnswers: 0,
+              wrongAnswers: 0
+            };
+            continue;
+          }
+
+          // Calcular estatísticas
+          const totalAttempts = respostas?.length || 0;
+          const correctAnswers = respostas?.filter((r: UserAnswer) => r.is_correta).length || 0;
+          const wrongAnswers = totalAttempts - correctAnswers;
+
+          console.log(`  ✓ Resultados: ${totalAttempts} questões | ${correctAnswers} acertos | ${wrongAnswers} erros`);
+
+          // Armazenar estatísticas do tópico
+          const topicKey = `${disciplina.id}-${i}`;
+          topicStatsData[topicKey] = {
+            totalAttempts,
+            correctAnswers,
+            wrongAnswers
+          };
+
+          // Acumular para o total da disciplina
+          totalDisciplinaAttempts += totalAttempts;
+          totalDisciplinaCorrect += correctAnswers;
+          totalDisciplinaWrong += wrongAnswers;
+        }
+        
+        // Armazenar estatísticas totais da disciplina
+        userStatsData[disciplina.id] = {
+          totalAttempts: totalDisciplinaAttempts,
+          correctAnswers: totalDisciplinaCorrect,
+          wrongAnswers: totalDisciplinaWrong
+        };
+        
+        console.log(`\n[TOTAL DA DISCIPLINA]`);
+        console.log(`  ${totalDisciplinaAttempts} questões | ${totalDisciplinaCorrect} acertos | ${totalDisciplinaWrong} erros`);
+      }
+
+      setUserStats(userStatsData);
+      setTopicUserStats(topicStatsData);
+      setLoading(false);
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas do usuário:', error);
+      setLoading(false);
+    }
+  };
 
   return {
     importanceStats,
