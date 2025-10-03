@@ -10,6 +10,19 @@ export const useEditalActions = () => {
   const cadastrarDisciplina = async (disciplina: Omit<Disciplina, 'id' | 'selecionada'>) => {
     try {
       setIsLoading(true);
+      
+      // Converter arrays de arrays em arrays de strings
+      // Quando um tópico tem múltiplos valores (ex: ["Coesão", "Coerência"]), concatenar com pipe "|"
+      const processarFiltros = (filtros: string[][] | undefined): string[] => {
+        if (!filtros) return [];
+        return filtros.map(item => {
+          if (Array.isArray(item)) {
+            return item.join('|');
+          }
+          return String(item);
+        });
+      };
+      
       const { data, error } = await supabase
         .from('disciplinaverticalizada')
         .insert({
@@ -17,11 +30,10 @@ export const useEditalActions = () => {
           descricao: disciplina.descricao,
           topicos: disciplina.topicos,
           links: disciplina.links,
-          // Corrigindo arrays multidimensionais para arrays simples
-          assuntos: disciplina.assuntos ? disciplina.assuntos.flat() : [],
-          topicos_filtro: disciplina.topicos_filtro ? disciplina.topicos_filtro.flat() : [],
-          disciplinas_filtro: disciplina.disciplinas_filtro ? disciplina.disciplinas_filtro.flat() : [],
-          bancas_filtro: disciplina.bancas_filtro ? disciplina.bancas_filtro.flat() : [],
+          assuntos: processarFiltros(disciplina.assuntos),
+          topicos_filtro: processarFiltros(disciplina.topicos_filtro),
+          disciplinas_filtro: processarFiltros(disciplina.disciplinas_filtro),
+          bancas_filtro: processarFiltros(disciplina.bancas_filtro),
           quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro
         })
         .select()
@@ -52,6 +64,17 @@ export const useEditalActions = () => {
       setIsLoading(true);
       console.log('🔄 Iniciando atualização da disciplina:', { id, disciplina });
       
+      // Converter arrays de arrays em arrays de strings
+      const processarFiltros = (filtros: string[][] | undefined): string[] => {
+        if (!filtros) return [];
+        return filtros.map(item => {
+          if (Array.isArray(item)) {
+            return item.join('|');
+          }
+          return String(item);
+        });
+      };
+      
       const { data, error } = await supabase
         .from('disciplinaverticalizada')
         .update({
@@ -59,11 +82,10 @@ export const useEditalActions = () => {
           descricao: disciplina.descricao,
           topicos: disciplina.topicos,
           links: disciplina.links,
-          // Corrigindo arrays multidimensionais para arrays simples
-          assuntos: disciplina.assuntos ? disciplina.assuntos.flat() : [],
-          topicos_filtro: disciplina.topicos_filtro ? disciplina.topicos_filtro.flat() : [],
-          disciplinas_filtro: disciplina.disciplinas_filtro ? disciplina.disciplinas_filtro.flat() : [],
-          bancas_filtro: disciplina.bancas_filtro ? disciplina.bancas_filtro.flat() : [],
+          assuntos: processarFiltros(disciplina.assuntos),
+          topicos_filtro: processarFiltros(disciplina.topicos_filtro),
+          disciplinas_filtro: processarFiltros(disciplina.disciplinas_filtro),
+          bancas_filtro: processarFiltros(disciplina.bancas_filtro),
           quantidade_questoes_filtro: disciplina.quantidade_questoes_filtro
         })
         .eq('id', id)

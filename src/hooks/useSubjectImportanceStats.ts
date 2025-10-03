@@ -222,13 +222,20 @@ export const useSubjectImportanceStats = (subjects: Subject[], currentUserId?: s
       // Processar cada tópico individualmente
       for (let i = 0; i < disciplina.quantidade_questoes_filtro.length; i++) {
         // Obter os filtros para este tópico específico
-        const topico = disciplina.topicos_filtro && disciplina.topicos_filtro[i] ? disciplina.topicos_filtro[i] : null;
-        const assunto = disciplina.assuntos && disciplina.assuntos[i] ? disciplina.assuntos[i] : null;
-        const disciplinaFiltro = disciplina.disciplinas_filtro && disciplina.disciplinas_filtro[i] ? disciplina.disciplinas_filtro[i] : null;
-        const banca = disciplina.bancas_filtro && disciplina.bancas_filtro[i] ? disciplina.bancas_filtro[i] : null;
+        const topicoRaw = disciplina.topicos_filtro && disciplina.topicos_filtro[i] ? disciplina.topicos_filtro[i] : null;
+        const assuntoRaw = disciplina.assuntos && disciplina.assuntos[i] ? disciplina.assuntos[i] : null;
+        const disciplinaFiltroRaw = disciplina.disciplinas_filtro && disciplina.disciplinas_filtro[i] ? disciplina.disciplinas_filtro[i] : null;
+        const bancaRaw = disciplina.bancas_filtro && disciplina.bancas_filtro[i] ? disciplina.bancas_filtro[i] : null;
+        
+        // Converter strings com pipe "|" em arrays (múltiplos valores por linha)
+        const topicos = topicoRaw ? topicoRaw.split('|').map(t => t.trim()).filter(t => t) : [];
+        const assuntos = assuntoRaw ? assuntoRaw.split('|').map(a => a.trim()).filter(a => a) : [];
+        const disciplinas = disciplinaFiltroRaw ? disciplinaFiltroRaw.split('|').map(d => d.trim()).filter(d => d) : [];
+        const bancas = bancaRaw ? bancaRaw.split('|').map(b => b.trim()).filter(b => b) : [];
         
         console.log(`\n[TÓPICO ${i + 1}]`);
-        console.log(`  Filtros originais:`, { disciplina: disciplinaFiltro, banca, assunto, topico });
+        console.log(`  Filtros originais: disciplina="${disciplinaFiltroRaw}", banca="${bancaRaw}", assunto="${assuntoRaw}", topico="${topicoRaw}"`);
+        console.log(`  Filtros processados: disciplinas=[${disciplinas.join(', ')}], bancas=[${bancas.join(', ')}], assuntos=[${assuntos.join(', ')}], topicos=[${topicos.join(', ')}]`);
         
         // Construir query base
         let query = supabase
@@ -239,35 +246,47 @@ export const useSubjectImportanceStats = (subjects: Subject[], currentUserId?: s
         let hasFilters = false;
         const appliedFilters: string[] = [];
 
-        // Aplicar filtro de disciplina
-        if (disciplinaFiltro && disciplinaFiltro.trim() !== '') {
-          query = query.eq('disciplina', disciplinaFiltro.trim());
+        // Aplicar filtros de disciplina (OR se múltiplos valores)
+        if (disciplinas.length > 0) {
+          if (disciplinas.length === 1) {
+            query = query.eq('disciplina', disciplinas[0]);
+            appliedFilters.push(`disciplina="${disciplinas[0]}"`);
+          } else {
+            query = query.in('disciplina', disciplinas);
+            appliedFilters.push(`disciplina IN [${disciplinas.join(', ')}]`);
+          }
           hasFilters = true;
-          appliedFilters.push(`disciplina="${disciplinaFiltro.trim()}"`);
         }
 
-        // Aplicar filtro de banca
-        if (banca && banca.trim() !== '') {
-          query = query.eq('banca', banca.trim());
+        // Aplicar filtros de banca (OR se múltiplos valores)
+        if (bancas.length > 0) {
+          if (bancas.length === 1) {
+            query = query.eq('banca', bancas[0]);
+            appliedFilters.push(`banca="${bancas[0]}"`);
+          } else {
+            query = query.in('banca', bancas);
+            appliedFilters.push(`banca IN [${bancas.join(', ')}]`);
+          }
           hasFilters = true;
-          appliedFilters.push(`banca="${banca.trim()}"`);
         }
 
-        // Aplicar filtro de assunto
-        if (assunto && assunto.trim() !== '') {
-          query = query.contains('assuntos', [assunto.trim()]);
+        // Aplicar filtros de assunto (OR se múltiplos valores)
+        if (assuntos.length > 0) {
+          // Usar overlaps para verificar se algum dos assuntos está presente
+          query = query.overlaps('assuntos', assuntos);
+          appliedFilters.push(`assuntos OVERLAPS [${assuntos.join(', ')}]`);
           hasFilters = true;
-          appliedFilters.push(`assuntos contém "${assunto.trim()}"`);
         }
 
-        // Aplicar filtro de tópico
-        if (topico && topico.trim() !== '') {
-          query = query.contains('topicos', [topico.trim()]);
+        // Aplicar filtros de tópico (OR se múltiplos valores)
+        if (topicos.length > 0) {
+          // Usar overlaps para verificar se algum dos tópicos está presente
+          query = query.overlaps('topicos', topicos);
+          appliedFilters.push(`topicos OVERLAPS [${topicos.join(', ')}]`);
           hasFilters = true;
-          appliedFilters.push(`topicos contém "${topico.trim()}"`);
         }
 
-        console.log(`  Filtros aplicados: ${appliedFilters.join(', ')}`);
+        console.log(`  Filtros SQL aplicados: ${appliedFilters.join(' AND ')}`);
 
         // Se não houver nenhum filtro, não buscar nada para este tópico
         if (!hasFilters) {
@@ -298,9 +317,13 @@ export const useSubjectImportanceStats = (subjects: Subject[], currentUserId?: s
         // Log detalhado das respostas encontradas
         if (respostas && respostas.length > 0) {
           console.log(`  📊 ${respostas.length} questões encontradas:`);
-          respostas.forEach((r: any, idx: number) => {
-            console.log(`    ${idx + 1}. ID: ${r.questao_id}, Correta: ${r.is_correta}, Tópicos: ${JSON.stringify(r.topicos)}, Assuntos: ${JSON.stringify(r.assuntos)}`);
+          respostas.slice(0, 5).forEach((r: any, idx: number) => {
+            console.log(`    ${idx + 1}. ID: ${r.questao_id}, Correta: ${r.is_correta}, Disciplina: ${r.disciplina}, Banca: ${r.banca}`);
+            console.log(`       Assuntos: ${JSON.stringify(r.assuntos)}, Tópicos: ${JSON.stringify(r.topicos)}`);
           });
+          if (respostas.length > 5) {
+            console.log(`    ... e mais ${respostas.length - 5} questões`);
+          }
         } else {
           console.log(`  📊 Nenhuma questão encontrada com esses filtros`);
         }
