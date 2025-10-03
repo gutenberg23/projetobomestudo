@@ -389,10 +389,10 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
         isOpen={isFiltersModalOpen}
         onClose={() => setIsFiltersModalOpen(false)}
         onApplyFilters={handleApplyFilters}
-        initialAssuntos={currentTopicIndex !== null && disciplinaParaEditar ? (assuntosPorTopico[currentTopicIndex] || []) : []}
-        initialTopicos={currentTopicIndex !== null && disciplinaParaEditar ? (topicosPorTopico[currentTopicIndex] || []) : []}
-        initialDisciplinas={currentTopicIndex !== null && disciplinaParaEditar ? (disciplinasPorTopico[currentTopicIndex] || []) : []}
-        initialBancas={currentTopicIndex !== null && disciplinaParaEditar ? (bancasPorTopico[currentTopicIndex] || []) : []}
+        initialAssuntos={currentTopicIndex !== null ? (assuntosPorTopico[currentTopicIndex] || []) : []}
+        initialTopicos={currentTopicIndex !== null ? (topicosPorTopico[currentTopicIndex] || []) : []}
+        initialDisciplinas={currentTopicIndex !== null ? (disciplinasPorTopico[currentTopicIndex] || []) : []}
+        initialBancas={currentTopicIndex !== null ? (bancasPorTopico[currentTopicIndex] || []) : []}
       />
     </Card>
   );
