@@ -65,11 +65,15 @@ const DisciplinasTab: React.FC = () => {
 
   const handleEditDisciplina = async (disciplina: Disciplina) => {
     console.log('🔄 handleEditDisciplina chamada com:', disciplina);
-    const disciplinaAtualizada = await atualizarDisciplina(disciplina.id, disciplina);
+    
+    // Extrair apenas os campos necessários (sem id e selecionada)
+    const { id, selecionada, ...dadosDisciplina } = disciplina;
+    
+    const disciplinaAtualizada = await atualizarDisciplina(id, dadosDisciplina);
     console.log('📝 Resultado da atualização:', disciplinaAtualizada);
     if (disciplinaAtualizada) {
       setDisciplinas(prev => 
-        prev.map(d => d.id === disciplina.id ? { ...disciplinaAtualizada, selecionada: d.selecionada } : d)
+        prev.map(d => d.id === id ? { ...disciplinaAtualizada, selecionada: d.selecionada } : d)
       );
       setDisciplinaParaEditar(null);
       console.log('✅ Estado local atualizado e modal fechado');
