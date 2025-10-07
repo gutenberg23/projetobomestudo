@@ -513,10 +513,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      console.log("Iniciando logout...");
+      
+      // Limpar estados locais primeiro
+      setUser(null);
+      setProfile(null);
+      
+      // Limpar refs de cache
+      profileFetchedRef.current = false;
+      isRefreshingRef.current = false;
+      initialAuthDoneRef.current = false;
+      
+      // Fazer logout no Supabase
       await supabase.auth.signOut();
+      
+      // Redirecionar para login
       navigate("/login");
+      
+      console.log("Logout concluído com sucesso");
+      
+      toast({
+        title: "Logout realizado",
+        description: "Você saiu da sua conta com sucesso.",
+      });
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
+      
+      // Mesmo com erro, limpar estados locais
+      setUser(null);
+      setProfile(null);
+      profileFetchedRef.current = false;
+      isRefreshingRef.current = false;
+      initialAuthDoneRef.current = false;
+      
+      toast({
+        title: "Erro ao fazer logout",
+        description: "Ocorreu um erro ao sair, mas sua sessão foi limpa localmente.",
+        variant: "destructive",
+      });
     }
   };
 
