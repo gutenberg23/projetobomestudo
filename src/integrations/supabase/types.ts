@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
   public: {
     Tables: {
       anos: {
@@ -1247,75 +1252,6 @@ export type Database = {
           },
         ]
       }
-      questoesimportadas: {
-        Row: {
-          alternativas: string | null
-          assuntos: string | null
-          content: string | null
-          correctanswer: string | null
-          created_at: string | null
-          difficulty: string | null
-          discipline: string | null
-          expandablecontent: string | null
-          id: number
-          institution: string | null
-          optiona: string | null
-          optionb: string | null
-          optionc: string | null
-          optiond: string | null
-          optione: string | null
-          organization: string | null
-          qid: string
-          role: string | null
-          url: string | null
-          year: string | null
-        }
-        Insert: {
-          alternativas?: string | null
-          assuntos?: string | null
-          content?: string | null
-          correctanswer?: string | null
-          created_at?: string | null
-          difficulty?: string | null
-          discipline?: string | null
-          expandablecontent?: string | null
-          id?: number
-          institution?: string | null
-          optiona?: string | null
-          optionb?: string | null
-          optionc?: string | null
-          optiond?: string | null
-          optione?: string | null
-          organization?: string | null
-          qid: string
-          role?: string | null
-          url?: string | null
-          year?: string | null
-        }
-        Update: {
-          alternativas?: string | null
-          assuntos?: string | null
-          content?: string | null
-          correctanswer?: string | null
-          created_at?: string | null
-          difficulty?: string | null
-          discipline?: string | null
-          expandablecontent?: string | null
-          id?: number
-          institution?: string | null
-          optiona?: string | null
-          optionb?: string | null
-          optionc?: string | null
-          optiond?: string | null
-          optione?: string | null
-          organization?: string | null
-          qid?: string
-          role?: string | null
-          url?: string | null
-          year?: string | null
-        }
-        Relationships: []
-      }
       respostas_alunos: {
         Row: {
           aluno_id: string
@@ -1406,6 +1342,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rss_configs: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          last_sync: string | null
+          lastSync: string | null
+          name: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_sync?: string | null
+          lastSync?: string | null
+          name: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          last_sync?: string | null
+          lastSync?: string | null
+          name?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
       }
       simulados: {
         Row: {
@@ -1515,66 +1484,6 @@ export type Database = {
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
-        }
-        Relationships: []
-      }
-      topicos: {
-        Row: {
-          abrir_em_nova_guia: boolean | null
-          assunto: string | null
-          caderno_questoes_url: string | null
-          created_at: string | null
-          disciplina: string
-          id: string
-          mapa_url: string | null
-          musica_url: string | null
-          nome: string
-          patrocinador: string | null
-          pdf_url: string | null
-          professor_id: string | null
-          professor_nome: string | null
-          questoes_ids: string[] | null
-          resumo_url: string | null
-          resumo_audio_url: string | null
-          video_url: string | null
-        }
-        Insert: {
-          abrir_em_nova_guia?: boolean | null
-          assunto?: string | null
-          caderno_questoes_url?: string | null
-          created_at?: string | null
-          disciplina: string
-          id?: string
-          mapa_url?: string | null
-          musica_url?: string | null
-          nome: string
-          patrocinador?: string | null
-          pdf_url?: string | null
-          professor_id?: string | null
-          professor_nome?: string | null
-          questoes_ids?: string[] | null
-          resumo_url?: string | null
-          resumo_audio_url?: string | null
-          video_url?: string | null
-        }
-        Update: {
-          abrir_em_nova_guia?: boolean | null
-          assunto?: string | null
-          caderno_questoes_url?: string | null
-          created_at?: string | null
-          disciplina?: string
-          id?: string
-          mapa_url?: string | null
-          musica_url?: string | null
-          nome?: string
-          patrocinador?: string | null
-          pdf_url?: string | null
-          professor_id?: string | null
-          professor_nome?: string | null
-          questoes_ids?: string[] | null
-          resumo_url?: string | null
-          resumo_audio_url?: string | null
-          video_url?: string | null
         }
         Relationships: []
       }
@@ -1740,44 +1649,44 @@ export type Database = {
       admin_duplicate_caderno: {
         Args: {
           p_caderno_id: string
+          p_is_public: boolean
           p_novo_nome: string
           p_novo_user_id: string
-          p_is_public: boolean
         }
         Returns: string
       }
       admin_get_caderno: {
         Args: { p_caderno_id: string }
         Returns: {
-          id: string
-          nome: string
-          created_at: string
-          user_id: string
-          is_public: boolean
-          total_questions: number
           answered_questions: number
           correct_answers: number
-          wrong_answers: number
+          created_at: string
+          id: string
+          is_public: boolean
+          nome: string
+          total_questions: number
           user_email: string
+          user_id: string
+          wrong_answers: number
         }[]
       }
       admin_list_cadernos: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          nome: string
-          created_at: string
-          user_id: string
-          is_public: boolean
-          total_questions: number
           answered_questions: number
           correct_answers: number
-          wrong_answers: number
+          created_at: string
+          id: string
+          is_public: boolean
+          nome: string
+          total_questions: number
           user_email: string
+          user_id: string
+          wrong_answers: number
         }[]
       }
       admin_update_caderno: {
-        Args: { p_caderno_id: string; p_nome: string; p_is_public: boolean }
+        Args: { p_caderno_id: string; p_is_public: boolean; p_nome: string }
         Returns: undefined
       }
       check_can_delete_post: {
@@ -1789,7 +1698,7 @@ export type Database = {
         Returns: boolean
       }
       check_table_exists: {
-        Args: { in_table_name: string; in_schema_name?: string }
+        Args: { in_schema_name?: string; in_table_name: string }
         Returns: boolean
       }
       clear_all_question_stats: {
@@ -1811,37 +1720,37 @@ export type Database = {
       get_comment_ranking: {
         Args: Record<PropertyKey, never>
         Returns: {
-          user_id: string
-          display_name: string
           avatar_url: string
           comment_count: number
+          display_name: string
           total_likes: number
+          user_id: string
         }[]
       }
       get_question_attempts_ranking: {
         Args: Record<PropertyKey, never>
         Returns: {
-          ranking_position: number
-          user_id: string
-          display_name: string
           avatar_url: string
-          total_attempts: number
           correct_answers: number
-          wrong_answers: number
+          display_name: string
+          ranking_position: number
           success_rate: number
+          total_attempts: number
+          user_id: string
+          wrong_answers: number
         }[]
       }
       get_question_attempts_ranking_by_period: {
         Args: { in_period: string }
         Returns: {
-          ranking_position: number
-          user_id: string
-          display_name: string
           avatar_url: string
-          total_attempts: number
           correct_answers: number
-          wrong_answers: number
+          display_name: string
+          ranking_position: number
           success_rate: number
+          total_attempts: number
+          user_id: string
+          wrong_answers: number
         }[]
       }
       get_questoes_por_disciplina: {
@@ -1854,13 +1763,13 @@ export type Database = {
       get_simulado_ranking: {
         Args: { p_simulado_id: string }
         Returns: {
-          ranking_position: number
-          user_id: string
-          nome: string
           acertos: number
-          erros: number
           aproveitamento: number
           created_at: string
+          erros: number
+          nome: string
+          ranking_position: number
+          user_id: string
         }[]
       }
       get_user_courses: {
@@ -1883,7 +1792,7 @@ export type Database = {
         Returns: undefined
       }
       increment: {
-        Args: { value: number; row_id: string; column_name: string }
+        Args: { column_name: string; row_id: string; value: number }
         Returns: number
       }
       increment_blog_post_comments: {
@@ -1947,7 +1856,7 @@ export type Database = {
         Returns: undefined
       }
       update_user_role: {
-        Args: { user_id: string; new_role: string; new_nivel: string }
+        Args: { new_nivel: string; new_role: string; user_id: string }
         Returns: undefined
       }
       update_users_ultimo_login: {
@@ -1956,8 +1865,8 @@ export type Database = {
       }
       upsert_user_question_attempt: {
         Args:
-          | { p_user_id: string; p_question_id: string; p_is_correct: boolean }
-          | { user_id: number; question_id: number; attempt_data: Json }
+          | { attempt_data: Json; question_id: number; user_id: number }
+          | { p_is_correct: boolean; p_question_id: string; p_user_id: string }
         Returns: undefined
       }
     }
@@ -1970,21 +1879,25 @@ export type Database = {
   }
 }
 
-type DefaultSchema = Database[Extract<keyof Database, "public">]
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      Database[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
@@ -2002,14 +1915,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
@@ -2025,14 +1940,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
@@ -2048,14 +1965,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
@@ -2063,14 +1982,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
+    schema: keyof DatabaseWithoutInternals
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
