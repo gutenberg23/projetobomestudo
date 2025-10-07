@@ -156,7 +156,11 @@ const Simulado = () => {
   }, [simuladoId]);
 
   useEffect(() => {
-    fetchQuestions();
+    // Só buscar questões adicionais se houver parâmetro caderno
+    const caderno = searchParams.get('caderno');
+    if (caderno) {
+      fetchQuestions();
+    }
   }, [searchParams]);
 
   const fetchQuestions = async () => {
@@ -169,122 +173,115 @@ const Simulado = () => {
       }
 
       const caderno = searchParams.get('caderno');
-      let questionsQuery;
+      
+      // Não fazer nada se não houver caderno (questões do simulado já foram carregadas)
+      if (!caderno) return;
 
-      if (caderno) {
-        // Verifica se o usuário tem acesso ao caderno
-        const { data: bookData, error: bookError } = await supabase
-          .from('cadernos_questoes')
-          .select('*')
-          .eq('id', caderno)
-          .single();
+      // Verifica se o usuário tem acesso ao caderno
+      const { data: bookData, error: bookError } = await supabase
+        .from('cadernos_questoes')
+        .select('*')
+        .eq('id', caderno)
+        .single();
 
-        if (bookError) throw bookError;
+      if (bookError) throw bookError;
 
-        if (bookData.user_id !== user.id && !bookData.is_public) {
-          toast.error('Você não tem permissão para ver este caderno');
-          return;
-        }
-
-        // Busca as questões do caderno
-        questionsQuery = supabase
-          .from('questoes_caderno')
-          .select(`
-            questao:questao_id (
-              id,
-              number,
-              content,
-              command,
-              options,
-              year,
-              institution,
-              organization,
-              role,
-              education_level,
-              discipline,
-              topics,
-              expandable_content,
-              teacher_explanation,
-              ai_explanation
-            )
-          `)
-          .eq('caderno_id', caderno);
-      } else {
-        // Busca questões aleatórias
-        questionsQuery = supabase
-          .from('questoes')
-          .select('*');
+      if (bookData.user_id !== user.id && !bookData.is_public) {
+        toast.error('Você não tem permissão para ver este caderno');
+        return;
       }
+
+      // Busca as questões do caderno
+      const questionsQuery = supabase
+        .from('questoes_caderno')
+        .select(`
+          questao:questao_id (
+            id,
+            number,
+            content,
+            command,
+            options,
+            year,
+            institution,
+            organization,
+            role,
+            education_level,
+            discipline,
+            topics,
+            expandable_content,
+            teacher_explanation,
+            ai_explanation
+          )
+        `)
+        .eq('caderno_id', caderno);
 
       const { data: questionsData, error: questionsError } = await questionsQuery;
 
       if (questionsError) throw questionsError;
 
-      const processedQuestions = caderno
-        ? ((questionsData as unknown) as Array<{
-            questao: {
-              id: string;
-              number: number;
-              content: string;
-              command: string;
-              options: Array<{
-                id: string;
-                text: string;
-                isCorrect: boolean;
-              }>;
-              year?: string;
-              institution?: string;
-              organization?: string;
-              role?: string;
-              education_level?: string;
-              discipline?: string;
-              topics?: string[];
-              expandable_content?: string;
-              teacher_explanation?: string;
-              ai_explanation?: string;
-            } | null;
-          }>)
-            .map(q => q.questao)
-            .filter((q): q is NonNullable<{
-              id: string;
-              number: number;
-              content: string;
-              command: string;
-              options: Array<{
-                id: string;
-                text: string;
-                isCorrect: boolean;
-              }>;
-              year?: string;
-              institution?: string;
-              organization?: string;
-              role?: string;
-              education_level?: string;
-              discipline?: string;
-              topics?: string[];
-              expandable_content?: string;
-              teacher_explanation?: string;
-              ai_explanation?: string;
-            }> => Boolean(q))
-            .map(q => ({
-              id: q.id,
-              number: q.number,
-              content: q.content,
-              command: q.command,
-              options: q.options,
-              year: q.year,
-              institution: q.institution,
-              organization: q.organization,
-              role: q.role,
-              educationLevel: q.education_level,
-              discipline: q.discipline,
-              topics: q.topics,
-              expandableContent: q.expandable_content,
-              teacherExplanation: q.teacher_explanation,
-              aiExplanation: q.ai_explanation,
-              comments: []
-            } as Question))
-        : questionsData;
+      const processedQuestions = ((questionsData as unknown) as Array<{
+        questao: {
+          id: string;
+          number: number;
+          content: string;
+          command: string;
+          options: Array<{
+            id: string;
+            text: string;
+            isCorrect: boolean;
+          }>;
+          year?: string;
+          institution?: string;
+          organization?: string;
+          role?: string;
+          education_level?: string;
+          discipline?: string;
+          topics?: string[];
+          expandable_content?: string;
+          teacher_explanation?: string;
+          ai_explanation?: string;
+        } | null;
+      }>)
+        .map(q => q.questao)
+        .filter((q): q is NonNullable<{
+          id: string;
+          number: number;
+          content: string;
+          command: string;
+          options: Array<{
+            id: string;
+            text: string;
+            isCorrect: boolean;
+          }>;
+          year?: string;
+          institution?: string;
+          organization?: string;
+          role?: string;
+          education_level?: string;
+          discipline?: string;
+          topics?: string[];
+          expandable_content?: string;
+          teacher_explanation?: string;
+          ai_explanation?: string;
+        }> => Boolean(q))
+        .map(q => ({
+          id: q.id,
+          number: q.number,
+          content: q.content,
+          command: q.command,
+          options: q.options,
+          year: q.year,
+          institution: q.institution,
+          organization: q.organization,
+          role: q.role,
+          educationLevel: q.education_level,
+          discipline: q.discipline,
+          topics: q.topics,
+          expandableContent: q.expandable_content,
+          teacherExplanation: q.teacher_explanation,
+          aiExplanation: q.ai_explanation,
+          comments: []
+        } as Question));
 
       setFormattedQuestions(processedQuestions || []);
     } catch (error) {

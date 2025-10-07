@@ -31,21 +31,25 @@ const Simulados: React.FC = () => {
       const cursosMap = new Map(cursosData.map(curso => [curso.id, curso]));
 
       // Formatar os dados para o formato esperado pelo componente
-      const formattedSimulados: Simulado[] = simuladosData.map(simulado => ({
-        id: simulado.id,
-        titulo: simulado.titulo,
-        descricao: simulado.descricao,
-        questoes_ids: simulado.questoes_ids || [],
-        curso_id: simulado.curso_id,
-        data_fim: simulado.data_fim,
-        ativo: simulado.ativo,
-        curso: {
-          titulo: cursosMap.get(simulado.curso_id)?.titulo || ""
-        },
-        questoesIds: simulado.questoes_ids || [],
-        cursosIds: [simulado.curso_id]
-      }));
+      const formattedSimulados: Simulado[] = simuladosData.map(simulado => {
+        console.log(`Simulado ${simulado.titulo}: ${(simulado.questoes_ids || []).length} questões`);
+        return {
+          id: simulado.id,
+          titulo: simulado.titulo,
+          descricao: simulado.descricao,
+          questoes_ids: simulado.questoes_ids || [],
+          curso_id: simulado.curso_id,
+          data_fim: simulado.data_fim,
+          ativo: simulado.ativo,
+          curso: {
+            titulo: cursosMap.get(simulado.curso_id)?.titulo || ""
+          },
+          questoesIds: simulado.questoes_ids || [],
+          cursosIds: [simulado.curso_id]
+        };
+      });
 
+      console.log("Simulados formatados:", formattedSimulados.map(s => ({ titulo: s.titulo, questoes: s.questoesIds.length })));
       setSimulados(formattedSimulados);
     } catch (error) {
       console.error("Erro ao buscar simulados:", error);
