@@ -434,14 +434,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
       
-      // Login bem-sucedido, marcar a autenticação inicial como concluída
-      initialAuthDoneRef.current = true;
-      
-      // Remover o listener para evitar eventos ao trocar de aba
-      if (unsubscribeRef.current) {
-        console.log("Removendo listener após login bem-sucedido via formulário");
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
+      // Login bem-sucedido - atualizar estados imediatamente
+      if (data?.user) {
+        console.log("Atualizando estado do usuário após login bem-sucedido");
+        
+        const userData: User = {
+          id: data.user.id,
+          email: data.user.email || '',
+          nome: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        setUser(userData);
+        
+        // Buscar perfil do usuário
+        await fetchUserProfile(data.user.id);
+        
+        // Marcar a autenticação inicial como concluída
+        initialAuthDoneRef.current = true;
+        
+        // Remover o listener para evitar eventos ao trocar de aba
+        if (unsubscribeRef.current) {
+          console.log("Removendo listener após login bem-sucedido via formulário");
+          unsubscribeRef.current();
+          unsubscribeRef.current = null;
+        }
       }
       
       toast({
