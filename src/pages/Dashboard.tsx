@@ -583,10 +583,9 @@ const Dashboard = () => {
           
           // Formatação das bancas para exibição na interface
           const bancasFormatadas = bancasArray.map(banca => {
-            // Converter para minúsculas e depois capitalizar
             return {
-              valor: banca, // Valor original (minúsculo) para comparação
-              exibicao: banca.toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) // Para exibição
+              valor: banca, // Valor original para comparação
+              exibicao: banca // Manter o texto original do banco de dados
             };
           });
           
@@ -1122,11 +1121,7 @@ const Dashboard = () => {
                 <div className="flex-1">
                   <CardTitle>Estatísticas por disciplina</CardTitle>
                   <CardDescription className="whitespace-nowrap">
-                    Desempenho detalhado por disciplina {selectedBanca !== "todas" && `(Banca: ${
-                      typeof selectedBanca === 'string' 
-                        ? selectedBanca.toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
-                        : selectedBanca
-                    })`}
+                    Desempenho detalhado por disciplina {selectedBanca !== "todas" && `(Banca: ${selectedBanca})`}
                   </CardDescription>
                 </div>
                 <div className="w-full sm:w-auto sm:ml-auto">
