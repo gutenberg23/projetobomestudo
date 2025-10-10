@@ -62,6 +62,7 @@ import ConcursoDetalhes from "./pages/ConcursoDetalhes";
 import RankingComentarios from "./pages/RankingComentarios";
 import RankingQuestoes from "./pages/RankingQuestoes";
 import UpdateRankingFunction from "./pages/admin/UpdateRankingFunction";
+import LeisSecasAdmin from "./pages/admin/LeisSecasAdmin";
 
 // Componente para aplicar as configurações de estilo
 const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
@@ -213,6 +214,7 @@ export default function App() {
                             <Route path="cursos" element={<Cursos />} />
                             <Route path="concursos" element={<ConcursosAdmin />} />
                             <Route path="professores" element={<Professores />} />
+                            <Route path="leis-secas" element={<LeisSecasAdmin />} />
                             <Route path="configuracoes" element={<ConfiguracoesSite />} />
                             <Route path="update-ranking-function" element={<UpdateRankingFunction />} />
                           </Route>

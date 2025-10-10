@@ -15,11 +15,12 @@ import { useUserProgress } from "./hooks/useUserProgress";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { CicloTab } from "./ciclo/CicloTab";
+import { LeiSecaTab } from "./leiseca/LeiSecaTab";
 
 export const CourseLayout = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados' | 'ciclo'>('disciplinas');
+  const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca'>('disciplinas');
   const [isProgressVisible, setIsProgressVisible] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -274,6 +275,14 @@ export const CourseLayout = () => {
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
               <CicloTab courseId={courseId} subjects={subjectsData} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'leiseca' && (
+          <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
+            <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
+              <LeiSecaTab courseId={courseId} />
             </div>
           </div>
         )}

@@ -796,6 +796,42 @@ export type Database = {
           },
         ]
       }
+      leis_secas: {
+        Row: {
+          ativo: boolean | null
+          conteudo: string
+          created_at: string | null
+          curso_id: string
+          id: string
+          ordem: number | null
+          palavras_treino: Json
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          conteudo: string
+          created_at?: string | null
+          curso_id: string
+          id?: string
+          ordem?: number | null
+          palavras_treino?: Json
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          conteudo?: string
+          created_at?: string | null
+          curso_id?: string
+          id?: string
+          ordem?: number | null
+          palavras_treino?: Json
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       likes_comentarios: {
         Row: {
           comentario_id: string

@@ -1,12 +1,12 @@
 import React, { useEffect, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
-import { BookOpen, FileText, Target, BarChart, RotateCcw } from "lucide-react";
+import { BookOpen, FileText, Target, BarChart, RotateCcw, Scale } from "lucide-react";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { Spinner } from "@/components/ui/spinner";
 
 interface CourseNavigationProps {
-  activeTab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo';
-  setActiveTab: (tab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo') => void;
+  activeTab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca';
+  setActiveTab: (tab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca') => void;
   onProgressClick: () => void;
   isProgressVisible: boolean;
 }
@@ -60,6 +60,10 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   
   const handleCicloClick = useCallback(() => {
     setActiveTab('ciclo');
+  }, [setActiveTab]);
+
+  const handleLeiSecaClick = useCallback(() => {
+    setActiveTab('leiseca');
   }, [setActiveTab]);
 
   const handleProgressClick = useCallback(() => {
@@ -149,6 +153,16 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
                 <span className="hidden md:inline">Ciclo</span>
               </button>
             )}
+            <button
+              onClick={handleLeiSecaClick}
+              className={cn(
+                "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                activeTab === 'leiseca' && "text-[#5f2ebe] border-[#5f2ebe]"
+              )}
+            >
+              <Scale className="w-5 h-5" />
+              <span className="hidden md:inline">Lei Seca</span>
+            </button>
           </div>
           
           {/* Botão de Progresso */}

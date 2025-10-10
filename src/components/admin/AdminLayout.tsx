@@ -19,6 +19,7 @@ import {
   Kanban,
   Book,
   Award,
+  Scale,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -128,6 +129,12 @@ const AdminLayout = () => {
       label: "Concursos", 
       icon: <Award className="w-5 h-5" />,
       showForJornalista: true
+    },
+    { 
+      path: "/admin/leis-secas", 
+      label: "Leis Secas", 
+      icon: <Scale className="w-5 h-5" />,
+      showForJornalista: false
     },
     { 
       path: "/admin/configuracoes", 
