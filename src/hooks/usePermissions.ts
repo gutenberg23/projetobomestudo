@@ -1,44 +1,51 @@
+import { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
-import { UserRole, UserNivel } from "@/types/user";
+import { supabase } from "@/lib/supabase";
 
 export const usePermissions = () => {
   const { user } = useAuth();
+  const [roles, setRoles] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const isAdmin = () => {
-    return user?.role === 'admin' || user?.nivel === 'admin';
-  };
+  useEffect(() => {
+    const fetchRoles = async () => {
+      if (!user) {
+        setRoles([]);
+        setLoading(false);
+        return;
+      }
 
-  const isProfessor = () => {
-    return user?.role === 'professor' || user?.nivel === 'professor';
-  };
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
 
-  const isAssistente = () => {
-    return user?.role === 'assistente' || user?.nivel === 'assistente';
-  };
+      setRoles(data?.map(r => r.role) || []);
+      setLoading(false);
+    };
 
-  const isJornalista = () => {
-    return user?.role === ('jornalista' as UserRole) || user?.nivel === ('jornalista' as UserNivel);
-  };
+    fetchRoles();
+  }, [user]);
 
-  const isStaff = () => {
-    return isAdmin() || isProfessor() || isAssistente();
-  };
-
-  const canAccessAdminArea = () => {
-    return isStaff() || isJornalista();
-  };
-  
-  const canOnlyAccessPosts = () => {
-    return isJornalista() && !isStaff();
-  };
+  const isAdmin = () => roles.includes('admin');
+  const isProfessor = () => roles.includes('professor');
+  const isAssistente = () => roles.includes('assistente');
+  const isJornalista = () => roles.includes('jornalista');
+  const isStaff = () => ['admin', 'professor', 'assistente'].some(r => roles.includes(r));
+  const canAccessAdminArea = () => isStaff() || isJornalista();
+  const canOnlyAccessPosts = () => isJornalista() && !isStaff();
+  const hasRole = (role: string) => roles.includes(role);
 
   return {
+    roles,
+    loading,
     isAdmin,
     isProfessor,
     isAssistente,
     isJornalista,
     isStaff,
     canAccessAdminArea,
-    canOnlyAccessPosts
+    canOnlyAccessPosts,
+    hasRole
   };
-}; 
+};
