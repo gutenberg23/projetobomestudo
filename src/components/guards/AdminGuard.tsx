@@ -30,7 +30,7 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
     setIsPageReload(isReload || Boolean(hasReferrer));
     
     if (isReload || hasReferrer) {
-      console.log("Detectada atualização de página - redirecionamentos serão bloqueados");
+      console.log("AdminGuard: Detectada atualização de página - redirecionamentos serão bloqueados");
     }
   }, []);
   
@@ -38,14 +38,20 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
   useEffect(() => {
     const checkPermissions = async () => {
       // Esperar até que o carregamento do usuário seja concluído
-      if (loading) return;
+      if (loading) {
+        console.log("AdminGuard: Ainda carregando usuário...");
+        return;
+      }
       
       // Se não há usuário, não tem permissão
       if (!user) {
+        console.log("AdminGuard: Nenhum usuário logado");
         setHasPermission(false);
         setCheckingAccess(false);
         return;
       }
+      
+      console.log("AdminGuard: Usuário logado:", user);
       
       // Verificar permissões com base nos dados do usuário
       const hasAccess = canAccessAdminArea();
@@ -54,11 +60,13 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
       setCheckingAccess(false);
     };
     
+    console.log("AdminGuard: Iniciando verificação de permissões");
     checkPermissions();
   }, [user, loading, canAccessAdminArea]);
   
   // Exibir spinner enquanto verifica
   if (loading || checkingAccess) {
+    console.log("AdminGuard: Exibindo spinner - loading:", loading, "checkingAccess:", checkingAccess);
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner size="lg" />
@@ -68,6 +76,7 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
   
   // Redirecionar para login se não estiver autenticado
   if (!user) {
+    console.log("AdminGuard: Usuário não autenticado, redirecionando para login");
     return <Navigate to="/admin/login" replace />;
   }
   
@@ -85,16 +94,18 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
     
     // Apenas redirecionar se não estiver na página de posts ou na raiz
     if (!isPostsPage && !isAdminRoot) {
-      console.log("Jornalista redirecionado para área de posts");
+      console.log("AdminGuard: Jornalista redirecionado para área de posts");
       return <Navigate to="/admin/posts" replace />;
     }
   }
   
   // Se não tem acesso à área administrativa, redirecionar para home
   if (hasPermission === false) {
-    console.log("Sem permissão para área administrativa, redirecionando para home");
+    console.log("AdminGuard: Sem permissão para área administrativa, redirecionando para home");
+    console.log("AdminGuard: Dados do usuário:", user);
     return <Navigate to="/" replace />;
   }
   
+  console.log("AdminGuard: Permissão concedida, renderizando children");
   return <>{children}</>;
-}; 
+};

@@ -802,8 +802,8 @@ export type Database = {
           conteudo: string
           created_at: string | null
           curso_id: string
+          cursos_ids: string[] | null
           id: string
-          ordem: number | null
           palavras_treino: Json
           titulo: string
           updated_at: string | null
@@ -813,8 +813,8 @@ export type Database = {
           conteudo: string
           created_at?: string | null
           curso_id: string
+          cursos_ids?: string[] | null
           id?: string
-          ordem?: number | null
           palavras_treino?: Json
           titulo: string
           updated_at?: string | null
@@ -824,8 +824,8 @@ export type Database = {
           conteudo?: string
           created_at?: string | null
           curso_id?: string
+          cursos_ids?: string[] | null
           id?: string
-          ordem?: number | null
           palavras_treino?: Json
           titulo?: string
           updated_at?: string | null

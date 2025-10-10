@@ -86,25 +86,25 @@ export const LeiSecaTab = ({ courseId }: LeiSecaTabProps) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="space-y-4">
       {leis.map((lei) => (
-        <Card 
+        <div 
           key={lei.id}
-          className="cursor-pointer hover:shadow-lg transition-shadow"
+          className="cursor-pointer hover:bg-gray-50 transition-colors w-full p-6 rounded-lg bg-white"
           onClick={() => setSelectedLei(lei)}
         >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
+          <div className="flex items-center gap-2 mb-2">
+            <FileText className="w-5 h-5 text-primary" />
+            <h3 className="text-2xl font-semibold leading-none tracking-tight">
               {lei.titulo}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h3>
+          </div>
+          <div className="p-6 pt-0">
             <p className="text-sm text-muted-foreground line-clamp-3">
               {lei.conteudo.substring(0, 150)}...
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ))}
     </div>
   );

@@ -278,7 +278,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Verificar se o perfil já foi buscado
       if (profileFetchedRef.current && profile?.id === userId) {
-        console.log("Perfil já foi buscado anteriormente, ignorando nova requisição");
+        console.log("AuthContext: Perfil já foi buscado anteriormente, ignorando nova requisição");
         isRefreshingRef.current = false;
         return;
       }
@@ -288,34 +288,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const fiveMinutesInMs = 5 * 60 * 1000;
       
       if (profile?.id === userId && (currentTime - lastFetchTimeRef.current < fiveMinutesInMs)) {
-        console.log("Perfil já foi buscado recentemente, usando dados em cache");
+        console.log("AuthContext: Perfil já foi buscado recentemente, usando dados em cache");
         isRefreshingRef.current = false;
         return;
       }
       
-      console.log("Buscando perfil do usuário:", userId);
+      console.log("AuthContext: Buscando perfil do usuário:", userId);
       
       // Buscar TODOS os campos da tabela profiles
-      console.log("Consultando profiles com id:", userId);
+      console.log("AuthContext: Consultando profiles com id:", userId);
       const { data: userProfile, error } = await supabase.from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
         
-      console.log("Resultado da consulta:", { data: userProfile, error });
+      console.log("AuthContext: Resultado da consulta:", { data: userProfile, error });
       
       if (error) {
-        console.error("Erro ao buscar perfil:", error);
+        console.error("AuthContext: Erro ao buscar perfil:", error);
         
         // Se não encontrou o perfil, tentar criar um básico
         if (error.code === 'PGRST116') { // No rows returned
-          console.log("Perfil não encontrado, criando perfil básico");
+          console.log("AuthContext: Perfil não encontrado, criando perfil básico");
           
           // Obter dados do usuário da auth
           const { data: { user: authUser } } = await supabase.auth.getUser();
           
           if (authUser) {
-            console.log("Dados do usuário auth:", authUser);
+            console.log("AuthContext: Dados do usuário auth:", authUser);
             
             // Criar perfil básico com dados mínimos
             const basicProfile = {
@@ -327,7 +327,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               updated_at: new Date().toISOString()
             };
             
-            console.log("Tentando criar perfil básico:", basicProfile);
+            console.log("AuthContext: Tentando criar perfil básico:", basicProfile);
             
             // Inserir o perfil básico
             const { data: newProfile, error: createError } = await supabase
@@ -337,9 +337,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               .single();
               
             if (createError) {
-              console.error("Erro ao criar perfil básico:", createError);
+              console.error("AuthContext: Erro ao criar perfil básico:", createError);
             } else {
-              console.log("Perfil básico criado com sucesso:", newProfile);
+              console.log("AuthContext: Perfil básico criado com sucesso:", newProfile);
               setProfile(newProfile as unknown as DatabaseUser);
               setUser(prev => ({
                 ...prev,
@@ -355,7 +355,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (userProfile) {
-        console.log("Perfil encontrado - dados completos:", JSON.stringify(userProfile, null, 2));
+        console.log("AuthContext: Perfil encontrado - dados completos:", JSON.stringify(userProfile, null, 2));
         const profileData = userProfile as unknown as DatabaseUser;
         setProfile(profileData);
         
@@ -373,7 +373,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: profileData.role,
           };
           
-          console.log("Usuário atualizado com dados do perfil:", updatedUser);
+          console.log("AuthContext: Usuário atualizado com dados do perfil:", updatedUser);
           
           return updatedUser;
         });
@@ -381,10 +381,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Marcar que o perfil foi buscado com sucesso
         profileFetchedRef.current = true;
       } else {
-        console.warn("Perfil do usuário não encontrado");
+        console.warn("AuthContext: Perfil do usuário não encontrado");
       }
     } catch (error) {
-      console.error("Erro ao buscar perfil do usuário:", error);
+      console.error("AuthContext: Erro ao buscar perfil do usuário:", error);
     } finally {
       // Liberar o bloqueio após completar a operação
       setTimeout(() => {

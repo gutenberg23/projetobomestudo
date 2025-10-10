@@ -1,14 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Header } from "../layout/Header";
 import { Footer } from "../layout/Footer";
 import { CourseHeader } from "./CourseHeader";
 import { CourseNavigation } from "./CourseNavigation";
 import { SubjectsList } from "./SubjectsList";
-import { ProgressPanel } from "./ProgressPanel";
 import { EditorializedView } from "./EditorializedView";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { useUserProgress } from "./hooks/useUserProgress";
@@ -21,12 +18,6 @@ export const CourseLayout = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca'>('disciplinas');
-  const [isProgressVisible, setIsProgressVisible] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
-  const progressPanelRef = useRef<HTMLDivElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
   const [subjectsData, setSubjectsData] = useState<any[]>([]);
   
   // Usar o hook de configurações do site
@@ -122,51 +113,6 @@ export const CourseLayout = () => {
     fetchSubjectsData();
   }, [courseId]);
 
-  const handleProgressClick = useCallback(() => {
-    setIsProgressVisible(prev => !prev);
-    setCurrentX(0); // Reset position when toggling
-  }, []);
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    setStartX(e.clientX - currentX);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const x = e.clientX - startX;
-    if (x >= 0) {
-      setCurrentX(x);
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    if (currentX > 100) { // Se arrastou mais que 100px, fecha o painel
-      setIsProgressVisible(false);
-      setCurrentX(0);
-    } else {
-      setCurrentX(0);
-    }
-  };
-
-  const handleClickOutside = (e: MouseEvent) => {
-    if (progressPanelRef.current && !progressPanelRef.current.contains(e.target as Node)) {
-      setIsProgressVisible(false);
-      setCurrentX(0);
-    }
-  };
-
-  useEffect(() => {
-    if (isProgressVisible) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isProgressVisible]);
-
   // Função para receber o número de disciplinas e os dados das disciplinas do componente SubjectsList
   const handleSubjectsCountChange = useCallback((count: number, data?: any[]) => {
     if (data) {
@@ -175,29 +121,9 @@ export const CourseLayout = () => {
     }
   }, []);
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    setIsDragging(true);
-    setStartX(e.touches[0].clientX - currentX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const x = e.touches[0].clientX - startX;
-    if (x >= 0) {
-      setCurrentX(x);
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-    if (currentX > 100) { // Se arrastou mais que 100px, fecha o painel
-      setIsProgressVisible(false);
-      setCurrentX(0);
-    } else {
-      setCurrentX(0);
-    }
-  };
+  if (!courseId) {
+    return <div>Curso não encontrado</div>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
@@ -207,8 +133,6 @@ export const CourseLayout = () => {
         <CourseNavigation
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          onProgressClick={handleProgressClick}
-          isProgressVisible={isProgressVisible}
         />
         
         {activeTab === 'disciplinas' && config.tabs.showDisciplinasTab && (
@@ -217,40 +141,6 @@ export const CourseLayout = () => {
               <div className="flex-1">
                 <SubjectsList courseId={courseId} onSubjectsCountChange={handleSubjectsCountChange} />
               </div>
-              
-              {/* Card de Progresso Flutuante */}
-              <div 
-                ref={progressPanelRef}
-                className={cn(
-                  "fixed top-[200px] right-[10px] md:right-[32px] z-[999] transition-transform duration-300 ease-in-out touch-none",
-                  isProgressVisible ? "translate-x-0" : "translate-x-[100%]",
-                  isDragging ? "transition-none" : ""
-                )}
-                style={{
-                  transform: isDragging ? `translateX(${currentX}px)` : undefined,
-                  visibility: isProgressVisible ? "visible" : "hidden"
-                }}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                <div className="w-[350px] shadow-[0_0_15px_rgba(0,0,0,0.05)] bg-white rounded-[10px] max-h-[calc(100vh-220px)] overflow-y-auto">
-                  <ProgressPanel subjectsFromCourse={subjectsData} />
-                </div>
-              </div>
-
-              {/* Overlay para detectar cliques fora */}
-              {isProgressVisible && (
-                <div
-                  ref={overlayRef}
-                  className="fixed inset-0 z-[998]"
-                  style={{ backgroundColor: 'transparent' }}
-                />
-              )}
             </div>
           </div>
         )}
@@ -258,7 +148,7 @@ export const CourseLayout = () => {
         {activeTab === 'edital' && config.tabs.showEditalTab && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
-              <EditorializedView courseId={courseId} activeTab={activeTab} />
+              <EditorializedView courseId={courseId || ''} activeTab={activeTab} />
             </div>
           </div>
         )}
@@ -266,7 +156,7 @@ export const CourseLayout = () => {
         {activeTab === 'simulados' && config.tabs.showSimuladosTab && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
-              <EditorializedView courseId={courseId} activeTab={activeTab} />
+              <EditorializedView courseId={courseId || ''} activeTab={activeTab} />
             </div>
           </div>
         )}

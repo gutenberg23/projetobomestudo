@@ -1,8 +1,8 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  DashboardHeader, 
-  StatCards, 
+import {
+  DashboardHeader,
+  StatCards,
   UsuariosTab,
   QuestoesTab
 } from "./components/dashboard";
@@ -43,7 +43,7 @@ const Dashboard = () => {
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
           <TabsTrigger value="questoes">Questões</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="usuarios">
           <UsuariosTab dadosCadastros={data.dadosCadastros} />
         </TabsContent>

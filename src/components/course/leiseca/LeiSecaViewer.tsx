@@ -143,44 +143,47 @@ export const LeiSecaViewer = ({ lei, onBack }: LeiSecaViewerProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onBack}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
-        </Button>
-        
-        <div className="flex gap-2">
+      {/* Botões fixos no topo */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 border-b">
+        <div className="flex items-center gap-4">
           <Button
-            variant={!modoTreino ? "default" : "outline"}
+            variant="outline"
             size="sm"
-            onClick={() => {
-              setModoTreino(false);
-              setRespostas({});
-              setPalavrasReveladas(new Set());
-            }}
+            onClick={onBack}
           >
-            <Eye className="w-4 h-4 mr-2" />
-            Visualizar
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
           </Button>
           
-          {lei.palavras_treino && lei.palavras_treino.length > 0 && (
+          <div className="flex gap-2">
             <Button
-              variant={modoTreino ? "default" : "outline"}
+              variant={!modoTreino ? "default" : "outline"}
               size="sm"
               onClick={() => {
-                setModoTreino(true);
+                setModoTreino(false);
                 setRespostas({});
                 setPalavrasReveladas(new Set());
               }}
             >
-              <Play className="w-4 h-4 mr-2" />
-              Treinar
+              <Eye className="w-4 h-4 mr-2" />
+              Visualizar
             </Button>
-          )}
+            
+            {lei.palavras_treino && lei.palavras_treino.length > 0 && (
+              <Button
+                variant={modoTreino ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setModoTreino(true);
+                  setRespostas({});
+                  setPalavrasReveladas(new Set());
+                }}
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Treinar
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

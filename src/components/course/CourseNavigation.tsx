@@ -1,21 +1,17 @@
 import React, { useEffect, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
-import { BookOpen, FileText, Target, BarChart, RotateCcw, Scale } from "lucide-react";
+import { BookOpen, FileText, Target, RotateCcw, Scale } from "lucide-react";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { Spinner } from "@/components/ui/spinner";
 
 interface CourseNavigationProps {
   activeTab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca';
   setActiveTab: (tab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca') => void;
-  onProgressClick: () => void;
-  isProgressVisible: boolean;
 }
 
 export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   activeTab,
-  setActiveTab,
-  onProgressClick,
-  isProgressVisible
+  setActiveTab
 }) => {
   const { config, isLoading } = useSiteConfig();
 
@@ -65,10 +61,6 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   const handleLeiSecaClick = useCallback(() => {
     setActiveTab('leiseca');
   }, [setActiveTab]);
-
-  const handleProgressClick = useCallback(() => {
-    onProgressClick();
-  }, [onProgressClick]);
 
   // Enquanto carrega, exibe um spinner de carregamento centralizado
   if (isLoading) {
@@ -164,22 +156,6 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
               <span className="hidden md:inline">Lei Seca</span>
             </button>
           </div>
-          
-          {/* Botão de Progresso */}
-          {activeTab === 'disciplinas' && (
-            <div className="flex">
-              <button
-                onClick={handleProgressClick}
-                className={cn(
-                  "course-nav-button flex items-center gap-2 px-4 py-3 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] transition-colors rounded-none",
-                  isProgressVisible && "bg-gray-100 text-[#5f2ebe]"
-                )}
-              >
-                <BarChart className="w-5 h-5" />
-                <span className="hidden md:inline">Meu Progresso</span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { AdminLayout } from "./AdminLayout";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,14 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit, Save, X } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { MultiSelect } from "@/components/admin/questions/form/MultiSelect";
 
 interface LeiSeca {
   id: string;
@@ -24,9 +18,10 @@ interface LeiSeca {
     palavra: string;
     posicao: number;
   }>;
-  curso_id: string;
+  curso_id: string; // Manter para compatibilidade
+  cursos_ids: string[]; // Novo campo para múltiplos cursos
   ativo: boolean;
-  ordem: number;
+
 }
 
 interface Curso {
@@ -40,13 +35,16 @@ export default function LeisSecasAdmin() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showTagButton, setShowTagButton] = useState(false);
+  const [selectionStart, setSelectionStart] = useState(0);
+  const [selectionEnd, setSelectionEnd] = useState(0);
   
   const [formData, setFormData] = useState({
     titulo: "",
     conteudo: "",
-    curso_id: "",
+    curso_id: "", // Manter para compatibilidade
+    cursos_ids: [] as string[],
     palavras: [] as Array<{ palavra: string; posicao: number }>,
-    ordem: 0,
   });
 
   useEffect(() => {
@@ -70,7 +68,7 @@ export default function LeisSecasAdmin() {
       const { data: leisData, error: leisError } = await supabase
         .from('leis_secas')
         .select('*')
-        .order('ordem');
+        .order('titulo');
       
       if (leisError) throw leisError;
       setLeis(leisData || []);
@@ -112,7 +110,7 @@ export default function LeisSecasAdmin() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.titulo || !formData.conteudo || !formData.curso_id) {
+    if (!formData.titulo || !formData.conteudo || formData.cursos_ids.length === 0) {
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
@@ -125,8 +123,9 @@ export default function LeisSecasAdmin() {
         titulo: formData.titulo,
         conteudo: conteudoLimpo,
         palavras_treino: palavrasTreino,
-        curso_id: formData.curso_id,
-        ordem: formData.ordem,
+        cursos_ids: formData.cursos_ids,
+        curso_id: formData.cursos_ids[0] || '', // Manter compatibilidade
+
         ativo: true,
       };
 
@@ -172,9 +171,10 @@ export default function LeisSecasAdmin() {
     setFormData({
       titulo: lei.titulo,
       conteudo: conteudoComMarcacoes,
-      curso_id: lei.curso_id,
+      curso_id: lei.curso_id || '',
+      cursos_ids: lei.cursos_ids || (lei.curso_id ? [lei.curso_id] : []),
       palavras: lei.palavras_treino || [],
-      ordem: lei.ordem,
+
     });
   };
 
@@ -201,23 +201,23 @@ export default function LeisSecasAdmin() {
       titulo: "",
       conteudo: "",
       curso_id: "",
+      cursos_ids: [],
       palavras: [],
-      ordem: 0,
+
     });
     setEditingId(null);
     setShowForm(false);
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Gerenciar Leis Secas</h1>
-          <Button onClick={() => setShowForm(!showForm)}>
-            {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-            {showForm ? 'Cancelar' : 'Nova Lei'}
-          </Button>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Gerenciar Leis Secas</h1>
+        <Button onClick={() => setShowForm(!showForm)}>
+          {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+          {showForm ? 'Cancelar' : 'Nova Lei'}
+        </Button>
+      </div>
 
         {showForm && (
           <Card>
@@ -237,32 +237,38 @@ export default function LeisSecasAdmin() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="curso">Curso</Label>
-                  <Select
-                    value={formData.curso_id}
-                    onValueChange={(value) => setFormData({ ...formData, curso_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione um curso" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {cursos.map((curso) => (
-                        <SelectItem key={curso.id} value={curso.id}>
-                          {curso.titulo}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ordem">Ordem de Exibição</Label>
-                  <Input
-                    id="ordem"
-                    type="number"
-                    value={formData.ordem}
-                    onChange={(e) => setFormData({ ...formData, ordem: parseInt(e.target.value) })}
+                  <Label htmlFor="cursos">Cursos</Label>
+                  <MultiSelect
+                    options={cursos.map(c => c.titulo)}
+                    selected={formData.cursos_ids.map(id => cursos.find(c => c.id === id)?.titulo || '')}
+                    onChange={(selectedTitles) => {
+                      const selectedIds = selectedTitles.map(title => cursos.find(c => c.titulo === title)?.id || '');
+                      setFormData({ ...formData, cursos_ids: selectedIds });
+                    }}
+                    placeholder="Selecione os cursos"
                   />
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.cursos_ids.map(id => {
+                      const curso = cursos.find(c => c.id === id);
+                      return curso ? (
+                        <div key={id} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm flex items-center">
+                          {curso.titulo}
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setFormData({ 
+                                ...formData, 
+                                cursos_ids: formData.cursos_ids.filter(cId => cId !== id) 
+                              });
+                            }}
+                            className="ml-1 text-blue-600 hover:text-blue-900"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -276,9 +282,33 @@ export default function LeisSecasAdmin() {
                     id="conteudo"
                     value={formData.conteudo}
                     onChange={(e) => setFormData({ ...formData, conteudo: e.target.value })}
+                    onSelect={(e) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      setSelectionStart(target.selectionStart);
+                      setSelectionEnd(target.selectionEnd);
+                      setShowTagButton(target.selectionStart !== target.selectionEnd);
+                    }}
                     rows={15}
                     placeholder="Ex: O servidor público está [treino:sujeito] aos deveres de..."
                   />
+                  {showTagButton && (
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => {
+                        const selectedText = formData.conteudo.substring(selectionStart, selectionEnd);
+                        const beforeText = formData.conteudo.substring(0, selectionStart);
+                        const afterText = formData.conteudo.substring(selectionEnd);
+                        const newText = `${beforeText}[treino:${selectedText}]${afterText}`;
+                        setFormData({ ...formData, conteudo: newText });
+                        setShowTagButton(false);
+                      }}
+                    >
+                      Marcar para Treino
+                    </Button>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     Exemplo: "O servidor [treino:estável] não poderá ser demitido..."
                   </p>
@@ -332,12 +362,11 @@ export default function LeisSecasAdmin() {
                     {lei.conteudo.substring(0, 200)}...
                   </p>
                   <div className="flex gap-4 text-xs text-muted-foreground">
-                    <span>Ordem: {lei.ordem}</span>
                     <span>
                       Palavras para treino: {lei.palavras_treino?.length || 0}
                     </span>
                     <span>
-                      Curso: {cursos.find(c => c.id === lei.curso_id)?.titulo || 'N/A'}
+                      Cursos: {lei.cursos_ids?.map(id => cursos.find(c => c.id === id)?.titulo || 'N/A').join(', ') || cursos.find(c => c.id === lei.curso_id)?.titulo || 'N/A'}
                     </span>
                   </div>
                 </CardContent>
@@ -346,6 +375,5 @@ export default function LeisSecasAdmin() {
           )}
         </div>
       </div>
-    </AdminLayout>
   );
 }
