@@ -43,6 +43,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import AdBanner from '@/components/ads/AdBanner';
 
 // Interface para as estatísticas diárias
 interface DailyStats {
@@ -63,6 +64,7 @@ interface DisciplinaStats {
   aproveitamento: number;
   banca?: string;
   assuntos?: AssuntoStats[];
+  topicos?: TopicoStats[];
 }
 
 // Interface para estatísticas por assunto
@@ -257,7 +259,7 @@ const Dashboard = () => {
         assuntoStat.topicos = disciplina.topicos;
         
         // Calcular totais do assunto
-        assuntoStat.topicos.forEach(topico => {
+        assuntoStat.topicos?.forEach(topico => {
           assuntoStat.certas += topico.certas;
           assuntoStat.erradas += topico.erradas;
           assuntoStat.em_branco += topico.em_branco;
@@ -522,7 +524,7 @@ const Dashboard = () => {
                 };
                 
                 // Calcular totais do assunto
-                assuntoStat.topicos.forEach(topico => {
+                assuntoStat.topicos?.forEach(topico => {
                   assuntoStat.certas += topico.certas;
                   assuntoStat.erradas += topico.erradas;
                   assuntoStat.em_branco += topico.em_branco;
@@ -810,7 +812,7 @@ const Dashboard = () => {
           );
           
           // Passo 2: Substituir a lista original de tópicos pela filtrada e ordenar alfabeticamente
-          disciplina.topicos = topicosFiltrados.sort((a, b) => a.topico.localeCompare(b.topico));
+          disciplina.topicos = topicosFiltrados.sort((a: TopicoStats, b: TopicoStats) => a.topico.localeCompare(b.topico));
           
           // Passo 3: Recalcular os totais da disciplina baseado apenas nos tópicos filtrados
           disciplina.certas = 0;
@@ -980,6 +982,9 @@ const Dashboard = () => {
                 </Select>
               </div>
             </div>
+            
+            {/* Anúncio acima do card 'dashboard' */}
+            <AdBanner position="dashboard_top" className="my-6 rounded-lg" />
             
             {isLoading ? (
               <div className="flex items-center justify-center my-20">
@@ -1302,6 +1307,9 @@ const Dashboard = () => {
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Anúncio acima do card 'Simulados' */}
+            <AdBanner position="dashboard_middle" className="my-6 rounded-lg" />
             
             <Card className="shadow-none border-0">
               <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">

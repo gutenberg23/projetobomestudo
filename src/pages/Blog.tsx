@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, ArrowRight, Search } from "lucide-react";
 import { SidebarPosts } from "@/components/blog/SidebarPosts";
 import { Link } from "react-router-dom";
+import AdBanner from '@/components/ads/AdBanner';
+import { PublicLayout } from "@/components/layout/PublicLayout";
 
 const Blog = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -113,109 +115,116 @@ const Blog = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
-        <BlogLayout>
-          <div className="space-y-8">
-            <Skeleton className="h-12 w-full" />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-64 w-full" />
-                <div className="space-y-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-40 w-full" />
-                  ))}
+      <PublicLayout>
+        <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
+          <BlogLayout>
+            <div className="space-y-8">
+              <Skeleton className="h-12 w-full" />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 space-y-6">
+                  <Skeleton className="h-8 w-full" />
+                  <Skeleton className="h-64 w-full" />
+                  <div className="space-y-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <Skeleton key={i} className="h-40 w-full" />
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <Skeleton className="h-64 w-full" />
+                  <Skeleton className="h-64 w-full" />
                 </div>
               </div>
-              <div className="space-y-6">
-                <Skeleton className="h-64 w-full" />
-                <Skeleton className="h-64 w-full" />
-              </div>
             </div>
-          </div>
-        </BlogLayout>
-      </div>
+          </BlogLayout>
+        </div>
+      </PublicLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
-      <BlogLayout>
-        {/* Filtro de estados - ocupa toda a largura */}
-        <div className="mb-6">
-          <StateFilter 
-            states={STATES} 
-            activeState={activeState} 
-            onSelectState={handleStateSelect} 
-          />
-        </div>
-        
-        {/* Posts em destaque - ocupa toda a largura */}
-        {!searchTerm && !activeState && featuredPosts.length > 0 && (
-          <FeaturedPosts posts={featuredPosts} />
-        )}
-        
-        {/* Banner de concursos */}
-        <div className="my-8">
-          <Link to="/concursos" className="block">
-            <div className="bg-gradient-to-r from-[#5f2ebe] to-[#7e4beb] rounded-lg p-6 text-white shadow-md hover:shadow-lg transition-shadow">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Search className="w-8 h-8 mr-4" />
-                  <h3 className="text-xl font-bold">Veja todos os concursos abertos</h3>
-                </div>
-                <div className="flex items-center">
-                  <span className="mr-2">Acessar agora</span>
-                  <ArrowRight className="w-5 h-5" />
-                </div>
-              </div>
-            </div>
-          </Link>
-        </div>
-        
-        {/* Layout de duas colunas abaixo dos destaques */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            {/* Listagem de posts */}
-            <div>
-              <BlogList posts={
-                // Remover os posts em destaque da lista principal
-                searchTerm || activeState 
-                  ? filteredPosts 
-                  : filteredPosts.filter(post => !post.featured)
-              } />
-              
-              {filteredPosts.length === 0 && (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500">Nenhum post encontrado com os filtros selecionados.</p>
-                  <button 
-                    className="mt-4 text-[#5f2ebe] hover:underline"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setActiveState(null);
-                    }}
-                  >
-                    Limpar filtros
-                  </button>
-                </div>
-              )}
-            </div>
+    <PublicLayout>
+      <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
+        <BlogLayout>
+          {/* Filtro de estados - ocupa toda a largura */}
+          <div className="mb-6">
+            <StateFilter 
+              states={STATES} 
+              activeState={activeState} 
+              onSelectState={handleStateSelect} 
+            />
           </div>
           
-          <div className="space-y-8">
-            {/* Posts populares */}
-            <SidebarPosts 
-              title="Posts Populares" 
-              posts={popularPosts} 
-              icon={<TrendingUp className="h-5 w-5 mr-2 text-[#5f2ebe]" />}
-            />
-            
-            {/* Últimas notícias */}
-            <LatestNews posts={latestPosts} />
+          {/* Posts em destaque - ocupa toda a largura */}
+          {!searchTerm && !activeState && featuredPosts.length > 0 && (
+            <FeaturedPosts posts={featuredPosts} />
+          )}
+          
+          {/* Banner de concursos */}
+          <div className="my-8">
+            <div className="mb-6">
+              <AdBanner position="blog_top_concursos" className="rounded-lg" />
+            </div>
+            <Link to="/concursos" className="block">
+              <div className="bg-gradient-to-r from-[#5f2ebe] to-[#7e4beb] rounded-lg p-6 text-white shadow-md hover:shadow-lg transition-shadow">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Search className="w-8 h-8 mr-4" />
+                    <h3 className="text-xl font-bold">Veja todos os concursos abertos</h3>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="mr-2">Acessar agora</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+            </Link>
           </div>
-        </div>
-      </BlogLayout>
-    </div>
+          
+          {/* Layout de duas colunas abaixo dos destaques */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              {/* Listagem de posts */}
+              <div>
+                <BlogList posts={
+                  // Remover os posts em destaque da lista principal
+                  searchTerm || activeState 
+                    ? filteredPosts 
+                    : filteredPosts.filter(post => !post.featured)
+                } />
+                
+                {filteredPosts.length === 0 && (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500">Nenhum post encontrado com os filtros selecionados.</p>
+                    <button 
+                      className="mt-4 text-[#5f2ebe] hover:underline"
+                      onClick={() => {
+                        setSearchTerm("");
+                        setActiveState(null);
+                      }}
+                    >
+                      Limpar filtros
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-8">
+              {/* Posts populares */}
+              <SidebarPosts 
+                title="Posts Populares" 
+                posts={popularPosts} 
+                icon={<TrendingUp className="h-5 w-5 mr-2 text-[#5f2ebe]" />}
+              />
+              
+              {/* Últimas notícias */}
+              <LatestNews posts={latestPosts} />
+            </div>
+          </div>
+        </BlogLayout>
+      </div>
+    </PublicLayout>
   );
 };
 

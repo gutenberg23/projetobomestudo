@@ -39,13 +39,15 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
     titulo: '',
     dataInicioInscricao: '',
     dataFimInscricao: '',
+    dataProva: undefined, // Corrigido para undefined em vez de string vazia
     prorrogado: false,
     niveis: [],
     cargos: [],
     vagas: 0,
     salario: '',
     estados: [],
-    postId: undefined
+    postId: undefined,
+    destacar: false
   });
   
   // Estado para novo cargo a ser adicionado
@@ -54,17 +56,35 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   // Preencher o formulário se estiver editando um concurso existente
   useEffect(() => {
     if (concursoInicial) {
+      // Tratar datas para garantir o formato correto para inputs date
+      const formatarDataParaInput = (dataString?: string | null): string => {
+        if (!dataString) return '';
+        // Se já estiver no formato correto (YYYY-MM-DD), usar diretamente
+        if (dataString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          return dataString;
+        }
+        // Se for um datetime, extrair apenas a data
+        try {
+          const date = new Date(dataString);
+          return date.toISOString().split('T')[0];
+        } catch {
+          return '';
+        }
+      };
+
       setFormData({
         titulo: concursoInicial.titulo,
-        dataInicioInscricao: concursoInicial.dataInicioInscricao,
-        dataFimInscricao: concursoInicial.dataFimInscricao,
+        dataInicioInscricao: formatarDataParaInput(concursoInicial.dataInicioInscricao),
+        dataFimInscricao: formatarDataParaInput(concursoInicial.dataFimInscricao),
+        dataProva: concursoInicial.dataProva ? formatarDataParaInput(concursoInicial.dataProva) : undefined, // Corrigido
         prorrogado: concursoInicial.prorrogado || false,
         niveis: concursoInicial.niveis,
         cargos: concursoInicial.cargos,
         vagas: concursoInicial.vagas,
         salario: concursoInicial.salario,
         estados: concursoInicial.estados,
-        postId: concursoInicial.postId
+        postId: concursoInicial.postId,
+        destacar: concursoInicial.destacar || false
       });
     }
   }, [concursoInicial]);
@@ -77,6 +97,12 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
       setFormData({
         ...formData,
         [name]: parseInt(value) || 0
+      });
+    } else if (name === 'dataProva') {
+      // Tratar o valor null/empty do campo de data da prova
+      setFormData({
+        ...formData,
+        [name]: value || undefined
       });
     } else {
       setFormData({
@@ -91,6 +117,14 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
     setFormData({
       ...formData,
       prorrogado: checked
+    });
+  };
+  
+  // Manipulador para checkbox de destaque
+  const handleDestacarChange = (checked: boolean) => {
+    setFormData({
+      ...formData,
+      destacar: checked
     });
   };
   
@@ -204,8 +238,8 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
             />
           </div>
           
-          {/* Período de Inscrição */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+          {/* Período de Inscrição e Data da Prova */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
               <Label htmlFor="dataInicioInscricao" className="font-medium">
                 Data de Início
@@ -234,6 +268,19 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
                 required
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="dataProva" className="font-medium">
+                Data da Prova
+              </Label>
+              <Input
+                type="date"
+                id="dataProva"
+                name="dataProva"
+                value={formData.dataProva ?? ''} // Corrigido para tratar undefined/null
+                onChange={handleInputChange}
+                className="w-full"
+              />
+            </div>
             <div className="flex items-center space-x-2">
               <Checkbox 
                 id="prorrogado" 
@@ -255,6 +302,30 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
                   </Tooltip>
                 </TooltipProvider>
               </div>
+            </div>
+          </div>
+          
+          {/* Opção de Destaque */}
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="destacar" 
+              checked={formData.destacar || false} 
+              onCheckedChange={handleDestacarChange}
+            />
+            <div className="flex items-center">
+              <Label htmlFor="destacar" className="font-medium cursor-pointer">
+                Destacar na página inicial
+              </Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="h-4 w-4 ml-1 text-gray-400" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Marque esta opção para destacar este concurso na homepage</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
           
@@ -425,4 +496,4 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   );
 };
 
-export default FormularioConcurso; 
+export default FormularioConcurso;

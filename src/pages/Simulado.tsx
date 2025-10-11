@@ -23,6 +23,7 @@ import { Trophy } from "lucide-react";
 import { ActivityLogger } from "@/services/activity-logger";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { PublicLayout } from "@/components/layout/PublicLayout";
 
 // Opções de exibição de questões
 type DisplayOption = "single" | "ten" | "all";
@@ -208,201 +209,53 @@ const Simulado = () => {
             education_level,
             discipline,
             topics,
-            expandable_content,
-            teacher_explanation,
-            ai_explanation
+            expandablecontent,
+            teacherexplanation,
+            aiexplanation
           )
         `)
-        .eq('caderno_id', caderno);
+        .eq('caderno_id', caderno)
+        .order('position', { ascending: true });
 
       const { data: questionsData, error: questionsError } = await questionsQuery;
 
       if (questionsError) throw questionsError;
 
-      const processedQuestions = ((questionsData as unknown) as Array<{
-        questao: {
-          id: string;
-          number: number;
-          content: string;
-          command: string;
-          options: Array<{
-            id: string;
-            text: string;
-            isCorrect: boolean;
-          }>;
-          year?: string;
-          institution?: string;
-          organization?: string;
-          role?: string;
-          education_level?: string;
-          discipline?: string;
-          topics?: string[];
-          expandable_content?: string;
-          teacher_explanation?: string;
-          ai_explanation?: string;
-        } | null;
-      }>)
-        .map(q => q.questao)
-        .filter((q): q is NonNullable<{
-          id: string;
-          number: number;
-          content: string;
-          command: string;
-          options: Array<{
-            id: string;
-            text: string;
-            isCorrect: boolean;
-          }>;
-          year?: string;
-          institution?: string;
-          organization?: string;
-          role?: string;
-          education_level?: string;
-          discipline?: string;
-          topics?: string[];
-          expandable_content?: string;
-          teacher_explanation?: string;
-          ai_explanation?: string;
-        }> => Boolean(q))
-        .map(q => ({
+      // Formatar questões para o formato do QuestionCard
+      const questionsForCard: Question[] = questionsData.map((qc: any) => {
+        const q = qc.questao;
+        return {
           id: q.id,
-          number: q.number,
+          number: q.number || 0,
           content: q.content,
-          command: q.command,
-          options: q.options,
+          command: q.command || '',
+          options: parseOptions(q.options),
           year: q.year,
           institution: q.institution,
           organization: q.organization,
           role: q.role,
           educationLevel: q.education_level,
           discipline: q.discipline,
-          topics: q.topics,
-          expandableContent: q.expandable_content,
-          teacherExplanation: q.teacher_explanation,
-          aiExplanation: q.ai_explanation,
+          topics: Array.isArray(q.topics) ? q.topics : [],
+          expandableContent: q.expandablecontent || undefined,
+          teacherExplanation: q.teacherexplanation || undefined,
+          aiExplanation: q.aiexplanation || undefined,
           comments: []
-        } as Question));
+        };
+      });
 
-      setFormattedQuestions(processedQuestions || []);
+      setFormattedQuestions(questionsForCard);
     } catch (error) {
-      console.error('Erro ao buscar questões:', error);
-      toast.error('Erro ao carregar as questões');
+      console.error("Erro ao buscar questões:", error);
+      toast.error("Erro ao carregar as questões. Tente novamente.");
     }
   };
 
-  // Função para calcular e salvar os resultados do simulado
-  const calculateAndSaveResults = async () => {
-    setIsFinishingSimulado(true);
-
-    try {
-      const { data: userData } = await supabase.auth.getUser();
-      
-      if (!userData.user) {
-        toast.error("Você precisa estar logado para finalizar o simulado.");
-        return;
-      }
-
-      // Buscar todas as respostas do usuário para este simulado
-      const { data: respostasData, error: respostasError } = await supabase
-        .from("respostas_alunos")
-        .select("questao_id, is_correta, created_at")
-        .eq("aluno_id", userData.user.id)
-        .in("questao_id", formattedQuestions.map(q => q.id))
-        .order('created_at', { ascending: false });
-
-      if (respostasError) {
-        console.error("Erro ao buscar respostas:", respostasError);
-        toast.error("Erro ao buscar suas respostas. Tente novamente.");
-        return;
-      }
-
-      // Processar as respostas para garantir que apenas a última resposta de cada questão seja contabilizada
-      const questoesMap = new Map<string, boolean>();
-      
-      if (respostasData && respostasData.length > 0) {
-        // Usar apenas a primeira resposta (mais recente) de cada questão
-        respostasData.forEach(resposta => {
-          if (!questoesMap.has(resposta.questao_id)) {
-            questoesMap.set(resposta.questao_id, resposta.is_correta);
-          }
-        });
-      }
-
-      // Calcular acertos e erros com base nas respostas mais recentes
-      let acertos = 0;
-      let erros = 0;
-
-      questoesMap.forEach((isCorreta) => {
-        if (isCorreta) {
-          acertos++;
-        } else {
-          erros++;
-        }
-      });
-
-      console.log("Salvando resultados:", {
-        user_id: userData.user.id,
-        simulado_id: simuladoId,
-        acertos,
-        erros,
-        questoes_respondidas: questoesMap.size
-      });
-
-      // Usar o método upsert diretamente para simplificar o código
-      // Usando type assertion para evitar erros de TypeScript
-      const supabaseWithCustomTables = supabase as SupabaseClientWithCustomTables;
-      const { error: upsertError } = await supabaseWithCustomTables
-        .from("user_simulado_results")
-        .upsert([{
-          user_id: userData.user.id,
-          simulado_id: simuladoId,
-          acertos: acertos,
-          erros: erros,
-          updated_at: new Date().toISOString()
-        }], {
-          onConflict: 'user_id,simulado_id'
-        });
-
-      if (upsertError) {
-        console.error("Erro ao salvar resultados:", upsertError);
-        toast.error("Erro ao salvar resultados. Tente novamente.");
-        return;
-      }
-
-      // Registrar a atividade de completar o simulado
-      if (simulado && simuladoId) {
-        await ActivityLogger.logExamComplete(
-          simuladoId, 
-          String(simulado.titulo || 'Simulado sem título'), 
-          {
-            acertos,
-            erros,
-            total_questoes: formattedQuestions.length,
-            porcentagem_acertos: formattedQuestions.length > 0 ? Math.round((acertos / formattedQuestions.length) * 100) : 0
-          }
-        );
-      }
-
-      toast.success("Simulado finalizado com sucesso!");
-      
-      // Redirecionar para a página do curso
-      const courseId = simulado.curso_id;
-      if (courseId) {
-        navigate(`/course/${courseId}`);
-      } else {
-        navigate("/");
-      }
-    } catch (error) {
-      console.error("Erro ao finalizar simulado:", error);
-      toast.error("Erro ao finalizar simulado. Tente novamente.");
-    } finally {
-      setIsFinishingSimulado(false);
-    }
-  };
-
-  const parseOptions = (options: Json | null) => {
+  // Função para converter options do banco para o formato esperado
+  const parseOptions = (options: Json | null): any[] => {
     if (!options) return [];
     
+    // Verificar se options é um array
     if (Array.isArray(options)) {
       return options.map((option: any) => ({
         id: option.id || `option-${Math.random().toString(36).substr(2, 9)}`,
@@ -414,284 +267,405 @@ const Simulado = () => {
     return [];
   };
 
-  const handleNextQuestion = () => {
-    if (activeQuestion < formattedQuestions.length - 1) {
-      setActiveQuestion(activeQuestion + 1);
+  const handleOptionSelect = async (questionId: string, optionId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Atualizar a página atual se estiver no modo de exibição única
-      if (displayOption === "single") {
-        setCurrentPage(activeQuestion + 2);
+      if (!user) {
+        toast.error('Você precisa estar logado para responder às questões');
+        return;
       }
-      
-      window.scrollTo(0, 0);
+
+      // Salvar resposta no banco de dados
+      const { error } = await supabase
+        .from('respostas_alunos')
+        .upsert({
+          aluno_id: user.id,
+          questao_id: questionId,
+          opcao_id: optionId,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'aluno_id,questao_id'
+        });
+
+      if (error) throw error;
+
+      // Atualizar estado local
+      setUserAnswers(prev => ({
+        ...prev,
+        [questionId]: optionId
+      }));
+
+      // Log da atividade
+      await ActivityLogger.logActivity('question_answered', {
+        questionId,
+        optionId,
+        simuladoId
+      });
+    } catch (error) {
+      console.error("Erro ao salvar resposta:", error);
+      toast.error("Erro ao salvar resposta. Tente novamente.");
     }
+  };
+
+  const handleToggleDisabled = (questionId: string, optionId: string) => {
+    setDisabledOptions(prev => {
+      const questionDisabled = prev[questionId] || [];
+      const isDisabled = questionDisabled.includes(optionId);
+      
+      return {
+        ...prev,
+        [questionId]: isDisabled
+          ? questionDisabled.filter(id => id !== optionId)
+          : [...questionDisabled, optionId]
+      };
+    });
   };
 
   const handlePreviousQuestion = () => {
     if (activeQuestion > 0) {
       setActiveQuestion(activeQuestion - 1);
-      
-      // Atualizar a página atual se estiver no modo de exibição única
-      if (displayOption === "single") {
-        setCurrentPage(activeQuestion);
-      }
-      
-      window.scrollTo(0, 0);
     }
   };
 
-  // Função para lidar com a mudança na opção de exibição
-  const handleDisplayOptionChange = (value: string) => {
-    const option = value as DisplayOption;
-    setDisplayOption(option);
-    
-    // Resetar a página atual ao mudar o modo de exibição
-    setCurrentPage(1);
-    
-    // Se mudar para exibição única, sincronizar com a questão ativa
-    if (option === "single") {
-      setCurrentPage(activeQuestion + 1);
+  const handleNextQuestion = () => {
+    if (activeQuestion < formattedQuestions.length - 1) {
+      setActiveQuestion(activeQuestion + 1);
     }
-  };
-  
-  // Função para mudar de página
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    
-    // Se estiver no modo de exibição única, atualizar a questão ativa
-    if (displayOption === "single") {
-      setActiveQuestion(page - 1);
-    }
-    
-    window.scrollTo(0, 0);
   };
 
-  // Função para atualizar a visibilidade do ranking
-  const handleToggleRankingVisibility = async () => {
-    if (!isAdmin()) return;
-    
-    setSavingRankingVisibility(true);
+  const handleQuestionChange = (index: number) => {
+    if (index >= 0 && index < formattedQuestions.length) {
+      setActiveQuestion(index);
+    }
+  };
+
+  const calculateAndSaveResults = async () => {
     try {
+      setIsFinishingSimulado(true);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error('Você precisa estar logado para finalizar o simulado');
+        return;
+      }
+
+      // Buscar todas as respostas do usuário para este simulado
+      const { data: respostasData, error: respostasError } = await supabase
+        .from("respostas_alunos")
+        .select("questao_id, opcao_id")
+        .eq("aluno_id", user.id)
+        .in("questao_id", simulado.questoes_ids || []);
+
+      if (respostasError) throw respostasError;
+
+      // Criar um mapa de respostas para fácil acesso
+      const userAnswersMap: Record<string, string> = {};
+      respostasData.forEach(resposta => {
+        userAnswersMap[resposta.questao_id] = resposta.opcao_id;
+      });
+
+      // Buscar as questões novamente para verificar as respostas corretas
+      const { data: questionsData, error: questionsError } = await supabase
+        .from("questoes")
+        .select("id, options")
+        .in("id", simulado.questoes_ids || []);
+
+      if (questionsError) throw questionsError;
+
+      // Calcular acertos
+      let correctAnswers = 0;
+      questionsData.forEach((q: any) => {
+        const userAnswer = userAnswersMap[q.id];
+        if (userAnswer) {
+          const options = parseOptions(q.options);
+          const correctOption = options.find((opt: any) => opt.isCorrect);
+          if (correctOption && correctOption.id === userAnswer) {
+            correctAnswers++;
+          }
+        }
+      });
+
+      // Calcular porcentagem
+      const totalQuestions = simulado.questoes_ids?.length || 0;
+      const percentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+
+      // Salvar resultado no banco de dados
+      const { error: resultError } = await supabase
+        .from('user_simulado_results')
+        .upsert({
+          user_id: user.id,
+          simulado_id: simuladoId,
+          correct_answers: correctAnswers,
+          total_questions: totalQuestions,
+          percentage: percentage,
+          finished_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,simulado_id'
+        });
+
+      if (resultError) throw resultError;
+
+      // Log da atividade
+      await ActivityLogger.logActivity('simulado_completed', {
+        simuladoId,
+        correctAnswers,
+        totalQuestions,
+        percentage
+      });
+
+      toast.success(`Simulado finalizado! Você acertou ${correctAnswers} de ${totalQuestions} questões (${percentage}%).`);
+      
+      // Redirecionar para a página de ranking
+      navigate(`/simulado-ranking/${simuladoId}`);
+    } catch (error) {
+      console.error("Erro ao calcular e salvar resultados:", error);
+      toast.error("Erro ao finalizar simulado. Tente novamente.");
+    } finally {
+      setIsFinishingSimulado(false);
+    }
+  };
+
+  const toggleRankingVisibility = async () => {
+    try {
+      setSavingRankingVisibility(true);
+      
       const { error } = await supabase
-        .from("simulados")
+        .from('simulados')
         .update({ 
           ranking_is_public: !rankingIsPublic,
-          ranking_updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
-        .eq("id", simuladoId);
-      
+        .eq('id', simuladoId);
+
       if (error) throw error;
-      
+
       setRankingIsPublic(!rankingIsPublic);
-      toast.success(`Ranking ${!rankingIsPublic ? 'publicado' : 'definido como privado'} com sucesso!`);
+      toast.success(`Visibilidade do ranking ${!rankingIsPublic ? 'ativada' : 'desativada'} com sucesso!`);
     } catch (error) {
       console.error("Erro ao atualizar visibilidade do ranking:", error);
-      toast.error("Não foi possível atualizar a visibilidade do ranking. Tente novamente.");
+      toast.error("Erro ao atualizar visibilidade do ranking. Tente novamente.");
     } finally {
       setSavingRankingVisibility(false);
     }
   };
 
-  // Verificar se o usuário pode ver o botão de ranking
-  const canViewRanking = rankingIsPublic || isAdmin();
-
-  // Botão de Ranking deve ser mostrado apenas se:
-  // 1. O usuário puder ver o ranking (admin ou ranking público)
-  // 2. A configuração showSimuladoRankingPage estiver habilitada
-  const showRankingButton = canViewRanking && config.pages.showSimuladoRankingPage;
-
-  const pageCount = getPageCount();
-  const displayedQuestions = getDisplayedQuestions();
-  
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-[#272f3c] mb-4">Carregando simulado...</h1>
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <PublicLayout>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1 container mx-auto px-4 py-8">
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5f2ebe]"></div>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </PublicLayout>
     );
   }
 
   if (!simulado) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-[#272f3c] mb-4">Simulado não encontrado</h1>
-            <p className="text-[#67748a]">O simulado solicitado não existe ou não está disponível.</p>
-            <Link to="/">
-              <Button className="mt-4">Voltar para o início</Button>
-            </Link>
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <PublicLayout>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1 container mx-auto px-4 py-8">
+            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">Simulado não encontrado</h1>
+              <p className="text-gray-600 mb-6">O simulado que você está tentando acessar não existe ou foi removido.</p>
+              <Link to="/simulados">
+                <Button>Voltar para simulados</Button>
+              </Link>
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </PublicLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-[#272f3c] mb-2">{simulado.titulo}</h1>
-              <div className="text-[#67748a] mb-4">
-                <p>Total de questões: {formattedQuestions.length}</p>
-                {simulado.data_inicio && (
-                  <p>Disponível de: {new Date(simulado.data_inicio).toLocaleDateString('pt-BR')}</p>
-                )}
-                {simulado.data_fim && (
-                  <p>Até: {new Date(simulado.data_fim).toLocaleDateString('pt-BR')}</p>
-                )}
+    <PublicLayout>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8">
+          {/* Cabeçalho do simulado */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{simulado.title}</h1>
+                <p className="text-gray-600 mt-2">{simulado.description}</p>
               </div>
-
-              {/* Botão de Ranking */}
-              {showRankingButton && (
-                <div className="mt-4">
-                  <Link to={`/simulado-ranking/${simuladoId}`}>
-                    <Button 
-                      variant="outline" 
-                      className="flex items-center gap-2 bg-[#5f2ebe] text-white hover:bg-[#4e259b]"
-                    >
-                      <Trophy className="h-4 w-4" />
-                      <span>Ranking</span>
-                    </Button>
-                  </Link>
-                </div>
-              )}
-
-              {/* Toggle para administradores */}
-              {isAdmin() && (
-                <div className="mt-4 flex items-center space-x-2">
-                  <Switch 
-                    id="ranking-visibility" 
-                    checked={rankingIsPublic}
-                    onCheckedChange={handleToggleRankingVisibility}
-                    disabled={savingRankingVisibility}
-                  />
-                  <Label htmlFor="ranking-visibility">
-                    Ranking {rankingIsPublic ? "público" : "privado"}
-                  </Label>
-                </div>
-              )}
-            </div>
-            
-            <div className="mt-4 md:mt-0">
-              <div className="flex items-center gap-2">
-                <span className="text-[#67748a] whitespace-nowrap">Exibir questões:</span>
-                <Select
-                  value={displayOption}
-                  onValueChange={handleDisplayOptionChange}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="single">1 por página</SelectItem>
-                    <SelectItem value="ten">10 por página</SelectItem>
-                    <SelectItem value="all">Todas de uma vez</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-[#f6f8fa] p-4 rounded-lg mt-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[#67748a]">Progresso:</span>
-              <span className="text-[#5f2ebe] font-semibold">
-                {displayOption === "single" ? `${activeQuestion + 1} de ${formattedQuestions.length}` : 
-                 displayOption === "ten" ? `Página ${currentPage} de ${pageCount}` : 
-                 `Todas as ${formattedQuestions.length} questões`}
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div 
-                className="bg-[#5f2ebe] h-2.5 rounded-full" 
-                style={{ 
-                  width: displayOption === "single" 
-                    ? `${((activeQuestion + 1) / formattedQuestions.length) * 100}%`
-                    : displayOption === "ten"
-                    ? `${(currentPage / pageCount) * 100}%`
-                    : "100%" 
-                }}
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        {formattedQuestions.length > 0 ? (
-          <div className="mb-8">
-            {displayedQuestions.map((question, index) => (
-              <div key={`question-${question.id}-${index}`} className="mb-8">
-                {displayOption !== "single" && (
-                  <div className="bg-white rounded-lg shadow-sm p-4 mb-4">
-                    <h2 className="text-lg font-semibold text-[#272f3c]">
-                      Questão {displayOption === "ten" ? (currentPage - 1) * 10 + index + 1 : index + 1} de {formattedQuestions.length}
-                    </h2>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                {isAdmin && (
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="ranking-visibility"
+                      checked={rankingIsPublic}
+                      onCheckedChange={toggleRankingVisibility}
+                      disabled={savingRankingVisibility}
+                    />
+                    <Label htmlFor="ranking-visibility">
+                      {savingRankingVisibility ? "Salvando..." : "Ranking público"}
+                    </Label>
                   </div>
                 )}
                 
-                <QuestionCard 
-                  question={question}
-                  disabledOptions={disabledOptions[question.id] || []}
-                  onToggleDisabled={(optionId, event) => {
-                    event.preventDefault();
-                    
-                    setDisabledOptions(prev => {
-                      const questionDisabledOptions = prev[question.id] || [];
-                      
-                      return {
-                        ...prev,
-                        [question.id]: questionDisabledOptions.includes(optionId)
-                          ? questionDisabledOptions.filter(id => id !== optionId)
-                          : [...questionDisabledOptions, optionId]
-                      };
-                    });
+                <Link to={`/simulado-ranking/${simuladoId}`}>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Trophy className="w-4 h-4" />
+                    Ver Ranking
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Total de Questões</p>
+                <p className="text-2xl font-bold text-[#5f2ebe]">{formattedQuestions.length}</p>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Tempo Estimado</p>
+                <p className="text-2xl font-bold text-[#5f2ebe]">{formattedQuestions.length * 2} min</p>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Instituição</p>
+                <p className="text-lg font-semibold text-gray-900">{simulado.institution || "Não especificada"}</p>
+              </div>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">Ano</p>
+                <p className="text-lg font-semibold text-gray-900">{simulado.year || "Não especificado"}</p>
+              </div>
+            </div>
+          </div>
 
-                    // Atualizar o estado de userAnswers quando o usuário seleciona uma opção
-                    setUserAnswers(prev => ({
-                      ...prev,
-                      [question.id]: optionId
-                    }));
-                  }}
-                />
-              </div>
-            ))}
-            
-            {/* Paginação para modo de exibição "ten" */}
-            {displayOption === "ten" && pageCount > 1 && (
-              <div className="mt-6">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={pageCount}
-                  onPageChange={handlePageChange}
-                  itemsPerPage={10}
-                  totalItems={formattedQuestions.length}
-                />
-              </div>
-            )}
-            
-            {/* Navegação para modo de exibição "single" */}
-            {displayOption === "single" && (
-              <div className="flex justify-between mt-8">
-                <Button 
-                  onClick={handlePreviousQuestion}
-                  disabled={activeQuestion === 0}
-                  variant="secondary"
-                >
-                  Questão Anterior
-                </Button>
+          {/* Controles de navegação e exibição */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div>
+                  <p className="text-sm text-gray-600">Modo de Exibição</p>
+                  <Select value={displayOption} onValueChange={(value: DisplayOption) => {
+                    setDisplayOption(value);
+                    setCurrentPage(1);
+                    setActiveQuestion(0);
+                  }}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single">Uma por vez</SelectItem>
+                      <SelectItem value="ten">Dez por página</SelectItem>
+                      <SelectItem value="all">Todas de uma vez</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 
-                {activeQuestion === formattedQuestions.length - 1 ? (
+                {displayOption !== "single" && (
+                  <div>
+                    <p className="text-sm text-gray-600">Página</p>
+                    <Pagination 
+                      currentPage={currentPage} 
+                      totalPages={getPageCount()}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
+              </div>
+              
+              {displayOption === "single" && formattedQuestions.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={handlePreviousQuestion}
+                    disabled={activeQuestion === 0}
+                    variant="outline"
+                  >
+                    Anterior
+                  </Button>
+                  
+                  <span className="text-sm text-gray-600">
+                    Questão {activeQuestion + 1} de {formattedQuestions.length}
+                  </span>
+                  
+                  <Button 
+                    onClick={handleNextQuestion}
+                    disabled={activeQuestion === formattedQuestions.length - 1}
+                    variant="outline"
+                  >
+                    Próxima
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Lista de questões */}
+          {formattedQuestions.length > 0 ? (
+            <div className="space-y-6">
+              {getDisplayedQuestions().map((question, index) => (
+                <QuestionCard
+                  key={`${question.id}-${displayOption}-${currentPage}`}
+                  question={question}
+                  selectedOption={_userAnswers[question.id] || null}
+                  disabledOptions={disabledOptions[question.id] || []}
+                  onOptionSelect={handleOptionSelect}
+                  onToggleDisabled={handleToggleDisabled}
+                  showNumber={displayOption === "single" ? activeQuestion + 1 : (currentPage - 1) * (displayOption === "ten" ? 10 : formattedQuestions.length) + index + 1}
+                />
+              ))}
+              
+              {/* Paginação para modo "ten" */}
+              {displayOption === "ten" && getPageCount() > 1 && (
+                <div className="flex justify-center mt-8">
+                  <Pagination 
+                    currentPage={currentPage} 
+                    totalPages={getPageCount()}
+                    onPageChange={setCurrentPage}
+                  />
+                </div>
+              )}
+              
+              {/* Botões de navegação para modo "single" */}
+              {displayOption === "single" && formattedQuestions.length > 1 && (
+                <div className="flex justify-between mt-8">
+                  <Button 
+                    onClick={handlePreviousQuestion}
+                    disabled={activeQuestion === 0}
+                    variant="outline"
+                  >
+                    Questão Anterior
+                  </Button>
+                  
+                  {activeQuestion === formattedQuestions.length - 1 ? (
+                    <Button 
+                      onClick={calculateAndSaveResults}
+                      disabled={isFinishingSimulado}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {isFinishingSimulado ? "Finalizando..." : "Finalizar Simulado"}
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleNextQuestion}
+                      disabled={activeQuestion === formattedQuestions.length - 1}
+                    >
+                      Próxima Questão
+                    </Button>
+                  )}
+                </div>
+              )}
+              
+              {/* Botão de finalizar para modos "ten" e "all" */}
+              {(displayOption === "ten" || displayOption === "all") && (
+                <div className="flex justify-center mt-8">
                   <Button 
                     onClick={calculateAndSaveResults}
                     disabled={isFinishingSimulado}
@@ -699,38 +673,18 @@ const Simulado = () => {
                   >
                     {isFinishingSimulado ? "Finalizando..." : "Finalizar Simulado"}
                   </Button>
-                ) : (
-                  <Button 
-                    onClick={handleNextQuestion}
-                    disabled={activeQuestion === formattedQuestions.length - 1}
-                  >
-                    Próxima Questão
-                  </Button>
-                )}
-              </div>
-            )}
-            
-            {/* Botão de finalizar para modos "ten" e "all" */}
-            {(displayOption === "ten" || displayOption === "all") && (
-              <div className="flex justify-center mt-8">
-                <Button 
-                  onClick={calculateAndSaveResults}
-                  disabled={isFinishingSimulado}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {isFinishingSimulado ? "Finalizando..." : "Finalizar Simulado"}
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-center">
-            <p className="text-[#67748a]">Este simulado não possui questões.</p>
-          </div>
-        )}
-      </main>
-      <Footer />
-    </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-center">
+              <p className="text-[#67748a]">Este simulado não possui questões.</p>
+            </div>
+          )}
+        </main>
+        <Footer />
+      </div>
+    </PublicLayout>
   );
 };
 

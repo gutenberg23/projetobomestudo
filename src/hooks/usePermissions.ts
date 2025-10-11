@@ -9,6 +9,10 @@ export const usePermissions = () => {
 
   useEffect(() => {
     const fetchRoles = async () => {
+      // Resetar estado de loading quando o usuário mudar
+      setLoading(true);
+      setRoles([]);
+      
       if (!user) {
         console.log("usePermissions: Nenhum usuário logado");
         setRoles([]);
@@ -73,8 +77,12 @@ export const usePermissions = () => {
   };
   
   const canAccessAdminArea = () => {
-    const result = isStaff() || isJornalista();
-    console.log("usePermissions: canAccessAdminArea() =", result);
+    // Verificar também o role do usuário diretamente do perfil, caso as roles não tenham sido carregadas
+    const userRole = user?.role;
+    const hasDirectAdminAccess = userRole === 'admin' || userRole === 'professor' || userRole === 'assistente' || userRole === 'jornalista';
+    
+    const result = isStaff() || isJornalista() || hasDirectAdminAccess;
+    console.log("usePermissions: canAccessAdminArea() =", result, "userRole:", userRole, "roles:", roles);
     return result;
   };
   

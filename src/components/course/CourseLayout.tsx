@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Header } from "../layout/Header";
 import { Footer } from "../layout/Footer";
@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { CicloTab } from "./ciclo/CicloTab";
 import { LeiSecaTab } from "./leiseca/LeiSecaTab";
+import CourseAdBanner from "./CourseAdBanner";
 
 export const CourseLayout = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -24,7 +25,7 @@ export const CourseLayout = () => {
   const { config, isLoading: isLoadingConfig } = useSiteConfig();
   
   // Usar o hook de progresso com o ID do usuário atual
-  const { progressPercentage } = useUserProgress(user?.id, courseId);
+  useUserProgress(user?.id, courseId);
 
   // Efeito para ajustar a aba ativa quando as configurações são carregadas
   useEffect(() => {
@@ -114,7 +115,7 @@ export const CourseLayout = () => {
   }, [courseId]);
 
   // Função para receber o número de disciplinas e os dados das disciplinas do componente SubjectsList
-  const handleSubjectsCountChange = useCallback((count: number, data?: any[]) => {
+  const handleSubjectsCountChange = useCallback((_count: number, data?: any[]) => {
     if (data) {
       setSubjectsData(data);
       console.log("CourseLayout - Recebendo dados de disciplinas:", data.length);
@@ -129,11 +130,12 @@ export const CourseLayout = () => {
     <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
       <main className="flex-1 w-full">
-        <CourseHeader courseId={courseId || ''} progress={progressPercentage} />
+        <CourseHeader courseId={courseId || ''} />
         <CourseNavigation
           activeTab={activeTab}
           setActiveTab={setActiveTab}
         />
+        <CourseAdBanner />
         
         {activeTab === 'disciplinas' && config.tabs.showDisciplinasTab && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center relative">

@@ -380,6 +380,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Marcar que o perfil foi buscado com sucesso
         profileFetchedRef.current = true;
+        // Atualizar timestamp da última busca
+        lastFetchTimeRef.current = Date.now();
       } else {
         console.warn("AuthContext: Perfil do usuário não encontrado");
       }

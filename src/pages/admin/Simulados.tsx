@@ -16,7 +16,13 @@ const Simulados: React.FC = () => {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (simuladosError) throw simuladosError;
+      if (simuladosError) {
+        console.error("Erro ao buscar simulados:", simuladosError);
+        toast.error("Erro ao carregar simulados: " + (simuladosError as Error).message);
+        throw simuladosError;
+      }
+
+      console.log("Simulados encontrados:", simuladosData);
 
       // Depois, buscar os cursos relacionados
       const cursoIds = simuladosData.map(s => s.curso_id);
@@ -25,7 +31,11 @@ const Simulados: React.FC = () => {
         .select("id, titulo")
         .in("id", cursoIds);
 
-      if (cursosError) throw cursosError;
+      if (cursosError) {
+        console.error("Erro ao buscar cursos:", cursosError);
+        toast.error("Erro ao carregar cursos: " + (cursosError as Error).message);
+        throw cursosError;
+      }
 
       // Criar um mapa de cursos para fácil acesso
       const cursosMap = new Map(cursosData.map(curso => [curso.id, curso]));
@@ -77,9 +87,9 @@ const Simulados: React.FC = () => {
 
       fetchSimulados();
       toast.success(`Simulado ${simulado.ativo ? "desativado" : "ativado"} com sucesso!`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Erro ao alterar status:", error);
-      toast.error("Erro ao alterar status do simulado");
+      toast.error("Erro ao alterar status do simulado: " + (error as Error).message);
     }
   };
 
@@ -96,9 +106,9 @@ const Simulados: React.FC = () => {
 
       fetchSimulados();
       toast.success("Simulado excluído com sucesso!");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Erro ao excluir simulado:", error);
-      toast.error("Erro ao excluir simulado");
+      toast.error("Erro ao excluir simulado: " + (error as Error).message);
     }
   };
 
@@ -106,10 +116,20 @@ const Simulados: React.FC = () => {
     <div className="container mx-auto py-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Simulados</h1>
+        <p className="text-sm text-gray-600 mt-1">
+          {isLoading ? "Carregando..." : `${simulados.length} simulados encontrados`}
+        </p>
       </div>
 
       {isLoading ? (
         <div className="text-center py-4">Carregando...</div>
+      ) : simulados.length === 0 ? (
+        <div className="text-center py-8 bg-white rounded-lg shadow">
+          <p className="text-gray-500">Nenhum simulado encontrado.</p>
+          <p className="text-sm text-gray-400 mt-2">
+            Se você espera ver simulados aqui, verifique se as políticas de acesso estão configuradas corretamente.
+          </p>
+        </div>
       ) : (
         <SimuladosTable
           simulados={simulados}

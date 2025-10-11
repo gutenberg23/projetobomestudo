@@ -2,6 +2,7 @@ import React from "react";
 import { QuestionCard } from "@/components/new/QuestionCard";
 import QuestionPagination from "./QuestionPagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import AdBannerList from "@/components/ads/AdBannerList";
 
 interface QuestionResultsProps {
   questions: any[];
@@ -68,13 +69,26 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
 
   return (
     <div className="space-y-8 mt-8">
-      {questions.map(question => (
-        <QuestionCard
-          key={question.id}
-          question={question}
-          disabledOptions={disabledOptions[question.id] || []}
-          onToggleDisabled={(optionId, event) => onToggleDisabled(question.id, optionId, event)}
-        />
+      {questions.map((question, index) => (
+        <React.Fragment key={question.id}>
+          <QuestionCard
+            question={question}
+            disabledOptions={disabledOptions[question.id] || []}
+            onToggleDisabled={(optionId, event) => onToggleDisabled(question.id, optionId, event)}
+          />
+          
+          {/* Mostrar anúncio a cada 5 questões */}
+          {((index + 1) % 5 === 0 && index < questions.length - 1) && (
+            <div className="my-4">
+              <AdBannerList 
+                position="questions_list" 
+                interval={5} 
+                itemCount={questions.length}
+                className="rounded-lg" 
+              />
+            </div>
+          )}
+        </React.Fragment>
       ))}
       
       {totalPages > 1 && (

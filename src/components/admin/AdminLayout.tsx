@@ -14,6 +14,8 @@ import {
   Folders,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Youtube,
   Settings,
   Kanban,
@@ -25,6 +27,13 @@ import { usePermissions } from "@/hooks/usePermissions";
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    administracao: false, // Fechado por padrão
+    blogNoticias: false,
+    pessoas: false,
+    questoesSimulados: false,
+    cursosAulas: false
+  });
   const location = useLocation();
   const { isJornalista } = usePermissions();
   
@@ -45,110 +54,180 @@ const AdminLayout = () => {
     };
   }, []);
 
-  const allMenuItems = [
-    { 
-      path: "/admin", 
-      label: "Dashboard", 
+  // Definir os grupos de menu conforme solicitado
+  const menuGroups = [
+    {
+      id: "administracao",
+      label: "Administração",
       icon: <LayoutDashboard className="w-5 h-5" />,
-      showForJornalista: false
+      items: [
+        { 
+          path: "/admin", 
+          label: "Dashboard", 
+          icon: <LayoutDashboard className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        {
+          path: "/admin/kanban",
+          label: "Kanban",
+          icon: <Kanban className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/configuracoes", 
+          label: "Configurações", 
+          icon: <Settings className="w-5 h-5" />,
+          showForJornalista: false
+        },
+      ]
     },
     {
-      path: "/admin/kanban",
-      label: "Kanban",
-      icon: <Kanban className="w-5 h-5" />,
-      showForJornalista: false
-    },
-    { 
-      path: "/admin/posts", 
-      label: "Posts", 
+      id: "blogNoticias",
+      label: "Blog e Notícias",
       icon: <FileText className="w-5 h-5" />,
-      showForJornalista: true
+      items: [
+        { 
+          path: "/admin/posts", 
+          label: "Posts", 
+          icon: <FileText className="w-5 h-5" />,
+          showForJornalista: true
+        },
+        { 
+          path: "/admin/concursos", 
+          label: "Concursos", 
+          icon: <Award className="w-5 h-5" />,
+          showForJornalista: true
+        },
+      ]
     },
-    { 
-      path: "/admin/usuarios", 
-      label: "Usuários", 
+    {
+      id: "pessoas",
+      label: "Pessoas",
       icon: <Users className="w-5 h-5" />,
-      showForJornalista: false
+      items: [
+        { 
+          path: "/admin/usuarios", 
+          label: "Usuários", 
+          icon: <Users className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/professores", 
+          label: "Professores", 
+          icon: <Youtube className="w-5 h-5" />,
+          showForJornalista: false
+        },
+      ]
     },
-    { 
-      path: "/admin/professores", 
-      label: "Professores", 
-      icon: <Youtube className="w-5 h-5" />,
-      showForJornalista: false
-    },
-    { 
-      path: "/admin/questoes", 
-      label: "Questões", 
+    {
+      id: "questoesSimulados",
+      label: "Questões e Simulados",
       icon: <HelpCircle className="w-5 h-5" />,
-      showForJornalista: false
+      items: [
+        { 
+          path: "/admin/questoes", 
+          label: "Questões", 
+          icon: <HelpCircle className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/cadernos", 
+          label: "Cadernos de Questões", 
+          icon: <Book className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/simulados", 
+          label: "Simulados", 
+          icon: <Calendar className="w-5 h-5" />,
+          showForJornalista: false
+        },
+      ]
     },
-    { 
-      path: "/admin/cadernos", 
-      label: "Cadernos de Questões", 
-      icon: <Book className="w-5 h-5" />,
-      showForJornalista: false
-    },
-    { 
-      path: "/admin/simulados", 
-      label: "Simulados", 
-      icon: <Calendar className="w-5 h-5" />,
-      showForJornalista: false
-    },
-    { 
-      path: "/admin/edital", 
-      label: "Edital Verticalizado", 
-      icon: <BookOpen className="w-5 h-5" />,
-      showForJornalista: false
-    },
-    { 
-      path: "/admin/topicos", 
-      label: "Tópicos", 
-      icon: <FolderTree className="w-5 h-5" />,
-      showForJornalista: false
-    },
-    { 
-      path: "/admin/aulas", 
-      label: "Aulas", 
+    {
+      id: "cursosAulas",
+      label: "Cursos e Aulas",
       icon: <BookMarked className="w-5 h-5" />,
-      showForJornalista: false
+      items: [
+        { 
+          path: "/admin/edital", 
+          label: "Edital Verticalizado", 
+          icon: <BookOpen className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/leis-secas", 
+          label: "Leis Secas", 
+          icon: <Scale className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/topicos", 
+          label: "Tópicos", 
+          icon: <FolderTree className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/aulas", 
+          label: "Aulas", 
+          icon: <BookMarked className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/disciplinas", 
+          label: "Disciplinas", 
+          icon: <Layers className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/cursos", 
+          label: "Cursos", 
+          icon: <Folders className="w-5 h-5" />,
+          showForJornalista: false
+        },
+      ]
     },
-    { 
-      path: "/admin/disciplinas", 
-      label: "Disciplinas", 
-      icon: <Layers className="w-5 h-5" />,
-      showForJornalista: false
-    },
-    { 
-      path: "/admin/cursos", 
-      label: "Cursos", 
-      icon: <Folders className="w-5 h-5" />,
-      showForJornalista: false
-    },
-    { 
-      path: "/admin/concursos", 
-      label: "Concursos", 
-      icon: <Award className="w-5 h-5" />,
-      showForJornalista: true
-    },
-    { 
-      path: "/admin/leis-secas", 
-      label: "Leis Secas", 
-      icon: <Scale className="w-5 h-5" />,
-      showForJornalista: false
-    },
-    { 
-      path: "/admin/configuracoes", 
-      label: "Configurações", 
-      icon: <Settings className="w-5 h-5" />,
-      showForJornalista: false
+    {
+      id: "anuncios",
+      label: "Anúncios",
+      icon: <FileText className="w-5 h-5" />,
+      items: [
+        { 
+          path: "/admin/anuncios", 
+          label: "Gerenciar Anúncios", 
+          icon: <FileText className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/popups", 
+          label: "Gerenciar Popups", 
+          icon: <FileText className="w-5 h-5" />,
+          showForJornalista: false
+        },
+      ]
     },
   ];
 
-  // Filtrar os itens do menu de acordo com o papel do usuário
-  // Importante! Recalcular a cada renderização do componente
-  const menuItems = isJornalista() 
-    ? allMenuItems.filter(item => item.showForJornalista)
-    : allMenuItems;
+  // Função para alternar a visibilidade de um grupo
+  const toggleMenu = (groupId: string) => {
+    setOpenMenus(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
+
+  // Filtrar os grupos de menu de acordo com o papel do usuário
+  const filteredMenuGroups = menuGroups.map(group => {
+    // Filtrar os itens do grupo
+    const filteredItems = isJornalista() 
+      ? group.items.filter(item => item.showForJornalista)
+      : group.items;
+    
+    return {
+      ...group,
+      items: filteredItems
+    };
+  }).filter(group => group.items.length > 0); // Remover grupos vazios
 
   return (
     <div className="flex h-screen bg-[#f6f8fa] font-inter">
@@ -175,21 +254,84 @@ const AdminLayout = () => {
         
         <nav className="flex-1 overflow-y-auto py-4 px-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
           <ul className="space-y-1">
-            {menuItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "flex items-center px-3 py-3 rounded-md transition-colors",
-                    location.pathname === item.path 
-                      ? "bg-[#ede7f9] text-[#5f2ebe]"
-                      : "text-[#67748a] hover:bg-gray-100",
-                    collapsed ? "justify-center" : "justify-start"
-                  )}
-                >
-                  {item.icon}
-                  {!collapsed && <span className="ml-3">{item.label}</span>}
-                </Link>
+            {filteredMenuGroups.map((group) => (
+              <li key={group.id}>
+                {!collapsed ? (
+                  <>
+                    <button
+                      onClick={() => toggleMenu(group.id)}
+                      className={cn(
+                        "flex items-center justify-between w-full px-3 py-3 rounded-md transition-colors text-left",
+                        "text-[#67748a] hover:bg-gray-100"
+                      )}
+                    >
+                      <div className="flex items-center">
+                        {group.icon}
+                        <span className="ml-3 font-medium">{group.label}</span>
+                      </div>
+                      {openMenus[group.id] ? 
+                        <ChevronUp className="w-4 h-4" /> : 
+                        <ChevronDown className="w-4 h-4" />
+                      }
+                    </button>
+                    
+                    {openMenus[group.id] && (
+                      <ul className="ml-4 mt-1 space-y-1 border-l border-gray-200 pl-2">
+                        {group.items.map((item) => (
+                          <li key={item.path}>
+                            <Link
+                              to={item.path}
+                              className={cn(
+                                "flex items-center px-3 py-2 rounded-md transition-colors text-sm",
+                                location.pathname === item.path 
+                                  ? "bg-[#ede7f9] text-[#5f2ebe]"
+                                  : "text-[#67748a] hover:bg-gray-100"
+                              )}
+                            >
+                              {item.icon}
+                              <span className="ml-3">{item.label}</span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  // Versão colapsada - mostrar apenas o ícone do grupo
+                  <div>
+                    <button
+                      onClick={() => toggleMenu(group.id)}
+                      className={cn(
+                        "flex items-center justify-center w-full px-3 py-3 rounded-md transition-colors",
+                        "text-[#67748a] hover:bg-gray-100"
+                      )}
+                      title={group.label}
+                    >
+                      {group.icon}
+                    </button>
+                    
+                    {openMenus[group.id] && (
+                      <ul className="mt-1 space-y-1">
+                        {group.items.map((item) => (
+                          <li key={item.path}>
+                            <Link
+                              to={item.path}
+                              className={cn(
+                                "flex items-center justify-center w-full px-3 py-2 rounded-md transition-colors",
+                                location.pathname === item.path 
+                                  ? "bg-[#ede7f9] text-[#5f2ebe]"
+                                  : "text-[#67748a] hover:bg-gray-100"
+                              )}
+                              title={item.label}
+                            >
+                              {item.icon}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>

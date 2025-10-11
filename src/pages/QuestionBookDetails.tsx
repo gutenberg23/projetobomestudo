@@ -9,6 +9,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { QuestionCard } from '@/components/new/QuestionCard';
 import type { Question } from '@/components/new/types';
+import { PublicLayout } from "@/components/layout/PublicLayout";
 
 interface QuestionBook {
   id: string;
@@ -202,7 +203,7 @@ export default function QuestionBookDetails() {
 
       if (updateError) throw updateError;
 
-      // Atualiza o estado local
+      // Recarrega os detalhes do caderno
       await fetchBookDetails();
       toast.success('Questão adicionada ao caderno!');
     } catch (error) {
@@ -235,13 +236,13 @@ export default function QuestionBookDetails() {
       const { error: updateError } = await supabase
         .from('cadernos_questoes')
         .update({ 
-          total_questions: book ? book.total_questions - 1 : 0 
+          total_questions: book ? Math.max(0, book.total_questions - 1) : 0 
         })
         .eq('id', id);
 
       if (updateError) throw updateError;
 
-      // Atualiza o estado local
+      // Recarrega os detalhes do caderno
       await fetchBookDetails();
       toast.success('Questão removida do caderno!');
     } catch (error) {
@@ -252,78 +253,85 @@ export default function QuestionBookDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
-        <Header />
-        <div className="flex-1">
-          <div className="container mx-auto py-8 px-4">
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500" />
+      <PublicLayout>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1">
+            <div className="container mx-auto px-4 py-8">
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5f2ebe]"></div>
+              </div>
             </div>
-          </div>
+          </main>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </PublicLayout>
     );
   }
 
   if (!book) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
-        <Header />
-        <div className="flex-1">
-          <div className="container mx-auto py-8 px-4">
-            <div className="text-center">
-              <p className="text-gray-500">Caderno não encontrado</p>
-              <Button 
-                variant="link" 
-                onClick={() => navigate('/cadernos')}
-                className="mt-2"
-              >
-                Voltar para a lista de cadernos
-              </Button>
+      <PublicLayout>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1">
+            <div className="container mx-auto px-4 py-8">
+              <div className="bg-white rounded-lg shadow-sm p-6 text-center">
+                <Book className="mx-auto h-12 w-12 text-gray-400" />
+                <h1 className="text-2xl font-bold text-gray-900 mt-4">Caderno não encontrado</h1>
+                <p className="text-gray-600 mt-2">O caderno que você está tentando acessar não existe ou foi removido.</p>
+                <Button 
+                  onClick={() => navigate('/cadernos')} 
+                  className="mt-6"
+                >
+                  Voltar para meus cadernos
+                </Button>
+              </div>
             </div>
-          </div>
+          </main>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </PublicLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f6f8fa]">
-      <Header />
-      <div className="flex-1">
-        <div className="container mx-auto py-8 px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
+    <PublicLayout>
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-1">
+          <div className="container mx-auto px-4 py-8">
+            <div className="flex items-center gap-4 mb-6">
               <Button 
-                variant="ghost" 
-                size="icon"
+                variant="outline" 
                 onClick={() => navigate('/cadernos')}
+                className="flex items-center gap-2"
               >
                 <ChevronLeft className="h-4 w-4" />
+                Voltar
               </Button>
-
-              <div className="flex items-center gap-2">
-                <Book className="h-6 w-6 text-purple-500" />
+              
+              <div className="flex-1">
                 {editingName ? (
                   <div className="flex items-center gap-2">
                     <Input
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="max-w-[300px]"
-                      placeholder="Nome do caderno"
+                      className="text-2xl font-bold"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleUpdateName();
+                        if (e.key === 'Escape') {
+                          setEditingName(false);
+                          setNewName(book.nome);
+                        }
+                      }}
                     />
-                    <Button 
-                      size="icon"
-                      onClick={handleUpdateName}
-                      disabled={!newName.trim() || newName.trim() === book.nome}
-                    >
+                    <Button size="icon" onClick={handleUpdateName}>
                       <Save className="h-4 w-4" />
                     </Button>
                     <Button 
-                      variant="ghost" 
-                      size="icon"
+                      size="icon" 
+                      variant="outline" 
                       onClick={() => {
                         setEditingName(false);
                         setNewName(book.nome);
@@ -334,10 +342,10 @@ export default function QuestionBookDetails() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-semibold text-gray-900">{book.nome}</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">{book.nome}</h1>
                     <Button 
+                      size="icon" 
                       variant="ghost" 
-                      size="icon"
                       onClick={() => setEditingName(true)}
                     >
                       <Pencil className="h-4 w-4" />
@@ -345,57 +353,74 @@ export default function QuestionBookDetails() {
                   </div>
                 )}
               </div>
-            </div>
-            
-            <Button
-              variant="outline"
-              onClick={async () => {
-                try {
-                  if (!id) return;
-                  
-                  toast.info('Atualizando estatísticas do caderno...');
-                  
-                  const { error } = await supabase.rpc('recalculate_caderno_statistics', {
-                    caderno_id: id
-                  });
-                  
-                  if (error) throw error;
-                  
-                  await fetchBookDetails();
-                  toast.success('Estatísticas atualizadas com sucesso!');
-                } catch (error) {
-                  console.error('Erro ao atualizar estatísticas:', error);
-                  toast.error('Erro ao atualizar as estatísticas');
-                }
-              }}
-            >
-              Atualizar Estatísticas
-            </Button>
-          </div>
-
-          <div className="space-y-6">
-            {book.questions.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Nenhuma questão adicionada ainda.</p>
-                <p className="text-sm text-gray-400 mt-2">
-                  Adicione questões ao seu caderno para começar a estudar.
-                </p>
+              
+              <div className="flex items-center gap-4 text-sm text-gray-600">
+                <span>{book.total_questions} questões</span>
+                <span>•</span>
+                <span>{book.answered_questions || 0} respondidas</span>
+                <span>•</span>
+                <span>{book.correct_answers || 0} acertos</span>
               </div>
-            ) : (
-              book.questions.map((question) => (
-                <QuestionCard
-                  key={question.id}
-                  question={question}
-                  disabledOptions={disabledOptions[question.id] || []}
-                  onToggleDisabled={(optionId) => handleToggleDisabled(question.id, optionId)}
-                  onRemove={handleRemoveQuestion}
-                />
-              ))
-            )}
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Estatísticas do Caderno</h2>
+                  <p className="text-sm text-gray-600">Acompanhe seu progresso de estudos</p>
+                </div>
+                
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    try {
+                      if (!id) return;
+                      
+                      toast.info('Atualizando estatísticas do caderno...');
+                      
+                      const { error } = await supabase.rpc('recalculate_caderno_statistics', {
+                        caderno_id: id
+                      });
+                      
+                      if (error) throw error;
+                      
+                      await fetchBookDetails();
+                      toast.success('Estatísticas atualizadas com sucesso!');
+                    } catch (error) {
+                      console.error('Erro ao atualizar estatísticas:', error);
+                      toast.error('Erro ao atualizar as estatísticas');
+                    }
+                  }}
+                >
+                  Atualizar Estatísticas
+                </Button>
+              </div>
+
+              <div className="space-y-6">
+                {book.questions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Nenhuma questão adicionada ainda.</p>
+                    <p className="text-sm text-gray-400 mt-2">
+                      Adicione questões ao seu caderno para começar a estudar.
+                    </p>
+                  </div>
+                ) : (
+                  book.questions.map((question) => (
+                    <QuestionCard
+                      key={question.id}
+                      question={question}
+                      disabledOptions={disabledOptions[question.id] || []}
+                      onToggleDisabled={(optionId) => handleToggleDisabled(question.id, optionId)}
+                      onRemove={handleRemoveQuestion}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
+        <Footer />
       </div>
-      <Footer />
-    </div>
+    </PublicLayout>
   );
-} 
+}

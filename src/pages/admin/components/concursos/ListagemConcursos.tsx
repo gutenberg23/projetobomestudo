@@ -21,7 +21,8 @@ import { Button } from '@/components/ui/button';
 import { 
   Edit, 
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Star
 } from 'lucide-react';
 
 interface ListagemConcursosProps {
@@ -83,6 +84,7 @@ const ListagemConcursos = ({ concursos, onEditar, onExcluir }: ListagemConcursos
               <TableHead>Título</TableHead>
               <TableHead>Período de Inscrição</TableHead>
               <TableHead className="text-center">Status</TableHead>
+              <TableHead className="text-center">Destacado</TableHead>
               <TableHead className="text-center">Vagas</TableHead>
               <TableHead>Níveis</TableHead>
               <TableHead>Estados</TableHead>
@@ -111,6 +113,17 @@ const ListagemConcursos = ({ concursos, onEditar, onExcluir }: ListagemConcursos
                       <Badge variant="default" className="bg-green-500 hover:bg-green-600">Ativo</Badge>
                     ) : (
                       <Badge variant="secondary">Encerrado</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {concurso.destacar ? (
+                      <div className="flex justify-center">
+                        <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
+                      </div>
+                    ) : (
+                      <div className="flex justify-center">
+                        <Star className="h-5 w-5 text-gray-300" />
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="text-center font-medium">{concurso.vagas.toLocaleString()}</TableCell>
@@ -158,7 +171,7 @@ const ListagemConcursos = ({ concursos, onEditar, onExcluir }: ListagemConcursos
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-gray-500">
+                <TableCell colSpan={8} className="h-24 text-center text-gray-500">
                   <div className="flex flex-col items-center justify-center gap-2">
                     <AlertCircle className="h-5 w-5 text-gray-400" />
                     <span>Nenhum concurso encontrado</span>
@@ -173,4 +186,4 @@ const ListagemConcursos = ({ concursos, onEditar, onExcluir }: ListagemConcursos
   );
 };
 
-export default ListagemConcursos; 
+export default ListagemConcursos;

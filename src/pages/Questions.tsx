@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { Json } from "@/integrations/supabase/types";
 import { useSearchParams } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AdBanner from "@/components/ads/AdBanner";
+import { PublicLayout } from "@/components/layout/PublicLayout";
 
 const Questions = () => {
   const [searchParams] = useSearchParams();
@@ -71,15 +73,6 @@ const Questions = () => {
     }
     
     return [];
-  };
-
-  // Função para remover acentos e normalizar strings
-  const normalizeString = (str: string): string => {
-    return str
-      .toLowerCase()
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
   };
 
   // Carregar filtros a partir da URL
@@ -403,71 +396,78 @@ const Questions = () => {
   const totalPages = Math.max(1, Math.ceil(totalCount / parseInt(questionsPerPage)));
   
   return (
-    <div className="flex flex-col min-h-screen bg-[rgb(242,244,246)]">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Questões de Concursos</h1>
-          <Button
-            variant="outline"
-            onClick={() => setShowScoreCounter(!showScoreCounter)}
-            className="flex items-center"
-          >
-            <Calculator className="h-4 w-4 mr-2" />
-            {showScoreCounter ? "Desativar Pontuação" : "Ativar Pontuação"}
-          </Button>
-        </div>
-
-        {showScoreCounter && (
-          <div className="mb-6">
-            <ScoreCounter />
+    <PublicLayout>
+      <div className="flex flex-col min-h-screen bg-[rgb(242,244,246)]">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-6">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Questões de Concursos</h1>
+            <Button
+              variant="outline"
+              onClick={() => setShowScoreCounter(!showScoreCounter)}
+              className="flex items-center"
+            >
+              <Calculator className="h-4 w-4 mr-2" />
+              {showScoreCounter ? "Desativar Pontuação" : "Ativar Pontuação"}
+            </Button>
           </div>
-        )}
 
-        <QuestionFiltersPanel
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedFilters={tempFilters}
-          handleFilterChange={handleFilterChange}
-          handleApplyFilters={handleApplyFilters}
-          questionsPerPage={questionsPerPage}
-          setQuestionsPerPage={setQuestionsPerPage}
-          filterOptions={filterOptions}
-          totalCount={totalCount} // Passando a contagem total de questões
-          rightElement={
-            <div className="pr-3">
-              <Select value={questionsPerPage} onValueChange={(value) => {
-                setQuestionsPerPage(value);
-                setCurrentPage(1); // Voltar para a primeira página quando mudar o número de itens por página
-              }}>
-                <SelectTrigger className="w-[100px]">
-                  <SelectValue placeholder="10" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
+          {showScoreCounter && (
+            <div className="mb-6">
+              <ScoreCounter />
             </div>
-          }
-        />
+          )}
 
-        <QuestionResults
-          questions={questions} 
-          loading={loading}
-          disabledOptions={disabledOptions}
-          onToggleDisabled={handleToggleDisabled}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          hasFilters={Object.values(selectedFilters).some(arr => arr.length > 0)}
-        />
-      </main>
-      <Footer />
-    </div>
+          <QuestionFiltersPanel
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedFilters={tempFilters}
+            handleFilterChange={handleFilterChange}
+            handleApplyFilters={handleApplyFilters}
+            questionsPerPage={questionsPerPage}
+            setQuestionsPerPage={setQuestionsPerPage}
+            filterOptions={filterOptions}
+            totalCount={totalCount} // Passando a contagem total de questões
+            rightElement={
+              <div className="pr-3">
+                <Select value={questionsPerPage} onValueChange={(value) => {
+                  setQuestionsPerPage(value);
+                  setCurrentPage(1); // Voltar para a primeira página quando mudar o número de itens por página
+                }}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue placeholder="10" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            }
+          />
+
+          {/* Anúncio abaixo dos filtros */}
+          <div className="my-6">
+            <AdBanner position="questions_filters" className="rounded-lg" />
+          </div>
+
+          <QuestionResults
+            questions={questions} 
+            loading={loading}
+            disabledOptions={disabledOptions}
+            onToggleDisabled={handleToggleDisabled}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            hasFilters={Object.values(selectedFilters).some(arr => arr.length > 0)}
+          />
+        </main>
+        <Footer />
+      </div>
+    </PublicLayout>
   );
 };
 

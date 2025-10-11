@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Card from "@/components/admin/questions/Card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Database } from '@/integrations/supabase/types';
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 
 type ReportedError = Database['public']['Tables']['questoes_erros_reportados']['Row'] & {
   questao?: {
@@ -25,9 +25,12 @@ interface ReportedErrorsCardProps {
   onEditQuestion: (questionId: string) => void;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export function ReportedErrorsCard({ onEditQuestion }: ReportedErrorsCardProps) {
   const [reportedErrors, setReportedErrors] = useState<ReportedError[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchReportedErrors();
@@ -37,15 +40,7 @@ export function ReportedErrorsCard({ onEditQuestion }: ReportedErrorsCardProps) 
     try {
       const { data, error } = await supabase
         .from('questoes_erros_reportados')
-        .select(`
-          *,
-          questao:questao_id (
-            id,
-            year,
-            institution,
-            discipline
-          )
-        `)
+        .select('*,questao:questao_id (id,year,institution,discipline)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -83,20 +78,25 @@ export function ReportedErrorsCard({ onEditQuestion }: ReportedErrorsCardProps) 
 
       if (error) throw error;
 
-      setReportedErrors(prev =>
-        prev.map(error =>
-          error.id === errorId ? { ...error, status: newStatus } : error
-        )
-      );
-
-      toast.success(`Status atualizado para ${newStatus}`);
+      // Se o status for "resolvido", remover o item da lista
+      if (newStatus === 'resolvido') {
+        setReportedErrors(prev => prev.filter(error => error.id !== errorId));
+        toast.success('Erro marcado como resolvido');
+      } else {
+        setReportedErrors(prev =>
+          prev.map(error =>
+            error.id === errorId ? { ...error, status: newStatus } : error
+          )
+        );
+        toast.success(`Status atualizado para ${newStatus}`);
+      }
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
       toast.error('Erro ao atualizar status');
     }
   };
 
-  const handleResolveError = (questionId: string, errorId: string) => {
+  const handleResolveError = (questionId: string) => {
     onEditQuestion(questionId);
   };
 
@@ -112,6 +112,18 @@ export function ReportedErrorsCard({ onEditQuestion }: ReportedErrorsCardProps) 
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
+  };
+
+  // Filtrar apenas os erros pendentes para paginação
+  const pendingErrors = reportedErrors.filter(error => error.status === 'pendente');
+  const totalPages = Math.ceil(pendingErrors.length / ITEMS_PER_PAGE);
+  const paginatedErrors = pendingErrors.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
   };
 
   return (
@@ -130,61 +142,96 @@ export function ReportedErrorsCard({ onEditQuestion }: ReportedErrorsCardProps) 
         </div>
       ) : (
         <div className="space-y-4">
-          {reportedErrors.map((error) => (
-            <div
-              key={error.id}
-              className="border rounded-lg p-4 space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <div className="font-medium">
-                  Questão #{error.questao_id}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleResolveError(error.questao_id, error.id)}
-                  >
-                    Editar questão
-                  </Button>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600">{error.descricao}</p>
-              <div className="flex items-center justify-between">
-                <div className="text-xs text-gray-400">
-                  Reportado por: {error.user?.nome || error.user?.email || 'Usuário desconhecido'}
-                </div>
-                <div className="text-xs text-gray-400">
-                  Reportado em: {new Date(error.created_at).toLocaleString()}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                {getStatusBadge(error.status)}
-                {error.status === 'pendente' && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStatusChange(error.id, 'resolvido')}
-                    >
-                      Marcar como resolvido
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleStatusChange(error.id, 'ignorado')}
-                    >
-                      Ignorar
-                    </Button>
-                  </>
-                )}
-              </div>
+          {paginatedErrors.length === 0 ? (
+            <div className="text-center p-4 text-gray-500">
+              Nenhum erro pendente
             </div>
-          ))}
+          ) : (
+            <>
+              {paginatedErrors.map((error) => (
+                <div
+                  key={error.id}
+                  className="border rounded-lg p-4 space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium">
+                      Questão #{error.questao_id}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResolveError(error.questao_id)}
+                      >
+                        Editar questão
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600">{error.descricao}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-gray-400">
+                      Reportado por: {error.user?.nome || error.user?.email || 'Usuário desconhecido'}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Reportado em: {new Date(error.created_at).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    {getStatusBadge(error.status)}
+                    {error.status === 'pendente' && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(error.id, 'resolvido')}
+                        >
+                          Marcar como resolvido
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleStatusChange(error.id, 'ignorado')}
+                        >
+                          Ignorar
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+              
+              {/* Paginação */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t pt-4">
+                  <div className="text-sm text-gray-500">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </Card>
   );
 }
 
-export default ReportedErrorsCard; 
+export default ReportedErrorsCard;

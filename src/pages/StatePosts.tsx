@@ -9,6 +9,7 @@ import { STATES } from "@/data/blogFilters";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { PublicLayout } from "@/components/layout/PublicLayout";
 
 const StatePosts = () => {
   const { stateId } = useParams<{ stateId: string }>();
@@ -55,49 +56,53 @@ const StatePosts = () => {
 
   if (loading) {
     return (
-      <BlogLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-full" />
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-40 w-full" />
-            ))}
+      <PublicLayout>
+        <BlogLayout>
+          <div className="space-y-6">
+            <Skeleton className="h-12 w-full" />
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-40 w-full" />
+              ))}
+            </div>
           </div>
-        </div>
-      </BlogLayout>
+        </BlogLayout>
+      </PublicLayout>
     );
   }
 
   return (
-    <BlogLayout>
-      <div className="mb-6">
-        <Link 
-          to="/blog" 
-          className="inline-flex items-center text-[#5f2ebe] hover:underline mb-2"
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          Voltar para o Blog
-        </Link>
-        <h1 className="text-2xl font-bold mb-6">
-          Posts do estado {stateName}
-        </h1>
-        
-        {posts.length > 0 ? (
-          <BlogList posts={posts} />
-        ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">Nenhum post encontrado para este estado.</p>
-            <Link 
-              to="/blog"
-              className="mt-4 inline-block text-[#5f2ebe] hover:underline"
-            >
-              Ver todos os posts
-            </Link>
-          </div>
-        )}
-      </div>
-    </BlogLayout>
+    <PublicLayout>
+      <BlogLayout>
+        <div className="mb-6">
+          <Link 
+            to="/blog" 
+            className="inline-flex items-center text-[#5f2ebe] hover:underline mb-2"
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Voltar para o Blog
+          </Link>
+          <h1 className="text-2xl font-bold mb-6">
+            Posts do estado {stateName}
+          </h1>
+          
+          {posts.length > 0 ? (
+            <BlogList posts={posts} />
+          ) : (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <p className="text-gray-500">Nenhum post encontrado para este estado.</p>
+              <Link 
+                to="/blog"
+                className="mt-4 inline-block text-[#5f2ebe] hover:underline"
+              >
+                Ver todos os posts
+              </Link>
+            </div>
+          )}
+        </div>
+      </BlogLayout>
+    </PublicLayout>
   );
 };
 
-export default StatePosts; 
+export default StatePosts;

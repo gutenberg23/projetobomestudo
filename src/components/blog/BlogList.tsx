@@ -1,8 +1,8 @@
-
 import React, { useState } from "react";
 import { BlogPostCard } from "@/components/blog/BlogPostCard";
 import { BlogPagination } from "@/components/blog/BlogPagination";
 import { BlogPost } from "@/components/blog/types";
+import AdBanner from '@/components/ads/AdBanner';
 
 interface BlogListProps {
   posts: BlogPost[];
@@ -46,13 +46,28 @@ export const BlogList: React.FC<BlogListProps> = ({
     );
   }
 
+  const currentPagePosts = getCurrentPagePosts();
+  
+  console.log(`BlogList - Rendering ${currentPagePosts.length} posts on page ${currentPage} for position blog_posts_list`);
+
   return (
     <>
       {title && <h2 className="text-2xl font-bold text-[#272f3c] mb-4">{title}</h2>}
       
       <div className="space-y-6">
-        {getCurrentPagePosts().map(post => (
-          <BlogPostCard key={post.id} post={post} />
+        {currentPagePosts.map((post, index) => (
+          <React.Fragment key={post.id}>
+            <BlogPostCard post={post} />
+            {/* Mostrar anúncio após cada 3 posts */}
+            {((index + 1) % 3 === 0) && index < currentPagePosts.length - 1 && (
+              <div className="my-6">
+                <AdBanner 
+                  position="blog_posts_list" 
+                  className="rounded-lg" 
+                />
+              </div>
+            )}
+          </React.Fragment>
         ))}
       </div>
       

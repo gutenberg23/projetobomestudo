@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
 import { generateFriendlyUrl } from "@/utils/slug-utils";
 import { ActivityLogger } from '@/services/activity-logger';
+import AdBanner from '@/components/ads/AdBanner';
+import { PublicLayout } from "@/components/layout/PublicLayout";
 
 interface ItemProps {
   id: string;
@@ -198,24 +200,20 @@ const Explore = () => {
           
           toast.success("Disciplina adicionada aos favoritos");
         }
-        console.log("Favoritos atualizados:", disciplinasFavoritos);
         const {
           error
         } = await supabase.from('profiles').update({
           disciplinas_favoritos: disciplinasFavoritos
         }).eq('id', user.id);
-        if (error) {
-          console.error("Erro ao atualizar favoritos:", error);
-          toast.error("Erro ao atualizar favoritos");
-        }
+        if (error) throw error;
       } else {
         const course = courses.find(c => c.friendlyUrl === friendlyUrl);
         if (!course) {
           console.error("Curso não encontrado:", friendlyUrl);
           return;
         }
-        const cursoId = course.id;
-        console.log("ID do curso:", cursoId);
+        const courseId = course.id;
+        console.log("ID do curso:", courseId);
         setCourses(courses.map(c => c.id === course.id ? {
           ...c,
           isFavorite: !c.isFavorite
@@ -229,97 +227,97 @@ const Explore = () => {
         }
         let cursosFavoritos = profile.cursos_favoritos || [];
         console.log("Favoritos atuais:", cursosFavoritos);
-        const isAlreadyFavorite = cursosFavoritos.includes(cursoId);
+        const isAlreadyFavorite = cursosFavoritos.includes(courseId);
         if (isAlreadyFavorite) {
-          cursosFavoritos = cursosFavoritos.filter((id: string) => id !== cursoId);
+          cursosFavoritos = cursosFavoritos.filter((id: string) => id !== courseId);
           toast.success("Curso removido dos favoritos");
         } else {
-          cursosFavoritos.push(cursoId);
+          cursosFavoritos.push(courseId);
           
           // Registrar atividade de favoritar curso
-          await ActivityLogger.logCourseFavorite(cursoId, course.titulo);
+          await ActivityLogger.logCourseFavorite(courseId, course.titulo);
           
           toast.success("Curso adicionado aos favoritos");
         }
-        console.log("Favoritos atualizados:", cursosFavoritos);
         const {
           error
         } = await supabase.from('profiles').update({
           cursos_favoritos: cursosFavoritos
         }).eq('id', user.id);
-        if (error) {
-          console.error("Erro ao atualizar favoritos:", error);
-          toast.error("Erro ao atualizar favoritos");
-        }
+        if (error) throw error;
       }
     } catch (error) {
       console.error("Erro ao atualizar favoritos:", error);
       toast.error("Erro ao atualizar favoritos. Por favor, tente novamente.");
     }
   };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/explore?search=${encodeURIComponent(searchTerm)}`);
-    }
-  };
-
-  const filteredData = showSubjects ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase())) : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredData = showSubjects ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || (subject.banca && subject.banca.toLowerCase().includes(searchTerm.toLowerCase()))) : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || (course.descricao && course.descricao.toLowerCase().includes(searchTerm.toLowerCase())));
 
   return (
-    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
-      <Header />
-      <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Buscar cursos e disciplinas</h1>
-          <p className="text-[#67748a] mb-6">Encontre todos os concursos e disciplinas disponíveis para estudo.</p>
-
-          <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-            <div className="flex items-center flex-1 relative">
-              <form onSubmit={handleSearch} className="w-full flex">
-                <Input type="text" placeholder="Pesquisar..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pr-10 w-full" />
-                <button type="submit" className="absolute right-3 top-1/2 transform -translate-y-1/2 h-8 w-8 flex items-center justify-center text-gray-400 hover:text-gray-600">
-                  <Search className="h-4 w-4" />
-                </button>
-              </form>
+    <PublicLayout>
+      <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
+        <Header />
+        <main className="flex-1">
+          <div className="container mx-auto px-4 py-8">
+            <div className="mb-8">
+              <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Explorar Cursos e Disciplinas</h1>
+              <p className="text-gray-600">Encontre o conteúdo que deseja estudar</p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className={`text-sm ${!showSubjects ? "font-medium" : ""}`}>Concursos</span>
-              <Switch checked={showSubjects} onCheckedChange={setShowSubjects} aria-label="Alternar entre cursos e disciplinas" />
-              <span className={`text-sm ${showSubjects ? "font-medium" : ""}`}>
-                Disciplinas
-              </span>
+            <div className="mb-6">
+              <AdBanner position="explore_top" className="rounded-lg" />
+            </div>
+
+            <div className="bg-white rounded-lg p-6 mb-8">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar cursos ou disciplinas..."
+                    className="pl-10 py-6 text-lg"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-600">Cursos</span>
+                  <Switch
+                    checked={showSubjects}
+                    onCheckedChange={setShowSubjects}
+                  />
+                  <span className="text-sm text-gray-600">Disciplinas</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg overflow-hidden">
+              {loading ? <div className="p-8 text-center">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
+                  <p className="mt-3 text-gray-500">Carregando dados...</p>
+                </div> : <div className="divide-y divide-gray-100">
+                  {filteredData.length > 0 ? filteredData.map(item => <ResultItem 
+                    key={item.id} 
+                    id={item.id}
+                    title={item.titulo} 
+                    description={item.descricao || ""}
+                    isFavorite={item.isFavorite}
+                    topics={item.topics}
+                    lessons={item.lessons}
+                    onToggleFavorite={handleToggleFavorite} 
+                    friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} 
+                    banca={showSubjects ? (item as DisciplinaItemType).banca : undefined}
+                    cargo={!showSubjects ? item.descricao : undefined}
+                  />) : <div className="p-8 text-center text-gray-500">
+                      Nenhum resultado encontrado para "{searchTerm}"
+                    </div>}
+                </div>}
             </div>
           </div>
-
-          <div className="bg-white rounded-lg overflow-hidden">
-            {loading ? <div className="p-8 text-center">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-                <p className="mt-3 text-gray-500">Carregando dados...</p>
-              </div> : <div className="divide-y divide-gray-100">
-                {filteredData.length > 0 ? filteredData.map(item => <ResultItem 
-                  key={item.id} 
-                  id={item.id}
-                  title={item.titulo} 
-                  description={item.descricao || ""}
-                  isFavorite={item.isFavorite}
-                  topics={item.topics}
-                  lessons={item.lessons}
-                  onToggleFavorite={handleToggleFavorite} 
-                  friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} 
-                  banca={showSubjects ? (item as DisciplinaItemType).banca : undefined}
-                  cargo={!showSubjects ? item.descricao : undefined}
-                />) : <div className="p-8 text-center text-gray-500">
-                    Nenhum resultado encontrado para "{searchTerm}"
-                  </div>}
-              </div>}
-          </div>
-        </div>
-      </main>
-      <Footer />
-    </div>
+        </main>
+        <Footer />
+      </div>
+    </PublicLayout>
   );
 };
 

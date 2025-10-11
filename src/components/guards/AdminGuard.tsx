@@ -10,7 +10,7 @@ interface AdminGuardProps {
 
 export const AdminGuard = ({ children }: AdminGuardProps) => {
   const { user, loading } = useAuth();
-  const { canAccessAdminArea, canOnlyAccessPosts } = usePermissions();
+  const { canAccessAdminArea, canOnlyAccessPosts, loading: permissionsLoading } = usePermissions();
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isPageReload, setIsPageReload] = useState(false);
@@ -38,8 +38,8 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
   useEffect(() => {
     const checkPermissions = async () => {
       // Esperar até que o carregamento do usuário seja concluído
-      if (loading) {
-        console.log("AdminGuard: Ainda carregando usuário...");
+      if (loading || permissionsLoading) {
+        console.log("AdminGuard: Ainda carregando usuário ou permissões...", { loading, permissionsLoading });
         return;
       }
       
@@ -62,11 +62,11 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
     
     console.log("AdminGuard: Iniciando verificação de permissões");
     checkPermissions();
-  }, [user, loading, canAccessAdminArea]);
+  }, [user, loading, permissionsLoading, canAccessAdminArea]);
   
   // Exibir spinner enquanto verifica
-  if (loading || checkingAccess) {
-    console.log("AdminGuard: Exibindo spinner - loading:", loading, "checkingAccess:", checkingAccess);
+  if (loading || permissionsLoading || checkingAccess) {
+    console.log("AdminGuard: Exibindo spinner - loading:", loading, "permissionsLoading:", permissionsLoading, "checkingAccess:", checkingAccess);
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Spinner size="lg" />

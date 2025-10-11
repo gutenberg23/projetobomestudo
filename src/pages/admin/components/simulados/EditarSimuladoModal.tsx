@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Search } from "lucide-react";
 
 interface Curso {
   id: string;
@@ -36,7 +37,8 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
   const [cursosSelecionados, setCursosSelecionados] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10; // Alterado de 5 para 10
+  const [searchTerm, setSearchTerm] = useState(""); // Adicionado estado para pesquisa
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,8 +84,20 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
 
     if (isOpen && simuladoId) {
       fetchData();
+      // Resetar paginação e pesquisa ao abrir o modal
+      setCurrentPage(1);
+      setSearchTerm("");
     }
   }, [isOpen, simuladoId]);
+
+  // Filtrar cursos com base no termo de pesquisa
+  const filteredCursos = useMemo(() => {
+    if (!searchTerm) return cursos;
+    return cursos.filter(curso => 
+      curso.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      curso.descricao.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [cursos, searchTerm]);
 
   const handleCursoSelect = (cursoId: string) => {
     setCursosSelecionados(prev => {
@@ -96,10 +110,20 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
   };
 
   const handleSelectAllCursos = () => {
-    if (cursosSelecionados.length === cursos.length) {
-      setCursosSelecionados([]);
+    if (cursosSelecionados.length === filteredCursos.length && filteredCursos.length > 0) {
+      // Se todos os cursos filtrados estão selecionados, desmarcar apenas os filtrados
+      const filteredCursosIds = filteredCursos.map(c => c.id);
+      setCursosSelecionados(prev => prev.filter(id => !filteredCursosIds.includes(id)));
     } else {
-      setCursosSelecionados(cursos.map(c => c.id));
+      // Selecionar todos os cursos filtrados
+      const filteredCursosIds = filteredCursos.map(c => c.id);
+      setCursosSelecionados(prev => {
+        // Manter os já selecionados que não estão nos filtrados
+        const otherSelected = prev.filter(id => !filteredCursosIds.includes(id));
+        // Adicionar os filtrados que não estão selecionados
+        const newSelected = filteredCursosIds.filter(id => !prev.includes(id));
+        return [...otherSelected, ...newSelected];
+      });
     }
   };
 
@@ -166,14 +190,20 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
     }
   };
 
-  const totalPages = Math.ceil(cursos.length / itemsPerPage);
+  // Atualizar paginação com base nos cursos filtrados
+  const totalPages = Math.ceil(filteredCursos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const cursosPaginados = cursos.slice(startIndex, endIndex);
+  const cursosPaginados = filteredCursos.slice(startIndex, endIndex);
+
+  // Resetar para a primeira página quando a pesquisa mudar
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Editar Simulado</DialogTitle>
           <DialogDescription>
@@ -207,30 +237,49 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
           <div className="mt-4">
             <Label className="text-[#67748a] mb-2 block">Cursos</Label>
             <div className="border rounded-lg p-4">
+              {/* Input de pesquisa */}
+              <div className="mb-4 relative">
+                <Input
+                  placeholder="Pesquisar cursos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10"
+                />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
+              
               <div className="mb-4">
                 <label className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    checked={cursosSelecionados.length === cursos.length}
+                    checked={cursosSelecionados.length > 0 && cursosSelecionados.length === filteredCursos.length}
                     onChange={handleSelectAllCursos}
                     className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
                   />
-                  <span className="text-sm text-[#67748a]">Selecionar todos</span>
+                  <span className="text-sm text-[#67748a]">
+                    Selecionar todos ({filteredCursos.length} cursos encontrados)
+                  </span>
                 </label>
               </div>
               
-              <div className="space-y-2">
-                {cursosPaginados.map((curso) => (
-                  <label key={curso.id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={cursosSelecionados.includes(curso.id)}
-                      onChange={() => handleCursoSelect(curso.id)}
-                      className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
-                    />
-                    <span className="text-sm text-[#67748a]">{curso.titulo} - {curso.descricao}</span>
-                  </label>
-                ))}
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {cursosPaginados.length > 0 ? (
+                  cursosPaginados.map((curso) => (
+                    <label key={curso.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={cursosSelecionados.includes(curso.id)}
+                        onChange={() => handleCursoSelect(curso.id)}
+                        className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
+                      />
+                      <span className="text-sm text-[#67748a]">{curso.titulo} - {curso.descricao}</span>
+                    </label>
+                  ))
+                ) : (
+                  <div className="text-center py-4 text-[#67748a]">
+                    {searchTerm ? "Nenhum curso encontrado com o termo pesquisado." : "Nenhum curso disponível."}
+                  </div>
+                )}
               </div>
 
               {totalPages > 1 && (
@@ -276,4 +325,4 @@ const EditarSimuladoModal: React.FC<EditarSimuladoModalProps> = ({
   );
 };
 
-export default EditarSimuladoModal; 
+export default EditarSimuladoModal;

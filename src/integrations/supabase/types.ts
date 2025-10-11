@@ -406,6 +406,8 @@ export type Database = {
           created_at: string | null
           data_fim_inscricao: string
           data_inicio_inscricao: string
+          data_prova: string | null  // Garantir que o tipo esteja correto
+          destacar: boolean | null
           estados: string[] | null
           id: string
           niveis: string[] | null
@@ -421,6 +423,8 @@ export type Database = {
           created_at?: string | null
           data_fim_inscricao: string
           data_inicio_inscricao: string
+          data_prova?: string | null  // Garantir que o tipo esteja correto
+          destacar?: boolean | null
           estados?: string[] | null
           id?: string
           niveis?: string[] | null
@@ -436,6 +440,8 @@ export type Database = {
           created_at?: string | null
           data_fim_inscricao?: string
           data_inicio_inscricao?: string
+          data_prova?: string | null  // Garantir que o tipo esteja correto
+          destacar?: boolean | null
           estados?: string[] | null
           id?: string
           niveis?: string[] | null
@@ -1667,6 +1673,48 @@ export type Database = {
         }
         Relationships: []
       }
+      anuncios: {
+        Row: {
+          id: string
+          created_at: string | null
+          updated_at: string | null
+          titulo: string
+          imagem_url: string | null
+          link_destino: string | null
+          data_inicio: string
+          data_fim: string
+          posicao: string
+          ativo: boolean | null
+          ordem: number | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string | null
+          updated_at?: string | null
+          titulo: string
+          imagem_url?: string | null
+          link_destino?: string | null
+          data_inicio: string
+          data_fim: string
+          posicao: string
+          ativo?: boolean | null
+          ordem?: number | null
+        }
+        Update: {
+          id?: string
+          created_at?: string | null
+          updated_at?: string | null
+          titulo?: string
+          imagem_url?: string | null
+          link_destino?: string | null
+          data_inicio?: string
+          data_fim?: string
+          posicao?: string
+          ativo?: boolean | null
+          ordem?: number | null
+        }
+        Relationships: []
+      }
       user_simulado_results: {
         Row: {
           acertos: number
@@ -1935,6 +1983,42 @@ export type Database = {
           | { attempt_data: Json; question_id: number; user_id: number }
           | { p_is_correct: boolean; p_question_id: string; p_user_id: string }
         Returns: undefined
+      }
+      is_anuncio_ativo: {
+        Args: { anuncio_id: string }
+        Returns: boolean
+      }
+      get_anuncios_ativos_por_posicao: {
+        Args: { posicao: string }
+        Returns: {
+          id: string
+          created_at: string | null
+          updated_at: string | null
+          titulo: string
+          imagem_url: string | null
+          link_destino: string | null
+          data_inicio: string
+          data_fim: string
+          posicao: string
+          ativo: boolean | null
+          ordem: number | null
+        }[]
+      }
+      get_anuncio_ativo_por_posicao: {
+        Args: { posicao: string }
+        Returns: {
+          id: string
+          created_at: string | null
+          updated_at: string | null
+          titulo: string
+          imagem_url: string | null
+          link_destino: string | null
+          data_inicio: string
+          data_fim: string
+          posicao: string
+          ativo: boolean | null
+          ordem: number | null
+        }
       }
     }
     Enums: {

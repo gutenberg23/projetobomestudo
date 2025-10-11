@@ -7,6 +7,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
+import AdBanner from '@/components/ads/AdBanner';
 
 interface ItemProps {
   id: string;
@@ -250,6 +251,11 @@ const MyCourses = () => {
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
             <p className="ml-3 text-gray-500">Carregando favoritos...</p>
           </div> : <div className="space-y-8">
+            {/* Anúncio acima do card 'Concursos' */}
+            <div className="my-6">
+              <AdBanner position="my_courses_concursos_top" className="rounded-lg" />
+            </div>
+            
             <section>
               <h2 className="text-2xl mb-4 text-[#272f3c] font-bold">Concursos</h2>
               <div className="bg-white rounded-lg overflow-hidden">
@@ -267,6 +273,11 @@ const MyCourses = () => {
               </div>
             </section>
 
+            {/* Anúncio acima do card 'Disciplinas' */}
+            <div className="my-6">
+              <AdBanner position="my_courses_disciplinas_top" className="rounded-lg" />
+            </div>
+            
             <section>
               <h2 className="text-2xl mb-4 text-[#272f3c] font-bold">Disciplinas</h2>
               <div className="bg-white rounded-lg overflow-hidden">

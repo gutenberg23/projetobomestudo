@@ -16,6 +16,7 @@ export interface Concurso {
   titulo: string;
   dataInicioInscricao: string;
   dataFimInscricao: string;
+  dataProva?: string | null; // Data da realização da prova (pode ser null/undefined)
   prorrogado: boolean;
   niveis: NivelEnsino[];
   cargos: Cargo[];
@@ -23,6 +24,7 @@ export interface Concurso {
   salario: string; // Usando string para permitir valores formatados como "Até R$ 10.450,00"
   estados: Estado[];
   postId?: string; // ID do post relacionado no blog
+  destacar?: boolean; // Indica se o concurso deve ser destacado na homepage
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +33,7 @@ export interface ConcursoFormData {
   titulo: string;
   dataInicioInscricao: string;
   dataFimInscricao: string;
+  dataProva?: string | null; // Data da realização da prova (pode ser null/undefined)
   prorrogado: boolean;
   niveis: NivelEnsino[];
   cargos: Cargo[];
@@ -38,9 +41,10 @@ export interface ConcursoFormData {
   salario: string;
   estados: Estado[];
   postId?: string;
+  destacar?: boolean; // Indica se o concurso deve ser destacado na homepage
 }
 
 export interface ConcursoFilter {
   estado?: Estado;
   nivel?: NivelEnsino;
-} 
+}

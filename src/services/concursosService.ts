@@ -1,35 +1,55 @@
 import { supabase } from '@/lib/supabase';
 import { Concurso, ConcursoFormData } from '@/types/concurso';
 
-// Funções auxiliares para convertrer entre formato do banco e da interface
-const dbToConcurso = (concurso: any): Concurso => ({
-  id: concurso.id,
-  titulo: concurso.titulo,
-  dataInicioInscricao: concurso.data_inicio_inscricao,
-  dataFimInscricao: concurso.data_fim_inscricao,
-  prorrogado: concurso.prorrogado || false,
-  niveis: concurso.niveis || [],
-  cargos: concurso.cargos || [],
-  vagas: concurso.vagas,
-  salario: concurso.salario,
-  estados: concurso.estados || [],
-  postId: concurso.post_id,
-  createdAt: concurso.created_at,
-  updatedAt: concurso.updated_at
-});
+// Funções auxiliares para converter entre formato do banco e da interface
+const dbToConcurso = (concurso: any): Concurso => {
+  // Tratar a data da prova para garantir que undefined seja usado quando null
+  let dataProva: string | undefined = undefined;
+  if (concurso.data_prova !== null && concurso.data_prova !== undefined) {
+    dataProva = concurso.data_prova;
+  }
 
-const concursoToDb = (formData: ConcursoFormData) => ({
-  titulo: formData.titulo,
-  data_inicio_inscricao: formData.dataInicioInscricao,
-  data_fim_inscricao: formData.dataFimInscricao,
-  prorrogado: formData.prorrogado,
-  niveis: formData.niveis,
-  cargos: formData.cargos,
-  vagas: formData.vagas,
-  salario: formData.salario,
-  estados: formData.estados,
-  post_id: formData.postId || null
-});
+  return {
+    id: concurso.id,
+    titulo: concurso.titulo,
+    dataInicioInscricao: concurso.data_inicio_inscricao,
+    dataFimInscricao: concurso.data_fim_inscricao,
+    dataProva: dataProva,
+    prorrogado: concurso.prorrogado || false,
+    niveis: concurso.niveis || [],
+    cargos: concurso.cargos || [],
+    vagas: concurso.vagas,
+    salario: concurso.salario,
+    estados: concurso.estados || [],
+    postId: concurso.post_id,
+    destacar: concurso.destacar || false,
+    createdAt: concurso.created_at,
+    updatedAt: concurso.updated_at
+  };
+};
+
+const concursoToDb = (formData: ConcursoFormData) => {
+  // Tratar a data da prova para garantir que null seja usado quando undefined
+  let data_prova: string | null = null;
+  if (formData.dataProva !== null && formData.dataProva !== undefined) {
+    data_prova = formData.dataProva;
+  }
+
+  return {
+    titulo: formData.titulo,
+    data_inicio_inscricao: formData.dataInicioInscricao,
+    data_fim_inscricao: formData.dataFimInscricao,
+    data_prova: data_prova,
+    prorrogado: formData.prorrogado,
+    niveis: formData.niveis,
+    cargos: formData.cargos,
+    vagas: formData.vagas,
+    salario: formData.salario,
+    estados: formData.estados,
+    post_id: formData.postId || null,
+    destacar: formData.destacar || false
+  };
+};
 
 /**
  * Serviço para gerenciar operações relacionadas a concursos
@@ -69,6 +89,38 @@ export const concursosService = {
       return data.map(dbToConcurso);
     } catch (error) {
       console.error('Exceção ao buscar concursos:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Buscar concursos destacados
+   */
+  async listarConcursosDestacados(): Promise<Concurso[]> {
+    console.log('Buscando concursos destacados...');
+    
+    try {
+      const { data, error } = await supabase
+        .from('concursos')
+        .select('*')
+        .eq('destacar', true)
+        .order('data_inicio_inscricao', { ascending: false })
+        .limit(3); // Limitar a 3 concursos para a homepage
+
+      if (error) {
+        console.error('Erro ao buscar concursos destacados:', error);
+        throw new Error(`Erro ao buscar concursos destacados: ${error.message}`);
+      }
+
+      if (!data || data.length === 0) {
+        console.log('Nenhum concurso destacado encontrado');
+        return [];
+      }
+
+      console.log(`${data.length} concursos destacados encontrados`);
+      return data.map(dbToConcurso);
+    } catch (error) {
+      console.error('Exceção ao buscar concursos destacados:', error);
       throw error;
     }
   },
@@ -228,4 +280,4 @@ export const concursosService = {
   }
 };
 
-export default concursosService; 
+export default concursosService;
