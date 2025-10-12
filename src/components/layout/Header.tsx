@@ -46,7 +46,7 @@ export const Header = () => {
   return (
     <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-center flex-wrap border-b border-[rgba(247,248,250,1)] z-40 px-4">
       <div className="max-w-[1400px] w-full flex items-center justify-between">
-        <div className="flex min-h-[88px] flex-col items-stretch justify-center w-[230px] py-[21px]">
+        <div className="flex min-h-[88px] flex-col items-start justify-center w-[230px] py-[21px]">
           <Link to="/">
             <img loading="lazy" src={logo} alt="Company Logo" className="aspect-[8.06] w-[230px] md:w-[230px] w-[120px] object-contain" />
           </Link>

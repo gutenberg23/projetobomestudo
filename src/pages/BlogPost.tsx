@@ -11,6 +11,7 @@ import {
   Calendar
 } from "lucide-react";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { BlogPost } from "@/components/blog/types";
 import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
@@ -361,24 +362,24 @@ const BlogPostPage = () => {
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
                       <div className="flex items-center">
                         <User className="h-4 w-4 mr-1" />
-                        {post.author?.name || 'Autor desconhecido'}
+                        {post.author}
                       </div>
-                      
+                        
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
                         {format(new Date(post.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                       </div>
-                      
+                        
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-1" />
-                        {Math.ceil(post.readTime / 60)} min de leitura
+                        {Math.ceil((typeof post.readingTime === 'string' ? parseInt(post.readingTime) : typeof post.readingTime === 'number' ? post.readingTime : 0) / 60)} min de leitura
                       </div>
-                      
+                        
                       <div className="flex items-center">
                         <Heart className="h-4 w-4 mr-1" />
                         {post.likesCount} curtidas
                       </div>
-                      
+                        
                       <div className="flex items-center">
                         <BookOpen className="h-4 w-4 mr-1" />
                         {post.viewCount} visualizações
@@ -437,13 +438,8 @@ const BlogPostPage = () => {
                       <div className="flex items-center">
                         <div className="ml-3">
                           <p className="text-sm font-medium text-gray-900">
-                            {post.author.name}
+                            {post.author}
                           </p>
-                          {post.author.bio && (
-                            <p className="text-xs text-gray-500">
-                              {post.author.bio}
-                            </p>
-                          )}
                         </div>
                       </div>
                     )}
