@@ -12,10 +12,10 @@ serve(async (req) => {
 
   try {
     const { originalContent, originalTitle } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GOOGLE_GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY não está configurada");
+    if (!GOOGLE_GEMINI_API_KEY) {
+      throw new Error("GOOGLE_GEMINI_API_KEY não está configurada");
     }
 
     if (!originalContent || !originalTitle) {
@@ -25,7 +25,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Reescrevendo conteúdo:', originalTitle);
+    console.log('Reescrevendo conteúdo com Google Gemini:', originalTitle);
 
     const prompt = `
 Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright. 
@@ -59,58 +59,53 @@ Certifique-se de:
 10. Para "state", use a sigla do estado brasileiro em maiúsculo (ex: "SP", "RJ", "MG") ou deixe vazio se for nacional/federal
 11. Para "metaKeywords", gere 5-10 palavras-chave relevantes separadas em array (ex: nome do órgão, área de atuação, tipo de cargo, nível de escolaridade, etc.)`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const systemInstruction = "Você é um especialista em concursos públicos e redação jornalística. Sua tarefa é reescrever artigos mantendo a precisão das informações mas evitando problemas de copyright. Remova toda referência a direitos autorais e retorne apenas o JSON solicitado. Se possível, mantenha tabelas e listas de dados.";
+    
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content: "Você é um especialista em concursos públicos e redação jornalística. Sua tarefa é reescrever artigos mantendo a precisão das informações mas evitando problemas de copyright. Remova toda referência a direitos autorais e retorne apenas o JSON solicitado. Se possível, mantenha tabelas e listas de dados."
-          },
+        contents: [
           {
             role: "user",
-            content: prompt
+            parts: [
+              { text: systemInstruction + "\n\n" + prompt }
+            ]
           }
         ],
-        max_tokens: 8000,
-        temperature: 0.7,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 8000,
+        }
       }),
     });
 
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Limite de requisições excedido, tente novamente mais tarde." }),
+          JSON.stringify({ error: "Limite de requisições excedido da API do Google Gemini, tente novamente mais tarde." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "É necessário adicionar créditos ao workspace do Lovable AI." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const errorText = await response.text();
-      console.error("Erro do AI gateway:", response.status, errorText);
+      console.error("Erro da API Google Gemini:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: "Erro ao chamar AI gateway" }),
+        JSON.stringify({ error: "Erro ao chamar API do Google Gemini" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!content) {
-      throw new Error('Resposta vazia do AI gateway');
+      console.error('Resposta do Gemini:', JSON.stringify(data, null, 2));
+      throw new Error('Resposta vazia da API do Google Gemini');
     }
 
-    console.log('Conteúdo reescrito com sucesso');
+    console.log('Conteúdo reescrito com sucesso usando Google Gemini');
 
     // Tentar fazer parse do JSON retornado
     try {
