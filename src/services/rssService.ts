@@ -194,7 +194,7 @@ export function getRewriteCacheStats(): { size: number; oldestEntry: number | nu
   };
 }
 
-// Função para reescrever conteúdo usando OpenAI
+// Função para reescrever conteúdo usando Google Gemini via Lovable AI
 export async function rewriteContentWithAI(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string; tags: string[]; region: string; state: string; metaKeywords: string[] } | null> {
   try {
     // Criar uma chave única baseada no título e conteúdo
@@ -213,337 +213,52 @@ export async function rewriteContentWithAI(originalContent: string, originalTitl
         rewriteCacheTimestamps.delete(cacheKey);
       }
     }
-    // Tentar múltiplas formas de acessar a variável de ambiente
-    let openaiApiKey = '';
     
-    // Debug: verificar todas as possíveis fontes de variáveis
-    console.log('=== DEBUG VARIÁVEIS DE AMBIENTE ===');
-    console.log('import.meta.env.VITE_OPENAI_API_KEY:', !!import.meta.env.VITE_OPENAI_API_KEY);
-    console.log('process.env.OPENAI_API_KEY:', !!process.env.OPENAI_API_KEY);
-    console.log('process.env.VITE_OPENAI_API_KEY:', !!process.env.VITE_OPENAI_API_KEY);
-    console.log('window.process?.env?.OPENAI_API_KEY:', !!(typeof window !== 'undefined' && (window as any).process?.env?.OPENAI_API_KEY));
+    console.log('Usando Supabase Edge Function (Lovable AI/Gemini) para reescrever conteúdo...');
     
-    // Tentar diferentes formas de acessar a chave
-    if (import.meta.env.VITE_OPENAI_API_KEY) {
-      openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY;
-      console.log('Chave encontrada via import.meta.env.VITE_OPENAI_API_KEY');
-    } else if (process.env.OPENAI_API_KEY) {
-      openaiApiKey = process.env.OPENAI_API_KEY;
-      console.log('Chave encontrada via process.env.OPENAI_API_KEY');
-    } else if (process.env.VITE_OPENAI_API_KEY) {
-      openaiApiKey = process.env.VITE_OPENAI_API_KEY;
-      console.log('Chave encontrada via process.env.VITE_OPENAI_API_KEY');
-    } else if (typeof window !== 'undefined' && (window as any).process?.env?.OPENAI_API_KEY) {
-      openaiApiKey = (window as any).process.env.OPENAI_API_KEY;
-      console.log('Chave encontrada via window.process.env.OPENAI_API_KEY');
-    }
-    
-    // Se não encontrou a chave, tentar usar a Netlify Function
-    if (!openaiApiKey) {
-      console.warn('=== Chave OpenAI não encontrada no frontend ===');
-      console.warn('Tentando usar Netlify Function como fallback...');
-      return await rewriteContentWithNetlifyFunction(originalContent, originalTitle);
-    }
-    
-    // Debug: verificar se a chave está sendo lida corretamente
-    console.log('OpenAI API Key presente:', !!openaiApiKey);
-    console.log('Primeiros 10 caracteres da chave:', openaiApiKey?.substring(0, 10));
-    console.log('Últimos 4 caracteres da chave:', openaiApiKey?.substring(openaiApiKey.length - 4));
-    
-    // Verificar se a chave tem um formato válido (aceita diferentes prefixos)
-    if (!openaiApiKey.startsWith('sk-') && !openaiApiKey.startsWith('sk-admin-') && !openaiApiKey.startsWith('sk-proj-') && !openaiApiKey.startsWith('sk-None-') && !openaiApiKey.startsWith('sk-svcacct-')) {
-      console.warn('Formato da chave OpenAI inválido, tentando Netlify Function...');
-      return await rewriteContentWithNetlifyFunction(originalContent, originalTitle);
-    }
-
-    const prompt = `
-Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright. 
-
-Título original: ${originalTitle}
-
-Conteúdo original:
-${originalContent}
-
-Por favor, retorne um JSON com a seguinte estrutura:
-{
-  "title": "Novo título reescrito",
-  "summary": "Resumo do artigo em 2-3 frases",
-  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc.",
-  "tags": ["tag1", "tag2", "tag3"],
-  "region": "região do concurso",
-  "state": "estado do concurso",
-  "metaKeywords": ["palavra-chave1", "palavra-chave2", "palavra-chave3"]
-}
-
-Certifique-se de:
-1. Reescrever completamente o conteúdo, não apenas parafrasear
-2. Manter todas as informações importantes (datas, valores, requisitos, etc.)
-3. Usar linguagem clara e profissional
-4. Formatar o conteúdo em HTML válido
-5. Criar um título atrativo e informativo
-6. Fazer um resumo conciso e envolvente
-7. NÃO incluir tags H1 no conteúdo, pois o título já será usado como H1
-8. Gerar 3-5 tags relevantes baseadas no conteúdo (ex: nome do órgão, tipo de concurso, área, etc.) - evite termos como "automatizado", "RSS", "bot"
-9. Para "region", use uma das opções: "norte", "nordeste", "centro-oeste", "sul", "sudeste", "nacional", "federal" (baseado no escopo geográfico do concurso)
-10. Para "state", use a sigla do estado brasileiro em maiúsculo (ex: "SP", "RJ", "MG") ou deixe vazio se for nacional/federal
-11. Para "metaKeywords", gere 5-10 palavras-chave relevantes separadas em array (ex: nome do órgão, área de atuação, tipo de cargo, nível de escolaridade, etc.)`;
-
-    // Debug: verificar headers da requisição
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${openaiApiKey}`
-    };
-    
-    console.log('Headers da requisição:', {
-      'Content-Type': headers['Content-Type'],
-      'Authorization': `Bearer ${openaiApiKey.substring(0, 10)}...${openaiApiKey.substring(openaiApiKey.length - 4)}`
-    });
-    
-    const requestBody = {
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: 'Você é um especialista em concursos públicos e redação jornalística. Sua tarefa é reescrever artigos mantendo a precisão das informações mas evitando problemas de copyright. Remova toda referência a direitos autorais e remova tags json, pois o conteúdo vai para um blog. Se possível, mantenha tabelas e listas de dados.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_tokens: 16384,
-      temperature: 0.7
-    };
-    
-    console.log('Fazendo requisição para OpenAI...');
-    
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody)
-    });
-    
-    console.log('Status da resposta:', response.status);
-    console.log('Headers da resposta:', Object.fromEntries(response.headers.entries()));
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Erro da API OpenAI - Status:', response.status);
-      console.log('Erro da API OpenAI - Resposta:', errorText);
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        console.log('Detalhes do erro:', errorData);
-        throw new Error(`Erro na API OpenAI: ${response.status} - ${errorData.error?.message || errorText}`);
-      } catch (parseError) {
-        throw new Error(`Erro na API OpenAI: ${response.status} - ${errorText}`);
+    // Chamar a edge function rewrite-content
+    const { data, error } = await supabase.functions.invoke('rewrite-content', {
+      body: {
+        originalContent,
+        originalTitle
       }
+    });
+    
+    if (error) {
+      console.error('Erro ao chamar edge function:', error);
+      throw new Error(`Erro na edge function: ${error.message}`);
     }
     
-    const data = await response.json();
-    console.log('Resposta da OpenAI recebida com sucesso');
-    const content = data.choices[0]?.message?.content;
-    
-    if (!content) {
-      throw new Error('Resposta vazia da OpenAI');
+    if (!data) {
+      throw new Error('Resposta vazia da edge function');
     }
     
-    // Tentar fazer parse do JSON retornado
-    try {
-      const result = JSON.parse(content);
-      
-      // Processar o conteúdo para remover H1s duplicados
-      let processedContent = result.content || '';
-      
-      // Remover tags H1 que contenham o título ou sejam similares
-      const titleWords = (result.title || originalTitle).toLowerCase().split(' ');
-      processedContent = processedContent.replace(/<h1[^>]*>.*?<\/h1>/gi, (match) => {
-        const h1Content = match.replace(/<[^>]*>/g, '').toLowerCase();
-        const similarity = titleWords.filter(word => word.length > 3 && h1Content.includes(word)).length;
-        
-        // Se mais de 50% das palavras do título estão no H1, remove
-        if (similarity > titleWords.length * 0.5) {
-          return '';
-        }
-        return match;
-      });
-      
-      const finalResult = {
-        title: result.title || originalTitle,
-        content: processedContent,
-        summary: result.summary || '',
-        tags: result.tags || ['Concursos', 'Educação'],
-        region: result.region || 'nacional',
-        state: result.state || '',
-        metaKeywords: result.metaKeywords || ['concursos', 'educação', 'vagas']
-      };
-      
-      // Armazenar no cache
-      rewriteCache.set(cacheKey, finalResult);
-      rewriteCacheTimestamps.set(cacheKey, now);
-      console.log('Conteúdo reescrito armazenado no cache para:', originalTitle);
-      
-      return finalResult;
-    } catch (parseError) {
-      // Se não conseguir fazer parse do JSON, retornar o conteúdo como está
-      const fallbackResult = {
-        title: originalTitle,
-        content: content,
-        summary: content.substring(0, 200) + '...',
-        tags: ['Concursos', 'Educação'],
-        region: 'nacional',
-        state: '',
-        metaKeywords: ['concursos', 'educação', 'vagas']
-      };
-      
-      // Armazenar no cache mesmo o resultado de fallback
-      rewriteCache.set(cacheKey, fallbackResult);
-      rewriteCacheTimestamps.set(cacheKey, now);
-      
-      return fallbackResult;
-    }
+    const result = {
+      title: data.title || originalTitle,
+      content: data.content || '',
+      summary: data.summary || '',
+      tags: data.tags || ['Concursos', 'Educação'],
+      region: data.region || 'nacional',
+      state: data.state || '',
+      metaKeywords: data.metaKeywords || ['concursos', 'educação', 'vagas']
+    };
+    
+    // Armazenar no cache
+    rewriteCache.set(cacheKey, result);
+    rewriteCacheTimestamps.set(cacheKey, now);
+    console.log('Conteúdo reescrito armazenado no cache para:', originalTitle);
+    
+    return result;
   } catch (error) {
     console.error('Erro ao reescrever conteúdo com IA:', error);
     return null;
   }
 }
 
-// Função auxiliar para usar a Netlify Function quando as variáveis de ambiente não estão disponíveis no frontend
+// Função auxiliar DEPRECADA - não é mais necessária, mantida apenas para compatibilidade
 async function rewriteContentWithNetlifyFunction(originalContent: string, originalTitle: string): Promise<{ title: string; content: string; summary: string; tags: string[]; region: string; state: string; metaKeywords: string[] } | null> {
-  try {
-    // Verificar cache primeiro (usando o mesmo sistema de cache)
-    const cacheKey = `${originalTitle}_${originalContent.substring(0, 100)}`;
-    const now = Date.now();
-    
-    if (rewriteCache.has(cacheKey)) {
-      const cacheTime = rewriteCacheTimestamps.get(cacheKey) || 0;
-      if (now - cacheTime < REWRITE_CACHE_TTL) {
-        console.log('Usando conteúdo reescrito do cache (Netlify Function) para:', originalTitle);
-        return rewriteCache.get(cacheKey)!;
-      } else {
-        // Cache expirado, remover
-        rewriteCache.delete(cacheKey);
-        rewriteCacheTimestamps.delete(cacheKey);
-      }
-    }
-    
-    console.log('Usando Netlify Function para reescrever conteúdo...');
-    
-    const prompt = `
-Reescreva completamente o seguinte artigo sobre concursos públicos, mantendo as informações importantes mas usando suas próprias palavras para evitar problemas de copyright. 
-
-Título original: ${originalTitle}
-
-Conteúdo original:
-${originalContent}
-
-Por favor, retorne um JSON com a seguinte estrutura:
-{
-  "title": "Novo título reescrito",
-  "summary": "Resumo do artigo em 2-3 frases",
-  "content": "Conteúdo completo reescrito em HTML, bem formatado com parágrafos, listas quando apropriado, etc.",
-  "tags": ["tag1", "tag2", "tag3"],
-  "region": "região do concurso",
-  "state": "estado do concurso",
-  "metaKeywords": ["palavra-chave1", "palavra-chave2", "palavra-chave3"]
-}
-
-Certifique-se de:
-1. Reescrever completamente o conteúdo, não apenas parafrasear
-2. Manter todas as informações importantes (datas, valores, requisitos, etc.)
-3. Usar linguagem clara e profissional
-4. Formatar o conteúdo em HTML válido
-5. Criar um título atrativo e informativo
-6. Fazer um resumo conciso e envolvente
-7. NÃO incluir tags H1 no conteúdo, pois o título já será usado como H1
-8. Gerar 3-5 tags relevantes baseadas no conteúdo (ex: nome do órgão, tipo de concurso, área, etc.) - evite termos como "automatizado", "RSS", "bot"
-9. Para "region", use uma das opções: "norte", "nordeste", "centro-oeste", "sul", "sudeste", "nacional", "federal" (baseado no escopo geográfico do concurso)
-10. Para "state", use a sigla do estado brasileiro em maiúsculo (ex: "SP", "RJ", "MG") ou deixe vazio se for nacional/federal
-11. Para "metaKeywords", gere 5-10 palavras-chave relevantes separadas em array (ex: nome do órgão, área de atuação, tipo de cargo, nível de escolaridade, etc.)`;
-
-    const response = await fetch('/.netlify/functions/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt: prompt,
-        max_tokens: 60000,
-        temperature: 0.7
-      })
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Erro na Netlify Function:', response.status, errorText);
-      throw new Error(`Erro na Netlify Function: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    const content = data.choices?.[0]?.text || '';
-
-    if (!content) {
-      throw new Error('Resposta vazia da Netlify Function');
-    }
-
-    // Tentar fazer parse do JSON retornado
-    try {
-      const result = JSON.parse(content);
-      
-      // Processar o conteúdo para remover H1s duplicados
-      let processedContent = result.content || '';
-      
-      // Remover tags H1 que contenham o título ou sejam similares
-      const titleWords = (result.title || originalTitle).toLowerCase().split(' ');
-      processedContent = processedContent.replace(/<h1[^>]*>.*?<\/h1>/gi, (match) => {
-        const h1Content = match.replace(/<[^>]*>/g, '').toLowerCase();
-        const similarity = titleWords.filter(word => word.length > 3 && h1Content.includes(word)).length;
-        
-        // Se mais de 50% das palavras do título estão no H1, remove
-        if (similarity > titleWords.length * 0.5) {
-          return '';
-        }
-        return match;
-      });
-      
-      const finalResult = {
-        title: result.title || originalTitle,
-        content: processedContent,
-        summary: result.summary || '',
-        tags: result.tags || ['Concursos', 'Educação'],
-        region: result.region || 'nacional',
-        state: result.state || '',
-        metaKeywords: result.metaKeywords || ['concursos', 'educação', 'vagas']
-      };
-      
-      // Armazenar no cache
-      rewriteCache.set(cacheKey, finalResult);
-      rewriteCacheTimestamps.set(cacheKey, now);
-      console.log('Conteúdo reescrito armazenado no cache para:', originalTitle);
-      
-      return finalResult;
-    } catch (parseError) {
-      // Se não conseguir fazer parse do JSON, retornar o conteúdo como está
-      const fallbackResult = {
-        title: originalTitle,
-        content: content,
-        summary: content.substring(0, 200) + '...',
-        tags: ['Concursos', 'Educação'],
-        region: 'nacional',
-        state: '',
-        metaKeywords: ['concursos', 'educação', 'vagas']
-      };
-      
-      // Armazenar no cache mesmo o resultado de fallback
-      rewriteCache.set(cacheKey, fallbackResult);
-      rewriteCacheTimestamps.set(cacheKey, now);
-      
-      return fallbackResult;
-    }
-  } catch (error) {
-    console.error('Erro ao usar Netlify Function:', error);
-    return null;
-  }
+  console.warn('rewriteContentWithNetlifyFunction está depreciada, use rewriteContentWithAI');
+  return rewriteContentWithAI(originalContent, originalTitle);
 }
 
 // Função para processar um item do RSS e criar um post
