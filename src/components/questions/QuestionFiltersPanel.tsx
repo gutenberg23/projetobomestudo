@@ -776,7 +776,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
             }
           </div>
         </CollapsibleTrigger>
-        <CollapsibleContent className={`px-6 pb-6 ${isOpen ? 'border-t border-gray-100 mt-4' : ''}`}>
+        <CollapsibleContent className={`px-6 pb-6 ${isOpen ? 'mt-4' : ''}`}>
           {filtersContent}
         </CollapsibleContent>
       </Collapsible>

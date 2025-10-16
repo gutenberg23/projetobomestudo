@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
-import { toast } from "react-toastify";
 import InputMask from "react-input-mask";
 
 import {
@@ -108,8 +107,6 @@ const Settings = () => {
     
     const loadProfileData = async () => {
       try {
-        console.log("Buscando dados do perfil para o usuário:", user.id);
-        
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -117,15 +114,10 @@ const Settings = () => {
           .single();
           
         if (error) {
-          console.error("Erro ao buscar perfil:", error);
-          toast("Erro ao carregar dados do perfil", {
-            type: "error"
-          });
           return;
         }
         
         if (data) {
-          console.log("Dados do perfil encontrados:", data);
           setFormData({
             nome: data.nome || "",
             sobrenome: data.sobrenome || "",
@@ -148,10 +140,6 @@ const Settings = () => {
           });
         }
       } catch (err) {
-        console.error("Erro ao carregar dados:", err);
-        toast("Erro ao carregar dados do perfil", {
-          type: "error"
-        });
       }
     };
 
@@ -173,17 +161,11 @@ const Settings = () => {
 
       // Validar tamanho do arquivo (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
-        toast("A imagem deve ter no máximo 2MB", {
-          type: "error"
-        });
         return;
       }
 
       // Validar tipo do arquivo
       if (!file.type.startsWith("image/")) {
-        toast("O arquivo deve ser uma imagem", {
-          type: "error"
-        });
         return;
       }
 
@@ -200,10 +182,6 @@ const Settings = () => {
         .upload(filePath, file);
 
       if (uploadError) {
-        console.error("Erro de upload:", uploadError);
-        toast(uploadError.message, {
-          type: "error"
-        });
         return;
       }
 
@@ -220,15 +198,7 @@ const Settings = () => {
       }
 
       setFormData(prev => ({ ...prev, foto_perfil: publicUrl }));
-
-      toast("Sua foto de perfil foi atualizada com sucesso", {
-        type: "success"
-      });
     } catch (error) {
-      console.error("Erro ao atualizar foto:", error);
-      toast(error instanceof Error ? error.message : "Erro desconhecido ao fazer upload", {
-        type: "error"
-      });
     } finally {
       setLoading(false);
     }
@@ -249,15 +219,7 @@ const Settings = () => {
       const { error } = await updateProfile(formattedData);
 
       if (error) throw error;
-
-      toast("Suas informações foram atualizadas com sucesso", {
-        type: "success"
-      });
     } catch (error) {
-      console.error("Erro ao atualizar perfil:", error);
-      toast(error instanceof Error ? error.message : "Erro desconhecido ao atualizar perfil", {
-        type: "error"
-      });
     } finally {
       setLoading(false);
     }
@@ -266,38 +228,21 @@ const Settings = () => {
   // Função para buscar dados diretamente do banco
   const debugFetchProfile = async () => {
     if (!user?.id) {
-      toast("Usuário não encontrado", {
-        type: "error"
-      });
       return;
     }
     
     try {
-      console.log("Buscando dados diretamente da tabela profiles para id:", user.id);
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single();
         
-      console.log("Resultado direto da consulta a profiles:", { data, error });
-      
       if (error) {
-        toast(error.message, {
-          type: "error"
-        });
         return;
       }
       
       if (data) {
-        toast("Perfil carregado com sucesso", {
-          type: "success"
-        });
-        
-        // Mostrar os dados encontrados
-        console.log("Dados completos do perfil:", data);
-        
         // Preencher o formulário com os dados encontrados
         setFormData({
           nome: data.nome || "",
@@ -321,16 +266,8 @@ const Settings = () => {
         });
         
         formInitializedRef.current = true;
-      } else {
-        toast("Não foi possível encontrar dados do perfil", {
-          type: "error"
-        });
       }
     } catch (err) {
-      console.error("Erro ao buscar dados:", err);
-      toast("Erro ao buscar dados do perfil", {
-        type: "error"
-      });
     }
   };
   
@@ -345,7 +282,8 @@ const Settings = () => {
     <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-5xl mx-auto px-4 py-8">
+        {/* Utiliza todo espaço horizontal e arredonda levemente as bordas */}
+        <div className="max-w-5xl mx-auto px-4 py-8 bg-white rounded-lg w-full">
           <h1 className="text-2xl text-[#272f3c] font-extrabold md:text-2xl mb-2 text-xl">Minha conta</h1>
           <p className="text-[#67748a] mb-6 text-xs md:text-sm">
             Mantendo sua conta atualizada, você nos ajuda a disponibilizar dados mais precisos sobre as aprovações pelo Brasil.
@@ -354,15 +292,15 @@ const Settings = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Coluna com foto */}
             <div className="space-y-6">
-              <div className="flex flex-col items-center bg-gray-50 p-6 rounded-lg">
+              <div className="flex flex-col items-center p-6 bg-gray-50 rounded-lg">
                 <div className="relative mb-4">
-                  <Avatar className="w-32 h-32 border-4 border-white shadow-sm">
+                  <Avatar className="w-32 h-32 border-0">
                     <AvatarImage src={user?.foto_perfil || ""} />
-                    <AvatarFallback className="bg-[#ea2be2] text-white text-xl">
+                    <AvatarFallback className="bg-[#ea2be2] text-white text-xl border-0 rounded-full">
                       <UserIcon className="h-10 w-10" />
                     </AvatarFallback>
                   </Avatar>
-                  <label htmlFor="foto-perfil" className="absolute bottom-0 right-0 bg-[#ea2be2] text-white p-2 rounded-full cursor-pointer">
+                  <label htmlFor="foto-perfil" className="absolute bottom-0 right-0 bg-[#ea2be2] text-white p-2 rounded-full cursor-pointer border-0">
                     <Camera className="h-4 w-4" />
                     <input
                       id="foto-perfil"
@@ -440,8 +378,6 @@ const Settings = () => {
                         <SelectContent>
                           <SelectItem value="M">Masculino</SelectItem>
                           <SelectItem value="F">Feminino</SelectItem>
-                          <SelectItem value="O">Outro</SelectItem>
-                          <SelectItem value="N">Prefiro não informar</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -626,21 +562,10 @@ const Settings = () => {
                 <div className="pt-4">
                   <Button 
                     type="submit" 
-                    className="bg-[#ea2be2] hover:bg-opacity-90 w-full md:w-auto"
+                    className="bg-[#ea2be2] hover:bg-opacity-90 w-full md:w-auto border-0 rounded-md"
                     disabled={loading}
                   >
                     {loading ? "Salvando..." : "Salvar alterações"}
-                  </Button>
-                </div>
-
-                <div className="mt-4 mb-2 flex justify-end">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="ml-2"
-                    onClick={debugFetchProfile}
-                  >
-                    Recarregar dados
                   </Button>
                 </div>
               </form>
