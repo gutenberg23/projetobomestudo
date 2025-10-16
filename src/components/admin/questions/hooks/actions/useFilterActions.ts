@@ -18,9 +18,10 @@ const initialFilters: Filters = {
   topicos: emptyFilter,
   subtopicos: emptyFilter,
   conteudo: emptyFilter,
+  semAIExplanation: emptyFilter,
 };
 
-export const useFilterActions = (state: ReturnType<typeof import("../useQuestionsState").useQuestionsState>) => {
+export const useFilterActions = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [showFilters, setShowFilters] = useState(false);
@@ -95,6 +96,7 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
       const matchesQuestionType = !filters.questionType.isActive || questionTypeValues.length === 0 || questionTypeValues.includes(question.questionType);
       const matchesTopicos = !filters.topicos.isActive || topicosValues.length === 0 || topicosValues.some(topico => question.assuntos?.includes(topico) || question.topicos?.includes(topico));
       const matchesContent = !filters.conteudo.isActive || !searchTerm || question.content.toLowerCase().includes(searchTerm);
+      const matchesSemAIExplanation = !filters.semAIExplanation.isActive || !question.aiExplanation || question.aiExplanation.trim() === '';
 
       return (
         matchesDisciplina &&
@@ -106,7 +108,8 @@ export const useFilterActions = (state: ReturnType<typeof import("../useQuestion
         matchesDificuldade &&
         matchesQuestionType &&
         matchesTopicos &&
-        matchesContent
+        matchesContent &&
+        matchesSemAIExplanation
       );
     });
   };

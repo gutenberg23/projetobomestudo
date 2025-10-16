@@ -91,4 +91,5 @@ export interface Filters {
   topicos: FilterItem;
   subtopicos: FilterItem;
   conteudo: FilterItem;
+  semAIExplanation: FilterItem;
 }

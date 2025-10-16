@@ -27,6 +27,22 @@ serve(async (req) => {
 
     console.log('Gerando explicação com Google Gemini');
 
+    // Adicionar instruções explícitas sobre formatação HTML no início do prompt
+    const enhancedPrompt = `Você é um assistente especializado em explicar questões de concursos.
+
+IMPORTANTE: Formate sua resposta usando HTML válido com as seguintes tags:
+- Use <strong> para texto em negrito
+- Use <em> para texto em itálico
+- Use <u> para texto sublinhado
+- Use <h3> para títulos de seções
+- Use <p> para parágrafos
+- Use <ul> e <li> para listas com marcadores
+- Use <ol> e <li> para listas numeradas
+- Não use Markdown (asteriscos, underscores, etc.)
+- Não use backticks ou código formatado
+
+${prompt}`;
+
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
@@ -37,7 +53,7 @@ serve(async (req) => {
           {
             role: "user",
             parts: [
-              { text: prompt }
+              { text: enhancedPrompt }
             ]
           }
         ],

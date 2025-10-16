@@ -26,8 +26,6 @@ interface QuestionFiltersProps {
     questionTypes: string[];
     topicos: string[];
   };
-  onChange: (key: keyof Filters, value: FilterItem) => void;
-  onFiltersClean: () => void;
 }
 
 const QuestionFilters: React.FC<QuestionFiltersProps> = ({
@@ -39,26 +37,16 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
   handleClearAllQuestionStats,
   handleDeleteAllQuestions,
   dropdownData,
-  onChange,
-  onFiltersClean
+
 }) => {
   const [subjectsByDiscipline, setSubjectsByDiscipline] = useState<{[key: string]: string[]}>({});
   const [topicsBySubject, setTopicsBySubject] = useState<{[key: string]: string[]}>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(true);
-  const [searchValue, setSearchValue] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  // Estados para disciplinas, assuntos e tópicos
-  const [disciplines, setDisciplines] = useState<string[]>([]);
-  const [allSubjects, setAllSubjects] = useState<{[key: string]: string[]}>({});
-  const [allTopics, setAllTopics] = useState<{[key: string]: string[]}>({});
 
   // Buscar questões para análise de relações entre disciplinas, assuntos e tópicos
   useEffect(() => {
     const fetchQuestions = async () => {
-      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('questoes')
@@ -123,8 +111,6 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
         }
       } catch (error) {
         console.error('Erro ao carregar questões:', error);
-      } finally {
-        setIsLoading(false);
       }
     };
     
@@ -146,8 +132,6 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
         if (questions) {
           // Extrair disciplinas únicas
           const uniqueDisciplines = [...new Set(questions.map(q => q.disciplina))].filter(Boolean);
-          setDisciplines(uniqueDisciplines);
-
           // Mapear disciplinas para assuntos
           const subjectsByDiscipline: {[key: string]: string[]} = {};
           // Mapear assuntos para tópicos
@@ -173,9 +157,6 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
               }
             }
           });
-
-          setAllSubjects(subjectsByDiscipline);
-          setAllTopics(topicsBySubject);
         }
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
@@ -262,43 +243,7 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
     return [...topicsSet].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)));
   }, [filters.topicos, topicsBySubject]);
 
-  // Filtrar assuntos com base nas disciplinas selecionadas
-  const filteredSubjectsFromData = useMemo(() => {
-    const disciplinaValue = filters.disciplina.value;
-    if (!disciplinaValue) return [];
-    
-    const selectedDisciplines = disciplinaValue.toString().split(';').filter(v => v !== '');
-    if (selectedDisciplines.length === 0) return [];
-    
-    // Unir todos os assuntos das disciplinas selecionadas
-    let subjects: string[] = [];
-    selectedDisciplines.forEach(discipline => {
-      if (subjectsByDiscipline[discipline]) {
-        subjects = [...subjects, ...subjectsByDiscipline[discipline]];
-      }
-    });
-    
-    return [...new Set(subjects)].sort((a, b) => a.localeCompare(b)); // Remover duplicatas e ordenar
-  }, [filters.disciplina.value, subjectsByDiscipline]);
 
-  // Filtrar tópicos com base nos assuntos selecionados
-  const filteredTopicsFromData = useMemo(() => {
-    const topicosValue = filters.topicos.value;
-    if (!topicosValue) return [];
-    
-    const selectedSubjects = topicosValue.toString().split(';').filter(v => v !== '');
-    if (selectedSubjects.length === 0) return [];
-    
-    // Unir todos os tópicos dos assuntos selecionados
-    let topics: string[] = [];
-    selectedSubjects.forEach(subject => {
-      if (topicsBySubject[subject]) {
-        topics = [...topics, ...topicsBySubject[subject]];
-      }
-    });
-    
-    return [...new Set(topics)].sort((a, b) => a.localeCompare(b)); // Remover duplicatas e ordenar
-  }, [filters.topicos.value, topicsBySubject]);
 
   const handleDeleteAllQuestionsConfirm = async () => {
     if (!handleDeleteAllQuestions) return;
@@ -337,6 +282,31 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
               <ChevronUp className="h-4 w-4" />
             ) : (
               <ChevronDown className="h-4 w-4" />
+            )}
+          </Button>
+          
+          {/* Botão para filtrar questões sem explicações da IA */}
+          <Button
+            variant={filters.semAIExplanation.isActive ? "default" : "outline"}
+            onClick={() => {
+              setFilters((prev) => ({
+                ...prev,
+                semAIExplanation: {
+                  ...prev.semAIExplanation,
+                  isActive: !prev.semAIExplanation.isActive,
+                  value: prev.semAIExplanation.isActive ? "" : "true"
+                }
+              }));
+            }}
+            className={`flex items-center gap-2 ${
+              filters.semAIExplanation.isActive 
+                ? "bg-[#5f2ebe] text-white hover:bg-[#4a1f9c]" 
+                : "border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <span>Sem Explicação da IA</span>
+            {filters.semAIExplanation.isActive && (
+              <XCircle className="h-4 w-4" />
             )}
           </Button>
           

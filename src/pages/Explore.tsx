@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Input } from "@/components/ui/input";
@@ -53,6 +53,7 @@ const ResultItem: React.FC<ItemProps> = ({
 
 const Explore = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // Nova variável para armazenar a query de pesquisa
   const [showSubjects, setShowSubjects] = useState(false);
   const [courses, setCourses] = useState<CourseItemType[]>([]);
   const [subjects, setSubjects] = useState<DisciplinaItemType[]>([]);
@@ -62,9 +63,10 @@ const Explore = () => {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
-    const searchQuery = searchParams.get('search');
+    const searchQuery = searchParams.get('q') || searchParams.get('s') || '';
     if (searchQuery) {
       setSearchTerm(searchQuery);
+      setSearchQuery(searchQuery);
     }
   }, [location.search]);
 
@@ -251,7 +253,45 @@ const Explore = () => {
       toast.error("Erro ao atualizar favoritos. Por favor, tente novamente.");
     }
   };
-  const filteredData = showSubjects ? subjects.filter(subject => subject.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || (subject.banca && subject.banca.toLowerCase().includes(searchTerm.toLowerCase()))) : courses.filter(course => course.titulo.toLowerCase().includes(searchTerm.toLowerCase()) || (course.descricao && course.descricao.toLowerCase().includes(searchTerm.toLowerCase())));
+
+  // Função para realizar a pesquisa
+  const handleSearch = useCallback(() => {
+    if (searchTerm.trim() !== "") {
+      // Atualizar URL com o parâmetro de busca
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.set('q', searchTerm);
+      navigate(`${location.pathname}?${searchParams.toString()}`, { replace: true });
+      setSearchQuery(searchTerm);
+    } else {
+      // Se o termo de busca estiver vazio, remover o parâmetro da URL
+      const searchParams = new URLSearchParams(window.location.search);
+      searchParams.delete('q');
+      searchParams.delete('s');
+      navigate(`${location.pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`, { replace: true });
+      setSearchQuery("");
+    }
+  }, [searchTerm, navigate, location.pathname]);
+
+  // Função para lidar com o Enter no campo de busca
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  const filteredData = showSubjects 
+    ? subjects.filter(subject => 
+        searchQuery && searchQuery.trim() !== "" 
+          ? subject.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            (subject.banca && subject.banca.toLowerCase().includes(searchQuery.toLowerCase()))
+          : true
+      ) 
+    : courses.filter(course => 
+        searchQuery && searchQuery.trim() !== "" 
+          ? course.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            (course.descricao && course.descricao.toLowerCase().includes(searchQuery.toLowerCase()))
+          : true
+      );
 
   return (
     <PublicLayout>
@@ -268,7 +308,7 @@ const Explore = () => {
               <AdBanner position="explore_top" className="rounded-lg" />
             </div>
 
-            <div className="bg-white rounded-lg p-6 mb-8">
+            <div className="bg-white rounded-lg p-6 mb-8 shadow-sm">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -278,20 +318,29 @@ const Explore = () => {
                     className="pl-10 py-6 text-lg"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={handleKeyPress}
                   />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Cursos</span>
+                <Button 
+                  onClick={handleSearch}
+                  className="px-6 py-6 text-base font-medium"
+                >
+                  <Search className="h-5 w-5 mr-2" />
+                  Pesquisar
+                </Button>
+                <div className="flex items-center justify-center space-x-3 bg-gray-50 rounded-full px-4 py-2 border border-gray-200">
+                  <span className={`text-sm font-medium ${!showSubjects ? "text-[#5f2ebe]" : "text-gray-500"}`}>Cursos</span>
                   <Switch
                     checked={showSubjects}
                     onCheckedChange={setShowSubjects}
+                    className="data-[state=checked]:bg-[#5f2ebe] data-[state=unchecked]:bg-gray-300"
                   />
-                  <span className="text-sm text-gray-600">Disciplinas</span>
+                  <span className={`text-sm font-medium ${showSubjects ? "text-[#5f2ebe]" : "text-gray-500"}`}>Disciplinas</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg overflow-hidden">
+            <div className="bg-white rounded-lg overflow-hidden shadow-sm">
               {loading ? <div className="p-8 text-center">
                   <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
                   <p className="mt-3 text-gray-500">Carregando dados...</p>
@@ -308,8 +357,10 @@ const Explore = () => {
                     friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} 
                     banca={showSubjects ? (item as DisciplinaItemType).banca : undefined}
                     cargo={!showSubjects ? item.descricao : undefined}
-                  />) : <div className="p-8 text-center text-gray-500">
-                      Nenhum resultado encontrado para "{searchTerm}"
+                  />) : searchQuery ? <div className="p-8 text-center text-gray-500">
+                      Nenhum resultado encontrado para "{searchQuery}"
+                    </div> : <div className="p-8 text-center text-gray-500">
+                      {showSubjects ? "Nenhuma disciplina encontrada" : "Nenhum curso encontrado"}
                     </div>}
                 </div>}
             </div>

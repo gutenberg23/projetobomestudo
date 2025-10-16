@@ -22,7 +22,20 @@ export const generateAIResponse = async (questionData: QuestionData): Promise<st
     
     // Se o usuário forneceu um prompt personalizado, usá-lo como principal
     if (questionData.prompt && questionData.prompt.trim()) {
-      basePrompt = `${questionData.prompt}
+      basePrompt = `Você é um assistente especializado em explicar questões de concursos.
+
+IMPORTANTE: Formate sua resposta usando HTML válido com as seguintes tags:
+- Use <strong> para texto em negrito
+- Use <em> para texto em itálico
+- Use <u> para texto sublinhado
+- Use <h3> para títulos de seções
+- Use <p> para parágrafos
+- Use <ul> e <li> para listas com marcadores
+- Use <ol> e <li> para listas numeradas
+- Não use Markdown (asteriscos, underscores, etc.)
+- Não use backticks ou código formatado
+
+${questionData.prompt}
 
 CONTEXTO DA QUESTÃO:
 Disciplina: ${questionData.discipline}
@@ -40,6 +53,18 @@ ${questionData.existingExplanation ? `\nExplicação existente:\n${questionData.
     } else {
       // Prompt padrão caso o usuário não forneça um
       basePrompt = `Você é um assistente especializado em explicar questões de concursos.
+
+IMPORTANTE: Formate sua resposta usando HTML válido com as seguintes tags:
+- Use <strong> para texto em negrito
+- Use <em> para texto em itálico
+- Use <u> para texto sublinhado
+- Use <h3> para títulos de seções
+- Use <p> para parágrafos
+- Use <ul> e <li> para listas com marcadores
+- Use <ol> e <li> para listas numeradas
+- Não use Markdown (asteriscos, underscores, etc.)
+- Não use backticks ou código formatado
+
 A questão é da disciplina ${questionData.discipline}, nível ${questionData.level} e dificuldade ${questionData.difficulty}.
 Os tópicos relacionados são: ${questionData.topicos.join('; ')}.
 
@@ -52,7 +77,7 @@ ${questionData.options.map(opt => `${opt.letter}) ${opt.text}${opt.isCorrect ? '
 ${questionData.existingExplanation ? `Existe uma explicação anterior:
 ${questionData.existingExplanation}
 
-Por favor, reescreva a explicação de uma forma diferente, mantendo a mesma estrutura.` : 'Por favor, explique detalhadamente por que a alternativa correta está correta e por que as outras alternativas estão incorretas.'}`;
+Por favor, reescreva a explicação de uma forma diferente, mantendo a mesma estrutura e usando HTML para formatação.` : 'Por favor, explique detalhadamente por que a alternativa correta está correta e por que as outras alternativas estão incorretas. Use HTML para formatação.'}`;
     }
 
     console.log('Enviando requisição para Google Gemini via Supabase Edge Function...');
