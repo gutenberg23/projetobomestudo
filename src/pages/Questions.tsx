@@ -401,11 +401,11 @@ const Questions = () => {
         <Header />
         <main className="flex-1 container mx-auto px-4 py-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Questões de Concursos</h1>
+            <h1 className="text-2xl text-[#272f3c] font-extrabold md:text-2xl mb-2 text-xl">Questões de Concursos</h1>
             <Button
               variant="outline"
               onClick={() => setShowScoreCounter(!showScoreCounter)}
-              className="flex items-center"
+              className="flex items-center text-xs md:text-sm"
             >
               <Calculator className="h-4 w-4 mr-2" />
               {showScoreCounter ? "Desativar Pontuação" : "Ativar Pontuação"}

@@ -300,8 +300,8 @@ const Explore = () => {
         <main className="flex-1">
           <div className="container mx-auto px-4 py-8">
             <div className="mb-8">
-              <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Explorar Cursos e Disciplinas</h1>
-              <p className="text-gray-600">Encontre o conteúdo que deseja estudar</p>
+              <h1 className="text-2xl text-[#272f3c] font-extrabold md:text-2xl mb-2 text-xl">Explorar Cursos e Disciplinas</h1>
+              <p className="text-gray-600 text-xs md:text-sm">Encontre o conteúdo que deseja estudar</p>
             </div>
 
             <div className="mb-6">
@@ -315,7 +315,7 @@ const Explore = () => {
                   <Input
                     type="text"
                     placeholder="Buscar cursos ou disciplinas..."
-                    className="pl-10 py-6 text-lg"
+                    className="pl-10 py-6 text-lg md:py-6"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyPress={handleKeyPress}
@@ -343,7 +343,7 @@ const Explore = () => {
             <div className="bg-white rounded-lg overflow-hidden shadow-sm">
               {loading ? <div className="p-8 text-center">
                   <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-                  <p className="mt-3 text-gray-500">Carregando dados...</p>
+                  <p className="mt-3 text-gray-500 text-xs md:text-sm">Carregando dados...</p>
                 </div> : <div className="divide-y divide-gray-100">
                   {filteredData.length > 0 ? filteredData.map(item => <ResultItem 
                     key={item.id} 
@@ -357,9 +357,9 @@ const Explore = () => {
                     friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} 
                     banca={showSubjects ? (item as DisciplinaItemType).banca : undefined}
                     cargo={!showSubjects ? item.descricao : undefined}
-                  />) : searchQuery ? <div className="p-8 text-center text-gray-500">
+                  />) : searchQuery ? <div className="p-8 text-center text-gray-500 text-xs md:text-sm">
                       Nenhum resultado encontrado para "{searchQuery}"
-                    </div> : <div className="p-8 text-center text-gray-500">
+                    </div> : <div className="p-8 text-center text-gray-500 text-xs md:text-sm">
                       {showSubjects ? "Nenhuma disciplina encontrada" : "Nenhum curso encontrado"}
                     </div>}
                 </div>}

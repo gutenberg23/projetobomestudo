@@ -170,7 +170,7 @@ const Concursos = () => {
         <Header />
         <main className="flex-1">
           <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Concursos abertos</h1>
+            <h1 className="text-2xl text-[#272f3c] font-extrabold md:text-2xl mb-2 text-xl">Concursos abertos</h1>
             
             {/* Campo de pesquisa */}
             <div className="mb-6">
@@ -245,13 +245,13 @@ const Concursos = () => {
               </div>
             ) : concursosFiltrados.length === 0 ? (
               <div className="bg-gray-50 rounded-lg p-6 text-center">
-                <p className="text-lg text-gray-600">Nenhum concurso encontrado.</p>
+                <p className="text-base text-gray-600 text-xs md:text-sm">Nenhum concurso encontrado.</p>
                 {(filtroAtivo || termoPesquisa) && (
                   <div className="mt-4 flex justify-center gap-4">
                     {filtroAtivo && (
                       <button 
                         onClick={() => setFiltroAtivo(null)}
-                        className="text-[#5f2ebe] hover:underline"
+                        className="text-[#5f2ebe] hover:underline text-xs md:text-sm"
                       >
                         Limpar filtro de estado
                       </button>
@@ -259,7 +259,7 @@ const Concursos = () => {
                     {termoPesquisa && (
                       <button 
                         onClick={limparPesquisa}
-                        className="text-[#5f2ebe] hover:underline"
+                        className="text-[#5f2ebe] hover:underline text-xs md:text-sm"
                       >
                         Limpar pesquisa
                       </button>
@@ -279,7 +279,7 @@ const Concursos = () => {
                           <div>
                             <button 
                               onClick={() => navegarParaPost(concurso)}
-                              className="text-left text-lg sm:text-xl md:text-2xl font-bold text-[#5f2ebe] hover:text-[#4924a1] transition-colors line-clamp-2"
+                              className="text-left text-base sm:text-lg md:text-xl font-bold text-[#5f2ebe] hover:text-[#4924a1] transition-colors line-clamp-2 text-sm md:text-lg"
                             >
                               {concurso.titulo}
                             </button>
@@ -290,9 +290,9 @@ const Concursos = () => {
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                                   <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
                                     <CalendarIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs sm:text-sm font-medium">Inscrições:</span>
+                                    <span className="text-xs font-medium">Inscrições:</span>
                                   </div>
-                                  <span className="text-xs sm:text-sm text-gray-700">
+                                  <span className="text-xs text-gray-700">
                                     {formatarPeriodo(concurso.dataInicioInscricao, concurso.dataFimInscricao)}
                                     {concurso.prorrogado && (
                                       <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -305,9 +305,9 @@ const Concursos = () => {
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                                   <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
                                     <BriefcaseIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs sm:text-sm font-medium">Cargos:</span>
+                                    <span className="text-xs font-medium">Cargos:</span>
                                   </div>
-                                  <span className="text-xs sm:text-sm text-gray-700 line-clamp-1">
+                                  <span className="text-xs text-gray-700 line-clamp-1">
                                     {concurso.cargos.map(cargo => exibirTextoCargo(cargo)).join(', ')}
                                   </span>
                                 </div>
@@ -315,9 +315,9 @@ const Concursos = () => {
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                                   <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
                                     <MapPinIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs sm:text-sm font-medium">Estados:</span>
+                                    <span className="text-xs font-medium">Estados:</span>
                                   </div>
-                                  <span className="text-xs sm:text-sm text-gray-700">
+                                  <span className="text-xs text-gray-700">
                                     {concurso.estados.join(', ')}
                                   </span>
                                 </div>
@@ -328,9 +328,9 @@ const Concursos = () => {
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                                   <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
                                     <CurrencyDollarIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs sm:text-sm font-medium">Salário:</span>
+                                    <span className="text-xs font-medium">Salário:</span>
                                   </div>
-                                  <span className="text-xs sm:text-sm text-gray-700">
+                                  <span className="text-xs text-gray-700">
                                     Até {concurso.salario}
                                   </span>
                                 </div>
@@ -338,9 +338,9 @@ const Concursos = () => {
                                 <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
                                   <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
                                     <BriefcaseIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs sm:text-sm font-medium">Vagas:</span>
+                                    <span className="text-xs font-medium">Vagas:</span>
                                   </div>
-                                  <span className="text-xs sm:text-sm text-gray-700">
+                                  <span className="text-xs text-gray-700">
                                     {concurso.vagas}
                                   </span>
                                 </div>

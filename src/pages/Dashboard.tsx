@@ -965,10 +965,10 @@ const Dashboard = () => {
         <div className="w-full">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Dashboard</h1>
+              <h1 className="text-2xl text-[#272f3c] font-extrabold md:text-2xl mb-2 text-xl">Dashboard</h1>
               
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Selecione o período:</span>
+                <span className="text-xs text-gray-500 md:text-sm">Selecione o período:</span>
                 <Select value={periodo} onValueChange={setPeriodo}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Selecione o período" />
@@ -995,28 +995,28 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="md:col-span-2 shadow-none border-0">
                 <CardHeader>
-                  <CardTitle>Desempenho Geral</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg md:text-lg">Desempenho Geral</CardTitle>
+                  <CardDescription className="text-xs md:text-xs">
                     Total de questões respondidas no período selecionado
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
                     <div className="text-center">
-                      <p className="text-sm text-gray-500">Questões</p>
-                      <p className="text-2xl font-bold text-blue-600">{totalStats.total}</p>
+                      <p className="text-xs text-gray-500">Questões</p>
+                      <p className="text-lg md:text-xl font-bold text-blue-600">{totalStats.total}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-500">Acertos</p>
-                      <p className="text-2xl font-bold text-green-600">{totalStats.acertos}</p>
+                      <p className="text-xs text-gray-500">Acertos</p>
+                      <p className="text-lg md:text-xl font-bold text-green-600">{totalStats.acertos}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-500">Erros</p>
-                      <p className="text-2xl font-bold text-red-600">{totalStats.erros}</p>
+                      <p className="text-xs text-gray-500">Erros</p>
+                      <p className="text-lg md:text-xl font-bold text-red-600">{totalStats.erros}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-500">Aproveitamento</p>
-                      <p className="text-2xl font-bold text-purple-600">{totalStats.aproveitamento}%</p>
+                      <p className="text-xs text-gray-500">Aproveitamento</p>
+                      <p className="text-lg md:text-xl font-bold text-purple-600">{totalStats.aproveitamento}%</p>
                     </div>
                   </div>
                   
@@ -1071,7 +1071,7 @@ const Dashboard = () => {
               
               <Card className="shadow-none border-0">
                 <CardHeader>
-                  <CardTitle>Percentual de rendimento</CardTitle>
+                  <CardTitle className="text-lg md:text-lg">Percentual de rendimento</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[250px] flex items-center justify-center">
@@ -1100,17 +1100,17 @@ const Dashboard = () => {
                   <div className="flex justify-center items-center mt-4">
                     <div className="flex items-center mr-4">
                       <div className="w-4 h-4 bg-[#5f2ebe] mr-2"></div>
-                      <span className="text-sm">Acertos</span>
+                      <span className="text-xs md:text-sm">Acertos</span>
                     </div>
                     <div className="flex items-center">
                       <div className="w-4 h-4 bg-[#FF8042] mr-2"></div>
-                      <span className="text-sm">Erros</span>
+                      <span className="text-xs md:text-sm">Erros</span>
                     </div>
                   </div>
                   
                   <div className="flex justify-center mt-4">
                     <button 
-                      className="flex items-center text-sm bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-md transition-colors hover:bg-gray-50 focus:outline-none"
+                      className="flex items-center text-xs md:text-sm bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-md transition-colors hover:bg-gray-50 focus:outline-none"
                       onClick={() => setShowConfirmDialog(true)}
                     >
                       <RotateCcw className="h-4 w-4 mr-1.5" />
@@ -1124,8 +1124,8 @@ const Dashboard = () => {
             <Card className="shadow-none border-0">
               <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex-1">
-                  <CardTitle>Estatísticas por disciplina</CardTitle>
-                  <CardDescription className="whitespace-nowrap">
+                  <CardTitle className="text-lg md:text-lg">Estatísticas por disciplina</CardTitle>
+                  <CardDescription className="whitespace-nowrap text-xs md:text-xs">
                     Desempenho detalhado por disciplina {selectedBanca !== "todas" && `(Banca: ${selectedBanca})`}
                   </CardDescription>
                 </div>
@@ -1150,11 +1150,11 @@ const Dashboard = () => {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="py-2 text-left">Disciplina</th>
-                        <th className="py-2 text-center">Certas</th>
-                        <th className="py-2 text-center">Erradas</th>
-                        <th className="py-2 text-center">Total</th>
-                        <th className="py-2 text-center">%</th>
+                        <th className="py-2 text-left text-xs">Disciplina</th>
+                        <th className="py-2 text-center text-xs">Certas</th>
+                        <th className="py-2 text-center text-xs">Erradas</th>
+                        <th className="py-2 text-center text-xs">Total</th>
+                        <th className="py-2 text-center text-xs">%</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1165,7 +1165,7 @@ const Dashboard = () => {
                               className="border-b hover:bg-gray-50 cursor-pointer"
                               onClick={() => toggleDisciplina(disciplina.disciplina)}
                             >
-                              <td className="py-2 flex items-center">
+                              <td className="py-2 flex items-center text-xs">
                                 <span className="mr-2 text-gray-500 inline-flex items-center justify-center w-5 h-5">
                                   {expandedDisciplinas.includes(disciplina.disciplina) 
                                     ? <ChevronDown size={16} /> 
@@ -1178,9 +1178,9 @@ const Dashboard = () => {
                                   </span>
                                 )}
                               </td>
-                            <td className="py-2 text-center">{disciplina.certas}</td>
-                            <td className="py-2 text-center">{disciplina.erradas}</td>
-                            <td className="py-2 text-center">{disciplina.total}</td>
+                            <td className="py-2 text-center text-xs">{disciplina.certas}</td>
+                            <td className="py-2 text-center text-xs">{disciplina.erradas}</td>
+                            <td className="py-2 text-center text-xs">{disciplina.total}</td>
                               <td className="py-2 text-center">
                                 <div className="flex items-center justify-center">
                                   <div className="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
@@ -1192,7 +1192,7 @@ const Dashboard = () => {
                                       style={{ width: `${disciplina.aproveitamento}%` }}
                                     ></div>
                                   </div>
-                                  <span>{disciplina.aproveitamento}%</span>
+                                  <span className="text-xs">{disciplina.aproveitamento}%</span>
                                 </div>
                               </td>
                             </tr>
@@ -1207,7 +1207,7 @@ const Dashboard = () => {
                                         className="bg-gray-50 text-sm border-b border-gray-100 cursor-pointer hover:bg-gray-100"
                                         onClick={() => toggleAssunto(`${disciplina.disciplina}-${assunto.assunto}`)}
                                       >
-                                        <td className="py-2 pl-8 text-gray-700 font-medium flex items-center">
+                                        <td className="py-2 pl-8 text-gray-700 font-medium flex items-center text-xs">
                                           <span className="mr-2 text-gray-400 inline-flex items-center justify-center w-4 h-4">
                                             {expandedAssuntos.includes(`${disciplina.disciplina}-${assunto.assunto}`) 
                                               ? <ChevronDown size={14} /> 
@@ -1215,9 +1215,9 @@ const Dashboard = () => {
                                           </span>
                                           {assunto.assunto}
                                         </td>
-                                        <td className="py-2 text-center text-gray-700">{assunto.certas}</td>
-                                        <td className="py-2 text-center text-gray-700">{assunto.erradas}</td>
-                                        <td className="py-2 text-center text-gray-700">{assunto.total}</td>
+                                        <td className="py-2 text-center text-gray-700 text-xs">{assunto.certas}</td>
+                                        <td className="py-2 text-center text-gray-700 text-xs">{assunto.erradas}</td>
+                                        <td className="py-2 text-center text-gray-700 text-xs">{assunto.total}</td>
                                         <td className="py-2 text-center text-gray-700">
                                           <div className="flex items-center justify-center">
                                             <div className="w-12 bg-gray-200 rounded-full h-1 mr-2">
@@ -1229,7 +1229,7 @@ const Dashboard = () => {
                                                 style={{ width: `${assunto.aproveitamento}%` }}
                                               ></div>
                                             </div>
-                                            <span>{assunto.aproveitamento}%</span>
+                                            <span className="text-xs">{assunto.aproveitamento}%</span>
                                           </div>
                                         </td>
                                       </tr>
@@ -1243,7 +1243,7 @@ const Dashboard = () => {
                                                 key={`topico-${disciplina.disciplina}-${assunto.assunto}-${topicoIndex}`} 
                                                 className="bg-gray-100 text-sm border-b border-gray-50"
                                               >
-                                                <td className="py-2 pl-16 text-gray-600">
+                                                <td className="py-2 pl-16 text-gray-600 text-xs">
                                                   {topico.topico}
                                                   {selectedBanca !== "todas" && (
                                                     <span className="ml-2 text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">
@@ -1251,9 +1251,9 @@ const Dashboard = () => {
                                                     </span>
                                                   )}
                                                 </td>
-                                                <td className="py-2 text-center text-gray-600">{topico.certas}</td>
-                                                <td className="py-2 text-center text-gray-600">{topico.erradas}</td>
-                                                <td className="py-2 text-center text-gray-600">{topico.total}</td>
+                                                <td className="py-2 text-center text-gray-600 text-xs">{topico.certas}</td>
+                                                <td className="py-2 text-center text-gray-600 text-xs">{topico.erradas}</td>
+                                                <td className="py-2 text-center text-gray-600 text-xs">{topico.total}</td>
                                                 <td className="py-2 text-center text-gray-600">
                                                   <div className="flex items-center justify-center">
                                                     <div className="w-10 bg-gray-200 rounded-full h-1 mr-2">
@@ -1265,14 +1265,14 @@ const Dashboard = () => {
                                                         style={{ width: `${topico.aproveitamento}%` }}
                                                       ></div>
                                                     </div>
-                                                    <span>{topico.aproveitamento}%</span>
+                                                    <span className="text-xs">{topico.aproveitamento}%</span>
                                                   </div>
                                                 </td>
                                               </tr>
                                             ))
                                           ) : (
                                             <tr className="bg-gray-100 text-sm border-b border-gray-50">
-                                              <td colSpan={5} className="py-3 text-center text-gray-500 pl-16">
+                                              <td colSpan={5} className="py-3 text-center text-gray-500 pl-16 text-xs">
                                                 Nenhum tópico encontrado para este assunto
                                               </td>
                                             </tr>
@@ -1283,7 +1283,7 @@ const Dashboard = () => {
                                   ))
                                 ) : (
                                   <tr className="bg-gray-50 text-sm border-b border-gray-100">
-                                    <td colSpan={5} className="py-3 text-center text-gray-500">
+                                    <td colSpan={5} className="py-3 text-center text-gray-500 text-xs">
                                       Nenhum assunto encontrado para esta disciplina
                                     </td>
                                   </tr>
@@ -1294,7 +1294,7 @@ const Dashboard = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={6} className="py-4 text-center text-gray-500">
+                          <td colSpan={6} className="py-4 text-center text-gray-500 text-xs">
                             {selectedBanca !== "todas" 
                               ? `Nenhuma questão respondida da banca ${selectedBanca} no período selecionado`
                               : "Nenhum dado disponível para o período selecionado"
@@ -1314,8 +1314,8 @@ const Dashboard = () => {
             <Card className="shadow-none border-0">
               <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                 <div className="flex-1">
-                  <CardTitle>Simulados</CardTitle>
-                  <CardDescription className="whitespace-nowrap">
+                  <CardTitle className="text-lg md:text-lg">Simulados</CardTitle>
+                  <CardDescription className="whitespace-nowrap text-xs md:text-xs">
                     Resultados dos simulados realizados
                   </CardDescription>
                 </div>
@@ -1338,21 +1338,21 @@ const Dashboard = () => {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
-                          <th className="py-2 text-left">Simulado</th>
-                          <th className="py-2 text-center">Questões</th>
-                          <th className="py-2 text-center">Acertos</th>
-                          <th className="py-2 text-center">Erros</th>
-                          <th className="py-2 text-center">Aproveitamento</th>
-                          <th className="py-2 text-center">Realizado</th>
+                          <th className="py-2 text-left text-xs">Simulado</th>
+                          <th className="py-2 text-center text-xs">Questões</th>
+                          <th className="py-2 text-center text-xs">Acertos</th>
+                          <th className="py-2 text-center text-xs">Erros</th>
+                          <th className="py-2 text-center text-xs">Aproveitamento</th>
+                          <th className="py-2 text-center text-xs">Realizado</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredSimulados.map((simulado) => (
                           <tr key={simulado.id} className="border-b">
-                            <td className="py-2">{simulado.titulo}</td>
-                            <td className="py-2 text-center">{simulado.questoes_total}</td>
-                            <td className="py-2 text-center">{simulado.acertos}</td>
-                            <td className="py-2 text-center">{simulado.erros}</td>
+                            <td className="py-2 text-xs">{simulado.titulo}</td>
+                            <td className="py-2 text-center text-xs">{simulado.questoes_total}</td>
+                            <td className="py-2 text-center text-xs">{simulado.acertos}</td>
+                            <td className="py-2 text-center text-xs">{simulado.erros}</td>
                             <td className="py-2 text-center">
                               <div className="flex items-center justify-center">
                                 <div className="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
@@ -1361,7 +1361,7 @@ const Dashboard = () => {
                                     style={{ width: `${simulado.aproveitamento}%` }}
                                   ></div>
                                 </div>
-                                <span>{simulado.aproveitamento}%</span>
+                                <span className="text-xs">{simulado.aproveitamento}%</span>
                               </div>
                             </td>
                             <td className="py-2 text-center">
@@ -1379,8 +1379,8 @@ const Dashboard = () => {
                     <div className="flex justify-center mb-4">
                       <FileX className="h-16 w-16 text-muted-foreground" />
                     </div>
-                    <p className="text-gray-500 mb-2">Nada por aqui</p>
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-500 mb-2 text-xs md:text-sm">Nada por aqui</p>
+                    <p className="text-gray-500 text-xs md:text-sm">
                       Não foram encontrados simulados para o filtro selecionado
                     </p>
                     <p className="text-gray-500 text-xs mt-2">
@@ -1398,8 +1398,8 @@ const Dashboard = () => {
           <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Zerar estatísticas</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-lg md:text-lg">Zerar estatísticas</DialogTitle>
+                <DialogDescription className="text-xs md:text-xs">
                   Esta ação irá apagar permanentemente todas as suas estatísticas de resolução de questões. Esta ação é irreversível.
                 </DialogDescription>
               </DialogHeader>
@@ -1408,6 +1408,7 @@ const Dashboard = () => {
                   variant="outline"
                   onClick={() => setShowConfirmDialog(false)}
                   disabled={isDeleting}
+                  className="text-xs md:text-sm"
                 >
                   Cancelar
                 </Button>
@@ -1415,6 +1416,7 @@ const Dashboard = () => {
                   variant="destructive"
                   onClick={apagarDadosUsuario}
                   disabled={isDeleting}
+                  className="text-xs md:text-sm"
                 >
                   {isDeleting ? "Apagando..." : "Sim, apagar tudo"}
                 </Button>

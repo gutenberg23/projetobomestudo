@@ -19,7 +19,6 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
   const [isCurso, setIsCurso] = useState(true);
   const [realId, setRealId] = useState("");
   const [cargo, setCargo] = useState("");
-  const [showTooltip, setShowTooltip] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -206,9 +205,9 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
               )}
               {isCurso && courseInfo && (
                 <TooltipProvider>
-                  <Tooltip open={showTooltip}>
-                    <TooltipTrigger onClick={() => setShowTooltip(!showTooltip)} className="md:hover:cursor-help">
-                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-[#ede7f9] cursor-pointer">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-[#ede7f9] cursor-pointer hover:cursor-help">
                         <Info className="w-3.5 h-3.5 text-[#5f2ebe]" />
                       </div>
                     </TooltipTrigger>

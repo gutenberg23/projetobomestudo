@@ -244,12 +244,12 @@ const MyCourses = () => {
   return <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
-        <h1 className="text-3xl mb-2 text-[#272f3c] font-extrabold md:text-3xl">Minhas Matrículas</h1>
-        <p className="text-[#67748a] mb-6">Aqui você encontra as suas disciplinas e seus concursos favoritos.</p>
+        <h1 className="text-2xl mb-2 text-[#272f3c] font-extrabold md:text-2xl text-xl">Minhas Matrículas</h1>
+        <p className="text-[#67748a] mb-6 text-xs md:text-sm">Aqui você encontra as suas disciplinas e seus concursos favoritos.</p>
 
         {loading ? <div className="flex items-center justify-center my-20">
             <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-            <p className="ml-3 text-gray-500">Carregando favoritos...</p>
+            <p className="ml-3 text-gray-500 text-xs md:text-sm">Carregando favoritos...</p>
           </div> : <div className="space-y-8">
             {/* Anúncio acima do card 'Concursos' */}
             <div className="my-6">
@@ -257,7 +257,7 @@ const MyCourses = () => {
             </div>
             
             <section>
-              <h2 className="text-2xl mb-4 text-[#272f3c] font-bold">Concursos</h2>
+              <h2 className="text-xl mb-4 text-[#272f3c] font-bold md:text-xl text-lg">Concursos</h2>
               <div className="bg-white rounded-lg overflow-hidden">
                 <div className="divide-y divide-gray-100">
                   {favoriteCourses.length > 0 ? favoriteCourses.map(course => <FavoriteItem 
@@ -266,7 +266,7 @@ const MyCourses = () => {
                     title={course.titulo} 
                     onRemove={handleRemoveCourse}
                     cargo={course.descricao}
-                  />) : <div className="p-8 text-center text-gray-500">
+                  />) : <div className="p-8 text-center text-gray-500 text-xs md:text-sm">
                       Você ainda não adicionou nenhum curso aos favoritos.
                     </div>}
                 </div>
@@ -279,7 +279,7 @@ const MyCourses = () => {
             </div>
             
             <section>
-              <h2 className="text-2xl mb-4 text-[#272f3c] font-bold">Disciplinas</h2>
+              <h2 className="text-xl mb-4 text-[#272f3c] font-bold md:text-xl text-lg">Disciplinas</h2>
               <div className="bg-white rounded-lg overflow-hidden">
                 <div className="divide-y divide-gray-100">
                   {favoriteSubjects.length > 0 ? favoriteSubjects.map(subject => <FavoriteItem 
@@ -288,7 +288,7 @@ const MyCourses = () => {
                     title={subject.titulo} 
                     onRemove={handleRemoveSubject}
                     banca={subject.banca} 
-                  />) : <div className="p-8 text-center text-gray-500">
+                  />) : <div className="p-8 text-center text-gray-500 text-xs md:text-sm">
                       Você ainda não adicionou nenhuma disciplina aos favoritos.
                     </div>}
                 </div>

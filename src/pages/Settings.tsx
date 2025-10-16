@@ -346,8 +346,8 @@ const Settings = () => {
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto px-4 py-8">
-          <h1 className="text-3xl text-[#272f3c] font-extrabold md:text-3xl mb-2">Minha conta</h1>
-          <p className="text-[#67748a] mb-6">
+          <h1 className="text-2xl text-[#272f3c] font-extrabold md:text-2xl mb-2 text-xl">Minha conta</h1>
+          <p className="text-[#67748a] mb-6 text-xs md:text-sm">
             Mantendo sua conta atualizada, você nos ajuda a disponibilizar dados mais precisos sobre as aprovações pelo Brasil.
           </p>
 
@@ -373,8 +373,8 @@ const Settings = () => {
                     />
                   </label>
                 </div>
-                <h2 className="text-lg font-medium">{formData.nome}</h2>
-                <p className="text-gray-500 text-sm">{formData.email}</p>
+                <h2 className="text-base font-medium text-xs md:text-base">{formData.nome}</h2>
+                <p className="text-gray-500 text-xs">{formData.email}</p>
               </div>
             </div>
 
@@ -382,10 +382,10 @@ const Settings = () => {
             <div className="md:col-span-2">
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div>
-                  <h3 className="text-sm uppercase text-[#67748a] font-medium mb-4">Sobre você</h3>
+                  <h3 className="text-xs uppercase text-[#67748a] font-medium mb-4">Sobre você</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="nome">Nome *</Label>
+                      <Label htmlFor="nome" className="text-xs">Nome *</Label>
                       <Input
                         id="nome"
                         value={formData.nome}
@@ -395,7 +395,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="sobrenome">Sobrenome</Label>
+                      <Label htmlFor="sobrenome" className="text-xs">Sobrenome</Label>
                       <Input
                         id="sobrenome"
                         value={formData.sobrenome}
@@ -404,7 +404,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="nome_social">Nome social</Label>
+                      <Label htmlFor="nome_social" className="text-xs">Nome social</Label>
                       <Input
                         id="nome_social"
                         value={formData.nome_social}
@@ -413,7 +413,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="nascimento">Data de Nascimento</Label>
+                      <Label htmlFor="nascimento" className="text-xs">Data de Nascimento</Label>
                       <Input
                         id="nascimento"
                         type="date"
@@ -429,7 +429,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="sexo">Sexo</Label>
+                      <Label htmlFor="sexo" className="text-xs">Sexo</Label>
                       <Select
                         onValueChange={(value) => handleChange("sexo", value)}
                         value={formData.sexo}
@@ -446,7 +446,7 @@ const Settings = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="escolaridade">Escolaridade</Label>
+                      <Label htmlFor="escolaridade" className="text-xs">Escolaridade</Label>
                       <Select
                         onValueChange={(value) => handleChange("escolaridade", value)}
                         value={formData.escolaridade}
@@ -463,7 +463,7 @@ const Settings = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="estado_civil">Estado Civil</Label>
+                      <Label htmlFor="estado_civil" className="text-xs">Estado Civil</Label>
                       <Select
                         onValueChange={(value) => handleChange("estado_civil", value)}
                         value={formData.estado_civil}
@@ -485,10 +485,10 @@ const Settings = () => {
                 <Separator />
 
                 <div>
-                  <h3 className="text-sm uppercase text-[#67748a] font-medium mb-4">Contato</h3>
+                  <h3 className="text-xs uppercase text-[#67748a] font-medium mb-4">Contato</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">E-mail *</Label>
+                      <Label htmlFor="email" className="text-xs">E-mail *</Label>
                       <Input
                         id="email"
                         type="email"
@@ -498,7 +498,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="celular">Celular</Label>
+                      <Label htmlFor="celular" className="text-xs">Celular</Label>
                       <MaskedInput
                         mask="(99)99999-9999"
                         id="celular"
@@ -508,7 +508,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="telefone">Telefone</Label>
+                      <Label htmlFor="telefone" className="text-xs">Telefone</Label>
                       <MaskedInput
                         mask="(99)9999-9999"
                         id="telefone"
@@ -523,10 +523,10 @@ const Settings = () => {
                 <Separator />
 
                 <div>
-                  <h3 className="text-sm uppercase text-[#67748a] font-medium mb-4">Endereço</h3>
+                  <h3 className="text-xs uppercase text-[#67748a] font-medium mb-4">Endereço</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="cep">CEP</Label>
+                      <Label htmlFor="cep" className="text-xs">CEP</Label>
                       <MaskedInput
                         mask="99999-999"
                         id="cep"
@@ -536,7 +536,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="endereco">Endereço</Label>
+                      <Label htmlFor="endereco" className="text-xs">Endereço</Label>
                       <Input
                         id="endereco"
                         value={formData.endereco}
@@ -545,7 +545,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="numero">Número</Label>
+                      <Label htmlFor="numero" className="text-xs">Número</Label>
                       <Input
                         id="numero"
                         value={formData.numero}
@@ -554,7 +554,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="bairro">Bairro</Label>
+                      <Label htmlFor="bairro" className="text-xs">Bairro</Label>
                       <Input
                         id="bairro"
                         value={formData.bairro}
@@ -563,7 +563,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="complemento">Complemento</Label>
+                      <Label htmlFor="complemento" className="text-xs">Complemento</Label>
                       <Input
                         id="complemento"
                         value={formData.complemento}
@@ -572,7 +572,7 @@ const Settings = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="estado">Estado</Label>
+                      <Label htmlFor="estado" className="text-xs">Estado</Label>
                       <Select
                         onValueChange={(value) => handleChange("estado", value)}
                         value={formData.estado}
@@ -612,7 +612,7 @@ const Settings = () => {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="cidade">Cidade</Label>
+                      <Label htmlFor="cidade" className="text-xs">Cidade</Label>
                       <Input
                         id="cidade"
                         value={formData.cidade}

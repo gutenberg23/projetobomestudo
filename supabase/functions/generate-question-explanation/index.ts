@@ -1,3 +1,4 @@
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -12,6 +13,7 @@ serve(async (req) => {
 
   try {
     const { prompt } = await req.json();
+    // @ts-ignore
     const GOOGLE_GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
     
     if (!GOOGLE_GEMINI_API_KEY) {

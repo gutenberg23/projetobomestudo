@@ -1,7 +1,7 @@
 import React, { Dispatch, SetStateAction, useState, useEffect, useMemo } from "react";
 import { ChevronDown, ChevronUp, Filter, XCircle, Eraser, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Filters, FilterItem } from './types';
+import { Filters } from './types';
 import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/admin/questions/form/MultiSelect";
 import { supabase } from "@/integrations/supabase/client";
@@ -130,8 +130,6 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
         if (error) throw error;
 
         if (questions) {
-          // Extrair disciplinas únicas
-          const uniqueDisciplines = [...new Set(questions.map(q => q.disciplina))].filter(Boolean);
           // Mapear disciplinas para assuntos
           const subjectsByDiscipline: {[key: string]: string[]} = {};
           // Mapear assuntos para tópicos
@@ -242,8 +240,6 @@ const QuestionFilters: React.FC<QuestionFiltersProps> = ({
     
     return [...topicsSet].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)));
   }, [filters.topicos, topicsBySubject]);
-
-
 
   const handleDeleteAllQuestionsConfirm = async () => {
     if (!handleDeleteAllQuestions) return;

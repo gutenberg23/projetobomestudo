@@ -31,7 +31,7 @@ const BlogPostPage = () => {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { } = useAuth();
   
   // Buscar o post com base no slug
   useEffect(() => {
@@ -321,236 +321,226 @@ const BlogPostPage = () => {
         <Header />
         <main className="flex-1">
           <div className="container mx-auto px-4 py-8">
-            <div className="max-w-4xl mx-auto">
-              {/* Banner acima do post */}
-              <div className="mb-6">
-                <AdBanner position="blog_post_top" className="rounded-lg" />
-              </div>
-              
-              {/* Navegação de volta */}
-              <div className="mb-6">
-                <Link to="/blog" className="text-primary hover:underline flex items-center">
-                  <span>← Voltar para o blog</span>
-                </Link>
-              </div>
-              
-              {/* Cabeçalho do post */}
-              <article className="bg-white rounded-lg shadow-sm overflow-hidden">
-                {post.featuredImage && (
-                  <img 
-                    src={post.featuredImage} 
-                    alt={post.title}
-                    className="w-full h-64 md:h-96 object-cover"
-                  />
-                )}
-                
-                <div className="p-6 md:p-8">
-                  <div className="mb-6">
-                    {post.category && (
-                      <Link 
-                        to={`/blog/categoria/${post.category.toLowerCase()}`}
-                        className="inline-block bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full hover:bg-primary/20 transition-colors mb-4"
-                      >
-                        {post.category}
-                      </Link>
-                    )}
-                    
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                      {post.title}
-                    </h1>
-                    
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
-                      <div className="flex items-center">
-                        <User className="h-4 w-4 mr-1" />
-                        {post.author}
-                      </div>
-                        
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {format(new Date(post.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                      </div>
-                        
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {Math.ceil((typeof post.readingTime === 'string' ? parseInt(post.readingTime) : typeof post.readingTime === 'number' ? post.readingTime : 0) / 60)} min de leitura
-                      </div>
-                        
-                      <div className="flex items-center">
-                        <Heart className="h-4 w-4 mr-1" />
-                        {post.likesCount} curtidas
-                      </div>
-                        
-                      <div className="flex items-center">
-                        <BookOpen className="h-4 w-4 mr-1" />
-                        {post.viewCount} visualizações
+            {/* Banner acima do post */}
+            <div className="mb-6">
+              <AdBanner position="blog_post_top" className="rounded-lg" />
+            </div>
+            
+            {/* Layout de duas colunas: post principal à esquerda, sidebar à direita */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Coluna principal - post */}
+              <div className="lg:col-span-2">
+                <article className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  {post.featuredImage && (
+                    <img 
+                      src={post.featuredImage} 
+                      alt={post.title}
+                      className="w-full h-64 md:h-96 object-cover"
+                    />
+                  )}
+                  
+                  <div className="p-6 md:p-8">
+                    <div className="mb-6">
+                      {post.category && (
+                        <Link 
+                          to={`/blog/categoria/${post.category.toLowerCase()}`}
+                          className="inline-block bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full hover:bg-primary/20 transition-colors mb-4"
+                        >
+                          {post.category}
+                        </Link>
+                      )}
+                      
+                      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                        {post.title}
+                      </h1>
+                      
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 mr-1" />
+                          {post.author}
+                        </div>
+                          
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          {format(new Date(post.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                        </div>
+                          
+                        <div className="flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          {Math.ceil((typeof post.readingTime === 'string' ? parseInt(post.readingTime) : typeof post.readingTime === 'number' ? post.readingTime : 0) / 60)} min de leitura
+                        </div>
+                          
+                        <div className="flex items-center">
+                          <Heart className="h-4 w-4 mr-1" />
+                          {post.likesCount} curtidas
+                        </div>
+                          
+                        <div className="flex items-center">
+                          <BookOpen className="h-4 w-4 mr-1" />
+                          {post.viewCount} visualizações
+                        </div>
                       </div>
                     </div>
+                    
+                    {/* Conteúdo do post */}
+                    <div 
+                      className="prose max-w-none text-gray-700 mb-8"
+                      dangerouslySetInnerHTML={{ __html: post.content }}
+                    />
+                    
+                    {/* Tags */}
+                    {post.tags && post.tags.length > 0 && (
+                      <div className="mb-8">
+                        <div className="flex flex-wrap gap-2">
+                          {post.tags.map(tag => (
+                            <Link
+                              key={tag}
+                              to={`/blog/tag/${tag.toLowerCase()}`}
+                              className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full hover:bg-gray-200 transition-colors"
+                            >
+                              #{tag}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Ações do post */}
+                    <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                      <div className="flex items-center space-x-4">
+                        <Button
+                          variant={isLiked ? "default" : "outline"}
+                          size="sm"
+                          onClick={handleLike}
+                          className="flex items-center gap-2"
+                        >
+                          <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+                          Curtir
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleShare}
+                          className="flex items-center gap-2"
+                        >
+                          <Share2 className="h-4 w-4" />
+                          Compartilhar
+                        </Button>
+                      </div>
+                      
+                      {post.author && (
+                        <div className="flex items-center">
+                          <div className="ml-3">
+                            <p className="text-sm font-medium text-gray-900">
+                              {post.author}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Conteúdo do post */}
-                  <div 
-                    className="prose max-w-none text-gray-700 mb-8"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
-                  />
-                  
-                  {/* Tags */}
-                  {post.tags && post.tags.length > 0 && (
-                    <div className="mb-8">
-                      <div className="flex flex-wrap gap-2">
-                        {post.tags.map(tag => (
+                </article>
+                
+                {/* Banner abaixo do post */}
+                <div className="my-8">
+                  <AdBanner position="blog_post_bottom" className="rounded-lg" />
+                </div>
+              </div>
+              
+              {/* Coluna lateral - posts relacionados */}
+              <div className="space-y-8">
+                {/* Posts relacionados */}
+                {relatedPostsList.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">Posts relacionados</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-4">
+                        {relatedPostsList.map(relatedPost => (
                           <Link
-                            key={tag}
-                            to={`/blog/tag/${tag.toLowerCase()}`}
-                            className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full hover:bg-gray-200 transition-colors"
+                            key={relatedPost.id}
+                            to={`/blog/${relatedPost.slug}`}
+                            className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
                           >
-                            #{tag}
+                            {relatedPost.featuredImage && (
+                              <img
+                                src={relatedPost.featuredImage}
+                                alt={relatedPost.title}
+                                className="w-16 h-16 object-cover rounded"
+                              />
+                            )}
+                            <div>
+                              <h3 className="font-medium text-gray-900 line-clamp-2">
+                                {relatedPost.title}
+                              </h3>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {format(new Date(relatedPost.createdAt), "dd/MM/yyyy")}
+                              </p>
+                            </div>
                           </Link>
                         ))}
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Ações do post */}
-                  <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                    <div className="flex items-center space-x-4">
-                      <Button
-                        variant={isLiked ? "default" : "outline"}
-                        size="sm"
-                        onClick={handleLike}
-                        className="flex items-center gap-2"
-                      >
-                        <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-                        Curtir
-                      </Button>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleShare}
-                        className="flex items-center gap-2"
-                      >
-                        <Share2 className="h-4 w-4" />
-                        Compartilhar
-                      </Button>
-                    </div>
-                    
-                    {post.author && (
-                      <div className="flex items-center">
-                        <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-900">
-                            {post.author}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </article>
-              
-              {/* Banner abaixo do post */}
-              <div className="my-8">
-                <AdBanner position="blog_post_bottom" className="rounded-lg" />
-              </div>
-            </div>
-            
-            {/* Barra lateral com posts relacionados */}
-            <div className="max-w-4xl mx-auto mt-12">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                  {/* Posts relacionados */}
-                  {relatedPostsList.length > 0 && (
-                    <Card className="mb-8">
-                      <CardHeader>
-                        <CardTitle className="text-lg font-semibold">Posts relacionados</CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-4">
-                          {relatedPostsList.map(relatedPost => (
-                            <Link
-                              key={relatedPost.id}
-                              to={`/blog/${relatedPost.slug}`}
-                              className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                              {relatedPost.featuredImage && (
-                                <img
-                                  src={relatedPost.featuredImage}
-                                  alt={relatedPost.title}
-                                  className="w-16 h-16 object-cover rounded"
-                                />
-                              )}
-                              <div>
-                                <h3 className="font-medium text-gray-900 line-clamp-2">
-                                  {relatedPost.title}
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {format(new Date(relatedPost.createdAt), "dd/MM/yyyy")}
-                                </p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                  
-                  {/* Posts da mesma categoria */}
-                  {sameCategoryPosts.length > 0 && (
-                    <Card className="mb-8">
-                      <CardHeader>
-                        <CardTitle className="text-lg font-semibold">
-                          Mais artigos sobre {post.category}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <div className="space-y-4">
-                          {sameCategoryPosts.map(categoryPost => (
-                            <Link
-                              key={categoryPost.id}
-                              to={`/blog/${categoryPost.slug}`}
-                              className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                              {categoryPost.featuredImage && (
-                                <img
-                                  src={categoryPost.featuredImage}
-                                  alt={categoryPost.title}
-                                  className="w-16 h-16 object-cover rounded"
-                                />
-                              )}
-                              <div>
-                                <h3 className="font-medium text-gray-900 line-clamp-2">
-                                  {categoryPost.title}
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {format(new Date(categoryPost.createdAt), "dd/MM/yyyy")}
-                                </p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                        <div className="mt-4 pt-4 border-t border-gray-200">
-                          <Link
-                            to={`/blog/categoria/${post.category?.toLowerCase()}`}
-                            className="text-sm text-primary hover:underline"
-                          >
-                            Ver todos os artigos sobre {post.category}
-                          </Link>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-                
-                <div className="space-y-8">
-                  {/* Últimas notícias */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold">Últimas notícias</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <LatestNews posts={latestPosts} title="" />
                     </CardContent>
                   </Card>
-                </div>
+                )}
+                
+                {/* Posts da mesma categoria */}
+                {sameCategoryPosts.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold">
+                        Mais artigos sobre {post.category}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="space-y-4">
+                        {sameCategoryPosts.map(categoryPost => (
+                          <Link
+                            key={categoryPost.id}
+                            to={`/blog/${categoryPost.slug}`}
+                            className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+                          >
+                            {categoryPost.featuredImage && (
+                              <img
+                                src={categoryPost.featuredImage}
+                                alt={categoryPost.title}
+                                className="w-16 h-16 object-cover rounded"
+                              />
+                            )}
+                            <div>
+                              <h3 className="font-medium text-gray-900 line-clamp-2">
+                                {categoryPost.title}
+                              </h3>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {format(new Date(categoryPost.createdAt), "dd/MM/yyyy")}
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <Link
+                          to={`/blog/categoria/${post.category?.toLowerCase()}`}
+                          className="text-sm text-primary hover:underline"
+                        >
+                          Ver todos os artigos sobre {post.category}
+                        </Link>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {/* Últimas notícias */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg font-semibold">Últimas notícias</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <LatestNews posts={latestPosts} title="" />
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>

@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/table';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { ActivityLogger } from '@/services/activity-logger';
@@ -48,6 +49,7 @@ interface QuestionBook {
 }
 
 export default function QuestionBooks() {
+  const { user } = useAuth();
   const [books, setBooks] = useState<QuestionBook[]>([]);
   const [publicBooks, setPublicBooks] = useState<QuestionBook[]>([]);
   const [loading, setLoading] = useState(true);
@@ -239,10 +241,8 @@ export default function QuestionBooks() {
       fetchBooks();
       
       // Registrar atividade
-      await ActivityLogger.logActivity('question_book_created', {
-        bookId: data.id,
-        bookName: data.nome
-      });
+      await ActivityLogger.logNotebookCreate(data.id, data.nome);
+
     } catch (error) {
       console.error('Erro ao criar caderno:', error);
       toast.error('Erro ao criar o caderno');
@@ -386,8 +386,8 @@ export default function QuestionBooks() {
         <main className="flex-1">
           <div className="container mx-auto px-4 py-8">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Meus Cadernos de Questões</h1>
-              <p className="text-gray-600">Organize e estude suas questões favoritas</p>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2 text-xl md:text-2xl">Meus Cadernos de Questões</h1>
+              <p className="text-gray-600 text-xs md:text-sm">Organize e estude suas questões favoritas</p>
             </div>
 
             <div className="mb-6">
@@ -398,20 +398,20 @@ export default function QuestionBooks() {
               {/* Meus Cadernos */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-semibold text-gray-900">Meus Cadernos</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 text-base md:text-lg">Meus Cadernos</h2>
                   <Dialog open={open} onOpenChange={setOpen}>
                     <DialogTrigger asChild>
-                      <Button onClick={handleOpenCreate} className="flex items-center gap-2">
+                      <Button onClick={handleOpenCreate} className="flex items-center gap-2 text-xs md:text-sm">
                         <Plus className="h-4 w-4" />
                         Novo Caderno
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>
+                        <DialogTitle className="text-lg md:text-lg">
                           {editingBook ? 'Editar Caderno' : 'Criar Novo Caderno'}
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-xs md:text-sm">
                           {editingBook 
                             ? 'Edite as informações do seu caderno' 
                             : 'Crie um novo caderno para organizar suas questões'}
@@ -419,7 +419,7 @@ export default function QuestionBooks() {
                       </DialogHeader>
                       <div className="space-y-4">
                         <div>
-                          <label className="text-sm font-medium text-gray-700 mb-1 block">
+                          <label className="text-xs font-medium text-gray-700 mb-1 block">
                             Nome do Caderno
                           </label>
                           <Input
@@ -429,7 +429,7 @@ export default function QuestionBooks() {
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700 mb-1 block">
+                          <label className="text-xs font-medium text-gray-700 mb-1 block">
                             Visibilidade
                           </label>
                           <Select value={newBookType} onValueChange={(value: 'public' | 'private') => setNewBookType(value)}>
@@ -443,10 +443,10 @@ export default function QuestionBooks() {
                           </Select>
                         </div>
                         <div className="flex justify-end gap-3 pt-4">
-                          <Button variant="outline" onClick={() => setOpen(false)}>
+                          <Button variant="outline" onClick={() => setOpen(false)} className="text-xs md:text-sm">
                             Cancelar
                           </Button>
-                          <Button onClick={editingBook ? handleEditBook : handleCreateBook}>
+                          <Button onClick={editingBook ? handleEditBook : handleCreateBook} className="text-xs md:text-sm">
                             {editingBook ? 'Atualizar' : 'Criar'}
                           </Button>
                         </div>
@@ -457,10 +457,10 @@ export default function QuestionBooks() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Questões</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
+                      <TableHead className="text-xs">Nome</TableHead>
+                      <TableHead className="text-xs">Questões</TableHead>
+                      <TableHead className="text-xs">Status</TableHead>
+                      <TableHead className="text-right text-xs">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -471,8 +471,8 @@ export default function QuestionBooks() {
                           className="cursor-pointer hover:bg-gray-50"
                           onClick={() => navigate(`/cadernos/${book.id}`)}
                         >
-                          <TableCell className="font-medium">{book.nome}</TableCell>
-                          <TableCell>{book.total_questions || 0}</TableCell>
+                          <TableCell className="font-medium text-xs">{book.nome}</TableCell>
+                          <TableCell className="text-xs">{book.total_questions || 0}</TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               book.is_public 
@@ -510,7 +510,7 @@ export default function QuestionBooks() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={4} className="text-center py-8 text-gray-500 text-xs md:text-sm">
                           Você ainda não criou nenhum caderno.
                         </TableCell>
                       </TableRow>
@@ -530,7 +530,7 @@ export default function QuestionBooks() {
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 <div className="p-6 border-b border-gray-200">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-semibold text-gray-900">Cadernos Públicos</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 text-base md:text-lg">Cadernos Públicos</h2>
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -539,7 +539,7 @@ export default function QuestionBooks() {
                         onChange={(e) => setShowOnlyFavorites(e.target.checked)}
                         className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
                       />
-                      <label htmlFor="favorites-only" className="text-sm text-gray-700">
+                      <label htmlFor="favorites-only" className="text-xs text-gray-700">
                         Apenas favoritos
                       </label>
                     </div>
@@ -554,10 +554,10 @@ export default function QuestionBooks() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Autor</TableHead>
-                      <TableHead>Questões</TableHead>
-                      <TableHead className="text-right">Favorito</TableHead>
+                      <TableHead className="text-xs">Nome</TableHead>
+                      <TableHead className="text-xs">Autor</TableHead>
+                      <TableHead className="text-xs">Questões</TableHead>
+                      <TableHead className="text-right text-xs">Favorito</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -568,13 +568,13 @@ export default function QuestionBooks() {
                           className="cursor-pointer hover:bg-gray-50"
                           onClick={() => navigate(`/cadernos/${book.id}`)}
                         >
-                          <TableCell className="font-medium">{book.nome}</TableCell>
-                          <TableCell>
-                            {book.user_id === supabase.auth.getUser()?.data?.user?.id 
+                          <TableCell className="font-medium text-xs">{book.nome}</TableCell>
+                          <TableCell className="text-xs">
+                            {book.user_id === user?.id 
                               ? 'Você' 
                               : 'Outro usuário'}
                           </TableCell>
-                          <TableCell>{book.total_questions || 0}</TableCell>
+                          <TableCell className="text-xs">{book.total_questions || 0}</TableCell>
                           <TableCell className="text-right">
                             <Button
                               variant="ghost"
@@ -592,7 +592,7 @@ export default function QuestionBooks() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={4} className="text-center py-8 text-gray-500 text-xs md:text-sm">
                           {searchQuery 
                             ? 'Nenhum caderno encontrado com esse termo.' 
                             : 'Nenhum caderno público disponível.'}

@@ -26,7 +26,7 @@ export const Header = () => {
   // Função para gerar a classe do link com base no estado ativo
   const getLinkClasses = (path: string) => {
     return cn(
-      "flex items-center gap-1 transition-colors",
+      "flex items-center gap-1 transition-colors text-sm md:text-base",
       isActive(path) 
         ? "text-[#5f2ebe] font-medium bg-[#5f2ebe]/10 px-3 py-1.5 rounded-md" 
         : "text-[#67748a] hover:text-[#5f2ebe] font-extralight"
@@ -56,19 +56,19 @@ export const Header = () => {
           {config.pages.showBlogPage && (
             <Link to="/blog" className={getLinkClasses("/blog")}>
               <Newspaper className="w-4 h-4 px-px" />
-              <span>Blog</span>
+              <span className="text-sm md:text-base">Blog</span>
             </Link>
           )}
           {config.pages.showQuestionsPage && (
             <Link to="/questions" className={getLinkClasses("/questions")}>
               <FileText className="w-4 h-4" />
-              <span>Questões</span>
+              <span className="text-sm md:text-base">Questões</span>
             </Link>
           )}
           {config.pages.showQuestionsPage && (
             <Link to="/cadernos" className={getLinkClasses("/cadernos")}>
               <Book className="w-4 h-4" />
-              <span>Cadernos</span>
+              <span className="text-sm md:text-base">Cadernos</span>
             </Link>
           )}
           {config.pages.showQuestionsPage && (
@@ -76,7 +76,7 @@ export const Header = () => {
               <PopoverTrigger asChild>
                 <button className={getLinkClasses("/ranking")}>
                   <Award className="w-4 h-4" />
-                  <span>Rankings</span>
+                  <span className="text-sm md:text-base">Rankings</span>
                   <ChevronDown className="h-4 w-4 opacity-50" />
                 </button>
               </PopoverTrigger>
@@ -95,17 +95,17 @@ export const Header = () => {
           {config.pages.showExplorePage && (
             <Link to="/explore" className={getLinkClasses("/explore")}>
               <Trophy className="w-4 h-4" />
-              <span>Estude Grátis</span>
+              <span className="text-sm md:text-base">Estude Grátis</span>
             </Link>
           )}
           <Link to="/concursos" className={getLinkClasses("/concursos")}>
             <Search className="w-4 h-4" />
-            <span>Concursos</span>
+            <span className="text-sm md:text-base">Concursos</span>
           </Link>
         </div>
 
         <div className="flex items-center gap-2.5">
-          {!user ? <Button variant="outline" onClick={() => navigate("/login")} className="mr-2">
+          {!user ? <Button variant="outline" onClick={() => navigate("/login")} className="mr-2 text-sm md:text-base">
               Entrar
             </Button> : null}
 
@@ -123,7 +123,7 @@ export const Header = () => {
                       <AvatarFallback>{user.nome ? user.nome.substring(0, 2).toUpperCase() : "US"}</AvatarFallback>
                     </Avatar>
                     <div className="overflow-hidden">
-                      <p className="font-medium text-gray-900 truncate">{user.nome || "Usuário"}</p>
+                      <p className="font-medium text-gray-900 truncate text-sm md:text-base">{user.nome || "Usuário"}</p>
                       <p className="text-sm text-gray-500 truncate">{user.email}</p>
                     </div>
                   </div>
