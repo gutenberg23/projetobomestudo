@@ -1,4 +1,4 @@
-// Remove unused import
+import { supabase } from "@/integrations/supabase/client";
 
 interface QuestionData {
   text: string;
@@ -15,14 +15,8 @@ interface QuestionData {
   prompt?: string;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || '';
-
 export const generateAIResponse = async (questionData: QuestionData): Promise<string> => {
   try {
-    if (!API_URL) {
-      throw new Error('URL da API não configurada');
-    }
-
     // Construir o prompt baseado nos dados da questão
     const basePrompt = `Você é um assistente especializado em explicar questões de concursos.
 A questão é da disciplina ${questionData.discipline}, nível ${questionData.level} e dificuldade ${questionData.difficulty}.
@@ -42,37 +36,24 @@ Por favor, reescreva a explicação de uma forma diferente, mantendo a mesma est
 ${questionData.prompt ? `\nInstruções adicionais:
 ${questionData.prompt}` : ''}`;
 
-    console.log('Enviando requisição para a API...', API_URL);
+    console.log('Enviando requisição para Google Gemini via Supabase Edge Function...');
 
-    // Fazer a chamada à API
-    const response = await fetch(`${API_URL}/api/generate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt: basePrompt,
-        max_tokens: 16384,
-        temperature: 0.7,
-        top_p: 0.9,
-        frequency_penalty: 0.5,
-        presence_penalty: 0.5,
-      }),
+    // Fazer a chamada à Edge Function do Supabase
+    const { data, error } = await supabase.functions.invoke('generate-question-explanation', {
+      body: { prompt: basePrompt }
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Erro na resposta da API:', data);
-      throw new Error(data.error || data.details || `Erro ao gerar resposta da IA (status: ${response.status})`);
+    if (error) {
+      console.error('Erro ao chamar Edge Function:', error);
+      throw new Error(error.message || 'Erro ao gerar resposta da IA');
     }
-    
-    if (!data.choices || !data.choices[0] || !data.choices[0].text) {
+
+    if (!data || !data.text) {
       console.error('Resposta inválida da API:', data);
       throw new Error('Resposta inválida da API');
     }
 
-    return data.choices[0].text.trim();
+    return data.text.trim();
   } catch (error) {
     console.error("Erro ao gerar resposta da IA:", error);
     throw error instanceof Error ? error : new Error('Erro ao gerar resposta da IA');
