@@ -18,7 +18,28 @@ interface QuestionData {
 export const generateAIResponse = async (questionData: QuestionData): Promise<string> => {
   try {
     // Construir o prompt baseado nos dados da questão
-    const basePrompt = `Você é um assistente especializado em explicar questões de concursos.
+    let basePrompt = '';
+    
+    // Se o usuário forneceu um prompt personalizado, usá-lo como principal
+    if (questionData.prompt && questionData.prompt.trim()) {
+      basePrompt = `${questionData.prompt}
+
+CONTEXTO DA QUESTÃO:
+Disciplina: ${questionData.discipline}
+Nível: ${questionData.level}
+Dificuldade: ${questionData.difficulty}
+Tópicos: ${questionData.topicos.join('; ')}
+
+Questão:
+${questionData.text}
+
+Alternativas:
+${questionData.options.map(opt => `${opt.letter}) ${opt.text}${opt.isCorrect ? ' (CORRETA)' : ''}`).join('\n')}
+
+${questionData.existingExplanation ? `\nExplicação existente:\n${questionData.existingExplanation}` : ''}`;
+    } else {
+      // Prompt padrão caso o usuário não forneça um
+      basePrompt = `Você é um assistente especializado em explicar questões de concursos.
 A questão é da disciplina ${questionData.discipline}, nível ${questionData.level} e dificuldade ${questionData.difficulty}.
 Os tópicos relacionados são: ${questionData.topicos.join('; ')}.
 
@@ -31,10 +52,8 @@ ${questionData.options.map(opt => `${opt.letter}) ${opt.text}${opt.isCorrect ? '
 ${questionData.existingExplanation ? `Existe uma explicação anterior:
 ${questionData.existingExplanation}
 
-Por favor, reescreva a explicação de uma forma diferente, mantendo a mesma estrutura.` : 'Por favor, explique detalhadamente por que a alternativa correta está correta e por que as outras alternativas estão incorretas.'}
-
-${questionData.prompt ? `\nInstruções adicionais:
-${questionData.prompt}` : ''}`;
+Por favor, reescreva a explicação de uma forma diferente, mantendo a mesma estrutura.` : 'Por favor, explique detalhadamente por que a alternativa correta está correta e por que as outras alternativas estão incorretas.'}`;
+    }
 
     console.log('Enviando requisição para Google Gemini via Supabase Edge Function...');
 
