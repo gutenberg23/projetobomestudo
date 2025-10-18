@@ -125,9 +125,9 @@ Certifique-se de:
       let processedContent = result.content || '';
       
       const titleWords = (result.title || originalTitle).toLowerCase().split(' ');
-      processedContent = processedContent.replace(/<h1[^>]*>.*?<\/h1>/gi, (match) => {
+      processedContent = processedContent.replace(/<h1[^>]*>.*?<\/h1>/gi, (match: string) => {
         const h1Content = match.replace(/<[^>]*>/g, '').toLowerCase();
-        const similarity = titleWords.filter(word => word.length > 3 && h1Content.includes(word)).length;
+        const similarity = titleWords.filter((word: string) => word.length > 3 && h1Content.includes(word)).length;
         
         if (similarity > titleWords.length * 0.5) {
           return '';

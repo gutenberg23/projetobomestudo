@@ -78,33 +78,16 @@ export const useUserActions = (state: UseUsersStateReturn) => {
   const excluirUsuario = async () => {
     if (!usuarioSelecionado) return;
     
-    const userId = usuarioSelecionado.id; // Guardar ID antes do try/catch para evitar null checks
+    const userId = usuarioSelecionado.id;
     
     try {
-      // Verificar se o usuário atual é administrador
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: currentUserProfile } = await supabase
-        .from('profiles')
-        .select('nivel')
-        .eq('id', user?.id)
-        .single();
-
-      if (!currentUserProfile || currentUserProfile.nivel !== 'admin') {
-        throw new Error('Apenas administradores podem excluir usuários');
-      }
-
-      // Excluir da tabela profiles
-      const { error: profilesError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
+      // Chamar Edge Function para excluir usuário com service role
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId }
+      });
       
-      if (profilesError) throw profilesError;
-
-      // Excluir usuário no Supabase Auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      
-      if (authError) throw authError;
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       
       // Atualizar na interface
       setUsuarios(usuarios.filter(usuario => usuario.id !== userId));
