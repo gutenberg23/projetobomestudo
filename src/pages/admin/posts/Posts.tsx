@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { usePostsState } from "./hooks/usePostsState";
 import { usePostsActions } from "./hooks/usePostsActions";
 import { ListagemPosts } from "./components/ListagemPosts";
 import { FormularioPost } from "./components/FormularioPost";
 import { ModoInterface, CATEGORIAS } from "./types";
+import { useLocation } from "react-router-dom";
 
 const Posts = () => {
   const state = usePostsState();
@@ -45,7 +46,8 @@ const Posts = () => {
     setEstado,
     postsRelacionados,
     setPostsRelacionados,
-    postEditando
+    postEditando,
+    setPostEditando
   } = state;
 
   const { 
@@ -54,6 +56,22 @@ const Posts = () => {
     salvarPost, 
     excluirPost 
   } = usePostsActions(state);
+  
+  const location = useLocation();
+
+  // Verificar se há um parâmetro de edição na URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const editPostId = urlParams.get('edit');
+    
+    if (editPostId && modo === ModoInterface.LISTAR) {
+      // Encontrar o post pelo ID
+      const postToEdit = postsFiltrados.find(post => post.id === editPostId);
+      if (postToEdit) {
+        iniciarEdicaoPost(postToEdit);
+      }
+    }
+  }, [location.search, modo, postsFiltrados, iniciarEdicaoPost]);
 
   // Inicializar a categoria com um valor padrão se estiver vazia
   React.useEffect(() => {

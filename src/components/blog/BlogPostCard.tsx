@@ -1,9 +1,10 @@
 import React from "react";
 import { BlogPost } from "./types";
-import { Heart, Clock, BookOpen, User } from "lucide-react";
+import { Heart, Clock, BookOpen, User, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface BlogPostCardProps {
   post: BlogPost;
@@ -15,6 +16,7 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
   variant = "default"
 }) => {
   const formattedDate = format(new Date(post.createdAt), "dd/MM/yyyy 'às' HH:mm");
+  const { isAdmin } = usePermissions();
 
   // Calcular tempo de leitura estimado se não estiver definido
   const readingTime = post.readingTime || Math.ceil(post.content.split(' ').length / 200);
@@ -34,6 +36,19 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
                 <div className="absolute top-2 right-2 bg-white/80 text-xs font-medium px-2 py-1 rounded">
                   {post.region}
                 </div>
+              )}
+              {/* Botão de edição para administradores - compact variant */}
+              {isAdmin() && (
+                <Link 
+                  to={`/admin/posts?edit=${post.id}`} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="absolute top-2 left-2 bg-[#ea2be2] text-white p-1.5 rounded-full hover:bg-[#d029d5] transition-colors z-10"
+                  title="Editar post"
+                >
+                  <Edit className="h-4 w-4" />
+                </Link>
               )}
             </div>
           )}
@@ -96,6 +111,19 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
                   <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
                 </div>
               </div>
+              {/* Botão de edição para administradores - featured variant */}
+              {isAdmin() && (
+                <Link 
+                  to={`/admin/posts?edit=${post.id}`} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="absolute top-2 right-2 bg-[#ea2be2] text-white p-2 rounded-full hover:bg-[#d029d5] transition-colors z-10"
+                  title="Editar post"
+                >
+                  <Edit className="h-4 w-4" />
+                </Link>
+              )}
             </div>
           ) : (
             // Versão sem imagem
@@ -126,6 +154,19 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
                 <Clock className="h-4 w-4 mr-1.5" />
                 <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
               </div>
+              {/* Botão de edição para administradores - featured sem imagem */}
+              {isAdmin() && (
+                <Link 
+                  to={`/admin/posts?edit=${post.id}`} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  className="absolute top-2 right-2 bg-[#ea2be2] text-white p-2 rounded-full hover:bg-[#d029d5] transition-colors z-10"
+                  title="Editar post"
+                >
+                  <Edit className="h-4 w-4" />
+                </Link>
+              )}
             </div>
           )}
         </Link>
@@ -188,16 +229,31 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
           </Link>
         )}
         <div className={post.featuredImage ? "md:w-2/3" : "w-full"}>
-          <Link to={`/blog/${post.slug}`}>
-            <h2 className="text-2xl font-bold text-[#272f3c] hover:text-[#5f2ebe] transition-colors">
-              {post.title}
-              {post.featured && (
-                <span className="ml-2 inline-block bg-[#5f2ebe] text-white text-xs px-2 py-0.5 rounded">
-                  Destaque
-                </span>
-              )}
-            </h2>
-          </Link>
+          <div className="relative">
+            <Link to={`/blog/${post.slug}`}>
+              <h2 className="text-2xl font-bold text-[#272f3c] hover:text-[#5f2ebe] transition-colors">
+                {post.title}
+                {post.featured && (
+                  <span className="ml-2 inline-block bg-[#5f2ebe] text-white text-xs px-2 py-0.5 rounded">
+                    Destaque
+                  </span>
+                )}
+              </h2>
+            </Link>
+            {/* Botão de edição para administradores - default variant */}
+            {isAdmin() && (
+              <Link 
+                to={`/admin/posts?edit=${post.id}`} 
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
+                className="absolute top-0 right-0 bg-[#ea2be2] text-white p-2 rounded-full hover:bg-[#d029d5] transition-colors"
+                title="Editar post"
+              >
+                <Edit className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
           <p className="text-[#67748a] my-3">{post.summary}</p>
           
           <div className="flex flex-wrap items-center justify-between mt-2 text-sm text-[#67748a]">

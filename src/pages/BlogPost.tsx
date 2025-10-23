@@ -8,7 +8,8 @@ import {
   BookOpen, 
   Share2, 
   User,
-  Calendar
+  Calendar,
+  Edit
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -23,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import AdBanner from "@/components/ads/AdBanner";
 import { PublicLayout } from "@/components/layout/PublicLayout";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -31,8 +33,8 @@ const BlogPostPage = () => {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const { } = useAuth();
-  
+  const { isAdmin } = usePermissions();
+
   // Buscar o post com base no slug
   useEffect(() => {
     const loadPost = async () => {
@@ -350,9 +352,21 @@ const BlogPostPage = () => {
                         </Link>
                       )}
                       
-                      <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                        {post.title}
-                      </h1>
+                      <div className="relative">
+                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                          {post.title}
+                        </h1>
+                        {/* Botão de edição para administradores - na página do post */}
+                        {isAdmin() && post.id && (
+                          <Link 
+                            to={`/admin/posts?edit=${post.id}`} 
+                            className="absolute top-0 right-0 bg-[#ea2be2] text-white p-2 rounded-full hover:bg-[#d029d5] transition-colors"
+                            title="Editar post"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </Link>
+                        )}
+                      </div>
                       
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
                         <div className="flex items-center">

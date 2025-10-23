@@ -26,6 +26,7 @@ import QuestionBookDetails from "./pages/QuestionBookDetails";
 import { ConfigGuard } from './components/guards/ConfigGuard';
 import { AdminGuard } from './components/guards/AdminGuard';
 import { AuthGuard } from './components/guards/AuthGuard';
+import { HomeRedirectGuard } from './components/guards/HomeRedirectGuard';
 import { useSiteConfig } from "./hooks/useSiteConfig";
 import { useEffect } from "react";
 import "./styles/globals.css";
@@ -106,7 +107,11 @@ export default function App() {
                   <ToastContainer position="top-right" autoClose={3000} />
                   <Routes>
                     <Route path="/settings" element={<Settings />} />
-                    <Route path="/" element={<Index />} />
+                    <Route path="/" element={
+                      <HomeRedirectGuard>
+                        <Index />
+                      </HomeRedirectGuard>
+                    } />
                     <Route path="/login" element={<Login />} />
                     <Route path="/direct-login" element={<DirectLogin />} />
                     <Route path="/esqueci-senha" element={<EsqueciSenha />} />
