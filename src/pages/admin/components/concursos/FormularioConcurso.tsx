@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Concurso, ConcursoFormData, Estado, NivelEnsino, Cargo } from '@/types/concurso';
 import { BlogPost } from '@/components/blog/types';
-import { XCircle, PlusCircle, HelpCircle } from 'lucide-react';
+import { XCircle, PlusCircle, HelpCircle, Search, X } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -41,7 +41,7 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
     titulo: '',
     dataInicioInscricao: '',
     dataFimInscricao: '',
-    dataProva: undefined, // Corrigido para undefined em vez de string vazia
+    dataProva: undefined,
     prorrogado: false,
     niveis: [],
     cargos: [],
@@ -60,6 +60,15 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   
   // Estado para controlar a visibilidade do diálogo de cargos em massa
   const [isMassCargoDialogOpen, setIsMassCargoDialogOpen] = useState<boolean>(false);
+  
+  // Estados para o campo de pesquisa de posts
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>(posts);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Post selecionado (para exibição)
+  const selectedPost = posts.find(post => post.id === formData.postId) || null;
   
   // Preencher o formulário se estiver editando um concurso existente
   useEffect(() => {
@@ -84,7 +93,7 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
         titulo: concursoInicial.titulo,
         dataInicioInscricao: formatarDataParaInput(concursoInicial.dataInicioInscricao),
         dataFimInscricao: formatarDataParaInput(concursoInicial.dataFimInscricao),
-        dataProva: concursoInicial.dataProva ? formatarDataParaInput(concursoInicial.dataProva) : undefined, // Corrigido
+        dataProva: concursoInicial.dataProva ? formatarDataParaInput(concursoInicial.dataProva) : undefined,
         prorrogado: concursoInicial.prorrogado || false,
         niveis: concursoInicial.niveis,
         cargos: concursoInicial.cargos,
@@ -96,6 +105,27 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
       });
     }
   }, [concursoInicial]);
+  
+  // Filtrar posts com base no termo de busca
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredPosts(posts);
+    } else {
+      const term = searchTerm.toLowerCase();
+      const filtered = posts.filter(post => 
+        post.title.toLowerCase().includes(term) || 
+        post.category.toLowerCase().includes(term)
+      );
+      setFilteredPosts(filtered);
+    }
+  }, [searchTerm, posts]);
+  
+  // Focar no input de pesquisa quando o campo é aberto
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
   
   // Manipuladores de eventos para campos do formulário
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -173,10 +203,20 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   };
 
   // Manipulador para seleção de post
-  const handlePostChange = (value: string) => {
+  const handlePostChange = (postId: string) => {
     setFormData({
       ...formData,
-      postId: value === "none" ? undefined : value,
+      postId: postId === "none" ? undefined : postId,
+    });
+    setIsSearchOpen(false);
+    setSearchTerm('');
+  };
+  
+  // Limpar seleção de post
+  const clearPostSelection = () => {
+    setFormData({
+      ...formData,
+      postId: undefined,
     });
   };
   
@@ -307,7 +347,7 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
                 type="date"
                 id="dataProva"
                 name="dataProva"
-                value={formData.dataProva ?? ''} // Corrigido para tratar undefined/null
+                value={formData.dataProva ?? ''}
                 onChange={handleInputChange}
                 className="w-full"
               />
@@ -535,25 +575,81 @@ Enfermeiro"
           
           {/* Post Relacionado */}
           <div className="space-y-2">
-            <Label htmlFor="postId" className="font-medium">
+            <Label className="font-medium">
               Post Relacionado
             </Label>
-            <Select
-              value={formData.postId || "none"}
-              onValueChange={handlePostChange}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Selecione um post relacionado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhum</SelectItem>
-                {posts.map((post) => (
-                  <SelectItem key={post.id} value={post.id}>
-                    {post.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            {/* Exibição do post selecionado */}
+            {selectedPost ? (
+              <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{selectedPost.title}</p>
+                  <p className="text-xs text-gray-500">{selectedPost.category}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearPostSelection}
+                  className="ml-2"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="relative">
+                <div 
+                  className="flex items-center justify-between p-3 border rounded-md cursor-pointer hover:bg-gray-50"
+                  onClick={() => setIsSearchOpen(true)}
+                >
+                  <span className="text-gray-500">
+                    {isSearchOpen ? "Digite para pesquisar..." : "Selecione um post relacionado"}
+                  </span>
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                
+                {/* Campo de pesquisa */}
+                {isSearchOpen && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+                    <div className="p-2 border-b">
+                      <Input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Pesquisar posts..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div className="max-h-60 overflow-y-auto">
+                      <div 
+                        className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                        onClick={() => handlePostChange("none")}
+                      >
+                        Nenhum
+                      </div>
+                      {filteredPosts.map((post) => (
+                        <div 
+                          key={post.id}
+                          className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 border-b last:border-b-0"
+                          onClick={() => handlePostChange(post.id)}
+                        >
+                          <p className="font-medium">{post.title}</p>
+                          <p className="text-xs text-gray-500">{post.category}</p>
+                        </div>
+                      ))}
+                      {filteredPosts.length === 0 && searchTerm && (
+                        <div className="px-4 py-2 text-sm text-gray-500">
+                          Nenhum post encontrado
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <p className="text-sm text-gray-500 mt-1">
               Opcional. Você pode vincular um post do blog com mais detalhes sobre este concurso.
             </p>
