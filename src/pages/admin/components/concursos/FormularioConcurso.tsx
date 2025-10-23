@@ -14,6 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface FormularioConcursoProps {
   concursoInicial: Concurso | null;
@@ -52,6 +54,12 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   
   // Estado para novo cargo a ser adicionado
   const [novoCargo, setNovoCargo] = useState<string>('');
+  
+  // Estado para o textarea de múltiplos cargos
+  const [cargosText, setCargosText] = useState<string>('');
+  
+  // Estado para controlar a visibilidade do diálogo de cargos em massa
+  const [isMassCargoDialogOpen, setIsMassCargoDialogOpen] = useState<boolean>(false);
   
   // Preencher o formulário se estiver editando um concurso existente
   useEffect(() => {
@@ -183,6 +191,29 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
         cargos: [...formData.cargos, novoCargo.trim()]
       });
       setNovoCargo('');
+    }
+  };
+  
+  // Adicionar múltiplos cargos
+  const adicionarCargosEmMassa = () => {
+    if (cargosText.trim()) {
+      const novosCargos = cargosText
+        .split('\n')
+        .map(cargo => cargo.trim())
+        .filter(cargo => cargo.length > 0)
+        .filter(cargo => !formData.cargos.some(c => 
+          (typeof c === 'string' && c === cargo) || 
+          (typeof c === 'object' && c.nome === cargo)
+        ));
+      
+      if (novosCargos.length > 0) {
+        setFormData({
+          ...formData,
+          cargos: [...formData.cargos, ...novosCargos]
+        });
+        setCargosText('');
+        setIsMassCargoDialogOpen(false);
+      }
     }
   };
   
@@ -358,6 +389,12 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
                 onChange={(e) => setNovoCargo(e.target.value)}
                 className="flex-grow"
                 placeholder="Adicionar cargo"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    adicionarCargo();
+                  }
+                }}
               />
               <Button
                 type="button"
@@ -367,6 +404,51 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
               >
                 <PlusCircle className="h-5 w-5" />
               </Button>
+              <Dialog open={isMassCargoDialogOpen} onOpenChange={setIsMassCargoDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="whitespace-nowrap"
+                  >
+                    Adicionar vários
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Adicionar múltiplos cargos</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Cole um cargo por linha. Cargos já existentes serão ignorados.
+                    </p>
+                    <Textarea
+                      value={cargosText}
+                      onChange={(e) => setCargosText(e.target.value)}
+                      placeholder="Exemplo:
+Professor
+Médico
+Enfermeiro"
+                      className="min-h-[200px]"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsMassCargoDialogOpen(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={adicionarCargosEmMassa}
+                      >
+                        Adicionar todos
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
             
             {/* Tags de cargos adicionados */}

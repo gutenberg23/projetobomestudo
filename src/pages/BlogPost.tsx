@@ -20,7 +20,6 @@ import { LatestNews } from "@/components/blog/LatestNews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { fetchBlogPostBySlug, fetchBlogPosts, incrementLikes, incrementViewCount } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
-import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import AdBanner from "@/components/ads/AdBanner";
 import { PublicLayout } from "@/components/layout/PublicLayout";

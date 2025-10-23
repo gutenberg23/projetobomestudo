@@ -46,8 +46,7 @@ const Posts = () => {
     setEstado,
     postsRelacionados,
     setPostsRelacionados,
-    postEditando,
-    setPostEditando
+    postEditando
   } = state;
 
   const { 
