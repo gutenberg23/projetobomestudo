@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Concurso, ConcursoFormData, Estado, NivelEnsino, Cargo } from '@/types/concurso';
 import { BlogPost } from '@/components/blog/types';
-import { XCircle, PlusCircle, HelpCircle, Search, X } from 'lucide-react';
+import { XCircle, PlusCircle, HelpCircle, Search, X, Sparkles } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { toast } from 'react-toastify';
+import { autoPreencherConcurso } from '../../../../services/autoPreencherConcursoService';
 
 interface FormularioConcursoProps {
   concursoInicial: Concurso | null;
@@ -66,6 +68,9 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>(posts);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  
+  // Estado para loading do auto preenchimento
+  const [autoPreencherLoading, setAutoPreencherLoading] = useState<boolean>(false);
   
   // Post selecionado (para exibição)
   const selectedPost = posts.find(post => post.id === formData.postId) || null;
@@ -273,6 +278,48 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
         }
       })
     });
+  };
+  
+  // Função para auto preencher dados do concurso
+  const handleAutoPreencher = async () => {
+    if (!formData.postId) {
+      toast.error('Por favor, selecione um post relacionado primeiro');
+      return;
+    }
+    
+    try {
+      setAutoPreencherLoading(true);
+      const extractedData = await autoPreencherConcurso(formData.postId);
+      
+      // Converter os níveis e estados para os tipos corretos
+      const niveisConvertidos = extractedData.niveis
+        .filter(nivel => NIVEIS.includes(nivel as NivelEnsino))
+        .map(nivel => nivel as NivelEnsino);
+        
+      const estadosConvertidos = extractedData.estados
+        .filter(estado => ESTADOS.includes(estado as Estado))
+        .map(estado => estado as Estado);
+      
+      setFormData({
+        ...formData,
+        titulo: extractedData.titulo || formData.titulo,
+        dataInicioInscricao: extractedData.dataInicioInscricao || formData.dataInicioInscricao,
+        dataFimInscricao: extractedData.dataFimInscricao || formData.dataFimInscricao,
+        dataProva: extractedData.dataProva || formData.dataProva,
+        niveis: niveisConvertidos,
+        cargos: extractedData.cargos.length > 0 ? extractedData.cargos : formData.cargos,
+        vagas: extractedData.vagas || formData.vagas,
+        salario: extractedData.salario || formData.salario,
+        estados: estadosConvertidos
+      });
+      
+      toast.success('Dados preenchidos automaticamente com sucesso!');
+    } catch (error: any) {
+      console.error('Erro ao auto preencher:', error);
+      toast.error(error.message || 'Erro ao auto preencher dados do concurso');
+    } finally {
+      setAutoPreencherLoading(false);
+    }
   };
   
   // Submeter formulário
@@ -575,9 +622,24 @@ Enfermeiro"
           
           {/* Post Relacionado */}
           <div className="space-y-2">
-            <Label className="font-medium">
-              Post Relacionado
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="font-medium">
+                Post Relacionado
+              </Label>
+              {formData.postId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAutoPreencher}
+                  disabled={autoPreencherLoading}
+                  className="flex items-center gap-1"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {autoPreencherLoading ? 'Preenchendo...' : 'Auto Preencher'}
+                </Button>
+              )}
+            </div>
             
             {/* Exibição do post selecionado */}
             {selectedPost ? (

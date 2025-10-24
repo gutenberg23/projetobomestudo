@@ -8,6 +8,3 @@ verify_jwt = false
 
 [functions.delete-user]
 verify_jwt = false
-
-[functions]
-import_map = "./functions/import_map.json"
