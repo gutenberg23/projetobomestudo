@@ -53,7 +53,8 @@ const Posts = () => {
     iniciarCriacaoPost, 
     iniciarEdicaoPost, 
     salvarPost, 
-    excluirPost 
+    excluirPost,
+    togglePostStatus
   } = usePostsActions(state);
   
   const location = useLocation();
@@ -90,6 +91,7 @@ const Posts = () => {
           onIniciarCriacaoPost={iniciarCriacaoPost}
           onIniciarEdicaoPost={iniciarEdicaoPost}
           onExcluirPost={excluirPost}
+          onToggleStatus={togglePostStatus}
         />
       ) : (
         <FormularioPost 

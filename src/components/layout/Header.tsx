@@ -1,18 +1,25 @@
-import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book, BarChart, Search, Award, ChevronDown } from "lucide-react";
+import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book, BarChart, Search, Award, X } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import logo from "/lovable-uploads/logo.svg";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { config } = useSiteConfig();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Fecha a sidebar quando a rota muda
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location]);
   
   // Função para verificar se o link corresponde à página atual
   const isActive = (path: string) => {
@@ -44,7 +51,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-center flex-wrap border-b border-[rgba(247,248,250,1)] z-40 px-4">
+    <header className="bg-white/90 backdrop-blur-sm min-h-[88px] w-full flex items-center justify-center flex-wrap border-b border-[rgba(247,248,250,1)] z-40 px-4 sticky top-0">
       <div className="max-w-[1400px] w-full flex items-center justify-between">
         <div className="flex min-h-[88px] flex-col items-start justify-center w-[230px] py-[21px]">
           <Link to="/">
@@ -52,7 +59,7 @@ export const Header = () => {
           </Link>
         </div>
 
-        <div className="hidden md:flex items-center space-x-4 mr-6">
+        <div className="hidden md:flex items-center space-x-6 mr-6">
           {config.pages.showBlogPage && (
             <Link to="/blog" className={getLinkClasses("/blog")}>
               <Newspaper className="w-4 h-4 px-px" />
@@ -71,27 +78,6 @@ export const Header = () => {
               <span className="text-sm md:text-base">Cadernos</span>
             </Link>
           )}
-          {config.pages.showQuestionsPage && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className={getLinkClasses("/ranking")}>
-                  <Award className="w-4 h-4" />
-                  <span className="text-sm md:text-base">Rankings</span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-48 p-0">
-                <div className="flex flex-col">
-                  <Link to="/ranking-comentarios" className="px-4 py-2 text-sm hover:bg-slate-50 hover:text-[#5f2ebe]">
-                    Ranking de Comentários
-                  </Link>
-                  <Link to="/ranking-questoes" className="px-4 py-2 text-sm hover:bg-slate-50 hover:text-[#5f2ebe]">
-                    Ranking de Questões
-                  </Link>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
           {config.pages.showExplorePage && (
             <Link to="/explore" className={getLinkClasses("/explore")}>
               <Trophy className="w-4 h-4" />
@@ -109,108 +95,156 @@ export const Header = () => {
               Entrar
             </Button> : null}
 
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className={`flex items-center justify-center w-10 h-10 rounded-full border-2 border-white cursor-pointer ${!user ? 'hidden' : ''}`}>
-                <Menu className="w-6 h-6 text-gray-700" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64 p-0 border border-gray-100">
-              {user ? <div className="p-4 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-[50px] h-[50px] border-2 border-white">
-                      <AvatarImage src={user.foto_perfil || "https://github.com/shadcn.png"} />
-                      <AvatarFallback>{user.nome ? user.nome.substring(0, 2).toUpperCase() : "US"}</AvatarFallback>
-                    </Avatar>
-                    <div className="overflow-hidden">
-                      <p className="font-medium text-gray-900 truncate text-sm md:text-base">{user.nome || "Usuário"}</p>
-                      <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                    </div>
-                  </div>
-                </div> : null}
-              <nav className="flex flex-col">
-                {config.pages.showMyCoursesPage && (
-                  <Link to="/my-courses" className={getMobileLinkClasses("/my-courses")}>
-                    <BookOpen className="w-4 h-4" />
-                    Meus Cursos
-                  </Link>
-                )}
-                <Link to="/dashboard" className={getMobileLinkClasses("/dashboard")}>
-                  <BarChart className="w-4 h-4" />
-                  Dashboard
-                </Link>
-                {/* Mostra o link "Cadernos de Questões" apenas no modo mobile */}
-                {config.pages.showQuestionsPage && (
-                  <div className="md:hidden">
-                    <Link to="/cadernos" className={getMobileLinkClasses("/cadernos")}>
-                      <Book className="w-4 h-4" />
-                      Cadernos de Questões
-                    </Link>
-                  </div>
-                )}
-                <Link to="/settings" className={getMobileLinkClasses("/settings")}>
-                  <Settings className="w-4 h-4" />
-                  Configurações
-                </Link>
-                {user?.role === "admin" && (
-                  <Link to="/admin" className={getMobileLinkClasses("/admin")}>
-                    <Shield className="w-4 h-4" />
-                    Área Administrativa
-                  </Link>
-                )}
-                {user?.role === "jornalista" && (
-                  <Link to="/admin/posts" className={getMobileLinkClasses("/admin/posts")}>
-                    <FileText className="w-4 h-4" />
-                    Criar/Editar Posts
-                  </Link>
-                )}
-                <div className="md:hidden border-t border-gray-100">
-                  {config.pages.showBlogPage && (
-                    <Link to="/blog" className={getMobileLinkClasses("/blog")}>
-                      <Newspaper className="w-4 h-4" />
-                      Blog
-                    </Link>
-                  )}
-                  {config.pages.showQuestionsPage && (
-                    <Link to="/questions" className={getMobileLinkClasses("/questions")}>
-                      <FileText className="w-4 h-4" />
-                      Questões
-                    </Link>
-                  )}
-                  {config.pages.showQuestionsPage && (
-                    <Link to="/ranking-comentarios" className={getMobileLinkClasses("/ranking-comentarios")}>
-                      <Award className="w-4 h-4" />
-                      Ranking de Comentários
-                    </Link>
-                  )}
-                  {config.pages.showQuestionsPage && (
-                    <Link to="/ranking-questoes" className={getMobileLinkClasses("/ranking-questoes")}>
-                      <Award className="w-4 h-4" />
-                      Ranking de Questões
-                    </Link>
-                  )}
-                  {config.pages.showExplorePage && (
-                    <Link to="/explore" className={getMobileLinkClasses("/explore")}>
-                      <Trophy className="w-4 h-4" />
-                      Estude Grátis
-                    </Link>
-                  )}
-                  <Link to="/concursos" className={getMobileLinkClasses("/concursos")}>
-                    <Search className="w-4 h-4" />
-                    Concursos
-                  </Link>
-                </div>
-                {user ? <div className="border-t border-gray-100">
-                    <button onClick={signOut} className="w-full text-left px-4 py-3 text-sm font-light text-red-600 hover:bg-slate-50 flex items-center gap-2">
-                      <LogOut className="w-4 h-4" />
-                      Sair
-                    </button>
-                  </div> : null}
-              </nav>
-            </PopoverContent>
-          </Popover>
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className={`flex items-center justify-center w-10 h-10 rounded-full border-2 border-white cursor-pointer ${!user ? 'hidden' : ''}`}
+          >
+            <Menu className="w-6 h-6 text-gray-700" />
+          </button>
         </div>
       </div>
+
+      {/* Renderiza a sidebar no body do documento usando portal */}
+      {isSidebarOpen && createPortal(
+        <>
+          <div 
+            className={`fixed inset-0 z-[100] transition-opacity duration-500 ease-in-out ${
+              isSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            {/* Overlay */}
+            <div 
+              className="absolute inset-0 bg-black/50 transition-opacity duration-500 ease-in-out"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+            
+            {/* Sidebar Content */}
+            <div 
+              className={`absolute top-0 right-0 h-full w-[300px] bg-white shadow-xl transform transition-all duration-500 ease-in-out ${
+                isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
+              }`}
+            >
+              <div className="flex flex-col h-full">
+                {/* Header da Sidebar */}
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h2 className="text-lg font-semibold">Menu</h2>
+                  <button 
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="p-2 rounded-full hover:bg-gray-100"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                {/* Conteúdo da Sidebar */}
+                <div className="flex-1 overflow-y-auto">
+                  {user && (
+                    <div className="p-4 border-b">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-[50px] h-[50px] border-2 border-white">
+                          <AvatarImage src={user.foto_perfil || "https://github.com/shadcn.png"} />
+                          <AvatarFallback>{user.nome ? user.nome.substring(0, 2).toUpperCase() : "US"}</AvatarFallback>
+                        </Avatar>
+                        <div className="overflow-hidden">
+                          <p className="font-medium text-gray-900 truncate text-sm">{user.nome || "Usuário"}</p>
+                          <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <nav className="flex flex-col">
+                    {config.pages.showMyCoursesPage && (
+                      <Link to="/my-courses" className={getMobileLinkClasses("/my-courses")}>
+                        <BookOpen className="w-4 h-4" />
+                        Meus Cursos
+                      </Link>
+                    )}
+                    <Link to="/dashboard" className={getMobileLinkClasses("/dashboard")}>
+                      <BarChart className="w-4 h-4" />
+                      Dashboard
+                    </Link>
+                    {/* Rankings movidos para a sidebar */}
+                    {config.pages.showQuestionsPage && (
+                      <Link to="/ranking-comentarios" className={getMobileLinkClasses("/ranking-comentarios")}>
+                        <Award className="w-4 h-4" />
+                        Ranking de Comentários
+                      </Link>
+                    )}
+                    {config.pages.showQuestionsPage && (
+                      <Link to="/ranking-questoes" className={getMobileLinkClasses("/ranking-questoes")}>
+                        <Award className="w-4 h-4" />
+                        Ranking de Questões
+                      </Link>
+                    )}
+                    {/* Mostra o link "Cadernos de Questões" apenas no modo mobile */}
+                    {config.pages.showQuestionsPage && (
+                      <div className="md:hidden">
+                        <Link to="/cadernos" className={getMobileLinkClasses("/cadernos")}>
+                          <Book className="w-4 h-4" />
+                          Cadernos de Questões
+                        </Link>
+                      </div>
+                    )}
+                    <Link to="/settings" className={getMobileLinkClasses("/settings")}>
+                      <Settings className="w-4 h-4" />
+                      Configurações
+                    </Link>
+                    {user?.role === "admin" && (
+                      <Link to="/admin" className={getMobileLinkClasses("/admin")}>
+                        <Shield className="w-4 h-4" />
+                        Área Administrativa
+                      </Link>
+                    )}
+                    {user?.role === "jornalista" && (
+                      <Link to="/admin/posts" className={getMobileLinkClasses("/admin/posts")}>
+                        <FileText className="w-4 h-4" />
+                        Criar/Editar Posts
+                      </Link>
+                    )}
+                    <div className="md:hidden border-t border-gray-100 mt-2">
+                      {config.pages.showBlogPage && (
+                        <Link to="/blog" className={getMobileLinkClasses("/blog")}>
+                          <Newspaper className="w-4 h-4" />
+                          Blog
+                        </Link>
+                      )}
+                      {config.pages.showQuestionsPage && (
+                        <Link to="/questions" className={getMobileLinkClasses("/questions")}>
+                          <FileText className="w-4 h-4" />
+                          Questões
+                        </Link>
+                      )}
+                      {config.pages.showExplorePage && (
+                        <Link to="/explore" className={getMobileLinkClasses("/explore")}>
+                          <Trophy className="w-4 h-4" />
+                          Estude Grátis
+                        </Link>
+                      )}
+                      <Link to="/concursos" className={getMobileLinkClasses("/concursos")}>
+                        <Search className="w-4 h-4" />
+                        Concursos
+                      </Link>
+                    </div>
+                    {user && (
+                      <div className="border-t border-gray-100 mt-2">
+                        <button 
+                          onClick={signOut} 
+                          className="w-full text-left px-4 py-3 text-sm font-light text-red-600 hover:bg-slate-50 flex items-center gap-2"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sair
+                        </button>
+                      </div>
+                    )}
+                  </nav>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
     </header>
   );
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Concurso, ConcursoFormData, Estado, NivelEnsino, Cargo } from '@/types/concurso';
 import { BlogPost } from '@/components/blog/types';
-import { XCircle, PlusCircle, HelpCircle, Search, X, Sparkles } from 'lucide-react';
+import { XCircle, PlusCircle, HelpCircle, Search, X, Sparkles, CheckCircle } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -13,15 +13,15 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { toast } from 'react-toastify';
+import { toast } from '@/components/ui/use-toast';
 import { autoPreencherConcurso } from '../../../../services/autoPreencherConcursoService';
 
 interface FormularioConcursoProps {
   concursoInicial: Concurso | null;
   posts: BlogPost[];
+  postIdsUtilizados: Set<string>;
   onSalvar: (formData: ConcursoFormData) => void;
   onCancelar: () => void;
 }
@@ -37,7 +37,7 @@ const ESTADOS: Estado[] = [
 // Lista de níveis de ensino
 const NIVEIS: NivelEnsino[] = ['Ensino Fundamental', 'Ensino Médio', 'Ensino Superior'];
 
-const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: FormularioConcursoProps) => {
+const FormularioConcurso = ({ concursoInicial, posts, postIdsUtilizados, onSalvar, onCancelar }: FormularioConcursoProps) => {
   // Estado do formulário
   const [formData, setFormData] = useState<ConcursoFormData>({
     titulo: '',
@@ -283,7 +283,11 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
   // Função para auto preencher dados do concurso
   const handleAutoPreencher = async () => {
     if (!formData.postId) {
-      toast.error('Por favor, selecione um post relacionado primeiro');
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione um post relacionado primeiro",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -313,10 +317,17 @@ const FormularioConcurso = ({ concursoInicial, posts, onSalvar, onCancelar }: Fo
         estados: estadosConvertidos
       });
       
-      toast.success('Dados preenchidos automaticamente com sucesso!');
+      toast({
+        title: "Sucesso",
+        description: "Dados preenchidos automaticamente com sucesso!",
+      });
     } catch (error: any) {
       console.error('Erro ao auto preencher:', error);
-      toast.error(error.message || 'Erro ao auto preencher dados do concurso');
+      toast({
+        title: "Erro",
+        description: error.message || 'Erro ao auto preencher dados do concurso',
+        variant: "destructive",
+      });
     } finally {
       setAutoPreencherLoading(false);
     }
@@ -694,11 +705,16 @@ Enfermeiro"
                       {filteredPosts.map((post) => (
                         <div 
                           key={post.id}
-                          className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 border-b last:border-b-0"
+                          className="px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 border-b last:border-b-0 flex items-center justify-between"
                           onClick={() => handlePostChange(post.id)}
                         >
-                          <p className="font-medium">{post.title}</p>
-                          <p className="text-xs text-gray-500">{post.category}</p>
+                          <div>
+                            <p className="font-medium">{post.title}</p>
+                            <p className="text-xs text-gray-500">{post.category}</p>
+                          </div>
+                          {postIdsUtilizados.has(post.id) && (
+                            <CheckCircle className="h-4 w-4 text-green-500 ml-2 flex-shrink-0" />
+                          )}
                         </div>
                       ))}
                       {filteredPosts.length === 0 && searchTerm && (

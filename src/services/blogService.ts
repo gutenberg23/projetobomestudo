@@ -799,3 +799,29 @@ export async function convertToDraft(postId: string): Promise<BlogPost | null> {
     return null;
   }
 }
+
+// Função para atualizar o status de um post (rascunho/publicado)
+export async function updateBlogPostStatus(postId: string, isDraft: boolean): Promise<BlogPost | null> {
+  try {
+    const { data, error } = await supabase
+      .from('blog_posts')
+      .update({ is_draft: isDraft })
+      .eq('id', postId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao atualizar status do post:', error);
+      return null;
+    }
+
+    // Limpar cache para forçar atualização
+    postsCache = [];
+    lastCacheTime = 0;
+
+    return data ? mapDatabasePostToAppPost(data) : null;
+  } catch (error) {
+    console.error('Erro ao atualizar status do post:', error);
+    return null;
+  }
+}

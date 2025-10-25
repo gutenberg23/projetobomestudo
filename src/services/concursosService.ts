@@ -277,6 +277,36 @@ export const concursosService = {
       console.error('Exceção ao buscar posts do blog:', error);
       throw error;
     }
+  },
+
+  /**
+   * Buscar IDs de posts já utilizados em concursos
+   */
+  async listarPostIdsUtilizados(): Promise<string[]> {
+    console.log('Buscando IDs de posts já utilizados em concursos...');
+    
+    try {
+      const { data, error } = await supabase
+        .from('concursos')
+        .select('post_id')
+        .not('post_id', 'is', null);
+
+      if (error) {
+        console.error('Erro ao buscar posts utilizados:', error);
+        throw new Error(`Erro ao buscar posts utilizados: ${error.message}`);
+      }
+
+      // Extrair apenas os IDs dos posts
+      const postIds = (data || [])
+        .map((concurso: any) => concurso.post_id)
+        .filter((id: string | null) => id !== null) as string[];
+      
+      console.log(`${postIds.length} posts já utilizados encontrados`);
+      return postIds;
+    } catch (error) {
+      console.error('Exceção ao buscar posts utilizados:', error);
+      throw error;
+    }
   }
 };
 

@@ -54,6 +54,39 @@ const ESTADOS: { id: string; name: string }[] = [
   { id: 'TO', name: 'TO' }
 ];
 
+// Lista de estados ordenados alfabeticamente para exibição
+const ESTADOS_ORDENADOS: { id: string; name: string }[] = [
+  { id: 'Nacional', name: 'Nacional' },
+  { id: 'AC', name: 'Acre' },
+  { id: 'AL', name: 'Alagoas' },
+  { id: 'AP', name: 'Amapá' },
+  { id: 'AM', name: 'Amazonas' },
+  { id: 'BA', name: 'Bahia' },
+  { id: 'CE', name: 'Ceará' },
+  { id: 'DF', name: 'Distrito Federal' },
+  { id: 'ES', name: 'Espírito Santo' },
+  { id: 'GO', name: 'Goiás' },
+  { id: 'MA', name: 'Maranhão' },
+  { id: 'MT', name: 'Mato Grosso' },
+  { id: 'MS', name: 'Mato Grosso do Sul' },
+  { id: 'MG', name: 'Minas Gerais' },
+  { id: 'PA', name: 'Pará' },
+  { id: 'PB', name: 'Paraíba' },
+  { id: 'PR', name: 'Paraná' },
+  { id: 'PE', name: 'Pernambuco' },
+  { id: 'PI', name: 'Piauí' },
+  { id: 'RJ', name: 'Rio de Janeiro' },
+  { id: 'RN', name: 'Rio Grande do Norte' },
+  { id: 'RS', name: 'Rio Grande do Sul' },
+  { id: 'RO', name: 'Rondônia' },
+  { id: 'RR', name: 'Roraima' },
+  { id: 'SC', name: 'Santa Catarina' },
+  { id: 'SP', name: 'São Paulo' },
+  { id: 'SE', name: 'Sergipe' },
+  { id: 'TO', name: 'Tocantins' },
+  { id: 'Federal', name: 'Federal' }
+];
+
 const Concursos = () => {
   const [concursos, setConcursos] = useState<Concurso[]>([]);
   const [filtroAtivo, setFiltroAtivo] = useState<string | null>(null);
@@ -126,6 +159,28 @@ const Concursos = () => {
     .filter(concurso => !filtroAtivo || concurso.estados.includes(filtroAtivo as Estado))
     .filter(concurso => concursoContemTermo(concurso, termoPesquisa));
 
+  // Organizar concursos por estados
+  const concursosPorEstado = () => {
+    const resultado: Record<string, Concurso[]> = {};
+    
+    // Se houver filtro ativo ou termo de pesquisa, manter a lista simples
+    if (filtroAtivo || termoPesquisa) {
+      return { 'Filtrados': concursosFiltrados };
+    }
+    
+    // Para cada concurso, adicioná-lo a todos os seus estados
+    concursosFiltrados.forEach(concurso => {
+      concurso.estados.forEach(estado => {
+        if (!resultado[estado]) {
+          resultado[estado] = [];
+        }
+        resultado[estado].push(concurso);
+      });
+    });
+    
+    return resultado;
+  };
+
   // Formatar período de inscrição
   const formatarPeriodo = (dataInicio: string, dataFim: string) => {
     return `${format(new Date(dataInicio), 'dd/MM/yyyy', { locale: ptBR })} a ${format(new Date(dataFim), 'dd/MM/yyyy', { locale: ptBR })}`;
@@ -162,6 +217,197 @@ const Concursos = () => {
       console.error('Erro ao buscar detalhes do post:', error);
       navigate(`/blog/${concurso.postId}`);
     }
+  };
+
+  // Obter o nome completo do estado
+  const getNomeEstado = (estadoId: string) => {
+    const estado = ESTADOS_ORDENADOS.find(e => e.id === estadoId);
+    return estado ? estado.name : estadoId;
+  };
+
+  // Renderizar concursos organizados por estado
+  const renderizarConcursosPorEstado = () => {
+    const concursosAgrupados = concursosPorEstado();
+    
+    // Se houver filtro ativo ou termo de pesquisa, mostrar lista simples
+    if (filtroAtivo || termoPesquisa) {
+      return (
+        <div className="grid grid-cols-1 gap-6">
+          {concursosFiltrados.map((concurso, index) => (
+            <React.Fragment key={concurso.id}>
+              {renderizarCardConcurso(concurso, index)}
+            </React.Fragment>
+          ))}
+        </div>
+      );
+    }
+    
+    // Ordenar estados alfabeticamente
+    const estadosComConcursos = Object.keys(concursosAgrupados)
+      .filter(estado => concursosAgrupados[estado].length > 0);
+      
+    const estadosOrdenados = ESTADOS_ORDENADOS
+      .filter(estado => estadosComConcursos.includes(estado.id))
+      .map(estado => estado.id);
+      
+    // Adicionar estados que não estão na lista padrão
+    const estadosRestantes = estadosComConcursos
+      .filter(estado => !ESTADOS_ORDENADOS.some(e => e.id === estado))
+      .sort();
+      
+    const todosEstadosOrdenados = [...estadosOrdenados, ...estadosRestantes];
+    
+    return (
+      <div className="space-y-8">
+        {todosEstadosOrdenados.map(estadoId => {
+          const concursosDoEstado = concursosAgrupados[estadoId] || [];
+          if (concursosDoEstado.length === 0) return null;
+          
+          return (
+            <div key={estadoId}>
+              <h2 className="text-xl font-bold text-[#272f3c] mb-4">{getNomeEstado(estadoId)}</h2>
+              <div className="grid grid-cols-1 gap-6">
+                {concursosDoEstado.map((concurso, index) => (
+                  <React.Fragment key={`${estadoId}-${concurso.id}`}>
+                    {renderizarCardConcurso(concurso, index)}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Renderizar card de concurso
+  const renderizarCardConcurso = (concurso: Concurso, index: number) => {
+    // Contar quantos concursos já foram renderizados para calcular a posição dos anúncios
+    const totalConcursosRenderizados = (() => {
+      const concursosAgrupados = concursosPorEstado();
+      if (filtroAtivo || termoPesquisa) {
+        return index;
+      }
+      
+      let count = 0;
+      const estados = Object.keys(concursosAgrupados);
+      const estadosOrdenados = ESTADOS_ORDENADOS
+        .filter(estado => estados.includes(estado.id))
+        .map(estado => estado.id);
+        
+      const estadosRestantes = estados
+        .filter(estado => !ESTADOS_ORDENADOS.some(e => e.id === estado))
+        .sort();
+        
+      const todosEstadosOrdenados = [...estadosOrdenados, ...estadosRestantes];
+      
+      for (const estado of todosEstadosOrdenados) {
+        const concursosDoEstado = concursosAgrupados[estado] || [];
+        for (let i = 0; i < concursosDoEstado.length; i++) {
+          if (concursosDoEstado[i].id === concurso.id) {
+            return count + i;
+          }
+        }
+        count += concursosDoEstado.length;
+      }
+      return index;
+    })();
+    
+    return (
+      <>
+        <div
+          className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+        >
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4">
+              <div>
+                <button 
+                  onClick={() => navegarParaPost(concurso)}
+                  className="text-left text-base sm:text-lg md:text-xl font-bold text-[#5f2ebe] hover:text-[#4924a1] transition-colors line-clamp-2 text-sm md:text-lg"
+                >
+                  {concurso.titulo}
+                </button>
+                
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-2.5">
+                  {/* Coluna da esquerda */}
+                  <div className="space-y-3 sm:space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                        <CalendarIcon className="h-4 w-4 mr-1.5" />
+                        <span className="text-xs font-medium">Inscrições:</span>
+                      </div>
+                      <span className="text-xs text-gray-700">
+                        {formatarPeriodo(concurso.dataInicioInscricao, concurso.dataFimInscricao)}
+                        {concurso.prorrogado && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Prorrogado
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                        <BriefcaseIcon className="h-4 w-4 mr-1.5" />
+                        <span className="text-xs font-medium">Cargos:</span>
+                      </div>
+                      <span className="text-xs text-gray-700 line-clamp-1">
+                        {concurso.cargos.map(cargo => exibirTextoCargo(cargo)).join(', ')}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                        <MapPinIcon className="h-4 w-4 mr-1.5" />
+                        <span className="text-xs font-medium">Estados:</span>
+                      </div>
+                      <span className="text-xs text-gray-700">
+                        {concurso.estados.join(', ')}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Coluna da direita */}
+                  <div className="space-y-3 sm:space-y-2.5">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                        <CurrencyDollarIcon className="h-4 w-4 mr-1.5" />
+                        <span className="text-xs font-medium">Salário:</span>
+                      </div>
+                      <span className="text-xs text-gray-700">
+                        Até {concurso.salario}
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                      <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
+                        <BriefcaseIcon className="h-4 w-4 mr-1.5" />
+                        <span className="text-xs font-medium">Vagas:</span>
+                      </div>
+                      <span className="text-xs text-gray-700">
+                        {concurso.vagas}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Mostrar anúncio a cada 5 concursos */}
+        {((totalConcursosRenderizados + 1) % 5 === 0) && (
+          <div className="my-4">
+            <AdBannerList 
+              position="concursos_list" 
+              interval={5} 
+              itemCount={concursosFiltrados.length}
+              className="rounded-lg" 
+            />
+          </div>
+        )}
+      </>
+    );
   };
 
   return (
@@ -238,7 +484,7 @@ const Concursos = () => {
               </button>
             </div>
 
-            {/* Lista de concursos */}
+            {/* Lista de concursos organizados por estado */}
             {loading ? (
               <div className="flex justify-center py-12">
                 <div className="loader"></div>
@@ -268,103 +514,7 @@ const Concursos = () => {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6">
-                {concursosFiltrados.map((concurso, index) => (
-                  <React.Fragment key={concurso.id}>
-                    <div
-                      className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-                    >
-                      <div className="p-4 sm:p-6">
-                        <div className="flex flex-col gap-4">
-                          <div>
-                            <button 
-                              onClick={() => navegarParaPost(concurso)}
-                              className="text-left text-base sm:text-lg md:text-xl font-bold text-[#5f2ebe] hover:text-[#4924a1] transition-colors line-clamp-2 text-sm md:text-lg"
-                            >
-                              {concurso.titulo}
-                            </button>
-                            
-                            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-2.5">
-                              {/* Coluna da esquerda */}
-                              <div className="space-y-3 sm:space-y-2.5">
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                  <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
-                                    <CalendarIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs font-medium">Inscrições:</span>
-                                  </div>
-                                  <span className="text-xs text-gray-700">
-                                    {formatarPeriodo(concurso.dataInicioInscricao, concurso.dataFimInscricao)}
-                                    {concurso.prorrogado && (
-                                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        Prorrogado
-                                      </span>
-                                    )}
-                                  </span>
-                                </div>
-                                
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                  <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
-                                    <BriefcaseIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs font-medium">Cargos:</span>
-                                  </div>
-                                  <span className="text-xs text-gray-700 line-clamp-1">
-                                    {concurso.cargos.map(cargo => exibirTextoCargo(cargo)).join(', ')}
-                                  </span>
-                                </div>
-                                
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                  <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
-                                    <MapPinIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs font-medium">Estados:</span>
-                                  </div>
-                                  <span className="text-xs text-gray-700">
-                                    {concurso.estados.join(', ')}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              {/* Coluna da direita */}
-                              <div className="space-y-3 sm:space-y-2.5">
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                  <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
-                                    <CurrencyDollarIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs font-medium">Salário:</span>
-                                  </div>
-                                  <span className="text-xs text-gray-700">
-                                    Até {concurso.salario}
-                                  </span>
-                                </div>
-                                
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                                  <div className="flex items-center text-[#5f2ebe] min-w-[90px]">
-                                    <BriefcaseIcon className="h-4 w-4 mr-1.5" />
-                                    <span className="text-xs font-medium">Vagas:</span>
-                                  </div>
-                                  <span className="text-xs text-gray-700">
-                                    {concurso.vagas}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Mostrar anúncio a cada 5 concursos */}
-                    {((index + 1) % 5 === 0 && index < concursosFiltrados.length - 1) && (
-                      <div className="my-4">
-                        <AdBannerList 
-                          position="concursos_list" 
-                          interval={5} 
-                          itemCount={concursosFiltrados.length}
-                          className="rounded-lg" 
-                        />
-                      </div>
-                    )}
-                  </React.Fragment>
-                ))}
-              </div>
+              renderizarConcursosPorEstado()
             )}
           </div>
         </main>

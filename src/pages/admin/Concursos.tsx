@@ -20,6 +20,7 @@ enum ModoInterface {
 const ConcursosAdmin = () => {
   const [concursos, setConcursos] = useState<Concurso[]>([]);
   const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [postIdsUtilizados, setPostIdsUtilizados] = useState<Set<string>>(new Set());
   const [modo, setModo] = useState<ModoInterface>(ModoInterface.LISTAR);
   const [concursoAtual, setConcursoAtual] = useState<Concurso | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -55,6 +56,7 @@ const ConcursosAdmin = () => {
         author: post.author || '',
         commentCount: 0,
         likesCount: 0,
+        viewCount: 0,
         createdAt: '',
         slug: '',
         category: post.category
@@ -67,10 +69,22 @@ const ConcursosAdmin = () => {
     }
   };
 
+  // Função para carregar IDs de posts já utilizados
+  const carregarPostIdsUtilizados = async () => {
+    try {
+      const ids = await concursosService.listarPostIdsUtilizados();
+      setPostIdsUtilizados(new Set(ids));
+    } catch (error: any) {
+      console.error('Erro ao carregar posts utilizados:', error);
+      toast.error(`Erro ao carregar posts utilizados: ${error.message}`);
+    }
+  };
+
   // Carregar dados ao montar o componente
   useEffect(() => {
     carregarConcursos();
     carregarPosts();
+    carregarPostIdsUtilizados();
   }, []);
 
   // Função para criar um novo concurso
@@ -80,6 +94,11 @@ const ConcursosAdmin = () => {
       setConcursos([novoConcurso, ...concursos]);
       setModo(ModoInterface.LISTAR);
       toast.success('Concurso criado com sucesso!');
+      
+      // Atualizar a lista de posts utilizados
+      if (formData.postId) {
+        setPostIdsUtilizados(prev => new Set([...prev, formData.postId!]));
+      }
     } catch (error: any) {
       console.error('Erro ao criar concurso:', error);
       toast.error(`Erro ao criar concurso: ${error.message}`);
@@ -115,6 +134,9 @@ const ConcursosAdmin = () => {
       setModo(ModoInterface.LISTAR);
       setConcursoAtual(null);
       toast.success('Concurso atualizado com sucesso!');
+      
+      // Atualizar a lista de posts utilizados
+      carregarPostIdsUtilizados();
     } catch (error: any) {
       console.error('Erro ao atualizar concurso:', error);
       toast.error(`Erro ao atualizar concurso: ${error.message}`);
@@ -130,6 +152,10 @@ const ConcursosAdmin = () => {
     try {
       await concursosService.excluirConcurso(id);
       setConcursos(concursos.filter(c => c.id !== id));
+      
+      // Atualizar a lista de posts utilizados
+      carregarPostIdsUtilizados();
+      
       toast.success('Concurso excluído com sucesso!');
     } catch (error: any) {
       console.error('Erro ao excluir concurso:', error);
@@ -162,6 +188,8 @@ const ConcursosAdmin = () => {
   // Função para recarregar os dados
   const recarregarDados = () => {
     carregarConcursos();
+    carregarPosts();
+    carregarPostIdsUtilizados();
     toast.info('Dados recarregados');
   };
 
@@ -184,6 +212,7 @@ const ConcursosAdmin = () => {
 
           <FormularioConcurso 
             posts={posts}
+            postIdsUtilizados={postIdsUtilizados}
             concursoInicial={concursoAtual}
             onSalvar={salvarConcurso}
             onCancelar={cancelar}
@@ -265,4 +294,4 @@ const ConcursosAdmin = () => {
   return renderContent();
 };
 
-export default ConcursosAdmin; 
+export default ConcursosAdmin;

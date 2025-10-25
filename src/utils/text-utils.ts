@@ -3,6 +3,20 @@
  */
 
 /**
+ * Remove acentos e caracteres especiais de um texto, substituindo-os por suas versões não acentuadas.
+ * Útil para geração de slugs e URLs amigáveis.
+ */
+export const removeAccents = (text: string): string => {
+  if (!text) return '';
+  
+  return text
+    .normalize('NFD') // Normaliza para decompor caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, '') // Remove os acentos
+    .replace(/ç/g, 'c')
+    .replace(/Ç/g, 'C');
+};
+
+/**
  * Normaliza caracteres especiais, incluindo glifos matemáticos e símbolos.
  * Útil para garantir a consistência na exibição de textos com caracteres especiais.
  */

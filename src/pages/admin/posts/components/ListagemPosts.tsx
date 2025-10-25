@@ -1,11 +1,9 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Info, Plus, Search, Trash2, Rss } from "lucide-react";
+import { Edit, Plus, Search, Trash2, Rss, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import { BlogPost } from "@/components/blog/types";
-import { diagnoseBlogPostsTable } from "@/services/blogService";
-import { useToast } from "@/hooks/use-toast";
 import RSSManager from "@/components/admin/RSSManager";
 
 interface ListagemPostsProps {
@@ -15,6 +13,7 @@ interface ListagemPostsProps {
   onIniciarCriacaoPost: () => void;
   onIniciarEdicaoPost: (post: BlogPost) => void;
   onExcluirPost: (id: string) => void;
+  onToggleStatus: (id: string, isDraft: boolean) => void;
 }
 
 export const ListagemPosts: React.FC<ListagemPostsProps> = ({
@@ -23,64 +22,16 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
   onChangeBusca,
   onIniciarCriacaoPost,
   onIniciarEdicaoPost,
-  onExcluirPost
+  onExcluirPost,
+  onToggleStatus
 }) => {
-  const { toast } = useToast();
-  const [isRunningDiagnostic, setIsRunningDiagnostic] = React.useState(false);
   const [showRSSManager, setShowRSSManager] = React.useState(false);
-  
-  const runDiagnostic = async () => {
-    setIsRunningDiagnostic(true);
-    try {
-      toast({
-        title: "Diagnóstico em andamento",
-        description: "Verificando permissões para posts...",
-      });
-      
-      const result = await diagnoseBlogPostsTable();
-      console.log("Resultado do diagnóstico:", result);
-      
-      if (result.success) {
-        const canDelete = result.permissions?.delete?.success;
-        toast({
-          title: canDelete ? "Diagnóstico concluído com sucesso" : "Problema de permissão detectado",
-          description: canDelete 
-            ? "As permissões de exclusão estão corretas. Verifique o console para mais detalhes."
-            : "Você não tem permissão para excluir posts. Verifique o console para mais detalhes.",
-          variant: canDelete ? "default" : "destructive",
-        });
-      } else {
-        toast({
-          title: "Falha no diagnóstico",
-          description: result.message || "Ocorreu um erro durante o diagnóstico. Verifique o console para mais detalhes.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Erro ao executar diagnóstico:", error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível executar o diagnóstico. Verifique o console para mais detalhes.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsRunningDiagnostic(false);
-    }
-  };
   
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[#272f3c]">Posts</h1>
         <div className="flex space-x-2">
-          <Button 
-            onClick={runDiagnostic} 
-            variant="outline"
-            disabled={isRunningDiagnostic}
-          >
-            <Info className="h-4 w-4 mr-2" />
-            Diagnóstico
-          </Button>
           <Button 
             onClick={() => setShowRSSManager(!showRSSManager)}
             variant="outline"
@@ -113,8 +64,6 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
               <tr>
                 <th className="px-4 py-3">Título</th>
                 <th className="px-4 py-3">Autor</th>
-                <th className="px-4 py-3">Categoria</th>
-                <th className="px-4 py-3">Região</th>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Curtidas</th>
                 <th className="px-4 py-3">Status</th>
@@ -127,8 +76,6 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
                 <tr key={post.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 font-medium">{post.title}</td>
                   <td className="px-4 py-3">{post.author}</td>
-                  <td className="px-4 py-3">{post.category}</td>
-                  <td className="px-4 py-3">{post.region || '—'}</td>
                   <td className="px-4 py-3">{format(new Date(post.createdAt), "dd/MM/yyyy")}</td>
                   <td className="px-4 py-3">{post.likesCount}</td>
                   <td className="px-4 py-3">
@@ -151,6 +98,19 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => onToggleStatus(post.id, !post.isDraft)}
+                        className="h-8 w-8 p-0"
+                        title={post.isDraft ? "Publicar post" : "Marcar como rascunho"}
+                      >
+                        {post.isDraft ? (
+                          <Eye className="h-4 w-4" />
+                        ) : (
+                          <EyeOff className="h-4 w-4" />
+                        )}
+                      </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 

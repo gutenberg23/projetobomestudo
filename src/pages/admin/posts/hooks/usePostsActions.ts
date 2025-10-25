@@ -1,9 +1,10 @@
 import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface } from "../types";
-import { createBlogPost, updateBlogPost, deleteBlogPost } from "@/services/blogService";
+import { createBlogPost, updateBlogPost, deleteBlogPost, updateBlogPostStatus } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
+import { removeAccents } from "@/utils/text-utils";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
@@ -126,13 +127,22 @@ export function usePostsActions(state: PostsState) {
     
     setLoading(true);
     try {
-      // Geração de slug com timestamp para garantir unicidade
-      const timestamp = Date.now().toString(36);
-      const slug = titulo
-        .toLowerCase()
-        .replace(/[^\w\s]/gi, '')
-        .replace(/\s+/g, '-')
-        + '-' + timestamp;
+      // Geração de slug - apenas para novos posts para manter URLs imutáveis
+      let slug;
+      if (postEditando) {
+        // Para posts existentes, manter o slug original
+        slug = postEditando.slug;
+      } else {
+        // Para novos posts, gerar slug único
+        const timestamp = Date.now().toString(36);
+        // Remover acentos e caracteres especiais antes de gerar o slug
+        const tituloSemAcentos = removeAccents(titulo);
+        slug = tituloSemAcentos
+          .toLowerCase()
+          .replace(/[^\w\s]/gi, '')
+          .replace(/\s+/g, '-')
+          + '-' + timestamp;
+      }
       
       // Convert the comma-separated tags into an array
       const tagsArray = tags.split(',')
@@ -180,7 +190,8 @@ export function usePostsActions(state: PostsState) {
         featured: destacado,
         isDraft: isDraft,
         commentCount: postEditando?.commentCount || 0,
-        likesCount: postEditando?.likesCount || 0
+        likesCount: postEditando?.likesCount || 0,
+        viewCount: postEditando?.viewCount || 0
       };
 
       let novoPost: BlogPost | null;
@@ -300,10 +311,43 @@ export function usePostsActions(state: PostsState) {
     }
   };
 
+  // Alternar status do post (rascunho/publicado)
+  const togglePostStatus = async (id: string, isDraft: boolean) => {
+    setLoading(true);
+    try {
+      const updatedPost = await updateBlogPostStatus(id, isDraft);
+      if (updatedPost) {
+        // Atualiza o post na lista local
+        setPosts(posts.map(post => post.id === id ? { ...post, isDraft } : post));
+        toast({
+          title: "Status atualizado",
+          description: `O post foi ${isDraft ? 'marcado como rascunho' : 'publicado'} com sucesso.`,
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao atualizar o status do post. Tente novamente.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar status do post:", error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao atualizar o status do post. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     iniciarCriacaoPost,
     iniciarEdicaoPost,
     salvarPost,
-    excluirPost
+    excluirPost,
+    togglePostStatus
   };
 }

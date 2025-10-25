@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AdBanner from "@/components/ads/AdBanner";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { usePermissions } from "@/hooks/usePermissions";
+import { prepareHtmlContent } from "@/utils/text-utils";
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -395,10 +396,10 @@ const BlogPostPage = () => {
                       </div>
                     </div>
                     
-                    {/* Conteúdo do post */}
+                    {/* Conteúdo do post - usando prepareHtmlContent para normalizar caracteres especiais */}
                     <div 
-                      className="prose max-w-none text-gray-700 mb-8"
-                      dangerouslySetInnerHTML={{ __html: post.content }}
+                      className="prose max-w-none text-gray-700 mb-8 [&_p]:mb-4 [&_p]:leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: prepareHtmlContent(post.content) }}
                     />
                     
                     {/* Tags */}
