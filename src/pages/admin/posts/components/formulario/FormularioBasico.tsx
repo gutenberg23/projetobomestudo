@@ -7,6 +7,8 @@ interface FormularioBasicoProps {
   onChangeTitulo: (value: string) => void;
   resumo: string;
   onChangeResumo: (value: string) => void;
+  autorAvatar: string;
+  onChangeAutorAvatar: (value: string) => void;
   categoria: string;
   onChangeCategoria: (value: string) => void;
   tempoLeitura: string;
@@ -18,6 +20,8 @@ export const FormularioBasico: React.FC<FormularioBasicoProps> = ({
   onChangeTitulo,
   resumo,
   onChangeResumo,
+  autorAvatar,
+  onChangeAutorAvatar,
   categoria,
   onChangeCategoria,
   tempoLeitura,
@@ -46,6 +50,16 @@ export const FormularioBasico: React.FC<FormularioBasicoProps> = ({
             onChange={(e) => onChangeResumo(e.target.value)} 
             placeholder="Breve resumo do post"
             required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="autorAvatar">URL do Avatar do Autor</Label>
+          <Input 
+            id="autorAvatar" 
+            value={autorAvatar} 
+            onChange={(e) => onChangeAutorAvatar(e.target.value)} 
+            placeholder="URL da imagem do avatar do autor"
           />
         </div>
 
