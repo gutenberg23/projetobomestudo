@@ -18,7 +18,6 @@ export function usePostsState() {
   const [titulo, setTitulo] = useState("");
   const [resumo, setResumo] = useState("");
   const [conteudo, setConteudo] = useState("");
-  const [autor, setAutor] = useState("");
   const [autorAvatar, setAutorAvatar] = useState("");
   const [categoria, setCategoria] = useState("");
   const [destacado, setDestacado] = useState(false);
@@ -31,13 +30,6 @@ export function usePostsState() {
   const [regiao, setRegiao] = useState<Region | "none">("none");
   const [estado, setEstado] = useState("none");
   const [postsRelacionados, setPostsRelacionados] = useState("");
-
-  // Inicializar o campo de autor com o nome do usuário logado se for jornalista
-  useEffect(() => {
-    if (isJornalista() && user?.nome) {
-      setAutor(user.nome);
-    }
-  }, [user, isJornalista]);
 
   // Buscar posts do banco de dados ao carregar o componente
   useEffect(() => {
@@ -57,7 +49,7 @@ export function usePostsState() {
     carregarPosts();
   }, []);
 
-  // Filtragem dos posts baseado na busca e no autor (para jornalistas)
+  // Filtragem dos posts baseado na busca
   const postsFiltrados = posts.filter(post => {
     // Filtrar por busca
     const matchesBusca = 
@@ -92,8 +84,6 @@ export function usePostsState() {
     setResumo,
     conteudo,
     setConteudo,
-    autor,
-    setAutor,
     autorAvatar,
     setAutorAvatar,
     categoria,

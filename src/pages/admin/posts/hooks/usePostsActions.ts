@@ -16,7 +16,6 @@ export function usePostsActions(state: PostsState) {
     setTitulo,
     setResumo,
     setConteudo,
-    setAutor,
     setAutorAvatar,
     setCategoria,
     setDestacado,
@@ -33,7 +32,6 @@ export function usePostsActions(state: PostsState) {
     titulo,
     resumo,
     conteudo,
-    autor,
     categoria,
     destacado,
     isDraft,
@@ -57,14 +55,6 @@ export function usePostsActions(state: PostsState) {
     setTitulo("");
     setResumo("");
     setConteudo("");
-    
-    // Se for jornalista, preencher automaticamente o autor com o nome do usuário
-    if (isJornalista() && user?.nome) {
-      setAutor(user.nome);
-    } else {
-      setAutor("");
-    }
-    
     setAutorAvatar("");
     setCategoria("");
     setDestacado(false);
@@ -96,7 +86,6 @@ export function usePostsActions(state: PostsState) {
     setTitulo(post.title);
     setResumo(post.summary);
     setConteudo(post.content);
-    setAutor(post.author);
     setAutorAvatar(post.authorAvatar || "");
     setCategoria(post.category);
     setDestacado(post.featured || false);
@@ -115,16 +104,6 @@ export function usePostsActions(state: PostsState) {
 
   // Salvar um post (novo ou editado)
   const salvarPost = async () => {
-    // Se for jornalista, garantir que o autor é o próprio usuário
-    if (isJornalista() && user?.nome && autor !== user.nome) {
-      toast({
-        title: "Acesso negado",
-        description: "Você só pode criar posts com seu nome como autor.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setLoading(true);
     try {
       // Geração de slug - apenas para novos posts para manter URLs imutáveis
@@ -164,18 +143,11 @@ export function usePostsActions(state: PostsState) {
         .map(k => k.trim())
         .filter(k => k.length > 0);
       
-      // Definir o autor apropriado
-      let postAutor = autor;
-      // Se o usuário for jornalista, garantir que o autor é o próprio usuário
-      if (isJornalista() && user?.nome) {
-        postAutor = user.nome;
-      }
-      
       const postData = {
         title: titulo,
         summary: resumo,
         content: conteudo,
-        author: postAutor,
+        author: user?.nome || 'Admin',
         authorAvatar: user?.foto_url || '',
         slug: slug,
         category: categoria,

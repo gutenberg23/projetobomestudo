@@ -23,8 +23,6 @@ interface FormularioPostProps {
   onChangeResumo: (value: string) => void;
   conteudo: string;
   onChangeConteudo: (value: string) => void;
-  autor: string;
-  onChangeAutor: (value: string) => void;
   autorAvatar: string;
   onChangeAutorAvatar: (value: string) => void;
   categoria: string;
@@ -50,6 +48,7 @@ interface FormularioPostProps {
   postsRelacionados: string;
   onChangePostsRelacionados: (value: string) => void;
   postId?: string;
+  postSlug?: string;
 }
 
 export const FormularioPost: React.FC<FormularioPostProps> = ({
@@ -62,8 +61,6 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
   onChangeResumo,
   conteudo,
   onChangeConteudo,
-  autor,
-  onChangeAutor,
   autorAvatar,
   onChangeAutorAvatar,
   categoria,
@@ -88,7 +85,8 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
   onChangeEstado,
   postsRelacionados,
   onChangePostsRelacionados,
-  postId
+  postId,
+  postSlug
 }) => {
   const handleResetLikes = async () => {
     if (!postId) return;
@@ -123,9 +121,16 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#272f3c]">
-          {modo === ModoInterface.CRIAR ? "Novo Post" : "Editar Post"}
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-[#272f3c]">
+            {modo === ModoInterface.CRIAR ? "Novo Post" : "Editar Post"}
+          </h1>
+          {modo === ModoInterface.EDITAR && postSlug && (
+            <p className="text-sm text-gray-600 mt-1">
+              URL: <a href={`/blog/${postSlug}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">/blog/{postSlug}</a>
+            </p>
+          )}
+        </div>
         <div className="flex items-center space-x-2">
           {modo === ModoInterface.EDITAR && (
             <Button
@@ -158,10 +163,6 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
             onChangeTitulo={onChangeTitulo}
             resumo={resumo}
             onChangeResumo={onChangeResumo}
-            autor={autor}
-            onChangeAutor={onChangeAutor}
-            autorAvatar={autorAvatar}
-            onChangeAutorAvatar={onChangeAutorAvatar}
             categoria={categoria}
             onChangeCategoria={onChangeCategoria}
             tempoLeitura={tempoLeitura}

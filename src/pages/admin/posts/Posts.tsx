@@ -20,8 +20,6 @@ const Posts = () => {
     setResumo,
     conteudo,
     setConteudo,
-    autor,
-    setAutor,
     autorAvatar,
     setAutorAvatar,
     categoria,
@@ -104,8 +102,6 @@ const Posts = () => {
           onChangeResumo={setResumo}
           conteudo={conteudo}
           onChangeConteudo={setConteudo}
-          autor={autor}
-          onChangeAutor={setAutor}
           autorAvatar={autorAvatar}
           onChangeAutorAvatar={setAutorAvatar}
           categoria={categoria}
@@ -131,6 +127,7 @@ const Posts = () => {
           postsRelacionados={postsRelacionados}
           onChangePostsRelacionados={setPostsRelacionados}
           postId={postEditando?.id}
+          postSlug={postEditando?.slug}
         />
       )}
     </div>
