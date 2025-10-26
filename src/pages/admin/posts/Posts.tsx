@@ -44,7 +44,12 @@ const Posts = () => {
     setEstado,
     postsRelacionados,
     setPostsRelacionados,
-    postEditando
+    postEditando,
+    // Estados de paginação
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalPosts
   } = state;
 
   const { 
@@ -90,6 +95,10 @@ const Posts = () => {
           onIniciarEdicaoPost={iniciarEdicaoPost}
           onExcluirPost={excluirPost}
           onToggleStatus={togglePostStatus}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalPosts={totalPosts}
+          onPageChange={setCurrentPage}
         />
       ) : (
         <FormularioPost 

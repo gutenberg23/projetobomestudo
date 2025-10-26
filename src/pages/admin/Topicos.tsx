@@ -61,12 +61,13 @@ const Topicos = () => {
   } = useTopicosState();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newTopico, setNewTopico] = useState({
+  const [newTopico, setNewTopico] = useState<Omit<Topico, 'id' | 'selecionado' | 'thumbnail' | 'abrirVideoEm'>>({
     titulo: "",
     disciplina: "",
     patrocinador: "",
-    questoesIds: [] as string[],
+    questoesIds: [],
     professor_id: "",
+    professor_nome: "",
     videoUrl: "",
     pdfUrl: "",
     mapaUrl: "",
@@ -177,10 +178,16 @@ const Topicos = () => {
 
     try {
       let professor_nome = "";
-      if (newTopico.professor_id) {
+      let professor_id = newTopico.professor_id || null;
+      
+      // Se um professor foi selecionado, verificar se é um UUID válido
+      if (professor_id) {
         const selectedTeacher = teachers.find(t => t.id === newTopico.professor_id);
         if (selectedTeacher) {
           professor_nome = selectedTeacher.nomeCompleto;
+        } else {
+          // Se não encontrou o professor, definir como null
+          professor_id = null;
         }
       }
 
@@ -191,14 +198,14 @@ const Topicos = () => {
           patrocinador: newTopico.patrocinador,
           disciplina: newTopico.disciplina,
           questoes_ids: newTopico.questoesIds,
-          professor_id: newTopico.professor_id,
+          professor_id: professor_id, // Usar o valor corrigido
           professor_nome: professor_nome,
           video_url: newTopico.videoUrl,
           pdf_url: newTopico.pdfUrl,
           mapa_url: newTopico.mapaUrl,
           resumo_url: newTopico.resumoUrl,
           musica_url: Array.isArray(newTopico.musicaUrl) ? newTopico.musicaUrl.join(',') : newTopico.musicaUrl,
-      resumo_audio_url: Array.isArray(newTopico.resumoAudioUrl) ? newTopico.resumoAudioUrl.join(',') : newTopico.resumoAudioUrl,
+          resumo_audio_url: Array.isArray(newTopico.resumoAudioUrl) ? newTopico.resumoAudioUrl.join(',') : newTopico.resumoAudioUrl,
           caderno_questoes_url: newTopico.cadernoQuestoesUrl,
           abrir_em_nova_guia: newTopico.abrirEmNovaGuia
         })
@@ -218,7 +225,7 @@ const Topicos = () => {
           mapaUrl: data[0].mapa_url,
           resumoUrl: data[0].resumo_url,
           musicaUrl: data[0].musica_url ? data[0].musica_url.split(',').filter(Boolean) : [],
-        resumoAudioUrl: data[0].resumo_audio_url ? data[0].resumo_audio_url.split(',').filter(Boolean) : [],
+          resumoAudioUrl: data[0].resumo_audio_url ? data[0].resumo_audio_url.split(',').filter(Boolean) : [],
           cadernoQuestoesUrl: data[0].caderno_questoes_url,
           questoesIds: data[0].questoes_ids,
           professor_id: data[0].professor_id,
@@ -239,13 +246,11 @@ const Topicos = () => {
           mapaUrl: "",
           resumoUrl: "",
           musicaUrl: [],
-      resumoAudioUrl: [],
+          resumoAudioUrl: [],
           cadernoQuestoesUrl: "",
           questoesIds: [],
           professor_id: "",
           professor_nome: "",
-          thumbnail: "",
-          abrirVideoEm: "site",
           abrirEmNovaGuia: false
         });
         
@@ -454,7 +459,7 @@ const Topicos = () => {
             <MultiFileUploadField
               id="topico-musica-url"
               label="Link da Música"
-              values={Array.isArray(newTopico.musicaUrl) ? newTopico.musicaUrl : newTopico.musicaUrl ? [newTopico.musicaUrl] : []}
+              values={Array.isArray(newTopico.musicaUrl) ? newTopico.musicaUrl : []}
               onChange={(values) => setNewTopico({ ...newTopico, musicaUrl: values })}
               placeholder="URLs das músicas ou faça upload"
               allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
@@ -464,7 +469,7 @@ const Topicos = () => {
             <MultiFileUploadField
               id="topico-resumo-audio-url"
               label="Link do Resumo em Áudio"
-              values={Array.isArray(newTopico.resumoAudioUrl) ? newTopico.resumoAudioUrl : newTopico.resumoAudioUrl ? [newTopico.resumoAudioUrl] : []}
+              values={Array.isArray(newTopico.resumoAudioUrl) ? newTopico.resumoAudioUrl : []}
               onChange={(values) => setNewTopico({ ...newTopico, resumoAudioUrl: values })}
               placeholder="URLs dos resumos em áudio ou faça upload"
               allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { BlogPost, Region } from "@/components/blog/types";
 import { ModoInterface, MOCK_POSTS } from "../types";
-import { fetchBlogPosts } from "@/services/blogService";
+import { fetchBlogPostsWithPagination } from "@/services/blogService";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -13,6 +13,11 @@ export function usePostsState() {
   const [loading, setLoading] = useState(false);
   const [busca, setBusca] = useState("");
   const [postEditando, setPostEditando] = useState<BlogPost | null>(null);
+  
+  // Estados para paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPosts, setTotalPosts] = useState(0);
+  const postsPerPage = 20;
   
   // Campos do formulário
   const [titulo, setTitulo] = useState("");
@@ -31,23 +36,32 @@ export function usePostsState() {
   const [estado, setEstado] = useState("none");
   const [postsRelacionados, setPostsRelacionados] = useState("");
 
-  // Buscar posts do banco de dados ao carregar o componente
+  // Buscar posts do banco de dados ao carregar o componente e quando a página muda
   useEffect(() => {
     const carregarPosts = async () => {
       setLoading(true);
       try {
-        const postsData = await fetchBlogPosts(undefined, true);
+        // Usar a nova função com paginação
+        const { posts: postsData, totalCount } = await fetchBlogPostsWithPagination(
+          currentPage, 
+          postsPerPage, 
+          undefined, 
+          true
+        );
+        
         setPosts(postsData.length > 0 ? postsData : MOCK_POSTS);
+        setTotalPosts(totalCount);
       } catch (error) {
         console.error("Erro ao carregar posts:", error);
         setPosts(MOCK_POSTS); // Fallback para dados mock em caso de erro
+        setTotalPosts(MOCK_POSTS.length);
       } finally {
         setLoading(false);
       }
     };
 
     carregarPosts();
-  }, []);
+  }, [currentPage]);
 
   // Filtragem dos posts baseado na busca
   const postsFiltrados = posts.filter(post => {
@@ -65,6 +79,9 @@ export function usePostsState() {
     // Para outros usuários, mostrar todos os posts que correspondem à busca
     return matchesBusca;
   });
+
+  // Calcular o número total de páginas
+  const totalPages = Math.ceil(totalPosts / postsPerPage);
 
   return {
     modo,
@@ -107,6 +124,11 @@ export function usePostsState() {
     estado,
     setEstado,
     postsRelacionados,
-    setPostsRelacionados
+    setPostsRelacionados,
+    // Estados de paginação
+    currentPage,
+    setCurrentPage,
+    totalPages,
+    totalPosts
   };
 }

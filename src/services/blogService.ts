@@ -149,6 +149,45 @@ export async function fetchBlogPosts(authorFilter?: string, includeDrafts: boole
   }
 }
 
+// Função para buscar posts do blog com paginação
+export async function fetchBlogPostsWithPagination(
+  page: number = 1, 
+  limit: number = 20, 
+  authorFilter?: string, 
+  includeDrafts: boolean = false
+): Promise<{ posts: BlogPost[]; totalCount: number }> {
+  try {
+    let query = supabase
+      .from('blog_posts')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range((page - 1) * limit, page * limit - 1);
+    
+    // Filtrar rascunhos por padrão, exceto se explicitamente solicitado
+    if (!includeDrafts) {
+      query = query.eq('is_draft', false);
+    }
+    
+    // Se tiver um filtro de autor, aplicar
+    if (authorFilter) {
+      query = query.eq('author', authorFilter);
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Erro ao buscar posts do blog com paginação:', error);
+      return { posts: [], totalCount: 0 };
+    }
+
+    const posts = data ? data.map(mapDatabasePostToAppPost) : [];
+    return { posts, totalCount: count || 0 };
+  } catch (error) {
+    console.error('Exceção ao buscar posts do blog com paginação:', error);
+    return { posts: [], totalCount: 0 };
+  }
+}
+
 // Função para buscar um post específico pelo slug
 export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   try {

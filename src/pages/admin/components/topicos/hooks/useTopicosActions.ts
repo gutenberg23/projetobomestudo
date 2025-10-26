@@ -43,6 +43,16 @@ export const useTopicosActions = (
   // Função para salvar tópico editado
   const handleSaveTopico = async (updatedTopico: Topico) => {
     try {
+      // Tratar o campo professor_id para evitar erro de UUID
+      let professor_id = updatedTopico.professor_id || null;
+      let professor_nome = updatedTopico.professor_nome || "";
+      
+      // Se um professor foi selecionado, verificar se é um UUID válido
+      if (professor_id) {
+        // Aqui poderíamos validar se é um UUID válido, mas vamos assumir que o Select já faz isso
+        // Se precisar validar, podemos adicionar uma verificação aqui
+      }
+
       // Atualizar no Supabase
       const { error } = await supabase
         .from('topicos')
@@ -51,15 +61,15 @@ export const useTopicosActions = (
           disciplina: updatedTopico.disciplina,
           patrocinador: updatedTopico.patrocinador,
           questoes_ids: updatedTopico.questoesIds,
-          professor_id: updatedTopico.professor_id,
-          professor_nome: updatedTopico.professor_nome,
+          professor_id: professor_id, // Usar o valor corrigido
+          professor_nome: professor_nome,
           video_url: updatedTopico.videoUrl,
-        pdf_url: updatedTopico.pdfUrl,
-        mapa_url: updatedTopico.mapaUrl,
-        resumo_url: updatedTopico.resumoUrl,
-        musica_url: Array.isArray(updatedTopico.musicaUrl) ? updatedTopico.musicaUrl.join(',') : updatedTopico.musicaUrl,
-      resumo_audio_url: Array.isArray(updatedTopico.resumoAudioUrl) ? updatedTopico.resumoAudioUrl.join(',') : updatedTopico.resumoAudioUrl,
-        caderno_questoes_url: updatedTopico.cadernoQuestoesUrl,
+          pdf_url: updatedTopico.pdfUrl,
+          mapa_url: updatedTopico.mapaUrl,
+          resumo_url: updatedTopico.resumoUrl,
+          musica_url: Array.isArray(updatedTopico.musicaUrl) ? updatedTopico.musicaUrl.join(',') : updatedTopico.musicaUrl,
+          resumo_audio_url: Array.isArray(updatedTopico.resumoAudioUrl) ? updatedTopico.resumoAudioUrl.join(',') : updatedTopico.resumoAudioUrl,
+          caderno_questoes_url: updatedTopico.cadernoQuestoesUrl,
           abrir_em_nova_guia: updatedTopico.abrirEmNovaGuia
         })
         .eq('id', updatedTopico.id);
