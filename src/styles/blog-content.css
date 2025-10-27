@@ -1,0 +1,131 @@
+/* Estilos personalizados para conteúdo de blog */
+/* Tabelas com design minimalista e 100% de largura */
+
+.prose {
+  /* Estilos para tabelas */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin-bottom: 1.5rem;
+  }
+  
+  th {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+  }
+  
+  td {
+    border: 1px solid #e9ecef;
+    padding: 0.75rem;
+  }
+  
+  tr:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+  
+  tr:hover {
+    background-color: #e9ecef;
+  }
+  
+  /* Estilos para tags de cabeçalho */
+  h1 {
+    font-size: 1.875rem; /* 30px */
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+  
+  h2 {
+    font-size: 1.5rem; /* 24px */
+    font-weight: 700;
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+  }
+  
+  h3 {
+    font-size: 1.25rem; /* 20px */
+    font-weight: 600;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+  }
+  
+  h4 {
+    font-size: 1.125rem; /* 18px */
+    font-weight: 600;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+  
+  h5 {
+    font-size: 1rem; /* 16px */
+    font-weight: 600;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+  }
+  
+  /* Estilos para parágrafos */
+  p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+  
+  /* Estilos para listas */
+  ul, ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+  }
+  
+  li {
+    margin-bottom: 0.25rem;
+  }
+  
+  /* Estilos para links */
+  a {
+    color: #5f2ebe;
+    text-decoration: underline;
+  }
+  
+  a:hover {
+    color: #4a2399;
+  }
+  
+  /* Estilos para código */
+  code {
+    background-color: #f1f3f5;
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+  }
+  
+  pre {
+    background-color: #f1f3f5;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+  
+  pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+  
+  /* Estilos para citações */
+  blockquote {
+    border-left: 4px solid #5f2ebe;
+    padding-left: 1rem;
+    margin-left: 0;
+    margin-bottom: 1rem;
+    font-style: italic;
+  }
+}

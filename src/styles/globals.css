@@ -4,6 +4,9 @@
 @tailwind utilities;
 /* stylelint-enable at-rule-no-unknown */
 
+/* Importar estilos personalizados para conteúdo de blog */
+@import './blog-content.css';
+
 :root {
   /* Variáveis de cores dinâmicas que serão atualizadas pelo hook useSiteConfig */
   --primary-color: #5f2ebe;
@@ -98,6 +101,51 @@
     @apply bg-background text-foreground;
     font-family: var(--font-family);
   }
+  
+  /* Estilos para o plugin @tailwindcss/typography */
+  .prose {
+    max-width: none;
+  }
+  
+  .prose table {
+    @apply w-full border-collapse border border-gray-300;
+  }
+  
+  .prose th {
+    @apply border border-gray-300 bg-gray-50 p-2 text-left font-semibold;
+  }
+  
+  .prose td {
+    @apply border border-gray-300 p-2;
+  }
+  
+  .prose tr:hover {
+    @apply bg-gray-50;
+  }
+  
+  .prose h1 {
+    @apply text-2xl font-bold;
+  }
+  
+  .prose h2 {
+    @apply text-xl font-bold;
+  }
+  
+  .prose h3 {
+    @apply text-lg font-bold;
+  }
+  
+  .prose h4 {
+    @apply text-base font-bold;
+  }
+  
+  .prose h5 {
+    @apply text-sm font-bold;
+  }
+  
+  .prose p {
+    @apply mb-4 leading-relaxed;
+  }
 }
 
 /* Estilos para o banner de manutenção */
@@ -160,4 +208,4 @@ button.course-nav-button,
 [data-radix-popper-content-wrapper] {
   z-index: 9999 !important;
   pointer-events: auto !important;
-} 
+}

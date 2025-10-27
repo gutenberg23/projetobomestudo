@@ -193,27 +193,13 @@ const Blog = () => {
     <PublicLayout>
       <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
         <BlogLayout>
-          {/* Filtros - ocupa toda a largura */}
-          <div className="mb-6 space-y-4">
+          {/* Filtros de estado - mantém na parte superior */}
+          <div className="mb-6">
             <StateFilter 
               states={STATES} 
               activeState={activeState} 
               onSelectState={handleStateSelect} 
             />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <CategoryFilter 
-                categories={CATEGORIES} 
-                activeCategory={activeCategory} 
-                onSelectCategory={handleCategorySelect} 
-              />
-              
-              <TagFilter 
-                tags={allTags} 
-                activeTag={activeTag} 
-                onSelectTag={handleTagSelect} 
-              />
-            </div>
           </div>
           
           {/* Posts em destaque - ocupa toda a largura */}
@@ -298,6 +284,21 @@ const Blog = () => {
               
               {/* Últimas notícias */}
               <LatestNews posts={latestPosts} />
+              
+              {/* Filtros de Categoria e Tag movidos para aqui */}
+              <div className="space-y-6">
+                <CategoryFilter 
+                  categories={CATEGORIES} 
+                  activeCategory={activeCategory} 
+                  onSelectCategory={handleCategorySelect} 
+                />
+                
+                <TagFilter 
+                  tags={allTags} 
+                  activeTag={activeTag} 
+                  onSelectTag={handleTagSelect} 
+                />
+              </div>
             </div>
           </div>
         </BlogLayout>
