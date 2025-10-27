@@ -68,7 +68,7 @@ Disallow: /dashboard/
 Disallow: */admin/*
 
 # Sitemap
-Sitemap: https://seusite.com.br/sitemap.xml`;
+Sitemap: https://bomestudo.com.br/sitemap.xml`;
 
     // Se encontrou dados, extrair o robotsTxt
     if (data && data.valor) {
@@ -88,6 +88,24 @@ Sitemap: https://seusite.com.br/sitemap.xml`;
   } catch (error) {
     console.error('Erro ao buscar robots.txt:', error);
     res.status(500).send('Erro ao buscar configurações do robots.txt');
+  }
+});
+
+// Rota dinâmica para sitemap.xml
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    // Importar a função de geração de sitemap
+    const { generateSitemapXML } = await import('./src/services/sitemapService');
+    
+    // Gerar o conteúdo do sitemap
+    const sitemapContent = await generateSitemapXML();
+    
+    // Retornar o conteúdo como XML
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(sitemapContent);
+  } catch (error) {
+    console.error('Erro ao gerar sitemap.xml:', error);
+    res.status(500).send('Erro ao gerar sitemap');
   }
 });
 

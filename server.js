@@ -278,6 +278,80 @@ app.delete('/api/files/folder', (req, res) => {
   }
 });
 
+// Rota dinâmica para robots.txt
+app.get('/robots.txt', async (req, res) => {
+  try {
+    if (!supabase) {
+      // Retornar conteúdo padrão se Supabase não estiver configurado
+      const robotsContent = `User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: */admin/*
+
+# Sitemap
+Sitemap: https://bomestudo.com.br/sitemap.xml`;
+      res.setHeader('Content-Type', 'text/plain');
+      res.send(robotsContent);
+      return;
+    }
+    
+    // Buscar o conteúdo do robots.txt do banco de dados
+    const { data, error } = await supabase
+      .from('configuracoes_site')
+      .select('valor')
+      .eq('chave', 'seo_config')
+      .single();
+    
+    // Definir conteúdo padrão caso não encontre no banco
+    let robotsContent = `User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: */admin/*
+
+# Sitemap
+Sitemap: https://bomestudo.com.br/sitemap.xml`;
+
+    // Se encontrou dados, extrair o robotsTxt
+    if (data && data.valor) {
+      try {
+        const seoConfig = JSON.parse(data.valor);
+        if (seoConfig.robotsTxt) {
+          robotsContent = seoConfig.robotsTxt;
+        }
+      } catch (parseError) {
+        console.error('Erro ao fazer parse do valor da configuração:', parseError);
+      }
+    }
+    
+    // Retornar o conteúdo como texto plano
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(robotsContent);
+  } catch (error) {
+    console.error('Erro ao buscar robots.txt:', error);
+    res.status(500).send('Erro ao buscar configurações do robots.txt');
+  }
+});
+
+// Rota dinâmica para sitemap.xml
+app.get('/sitemap.xml', async (req, res) => {
+  try {
+    // Importar a função de geração de sitemap
+    const { generateSitemapXML } = await import('./src/services/sitemapService.js');
+    
+    // Gerar o conteúdo do sitemap
+    const sitemapContent = await generateSitemapXML();
+    
+    // Retornar o conteúdo como XML
+    res.setHeader('Content-Type', 'application/xml');
+    res.send(sitemapContent);
+  } catch (error) {
+    console.error('Erro ao gerar sitemap.xml:', error);
+    res.status(500).send('Erro ao gerar sitemap');
+  }
+});
+
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
