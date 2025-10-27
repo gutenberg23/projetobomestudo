@@ -22,8 +22,34 @@ export function useImageUpload() {
       
       console.log('Baixando imagem de:', imageUrl);
       
-      // Baixar a imagem
-      const response = await fetch(imageUrl);
+      // Tentar baixar a imagem com tratamento de CORS
+      let response: Response;
+      try {
+        // Primeira tentativa: fetch direto
+        response = await fetch(imageUrl);
+      } catch (fetchError) {
+        console.warn('Falha no fetch direto, tentando com proxy:', fetchError);
+        // Segunda tentativa: usar proxy CORS do Next.js
+        try {
+          response = await fetch(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
+        } catch (proxyError) {
+          console.error('Falha ao usar proxy:', proxyError);
+          // Se ambos falharem, retornar a URL original
+          return imageUrl;
+        }
+      }
+      
+      // Se ainda tivermos problemas de CORS, tentar novamente com o proxy
+      if (!response.ok && response.status === 0) {
+        console.warn('Possível erro de CORS, tentando com proxy');
+        try {
+          response = await fetch(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
+        } catch (proxyError) {
+          console.error('Falha ao usar proxy:', proxyError);
+          // Se o proxy falhar, retornar a URL original
+          return imageUrl;
+        }
+      }
       
       if (!response.ok) {
         throw new Error(`Falha ao baixar imagem: ${response.status} ${response.statusText}`);
@@ -57,7 +83,8 @@ export function useImageUpload() {
       return publicUrl;
     } catch (error) {
       console.error('Erro ao processar imagem:', error);
-      return null;
+      // Em caso de erro, retornar a URL original em vez de null
+      return imageUrl;
     } finally {
       setIsUploading(false);
     }

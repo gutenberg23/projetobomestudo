@@ -93,11 +93,18 @@ export const FormularioMidia: React.FC<FormularioMidiaProps> = ({
     setIsProcessingUrl(true);
     try {
       const processedUrl = await downloadAndUploadImage(imagemDestaque);
-      if (processedUrl) {
+      if (processedUrl && processedUrl !== imagemDestaque) {
         onChangeImagemDestaque(processedUrl);
         toast({
           title: "Imagem processada",
           description: "A imagem foi baixada e salva no Supabase com sucesso.",
+          variant: "default"
+        });
+      } else if (processedUrl === imagemDestaque) {
+        // A URL original foi mantida devido a problemas de CORS
+        toast({
+          title: "Imagem não processada",
+          description: "Não foi possível processar a imagem devido a restrições de segurança do servidor de origem. A URL original será mantida.",
           variant: "default"
         });
       } else {
