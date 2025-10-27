@@ -173,10 +173,17 @@ export default function App() {
                         <RegionPosts />
                       </ConfigGuard>
                     } />
-
-                    <Route path="/blog/estado/:stateId" element={
+                    
+                    {/* Add these new routes for category and tag filtering */}
+                    <Route path="/blog/categoria/:category" element={
                       <ConfigGuard configKey="showBlogPage">
-                        <StatePosts />
+                        <Blog />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/blog/tag/:tag" element={
+                      <ConfigGuard configKey="showBlogPage">
+                        <Blog />
                       </ConfigGuard>
                     } />
                     

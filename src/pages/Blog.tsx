@@ -3,21 +3,26 @@ import { BlogLayout } from "@/components/blog/BlogLayout";
 import { BlogList } from "@/components/blog/BlogList";
 import { FeaturedPosts } from "@/components/blog/FeaturedPosts";
 import { StateFilter } from "@/components/blog/StateFilter";
+import { CategoryFilter } from "@/components/blog/CategoryFilter";
+import { TagFilter } from "@/components/blog/TagFilter";
 import { LatestNews } from "@/components/blog/LatestNews";
 import { MOCK_BLOG_POSTS } from "@/data/blogPosts";
-import { STATES } from "@/data/blogFilters";
+import { STATES, CATEGORIES } from "@/data/blogFilters";
 import { fetchBlogPosts } from "@/services/blogService";
 import { BlogPost } from "@/components/blog/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, ArrowRight, Search } from "lucide-react";
 import { SidebarPosts } from "@/components/blog/SidebarPosts";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import AdBanner from '@/components/ads/AdBanner';
 import { PublicLayout } from "@/components/layout/PublicLayout";
 
 const Blog = () => {
+  const { category: categoryParam, tag: tagParam } = useParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeState, setActiveState] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,8 +100,42 @@ const Blog = () => {
       }
     }
     
+    // Filtrar por categoria
+    if (activeCategory) {
+      const selectedCategory = CATEGORIES.find(c => c.id === activeCategory);
+      if (selectedCategory) {
+        result = result.filter(post => 
+          post.category && post.category.toLowerCase() === selectedCategory.value.toLowerCase()
+        );
+      }
+    }
+    
+    // Filtrar por tag
+    if (activeTag) {
+      result = result.filter(post => 
+        post.tags && post.tags.some(t => t.toLowerCase() === activeTag.toLowerCase())
+      );
+    }
+    
+    // Filtrar por categoria (se houver parâmetro na URL)
+    if (categoryParam) {
+      result = result.filter(post => 
+        post.category && post.category.toLowerCase() === categoryParam.toLowerCase()
+      );
+    }
+    
+    // Filtrar por tag (se houver parâmetro na URL)
+    if (tagParam) {
+      result = result.filter(post => 
+        post.tags && post.tags.some(t => t.toLowerCase() === tagParam.toLowerCase())
+      );
+    }
+    
     setFilteredPosts(result);
-  }, [searchTerm, activeState, allPosts]);
+  }, [searchTerm, activeState, activeCategory, activeTag, allPosts, categoryParam, tagParam]);
+
+  // Extrair todas as tags únicas dos posts
+  const allTags = [...new Set(allPosts.flatMap(post => post.tags || []))];
 
   // Posts destacados para o carrossel
   const featuredPosts = allPosts.filter(post => post.featured).slice(0, 4);
@@ -111,6 +150,14 @@ const Blog = () => {
 
   const handleStateSelect = (stateId: string | null) => {
     setActiveState(stateId);
+  };
+
+  const handleCategorySelect = (categoryId: string | null) => {
+    setActiveCategory(categoryId);
+  };
+
+  const handleTagSelect = (tag: string | null) => {
+    setActiveTag(tag);
   };
 
   if (loading) {
@@ -146,17 +193,31 @@ const Blog = () => {
     <PublicLayout>
       <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
         <BlogLayout>
-          {/* Filtro de estados - ocupa toda a largura */}
-          <div className="mb-6">
+          {/* Filtros - ocupa toda a largura */}
+          <div className="mb-6 space-y-4">
             <StateFilter 
               states={STATES} 
               activeState={activeState} 
               onSelectState={handleStateSelect} 
             />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CategoryFilter 
+                categories={CATEGORIES} 
+                activeCategory={activeCategory} 
+                onSelectCategory={handleCategorySelect} 
+              />
+              
+              <TagFilter 
+                tags={allTags} 
+                activeTag={activeTag} 
+                onSelectTag={handleTagSelect} 
+              />
+            </div>
           </div>
           
           {/* Posts em destaque - ocupa toda a largura */}
-          {!searchTerm && !activeState && featuredPosts.length > 0 && (
+          {!searchTerm && !activeState && !activeCategory && !activeTag && !categoryParam && !tagParam && featuredPosts.length > 0 && (
             <FeaturedPosts posts={featuredPosts} />
           )}
           
@@ -181,14 +242,29 @@ const Blog = () => {
             </Link>
           </div>
           
+          {/* Mostrar título quando filtrando por categoria ou tag */}
+          {(categoryParam || tagParam || activeCategory || activeTag) && (
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-800">
+                {categoryParam ? `Categoria: ${categoryParam}` : 
+                 tagParam ? `Tag: ${tagParam}` :
+                 activeCategory ? `Categoria: ${CATEGORIES.find(c => c.id === activeCategory)?.name}` :
+                 activeTag ? `Tag: ${activeTag}` : ''}
+              </h1>
+              <p className="text-gray-600">
+                {filteredPosts.length} post{filteredPosts.length !== 1 ? 's' : ''} encontrado{filteredPosts.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          )}
+          
           {/* Layout de duas colunas abaixo dos destaques */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
               {/* Listagem de posts */}
               <div>
                 <BlogList posts={
-                  // Remover os posts em destaque da lista principal
-                  searchTerm || activeState 
+                  // Remover os posts em destaque da lista principal apenas quando não há filtros
+                  searchTerm || activeState || activeCategory || activeTag || categoryParam || tagParam
                     ? filteredPosts 
                     : filteredPosts.filter(post => !post.featured)
                 } />
@@ -201,6 +277,8 @@ const Blog = () => {
                       onClick={() => {
                         setSearchTerm("");
                         setActiveState(null);
+                        setActiveCategory(null);
+                        setActiveTag(null);
                       }}
                     >
                       Limpar filtros

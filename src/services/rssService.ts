@@ -27,6 +27,15 @@ interface RSSConfig {
   created_at?: string;
 }
 
+interface RSSTransmitido {
+  id: string;
+  rss_item_guid: string;
+  rss_item_link: string;
+  rss_feed_name: string;
+  blog_post_id: string | null;
+  created_at: string;
+}
+
 // Função para buscar e parsear RSS feed
 export async function fetchRSSFeed(url: string): Promise<RSSFeed | null> {
   try {
@@ -173,7 +182,7 @@ export async function extractWebContent(url: string): Promise<string | null> {
 }
 
 // Cache para evitar reprocessar o mesmo conteúdo múltiplas vezes
-const rewriteCache = new Map<string, { title: string; content: string; summary: string; tags: string[] }>();
+const rewriteCache = new Map<string, { title: string; content: string; summary: string; tags: string[]; region: string; state: string; metaKeywords: string[] }>();
 const REWRITE_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas em ms
 const rewriteCacheTimestamps = new Map<string, number>();
 
@@ -460,6 +469,73 @@ export async function fetchAllRSSPosts(): Promise<{ feedName: string; items: RSS
 // Função para processar um post individual
 export async function processIndividualRSSItem(item: RSSItem, authorName: string = 'Administrador'): Promise<BlogPost | null> {
   return await processRSSItem(item, authorName);
+}
+
+// Função para registrar um post RSS como transmitido
+export async function registerTransmittedRSSItem(item: RSSItem, feedName: string, blogPostId: string | null = null): Promise<RSSTransmitido | null> {
+  try {
+    const { data, error } = await supabase
+      .from('rss_transmitidos')
+      .insert([{
+        rss_item_guid: item.guid,
+        rss_item_link: item.link,
+        rss_feed_name: feedName,
+        blog_post_id: blogPostId
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao registrar item RSS transmitido:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao registrar item RSS transmitido:', error);
+    return null;
+  }
+}
+
+// Função para verificar se um item RSS já foi transmitido
+export async function isRSSItemTransmitted(guid: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('rss_transmitidos')
+      .select('id')
+      .eq('rss_item_guid', guid)
+      .limit(1);
+
+    if (error) {
+      console.error('Erro ao verificar item RSS transmitido:', error);
+      return false;
+    }
+
+    return data && data.length > 0;
+  } catch (error) {
+    console.error('Erro ao verificar item RSS transmitido:', error);
+    return false;
+  }
+}
+
+// Função para buscar todos os itens RSS transmitidos
+export async function fetchAllTransmittedRSSItems(): Promise<RSSTransmitido[]> {
+  try {
+    const { data, error } = await supabase
+      .from('rss_transmitidos')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar itens RSS transmitidos:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Erro ao buscar itens RSS transmitidos:', error);
+    return [];
+  }
 }
 
 export async function syncAllRSSFeeds(): Promise<{ success: number; errors: number }> {

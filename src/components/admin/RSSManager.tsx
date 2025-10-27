@@ -29,7 +29,9 @@ import {
   fetchAllRSSPosts,
   processIndividualRSSItem,
   clearRewriteCache,
-  getRewriteCacheStats
+  getRewriteCacheStats,
+  fetchAllTransmittedRSSItems,
+  registerTransmittedRSSItem
 } from '@/services/rssService';
 
 interface RSSConfig {
@@ -61,6 +63,7 @@ const RSSManager: React.FC = () => {
   const [allPosts, setAllPosts] = useState<RSSPostItem[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [transmittingPosts, setTransmittingPosts] = useState<Set<string>>(new Set());
+  const [transmittedItems, setTransmittedItems] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -207,6 +210,11 @@ const RSSManager: React.FC = () => {
       setAllPosts(flattenedPosts);
       setShowPostsTable(true);
       
+      // Carregar itens transmitidos
+      const transmittedItemsData = await fetchAllTransmittedRSSItems();
+      const transmittedGuids = new Set(transmittedItemsData.map(item => item.rss_item_guid));
+      setTransmittedItems(transmittedGuids);
+      
       toast({
         title: 'Posts carregados',
         description: `${flattenedPosts.length} posts encontrados nos feeds RSS.`,
@@ -236,6 +244,12 @@ const RSSManager: React.FC = () => {
       });
       
       if (blogPost) {
+        // Registrar como transmitido
+        await registerTransmittedRSSItem(post, post.feedName, blogPost.id);
+        
+        // Atualizar o conjunto de itens transmitidos
+        setTransmittedItems(prev => new Set([...prev, post.guid]));
+        
         toast({
           title: 'Post transmitido com sucesso',
           description: `"${post.title}" foi processado e criado no blog.`,
@@ -369,13 +383,19 @@ const RSSManager: React.FC = () => {
                       Data
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Ação
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {allPosts.map((post, index) => (
-                    <tr key={post.guid || index} className="hover:bg-gray-50">
+                    <tr 
+                      key={post.guid || index} 
+                      className={`hover:bg-gray-50 ${transmittedItems.has(post.guid) ? 'bg-blue-50' : ''}`}
+                    >
                       <td className="px-6 py-4">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -400,6 +420,16 @@ const RSSManager: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(post.pubDate)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {transmittedItems.has(post.guid) ? (
+                          <Badge variant="default" className="bg-green-500">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Transmitido
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">Novo</Badge>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Button

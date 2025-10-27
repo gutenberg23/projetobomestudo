@@ -1418,6 +1418,41 @@ export type Database = {
         }
         Relationships: []
       }
+      rss_transmitidos: {
+        Row: {
+          blog_post_id: string | null
+          created_at: string
+          id: string
+          rss_feed_name: string
+          rss_item_guid: string
+          rss_item_link: string
+        }
+        Insert: {
+          blog_post_id?: string | null
+          created_at?: string
+          id?: string
+          rss_feed_name: string
+          rss_item_guid: string
+          rss_item_link: string
+        }
+        Update: {
+          blog_post_id?: string | null
+          created_at?: string
+          id?: string
+          rss_feed_name?: string
+          rss_item_guid?: string
+          rss_item_link?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rss_transmitidos_blog_post_id_fkey"
+            columns: ["blog_post_id"]
+            isOneToOne: false
+            referencedRelation: "blog_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       simulados: {
         Row: {
           ativo: boolean | null

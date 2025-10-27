@@ -1,6 +1,6 @@
 import React from "react";
 import { BlogPost } from "./types";
-import { Heart, Clock, BookOpen, User, Edit } from "lucide-react";
+import { Heart, Clock, User, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -15,11 +15,8 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
   post,
   variant = "default"
 }) => {
-  const formattedDate = format(new Date(post.createdAt), "dd/MM/yyyy 'às' HH:mm");
+  const formattedDate = format(new Date(post.createdAt), "dd/MM/yyyy");
   const { isAdmin } = usePermissions();
-
-  // Calcular tempo de leitura estimado se não estiver definido
-  const readingTime = post.readingTime || Math.ceil(post.content.split(' ').length / 200);
 
   if (variant === "compact") {
     return (
@@ -63,7 +60,7 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
             </h3>
             <div className="flex items-center text-xs text-[#67748a]">
               <Clock className="h-3 w-3 mr-1" />
-              <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
+              <span>{formattedDate}</span>
             </div>
           </div>
         </Link>
@@ -108,7 +105,7 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
                   )}
                   <span className="mr-3">{post.author}</span>
                   <Clock className="h-4 w-4 mr-1.5" />
-                  <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
+                  <span>{formattedDate}</span>
                 </div>
               </div>
               {/* Botão de edição para administradores - featured variant */}
@@ -152,7 +149,7 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
                 )}
                 <span className="mr-3">{post.author}</span>
                 <Clock className="h-4 w-4 mr-1.5" />
-                <span>{format(new Date(post.createdAt), "dd/MM/yyyy")}</span>
+                <span>{formattedDate}</span>
               </div>
               {/* Botão de edição para administradores - featured sem imagem */}
               {isAdmin() && (
@@ -265,10 +262,6 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
               <span className="flex items-center">
                 <Heart className="h-4 w-4 mr-1.5" />
                 {post.likesCount} curtidas
-              </span>
-              <span className="flex items-center">
-                <BookOpen className="h-4 w-4 mr-1.5" />
-                {readingTime} min de leitura
               </span>
             </div>
             <div className="flex items-center mt-2 sm:mt-0">
