@@ -5,6 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { removeAccents } from "@/utils/text-utils";
+import { useImageUpload } from "./useImageUpload";
 
 type PostsState = ReturnType<typeof import("./usePostsState").usePostsState>;
 
@@ -49,6 +50,7 @@ export function usePostsActions(state: PostsState) {
 
   const { user } = useAuth();
   const { isJornalista } = usePermissions();
+  const { downloadAndUploadImage } = useImageUpload();
 
   // Iniciar criação de um novo post
   const iniciarCriacaoPost = () => {
@@ -106,6 +108,22 @@ export function usePostsActions(state: PostsState) {
   const salvarPost = async () => {
     setLoading(true);
     try {
+      // Processar a imagem destaque se for uma URL externa
+      let processedImageUrl = imagemDestaque;
+      if (imagemDestaque && (imagemDestaque.startsWith('http://') || imagemDestaque.startsWith('https://'))) {
+        // Verificar se já é uma URL do Supabase
+        if (!imagemDestaque.includes('supabase') || !imagemDestaque.includes('storage')) {
+          console.log('Processando imagem destaque:', imagemDestaque);
+          const uploadedUrl = await downloadAndUploadImage(imagemDestaque);
+          if (uploadedUrl) {
+            processedImageUrl = uploadedUrl;
+            console.log('Imagem processada com sucesso:', uploadedUrl);
+          } else {
+            console.warn('Falha ao processar imagem, usando URL original');
+          }
+        }
+      }
+      
       // Geração de slug - apenas para novos posts para manter URLs imutáveis
       let slug;
       if (postEditando) {
@@ -156,7 +174,7 @@ export function usePostsActions(state: PostsState) {
         tags: tagsArray.length > 0 ? tagsArray : undefined,
         metaDescription: metaDescricao || resumo,
         metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
-        featuredImage: imagemDestaque || undefined,
+        featuredImage: processedImageUrl || undefined,
         readingTime: readingTimeString,
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
         featured: destacado,
