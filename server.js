@@ -352,6 +352,23 @@ app.get('/sitemap.xml', async (req, res) => {
   }
 });
 
+// Endpoint para atualizar o sitemap
+app.post('/api/update-sitemap', async (req, res) => {
+  try {
+    // Importar a função de geração de sitemap
+    const { generateSitemapXML } = await import('./src/services/sitemapService.js');
+    
+    // Gerar o conteúdo do sitemap
+    const sitemapContent = await generateSitemapXML();
+    
+    // Retornar sucesso
+    res.json({ success: true, message: 'Sitemap atualizado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao atualizar sitemap:', error);
+    res.status(500).json({ success: false, error: 'Erro ao atualizar sitemap' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });

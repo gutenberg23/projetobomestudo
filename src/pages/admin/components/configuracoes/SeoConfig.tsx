@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { Spinner } from "@/components/ui/spinner";
-import { AlertCircle, Upload, HelpCircle, X } from "lucide-react";
+import { AlertCircle, Upload, HelpCircle, X, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +34,7 @@ const SeoConfig = () => {
   const [ogImageFile, setOgImageFile] = useState<File | null>(null);
   const [ogImagePreview, setOgImagePreview] = useState(config.seo.ogImageUrl);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [updatingSitemap, setUpdatingSitemap] = useState(false);
 
   // Atualizar estados locais quando as configurações forem carregadas
   useEffect(() => {
@@ -121,6 +122,31 @@ const SeoConfig = () => {
 
   const handleRemoveKeyword = (keyword: string) => {
     setSiteKeywords(siteKeywords.filter(k => k !== keyword));
+  };
+
+  const handleUpdateSitemap = async () => {
+    try {
+      setUpdatingSitemap(true);
+      
+      // Chamar o endpoint para regenerar o sitemap
+      const response = await fetch('/api/update-sitemap', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar sitemap');
+      }
+      
+      toast.success('Sitemap atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao atualizar sitemap:', error);
+      toast.error('Erro ao atualizar sitemap');
+    } finally {
+      setUpdatingSitemap(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -481,6 +507,29 @@ const SeoConfig = () => {
           </div>
         </div>
       )}
+
+      <Card className="p-6 space-y-6">
+        <div className="space-y-2">
+          <Label>Atualizar Sitemap</Label>
+          <p className="text-xs text-[#67748a] mb-4">
+            Clique no botão abaixo para regenerar o sitemap com os posts de blog e cadernos de questões atuais.
+          </p>
+          <Button 
+            type="button" 
+            onClick={handleUpdateSitemap}
+            disabled={updatingSitemap}
+          >
+            {updatingSitemap ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Atualizando...
+              </>
+            ) : (
+              'Atualizar Sitemap Agora'
+            )}
+          </Button>
+        </div>
+      </Card>
 
       <div className="flex justify-end pt-4">
         <Button type="submit" disabled={isLoading || isSaving}>
