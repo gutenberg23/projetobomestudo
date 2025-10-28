@@ -725,7 +725,7 @@ const Dashboard = () => {
             
               return {
               id: simuladoId,
-              titulo: simulado ? simulado.titulo : `Simulado ${simuladoId.slice(0, 8)}...`,
+              titulo: simulado?.titulo || `Simulado ${simuladoId.slice(0, 8)}`,
               questoes_total: questoesTotais,
               acertos: correctAnswers,
               erros: wrongAnswers,
