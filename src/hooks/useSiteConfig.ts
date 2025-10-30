@@ -17,6 +17,7 @@ export interface PagesConfig {
   showCommentRankingPage: boolean;
   showQuestionRankingPage: boolean;
   showSimuladoRankingPage: boolean;
+  showTeoriasPage: boolean;
 }
 
 export interface FooterLink {
@@ -90,7 +91,8 @@ const DEFAULT_CONFIG: SiteConfig = {
     showQuestionBooksPage: true,
     showCommentRankingPage: true,
     showQuestionRankingPage: true,
-    showSimuladoRankingPage: true
+    showSimuladoRankingPage: true,
+    showTeoriasPage: true
   },
   visual: {
     primaryColor: '#5f2ebe',
@@ -281,7 +283,8 @@ export const useSiteConfig = () => {
                 showQuestionBooksPage: pagesSettings.showQuestionBooksPage ?? true,
                 showCommentRankingPage: pagesSettings.showCommentRankingPage ?? true,
                 showQuestionRankingPage: pagesSettings.showQuestionRankingPage ?? true,
-                showSimuladoRankingPage: pagesSettings.showSimuladoRankingPage ?? true
+                showSimuladoRankingPage: pagesSettings.showSimuladoRankingPage ?? true,
+                showTeoriasPage: pagesSettings.showTeoriasPage ?? true
               };
             }
             else if (item.chave === 'visual_config' && item.valor) {

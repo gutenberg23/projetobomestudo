@@ -93,6 +93,12 @@ const AdminLayout = () => {
           showForJornalista: true
         },
         { 
+          path: "/admin/teorias", 
+          label: "Teorias", 
+          icon: <BookOpen className="w-5 h-5" />,
+          showForJornalista: true
+        },
+        { 
           path: "/admin/concursos", 
           label: "Concursos", 
           icon: <Award className="w-5 h-5" />,

@@ -27,6 +27,10 @@ export const Header = () => {
     if (path === '/') {
       return location.pathname === '/';
     }
+    // Para teorias, verificar se está na página de teorias ou em uma teoria específica
+    if (path === '/teorias') {
+      return location.pathname === '/teorias' || location.pathname.startsWith('/teoria/');
+    }
     return location.pathname.startsWith(path);
   };
   

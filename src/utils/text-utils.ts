@@ -36,13 +36,30 @@ export const normalizeSpecialChars = (text: string): string => {
 /**
  * Prepara conteúdo HTML para exibição segura, tratando caracteres especiais
  * e garantindo que glifos matemáticos sejam preservados.
+ * @param html Conteúdo HTML original
+ * @param highlights Array de destaques a serem aplicados
  */
-export const prepareHtmlContent = (html: string): string => {
+export const prepareHtmlContent = (html: string, highlights: Array<{id: string, text: string, color: string, note?: string}> = []): string => {
   if (!html) return '';
   
   try {
     // Normalizar o texto para garantir consistência de caracteres especiais
-    const normalized = normalizeSpecialChars(html);
+    let normalized = normalizeSpecialChars(html);
+    
+    // Aplicar destaques se houver
+    if (highlights.length > 0) {
+      // Processar cada destaque individualmente
+      highlights.forEach(highlight => {
+        // Escapar caracteres especiais para regex
+        const escapedText = highlight.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escapedText})`, 'g');
+        // Adicionar ID e nota como atributos data
+        const idAttr = ` data-highlight-id="${highlight.id}"`;
+        const noteAttr = highlight.note ? ` data-note="${highlight.note.replace(/"/g, '&quot;')}"` : '';
+        // Substituir todas as ocorrências deste texto específico
+        normalized = normalized.replace(regex, `<mark style="background-color: ${highlight.color}; padding: 2px 4px; border-radius: 2px;"${idAttr}${noteAttr}>$1</mark>`);
+      });
+    }
     
     // Aqui poderíamos adicionar outras transformações se necessário
     

@@ -15,6 +15,8 @@ import Questions from "./pages/Questions";
 import Settings from "./pages/Settings";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import TeoriaPost from "./pages/TeoriaPost";
+import Teorias from "./pages/Teorias";
 import AuthorPosts from "./pages/AuthorPosts";
 import NotFound from "./pages/NotFound";
 import TermosEPoliticas from "./pages/TermosEPoliticas";
@@ -35,7 +37,6 @@ import "react-toastify/dist/ReactToastify.css";
 import Perfil from "./pages/Perfil";
 import DirectLogin from "@/pages/DirectLogin";
 import RegionPosts from "@/pages/RegionPosts";
-import StatePosts from "@/pages/StatePosts";
 import ActivityTracker from "./components/layout/ActivityTracker";
 
 // Admin imports
@@ -205,6 +206,18 @@ export default function App() {
                       </ConfigGuard>
                     } />
                     
+                    <Route path="/teorias" element={
+                      <ConfigGuard configKey="showTeoriasPage">
+                        <Teorias />
+                      </ConfigGuard>
+                    } />
+                    
+                    <Route path="/teoria/:slug" element={
+                      <ConfigGuard configKey="showTeoriasPage">
+                        <TeoriaPost />
+                      </ConfigGuard>
+                    } />
+                    
                     <Route path="/termos-e-politicas" element={<TermosEPoliticas />} />
                     
                     {/* Admin Routes - Isoladas em sua própria estrutura para evitar interações indesejadas */}
@@ -216,6 +229,7 @@ export default function App() {
                             <Route index element={<Dashboard />} />
                             <Route path="kanban" element={<Kanban />} />
                             <Route path="posts" element={<Posts />} />
+                            <Route path="teorias" element={<Teorias />} />
                             <Route path="usuarios" element={<Usuarios />} />
                             <Route path="questoes" element={<Questoes />} />
                             <Route path="cadernos" element={<AdminQuestionBooks />} />

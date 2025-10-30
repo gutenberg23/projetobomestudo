@@ -17,6 +17,7 @@ const PagesConfig = () => {
   const [showCommentRankingPage, setShowCommentRankingPage] = useState(config.pages.showCommentRankingPage);
   const [showQuestionRankingPage, setShowQuestionRankingPage] = useState(config.pages.showQuestionRankingPage);
   const [showSimuladoRankingPage, setShowSimuladoRankingPage] = useState(config.pages.showSimuladoRankingPage);
+  const [showTeoriasPage, setShowTeoriasPage] = useState(config.pages.showTeoriasPage);
   const [isSaving, setIsSaving] = useState(false);
 
   // Atualizar estados locais quando as configurações forem carregadas
@@ -30,6 +31,7 @@ const PagesConfig = () => {
       setShowCommentRankingPage(config.pages.showCommentRankingPage);
       setShowQuestionRankingPage(config.pages.showQuestionRankingPage);
       setShowSimuladoRankingPage(config.pages.showSimuladoRankingPage);
+      setShowTeoriasPage(config.pages.showTeoriasPage);
     }
   }, [config, isLoading]);
 
@@ -47,7 +49,8 @@ const PagesConfig = () => {
         showQuestionBooksPage,
         showCommentRankingPage,
         showQuestionRankingPage,
-        showSimuladoRankingPage
+        showSimuladoRankingPage,
+        showTeoriasPage
       };
       
       await updatePagesConfig(pagesConfig);
@@ -116,6 +119,21 @@ const PagesConfig = () => {
                 id="blog-page"
                 checked={showBlogPage}
                 onCheckedChange={setShowBlogPage}
+                disabled={isSaving}
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="teorias-page">Página de Teorias</Label>
+                <p className="text-[#67748a] text-xs">
+                  Controla a visibilidade da página de Teorias
+                </p>
+              </div>
+              <Switch
+                id="teorias-page"
+                checked={showTeoriasPage}
+                onCheckedChange={setShowTeoriasPage}
                 disabled={isSaving}
               />
             </div>
