@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { 
-  Bookmark, 
   AlertTriangle, 
   Highlighter, 
   FileText, 
@@ -15,7 +14,6 @@ import {
   Edit,
   X,
   Trash2,
-  GripHorizontal,
   List
 } from "lucide-react";
 import { format } from "date-fns";
@@ -99,6 +97,8 @@ const TeoriaPost = () => {
   }>>([]);
   const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingHighlight, setPendingHighlight] = useState<{text: string, color: string} | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Simulate fetching post data
@@ -195,23 +195,74 @@ const TeoriaPost = () => {
       return;
     }
     
-    const selectedText = selection.toString();
-    const newHighlight = {
-      id: `highlight-${Date.now()}`,
-      text: selectedText,
-      color: color,
-      position: { 
-        start: selection.anchorOffset, 
-        end: selection.focusOffset 
-      },
-      note: "" // Inicializando com nota vazia
-    };
+    // Obter o texto selecionado
+    let selectedText = selection.toString();
     
-    setHighlights(prev => [...prev, newHighlight]);
+    // Normalizar o texto para garantir consistência
+    selectedText = selectedText
+      .normalize('NFC') // Normalização Unicode
+      .replace(/\s+/g, ' ') // Substituir múltiplos espaços por um único espaço
+      .trim(); // Remover espaços no início e fim
+    
+    // Verificar se o texto selecionado já tem highlight
+    const hasExistingHighlight = highlights.some(highlight => 
+      selectedText.includes(highlight.text) || highlight.text.includes(selectedText)
+    );
+    
+    if (hasExistingHighlight) {
+      // Mostrar diálogo de confirmação
+      setPendingHighlight({ text: selectedText, color });
+      setShowConfirmDialog(true);
+    } else {
+      // Adicionar highlight diretamente
+      const newHighlight = {
+        id: `highlight-${Date.now()}`,
+        text: selectedText,
+        color: color,
+        position: { 
+          start: selection.anchorOffset, 
+          end: selection.focusOffset 
+        },
+        note: "" // Inicializando com nota vazia
+      };
+      
+      setHighlights(prev => [...prev, newHighlight]);
+    }
+    
     setShowHighlightColors(false);
     
     // Clear selection
     selection.removeAllRanges();
+  };
+
+  // Function to confirm highlight replacement
+  const confirmHighlight = () => {
+    if (pendingHighlight) {
+      // Remover highlights existentes que se sobrepõem
+      const filteredHighlights = highlights.filter(highlight => 
+        !pendingHighlight.text.includes(highlight.text) && !highlight.text.includes(pendingHighlight.text)
+      );
+      
+      // Adicionar o novo highlight
+      const newHighlight = {
+        id: `highlight-${Date.now()}`,
+        text: pendingHighlight.text,
+        color: pendingHighlight.color,
+        position: { start: 0, end: 0 }, // Posições genéricas
+        note: ""
+      };
+      
+      setHighlights([...filteredHighlights, newHighlight]);
+      setPendingHighlight(null);
+    }
+    
+    setShowConfirmDialog(false);
+  };
+
+  // Function to cancel highlight replacement
+  const cancelHighlight = () => {
+    setShowConfirmDialog(false);
+    setPendingHighlight(null);
   };
 
   // Function to update highlight note
@@ -384,6 +435,41 @@ const TeoriaPost = () => {
                         }}
                       >
                         Enviar
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Confirm Highlight Replacement Dialog */}
+            {showConfirmDialog && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+                  <div className="flex justify-between items-center border-b p-4">
+                    <h3 className="text-lg font-semibold">Substituir marcação existente?</h3>
+                    <button 
+                      onClick={cancelHighlight}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <div className="p-4">
+                    <p className="text-gray-600 mb-6">
+                      Já existe uma marcação neste trecho. Deseja substituir a marcação existente pela nova?
+                    </p>
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={cancelHighlight}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        onClick={confirmHighlight}
+                      >
+                        Substituir
                       </Button>
                     </div>
                   </div>
