@@ -91,6 +91,7 @@ const TeoriaPost = () => {
   const [highlights, setHighlights] = useState<Array<{
     id: string;
     text: string;
+    html?: string; // Adicionar HTML da seleção
     color: string;
     position: { start: number; end: number };
     note?: string;
@@ -214,7 +215,7 @@ const TeoriaPost = () => {
       setPendingHighlight({ text: selectedText, color });
       setShowConfirmDialog(true);
     } else {
-      // Adicionar highlight diretamente
+      // Adicionar highlight diretamente ao estado
       const newHighlight = {
         id: `highlight-${Date.now()}`,
         text: selectedText,

@@ -34,8 +34,7 @@ export const normalizeSpecialChars = (text: string): string => {
 };
 
 /**
- * Normaliza texto removendo espaços extras e caracteres especiais que podem interferir
- * na correspondência de texto em elementos HTML como listas
+ * Normaliza texto para melhor correspondência, removendo espaços extras e caracteres especiais
  */
 export const normalizeTextForMatching = (text: string): string => {
   if (!text) return '';
@@ -51,6 +50,43 @@ export const normalizeTextForMatching = (text: string): string => {
  */
 export const escapeRegExp = (text: string): string => {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+/**
+ * Aplica destaques diretamente no HTML
+ */
+export const applyHighlightsToHtml = (html: string, highlights: Array<{id: string, text: string, color: string, note?: string}> = []): string => {
+  if (!html || highlights.length === 0) return html;
+  
+  try {
+    // Trabalhar com uma cópia do HTML
+    let result = html;
+    
+    // Processar cada destaque
+    highlights.forEach(highlight => {
+      const normalizedText = normalizeTextForMatching(highlight.text);
+      if (!normalizedText) return;
+      
+      // Criar uma expressão regular para encontrar o texto
+      // Esta é uma abordagem mais flexível que lida com espaços e quebras de linha
+      const escapedText = escapeRegExp(normalizedText)
+        .replace(/\s+/g, '[\\s\\n\\r\\t]*');
+      
+      // Criar o elemento de marcação
+      const idAttr = ` data-highlight-id="${highlight.id}"`;
+      const noteAttr = highlight.note ? ` data-note="${highlight.note.replace(/"/g, '&quot;')}"` : '';
+      const markElement = `<mark style="background-color: ${highlight.color}; padding: 2px 4px; border-radius: 2px;"${idAttr}${noteAttr}>$1</mark>`;
+      
+      // Aplicar a substituição
+      const regex = new RegExp(`(${escapedText})`, 'g');
+      result = result.replace(regex, markElement);
+    });
+    
+    return result;
+  } catch (e) {
+    console.error('Erro ao aplicar highlights ao HTML:', e);
+    return html;
+  }
 };
 
 /**

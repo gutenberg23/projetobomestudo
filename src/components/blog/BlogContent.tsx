@@ -4,7 +4,7 @@ import { prepareHtmlContent } from "@/utils/text-utils";
 interface BlogContentProps {
   content: string;
   className?: string;
-  highlights?: Array<{id: string, text: string, color: string, note?: string}>;
+  highlights?: Array<{id: string, text: string, html?: string, color: string, note?: string}>;
 }
 
 export const BlogContent: React.FC<BlogContentProps> = ({ 
@@ -36,49 +36,78 @@ export const BlogContent: React.FC<BlogContentProps> = ({
     
     // Aplicar novos highlights
     highlights.forEach(highlight => {
-      const walker = document.createTreeWalker(
-        contentRef.current!,
-        NodeFilter.SHOW_TEXT,
-        null
-      );
-      
-      let node;
-      while (node = walker.nextNode()) {
-        const textNode = node as Text;
-        if (textNode.textContent && textNode.textContent.includes(highlight.text)) {
-          const text = textNode.textContent;
-          const index = text.indexOf(highlight.text);
+      applyHighlightToText(highlight);
+    });
+  };
+  
+  const applyHighlightToText = (highlight: {id: string, text: string, color: string, note?: string}) => {
+    if (!contentRef.current) return;
+    
+    // Normalizar o texto do highlight
+    const normalizedHighlightText = highlight.text
+      .normalize('NFC')
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Obter todo o conteúdo de texto do elemento
+    const fullText = contentRef.current.textContent || '';
+    
+    // Se o texto não estiver presente no conteúdo, retornar
+    if (!fullText.includes(normalizedHighlightText)) return;
+    
+    // Aplicar highlight a cada nó de texto que contenha parte do texto
+    const walker = document.createTreeWalker(
+      contentRef.current,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+    
+    const nodesToProcess: {node: Text, text: string}[] = [];
+    let node;
+    
+    // Coletar todos os nós de texto
+    while (node = walker.nextNode()) {
+      const textNode = node as Text;
+      if (textNode.textContent) {
+        nodesToProcess.push({
+          node: textNode,
+          text: textNode.textContent
+        });
+      }
+    }
+    
+    // Processar cada nó para encontrar e aplicar highlights
+    nodesToProcess.forEach(({node, text}) => {
+      if (text.includes(normalizedHighlightText)) {
+        // Se o nó contém o texto completo, aplicar highlight diretamente
+        const index = text.indexOf(normalizedHighlightText);
+        if (index !== -1) {
+          const before = text.substring(0, index);
+          const highlighted = text.substring(index, index + normalizedHighlightText.length);
+          const after = text.substring(index + normalizedHighlightText.length);
           
-          if (index !== -1) {
-            // Dividir o texto em três partes: antes, highlight e depois
-            const before = text.substring(0, index);
-            const highlighted = text.substring(index, index + highlight.text.length);
-            const after = text.substring(index + highlight.text.length);
-            
-            // Criar os elementos
-            const parent = textNode.parentNode;
-            if (parent) {
-              if (before) {
-                parent.insertBefore(document.createTextNode(before), textNode);
-              }
-              
-              const markElement = document.createElement('mark');
-              markElement.style.backgroundColor = highlight.color;
-              markElement.style.padding = '2px 4px';
-              markElement.style.borderRadius = '2px';
-              markElement.setAttribute('data-highlight-id', highlight.id);
-              if (highlight.note) {
-                markElement.setAttribute('data-note', highlight.note);
-              }
-              markElement.textContent = highlighted;
-              parent.insertBefore(markElement, textNode);
-              
-              if (after) {
-                parent.insertBefore(document.createTextNode(after), textNode);
-              }
-              
-              parent.removeChild(textNode);
+          const parent = node.parentNode;
+          if (parent) {
+            if (before) {
+              parent.insertBefore(document.createTextNode(before), node);
             }
+            
+            const markElement = document.createElement('mark');
+            markElement.style.backgroundColor = highlight.color;
+            markElement.style.padding = '2px 4px';
+            markElement.style.borderRadius = '2px';
+            markElement.setAttribute('data-highlight-id', highlight.id);
+            if (highlight.note) {
+              markElement.setAttribute('data-note', highlight.note);
+            }
+            markElement.textContent = highlighted;
+            parent.insertBefore(markElement, node);
+            
+            if (after) {
+              parent.insertBefore(document.createTextNode(after), node);
+            }
+            
+            parent.removeChild(node);
           }
         }
       }
