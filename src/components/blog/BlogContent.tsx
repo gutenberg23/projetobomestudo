@@ -43,143 +43,148 @@ export const BlogContent: React.FC<BlogContentProps> = ({
   const applyHighlightToText = (highlight: {id: string, text: string, color: string, note?: string}) => {
     if (!contentRef.current) return;
     
-    // Normalizar o texto do highlight (preservando espaços únicos)
+    // Normalizar o texto do highlight
     const normalizedHighlightText = highlight.text
       .normalize('NFC')
       .replace(/\s+/g, ' ')
       .trim();
     
-    // Coletar todos os nós de texto
-    const walker = document.createTreeWalker(
-      contentRef.current,
-      NodeFilter.SHOW_TEXT,
-      null
-    );
+    if (!normalizedHighlightText) return;
     
-    const textNodes: Text[] = [];
-    let node;
-    
-    while (node = walker.nextNode()) {
-      const textNode = node as Text;
-      if (textNode.textContent) {
-        textNodes.push(textNode);
+    // Função para coletar todos os nós de texto recursivamente
+    const collectTextNodes = (node: Node): Text[] => {
+      const textNodes: Text[] = [];
+      
+      if (node.nodeType === Node.TEXT_NODE) {
+        textNodes.push(node as Text);
+      } else {
+        node.childNodes.forEach(child => {
+          textNodes.push(...collectTextNodes(child));
+        });
       }
-    }
+      
+      return textNodes;
+    };
     
-    // Construir um mapa de posição de cada nó de texto no contexto completo
-    // Normalizar todos os espaços em branco para um único espaço
-    let currentPosition = 0;
-    const nodeMap: Array<{node: Text, start: number, end: number, text: string, originalText: string}> = [];
+    // Coletar todos os nós de texto
+    const textNodes = collectTextNodes(contentRef.current);
+    
+    if (textNodes.length === 0) return;
+    
+    // Construir texto completo e mapa de nós
+    let fullText = '';
+    const nodeMap: Array<{
+      node: Text;
+      startIndex: number;
+      endIndex: number;
+      originalText: string;
+      normalizedText: string;
+    }> = [];
     
     textNodes.forEach(node => {
       const originalText = node.textContent || '';
       const normalizedText = originalText.normalize('NFC').replace(/\s+/g, ' ');
       
+      const startIndex = fullText.length;
+      const endIndex = startIndex + normalizedText.length;
+      
       nodeMap.push({
         node,
-        start: currentPosition,
-        end: currentPosition + normalizedText.length,
-        text: normalizedText,
-        originalText
+        startIndex,
+        endIndex,
+        originalText,
+        normalizedText
       });
-      currentPosition += normalizedText.length;
+      
+      fullText += normalizedText;
     });
     
-    // Construir o texto completo normalizado
-    const fullNormalizedText = nodeMap.map(n => n.text).join('');
+    // Encontrar a posição do texto a destacar
+    const highlightStartIndex = fullText.indexOf(normalizedHighlightText);
     
-    // Procurar o texto a ser destacado
-    const startIndex = fullNormalizedText.indexOf(normalizedHighlightText);
+    if (highlightStartIndex === -1) {
+      console.warn('Texto não encontrado para highlight:', normalizedHighlightText);
+      return;
+    }
     
-    if (startIndex === -1) return;
+    const highlightEndIndex = highlightStartIndex + normalizedHighlightText.length;
     
-    const endIndex = startIndex + normalizedHighlightText.length;
+    // Encontrar nós afetados
+    const affectedNodes = nodeMap.filter(nodeInfo => 
+      nodeInfo.startIndex < highlightEndIndex && nodeInfo.endIndex > highlightStartIndex
+    );
     
-    // Encontrar quais nós de texto contêm partes do texto a ser destacado
-    const affectedNodes = nodeMap.filter(nodeInfo => {
-      return nodeInfo.start < endIndex && nodeInfo.end > startIndex;
-    });
+    if (affectedNodes.length === 0) return;
     
-    // Aplicar highlight em cada nó afetado (do último para o primeiro para evitar problemas de indexação)
+    // Aplicar highlight de trás para frente para não afetar índices
     for (let i = affectedNodes.length - 1; i >= 0; i--) {
       const nodeInfo = affectedNodes[i];
-      const node = nodeInfo.node;
-      const nodeText = nodeInfo.text;
-      const originalText = nodeInfo.originalText;
+      const { node, startIndex, endIndex, originalText, normalizedText } = nodeInfo;
       
-      // Calcular os índices dentro deste nó específico
-      const highlightStartInNode = Math.max(0, startIndex - nodeInfo.start);
-      const highlightEndInNode = Math.min(nodeText.length, endIndex - nodeInfo.start);
+      // Calcular posições relativas ao nó
+      const relativeStart = Math.max(0, highlightStartIndex - startIndex);
+      const relativeEnd = Math.min(normalizedText.length, highlightEndIndex - startIndex);
       
-      // Mapear os índices normalizados de volta para o texto original
-      // Isso é necessário porque o texto original pode ter múltiplos espaços
-      let originalStartIdx = 0;
-      let normalizedIdx = 0;
+      // Mapear posições normalizadas para texto original
+      const originalStart = mapNormalizedToOriginal(originalText, relativeStart);
+      const originalEnd = mapNormalizedToOriginal(originalText, relativeEnd);
       
-      // Encontrar o índice inicial no texto original
-      for (let j = 0; j < originalText.length && normalizedIdx < highlightStartInNode; j++) {
-        const char = originalText[j];
-        if (/\s/.test(char)) {
-          // Espaço em branco no original corresponde a um espaço único no normalizado
-          if (normalizedIdx < highlightStartInNode) {
-            normalizedIdx++;
-            originalStartIdx = j + 1;
-          }
-        } else {
-          normalizedIdx++;
-          originalStartIdx = j + 1;
-        }
-      }
+      const before = originalText.substring(0, originalStart);
+      const highlighted = originalText.substring(originalStart, originalEnd);
+      const after = originalText.substring(originalEnd);
       
-      // Encontrar o índice final no texto original
-      let originalEndIdx = originalStartIdx;
-      for (let j = originalStartIdx; j < originalText.length && normalizedIdx < highlightEndInNode; j++) {
-        const char = originalText[j];
-        if (/\s/.test(char)) {
-          if (normalizedIdx < highlightEndInNode) {
-            normalizedIdx++;
-            originalEndIdx = j + 1;
-          }
-        } else {
-          normalizedIdx++;
-          originalEndIdx = j + 1;
-        }
-      }
-      
-      const before = originalText.substring(0, originalStartIdx);
-      const highlighted = originalText.substring(originalStartIdx, originalEndIdx);
-      const after = originalText.substring(originalEndIdx);
-      
-      // Verificar se o texto destacado não está vazio ou contém apenas espaços
-      if (!highlighted || !highlighted.trim()) continue;
+      // Pular se o highlight estiver vazio
+      if (!highlighted.trim()) continue;
       
       const parent = node.parentNode;
       if (!parent) continue;
       
+      // Criar fragmento com o novo conteúdo
       const fragment = document.createDocumentFragment();
       
       if (before) {
         fragment.appendChild(document.createTextNode(before));
       }
       
-      const markElement = document.createElement('mark');
-      markElement.style.backgroundColor = highlight.color;
-      markElement.style.padding = '2px 4px';
-      markElement.style.borderRadius = '2px';
-      markElement.setAttribute('data-highlight-id', highlight.id);
+      const mark = document.createElement('mark');
+      mark.style.backgroundColor = highlight.color;
+      mark.style.padding = '2px 4px';
+      mark.style.borderRadius = '2px';
+      mark.setAttribute('data-highlight-id', highlight.id);
       if (highlight.note) {
-        markElement.setAttribute('data-note', highlight.note);
+        mark.setAttribute('data-note', highlight.note);
       }
-      markElement.textContent = highlighted;
-      fragment.appendChild(markElement);
+      mark.textContent = highlighted;
+      fragment.appendChild(mark);
       
       if (after) {
         fragment.appendChild(document.createTextNode(after));
       }
       
-      parent.insertBefore(fragment, node);
-      parent.removeChild(node);
+      // Substituir nó original
+      parent.replaceChild(fragment, node);
     }
+  };
+  
+  // Função auxiliar para mapear posição normalizada para original
+  const mapNormalizedToOriginal = (originalText: string, normalizedPosition: number): number => {
+    let normalizedIndex = 0;
+    let originalIndex = 0;
+    
+    while (originalIndex < originalText.length && normalizedIndex < normalizedPosition) {
+      const char = originalText[originalIndex];
+      
+      if (/\s/.test(char)) {
+        // Espaço em branco conta como 1 no texto normalizado
+        normalizedIndex++;
+      } else {
+        normalizedIndex++;
+      }
+      
+      originalIndex++;
+    }
+    
+    return originalIndex;
   };
   
   return (
