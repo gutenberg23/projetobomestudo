@@ -150,6 +150,9 @@ export const BlogContent: React.FC<BlogContentProps> = ({
       const highlighted = originalText.substring(originalStartIdx, originalEndIdx);
       const after = originalText.substring(originalEndIdx);
       
+      // Verificar se o texto destacado não está vazio ou contém apenas espaços
+      if (!highlighted || !highlighted.trim()) continue;
+      
       const parent = node.parentNode;
       if (!parent) continue;
       
@@ -159,18 +162,16 @@ export const BlogContent: React.FC<BlogContentProps> = ({
         fragment.appendChild(document.createTextNode(before));
       }
       
-      if (highlighted) {
-        const markElement = document.createElement('mark');
-        markElement.style.backgroundColor = highlight.color;
-        markElement.style.padding = '2px 4px';
-        markElement.style.borderRadius = '2px';
-        markElement.setAttribute('data-highlight-id', highlight.id);
-        if (highlight.note) {
-          markElement.setAttribute('data-note', highlight.note);
-        }
-        markElement.textContent = highlighted;
-        fragment.appendChild(markElement);
+      const markElement = document.createElement('mark');
+      markElement.style.backgroundColor = highlight.color;
+      markElement.style.padding = '2px 4px';
+      markElement.style.borderRadius = '2px';
+      markElement.setAttribute('data-highlight-id', highlight.id);
+      if (highlight.note) {
+        markElement.setAttribute('data-note', highlight.note);
       }
+      markElement.textContent = highlighted;
+      fragment.appendChild(markElement);
       
       if (after) {
         fragment.appendChild(document.createTextNode(after));
