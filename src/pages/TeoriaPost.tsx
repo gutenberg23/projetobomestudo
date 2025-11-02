@@ -8,13 +8,12 @@ import {
   Video, 
   Map, 
   Layers,
-  Clock,
   User,
-  Calendar,
   Edit,
   X,
   Trash2,
-  List
+  List,
+  BookOpen
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -69,9 +68,9 @@ const MOCK_TEORIA_POST = {
     
     <p>Esses são apenas os conceitos iniciais. Em aulas futuras, abordaremos temas mais específicos como poderes administrativos, atos administrativos, licitações, contratos administrativos, entre outros.</p>
   `,
-  readingTime: 300, // seconds
   viewCount: 1250,
-  saved: false
+  saved: false,
+  subject: "Direito Administrativo" // Adicionando o campo de disciplina
 };
 
 const TeoriaPost = () => {
@@ -499,23 +498,20 @@ const TeoriaPost = () => {
                   </div>
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center">
-                      <User className="h-4 w-4 mr-1" />
+                      {post.subject && (
+                        <>
+                          <span className="font-medium">{post.subject}</span>
+                          <BookOpen className="h-4 w-4 mx-2 text-gray-400" />
+                        </>
+                      )}
                       {post.author}
-                    </div>
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {format(new Date(post.createdAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-1" />
-                      {Math.ceil(post.readingTime / 60)} min de leitura
                     </div>
                   </div>
                 </div>
               </div>
               
               {/* Top Menu - Fixed when scrolling */}
-              <div className="sticky top-[88px] z-10 bg-white border-b border-[rgba(239,239,239,1)] mb-6 -mx-6 px-6 py-0">
+              <div className="sticky top-0 z-10 bg-white border-b border-[rgba(239,239,239,1)] mb-6 -mx-6 px-6 py-0">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   {/* Left Icons */}
                   <div className="flex items-center gap-2 relative">
@@ -579,7 +575,7 @@ const TeoriaPost = () => {
                           className="absolute inset-0 bg-black bg-opacity-50"
                           onClick={() => setShowHighlightsSidebar(false)}
                         />
-                        <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-lg p-4 overflow-y-auto mt-[88px]">
+                        <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-lg p-4 overflow-y-auto">
                           <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-semibold">Textos Marcados</h3>
                             <button 
@@ -602,7 +598,7 @@ const TeoriaPost = () => {
                                   }
                                 }}
                               >
-                                <p className="text-sm text-gray-700 line-clamp-3">
+                                <p className="text-sm text-gray-700 line-clamp-33">
                                   {highlight.text}
                                 </p>
                                 <div 
