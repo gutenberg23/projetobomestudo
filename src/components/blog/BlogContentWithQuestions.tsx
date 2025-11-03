@@ -1,20 +1,22 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { prepareHtmlContent } from "@/utils/text-utils";
+import { QuestionCard } from "@/components/new/QuestionCard";
+import { fetchQuestionById } from "@/services/questoesService";
 
-interface BlogContentProps {
+interface BlogContentWithQuestionsProps {
   content: string;
   className?: string;
   highlights?: Array<{id: string, text: string, html?: string, color: string, note?: string}>;
-  showQuestionTags?: boolean; // New prop to control question tag display
 }
 
-export const BlogContent: React.FC<BlogContentProps> = ({ 
+export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> = ({ 
   content, 
   className = "",
-  highlights = [],
-  showQuestionTags = false // Default to false to preserve existing behavior
+  highlights = []
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
+  const [questions, setQuestions] = useState<Record<string, any>>({});
+  const [loadedQuestions, setLoadedQuestions] = useState<Set<string>>(new Set());
   
   useEffect(() => {
     if (contentRef.current && highlights.length > 0) {
@@ -28,6 +30,10 @@ export const BlogContent: React.FC<BlogContentProps> = ({
     }
   }, [content, highlights]);
   
+  useEffect(() => {
+    loadQuestions();
+  }, [content]);
+  
   const applyTableHeaderStyling = () => {
     if (!contentRef.current) return;
     
@@ -40,6 +46,36 @@ export const BlogContent: React.FC<BlogContentProps> = ({
       th.style.fontWeight = 'bold';
       th.style.padding = '8px';
     });
+  };
+  
+  const loadQuestions = async () => {
+    // Extrair IDs de questões do conteúdo
+    const questionIds = [];
+    const questionTagRegex = /\[question:([a-f0-9-]+)\]/g;
+    let match;
+    
+    while ((match = questionTagRegex.exec(content)) !== null) {
+      questionIds.push(match[1]);
+    }
+    
+    // Carregar dados das questões que ainda não foram carregadas
+    const newQuestions = { ...questions };
+    const newLoadedQuestions = new Set(loadedQuestions);
+    
+    for (const questionId of questionIds) {
+      if (!newLoadedQuestions.has(questionId)) {
+        try {
+          const question = await fetchQuestionById(questionId);
+          newQuestions[questionId] = question;
+          newLoadedQuestions.add(questionId);
+        } catch (error) {
+          console.error(`Erro ao carregar questão ${questionId}:`, error);
+        }
+      }
+    }
+    
+    setQuestions(newQuestions);
+    setLoadedQuestions(newLoadedQuestions);
   };
   
   const applyHighlights = () => {
@@ -208,16 +244,56 @@ export const BlogContent: React.FC<BlogContentProps> = ({
     return originalIndex;
   };
   
-  // Process content to show question tags if needed
-  const processedContent = showQuestionTags 
-    ? content // Show tags as-is in edit mode
-    : content.replace(/\[question:([a-f0-9-]+)\]/g, '<div class="p-4 my-4 bg-blue-50 border border-blue-200 rounded-lg text-center"><p class="text-blue-800 font-medium">Questão incorporada neste ponto</p><p class="text-sm text-blue-600 mt-1">[question:$1]</p></div>');
+  // Render content with questions embedded
+  const renderContentWithQuestions = () => {
+    // Split content by question tags
+    const parts = content.split(/(\[question:[a-f0-9-]+\])/g);
+    
+    return parts.map((part, index) => {
+      // Check if this part is a question tag
+      const questionMatch = part.match(/\[question:([a-f0-9-]+)\]/);
+      
+      if (questionMatch) {
+        const questionId = questionMatch[1];
+        const question = questions[questionId];
+        
+        if (question) {
+          return (
+            <div key={`question-${index}`} className="my-4 w-full">
+              <div className="bg-[rgb(226,232,240)] p-2 w-full rounded-xl">
+                <QuestionCard 
+                  question={question}
+                  disabledOptions={[]}
+                  onToggleDisabled={() => {}}
+                />
+              </div>
+            </div>
+          );
+        } else {
+          // Show loading or placeholder if question is not loaded yet
+          return (
+            <div key={`question-${index}`} className="my-4 w-full">
+              <div className="bg-[rgb(226,232,240)] p-2 w-full rounded-xl text-center">
+                <p>Carregando questão...</p>
+              </div>
+            </div>
+          );
+        }
+      } else {
+        // Regular content part
+        return (
+          <span 
+            key={`content-${index}`} 
+            dangerouslySetInnerHTML={{ __html: prepareHtmlContent(part) }} 
+          />
+        );
+      }
+    });
+  };
   
   return (
-    <div 
-      ref={contentRef}
-      className={`prose max-w-none ${className}`}
-      dangerouslySetInnerHTML={{ __html: prepareHtmlContent(processedContent) }}
-    />
+    <div className={`prose max-w-none ${className}`}>
+      {renderContentWithQuestions()}
+    </div>
   );
 };

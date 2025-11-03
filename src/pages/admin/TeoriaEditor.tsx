@@ -12,12 +12,14 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Save, ArrowLeft, Eye, EyeOff, Search, Plus, Trash2 } from "lucide-react";
+import { X, Save, ArrowLeft, Eye, EyeOff, Search, Settings } from "lucide-react";
 import { TiptapEditor } from "./posts/components/editor/TiptapEditor";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { teoriasService } from "@/services/teoriasService";
-import type { Teoria, TeoriaInsert } from "@/services/teoriasService";
+import type { TeoriaInsert } from "@/services/teoriasService";
+import { BlogContent } from "@/components/blog/BlogContent";
+import { DisciplinaFiltersModal } from "./components/edital/DisciplinaFiltersModal";
 
 // Componente de campo de pesquisa com seleção múltipla e possibilidade de adição/remoção
 interface MultiSearchFieldProps {
@@ -142,7 +144,7 @@ const SearchField: React.FC<SearchFieldProps> = ({
   isRequired = false,
   disabled = false
 }) => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(value || "");
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -152,7 +154,7 @@ const SearchField: React.FC<SearchFieldProps> = ({
 
   const handleSelectOption = (option: string) => {
     setValue(option);
-    setSearchQuery("");
+    setSearchQuery(option);
     setShowDropdown(false);
   };
 
@@ -169,6 +171,11 @@ const SearchField: React.FC<SearchFieldProps> = ({
     };
   }, []);
 
+  // Atualizar searchQuery quando o value muda
+  useEffect(() => {
+    setSearchQuery(value || "");
+  }, [value]);
+
   return (
     <div className="space-y-2">
       <Label htmlFor={`search-${label}`} className="flex items-center">
@@ -179,12 +186,16 @@ const SearchField: React.FC<SearchFieldProps> = ({
         <div className="relative flex-1">
           <Input
             id={`search-${label}`}
-            value={searchQuery || (showDropdown ? searchQuery : value)}
+            value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setShowDropdown(true);
             }}
             onFocus={() => setShowDropdown(true)}
+            onBlur={() => {
+              // Se o valor não estiver na lista de opções, manter o valor atual
+              setTimeout(() => setShowDropdown(false), 150);
+            }}
             placeholder={`Pesquisar ${label.toLowerCase()}...`}
             disabled={disabled}
           />
@@ -212,18 +223,7 @@ const SearchField: React.FC<SearchFieldProps> = ({
 const TeoriaEditor = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
-  // Estados para armazenar todas as opções disponíveis
-  const [allDisciplinas, setAllDisciplinas] = useState<string[]>([]);
-  const [allAssuntos, setAllAssuntos] = useState<string[]>([]);
-  const [allTopicos, setAllTopicos] = useState<string[]>([]);
-  const [professores, setProfessores] = useState<{id: string, nome: string}[]>([]);
-
-  // Estados para armazenar as opções filtradas
-  const [filteredAssuntos, setFilteredAssuntos] = useState<string[]>([]);
-  const [filteredTopicos, setFilteredTopicos] = useState<string[]>([]);
-  
-  // Estados para os valores selecionados
+  const [loading, setLoading] = useState(true);
   const [titulo, setTitulo] = useState("");
   const [disciplina, setDisciplina] = useState("");
   const [assunto, setAssunto] = useState("");
@@ -231,17 +231,97 @@ const TeoriaEditor = () => {
   const [conteudo, setConteudo] = useState("");
   const [noEdital, setNoEdital] = useState("");
   const [status, setStatus] = useState<"draft" | "published">("draft");
-  const [professorId, setProfessorId] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+  const [professorId, setProfessorId] = useState("");
+  const [allDisciplinas, setAllDisciplinas] = useState<string[]>([]);
+  const [allAssuntos, setAllAssuntos] = useState<string[]>([]);
+  const [allTopicos, setAllTopicos] = useState<string[]>([]);
+  const [filteredAssuntos, setFilteredAssuntos] = useState<string[]>([]);
+  const [filteredTopicos, setFilteredTopicos] = useState<string[]>([]);
+  const [professores, setProfessores] = useState<Array<{id: string, nome: string}>>([]);
   const [isPreview, setIsPreview] = useState(false);
+  
+  // States for question filters
+  const [questoesFiltros, setQuestoesFiltros] = useState<{
+    disciplinas?: string[];
+    assuntos?: string[];
+    bancas?: string[];
+    topicos?: string[];
+  }>({});
+  const [questoesLink, setQuestoesLink] = useState("");
+  const [isFiltersModalOpen, setIsFiltersModalOpen] = useState(false);
+  
+  // States for video links
+  const [videoLinks, setVideoLinks] = useState<string[]>([]);
+  const [newVideoLink, setNewVideoLink] = useState("");
+  
+  // States for mind maps (PDFs)
+  const [mindMapFiles, setMindMapFiles] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   // Carregar dados iniciais
   useEffect(() => {
     fetchAllData();
     fetchProfessores();
-    if (id) {
-      fetchTeoria(id);
-    }
+  }, []);
+
+  // Load existing teoria data
+  useEffect(() => {
+    const loadTeoria = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const teoria = await teoriasService.getTeoriaById(id);
+        
+        if (teoria) {
+          setTitulo(teoria.titulo || "");
+          setDisciplina(teoria.disciplina_id || "");
+          setAssunto(teoria.assunto_id || "");
+          setSelectedTopicos(teoria.topicos_ids || []);
+          setConteudo(teoria.conteudo || "");
+          setNoEdital(teoria.no_edital || "");
+          setStatus(teoria.status || "draft");
+          setProfessorId(teoria.professor_id || "");
+          
+          // Load question filters if they exist
+          if (teoria.questoes_filtros) {
+            setQuestoesFiltros(teoria.questoes_filtros);
+          }
+          
+          if (teoria.questoes_link) {
+            setQuestoesLink(teoria.questoes_link);
+          }
+          
+          // Load video links if they exist
+          if (teoria.videoaulas) {
+            setVideoLinks(teoria.videoaulas);
+          }
+          
+          // Load mind map files if they exist
+          if (teoria.mapas_mentais) {
+            setMindMapFiles(teoria.mapas_mentais);
+          }
+          
+          // Update filters based on loaded values
+          if (teoria.disciplina_id) {
+            await filterAssuntosByDisciplina(teoria.disciplina_id);
+          }
+          if (teoria.assunto_id && teoria.disciplina_id) {
+            await filterTopicosByAssunto(teoria.assunto_id);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar teoria:", error);
+        toast.error("Erro ao carregar teoria");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTeoria();
   }, [id]);
 
   // Filtrar assuntos quando disciplina muda
@@ -249,9 +329,6 @@ const TeoriaEditor = () => {
     if (disciplina) {
       // Filtrar assuntos que pertencem a essa disciplina
       filterAssuntosByDisciplina(disciplina);
-      setAssunto("");
-      setFilteredTopicos([]);
-      setSelectedTopicos([]);
     } else {
       setFilteredAssuntos([]);
       setAssunto("");
@@ -315,17 +392,22 @@ const TeoriaEditor = () => {
 
   const fetchProfessores = async () => {
     try {
-      // Buscar professores da tabela professores
+      // Buscar professores da tabela professores com seus user_ids
       const { data, error } = await supabase
         .from('professores')
         .select('id, nome_completo');
       
       if (error) throw error;
       
-      const professoresFormatados = data?.map(professor => ({
-        id: professor.id,
-        nome: professor.nome_completo
-      })) || [];
+      // Buscar os user_ids correspondentes dos professores
+      const professoresFormatados = await Promise.all(
+        data?.map(async (professor) => {
+          return {
+            id: professor.id,
+            nome: professor.nome_completo
+          };
+        }) || []
+      );
       
       setProfessores(professoresFormatados);
     } catch (error) {
@@ -380,39 +462,7 @@ const TeoriaEditor = () => {
     }
   };
 
-  const fetchTeoria = async (teoriaId: string) => {
-    try {
-      setLoading(true);
-      
-      const teoria = await teoriasService.getTeoriaById(teoriaId);
-      
-      if (teoria) {
-        setTitulo(teoria.titulo);
-        setDisciplina(teoria.disciplina_id || "");
-        setAssunto(teoria.assunto_id || "");
-        setSelectedTopicos(teoria.topicos_ids || []);
-        setConteudo(teoria.conteudo);
-        setNoEdital(teoria.no_edital || "");
-        setStatus(teoria.status || "draft");
-        setProfessorId(teoria.professor_id || "");
-        
-        // Atualizar filtros com base nos valores carregados
-        if (teoria.disciplina_id) {
-          await filterAssuntosByDisciplina(teoria.disciplina_id);
-        }
-        if (teoria.assunto_id) {
-          await filterTopicosByAssunto(teoria.assunto_id);
-        }
-      }
-    } catch (error) {
-      console.error("Erro ao carregar teoria:", error);
-      toast.error("Erro ao carregar teoria");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Atualizar a função handleSave para salvar os tópicos como array de strings
+  // Update the handleSave function to save question filters
   const handleSave = async () => {
     if (!titulo || !disciplina || !assunto) {
       toast.error("Preencha todos os campos obrigatórios");
@@ -422,24 +472,28 @@ const TeoriaEditor = () => {
     try {
       setLoading(true);
       
-      // Para tópicos, vamos armazenar como array de strings (nomes dos tópicos)
+      // For topics, we store as array of strings (topic names)
       const teoriaData: TeoriaInsert = {
         titulo,
-        disciplina_id: disciplina, // Agora armazenamos o nome da disciplina diretamente
-        assunto_id: assunto,       // Agora armazenamos o nome do assunto diretamente
+        disciplina_id: disciplina, // Now store the discipline name directly
+        assunto_id: assunto,       // Now store the subject name directly
         topicos_ids: selectedTopicos,
-        conteudo: conteudo || "",  // Garantir que não seja undefined
-        no_edital: noEdital || "", // Garantir que não seja undefined
+        conteudo: conteudo || "",  // Ensure it's not undefined
+        no_edital: noEdital || "", // Ensure it's not undefined
         status,
-        professor_id: professorId || undefined
+        professor_id: professorId || undefined, // Use the professor ID directly
+        questoes_filtros: questoesFiltros,
+        questoes_link: questoesLink,
+        videoaulas: videoLinks,
+        mapas_mentais: mindMapFiles
       };
 
       if (id) {
-        // Atualizar teoria existente
+        // Update existing theory
         await teoriasService.updateTeoria(id, teoriaData);
         toast.success("Teoria atualizada com sucesso!");
       } else {
-        // Criar nova teoria
+        // Create new theory
         await teoriasService.createTeoria(teoriaData);
         toast.success("Teoria criada com sucesso!");
       }
@@ -458,6 +512,89 @@ const TeoriaEditor = () => {
     // A lógica de salvar será tratada no handleSave
     await handleSave();
   };
+
+  // Function to add a new video link
+  const handleAddVideoLink = () => {
+    if (newVideoLink.trim() && !videoLinks.includes(newVideoLink.trim())) {
+      setVideoLinks([...videoLinks, newVideoLink.trim()]);
+      setNewVideoLink("");
+    }
+  };
+
+  // Function to remove a video link
+  const handleRemoveVideoLink = (link: string) => {
+    setVideoLinks(videoLinks.filter(l => l !== link));
+  };
+
+  // Function to upload mind map PDF
+  const handleUploadMindMap = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const uploadedUrls: string[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        if (file.type !== 'application/pdf') {
+          toast.error(`O arquivo ${file.name} não é um PDF válido.`);
+          continue;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `mindmaps/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('blog-images')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error('Erro ao fazer upload:', uploadError);
+          toast.error(`Erro ao fazer upload do arquivo ${file.name}`);
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('blog-images')
+          .getPublicUrl(filePath);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      if (uploadedUrls.length > 0) {
+        setMindMapFiles([...mindMapFiles, ...uploadedUrls]);
+        toast.success(`${uploadedUrls.length} arquivo(s) PDF carregado(s) com sucesso!`);
+      }
+    } catch (error) {
+      console.error('Erro ao fazer upload dos PDFs:', error);
+      toast.error('Erro ao fazer upload dos arquivos PDF');
+    } finally {
+      setUploading(false);
+      // Reset file input
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
+  // Function to remove a mind map file
+  const handleRemoveMindMap = (url: string) => {
+    setMindMapFiles(mindMapFiles.filter(u => u !== url));
+  };
+
+  // Gerar slug a partir do título
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remover acentos
+      .replace(/[^a-z0-9]+/g, '-') // Substituir caracteres não alfanuméricos por hífen
+      .replace(/^-+|-+$/g, ''); // Remover hífens do início e fim
+  };
+
+  const currentSlug = generateSlug(titulo);
 
   return (
     <div className="space-y-6">
@@ -505,6 +642,32 @@ const TeoriaEditor = () => {
         </div>
       </div>
 
+      {/* Mostrar URL da teoria quando estiver sendo editada */}
+      {id && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-blue-800">URL da Teoria</h3>
+                <p className="text-sm text-blue-600 mt-1">
+                  {window.location.origin}/teoria/{id}
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/teoria/${id}`);
+                  toast.success("URL copiada para a área de transferência");
+                }}
+              >
+                Copiar URL
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Detalhes da Teoria</CardTitle>
@@ -519,6 +682,11 @@ const TeoriaEditor = () => {
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Título da teoria"
               />
+              {titulo && (
+                <p className="text-sm text-gray-500">
+                  Slug: {currentSlug}
+                </p>
+              )}
             </div>
             
             <div className="space-y-2">
@@ -590,10 +758,13 @@ const TeoriaEditor = () => {
           <div className="space-y-2">
             <Label htmlFor="conteudo">Conteúdo *</Label>
             {isPreview ? (
-              <div 
-                className="border rounded-lg p-4 min-h-[300px] prose max-w-none"
-                dangerouslySetInnerHTML={{ __html: conteudo }}
-              />
+              <div className="border rounded-lg p-4 min-h-[300px]">
+                <BlogContent 
+                  content={conteudo} 
+                  className="prose max-w-none"
+                  showQuestionTags={true}
+                />
+              </div>
             ) : (
               <TiptapEditor 
                 content={conteudo} 
@@ -614,6 +785,162 @@ const TeoriaEditor = () => {
               Este campo não aparecerá na postagem da teoria. Será apenas para futura utilização para criação de conteúdos por IA.
             </p>
           </div>
+          
+          {/* Card for question filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Adicionar filtro de questões</span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsFiltersModalOpen(true)}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configurar
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {questoesFiltros && (
+                Object.keys(questoesFiltros).length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                      Filtros configurados para exibição de questões na aba "Questões":
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {questoesFiltros.disciplinas && questoesFiltros.disciplinas.length > 0 && (
+                        <Badge variant="secondary">
+                          Disciplinas: {questoesFiltros.disciplinas.length}
+                        </Badge>
+                      )}
+                      {questoesFiltros.assuntos && questoesFiltros.assuntos.length > 0 && (
+                        <Badge variant="secondary">
+                          Assuntos: {questoesFiltros.assuntos.length}
+                        </Badge>
+                      )}
+                      {questoesFiltros.bancas && questoesFiltros.bancas.length > 0 && (
+                        <Badge variant="secondary">
+                          Bancas: {questoesFiltros.bancas.length}
+                        </Badge>
+                      )}
+                      {questoesFiltros.topicos && questoesFiltros.topicos.length > 0 && (
+                        <Badge variant="secondary">
+                          Tópicos: {questoesFiltros.topicos.length}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    Nenhum filtro configurado. Clique em "Configurar" para adicionar filtros de questões.
+                  </p>
+                )
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Card for video links - Ensure it always renders */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Videoaulas do YouTube</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  value={newVideoLink || ""}
+                  onChange={(e) => setNewVideoLink(e.target.value)}
+                  placeholder="Cole o link do vídeo do YouTube"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddVideoLink();
+                    }
+                  }}
+                />
+                <Button onClick={handleAddVideoLink} disabled={!newVideoLink || newVideoLink.trim().length === 0}>
+                  Adicionar
+                </Button>
+              </div>
+              
+              {videoLinks && videoLinks.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Vídeos adicionados:</p>
+                  <div className="space-y-2">
+                    {videoLinks.map((link, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span className="text-sm truncate flex-1 mr-2">{link}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveVideoLink(link)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          
+          {/* Card for mind maps (PDFs) - Ensure it always renders */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Mapas Mentais (PDFs)</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="file"
+                  accept=".pdf"
+                  multiple
+                  onChange={handleUploadMindMap}
+                  disabled={uploading}
+                  className="flex-1"
+                />
+                {uploading && (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-900"></div>
+                  </div>
+                )}
+              </div>
+              
+              {mindMapFiles && mindMapFiles.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Arquivos PDF adicionados:</p>
+                  <div className="space-y-2">
+                    {mindMapFiles.map((url, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                        <span className="text-sm truncate flex-1 mr-2">mapa_mental_{index + 1}.pdf</span>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(url, '_blank')}
+                            className="h-8 w-8 p-0"
+                            title="Visualizar PDF"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveMindMap(url)}
+                            className="h-8 w-8 p-0"
+                            title="Remover PDF"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
           
           <div className="flex justify-end gap-2 pt-4">
             <Button 
@@ -638,6 +965,26 @@ const TeoriaEditor = () => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Question Filters Modal */}
+      <DisciplinaFiltersModal
+        isOpen={isFiltersModalOpen}
+        onClose={() => setIsFiltersModalOpen(false)}
+        onApplyFilters={(filters, link) => {
+          setQuestoesFiltros({
+            disciplinas: filters.disciplinas,
+            assuntos: filters.assuntos,
+            bancas: filters.bancas,
+            topicos: filters.topicos
+          });
+          setQuestoesLink(link);
+          setIsFiltersModalOpen(false);
+        }}
+        initialDisciplinas={questoesFiltros.disciplinas || []}
+        initialAssuntos={questoesFiltros.assuntos || []}
+        initialBancas={questoesFiltros.bancas || []}
+        initialTopicos={questoesFiltros.topicos || []}
+      />
     </div>
   );
 };

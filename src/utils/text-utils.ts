@@ -151,4 +151,30 @@ export const mathSymbolsToHtml = (text: string): string => {
     console.error('Erro ao converter símbolos matemáticos:', e);
     return text;
   }
-}; 
+};
+
+/**
+ * Extrai IDs de questões de tags no formato [question:uuid] do conteúdo
+ */
+export const extractQuestionIds = (content: string): string[] => {
+  if (!content) return [];
+  
+  const questionTagRegex = /\[question:([a-f0-9-]+)\]/g;
+  const matches = [];
+  let match;
+  
+  while ((match = questionTagRegex.exec(content)) !== null) {
+    matches.push(match[1]);
+  }
+  
+  return matches;
+};
+
+/**
+ * Substitui tags de questões no conteúdo por marcadores para renderização
+ */
+export const replaceQuestionTagsWithMarkers = (content: string): string => {
+  if (!content) return '';
+  
+  return content.replace(/\[question:([a-f0-9-]+)\]/g, '<div class="question-marker" data-question-id="$1"></div>');
+};

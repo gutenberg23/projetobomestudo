@@ -41,9 +41,7 @@ import {
   Heading3,
   Heading4,
   Heading5,
-  Type,
-  Palette,
-  Highlighter,
+  Square,
   HelpCircle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -358,7 +356,6 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
             const selection = editor.state.selection;
             const node = editor.state.doc.nodeAt(selection.from);
             if (node) {
-              const style = window.getComputedStyle(editor.view.dom);
               navigator.clipboard.writeText(JSON.stringify({
                 type: node.type.name,
                 marks: node.marks.map(mark => ({
@@ -435,6 +432,29 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
           className="w-8 h-8 rounded cursor-pointer"
           onChange={(e) => editor.chain().focus().setHighlight({ color: e.target.value }).run()}
         />
+        
+        {/* Table cell background color selector */}
+        <div className="flex items-center gap-1">
+          <Square className="h-4 w-4" />
+          <select
+            className="border rounded px-2 py-1 text-sm"
+            onChange={(e) => {
+              if (editor && e.target.value) {
+                // Use document.execCommand for background color
+                document.execCommand('styleWithCSS', false, 'true');
+                document.execCommand('backColor', false, e.target.value);
+              }
+            }}
+          >
+            <option value="">Cor de fundo</option>
+            <option value="rgb(95, 46, 190)">Roxo</option>
+            <option value="rgb(226, 232, 240)">Cinza claro</option>
+            <option value="rgb(254, 252, 232)">Amarelo</option>
+            <option value="rgb(219, 234, 254)">Azul</option>
+            <option value="rgb(220, 252, 231)">Verde</option>
+            <option value="rgb(254, 226, 226)">Vermelho</option>
+          </select>
+        </div>
       </div>
       <div className="editor-content">
         <EditorContent editor={editor} />

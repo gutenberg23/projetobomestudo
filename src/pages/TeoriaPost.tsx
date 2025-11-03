@@ -2,18 +2,19 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { 
   AlertTriangle, 
-  Highlighter, 
   FileText, 
   FileQuestion, 
   Video, 
   Map, 
-  Layers,
   User,
   Edit,
   X,
   Trash2,
   List,
-  BookOpen
+  BookOpen,
+  Calendar,
+  Eye,
+  Palette
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,61 +23,49 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { BlogContent } from "@/components/blog/BlogContent";
+import { BlogContentWithQuestions } from "@/components/blog/BlogContentWithQuestions";
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import QuestionResults from "@/components/questions/QuestionResults";
+import { supabase as supabaseClient } from "@/integrations/supabase/client";
 
-// Mock data for demonstration
-const MOCK_TEORIA_POST = {
-  id: "1",
-  title: "Teoria de Direito Administrativo",
-  slug: "teoria-direito-administrativo",
-  author: "Prof. João Silva",
-  createdAt: new Date().toISOString(),
-  content: `
-    <h2>O que é Direito Administrativo?</h2>
-    <p>O Direito Administrativo é o ramo do Direito Público que regula a organização e o funcionamento da Administração Pública, bem como as relações entre esta e os administrados.</p>
-    
-    <h3>Princípios do Direito Administrativo</h3>
-    <p>Os princípios do Direito Administrativo são normas fundamentais que orientam a atuação da Administração Pública. Dentre os principais, destacam-se:</p>
-    <ul>
-      <li><strong>Legalidade:</strong> A Administração deve agir estritamente dentro da lei.</li>
-      <li><strong>Impessoalidade:</strong> O interesse público deve prevalecer sobre o privado.</li>
-      <li><strong>Moralidade:</strong> A Administração deve seguir os padrões éticos da sociedade.</li>
-      <li><strong>Publicidade:</strong> Os atos administrativos devem ser transparentes.</li>
-      <li><strong>Eficiência:</strong> A Administração deve buscar o melhor desempenho possível.</li>
-    </ul>
-    
-    <h3>Conceitos Fundamentais</h3>
-    <p>Para entender melhor o Direito Administrativo, é importante compreender alguns conceitos fundamentais:</p>
-    <blockquote>
-      <p><strong>Administração Pública:</strong> Conjunto de órgãos e entidades que exercem funções administrativas do Estado.</p>
-    </blockquote>
-    <blockquote>
-      <p><strong>Agentes Públicos:</strong> Pessoas que exercem funções públicas, como servidores, políticos e delegados de poder.</p>
-    </blockquote>
-    
-    <h3>Organização Administrativa</h3>
-    <p>A Administração Pública é organizada em três esferas:</p>
-    <ol>
-      <li><strong>Administração Direta:</strong> Órgãos integrantes da estrutura dos Poderes Executivo, Legislativo e Judiciário.</li>
-      <li><strong>Administração Indireta:</strong> Entidades autônomas criadas pelo Estado para prestar serviços públicos.</li>
-      <li><strong>Fundação Pública:</strong> Pessoa jurídica de direito público criada por lei para fins de relevante interesse público.</li>
-    </ol>
-    
-    <p>Esses são apenas os conceitos iniciais. Em aulas futuras, abordaremos temas mais específicos como poderes administrativos, atos administrativos, licitações, contratos administrativos, entre outros.</p>
-  `,
-  viewCount: 1250,
-  saved: false,
-  subject: "Direito Administrativo" // Adicionando o campo de disciplina
-};
+interface Teoria {
+  id: string;
+  titulo: string;
+  disciplina_id: string;
+  assunto_id: string;
+  topicos_ids: string[];
+  conteudo: string;
+  no_edital: string;
+  status: "draft" | "published";
+  professor_id?: string;
+  created_at: string;
+  updated_at: string;
+  questoes_filtros?: {
+    disciplinas?: string[];
+    assuntos?: string[];
+    bancas?: string[];
+    topicos?: string[];
+  };
+  questoes_link?: string;
+  videoaulas?: string[];
+  mapas_mentais?: string[];
+}
+
+interface Professor {
+  id: string;
+  nome_completo: string;
+}
 
 const TeoriaPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [post, setPost] = useState<any>(null);
+  const [post, setPost] = useState<Teoria | null>(null);
+  const [professor, setProfessor] = useState<Professor | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("aula");
   const { isAdmin } = usePermissions();
@@ -90,7 +79,7 @@ const TeoriaPost = () => {
   const [highlights, setHighlights] = useState<Array<{
     id: string;
     text: string;
-    html?: string; // Adicionar HTML da seleção
+    html?: string; // Add HTML of selection
     color: string;
     position: { start: number; end: number };
     note?: string;
@@ -100,8 +89,67 @@ const TeoriaPost = () => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingHighlight, setPendingHighlight] = useState<{text: string, color: string} | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-
-  // Simulate fetching post data
+  
+  // States for question filters and pagination
+  const [filteredQuestions, setFilteredQuestions] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [disabledOptions, setDisabledOptions] = useState<{[key: string]: string[]}>({});
+  
+  // Function to load questions based on filters
+  const loadFilteredQuestions = async (filters: any) => {
+    setQuestionsLoading(true);
+    try {
+      let query = supabaseClient
+        .from('questoes')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      // Apply filters
+      if (filters.disciplinas && filters.disciplinas.length > 0) {
+        query = query.in('discipline', filters.disciplinas);
+      }
+      
+      if (filters.assuntos && filters.assuntos.length > 0) {
+        query = query.overlaps('assuntos', filters.assuntos);
+      }
+      
+      if (filters.bancas && filters.bancas.length > 0) {
+        query = query.in('institution', filters.bancas);
+      }
+      
+      if (filters.topicos && filters.topicos.length > 0) {
+        query = query.overlaps('topicos', filters.topicos);
+      }
+      
+      // Add pagination
+      const from = (currentPage - 1) * 10;
+      const to = from + 9;
+      query = query.range(from, to);
+      
+      const { data, error, count } = await query;
+      
+      if (error) throw error;
+      
+      setFilteredQuestions(data || []);
+      setTotalPages(count ? Math.ceil(count / 10) : 1);
+    } catch (error) {
+      console.error("Erro ao carregar questões:", error);
+      toast.error("Erro ao carregar questões");
+    } finally {
+      setQuestionsLoading(false);
+    }
+  };
+  
+  // Effect to reload questions when page changes
+  useEffect(() => {
+    if (post && post.questoes_filtros && activeTab === "questoes") {
+      loadFilteredQuestions(post.questoes_filtros);
+    }
+  }, [currentPage, activeTab, post]);
+  
+  // Fetch teoria data
   useEffect(() => {
     const loadPost = async () => {
       if (!slug) {
@@ -109,15 +157,48 @@ const TeoriaPost = () => {
         return;
       }
 
-      setLoading(true);
-      
-      // Simulate API call delay
-      setTimeout(() => {
-        // For now, we'll use mock data
-        // In a real implementation, this would fetch from an API
-        setPost(MOCK_TEORIA_POST);
+      try {
+        setLoading(true);
+        
+        // Fetch teoria by ID (slug is actually the ID in our case)
+        const { data: teoriaData, error: teoriaError } = await supabase
+          .from('teorias')
+          .select('*')
+          .eq('id', slug)
+          .eq('status', 'published')
+          .single();
+        
+        if (teoriaError) throw teoriaError;
+        if (!teoriaData) {
+          throw new Error('Teoria não encontrada');
+        }
+        
+        setPost(teoriaData);
+        
+        // Fetch professor data if professor_id exists
+        if (teoriaData.professor_id) {
+          const { data: professorData, error: professorError } = await supabase
+            .from('professores')
+            .select('id, nome_completo')
+            .eq('id', teoriaData.professor_id)
+            .single();
+          
+          if (!professorError && professorData) {
+            setProfessor(professorData);
+          }
+        }
+        
+        // Load questions if filters exist
+        if (teoriaData.questoes_filtros) {
+          loadFilteredQuestions(teoriaData.questoes_filtros);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar teoria:", error);
+        toast.error("Erro ao carregar a teoria");
+        navigate('/teorias');
+      } finally {
         setLoading(false);
-      }, 500);
+      }
     };
 
     loadPost();
@@ -128,14 +209,13 @@ const TeoriaPost = () => {
     { id: "aula", label: "Aula em texto", icon: FileText },
     { id: "questoes", label: "Questões", icon: FileQuestion },
     { id: "video", label: "Videoaula", icon: Video },
-    { id: "mapa", label: "Mapa mental", icon: Map },
-    { id: "estrutura", label: "Estrutura", icon: Layers }
+    { id: "mapa", label: "Mapa mental", icon: Map }
   ];
 
   // Icon actions
   const iconActions = [
     { id: "report", icon: AlertTriangle, label: "Reportar erro" },
-    { id: "highlight", icon: Highlighter, label: "Marcar texto" }
+    { id: "highlight", icon: Palette, label: "Marcar texto" }
   ];
 
   // Highlight colors
@@ -287,6 +367,25 @@ const TeoriaPost = () => {
   const deleteHighlight = (highlightId: string) => {
     setHighlights(prev => prev.filter(highlight => highlight.id !== highlightId));
   };
+  
+  // Function to handle disabled options for questions
+  const handleToggleDisabled = (questionId: string, optionId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    setDisabledOptions(prev => {
+      const questionDisabled = prev[questionId] || [];
+      if (questionDisabled.includes(optionId)) {
+        return {
+          ...prev,
+          [questionId]: questionDisabled.filter(id => id !== optionId)
+        };
+      } else {
+        return {
+          ...prev,
+          [questionId]: [...questionDisabled, optionId]
+        };
+      }
+    });
+  };
 
   if (loading) {
     return (
@@ -433,6 +532,7 @@ const TeoriaPost = () => {
                           console.log("Erro reportado:", errorReport);
                           setShowErrorReport(false);
                           setErrorReport("");
+                          toast.success("Erro reportado com sucesso!");
                         }}
                       >
                         Enviar
@@ -484,12 +584,12 @@ const TeoriaPost = () => {
                 <div>
                   <div className="relative">
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                      {post.title}
+                      {post.titulo}
                     </h1>
                     {/* Botão de edição para administradores */}
                     {isAdmin() && post.id && (
                       <Link 
-                        to={`/admin/teorias?edit=${post.id}`} 
+                        to={`/admin/teorias/${post.id}/edit`} 
                         className="absolute top-0 right-0 bg-[#ea2be2] text-white p-2 rounded-full hover:bg-[#d029d5] transition-colors"
                         title="Editar teoria"
                       >
@@ -499,14 +599,25 @@ const TeoriaPost = () => {
                   </div>
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                     <div className="flex items-center">
-                      {post.subject && (
-                        <>
-                          <span className="font-medium">{post.subject}</span>
-                          <BookOpen className="h-4 w-4 mx-2 text-gray-400" />
-                        </>
-                      )}
-                      {post.author}
+                      <BookOpen className="h-4 w-4 mr-2 text-gray-400" />
+                      <span className="font-medium">{post.disciplina_id}</span>
                     </div>
+                    <div className="flex items-center">
+                      <User className="h-4 w-4 mr-2 text-gray-400" />
+                      {professor ? professor.nome_completo : "Professor não informado"}
+                    </div>
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                      {format(new Date(post.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                    <span className="bg-gray-100 px-2 py-1 rounded">
+                      Assunto: {post.assunto_id}
+                    </span>
+                    <span className="bg-gray-100 px-2 py-1 rounded">
+                      Tópicos: {post.topicos_ids ? post.topicos_ids.length : 0}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -726,15 +837,136 @@ const TeoriaPost = () => {
               <div className="prose max-w-none relative" ref={contentRef}>
                 {activeTab === "aula" && (
                   <div className="relative">
-                    <BlogContent 
-                      content={post.content} 
+                    <BlogContentWithQuestions 
+                      content={post.conteudo} 
                       className="text-gray-700"
                       highlights={highlights}
                     />
                   </div>
                 )}
                 
-                {activeTab !== "aula" && (
+                {activeTab === "questoes" && (
+                  <div className="relative bg-[rgb(249,250,251)] p-4 rounded-lg">
+                    {post.questoes_filtros ? (
+                      <div>
+                        <QuestionResults
+                          questions={filteredQuestions}
+                          disabledOptions={disabledOptions}
+                          onToggleDisabled={handleToggleDisabled}
+                          currentPage={currentPage}
+                          totalPages={totalPages}
+                          onPageChange={setCurrentPage}
+                          hasFilters={true}
+                          loading={questionsLoading}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="bg-gray-100 rounded-full p-4 mb-4">
+                          <FileQuestion className="h-8 w-8 text-gray-600" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                          Nenhum filtro configurado
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                          O administrador ainda não configurou filtros para exibir questões nesta teoria.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {activeTab === "video" && (
+                  <div className="relative bg-[rgb(249,250,251)] p-4 rounded-lg">
+                    {post.videoaulas && post.videoaulas.length > 0 ? (
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-bold mb-6">Videoaulas</h2>
+                        {post.videoaulas.map((videoUrl, index) => {
+                          // Extract YouTube video ID from URL
+                          const videoId = videoUrl.includes('youtube.com') 
+                            ? new URLSearchParams(videoUrl.split('?')[1]).get('v') 
+                            : videoUrl.split('/').pop();
+                          
+                          return (
+                            <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                              <div className="aspect-w-16 aspect-h-9">
+                                <iframe
+                                  src={`https://www.youtube.com/embed/${videoId}`}
+                                  title={`Videoaula ${index + 1}`}
+                                  className="w-full h-64 md:h-96"
+                                  frameBorder="0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                ></iframe>
+                              </div>
+                              <div className="p-4">
+                                <h3 className="font-medium">Videoaula {index + 1}</h3>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="bg-gray-100 rounded-full p-4 mb-4">
+                          <Video className="h-8 w-8 text-gray-600" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                          Nenhum vídeo adicionado
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                          O administrador ainda não adicionou vídeos para esta teoria.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {activeTab === "mapa" && (
+                  <div className="relative bg-[rgb(249,250,251)] p-4 rounded-lg">
+                    {post.mapas_mentais && post.mapas_mentais.length > 0 ? (
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-bold mb-6">Mapas Mentais</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {post.mapas_mentais.map((pdfUrl, index) => (
+                            <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                              <div className="p-4 border-b">
+                                <h3 className="font-medium">Mapa Mental {index + 1}</h3>
+                              </div>
+                              <div className="p-4">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-gray-600">Documento PDF</span>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => window.open(pdfUrl, '_blank')}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Visualizar
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <div className="bg-gray-100 rounded-full p-4 mb-4">
+                          <Map className="h-8 w-8 text-gray-600" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                          Nenhum mapa mental adicionado
+                        </h3>
+                        <p className="text-gray-600 mb-4">
+                          O administrador ainda não adicionou mapas mentais para esta teoria.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {activeTab !== "aula" && activeTab !== "questoes" && activeTab !== "video" && activeTab !== "mapa" && (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div className="bg-gray-100 rounded-full p-4 mb-4">
                       {menuOptions.find(opt => opt.id === activeTab)?.icon && 

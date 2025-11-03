@@ -1,136 +1,149 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { BookOpen, Search, Calendar, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Search, ChevronRight, BookOpen } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
 
-// Mock data for demonstration
-const MOCK_TEORIA_POSTS = [
-  {
-    id: "1",
-    title: "Teoria de Direito Administrativo",
-    slug: "teoria-direito-administrativo",
-    author: "Prof. João Silva",
-    createdAt: new Date().toISOString(),
-    summary: "Conceitos fundamentais do Direito Administrativo, princípios e organização administrativa.",
-    category: "Direito",
-    tags: ["direito", "administrativo", "princípios"],
-    viewCount: 1250,
-    likesCount: 42
-  },
-  {
-    id: "2",
-    title: "Teoria de Direito Constitucional",
-    slug: "teoria-direito-constitucional",
-    author: "Prof. Maria Oliveira",
-    createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-    summary: "Estrutura da Constituição Federal, direitos fundamentais e organização do Estado.",
-    category: "Direito",
-    tags: ["direito", "constitucional", "direitos"],
-    viewCount: 980,
-    likesCount: 38
-  },
-  {
-    id: "3",
-    title: "Teoria de Matemática Financeira",
-    slug: "teoria-matematica-financeira",
-    author: "Prof. Carlos Santos",
-    createdAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-    summary: "Juros simples e compostos, taxas de juros e operações financeiras básicas.",
-    category: "Matemática",
-    tags: ["matemática", "financeira", "juros"],
-    viewCount: 1520,
-    likesCount: 56
-  },
-  {
-    id: "4",
-    title: "Teoria de Português - Figuras de Linguagem",
-    slug: "teoria-portugues-figuras-linguagem",
-    author: "Prof. Ana Costa",
-    createdAt: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-    summary: "Principais figuras de linguagem utilizadas na literatura e em textos dissertativos.",
-    category: "Português",
-    tags: ["português", "literatura", "figuras"],
-    viewCount: 870,
-    likesCount: 29
-  },
-  {
-    id: "5",
-    title: "Teoria de Informática - Redes de Computadores",
-    slug: "teoria-informatica-redes-computadores",
-    author: "Prof. Roberto Almeida",
-    createdAt: new Date(Date.now() - 345600000).toISOString(), // 4 days ago
-    summary: "Conceitos de redes, protocolos, topologias e segurança em redes de computadores.",
-    category: "Informática",
-    tags: ["informática", "redes", "protocolos"],
-    viewCount: 1120,
-    likesCount: 45
-  },
-  {
-    id: "6",
-    title: "Teoria de Contabilidade Geral",
-    slug: "teoria-contabilidade-geral",
-    author: "Prof. Fernanda Lima",
-    createdAt: new Date(Date.now() - 432000000).toISOString(), // 5 days ago
-    summary: "Princípios contábeis, plano de contas e demonstrações contábeis básicas.",
-    category: "Contabilidade",
-    tags: ["contabilidade", "financeira", "demonstrações"],
-    viewCount: 930,
-    likesCount: 33
-  }
-];
+interface Teoria {
+  id: string;
+  titulo: string;
+  disciplina_id: string;
+  assunto_id: string;
+  topicos_ids: string[];
+  conteudo: string;
+  no_edital: string;
+  status: "draft" | "published";
+  professor_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Professor {
+  id: string;
+  nome_completo: string;
+}
+
+interface DisciplinaSummary {
+  nome: string;
+  quantidadeTeorias: number;
+  professores: string[];
+}
+
+interface TeoriaDetalhada extends Teoria {
+  professor_nome?: string;
+}
+
+// Função para gerar slug a partir do título
 
 const Teorias = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredPosts, setFilteredPosts] = useState<any[]>([]);
-  const [allPosts, setAllPosts] = useState<any[]>([]);
+  const [teorias, setTeorias] = useState<Teoria[]>([]);
+  const [disciplinas, setDisciplinas] = useState<DisciplinaSummary[]>([]);
+  const [professores, setProfessores] = useState<Professor[]>([]);
+  const [teoriasPorDisciplina, setTeoriasPorDisciplina] = useState<Record<string, TeoriaDetalhada[]>>({});
   const [loading, setLoading] = useState(true);
+  const [selectedDisciplina, setSelectedDisciplina] = useState<string | null>(null);
 
-  // Simulate fetching posts data
+  // Carregar dados do banco de dados
   useEffect(() => {
-    const loadPosts = async () => {
-      setLoading(true);
-      
-      // Simulate API call delay
-      setTimeout(() => {
-        // For now, we'll use mock data
-        // In a real implementation, this would fetch from an API
-        setAllPosts(MOCK_TEORIA_POSTS);
-        setFilteredPosts(MOCK_TEORIA_POSTS);
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Carregar teorias publicadas
+        const { data: teoriasData, error: teoriasError } = await supabase
+          .from('teorias')
+          .select('*')
+          .eq('status', 'published')
+          .order('disciplina_id', { ascending: true })
+          .order('titulo', { ascending: true });
+        
+        if (teoriasError) throw teoriasError;
+        
+        // Carregar professores
+        const { data: professoresData, error: professoresError } = await supabase
+          .from('professores')
+          .select('id, nome_completo');
+        
+        if (professoresError) throw professoresError;
+        
+        setTeorias(teoriasData || []);
+        setProfessores(professoresData || []);
+        
+        // Processar dados para exibição
+        processarDados(teoriasData || [], professoresData || []);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        toast.error("Erro ao carregar teorias");
+      } finally {
         setLoading(false);
-      }, 500);
+      }
     };
-
-    loadPosts();
+    
+    loadData();
   }, []);
 
-  // Filter posts based on search term
-  useEffect(() => {
-    let result = [...allPosts];
+  const processarDados = (teoriasData: Teoria[], professoresData: Professor[]) => {
+    // Criar mapa de professores para fácil acesso
+    const professorMap = professoresData.reduce((acc, prof) => {
+      acc[prof.id] = prof.nome_completo;
+      return acc;
+    }, {} as Record<string, string>);
+    
+    // Agrupar teorias por disciplina
+    const disciplinasMap: Record<string, TeoriaDetalhada[]> = {};
+    teoriasData.forEach(teoria => {
+      const teoriaDetalhada: TeoriaDetalhada = {
+        ...teoria,
+        professor_nome: teoria.professor_id ? professorMap[teoria.professor_id] : "Não informado"
+      };
+      
+      if (!disciplinasMap[teoria.disciplina_id]) {
+        disciplinasMap[teoria.disciplina_id] = [];
+      }
+      disciplinasMap[teoria.disciplina_id].push(teoriaDetalhada);
+    });
+    
+    setTeoriasPorDisciplina(disciplinasMap);
+    
+    // Criar sumário das disciplinas
+    const disciplinasSummary: DisciplinaSummary[] = Object.entries(disciplinasMap).map(([nome, teorias]) => {
+      const professoresSet = new Set<string>();
+      teorias.forEach(teoria => {
+        if (teoria.professor_nome) {
+          professoresSet.add(teoria.professor_nome);
+        }
+      });
+      
+      return {
+        nome,
+        quantidadeTeorias: teorias.length,
+        professores: Array.from(professoresSet)
+      };
+    });
+    
+    // Ordenar disciplinas alfabeticamente
+    disciplinasSummary.sort((a, b) => a.nome.localeCompare(b.nome));
+    setDisciplinas(disciplinasSummary);
+  };
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(post => 
-        post.title.toLowerCase().includes(term) || 
-        post.summary.toLowerCase().includes(term) || 
-        post.tags?.some((tag: string) => tag.toLowerCase().includes(term))
-      );
-    }
+  const handleDisciplinaClick = (disciplina: string) => {
+    setSelectedDisciplina(disciplina);
+  };
 
-    setFilteredPosts(result);
-  }, [searchTerm, allPosts]);
-
-  // Sort posts by creation date (newest first)
-  const sortedPosts = [...filteredPosts].sort((a, b) => 
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  const handleVoltar = () => {
+    setSelectedDisciplina(null);
+  };
 
   if (loading) {
     return (
@@ -182,6 +195,97 @@ const Teorias = () => {
     );
   }
 
+  // Exibição da lista de disciplinas
+  if (!selectedDisciplina) {
+    return (
+      <PublicLayout>
+        <div className="min-h-screen flex flex-col">
+          <Header />
+          <main className="flex-1">
+            <div className="container mx-auto px-4 py-8">
+              {/* Page Header */}
+              <div className="mb-8">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Teorias</h1>
+                <p className="text-gray-600">
+                  Aulas detalhadas com teorias e conceitos importantes para seus estudos.
+                </p>
+              </div>
+
+              {/* Search Bar */}
+              <div className="mb-8">
+                <div className="relative max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar disciplinas..."
+                    className="pl-10"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Lista de Disciplinas */}
+              {disciplinas.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white rounded-lg overflow-hidden">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="py-3 px-4 text-left font-medium text-gray-900">Disciplina</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-900">Quantidade de Teorias</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-900">Professores</th>
+                        <th className="py-3 px-4 text-left font-medium text-gray-900">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {disciplinas
+                        .filter(disc => 
+                          disc.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          disc.professores.some(prof => prof.toLowerCase().includes(searchTerm.toLowerCase()))
+                        )
+                        .map((disciplina, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="py-3 px-4 font-medium text-gray-900">{disciplina.nome}</td>
+                            <td className="py-3 px-4 text-gray-700">{disciplina.quantidadeTeorias}</td>
+                            <td className="py-3 px-4 text-gray-700">
+                              {disciplina.professores.length > 0 
+                                ? disciplina.professores.join(", ") 
+                                : "Não informado"}
+                            </td>
+                            <td className="py-3 px-4">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDisciplinaClick(disciplina.nome)}
+                                className="flex items-center gap-1"
+                              >
+                                Ver teorias
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma teoria encontrada</h3>
+                  <p className="text-gray-500 mb-4">
+                    Não encontramos nenhuma teoria cadastrada no sistema.
+                  </p>
+                </div>
+              )}
+            </div>
+          </main>
+          <Footer />
+        </div>
+      </PublicLayout>
+    );
+  }
+
+  // Exibição das teorias de uma disciplina específica
   return (
     <PublicLayout>
       <div className="min-h-screen flex flex-col">
@@ -190,95 +294,72 @@ const Teorias = () => {
           <div className="container mx-auto px-4 py-8">
             {/* Page Header */}
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Teorias</h1>
+              <Button 
+                variant="outline" 
+                onClick={handleVoltar} 
+                className="mb-4 flex items-center gap-2"
+              >
+                <ChevronRight className="h-4 w-4 rotate-180" />
+                Voltar para disciplinas
+              </Button>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{selectedDisciplina}</h1>
               <p className="text-gray-600">
-                Aulas detalhadas com teorias e conceitos importantes para seus estudos.
+                Lista de teorias da disciplina {selectedDisciplina}
               </p>
             </div>
 
-            {/* Search Bar */}
-            <div className="mb-8">
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Buscar teorias..."
-                  className="pl-10"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Posts Grid */}
-            {sortedPosts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedPosts.map((post) => (
-                  <Card key={post.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="mb-4">
-                        <span className="inline-block bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded">
-                          {post.category}
-                        </span>
-                      </div>
-                      
-                      <h2 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2">
-                        <Link to={`/teoria/${post.slug}`} className="hover:text-primary">
-                          {post.title}
-                        </Link>
-                      </h2>
-                      
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                        {post.summary}
-                      </p>
-                      
-                      <div className="flex flex-wrap gap-1 mb-4">
-                        {post.tags.slice(0, 3).map((tag: string) => (
-                          <span 
-                            key={tag} 
-                            className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+            {/* Lista de Teorias da Disciplina */}
+            {teoriasPorDisciplina[selectedDisciplina]?.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-lg overflow-hidden">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="py-3 px-4 text-left font-medium text-gray-900">Teoria (Título)</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-900">Assunto</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-900">Professor</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-900">Quantidade de Tópicos</th>
+                      <th className="py-3 px-4 text-left font-medium text-gray-900">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {teoriasPorDisciplina[selectedDisciplina].map((teoria, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="py-3 px-4 font-medium text-gray-900">{teoria.titulo}</td>
+                        <td className="py-3 px-4 text-gray-700">{teoria.assunto_id}</td>
+                        <td className="py-3 px-4 text-gray-700">
+                          {teoria.professor_nome || "Não informado"}
+                        </td>
+                        <td className="py-3 px-4 text-gray-700">
+                          {teoria.topicos_ids ? teoria.topicos_ids.length : 0}
+                        </td>
+                        <td className="py-3 px-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => navigate(`/teoria/${teoria.id}`)}
+                            className="flex items-center gap-1"
                           >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                      
-                      <div className="flex items-center justify-between text-sm text-gray-500">
-                        <div className="flex items-center">
-                          <User className="h-4 w-4 mr-1" />
-                          {post.author}
-                        </div>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          {format(new Date(post.createdAt), "dd/MM/yyyy", { locale: ptBR })}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                            Ver teoria
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             ) : (
               <div className="text-center py-12">
                 <BookOpen className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma teoria encontrada</h3>
                 <p className="text-gray-500 mb-4">
-                  Não encontramos nenhuma teoria que corresponda à sua busca.
+                  Não encontramos nenhuma teoria para a disciplina {selectedDisciplina}.
                 </p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSearchTerm("")}
-                >
-                  Limpar filtros
+                <Button onClick={handleVoltar} variant="outline">
+                  Voltar para disciplinas
                 </Button>
               </div>
             )}
-
-            {/* Load More Button */}
-            <div className="mt-8 text-center">
-              <Button variant="outline" className="w-full md:w-auto">
-                Carregar mais teorias
-              </Button>
-            </div>
           </div>
         </main>
         <Footer />

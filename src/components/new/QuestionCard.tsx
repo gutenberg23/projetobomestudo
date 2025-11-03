@@ -1292,7 +1292,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
 
   return (
-    <div className="w-full bg-white rounded-lg mb-4">
+    <div className="w-full bg-white rounded-xl mb-4">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <QuestionHeader

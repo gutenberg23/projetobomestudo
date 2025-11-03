@@ -18,7 +18,11 @@ export const teoriasService = {
           conteudo: teoria.conteudo,
           no_edital: teoria.no_edital,
           status: teoria.status,
-          professor_id: teoria.professor_id // Adicionado
+          professor_id: teoria.professor_id, // Agora referencia professores.id
+          questoes_filtros: teoria.questoes_filtros,
+          questoes_link: teoria.questoes_link,
+          videoaulas: teoria.videoaulas,
+          mapas_mentais: teoria.mapas_mentais
         })
         .select()
         .single();
