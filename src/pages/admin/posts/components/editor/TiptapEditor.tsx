@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { QuestionExtension } from '@/components/editor/QuestionExtension';
+import { TableCellBackground } from '@/components/editor/TableCellBackground';
 import './TiptapEditor.css';
 
 const lowlight = createLowlight();
@@ -124,6 +125,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
         },
       }),
       QuestionExtension,
+      TableCellBackground,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -440,13 +442,13 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
             className="border rounded px-2 py-1 text-sm"
             onChange={(e) => {
               if (editor && e.target.value) {
-                // Use document.execCommand for background color
-                document.execCommand('styleWithCSS', false, 'true');
-                document.execCommand('backColor', false, e.target.value);
+                editor.chain().focus().setTableCellBackground(e.target.value).run();
               }
             }}
+            defaultValue=""
           >
-            <option value="">Cor de fundo</option>
+            <option value="">Cor de fundo da célula</option>
+            <option value="">Padrão</option>
             <option value="rgb(95, 46, 190)">Roxo</option>
             <option value="rgb(226, 232, 240)">Cinza claro</option>
             <option value="rgb(254, 252, 232)">Amarelo</option>

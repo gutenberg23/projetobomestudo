@@ -12,7 +12,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { X, Save, ArrowLeft, Eye, EyeOff, Search, Settings } from "lucide-react";
+import { X, Save, ArrowLeft, Eye, EyeOff, Search, Settings, Plus, Trash2 } from "lucide-react";
 import { TiptapEditor } from "./posts/components/editor/TiptapEditor";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,13 @@ import { teoriasService } from "@/services/teoriasService";
 import type { TeoriaInsert } from "@/services/teoriasService";
 import { BlogContent } from "@/components/blog/BlogContent";
 import { DisciplinaFiltersModal } from "./components/edital/DisciplinaFiltersModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // Componente de campo de pesquisa com seleção múltipla e possibilidade de adição/remoção
 interface MultiSearchFieldProps {
@@ -28,6 +35,8 @@ interface MultiSearchFieldProps {
   setValues: (values: string[]) => void;
   options: string[]; // Simplificado para usar apenas strings
   isRequired?: boolean;
+  onAddNew?: () => void;
+  onDelete?: (value: string) => void;
 }
 
 const MultiSearchField: React.FC<MultiSearchFieldProps> = ({
@@ -35,7 +44,9 @@ const MultiSearchField: React.FC<MultiSearchFieldProps> = ({
   values,
   setValues,
   options,
-  isRequired = false
+  isRequired = false,
+  onAddNew,
+  onDelete
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -74,9 +85,23 @@ const MultiSearchField: React.FC<MultiSearchFieldProps> = ({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={`search-${label}`} className="flex items-center">
-        {label}
-        {isRequired && <span className="text-red-500 ml-1">*</span>}
+      <Label htmlFor={`search-${label}`} className="flex items-center justify-between">
+        <span>
+          {label}
+          {isRequired && <span className="text-red-500 ml-1">*</span>}
+        </span>
+        {onAddNew && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onAddNew}
+            className="h-8 px-2"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Novo
+          </Button>
+        )}
       </Label>
       <div className="relative" ref={dropdownRef}>
         <div className="relative flex-1">
@@ -111,14 +136,26 @@ const MultiSearchField: React.FC<MultiSearchFieldProps> = ({
       {/* Badges para valores selecionados */}
       <div className="flex flex-wrap gap-2 mt-2">
         {values.map((value, index) => (
-          <Badge key={index} variant="secondary" className="flex items-center gap-1">
+          <Badge key={index} variant="secondary" className="flex items-center gap-2">
             {value}
-            <button 
-              onClick={() => handleRemoveValue(value)}
-              className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
-            >
-              <X className="h-3 w-3" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={() => handleRemoveValue(value)}
+                className="hover:bg-gray-200 rounded-full p-0.5"
+                title="Remover da seleção"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              {onDelete && (
+                <button 
+                  onClick={() => onDelete(value)}
+                  className="hover:bg-red-200 rounded-full p-0.5 text-red-600"
+                  title="Excluir permanentemente"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
           </Badge>
         ))}
       </div>
@@ -134,6 +171,8 @@ interface SearchFieldProps {
   options: string[]; // Simplificado para usar apenas strings
   isRequired?: boolean;
   disabled?: boolean;
+  onAddNew?: () => void;
+  onDelete?: (value: string) => void;
 }
 
 const SearchField: React.FC<SearchFieldProps> = ({
@@ -142,7 +181,9 @@ const SearchField: React.FC<SearchFieldProps> = ({
   setValue,
   options,
   isRequired = false,
-  disabled = false
+  disabled = false,
+  onAddNew,
+  onDelete
 }) => {
   const [searchQuery, setSearchQuery] = useState(value || "");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -178,9 +219,38 @@ const SearchField: React.FC<SearchFieldProps> = ({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={`search-${label}`} className="flex items-center">
-        {label}
-        {isRequired && <span className="text-red-500 ml-1">*</span>}
+      <Label htmlFor={`search-${label}`} className="flex items-center justify-between">
+        <span>
+          {label}
+          {isRequired && <span className="text-red-500 ml-1">*</span>}
+        </span>
+        <div className="flex items-center gap-1">
+          {onAddNew && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onAddNew}
+              className="h-8 px-2"
+              disabled={disabled}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              Novo
+            </Button>
+          )}
+          {onDelete && value && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onDelete(value)}
+              className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              disabled={disabled}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </Label>
       <div className="relative" ref={dropdownRef}>
         <div className="relative flex-1">
@@ -257,6 +327,12 @@ const TeoriaEditor = () => {
   // States for mind maps (PDFs)
   const [mindMapFiles, setMindMapFiles] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  
+  // States for add/delete dialogs
+  const [isAddDisciplinaOpen, setIsAddDisciplinaOpen] = useState(false);
+  const [isAddAssuntoOpen, setIsAddAssuntoOpen] = useState(false);
+  const [isAddTopicoOpen, setIsAddTopicoOpen] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -595,6 +671,69 @@ const TeoriaEditor = () => {
   };
 
   const currentSlug = generateSlug(titulo);
+  
+  // Handlers for adding new items
+  const handleAddDisciplina = () => {
+    if (newItemName.trim() && !allDisciplinas.includes(newItemName.trim())) {
+      setAllDisciplinas([...allDisciplinas, newItemName.trim()]);
+      setDisciplina(newItemName.trim());
+      toast.success("Disciplina adicionada com sucesso!");
+    }
+    setNewItemName("");
+    setIsAddDisciplinaOpen(false);
+  };
+  
+  const handleAddAssunto = () => {
+    if (newItemName.trim() && !allAssuntos.includes(newItemName.trim())) {
+      setAllAssuntos([...allAssuntos, newItemName.trim()]);
+      setFilteredAssuntos([...filteredAssuntos, newItemName.trim()]);
+      setAssunto(newItemName.trim());
+      toast.success("Assunto adicionado com sucesso!");
+    }
+    setNewItemName("");
+    setIsAddAssuntoOpen(false);
+  };
+  
+  const handleAddTopico = () => {
+    if (newItemName.trim() && !allTopicos.includes(newItemName.trim())) {
+      setAllTopicos([...allTopicos, newItemName.trim()]);
+      setFilteredTopicos([...filteredTopicos, newItemName.trim()]);
+      toast.success("Tópico adicionado com sucesso!");
+    }
+    setNewItemName("");
+    setIsAddTopicoOpen(false);
+  };
+  
+  // Handlers for deleting items
+  const handleDeleteDisciplina = (disciplinaToDelete: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir a disciplina "${disciplinaToDelete}"?`)) {
+      setAllDisciplinas(allDisciplinas.filter(d => d !== disciplinaToDelete));
+      if (disciplina === disciplinaToDelete) {
+        setDisciplina("");
+      }
+      toast.success("Disciplina excluída com sucesso!");
+    }
+  };
+  
+  const handleDeleteAssunto = (assuntoToDelete: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o assunto "${assuntoToDelete}"?`)) {
+      setAllAssuntos(allAssuntos.filter(a => a !== assuntoToDelete));
+      setFilteredAssuntos(filteredAssuntos.filter(a => a !== assuntoToDelete));
+      if (assunto === assuntoToDelete) {
+        setAssunto("");
+      }
+      toast.success("Assunto excluído com sucesso!");
+    }
+  };
+  
+  const handleDeleteTopico = (topico: string) => {
+    if (window.confirm(`Tem certeza que deseja excluir o tópico "${topico}"?`)) {
+      setAllTopicos(allTopicos.filter(t => t !== topico));
+      setFilteredTopicos(filteredTopicos.filter(t => t !== topico));
+      setSelectedTopicos(selectedTopicos.filter(t => t !== topico));
+      toast.success("Tópico excluído com sucesso!");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -714,6 +853,8 @@ const TeoriaEditor = () => {
                 setValue={setDisciplina}
                 options={allDisciplinas}
                 isRequired={true}
+                onAddNew={() => setIsAddDisciplinaOpen(true)}
+                onDelete={handleDeleteDisciplina}
               />
             </div>
             
@@ -725,6 +866,8 @@ const TeoriaEditor = () => {
                 options={filteredAssuntos}
                 isRequired={true}
                 disabled={!disciplina}
+                onAddNew={() => setIsAddAssuntoOpen(true)}
+                onDelete={handleDeleteAssunto}
               />
             </div>
             
@@ -752,6 +895,8 @@ const TeoriaEditor = () => {
               setValues={setSelectedTopicos}
               options={filteredTopicos}
               isRequired={false}
+              onAddNew={() => setIsAddTopicoOpen(true)}
+              onDelete={handleDeleteTopico}
             />
           </div>
           
@@ -985,6 +1130,114 @@ const TeoriaEditor = () => {
         initialBancas={questoesFiltros.bancas || []}
         initialTopicos={questoesFiltros.topicos || []}
       />
+      
+      {/* Add Disciplina Dialog */}
+      <Dialog open={isAddDisciplinaOpen} onOpenChange={setIsAddDisciplinaOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Nova Disciplina</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-disciplina">Nome da Disciplina</Label>
+              <Input
+                id="new-disciplina"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                placeholder="Digite o nome da disciplina"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddDisciplina();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setNewItemName("");
+              setIsAddDisciplinaOpen(false);
+            }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddDisciplina} disabled={!newItemName.trim()}>
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Assunto Dialog */}
+      <Dialog open={isAddAssuntoOpen} onOpenChange={setIsAddAssuntoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Novo Assunto</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-assunto">Nome do Assunto</Label>
+              <Input
+                id="new-assunto"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                placeholder="Digite o nome do assunto"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddAssunto();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setNewItemName("");
+              setIsAddAssuntoOpen(false);
+            }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddAssunto} disabled={!newItemName.trim()}>
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Add Tópico Dialog */}
+      <Dialog open={isAddTopicoOpen} onOpenChange={setIsAddTopicoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar Novo Tópico</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-topico">Nome do Tópico</Label>
+              <Input
+                id="new-topico"
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                placeholder="Digite o nome do tópico"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleAddTopico();
+                  }
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setNewItemName("");
+              setIsAddTopicoOpen(false);
+            }}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddTopico} disabled={!newItemName.trim()}>
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
