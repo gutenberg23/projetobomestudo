@@ -24,7 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AdBanner from "@/components/ads/AdBanner";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { usePermissions } from "@/hooks/usePermissions";
-import { BlogContent } from "@/components/blog/BlogContent";
+import { BlogContentWithQuestions } from "@/components/blog/BlogContentWithQuestions";
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -396,8 +396,8 @@ const BlogPostPage = () => {
                       </div>
                     </div>
                     
-                    {/* Conteúdo do post - usando o componente BlogContent para estilizar corretamente as tags HTML e tabelas */}
-                    <BlogContent 
+                    {/* Conteúdo do post - usando o componente BlogContentWithQuestions para renderizar questões */}
+                    <BlogContentWithQuestions 
                       content={post.content} 
                       className="text-gray-700 mb-8"
                     />

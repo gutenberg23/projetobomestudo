@@ -128,4 +128,9 @@
     margin-bottom: 1rem;
     font-style: italic;
   }
+  
+  /* Correção para texto em negrito - garantir que a cor definida no editor seja respeitada */
+  strong, b {
+    color: inherit !important;
+  }
 }

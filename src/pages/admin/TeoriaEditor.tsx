@@ -358,6 +358,13 @@ const TeoriaEditor = () => {
           setAssunto(teoria.assunto_id || "");
           setSelectedTopicos(teoria.topicos_ids || []);
           setConteudo(teoria.conteudo || "");
+          console.log('Conteúdo carregado:', teoria.conteudo || "");
+          
+          // Pequeno atraso para garantir que o editor esteja pronto
+          setTimeout(() => {
+            console.log('Forçando atualização do conteúdo após carregamento');
+          }, 200);
+          
           setNoEdital(teoria.no_edital || "");
           setStatus(teoria.status || "draft");
           setProfessorId(teoria.professor_id || "");
@@ -537,6 +544,18 @@ const TeoriaEditor = () => {
       toast.error("Erro ao filtrar tópicos");
     }
   };
+
+  // Forçar atualização do conteúdo quando alternar para modo de edição
+  useEffect(() => {
+    if (!isPreview) {
+      // Pequeno atraso para garantir que o editor esteja pronto
+      const timer = setTimeout(() => {
+        console.log('Forçando atualização do conteúdo do editor');
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isPreview]);
 
   // Update the handleSave function to save question filters
   const handleSave = async () => {
@@ -902,20 +921,23 @@ const TeoriaEditor = () => {
           
           <div className="space-y-2">
             <Label htmlFor="conteudo">Conteúdo *</Label>
-            {isPreview ? (
-              <div className="border rounded-lg p-4 min-h-[300px]">
+            <div className="border rounded-lg p-4 min-h-[300px]">
+              {isPreview ? (
                 <BlogContent 
                   content={conteudo} 
                   className="prose max-w-none"
                   showQuestionTags={true}
                 />
-              </div>
-            ) : (
-              <TiptapEditor 
-                content={conteudo} 
-                onChange={setConteudo} 
-              />
-            )}
+              ) : (
+                <TiptapEditor 
+                  content={conteudo} 
+                  onChange={(newContent) => {
+                    console.log('Conteúdo atualizado:', newContent);
+                    setConteudo(newContent);
+                  }} 
+                />
+              )}
+            </div>
           </div>
           
           <div className="space-y-2">

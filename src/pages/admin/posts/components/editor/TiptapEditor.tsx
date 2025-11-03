@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextStyle from '@tiptap/extension-text-style';
@@ -16,11 +16,12 @@ import Strike from '@tiptap/extension-strike';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import Bold from '@tiptap/extension-bold';
 import { createLowlight } from 'lowlight';
 import js from 'highlight.js/lib/languages/javascript';
 import { Button } from '@/components/ui/button';
 import {
-  Bold,
+  Bold as BoldIcon,
   Italic,
   Underline as UnderlineIcon,
   Strikethrough,
@@ -42,7 +43,9 @@ import {
   Heading4,
   Heading5,
   Square,
-  HelpCircle
+  HelpCircle,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { QuestionExtension } from '@/components/editor/QuestionExtension';
@@ -58,6 +61,7 @@ interface TiptapEditorProps {
 }
 
 export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange }) => {
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -72,6 +76,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
           },
         },
       }),
+      Bold,
       TextStyle,
       Color,
       FontFamily,
@@ -127,11 +132,79 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
       QuestionExtension,
       TableCellBackground,
     ],
-    content,
+    content: content || '',
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
   });
+
+  // Atualizar o conteúdo do editor quando a prop content mudar, mas apenas se for diferente
+  useEffect(() => {
+    if (editor && content !== undefined && content !== null) {
+      // Verificar se o conteúdo atual do editor é diferente do conteúdo recebido
+      const currentContent = editor.getHTML();
+      // Remover espaços em branco e quebras de linha para comparação mais precisa
+      const normalizedCurrent = currentContent.replace(/\s+/g, ' ').trim();
+      const normalizedContent = (content || '').replace(/\s+/g, ' ').trim();
+      
+      // Só atualizar se o conteúdo for realmente diferente
+      if (normalizedCurrent !== normalizedContent) {
+        console.log('Atualizando conteúdo do editor:', content);
+        editor.commands.setContent(content || '');
+      }
+    }
+  }, [editor, content]);
+
+  // Efeito para lidar com a tecla ESC para sair do modo tela cheia
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    if (isFullscreen) {
+      document.addEventListener('keydown', handleEscKey);
+      // Adicionar classe ao body para esconder scrollbars
+      document.body.classList.add('overflow-hidden');
+    } else {
+      // Remover classe do body
+      document.body.classList.remove('overflow-hidden');
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+      // Remover classe do body
+      document.body.classList.remove('overflow-hidden');
+    };
+  }, [isFullscreen]);
+
+  // Efeito para garantir que o editor tenha a altura correta em modo tela cheia
+  useEffect(() => {
+    if (isFullscreen && editor) {
+      // Forçar re-renderização do editor
+      setTimeout(() => {
+        editor.commands.focus();
+      }, 100);
+    }
+  }, [isFullscreen, editor]);
+
+  // Efeito para atualizar o conteúdo quando sair do modo tela cheia
+  useEffect(() => {
+    if (!isFullscreen && editor && content) {
+      // Verificar se o conteúdo atual do editor é diferente do conteúdo recebido
+      const currentContent = editor.getHTML();
+      // Remover espaços em branco e quebras de linha para comparação mais precisa
+      const normalizedCurrent = currentContent.replace(/\s+/g, ' ').trim();
+      const normalizedContent = (content || '').replace(/\s+/g, ' ').trim();
+      
+      // Só atualizar se o conteúdo for realmente diferente
+      if (normalizedCurrent !== normalizedContent) {
+        // Atualizar o conteúdo quando sair do modo tela cheia
+        editor.commands.setContent(content);
+      }
+    }
+  }, [isFullscreen, editor, content]);
 
   const handleImageUpload = useCallback(async (file: File) => {
     try {
@@ -203,12 +276,17 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
     }
   }, [editor]);
 
+  // Função para alternar o modo tela cheia
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(!isFullscreen);
+  }, [isFullscreen]);
+
   if (!editor) {
     return null;
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className={`border rounded-lg overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50 m-0 rounded-none border-0' : ''}`}>
       <div className="border-b p-2 flex flex-wrap gap-2 bg-gray-50">
         <Button
           type="button"
@@ -217,7 +295,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={editor.isActive('bold') ? 'bg-gray-200' : ''}
         >
-          <Bold className="h-4 w-4" />
+          <BoldIcon className="h-4 w-4" />
         </Button>
         <Button
           type="button"
@@ -457,8 +535,19 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
             <option value="rgb(254, 226, 226)">Vermelho</option>
           </select>
         </div>
+        
+        {/* Botão de tela cheia */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={toggleFullscreen}
+          title={isFullscreen ? "Sair da tela cheia" : "Entrar na tela cheia"}
+        >
+          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
       </div>
-      <div className="editor-content">
+      <div className={`editor-content ${isFullscreen ? 'flex-1 overflow-y-auto p-4' : ''}`}>
         <EditorContent editor={editor} />
       </div>
     </div>

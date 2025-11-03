@@ -989,39 +989,6 @@ const TeoriaPost = () => {
                 )}
               </div>
             </div>
-            
-            {/* Related Content */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg mb-4">Próxima teoria</h3>
-                  <p className="text-gray-600">Princípios Constitucionais</p>
-                  <Button className="mt-4 w-full" variant="outline">
-                    Continuar aprendendo
-                  </Button>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg mb-4">Questões relacionadas</h3>
-                  <p className="text-gray-600">15 questões sobre este tema</p>
-                  <Button className="mt-4 w-full" variant="outline">
-                    Praticar questões
-                  </Button>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold text-lg mb-4">Resumo</h3>
-                  <p className="text-gray-600">Veja um resumo desta teoria</p>
-                  <Button className="mt-4 w-full" variant="outline">
-                    Ver resumo
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         </main>
         <Footer />

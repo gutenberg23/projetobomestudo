@@ -5,6 +5,12 @@
   background-color: white;
 }
 
+.ProseMirror.p-4.border.rounded-lg.overflow-hidden.fixed.inset-0.z-50.m-0.rounded-none .ProseMirror {
+  min-height: calc(100vh - 80px); /* Altura total menos a barra de ferramentas */
+  padding: 1.5rem;
+  background-color: white;
+}
+
 .ProseMirror p {
   margin: 0.5em 0;
 }
@@ -141,25 +147,35 @@
   flex-direction: column;
 }
 
-/* Barra de ferramentas */
-.border-b.p-2.flex.flex-wrap.gap-2.bg-gray-50 {
+/* Estilos para o modo tela cheia */
+.fixed.inset-0.z-50.m-0.rounded-none.border-0 {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  border: none;
+  border-radius: 0;
+  margin: 0;
   background-color: white;
+  z-index: 9999;
+}
+
+.fixed.inset-0.z-50.m-0.rounded-none.border-0 .border-b.p-2.flex.flex-wrap.gap-2.bg-gray-50 {
   border-bottom: 1px solid #e5e7eb;
   padding: 0.5rem;
+  flex-wrap: wrap;
+  background-color: white;
 }
 
-/* Container do conteúdo */
-.editor-content {
+.fixed.inset-0.z-50.m-0.rounded-none.border-0 .editor-content.flex-1.overflow-y-auto.p-4 {
   flex: 1;
   overflow-y: auto;
-  max-height: 450px;
+  padding: 1rem;
+  max-height: none;
 }
 
-/* Área de conteúdo do editor */
-.ProseMirror {
+.fixed.inset-0.z-50.m-0.rounded-none.border-0 .editor-content.flex-1.overflow-y-auto.p-4 .ProseMirror {
+  min-height: 100%;
   padding: 1rem;
-  min-height: 200px;
-  height: auto;
   background-color: white;
 }
 
@@ -172,4 +188,4 @@
 .p-4.border.rounded-md.bg-gray-50 {
   margin-bottom: 2rem;
   overflow: visible;
-} 
+}

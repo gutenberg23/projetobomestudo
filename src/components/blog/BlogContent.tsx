@@ -208,10 +208,14 @@ export const BlogContent: React.FC<BlogContentProps> = ({
     return originalIndex;
   };
   
-  // Process content to show question tags if needed
+  // Process content to handle question nodes
   const processedContent = showQuestionTags 
     ? content // Show tags as-is in edit mode
-    : content.replace(/\[question:([a-f0-9-]+)\]/g, '<div class="p-4 my-4 bg-blue-50 border border-blue-200 rounded-lg text-center"><p class="text-blue-800 font-medium">Questão incorporada neste ponto</p><p class="text-sm text-blue-600 mt-1">[question:$1]</p></div>');
+    : content
+        // Substituir as tags de questões por placeholders visuais
+        .replace(/<div[^>]*data-question-id="([^"]+)"[^>]*data-question-node="true"[^>]*><\/div>/g, '[question:$1]')
+        // Substituir as tags de questões antigas também
+        .replace(/\[question:([a-f0-9-]+)\]/g, '<div class="p-4 my-4 bg-blue-50 border border-blue-200 rounded-lg text-center"><p class="text-blue-800 font-medium">Questão incorporada neste ponto</p><p class="text-sm text-blue-600 mt-1">[question:$1]</p></div>');
   
   return (
     <div 

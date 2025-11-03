@@ -42,7 +42,9 @@ export const QuestionExtension = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(HTMLAttributes), 0];
+    // Renderizar como uma tag especial que pode ser identificada posteriormente
+    // Mas também incluir o formato de texto [question:id] para garantir compatibilidade
+    return ['div', mergeAttributes(HTMLAttributes, { 'data-question-node': 'true' }), `[question:${HTMLAttributes['data-question-id']}]`];
   },
 
   addNodeView() {

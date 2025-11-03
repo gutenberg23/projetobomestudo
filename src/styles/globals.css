@@ -11,7 +11,7 @@
   /* Variáveis de cores dinâmicas que serão atualizadas pelo hook useSiteConfig */
   --primary-color: #5f2ebe;
   --secondary-color: #272f3c;
-  --accent-color: #f97316;
+  --accent-color: #f34ef3;
   --font-family: 'Inter, sans-serif';
   
   /* Cores padrão do shadcn UI */
@@ -145,6 +145,11 @@
   
   .prose p {
     @apply mb-4 leading-relaxed;
+  }
+  
+  /* Correção para texto em negrito - garantir que a cor definida no editor seja respeitada */
+  .prose strong, .prose b {
+    color: inherit !important;
   }
 }
 

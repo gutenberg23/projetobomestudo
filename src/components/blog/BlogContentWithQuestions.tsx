@@ -289,6 +289,7 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
                   question={question}
                   disabledOptions={[]}
                   onToggleDisabled={() => {}}
+                  onRemove={async () => {}}
                 />
               </div>
             </div>
