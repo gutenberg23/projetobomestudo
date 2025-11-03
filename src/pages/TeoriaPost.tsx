@@ -140,11 +140,12 @@ const TeoriaPost = () => {
 
   // Highlight colors
   const highlightColors = [
-    { name: "Amarelo", value: "#fff000" },
-    { name: "Verde", value: "#00ff00" },
-    { name: "Azul", value: "#0080ff" },
-    { name: "Rosa", value: "#ff69b4" },
-    { name: "Laranja", value: "#ffa500" }
+    { name: "Amarelo Pastel", value: "#FFF9C4" },
+    { name: "Verde Pastel", value: "#C8E6C9" },
+    { name: "Azul Pastel", value: "#BBDEFB" },
+    { name: "Rosa Pastel", value: "#F8BBD0" },
+    { name: "Laranja Pastel", value: "#FFE0B2" },
+    { name: "Violeta Pastel", value: "#D1C4E9" }
   ];
 
   const handleIconAction = (actionId: string) => {
@@ -570,7 +571,7 @@ const TeoriaPost = () => {
                     
                     {/* Highlights sidebar */}
                     {showHighlightsSidebar && (
-                      <div className="fixed inset-0 z-50">
+                      <div className="fixed inset-0 z-60">
                         <div 
                           className="absolute inset-0 bg-black bg-opacity-50"
                           onClick={() => setShowHighlightsSidebar(false)}

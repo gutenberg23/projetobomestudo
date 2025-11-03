@@ -44,8 +44,10 @@ import {
   Type,
   Palette,
   Highlighter,
+  HelpCircle
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { QuestionExtension } from '@/components/editor/QuestionExtension';
 import './TiptapEditor.css';
 
 const lowlight = createLowlight();
@@ -123,6 +125,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
           class: 'bg-gray-100 p-4 rounded-md',
         },
       }),
+      QuestionExtension,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -191,6 +194,13 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
 
   const addTable = useCallback(() => {
     editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+  }, [editor]);
+
+  const addQuestion = useCallback(() => {
+    const questionId = window.prompt('ID da Questão');
+    if (questionId) {
+      editor?.chain().focus().setQuestionNode({ questionId }).run();
+    }
   }, [editor]);
 
   if (!editor) {
@@ -319,6 +329,14 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
           type="button"
           variant="ghost"
           size="sm"
+          onClick={addQuestion}
+        >
+          <HelpCircle className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           className={editor.isActive('blockquote') ? 'bg-gray-200' : ''}
         >
@@ -423,4 +441,4 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange })
       </div>
     </div>
   );
-}; 
+};

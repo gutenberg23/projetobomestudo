@@ -67,6 +67,8 @@ import UpdateRankingFunction from "./pages/admin/UpdateRankingFunction";
 import LeisSecasAdmin from "./pages/admin/LeisSecasAdmin";
 import Anuncios from "./pages/admin/Anuncios";
 import Popups from "./pages/admin/popups/Popups";
+import TeoriasAdmin from "./pages/admin/Teorias";
+import TeoriaEditor from "./pages/admin/TeoriaEditor";
 
 // Componente para aplicar as configurações de estilo
 const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
@@ -229,7 +231,9 @@ export default function App() {
                             <Route index element={<Dashboard />} />
                             <Route path="kanban" element={<Kanban />} />
                             <Route path="posts" element={<Posts />} />
-                            <Route path="teorias" element={<Teorias />} />
+                            <Route path="teorias" element={<TeoriasAdmin />} />
+                            <Route path="teorias/new" element={<TeoriaEditor />} />
+                            <Route path="teorias/:id/edit" element={<TeoriaEditor />} />
                             <Route path="usuarios" element={<Usuarios />} />
                             <Route path="questoes" element={<Questoes />} />
                             <Route path="cadernos" element={<AdminQuestionBooks />} />

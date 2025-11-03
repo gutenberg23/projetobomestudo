@@ -1,206 +1,143 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Plus, Search, Trash2, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+import { teoriasService } from "@/services/teoriasService";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock data for demonstration
-const MOCK_TEORIAS = [
-  {
-    id: "1",
-    title: "Teoria de Direito Administrativo",
-    slug: "teoria-direito-administrativo",
-    author: "Prof. João Silva",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    category: "Direito",
-    tags: ["direito", "administrativo", "princípios"],
-    status: "published"
-  },
-  {
-    id: "2",
-    title: "Teoria de Direito Constitucional",
-    slug: "teoria-direito-constitucional",
-    author: "Prof. Maria Oliveira",
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    category: "Direito",
-    tags: ["direito", "constitucional", "direitos"],
-    status: "published"
-  },
-  {
-    id: "3",
-    title: "Teoria de Matemática Financeira",
-    slug: "teoria-matematica-financeira",
-    author: "Prof. Carlos Santos",
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-    updatedAt: new Date().toISOString(),
-    category: "Matemática",
-    tags: ["matemática", "financeira", "juros"],
-    status: "draft"
-  }
-];
+interface Teoria {
+  id: string;
+  titulo: string;
+  disciplina_id: string; // Agora armazena o nome da disciplina como string
+  assunto_id: string;    // Agora armazena o nome do assunto como string
+  topicos_ids: string[];
+  conteudo: string;
+  no_edital: string;
+  status: "draft" | "published";
+  professor_id?: string; // Adicionado
+  created_at: string;
+  updated_at: string;
+}
+
+interface Disciplina {
+  id: string;
+  titulo: string;
+}
+
+interface Assunto {
+  id: string;
+  nome: string;
+}
 
 const TeoriasAdmin = () => {
-  const [teorias, setTeorias] = useState<any[]>(MOCK_TEORIAS);
+  const navigate = useNavigate();
+  const [teorias, setTeorias] = useState<Teoria[]>([]);
+  const [professores, setProfessores] = useState<{id: string, nome: string}[]>([]); // Atualizado
   const [searchTerm, setSearchTerm] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentTeoria, setCurrentTeoria] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Carregar teorias do banco de dados
+  useEffect(() => {
+    Promise.all([
+      fetchTeorias(),
+      fetchProfessores() // Atualizado
+    ]).catch(error => {
+      console.error("Erro ao carregar dados:", error);
+      toast.error("Erro ao carregar dados");
+    });
+  }, []);
+
+  const fetchTeorias = async () => {
+    try {
+      setLoading(true);
+      const data = await teoriasService.getTeorias();
+      setTeorias(data || []);
+    } catch (error) {
+      console.error("Erro ao buscar teorias:", error);
+      toast.error("Erro ao carregar teorias");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProfessores = async () => {
+    try {
+      // Buscar professores da tabela professores
+      const { data, error } = await supabase
+        .from('professores')
+        .select('id, nome_completo');
+      
+      if (error) throw error;
+      
+      const professoresFormatados = data?.map(professor => ({
+        id: professor.id,
+        nome: professor.nome_completo
+      })) || [];
+      
+      setProfessores(professoresFormatados);
+    } catch (error) {
+      console.error("Erro ao carregar professores:", error);
+      toast.error("Erro ao carregar professores");
+    }
+  };
+
+  // Obter nome da disciplina pelo ID
+  const getDisciplinaNome = (id: string) => {
+    // Agora id é o nome da disciplina diretamente
+    return id || "Não encontrada";
+  };
+
+  // Obter nome do assunto pelo ID
+  const getAssuntoNome = (id: string) => {
+    // Agora id é o nome do assunto diretamente
+    return id || "Não encontrado";
+  };
+
+  // Obter nome do professor pelo ID
+  const getProfessorNome = (id: string) => {
+    const professor = professores.find(p => p.id === id);
+    return professor ? professor.nome : "Não encontrado";
+  };
 
   // Filter teorias based on search term
   const filteredTeorias = teorias.filter(teoria => 
-    teoria.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teoria.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teoria.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+    teoria.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    teoria.disciplina_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    teoria.assunto_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleCreateNew = () => {
-    setIsEditing(true);
-    setCurrentTeoria({
-      id: "",
-      title: "",
-      slug: "",
-      author: "",
-      category: "",
-      tags: [],
-      content: "",
-      status: "draft"
-    });
+    navigate("/admin/teorias/new");
   };
 
-  const handleEdit = (teoria: any) => {
-    setIsEditing(true);
-    setCurrentTeoria({...teoria});
+  const handleEdit = (id: string) => {
+    navigate(`/admin/teorias/${id}/edit`);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm("Tem certeza que deseja excluir esta teoria?")) {
-      setTeorias(teorias.filter(teoria => teoria.id !== id));
+      try {
+        await teoriasService.deleteTeoria(id);
+        // Atualizar a lista local
+        setTeorias(teorias.filter(teoria => teoria.id !== id));
+        toast.success("Teoria excluída com sucesso!");
+      } catch (error) {
+        console.error("Erro ao excluir teoria:", error);
+        toast.error("Erro ao excluir teoria");
+      }
     }
   };
 
-  const handleSave = () => {
-    if (currentTeoria.id) {
-      // Update existing
-      setTeorias(teorias.map(teoria => 
-        teoria.id === currentTeoria.id 
-          ? {...currentTeoria, updatedAt: new Date().toISOString()}
-          : teoria
-      ));
-    } else {
-      // Create new
-      const newTeoria = {
-        ...currentTeoria,
-        id: String(teorias.length + 1),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setTeorias([...teorias, newTeoria]);
-    }
-    
-    setIsEditing(false);
-    setCurrentTeoria(null);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setCurrentTeoria(null);
-  };
-
-  if (isEditing) {
+  if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">
-            {currentTeoria.id ? "Editar Teoria" : "Nova Teoria"}
-          </h1>
-          <Button variant="outline" onClick={handleCancel}>
-            Cancelar
-          </Button>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Detalhes da Teoria</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  value={currentTeoria.title}
-                  onChange={(e) => setCurrentTeoria({...currentTeoria, title: e.target.value})}
-                  placeholder="Título da teoria"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="author">Autor</Label>
-                <Input
-                  id="author"
-                  value={currentTeoria.author}
-                  onChange={(e) => setCurrentTeoria({...currentTeoria, author: e.target.value})}
-                  placeholder="Nome do autor"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="category">Categoria</Label>
-                <Input
-                  id="category"
-                  value={currentTeoria.category}
-                  onChange={(e) => setCurrentTeoria({...currentTeoria, category: e.target.value})}
-                  placeholder="Categoria"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="tags">Tags (separadas por vírgula)</Label>
-                <Input
-                  id="tags"
-                  value={currentTeoria.tags.join(", ")}
-                  onChange={(e) => setCurrentTeoria({...currentTeoria, tags: e.target.value.split(",").map(tag => tag.trim())})}
-                  placeholder="Tags"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="content">Conteúdo</Label>
-              <Textarea
-                id="content"
-                value={currentTeoria.content}
-                onChange={(e) => setCurrentTeoria({...currentTeoria, content: e.target.value})}
-                placeholder="Conteúdo da teoria em HTML"
-                rows={15}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Button onClick={handleSave}>
-                {currentTeoria.id ? "Atualizar" : "Criar"} Teoria
-              </Button>
-              
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="status">Status:</Label>
-                <select
-                  id="status"
-                  value={currentTeoria.status}
-                  onChange={(e) => setCurrentTeoria({...currentTeoria, status: e.target.value})}
-                  className="border rounded px-2 py-1"
-                >
-                  <option value="draft">Rascunho</option>
-                  <option value="published">Publicado</option>
-                </select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     );
   }
@@ -237,8 +174,9 @@ const TeoriasAdmin = () => {
               <thead>
                 <tr className="border-b">
                   <th className="text-left py-3 px-4">Título</th>
-                  <th className="text-left py-3 px-4">Categoria</th>
-                  <th className="text-left py-3 px-4">Autor</th>
+                  <th className="text-left py-3 px-4">Professor</th>
+                  <th className="text-left py-3 px-4">Disciplina</th>
+                  <th className="text-left py-3 px-4">Assunto</th>
                   <th className="text-left py-3 px-4">Status</th>
                   <th className="text-left py-3 px-4">Atualizado</th>
                   <th className="text-left py-3 px-4">Ações</th>
@@ -248,19 +186,17 @@ const TeoriasAdmin = () => {
                 {filteredTeorias.map((teoria) => (
                   <tr key={teoria.id} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">
-                      <div>
-                        <div className="font-medium">{teoria.title}</div>
-                        <div className="text-sm text-gray-500">
-                          {teoria.tags.map((tag: string) => `#${tag}`).join(", ")}
-                        </div>
-                      </div>
+                      <div className="font-medium">{teoria.titulo}</div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {teoria.category}
-                      </span>
+                      <div className="text-sm text-gray-600">{getProfessorNome(teoria.professor_id || "")}</div>
                     </td>
-                    <td className="py-3 px-4">{teoria.author}</td>
+                    <td className="py-3 px-4">
+                      <div className="text-sm text-gray-600">{getDisciplinaNome(teoria.disciplina_id)}</div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="text-sm text-gray-600">{getAssuntoNome(teoria.assunto_id)}</div>
+                    </td>
                     <td className="py-3 px-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         teoria.status === "published" 
@@ -271,14 +207,14 @@ const TeoriasAdmin = () => {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      {format(new Date(teoria.updatedAt), "dd/MM/yyyy", { locale: ptBR })}
+                      {format(new Date(teoria.updated_at), "dd/MM/yyyy", { locale: ptBR })}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleEdit(teoria)}
+                          onClick={() => handleEdit(teoria.id)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
