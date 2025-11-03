@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useLayoutEffect } from "react";
 import { prepareHtmlContent } from "@/utils/text-utils";
 import { QuestionCard } from "@/components/new/QuestionCard";
 import { fetchQuestionById } from "@/services/questoesService";
@@ -18,17 +18,22 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
   const [questions, setQuestions] = useState<Record<string, any>>({});
   const [loadedQuestions, setLoadedQuestions] = useState<Set<string>>(new Set());
   
-  useEffect(() => {
+  useLayoutEffect(() => {
+    // Apply highlights after DOM is ready
     if (contentRef.current && highlights.length > 0) {
-      // Aplicar highlights diretamente no DOM após o render
-      applyHighlights();
+      // Small delay to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        applyHighlights();
+      });
     }
-    
+  }, [content, highlights]);
+  
+  useEffect(() => {
     // Apply table header styling
     if (contentRef.current) {
       applyTableHeaderStyling();
     }
-  }, [content, highlights]);
+  }, [content]);
   
   useEffect(() => {
     loadQuestions();
@@ -79,10 +84,17 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
   };
   
   const applyHighlights = () => {
-    if (!contentRef.current) return;
+    if (!contentRef.current) {
+      console.log('[BlogContentWithQuestions] contentRef.current is null');
+      return;
+    }
+    
+    console.log('[BlogContentWithQuestions] Applying highlights:', highlights.length);
+    console.log('[BlogContentWithQuestions] contentRef HTML:', contentRef.current.innerHTML.substring(0, 200));
     
     // Limpar highlights antigos
     const existingMarks = contentRef.current.querySelectorAll('mark[data-highlight-id]');
+    console.log('[BlogContentWithQuestions] Removing existing marks:', existingMarks.length);
     existingMarks.forEach(mark => {
       const parent = mark.parentNode;
       while (mark.firstChild) {
@@ -93,6 +105,7 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
     
     // Aplicar novos highlights
     highlights.forEach(highlight => {
+      console.log('[BlogContentWithQuestions] Applying highlight:', highlight.text.substring(0, 50));
       applyHighlightToText(highlight);
     });
   };
@@ -106,7 +119,10 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
       .replace(/\s+/g, ' ')
       .trim();
     
-    if (!normalizedHighlightText) return;
+    if (!normalizedHighlightText) {
+      console.log('[BlogContentWithQuestions] Empty normalized text');
+      return;
+    }
     
     // Função para coletar todos os nós de texto recursivamente
     const collectTextNodes = (node: Node): Text[] => {
@@ -125,6 +141,8 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
     
     // Coletar todos os nós de texto
     const textNodes = collectTextNodes(contentRef.current);
+    
+    console.log('[BlogContentWithQuestions] Text nodes collected:', textNodes.length);
     
     if (textNodes.length === 0) return;
     
@@ -156,13 +174,19 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
       fullText += normalizedText;
     });
     
+    console.log('[BlogContentWithQuestions] Full text length:', fullText.length);
+    console.log('[BlogContentWithQuestions] Looking for text:', normalizedHighlightText);
+    
     // Encontrar a posição do texto a destacar
     const highlightStartIndex = fullText.indexOf(normalizedHighlightText);
     
     if (highlightStartIndex === -1) {
-      console.warn('Texto não encontrado para highlight:', normalizedHighlightText);
+      console.warn('[BlogContentWithQuestions] Text not found:', normalizedHighlightText.substring(0, 100));
+      console.log('[BlogContentWithQuestions] Full text sample:', fullText.substring(0, 500));
       return;
     }
+    
+    console.log('[BlogContentWithQuestions] Text found at index:', highlightStartIndex);
     
     const highlightEndIndex = highlightStartIndex + normalizedHighlightText.length;
     
@@ -292,7 +316,7 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
   };
   
   return (
-    <div className={`prose max-w-none ${className}`}>
+    <div ref={contentRef} className={`prose max-w-none ${className}`}>
       {renderContentWithQuestions()}
     </div>
   );
