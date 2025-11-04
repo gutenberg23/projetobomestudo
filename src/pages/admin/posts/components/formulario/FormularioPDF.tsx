@@ -98,34 +98,43 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
     setIsProcessing(true);
     try {
       // Chamar a função do Google Gemini através da Edge Function do Supabase
-      const systemInstruction = `Você é um assistente de IA especialista em criar conteúdo para o blog 'Bom Estudo', focado em concursos públicos no Brasil. Sua tarefa é analisar o conteúdo fornecido (PDF e/ou links da web) e gerar uma postagem de blog completa no formato JSON, seguindo estritamente o schema fornecido. O tom deve ser informativo, claro e encorajador para os concurseiros. Preencha todos os campos do JSON de forma completa e precisa.`;
+      const systemInstruction = `Você é um assistente de IA especialista em criar conteúdo para o blog 'Bom Estudo', focado em concursos públicos no Brasil. Sua tarefa é analisar EXCLUSIVAMENTE o conteúdo do PDF fornecido e gerar uma postagem de blog completa no formato JSON, seguindo estritamente o schema fornecido. O tom deve ser informativo, claro e encorajador para os concurseiros. Preencha todos os campos do JSON de forma completa e precisa com base APENAS nas informações presentes no PDF. NÃO invente informações.`;
 
       const blogPostSchema = {
         type: "object",
         properties: {
-          titulo: { type: "string", description: "Título atraente e informativo para a postagem do blog." },
-          resumo: { type: "string", description: "Resumo conciso da postagem, com no máximo 240 caracteres." },
-          categoria: { type: "string", description: "Categoria principal da notícia (ex: 'Concursos')." },
-          conteudo: { type: "string", description: "Conteúdo completo da postagem em formato HTML otimizado. Se for sobre um novo concurso, deve terminar com uma tabela HTML com 2 colunas. À esquerda os títulos: 'Website de Inscrição', 'Período de Inscrição', 'Data da Prova', 'Valor da Inscrição', 'Quantidade de Vagas' e 'Banca'." },
-          regiao: { type: "string", description: "A região do Brasil do concurso. Escolha entre: 'norte', 'nordeste', 'centro-oeste', 'sudeste', 'sul', 'federal', 'nacional'." },
-          estado: { type: "string", description: "O estado brasileiro do concurso em siglas maiúsculas (ex: 'SP', 'BH', 'RJ'). Deixe como uma string vazia se a região for 'federal' ou 'nacional'." },
-          tags: { type: "string", description: "Uma lista de 3 a 5 tags relevantes separadas por vírgula." },
-          metaDescricao: { type: "string", description: "Uma meta descrição otimizada para SEO, resumindo o conteúdo em até 160 caracteres." },
-          palavrasChave: { type: "string", description: "Uma lista de 3 a 5 palavras-chave relevantes para SEO, separadas por vírgula." },
+          titulo: { type: "string", description: "Título atraente e informativo para a postagem do blog, baseado nas informações do PDF." },
+          resumo: { type: "string", description: "Resumo conciso da postagem, com no máximo 240 caracteres, baseado nas informações do PDF." },
+          categoria: { type: "string", description: "Categoria principal da notícia (ex: 'Concursos'), baseado nas informações do PDF." },
+          conteudo: { type: "string", description: "Conteúdo completo da postagem em formato HTML otimizado, baseado nas informações do PDF. Se for sobre um novo concurso, deve terminar com uma tabela HTML com 2 colunas. À esquerda os títulos: 'Website de Inscrição', 'Período de Inscrição', 'Data da Prova', 'Valor da Inscrição', 'Quantidade de Vagas' e 'Banca'." },
+          regiao: { type: "string", description: "A região do Brasil do concurso, baseado nas informações do PDF. Escolha entre: 'norte', 'nordeste', 'centro-oeste', 'sudeste', 'sul', 'federal', 'nacional'." },
+          estado: { type: "string", description: "O estado brasileiro do concurso em siglas maiúsculas (ex: 'SP', 'BH', 'RJ'), baseado nas informações do PDF. Deixe como uma string vazia se a região for 'federal' ou 'nacional'." },
+          tags: { type: "string", description: "Uma lista de 3 a 5 tags relevantes separadas por vírgula, baseado nas informações do PDF." },
+          metaDescricao: { type: "string", description: "Uma meta descrição otimizada para SEO, resumindo o conteúdo em até 160 caracteres, baseado nas informações do PDF." },
+          palavrasChave: { type: "string", description: "Uma lista de 3 a 5 palavras-chave relevantes para SEO, separadas por vírgula, baseado nas informações do PDF." },
         },
         required: ['titulo', 'resumo', 'categoria', 'conteudo', 'regiao', 'estado', 'tags', 'metaDescricao', 'palavrasChave']
       };
 
       const prompt = `
-        Analise o PDF anexado e crie uma postagem de blog completa seguindo exatamente o schema abaixo.
+        Analise EXCLUSIVAMENTE o PDF anexado e crie uma postagem de blog completa seguindo exatamente o schema abaixo.
         O PDF contém informações sobre um concurso público ou notícia relevante para concursandos.
+        
+        INSTRUÇÕES CRÍTICAS:
+        1. Analise APENAS o conteúdo do PDF fornecido na URL
+        2. NÃO invente informações que não estejam claramente no PDF
+        3. Se alguma informação não estiver clara ou ausente no PDF, deixe o campo vazio
+        4. Baseie-se SOMENTE nas informações presentes no PDF
+        5. Retorne APENAS um JSON válido com todos os campos preenchidos conforme o schema
+        6. NÃO inclua texto adicional além do JSON solicitado
+        7. Certifique-se de que o conteúdo seja extraído fielmente do PDF
+        8. Foque especialmente no conteúdo principal do PDF, ignorando cabeçalhos, rodapés e informações secundárias
+        9. Extraia as informações mais importantes como título, datas, vagas, salários, requisitos, etc.
         
         Schema JSON obrigatório:
         ${JSON.stringify(blogPostSchema, null, 2)}
         
         URL do PDF para análise: ${uploadedFileUrl}
-        
-        Retorne APENAS um JSON válido com todos os campos preenchidos. NÃO inclua texto adicional.
       `;
 
       // Fazer a chamada à Edge Function do Supabase para o Google Gemini
