@@ -11,7 +11,7 @@ import { FormularioStatus } from "./formulario/FormularioStatus";
 import { Region } from "@/components/blog/types";
 import { resetBlogPostLikes } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
-import { Trash2 } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
 
 interface FormularioPostProps {
   modo: ModoInterface;
@@ -118,6 +118,61 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
     }
   };
 
+  const handleImportJSON = async () => {
+    try {
+      // Ler o conteúdo da área de transferência
+      const clipboardText = await navigator.clipboard.readText();
+      
+      if (!clipboardText) {
+        toast({
+          title: "Erro",
+          description: "Nenhum conteúdo encontrado na área de transferência.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Parse o JSON
+      const jsonData = JSON.parse(clipboardText);
+      
+      // Validar se temos os campos necessários
+      if (!jsonData.titulo || !jsonData.resumo || !jsonData.categoria || !jsonData.conteudo) {
+        toast({
+          title: "Erro",
+          description: "JSON inválido. Certifique-se de que contém todos os campos obrigatórios.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Atualizar os campos do formulário com os dados do JSON
+      onChangeTitulo(jsonData.titulo || "");
+      onChangeResumo(jsonData.resumo || "");
+      onChangeConteudo(jsonData.conteudo || "");
+      onChangeCategoria(jsonData.categoria || "");
+      
+      // Campos opcionais
+      if (jsonData.tags) onChangeTags(jsonData.tags);
+      if (jsonData.metaDescricao) onChangeMetaDescricao(jsonData.metaDescricao);
+      if (jsonData.palavrasChave) onChangeMetaKeywords(jsonData.palavrasChave);
+      if (jsonData.regiao) onChangeRegiao(jsonData.regiao);
+      if (jsonData.estado) onChangeEstado(jsonData.estado);
+      
+      toast({
+        title: "Sucesso",
+        description: "Dados importados com sucesso!",
+        variant: "default"
+      });
+    } catch (error) {
+      console.error("Erro ao importar JSON:", error);
+      toast({
+        title: "Erro",
+        description: "Falha ao importar JSON. Verifique se o conteúdo está correto.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -157,6 +212,24 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
           e.preventDefault();
           onSalvar();
         }}>
+          {/* Botão de importação de JSON - apenas para criação */}
+          {modo === ModoInterface.CRIAR && (
+            <div className="mb-4">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleImportJSON}
+                className="flex items-center"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Importar JSON
+              </Button>
+              <p className="text-sm text-gray-500 mt-1">
+                Cole o JSON na área de transferência e clique para importar todos os campos
+              </p>
+            </div>
+          )}
+
           {/* Informações Básicas */}
           <FormularioBasico 
             titulo={titulo}
