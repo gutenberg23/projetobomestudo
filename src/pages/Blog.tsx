@@ -11,8 +11,8 @@ import { STATES, CATEGORIES } from "@/data/blogFilters";
 import { fetchBlogPosts } from "@/services/blogService";
 import { BlogPost } from "@/components/blog/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, ArrowRight, Search } from "lucide-react";
-import { SidebarPosts } from "@/components/blog/SidebarPosts";
+import { ArrowRight, Search } from "lucide-react";
+
 import { Link, useParams } from "react-router-dom";
 import AdBanner from '@/components/ads/AdBanner';
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -140,8 +140,6 @@ const Blog = () => {
   // Posts destacados para o carrossel
   const featuredPosts = allPosts.filter(post => post.featured).slice(0, 4);
 
-  // Posts mais populares (baseado em curtidas)
-  const popularPosts = [...allPosts].sort((a, b) => b.likesCount - a.likesCount).slice(0, 5);
 
   // Posts mais recentes
   const latestPosts = [...allPosts]
@@ -275,13 +273,6 @@ const Blog = () => {
             </div>
             
             <div className="space-y-8">
-              {/* Posts populares */}
-              <SidebarPosts 
-                title="Posts Populares" 
-                posts={popularPosts} 
-                icon={<TrendingUp className="h-5 w-5 mr-2 text-[#5f2ebe]" />}
-              />
-              
               {/* Últimas notícias */}
               <LatestNews posts={latestPosts} />
               

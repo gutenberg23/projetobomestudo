@@ -5,7 +5,6 @@ import { Footer } from "@/components/layout/Footer";
 import { 
   Heart, 
   Clock, 
-  BookOpen, 
   Share2, 
   User,
   Calendar,
@@ -382,16 +381,6 @@ const BlogPostPage = () => {
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
                           {Math.ceil((typeof post.readingTime === 'string' ? parseInt(post.readingTime) : typeof post.readingTime === 'number' ? post.readingTime : 0) / 60)} min de leitura
-                        </div>
-                          
-                        <div className="flex items-center">
-                          <Heart className="h-4 w-4 mr-1" />
-                          {post.likesCount} curtidas
-                        </div>
-                          
-                        <div className="flex items-center">
-                          <BookOpen className="h-4 w-4 mr-1" />
-                          {post.viewCount} visualizações
                         </div>
                       </div>
                     </div>

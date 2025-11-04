@@ -36,7 +36,7 @@ serve(async (req) => {
       properties: {
         titulo: { type: "string", description: "Título atraente e informativo para a postagem do blog, baseado nas informações do PDF." },
         resumo: { type: "string", description: "Resumo conciso da postagem, com no máximo 240 caracteres, baseado nas informações do PDF." },
-        categoria: { type: "string", description: "Categoria principal da notícia (ex: 'Concursos'), baseado nas informações do PDF." },
+        categoria: { type: "string", description: "Categoria principal da notícia (ex: 'Novos Concursos'), baseado nas informações do PDF." },
         conteudo: { type: "string", description: "Conteúdo completo da postagem em formato HTML otimizado, baseado nas informações do PDF. Se for sobre um novo concurso, deve terminar com uma tabela HTML com 2 colunas. À esquerda os títulos: 'Website de Inscrição', 'Período de Inscrição', 'Data da Prova', 'Valor da Inscrição', 'Quantidade de Vagas' e 'Banca'." },
         regiao: { type: "string", description: "A região do Brasil do concurso, baseado nas informações do PDF. Escolha entre: 'norte', 'nordeste', 'centro-oeste', 'sudeste', 'sul', 'federal', 'nacional'." },
         estado: { type: "string", description: "O estado brasileiro do concurso em siglas maiúsculas (ex: 'SP', 'BH', 'RJ'), baseado nas informações do PDF. Deixe como uma string vazia se a região for 'federal' ou 'nacional'." },

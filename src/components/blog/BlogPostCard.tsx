@@ -1,6 +1,6 @@
 import React from "react";
 import { BlogPost } from "./types";
-import { Heart, Clock, User, Edit } from "lucide-react";
+import { Clock, User, Edit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -258,10 +258,6 @@ export const BlogPostCard: React.FC<BlogPostCardProps> = ({
               <span className="flex items-center">
                 <User className="h-4 w-4 mr-1.5" />
                 {post.author}
-              </span>
-              <span className="flex items-center">
-                <Heart className="h-4 w-4 mr-1.5" />
-                {post.likesCount} curtidas
               </span>
             </div>
             <div className="flex items-center mt-2 sm:mt-0">

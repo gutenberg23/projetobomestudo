@@ -63,7 +63,7 @@ export const MediaFields: React.FC<MediaFieldsProps> = ({
 
       <FileUploadField
         id="pdfUrl"
-        label="Link da Aula em PDF"
+        label="Link da Aula em texto"
         value={newTopico.pdfUrl}
         onChange={(value) => setNewTopico({ ...newTopico, pdfUrl: value })}
         placeholder="URL do arquivo PDF ou faça upload"
