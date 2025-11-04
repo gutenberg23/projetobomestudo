@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Sparkles } from "lucide-react";
+import { Upload, Sparkles, FileText } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { BlogPost, Region } from "@/components/blog/types";
 
@@ -18,6 +18,7 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
+  const [extractedText, setExtractedText] = useState<string | null>(null);
 
   const handleFileUpload = async (file: File) => {
     try {
@@ -63,16 +64,102 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
     }
   };
 
+  const extractPDFContent = async (file: File): Promise<string | null> => {
+    try {
+      // Criar um FormData e adicionar o arquivo
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Fazer upload temporário para extrair o texto
+      const fileExt = file.name.split('.').pop();
+      const fileName = `temp-${Date.now()}.${fileExt}`;
+      const filePath = `temp-pdfs/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('blog-pdfs')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Erro ao fazer upload temporário:', uploadError);
+        return null;
+      }
+
+      // Obter URL pública temporária
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog-pdfs')
+        .getPublicUrl(filePath);
+
+      // Baixar o PDF como blob
+      const response = await fetch(publicUrl);
+      const blob = await response.blob();
+
+      // Usar a API de parsing de documentos
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve) => {
+        reader.onloadend = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
+        };
+        reader.readAsDataURL(blob);
+      });
+
+      const base64Content = await base64Promise;
+
+      // Chamar edge function para extrair texto do PDF
+      const { data, error } = await supabase.functions.invoke('extract-pdf-text', {
+        body: { pdfBase64: base64Content }
+      });
+
+      // Deletar arquivo temporário
+      await supabase.storage
+        .from('blog-pdfs')
+        .remove([filePath]);
+
+      if (error) {
+        console.error('Erro ao extrair texto:', error);
+        return null;
+      }
+
+      return data?.text || null;
+    } catch (error) {
+      console.error('Erro ao processar PDF:', error);
+      return null;
+    }
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type === 'application/pdf') {
       setUploadedFile(file);
+      setIsUploading(true);
+      
+      // Fazer upload permanente
       const url = await handleFileUpload(file);
       if (url) {
         setUploadedFileUrl(url);
+      }
+
+      // Extrair conteúdo do PDF
+      toast({
+        title: "Processando",
+        description: "Extraindo texto do PDF...",
+        variant: "default"
+      });
+
+      const text = await extractPDFContent(file);
+      setIsUploading(false);
+
+      if (text) {
+        setExtractedText(text);
         toast({
           title: "Sucesso",
-          description: "PDF enviado com sucesso!",
+          description: "PDF processado com sucesso! Clique em 'Gerar Notícia' para criar o conteúdo.",
+          variant: "default"
+        });
+      } else {
+        toast({
+          title: "Aviso",
+          description: "PDF enviado, mas não foi possível extrair o texto automaticamente.",
           variant: "default"
         });
       }
@@ -86,10 +173,10 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
   };
 
   const handleGerarNoticia = async () => {
-    if (!uploadedFileUrl) {
+    if (!extractedText) {
       toast({
-        title: "Nenhum PDF",
-        description: "Por favor, faça upload de um PDF primeiro.",
+        title: "Nenhum conteúdo",
+        description: "Por favor, aguarde a extração do texto do PDF ou faça upload novamente.",
         variant: "destructive"
       });
       return;
@@ -98,7 +185,7 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
     setIsProcessing(true);
     try {
       // Chamar a função do Google Gemini através da Edge Function do Supabase
-      const systemInstruction = `Você é um assistente de IA especialista em criar conteúdo para o blog 'Bom Estudo', focado em concursos públicos no Brasil. Sua tarefa é analisar EXCLUSIVAMENTE o conteúdo do PDF fornecido e gerar uma postagem de blog completa no formato JSON, seguindo estritamente o schema fornecido. O tom deve ser informativo, claro e encorajador para os concurseiros. Preencha todos os campos do JSON de forma completa e precisa com base APENAS nas informações presentes no PDF. NÃO invente informações.`;
+      const systemInstruction = `Você é um assistente de IA especialista em criar conteúdo para o blog 'Bom Estudo', focado em concursos públicos no Brasil. Sua tarefa é analisar EXCLUSIVAMENTE o conteúdo do PDF fornecido abaixo e gerar uma postagem de blog completa no formato JSON, seguindo estritamente o schema fornecido. O tom deve ser informativo, claro e encorajador para os concurseiros. Preencha todos os campos do JSON de forma completa e precisa com base APENAS nas informações presentes no texto extraído do PDF. NÃO invente informações.`;
 
       const blogPostSchema = {
         type: "object",
@@ -117,24 +204,22 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
       };
 
       const prompt = `
-        Analise EXCLUSIVAMENTE o PDF anexado e crie uma postagem de blog completa seguindo exatamente o schema abaixo.
-        O PDF contém informações sobre um concurso público ou notícia relevante para concursandos.
+        Analise EXCLUSIVAMENTE o conteúdo extraído do PDF abaixo e crie uma postagem de blog completa seguindo exatamente o schema.
         
         INSTRUÇÕES CRÍTICAS:
-        1. Analise APENAS o conteúdo do PDF fornecido na URL
-        2. NÃO invente informações que não estejam claramente no PDF
-        3. Se alguma informação não estiver clara ou ausente no PDF, deixe o campo vazio
-        4. Baseie-se SOMENTE nas informações presentes no PDF
+        1. Analise APENAS o conteúdo do PDF fornecido abaixo
+        2. NÃO invente informações que não estejam claramente no conteúdo
+        3. Se alguma informação não estiver clara ou ausente, deixe o campo vazio
+        4. Baseie-se SOMENTE nas informações presentes no texto extraído
         5. Retorne APENAS um JSON válido com todos os campos preenchidos conforme o schema
         6. NÃO inclua texto adicional além do JSON solicitado
-        7. Certifique-se de que o conteúdo seja extraído fielmente do PDF
-        8. Foque especialmente no conteúdo principal do PDF, ignorando cabeçalhos, rodapés e informações secundárias
-        9. Extraia as informações mais importantes como título, datas, vagas, salários, requisitos, etc.
+        7. Extraia as informações mais importantes como título, datas, vagas, salários, requisitos, etc.
         
         Schema JSON obrigatório:
         ${JSON.stringify(blogPostSchema, null, 2)}
         
-        URL do PDF para análise: ${uploadedFileUrl}
+        CONTEÚDO EXTRAÍDO DO PDF:
+        ${extractedText}
       `;
 
       // Fazer a chamada à Edge Function do Supabase para o Google Gemini
@@ -239,14 +324,14 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
                 className="w-full justify-start"
               >
                 <Upload className="h-4 w-4 mr-2" />
-                {isUploading ? "Enviando..." : "Selecionar PDF"}
+                {isUploading ? "Processando..." : "Selecionar PDF"}
               </Button>
             </div>
             
             <Button
               type="button"
               onClick={handleGerarNoticia}
-              disabled={isProcessing || !uploadedFileUrl}
+              disabled={isProcessing || !extractedText}
               className="bg-purple-600 hover:bg-purple-700"
             >
               <Sparkles className="h-4 w-4 mr-2" />
@@ -259,10 +344,10 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
         </div>
         
         {uploadedFile && (
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 space-y-2">
             <p>Arquivo selecionado: <span className="font-medium">{uploadedFile.name}</span></p>
             {uploadedFileUrl && (
-              <p className="mt-1">
+              <p>
                 PDF armazenado:{" "}
                 <a 
                   href={uploadedFileUrl} 
@@ -273,6 +358,17 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
                   Visualizar PDF
                 </a>
               </p>
+            )}
+            {extractedText && (
+              <div className="p-3 bg-green-50 rounded-md border border-green-200">
+                <div className="flex items-center gap-2 text-green-700">
+                  <FileText className="h-4 w-4" />
+                  <span className="font-medium">Texto extraído com sucesso!</span>
+                </div>
+                <p className="text-xs text-green-600 mt-1">
+                  {extractedText.length} caracteres extraídos
+                </p>
+              </div>
             )}
           </div>
         )}
