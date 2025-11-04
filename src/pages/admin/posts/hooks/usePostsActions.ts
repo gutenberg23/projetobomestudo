@@ -17,14 +17,12 @@ export function usePostsActions(state: PostsState) {
     setTitulo,
     setResumo,
     setConteudo,
-    setAutorAvatar,
     setCategoria,
     setDestacado,
     setIsDraft,
     setTags,
     setMetaDescricao,
     setMetaKeywords,
-    setTempoLeitura,
     setImagemDestaque,
     setRegiao,
     setEstado,
@@ -39,7 +37,6 @@ export function usePostsActions(state: PostsState) {
     tags,
     metaDescricao,
     metaKeywords,
-    tempoLeitura,
     imagemDestaque,
     regiao,
     estado,
@@ -57,14 +54,12 @@ export function usePostsActions(state: PostsState) {
     setTitulo("");
     setResumo("");
     setConteudo("");
-    setAutorAvatar("");
     setCategoria("");
     setDestacado(false);
     setIsDraft(false);
     setTags("");
     setMetaDescricao("");
     setMetaKeywords("");
-    setTempoLeitura("");
     setImagemDestaque("");
     setRegiao("none");
     setEstado("none");
@@ -88,14 +83,12 @@ export function usePostsActions(state: PostsState) {
     setTitulo(post.title);
     setResumo(post.summary);
     setConteudo(post.content);
-    setAutorAvatar(post.authorAvatar || "");
     setCategoria(post.category);
     setDestacado(post.featured || false);
     setIsDraft(post.isDraft || false);
     setTags(post.tags ? post.tags.join(", ") : "");
     setMetaDescricao(post.metaDescription || "");
     setMetaKeywords(post.metaKeywords ? post.metaKeywords.join(", ") : "");
-    setTempoLeitura(post.readingTime ? post.readingTime.toString() : "");
     setImagemDestaque(post.featuredImage || "");
     setRegiao(post.region || "none");
     setEstado(post.state || "none");
@@ -148,9 +141,8 @@ export function usePostsActions(state: PostsState) {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
       
-      // Parse reading time and convert to string to match BlogPost type
-      const readingTimeNumber = tempoLeitura ? parseInt(tempoLeitura, 10) : 
-        Math.ceil(conteudo.split(' ').length / 200);
+      // Calcular o tempo de leitura automaticamente
+      const readingTimeNumber = Math.ceil(conteudo.split(' ').length / 200);
       const readingTimeString = readingTimeNumber.toString();
       
       // Convert related posts to array
@@ -168,7 +160,6 @@ export function usePostsActions(state: PostsState) {
         summary: resumo,
         content: conteudo,
         author: user?.nome || 'Admin',
-        authorAvatar: user?.foto_url || '',
         slug: slug,
         category: categoria,
         region: regiao === "none" ? undefined : regiao as Region,

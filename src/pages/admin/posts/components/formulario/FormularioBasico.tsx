@@ -7,12 +7,8 @@ interface FormularioBasicoProps {
   onChangeTitulo: (value: string) => void;
   resumo: string;
   onChangeResumo: (value: string) => void;
-  autorAvatar: string;
-  onChangeAutorAvatar: (value: string) => void;
   categoria: string;
   onChangeCategoria: (value: string) => void;
-  tempoLeitura: string;
-  onChangeTempoLeitura: (value: string) => void;
 }
 
 export const FormularioBasico: React.FC<FormularioBasicoProps> = ({
@@ -20,12 +16,8 @@ export const FormularioBasico: React.FC<FormularioBasicoProps> = ({
   onChangeTitulo,
   resumo,
   onChangeResumo,
-  autorAvatar,
-  onChangeAutorAvatar,
   categoria,
-  onChangeCategoria,
-  tempoLeitura,
-  onChangeTempoLeitura
+  onChangeCategoria
 }) => {
   return (
     <div className="p-4 border rounded-md bg-gray-50">
@@ -54,16 +46,6 @@ export const FormularioBasico: React.FC<FormularioBasicoProps> = ({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="autorAvatar">URL do Avatar do Autor</Label>
-          <Input 
-            id="autorAvatar" 
-            value={autorAvatar} 
-            onChange={(e) => onChangeAutorAvatar(e.target.value)} 
-            placeholder="URL da imagem do avatar do autor"
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="categoria">Categoria</Label>
           <Input 
             id="categoria" 
@@ -71,17 +53,6 @@ export const FormularioBasico: React.FC<FormularioBasicoProps> = ({
             onChange={(e) => onChangeCategoria(e.target.value)} 
             placeholder="Digite a categoria do post"
             required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="tempoLeitura">Tempo de leitura (minutos)</Label>
-          <Input 
-            id="tempoLeitura" 
-            type="number"
-            value={tempoLeitura} 
-            onChange={(e) => onChangeTempoLeitura(e.target.value)} 
-            placeholder="Deixe vazio para calcular automaticamente"
           />
         </div>
       </div>

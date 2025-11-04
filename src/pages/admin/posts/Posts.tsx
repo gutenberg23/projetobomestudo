@@ -20,8 +20,6 @@ const Posts = () => {
     setResumo,
     conteudo,
     setConteudo,
-    autorAvatar,
-    setAutorAvatar,
     categoria,
     setCategoria,
     destacado,
@@ -34,8 +32,6 @@ const Posts = () => {
     setMetaDescricao,
     metaKeywords,
     setMetaKeywords,
-    tempoLeitura,
-    setTempoLeitura,
     imagemDestaque,
     setImagemDestaque,
     regiao,
@@ -111,8 +107,6 @@ const Posts = () => {
           onChangeResumo={setResumo}
           conteudo={conteudo}
           onChangeConteudo={setConteudo}
-          autorAvatar={autorAvatar}
-          onChangeAutorAvatar={setAutorAvatar}
           categoria={categoria}
           onChangeCategoria={setCategoria}
           destacado={destacado}
@@ -125,8 +119,6 @@ const Posts = () => {
           onChangeMetaDescricao={setMetaDescricao}
           metaKeywords={metaKeywords}
           onChangeMetaKeywords={setMetaKeywords}
-          tempoLeitura={tempoLeitura}
-          onChangeTempoLeitura={setTempoLeitura}
           imagemDestaque={imagemDestaque}
           onChangeImagemDestaque={setImagemDestaque}
           regiao={regiao}

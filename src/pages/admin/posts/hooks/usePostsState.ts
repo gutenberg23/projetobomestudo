@@ -23,17 +23,15 @@ export function usePostsState() {
   const [titulo, setTitulo] = useState("");
   const [resumo, setResumo] = useState("");
   const [conteudo, setConteudo] = useState("");
-  const [autorAvatar, setAutorAvatar] = useState("");
   const [categoria, setCategoria] = useState("");
   const [destacado, setDestacado] = useState(false);
   const [isDraft, setIsDraft] = useState(false);
   const [tags, setTags] = useState("");
   const [metaDescricao, setMetaDescricao] = useState("");
   const [metaKeywords, setMetaKeywords] = useState("");
-  const [tempoLeitura, setTempoLeitura] = useState("");
   const [imagemDestaque, setImagemDestaque] = useState("");
   const [regiao, setRegiao] = useState<Region | "none">("none");
-  const [estado, setEstado] = useState("none");
+  const [estado, setEstado] = useState("none"); // Alterado de string para "none"
   const [postsRelacionados, setPostsRelacionados] = useState("");
 
   // Buscar posts do banco de dados ao carregar o componente e quando a página muda
@@ -101,8 +99,6 @@ export function usePostsState() {
     setResumo,
     conteudo,
     setConteudo,
-    autorAvatar,
-    setAutorAvatar,
     categoria,
     setCategoria,
     destacado,
@@ -115,8 +111,6 @@ export function usePostsState() {
     setMetaDescricao,
     metaKeywords,
     setMetaKeywords,
-    tempoLeitura,
-    setTempoLeitura,
     imagemDestaque,
     setImagemDestaque,
     regiao,

@@ -1,12 +1,6 @@
-# Welcome to your Lovable project
+# Projeto Bom Estudo
 
-## Project info
-
-**URL**: https://lovable.dev/projects/3b2748fe-92f8-4127-b236-d58173b6010d
-
-## Configuração do Supabase
-
-Este projeto utiliza o Supabase para armazenamento de imagens. Para configurar:
+## Como configurar o ambiente
 
 1. Crie uma conta no [Supabase](https://supabase.com)
 2. Crie um novo projeto
@@ -16,56 +10,58 @@ Este projeto utiliza o Supabase para armazenamento de imagens. Para configurar:
 6. Substitua os valores das variáveis de ambiente com suas credenciais
 7. No Supabase, crie um bucket chamado 'blog-images' em Storage > New Bucket
 8. Configure as permissões do bucket para permitir uploads públicos
+9. No Supabase, crie um bucket chamado 'blog-pdfs' em Storage > New Bucket
+10. Configure as permissões do bucket 'blog-pdfs' para permitir uploads públicos
 
-## How can I edit this code?
+## Como editar este código?
 
-There are several ways of editing your application.
+Existem várias formas de editar sua aplicação.
 
 **Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/3b2748fe-92f8-4127-b236-d58173b6010d) and start prompting.
+Simplesmente visite o [Lovable Project](https://lovable.dev/projects/3b2748fe-92f8-4127-b236-d58173b6010d) e comece a fazer prompts.
 
-Changes made via Lovable will be committed automatically to this repo.
+As mudanças feitas via Lovable serão commitadas automaticamente para este repositório.
 
-**Use your preferred IDE**
+**Use seu IDE preferido**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Se você quiser trabalhar localmente usando seu próprio IDE, você pode clonar este repositório e fazer push das mudanças. As mudanças feitas por push também serão refletidas no Lovable.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+O único requisito é ter o Node.js & npm instalados - [instale com nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-Follow these steps:
+Siga estes passos:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Passo 1: Clone o repositório usando a URL Git do projeto.
+git clone <SUA_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Passo 2: Navegue até o diretório do projeto.
+cd <NOME_DO_SEU_PROJETO>
 
-# Step 3: Install the necessary dependencies.
+# Passo 3: Instale as dependências necessárias.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Passo 4: Inicie o servidor de desenvolvimento com auto-reloading e preview instantâneo.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+**Edite um arquivo diretamente no GitHub**
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- Navegue até o arquivo desejado.
+- Clique no botão "Edit" (ícone de lápis) no canto superior direito da visualização do arquivo.
+- Faça suas mudanças e commite as alterações.
 
 **Use GitHub Codespaces**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- Navegue até a página principal do seu repositório.
+- Clique no botão "Code" (botão verde) próximo ao canto superior direito.
+- Selecione a aba "Codespaces".
+- Clique em "New codespace" para lançar um novo ambiente Codespace.
+- Edite os arquivos diretamente dentro do Codespace e commite e faça push das suas mudanças quando terminar.
 
-## What technologies are used for this project?
+## Quais tecnologias são usadas para este projeto?
 
-This project is built with .
+Este projeto é construído com .
 
 - Vite
 - TypeScript
@@ -73,10 +69,10 @@ This project is built with .
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## Como posso implantar este projeto?
 
-Simply open [Lovable](https://lovable.dev/projects/3b2748fe-92f8-4127-b236-d58173b6010d) and click on Share -> Publish.
+Simplesmente abra [Lovable](https://lovable.dev/projects/3b2748fe-92f8-4127-b236-d58173b6010d) e clique em Share -> Publish.
 
-## I want to use a custom domain - is that possible?
+## Eu quero usar um domínio personalizado - isso é possível?
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+Não suportamos domínios personalizados (ainda). Se você quiser implantar seu projeto sob seu próprio domínio, recomendamos usar o Netlify. Visite nossa documentação para mais detalhes: [Domínios personalizados](https://docs.lovable.dev/tips-tricks/custom-domain/)

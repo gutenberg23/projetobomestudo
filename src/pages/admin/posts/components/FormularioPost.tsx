@@ -6,6 +6,7 @@ import { FormularioConteudo } from "./formulario/FormularioConteudo";
 import { FormularioRegiao } from "./formulario/FormularioRegiao";
 import { FormularioMetadados } from "./formulario/FormularioMetadados";
 import { FormularioMidia } from "./formulario/FormularioMidia";
+import { FormularioPDF } from "./formulario/FormularioPDF";
 import { FormularioDestaque } from "./formulario/FormularioDestaque";
 import { FormularioStatus } from "./formulario/FormularioStatus";
 import { Region } from "@/components/blog/types";
@@ -23,8 +24,6 @@ interface FormularioPostProps {
   onChangeResumo: (value: string) => void;
   conteudo: string;
   onChangeConteudo: (value: string) => void;
-  autorAvatar: string;
-  onChangeAutorAvatar: (value: string) => void;
   categoria: string;
   onChangeCategoria: (value: string) => void;
   destacado: boolean;
@@ -37,8 +36,6 @@ interface FormularioPostProps {
   onChangeMetaDescricao: (value: string) => void;
   metaKeywords: string;
   onChangeMetaKeywords: (value: string) => void;
-  tempoLeitura: string;
-  onChangeTempoLeitura: (value: string) => void;
   imagemDestaque: string;
   onChangeImagemDestaque: (value: string) => void;
   regiao: Region | "none";
@@ -61,8 +58,6 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
   onChangeResumo,
   conteudo,
   onChangeConteudo,
-  autorAvatar,
-  onChangeAutorAvatar,
   categoria,
   onChangeCategoria,
   destacado,
@@ -75,8 +70,6 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
   onChangeMetaDescricao,
   metaKeywords,
   onChangeMetaKeywords,
-  tempoLeitura,
-  onChangeTempoLeitura,
   imagemDestaque,
   onChangeImagemDestaque,
   regiao,
@@ -236,13 +229,26 @@ export const FormularioPost: React.FC<FormularioPostProps> = ({
             onChangeTitulo={onChangeTitulo}
             resumo={resumo}
             onChangeResumo={onChangeResumo}
-            autorAvatar={autorAvatar}
-            onChangeAutorAvatar={onChangeAutorAvatar}
             categoria={categoria}
             onChangeCategoria={onChangeCategoria}
-            tempoLeitura={tempoLeitura}
-            onChangeTempoLeitura={onChangeTempoLeitura}
           />
+
+          {/* Gerar Notícia via PDF - apenas para criação */}
+          {modo === ModoInterface.CRIAR && (
+            <FormularioPDF 
+              onPreencherCampos={(dados) => {
+                if (dados.title) onChangeTitulo(dados.title);
+                if (dados.summary) onChangeResumo(dados.summary);
+                if (dados.category) onChangeCategoria(dados.category);
+                if (dados.content) onChangeConteudo(dados.content);
+                if (dados.region) onChangeRegiao(dados.region);
+                if (dados.state) onChangeEstado(dados.state || "none");
+                if (dados.tags) onChangeTags(Array.isArray(dados.tags) ? dados.tags.join(', ') : dados.tags as string);
+                if (dados.metaDescription) onChangeMetaDescricao(dados.metaDescription);
+                if (dados.metaKeywords) onChangeMetaKeywords(Array.isArray(dados.metaKeywords) ? dados.metaKeywords.join(', ') : dados.metaKeywords as string);
+              }}
+            />
+          )}
 
           {/* Conteúdo */}
           <FormularioConteudo 
