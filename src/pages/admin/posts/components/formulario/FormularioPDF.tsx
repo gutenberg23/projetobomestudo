@@ -18,7 +18,6 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState<string | null>(null);
-  const [extractedText, setExtractedText] = useState<string | null>(null);
 
   const handleFileUpload = async (file: File) => {
     try {
@@ -64,67 +63,16 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
     }
   };
 
-  const extractPDFContent = async (file: File): Promise<string | null> => {
-    try {
-      // Criar um FormData e adicionar o arquivo
-      const formData = new FormData();
-      formData.append('file', file);
-
-      // Fazer upload temporário para extrair o texto
-      const fileExt = file.name.split('.').pop();
-      const fileName = `temp-${Date.now()}.${fileExt}`;
-      const filePath = `temp-pdfs/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('blog-pdfs')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        console.error('Erro ao fazer upload temporário:', uploadError);
-        return null;
-      }
-
-      // Obter URL pública temporária
-      const { data: { publicUrl } } = supabase.storage
-        .from('blog-pdfs')
-        .getPublicUrl(filePath);
-
-      // Baixar o PDF como blob
-      const response = await fetch(publicUrl);
-      const blob = await response.blob();
-
-      // Usar a API de parsing de documentos
+  const convertPDFToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve) => {
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.readAsDataURL(blob);
-      });
-
-      const base64Content = await base64Promise;
-
-      // Chamar edge function para extrair texto do PDF
-      const { data, error } = await supabase.functions.invoke('extract-pdf-text', {
-        body: { pdfBase64: base64Content }
-      });
-
-      // Deletar arquivo temporário
-      await supabase.storage
-        .from('blog-pdfs')
-        .remove([filePath]);
-
-      if (error) {
-        console.error('Erro ao extrair texto:', error);
-        return null;
-      }
-
-      return data?.text || null;
-    } catch (error) {
-      console.error('Erro ao processar PDF:', error);
-      return null;
-    }
+      reader.onloadend = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -135,31 +83,13 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
       
       // Fazer upload permanente
       const url = await handleFileUpload(file);
+      setIsUploading(false);
+      
       if (url) {
         setUploadedFileUrl(url);
-      }
-
-      // Extrair conteúdo do PDF
-      toast({
-        title: "Processando",
-        description: "Extraindo texto do PDF...",
-        variant: "default"
-      });
-
-      const text = await extractPDFContent(file);
-      setIsUploading(false);
-
-      if (text) {
-        setExtractedText(text);
         toast({
           title: "Sucesso",
-          description: "PDF processado com sucesso! Clique em 'Gerar Notícia' para criar o conteúdo.",
-          variant: "default"
-        });
-      } else {
-        toast({
-          title: "Aviso",
-          description: "PDF enviado, mas não foi possível extrair o texto automaticamente.",
+          description: "PDF carregado com sucesso! Clique em 'Gerar Notícia' para criar o conteúdo.",
           variant: "default"
         });
       }
@@ -173,10 +103,10 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
   };
 
   const handleGerarNoticia = async () => {
-    if (!extractedText) {
+    if (!uploadedFile) {
       toast({
-        title: "Nenhum conteúdo",
-        description: "Por favor, aguarde a extração do texto do PDF ou faça upload novamente.",
+        title: "Nenhum PDF",
+        description: "Por favor, faça upload de um PDF primeiro.",
         variant: "destructive"
       });
       return;
@@ -184,47 +114,21 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
 
     setIsProcessing(true);
     try {
-      // Chamar a função do Google Gemini através da Edge Function do Supabase
-      const systemInstruction = `Você é um assistente de IA especialista em criar conteúdo para o blog 'Bom Estudo', focado em concursos públicos no Brasil. Sua tarefa é analisar EXCLUSIVAMENTE o conteúdo do PDF fornecido abaixo e gerar uma postagem de blog completa no formato JSON, seguindo estritamente o schema fornecido. O tom deve ser informativo, claro e encorajador para os concurseiros. Preencha todos os campos do JSON de forma completa e precisa com base APENAS nas informações presentes no texto extraído do PDF. NÃO invente informações.`;
+      toast({
+        title: "Processando",
+        description: "Enviando PDF para o Google Gemini...",
+        variant: "default"
+      });
 
-      const blogPostSchema = {
-        type: "object",
-        properties: {
-          titulo: { type: "string", description: "Título atraente e informativo para a postagem do blog, baseado nas informações do PDF." },
-          resumo: { type: "string", description: "Resumo conciso da postagem, com no máximo 240 caracteres, baseado nas informações do PDF." },
-          categoria: { type: "string", description: "Categoria principal da notícia (ex: 'Concursos'), baseado nas informações do PDF." },
-          conteudo: { type: "string", description: "Conteúdo completo da postagem em formato HTML otimizado, baseado nas informações do PDF. Se for sobre um novo concurso, deve terminar com uma tabela HTML com 2 colunas. À esquerda os títulos: 'Website de Inscrição', 'Período de Inscrição', 'Data da Prova', 'Valor da Inscrição', 'Quantidade de Vagas' e 'Banca'." },
-          regiao: { type: "string", description: "A região do Brasil do concurso, baseado nas informações do PDF. Escolha entre: 'norte', 'nordeste', 'centro-oeste', 'sudeste', 'sul', 'federal', 'nacional'." },
-          estado: { type: "string", description: "O estado brasileiro do concurso em siglas maiúsculas (ex: 'SP', 'BH', 'RJ'), baseado nas informações do PDF. Deixe como uma string vazia se a região for 'federal' ou 'nacional'." },
-          tags: { type: "string", description: "Uma lista de 3 a 5 tags relevantes separadas por vírgula, baseado nas informações do PDF." },
-          metaDescricao: { type: "string", description: "Uma meta descrição otimizada para SEO, resumindo o conteúdo em até 160 caracteres, baseado nas informações do PDF." },
-          palavrasChave: { type: "string", description: "Uma lista de 3 a 5 palavras-chave relevantes para SEO, separadas por vírgula, baseado nas informações do PDF." },
-        },
-        required: ['titulo', 'resumo', 'categoria', 'conteudo', 'regiao', 'estado', 'tags', 'metaDescricao', 'palavrasChave']
-      };
+      // Converter PDF para base64
+      const pdfBase64 = await convertPDFToBase64(uploadedFile);
 
-      const prompt = `
-        Analise EXCLUSIVAMENTE o conteúdo extraído do PDF abaixo e crie uma postagem de blog completa seguindo exatamente o schema.
-        
-        INSTRUÇÕES CRÍTICAS:
-        1. Analise APENAS o conteúdo do PDF fornecido abaixo
-        2. NÃO invente informações que não estejam claramente no conteúdo
-        3. Se alguma informação não estiver clara ou ausente, deixe o campo vazio
-        4. Baseie-se SOMENTE nas informações presentes no texto extraído
-        5. Retorne APENAS um JSON válido com todos os campos preenchidos conforme o schema
-        6. NÃO inclua texto adicional além do JSON solicitado
-        7. Extraia as informações mais importantes como título, datas, vagas, salários, requisitos, etc.
-        
-        Schema JSON obrigatório:
-        ${JSON.stringify(blogPostSchema, null, 2)}
-        
-        CONTEÚDO EXTRAÍDO DO PDF:
-        ${extractedText}
-      `;
-
-      // Fazer a chamada à Edge Function do Supabase para o Google Gemini
-      const { data, error } = await supabase.functions.invoke('generate-question-explanation', {
-        body: { prompt: `${systemInstruction}\n\n${prompt}` }
+      // Chamar a edge function que envia o PDF diretamente ao Gemini
+      const { data, error } = await supabase.functions.invoke('generate-blog-from-pdf', {
+        body: { 
+          pdfBase64,
+          mimeType: uploadedFile.type
+        }
       });
 
       if (error) {
@@ -237,7 +141,7 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
         return;
       }
 
-      if (!data || !data.text) {
+      if (!data || !data.data) {
         console.error('Resposta inválida da API:', data);
         toast({
           title: "Erro",
@@ -247,47 +151,31 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
         return;
       }
 
-      // Parsear o JSON retornado
-      try {
-        // Remover possíveis caracteres de formatação
-        const cleanResponse = data.text
-          .replace(/```json/g, '')
-          .replace(/```/g, '')
-          .trim();
-        
-        const extractedData = JSON.parse(cleanResponse);
-        
-        // Converter os dados para o formato esperado pelo formulário
-        const dadosConvertidos: Partial<BlogPost> = {
-          title: extractedData.titulo || '',
-          summary: extractedData.resumo || '',
-          category: extractedData.categoria || '',
-          content: extractedData.conteudo || '',
-          region: (extractedData.regiao as Region) || 'nacional',
-          state: extractedData.estado || '',
-          tags: Array.isArray(extractedData.tags) ? extractedData.tags : 
-                typeof extractedData.tags === 'string' ? extractedData.tags.split(',').map((tag: string) => tag.trim()) : [],
-          metaDescription: extractedData.metaDescricao || '',
-          metaKeywords: Array.isArray(extractedData.palavrasChave) ? extractedData.palavrasChave : 
-                       typeof extractedData.palavrasChave === 'string' ? extractedData.palavrasChave.split(',').map((kw: string) => kw.trim()) : []
-        };
-        
-        // Preencher os campos do formulário
-        onPreencherCampos(dadosConvertidos);
-        
-        toast({
-          title: "Sucesso",
-          description: "Notícia gerada com sucesso! Os campos foram preenchidos automaticamente.",
-          variant: "default"
-        });
-      } catch (parseError) {
-        console.error('Erro ao parsear JSON:', parseError);
-        toast({
-          title: "Erro",
-          description: "Erro ao processar a resposta da IA. Tente novamente.",
-          variant: "destructive"
-        });
-      }
+      const extractedData = data.data;
+      
+      // Converter os dados para o formato esperado pelo formulário
+      const dadosConvertidos: Partial<BlogPost> = {
+        title: extractedData.titulo || '',
+        summary: extractedData.resumo || '',
+        category: extractedData.categoria || '',
+        content: extractedData.conteudo || '',
+        region: (extractedData.regiao as Region) || 'nacional',
+        state: extractedData.estado || '',
+        tags: Array.isArray(extractedData.tags) ? extractedData.tags : 
+              typeof extractedData.tags === 'string' ? extractedData.tags.split(',').map((tag: string) => tag.trim()) : [],
+        metaDescription: extractedData.metaDescricao || '',
+        metaKeywords: Array.isArray(extractedData.palavrasChave) ? extractedData.palavrasChave : 
+                     typeof extractedData.palavrasChave === 'string' ? extractedData.palavrasChave.split(',').map((kw: string) => kw.trim()) : []
+      };
+      
+      // Preencher os campos do formulário
+      onPreencherCampos(dadosConvertidos);
+      
+      toast({
+        title: "Sucesso",
+        description: "Notícia gerada com sucesso! Os campos foram preenchidos automaticamente.",
+        variant: "default"
+      });
     } catch (error) {
       console.error("Erro ao gerar notícia:", error);
       toast({
@@ -331,7 +219,7 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
             <Button
               type="button"
               onClick={handleGerarNoticia}
-              disabled={isProcessing || !extractedText}
+              disabled={isProcessing || !uploadedFile}
               className="bg-purple-600 hover:bg-purple-700"
             >
               <Sparkles className="h-4 w-4 mr-2" />
@@ -345,31 +233,22 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
         
         {uploadedFile && (
           <div className="text-sm text-gray-600 space-y-2">
-            <p>Arquivo selecionado: <span className="font-medium">{uploadedFile.name}</span></p>
-            {uploadedFileUrl && (
-              <p>
-                PDF armazenado:{" "}
+            <div className="p-3 bg-green-50 rounded-md border border-green-200">
+              <div className="flex items-center gap-2 text-green-700">
+                <FileText className="h-4 w-4" />
+                <span className="font-medium">PDF carregado: {uploadedFile.name}</span>
+              </div>
+              {uploadedFileUrl && (
                 <a 
                   href={uploadedFileUrl} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
+                  className="text-blue-600 hover:underline text-xs mt-1 inline-block"
                 >
                   Visualizar PDF
                 </a>
-              </p>
-            )}
-            {extractedText && (
-              <div className="p-3 bg-green-50 rounded-md border border-green-200">
-                <div className="flex items-center gap-2 text-green-700">
-                  <FileText className="h-4 w-4" />
-                  <span className="font-medium">Texto extraído com sucesso!</span>
-                </div>
-                <p className="text-xs text-green-600 mt-1">
-                  {extractedText.length} caracteres extraídos
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
