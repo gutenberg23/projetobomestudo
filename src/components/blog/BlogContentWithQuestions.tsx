@@ -111,7 +111,7 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
     });
   };
   
-  const applyHighlightToText = (highlight: {id: string, text: string, color: string, note?: string}) => {
+  const applyHighlightToText = (highlight: {id: string, text: string, html?: string, color: string, note?: string}) => {
     if (!contentRef.current) return;
     
     // Normalizar o texto buscado
@@ -151,16 +151,18 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
     
     if (textNodes.length === 0) return;
     
-    // Construir mapa de texto
+    // Construir mapa de texto normalizado
     let fullText = '';
     const nodeMap: Array<{
       node: Text;
       startOffset: number;
       endOffset: number;
+      originalText: string;
     }> = [];
     
     textNodes.forEach(node => {
-      const text = (node.textContent || '').normalize('NFC').replace(/\s+/g, ' ');
+      const originalText = node.textContent || '';
+      const text = originalText.normalize('NFC').replace(/\s+/g, ' ');
       const startOffset = fullText.length;
       fullText += text;
       const endOffset = fullText.length;
@@ -168,16 +170,19 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
       nodeMap.push({
         node,
         startOffset,
-        endOffset
+        endOffset,
+        originalText
       });
     });
     
     console.log('[BlogContentWithQuestions] Full text length:', fullText.length);
+    console.log('[BlogContentWithQuestions] Search text:', searchText.substring(0, 100));
     
-    // Encontrar todas as ocorrências do texto
-    let searchIndex = 0;
+    // Busca flexível: tentar encontrar correspondências mesmo com variações de espaçamento
     const occurrences: Array<{ start: number; end: number }> = [];
     
+    // Método 1: Busca exata
+    let searchIndex = 0;
     while ((searchIndex = fullText.indexOf(searchText, searchIndex)) !== -1) {
       occurrences.push({
         start: searchIndex,
@@ -186,8 +191,26 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
       searchIndex += searchText.length;
     }
     
+    // Método 2: Se não encontrou, tentar busca fuzzy (ignorando espaços extras)
     if (occurrences.length === 0) {
-      console.warn('[BlogContentWithQuestions] Text not found:', searchText.substring(0, 100));
+      console.log('[BlogContentWithQuestions] Trying fuzzy search...');
+      const searchWords = searchText.split(' ').filter(w => w.length > 0);
+      const pattern = searchWords.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+      const regex = new RegExp(pattern, 'gi');
+      
+      let match;
+      while ((match = regex.exec(fullText)) !== null) {
+        occurrences.push({
+          start: match.index,
+          end: match.index + match[0].length
+        });
+      }
+    }
+    
+    if (occurrences.length === 0) {
+      console.warn('[BlogContentWithQuestions] Text not found even with fuzzy search');
+      console.warn('[BlogContentWithQuestions] Searched for:', searchText);
+      console.warn('[BlogContentWithQuestions] In text starting with:', fullText.substring(0, 200));
       return;
     }
     
@@ -203,7 +226,7 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
     startIndex: number,
     endIndex: number,
     highlight: {id: string, color: string, note?: string},
-    nodeMap: Array<{ node: Text; startOffset: number; endOffset: number }>
+    nodeMap: Array<{ node: Text; startOffset: number; endOffset: number; originalText: string }>
   ) => {
     // Encontrar nodes afetados
     const affectedNodes = nodeMap.filter(
@@ -215,14 +238,13 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
     // Processar de trás para frente para não afetar índices
     for (let i = affectedNodes.length - 1; i >= 0; i--) {
       const nodeInfo = affectedNodes[i];
-      const { node, startOffset, endOffset } = nodeInfo;
+      const { node, startOffset, endOffset, originalText } = nodeInfo;
       
       // Calcular posições relativas no texto normalizado do node
       const relativeStart = Math.max(0, startIndex - startOffset);
       const relativeEnd = Math.min(endOffset - startOffset, endIndex - startOffset);
       
       // Converter posições normalizadas para posições no texto original
-      const originalText = node.textContent || '';
       const normalizedText = originalText.normalize('NFC').replace(/\s+/g, ' ');
       
       const originalStart = mapToOriginalPosition(originalText, normalizedText, relativeStart);

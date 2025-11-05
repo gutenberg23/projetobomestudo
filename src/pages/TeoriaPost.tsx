@@ -271,13 +271,21 @@ const TeoriaPost = () => {
   // Function to apply highlight to selected text
   const applyHighlight = (color: string) => {
     const selection = window.getSelection();
-    if (!selection || selection.toString().trim() === "") {
+    if (!selection || selection.toString().trim() === "" || selection.rangeCount === 0) {
       setShowHighlightColors(false);
       return;
     }
     
+    const range = selection.getRangeAt(0);
+    
     // Obter o texto selecionado
     let selectedText = selection.toString();
+    
+    // Capturar HTML da seleção para melhor correspondência
+    const clonedContent = range.cloneContents();
+    const div = document.createElement('div');
+    div.appendChild(clonedContent);
+    const selectedHtml = div.innerHTML;
     
     // Normalizar o texto para garantir consistência
     selectedText = selectedText
@@ -295,10 +303,11 @@ const TeoriaPost = () => {
       setPendingHighlight({ text: selectedText, color });
       setShowConfirmDialog(true);
     } else {
-      // Adicionar highlight diretamente ao estado
+      // Adicionar highlight com texto E HTML
       const newHighlight = {
         id: `highlight-${Date.now()}`,
         text: selectedText,
+        html: selectedHtml, // Incluir HTML para melhor correspondência
         color: color,
         position: { 
           start: selection.anchorOffset, 
