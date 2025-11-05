@@ -84,24 +84,25 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
   };
   
   const applyHighlights = () => {
-    if (!contentRef.current) {
-      console.log('[BlogContentWithQuestions] contentRef.current is null');
-      return;
-    }
+    if (!contentRef.current) return;
     
     console.log('[BlogContentWithQuestions] Applying highlights:', highlights.length);
-    console.log('[BlogContentWithQuestions] contentRef HTML:', contentRef.current.innerHTML.substring(0, 200));
     
-    // Limpar highlights antigos
+    // Remover highlights antigos
     const existingMarks = contentRef.current.querySelectorAll('mark[data-highlight-id]');
     console.log('[BlogContentWithQuestions] Removing existing marks:', existingMarks.length);
     existingMarks.forEach(mark => {
       const parent = mark.parentNode;
-      while (mark.firstChild) {
-        parent?.insertBefore(mark.firstChild, mark);
+      if (parent) {
+        while (mark.firstChild) {
+          parent.insertBefore(mark.firstChild, mark);
+        }
+        parent.removeChild(mark);
       }
-      parent?.removeChild(mark);
     });
+    
+    // Normalizar o DOM após remoção (juntar text nodes adjacentes)
+    contentRef.current.normalize();
     
     // Aplicar novos highlights
     highlights.forEach(highlight => {
@@ -113,114 +114,131 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
   const applyHighlightToText = (highlight: {id: string, text: string, color: string, note?: string}) => {
     if (!contentRef.current) return;
     
-    // Normalizar o texto do highlight
-    const normalizedHighlightText = highlight.text
+    // Normalizar o texto buscado
+    const searchText = highlight.text
       .normalize('NFC')
       .replace(/\s+/g, ' ')
       .trim();
     
-    if (!normalizedHighlightText) {
-      console.log('[BlogContentWithQuestions] Empty normalized text');
-      return;
-    }
+    if (!searchText) return;
     
-    // Função para coletar todos os nós de texto recursivamente
-    const collectTextNodes = (node: Node): Text[] => {
-      const textNodes: Text[] = [];
-      
-      if (node.nodeType === Node.TEXT_NODE) {
-        textNodes.push(node as Text);
-      } else {
-        node.childNodes.forEach(child => {
-          textNodes.push(...collectTextNodes(child));
-        });
+    // Criar TreeWalker para percorrer todos os text nodes
+    const walker = document.createTreeWalker(
+      contentRef.current,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: (node) => {
+          // Ignorar text nodes dentro de elementos mark existentes
+          let parent = node.parentElement;
+          while (parent && parent !== contentRef.current) {
+            if (parent.tagName === 'MARK') {
+              return NodeFilter.FILTER_REJECT;
+            }
+            parent = parent.parentElement;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        }
       }
-      
-      return textNodes;
-    };
+    );
     
-    // Coletar todos os nós de texto
-    const textNodes = collectTextNodes(contentRef.current);
-    
-    console.log('[BlogContentWithQuestions] Text nodes collected:', textNodes.length);
+    // Coletar todos os text nodes
+    const textNodes: Text[] = [];
+    let currentNode = walker.nextNode();
+    while (currentNode) {
+      textNodes.push(currentNode as Text);
+      currentNode = walker.nextNode();
+    }
     
     if (textNodes.length === 0) return;
     
-    // Construir texto completo e mapa de nós
+    // Construir mapa de texto
     let fullText = '';
     const nodeMap: Array<{
       node: Text;
-      startIndex: number;
-      endIndex: number;
-      originalText: string;
-      normalizedText: string;
+      startOffset: number;
+      endOffset: number;
     }> = [];
     
     textNodes.forEach(node => {
-      const originalText = node.textContent || '';
-      const normalizedText = originalText.normalize('NFC').replace(/\s+/g, ' ');
-      
-      const startIndex = fullText.length;
-      const endIndex = startIndex + normalizedText.length;
+      const text = (node.textContent || '').normalize('NFC').replace(/\s+/g, ' ');
+      const startOffset = fullText.length;
+      fullText += text;
+      const endOffset = fullText.length;
       
       nodeMap.push({
         node,
-        startIndex,
-        endIndex,
-        originalText,
-        normalizedText
+        startOffset,
+        endOffset
       });
-      
-      fullText += normalizedText;
     });
     
     console.log('[BlogContentWithQuestions] Full text length:', fullText.length);
-    console.log('[BlogContentWithQuestions] Looking for text:', normalizedHighlightText);
     
-    // Encontrar a posição do texto a destacar
-    const highlightStartIndex = fullText.indexOf(normalizedHighlightText);
+    // Encontrar todas as ocorrências do texto
+    let searchIndex = 0;
+    const occurrences: Array<{ start: number; end: number }> = [];
     
-    if (highlightStartIndex === -1) {
-      console.warn('[BlogContentWithQuestions] Text not found:', normalizedHighlightText.substring(0, 100));
-      console.log('[BlogContentWithQuestions] Full text sample:', fullText.substring(0, 500));
+    while ((searchIndex = fullText.indexOf(searchText, searchIndex)) !== -1) {
+      occurrences.push({
+        start: searchIndex,
+        end: searchIndex + searchText.length
+      });
+      searchIndex += searchText.length;
+    }
+    
+    if (occurrences.length === 0) {
+      console.warn('[BlogContentWithQuestions] Text not found:', searchText.substring(0, 100));
       return;
     }
     
-    console.log('[BlogContentWithQuestions] Text found at index:', highlightStartIndex);
+    console.log('[BlogContentWithQuestions] Found', occurrences.length, 'occurrence(s)');
     
-    const highlightEndIndex = highlightStartIndex + normalizedHighlightText.length;
-    
-    // Encontrar nós afetados
-    const affectedNodes = nodeMap.filter(nodeInfo => 
-      nodeInfo.startIndex < highlightEndIndex && nodeInfo.endIndex > highlightStartIndex
+    // Aplicar highlight em todas as ocorrências (de trás para frente)
+    occurrences.reverse().forEach(occurrence => {
+      applyHighlightToRange(occurrence.start, occurrence.end, highlight, nodeMap);
+    });
+  };
+  
+  const applyHighlightToRange = (
+    startIndex: number,
+    endIndex: number,
+    highlight: {id: string, color: string, note?: string},
+    nodeMap: Array<{ node: Text; startOffset: number; endOffset: number }>
+  ) => {
+    // Encontrar nodes afetados
+    const affectedNodes = nodeMap.filter(
+      info => info.startOffset < endIndex && info.endOffset > startIndex
     );
     
     if (affectedNodes.length === 0) return;
     
-    // Aplicar highlight de trás para frente para não afetar índices
+    // Processar de trás para frente para não afetar índices
     for (let i = affectedNodes.length - 1; i >= 0; i--) {
       const nodeInfo = affectedNodes[i];
-      const { node, startIndex, originalText, normalizedText } = nodeInfo;
+      const { node, startOffset, endOffset } = nodeInfo;
       
-      // Calcular posições relativas ao nó
-      const relativeStart = Math.max(0, highlightStartIndex - startIndex);
-      const relativeEnd = Math.min(normalizedText.length, highlightEndIndex - startIndex);
+      // Calcular posições relativas no texto normalizado do node
+      const relativeStart = Math.max(0, startIndex - startOffset);
+      const relativeEnd = Math.min(endOffset - startOffset, endIndex - startOffset);
       
-      // Mapear posições normalizadas para texto original
-      const originalStart = mapNormalizedToOriginal(originalText, relativeStart);
-      const originalEnd = mapNormalizedToOriginal(originalText, relativeEnd);
+      // Converter posições normalizadas para posições no texto original
+      const originalText = node.textContent || '';
+      const normalizedText = originalText.normalize('NFC').replace(/\s+/g, ' ');
       
+      const originalStart = mapToOriginalPosition(originalText, normalizedText, relativeStart);
+      const originalEnd = mapToOriginalPosition(originalText, normalizedText, relativeEnd);
+      
+      // Dividir o text node e envolver a parte destacada
       const before = originalText.substring(0, originalStart);
       const highlighted = originalText.substring(originalStart, originalEnd);
       const after = originalText.substring(originalEnd);
       
-      // Pular se o highlight estiver vazio
       if (!highlighted.trim()) continue;
       
       const parent = node.parentNode;
       if (!parent) continue;
       
-      // Criar fragmento com o novo conteúdo
+      // Criar elementos
       const fragment = document.createDocumentFragment();
       
       if (before) {
@@ -231,9 +249,11 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
       mark.style.backgroundColor = highlight.color;
       mark.style.padding = '2px 4px';
       mark.style.borderRadius = '2px';
+      mark.style.transition = 'all 0.2s ease';
       mark.setAttribute('data-highlight-id', highlight.id);
       if (highlight.note) {
         mark.setAttribute('data-note', highlight.note);
+        mark.title = highlight.note;
       }
       mark.textContent = highlighted;
       fragment.appendChild(mark);
@@ -242,30 +262,39 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
         fragment.appendChild(document.createTextNode(after));
       }
       
-      // Substituir nó original
+      // Substituir o node original
       parent.replaceChild(fragment, node);
     }
   };
   
-  // Função auxiliar para mapear posição normalizada para original
-  const mapNormalizedToOriginal = (originalText: string, normalizedPosition: number): number => {
-    let normalizedIndex = 0;
-    let originalIndex = 0;
+  const mapToOriginalPosition = (
+    originalText: string,
+    normalizedText: string,
+    normalizedPosition: number
+  ): number => {
+    let normIdx = 0;
+    let origIdx = 0;
     
-    while (originalIndex < originalText.length && normalizedIndex < normalizedPosition) {
-      const char = originalText[originalIndex];
+    while (origIdx < originalText.length && normIdx < normalizedPosition) {
+      const origChar = originalText[origIdx];
+      const normChar = normalizedText[normIdx];
       
-      if (/\s/.test(char)) {
-        // Espaço em branco conta como 1 no texto normalizado
-        normalizedIndex++;
-      } else {
-        normalizedIndex++;
+      if (/\s/.test(origChar)) {
+        // Espaços consecutivos no original mapeiam para um único espaço normalizado
+        let wsCount = 0;
+        while (origIdx < originalText.length && /\s/.test(originalText[origIdx])) {
+          origIdx++;
+          wsCount++;
+        }
+        normIdx++; // Um espaço normalizado
+        continue;
       }
       
-      originalIndex++;
+      origIdx++;
+      normIdx++;
     }
     
-    return originalIndex;
+    return origIdx;
   };
   
   // Render content with questions embedded
