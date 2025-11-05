@@ -278,51 +278,64 @@ const TeoriaPost = () => {
     
     const range = selection.getRangeAt(0);
     
-    // Obter o texto selecionado
-    let selectedText = selection.toString();
+    // Verificar se a seleção está dentro do contentRef
+    if (!contentRef.current || !contentRef.current.contains(range.commonAncestorContainer)) {
+      toast.error("Por favor, selecione texto dentro do conteúdo da aula");
+      setShowHighlightColors(false);
+      return;
+    }
     
-    // Capturar HTML da seleção para melhor correspondência
-    const clonedContent = range.cloneContents();
-    const div = document.createElement('div');
-    div.appendChild(clonedContent);
-    const selectedHtml = div.innerHTML;
-    
-    // Normalizar o texto para garantir consistência
-    selectedText = selectedText
-      .normalize('NFC') // Normalização Unicode
-      .replace(/\s+/g, ' ') // Substituir múltiplos espaços por um único espaço
-      .trim(); // Remover espaços no início e fim
-    
-    // Verificar se o texto selecionado já tem highlight
-    const hasExistingHighlight = highlights.some(highlight => 
-      selectedText.includes(highlight.text) || highlight.text.includes(selectedText)
-    );
-    
-    if (hasExistingHighlight) {
-      // Mostrar diálogo de confirmação
-      setPendingHighlight({ text: selectedText, color });
-      setShowConfirmDialog(true);
-    } else {
-      // Adicionar highlight com texto E HTML
+    try {
+      // Criar ID único para este highlight
+      const highlightId = `highlight-${Date.now()}`;
+      
+      // Obter o texto selecionado
+      const selectedText = selection.toString()
+        .normalize('NFC')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Aplicar highlight diretamente no DOM usando Range
+      const mark = document.createElement('mark');
+      mark.style.backgroundColor = color;
+      mark.style.padding = '2px 4px';
+      mark.style.borderRadius = '2px';
+      mark.style.transition = 'all 0.2s ease';
+      mark.style.cursor = 'pointer';
+      mark.setAttribute('data-highlight-id', highlightId);
+      
+      // Envolver o conteúdo selecionado
+      try {
+        range.surroundContents(mark);
+      } catch (e) {
+        // Se surroundContents falhar (conteúdo parcialmente selecionado),
+        // usar método alternativo
+        const fragment = range.extractContents();
+        mark.appendChild(fragment);
+        range.insertNode(mark);
+      }
+      
+      // Adicionar ao estado para tracking
       const newHighlight = {
-        id: `highlight-${Date.now()}`,
+        id: highlightId,
         text: selectedText,
-        html: selectedHtml, // Incluir HTML para melhor correspondência
         color: color,
-        position: { 
-          start: selection.anchorOffset, 
-          end: selection.focusOffset 
-        },
-        note: "" // Inicializando com nota vazia
+        position: { start: 0, end: 0 },
+        note: ""
       };
       
       setHighlights(prev => [...prev, newHighlight]);
+      
+      // Limpar seleção
+      selection.removeAllRanges();
+      
+      toast.success("Texto marcado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao aplicar highlight:", error);
+      toast.error("Erro ao marcar texto. Tente selecionar um trecho menor.");
     }
     
     setShowHighlightColors(false);
-    
-    // Clear selection
-    selection.removeAllRanges();
   };
 
   // Function to confirm highlight replacement
