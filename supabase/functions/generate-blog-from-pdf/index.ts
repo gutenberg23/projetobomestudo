@@ -79,7 +79,7 @@ INSTRUÇÕES CRÍTICAS:
           }
         ],
         generationConfig: {
-          temperature: 0.8,
+          temperature: 0.1,
           maxOutputTokens: 16000,
           responseMimeType: 'application/json',
           responseSchema: blogPostSchema,
