@@ -50,12 +50,12 @@ serve(async (req) => {
     const prompt = `Analise EXCLUSIVAMENTE o conteúdo do PDF fornecido e crie uma postagem de blog completa seguindo EXATAMENTE o schema.
 
 INSTRUÇÕES CRÍTICAS:
-1. Analise APENAS o conteúdo do PDF fornecido
-2. PROIBIDO INVENTAR INFORMAÇÕES que não estejam claramente no PDF
+1. Analise APENAS o conteúdo do PDF fornecido. O PDF pode ter informações de outros assuntos. Saiba separar os assuntos corretamente.
+2. PROIBIDO INVENTAR INFORMAÇÕES que não estejam claramente no PDF. Até mesmo informações que estejam no PDF podem ser de outros assuntos sem ser o novo concurso. Cuidado com as informações.
 3. Se alguma informação não estiver clara, não a utilize.
 4. Baseie-se SOMENTE nas informações presentes no PDF.
 5. Extraia as informações mais importantes como título, datas, vagas, salários, requisitos, disciplinas, etc.
-6. Se for um edital de concurso, organize as informações de forma estruturada e clara
+6. É um concurso novo ou processo seletivo. Organize as informações de forma estruturada e clara.
 7. Crie um conteúdo HTML bem formatado com parágrafos, títulos e listas quando apropriado`;
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GOOGLE_GEMINI_API_KEY}`, {
@@ -79,7 +79,7 @@ INSTRUÇÕES CRÍTICAS:
           }
         ],
         generationConfig: {
-          temperature: 0.1,
+          temperature: 0,
           maxOutputTokens: 16000,
           responseMimeType: 'application/json',
           responseSchema: blogPostSchema,
