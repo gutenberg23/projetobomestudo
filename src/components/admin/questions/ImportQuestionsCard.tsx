@@ -196,7 +196,7 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
       throw new Error('Arquivo CSV vazio ou sem dados');
     }
     
-    const headers = rows[0].split('###').map(header => header.trim());
+    const headers = rows[0].split('#*').map(header => header.trim());
     
     // Verificar se temos os cabeçalhos mínimos necessários
     const requiredHeaders = ['year', 'institution', 'organization', 'discipline', 'questiontype', 'content'];
@@ -217,7 +217,7 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
       }
 
       try {
-        const values = rows[i].split('###').map(value => value.trim());
+        const values = rows[i].split('#*').map(value => value.trim());
         
         // Verificar se o número de valores corresponde ao número de cabeçalhos
         if (values.length !== headers.length) {
@@ -444,7 +444,7 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
         )}
 
         <div className="text-sm text-gray-500">
-          <p className="font-semibold mb-2">O arquivo CSV deve conter as seguintes colunas (separadas por ###):</p>
+          <p className="font-semibold mb-2">O arquivo CSV deve conter as seguintes colunas (separadas por #*):</p>
           <ul className="list-disc list-inside space-y-1">
             <li>year, institution, organization, role</li>
             <li>discipline, level, difficulty</li>
