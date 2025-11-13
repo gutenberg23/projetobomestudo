@@ -175,6 +175,29 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
     difficulty: [...new Set(filterOptions.difficulty)].filter(Boolean).sort((a, b) => String(a).localeCompare(String(b)))
   };
 
+  // Função para ordenar assuntos numericamente
+  const sortSubjectsNumerically = (a: string, b: string): number => {
+    // Extrair números do início das strings
+    const numA = parseInt(a.match(/^\d+/)?.[0] || '0', 10);
+    const numB = parseInt(b.match(/^\d+/)?.[0] || '0', 10);
+    
+    // Se ambos tiverem números no início, ordenar numericamente
+    if (!isNaN(numA) && !isNaN(numB)) {
+      if (numA !== numB) {
+        return numA - numB;
+      }
+      // Se os números forem iguais, ordenar alfabeticamente o restante
+      return a.localeCompare(b);
+    }
+    
+    // Se apenas um tiver número, ele vem primeiro
+    if (!isNaN(numA) && isNaN(numB)) return -1;
+    if (isNaN(numA) && !isNaN(numB)) return 1;
+    
+    // Se nenhum tiver número, ordenar alfabeticamente
+    return a.localeCompare(b);
+  };
+
   // Organizar assuntos por disciplina para exibição hierárquica
   const organizedSubjects = useMemo(() => {
     if (selectedFilters.disciplines.length === 0) {
@@ -188,7 +211,7 @@ const QuestionFiltersPanel: React.FC<QuestionFiltersPanelProps> = ({
       if (subjects.length > 0) {
         result.push({
           discipline,
-          subjects: subjects.sort((a, b) => String(a).localeCompare(String(b)))
+          subjects: subjects.sort(sortSubjectsNumerically)
         });
       }
     });
