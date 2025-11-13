@@ -190,7 +190,38 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
     // Remover BOM se presente
     const cleanText = text.replace(/^\uFEFF/, '');
     
-    const rows = cleanText.split('\n');
+    // Dividir em linhas, mas tratar linhas que não começam com ano como continuação
+    const rawLines = cleanText.split('\n');
+    const rows: string[] = [];
+    let currentRow = '';
+    
+    // Processar linhas para juntar conteúdo que foi quebrado incorretamente
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i];
+      
+      // Linha vazia, pular
+      if (!line.trim()) continue;
+      
+      // Primeira linha (cabeçalho) ou linha que começa com ano (nova questão)
+      if (i === 0 || /^\d{4}(#|\*)/.test(line.trim())) {
+        // Se já temos uma linha em construção, adicionamos ao array
+        if (currentRow) {
+          rows.push(currentRow);
+        }
+        // Começar nova linha
+        currentRow = line;
+      } else {
+        // Continuação da linha anterior (explicação, etc)
+        // Adicionar com quebra de linha mantendo o conteúdo original
+        currentRow += '\n' + line;
+      }
+    }
+    
+    // Adicionar a última linha se existir
+    if (currentRow) {
+      rows.push(currentRow);
+    }
+    
     // Verificar se há pelo menos duas linhas (cabeçalho + dados)
     if (rows.length < 2) {
       throw new Error('Arquivo CSV vazio ou sem dados');
@@ -222,6 +253,7 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
         // Verificar se o número de valores corresponde ao número de cabeçalhos
         if (values.length !== headers.length) {
           console.warn(`Linha ${i} ignorada: número de colunas (${values.length}) difere do número de cabeçalhos (${headers.length})`);
+          console.warn(`Conteúdo da linha problemática: ${rows[i].substring(0, 200)}...`);
           skippedRows++;
           continue;
         }
