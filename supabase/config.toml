@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.generate-blog-from-pdf]
 verify_jwt = false
+
+[functions.rewrite-and-post-news]
+verify_jwt = false
