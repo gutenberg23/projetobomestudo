@@ -7,6 +7,51 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Função para delay
+function delay(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Função para chamar a API do Gemini com retry
+async function callGeminiAPI(apiKey: string, requestBody: any, model = "gemini-2.5-pro:generateContent", maxRetries = 3) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}?key=${apiKey}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        return response;
+      }
+
+      // Se for 429 (rate limit), esperar e tentar novamente
+      if (response.status === 429 && attempt < maxRetries) {
+        const waitTime = Math.pow(2, attempt) * 1000; // Backoff exponencial
+        console.log(`Rate limit atingido. Tentando novamente em ${waitTime}ms...`);
+        await delay(waitTime);
+        continue;
+      }
+
+      // Para outros erros, retornar imediatamente
+      return response;
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      const waitTime = Math.pow(2, attempt) * 1000;
+      console.log(`Erro na tentativa ${attempt + 1}. Tentando novamente em ${waitTime}ms...`, error);
+      await delay(waitTime);
+    }
+  }
+  
+  throw new Error("Número máximo de tentativas excedido");
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -74,37 +119,31 @@ INSTRUÇÕES CRÍTICAS:
 6. É um concurso novo ou processo seletivo. Organize as informações de forma estruturada e clara.
 7. Crie um conteúdo HTML bem formatado com parágrafos, títulos e listas quando apropriado`;
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GOOGLE_GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { text: prompt },
-              {
-                inlineData: {
-                  data: pdfBase64,
-                  mimeType: mimeType || 'application/pdf'
-                }
+    const response = await callGeminiAPI(GOOGLE_GEMINI_API_KEY, {
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                data: pdfBase64,
+                mimeType: mimeType || 'application/pdf'
               }
-            ]
-          }
-        ],
-        generationConfig: {
-          temperature: 0,
-          maxOutputTokens: 16000,
-          responseMimeType: 'application/json',
-          responseSchema: blogPostSchema,
-        },
-        systemInstruction: {
-          parts: [{ text: systemInstruction }]
+            }
+          ]
         }
-      }),
-    });
+      ],
+      generationConfig: {
+        temperature: 0,
+        maxOutputTokens: 16000,
+        responseMimeType: 'application/json',
+        responseSchema: blogPostSchema,
+      },
+      systemInstruction: {
+        parts: [{ text: systemInstruction }]
+      }
+    }, "gemini-2.0-flash-exp");
 
     if (!response.ok) {
       if (response.status === 429) {
