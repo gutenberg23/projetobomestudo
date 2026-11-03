@@ -10,6 +10,7 @@ import { Disciplina } from "./components/disciplinas/DisciplinasTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
+import { calcularComposicaoCurso } from "./components/cursos/composicaoCurso";
 
 const Disciplinas = () => {
   // Estados para filtros
@@ -361,56 +362,8 @@ const Disciplinas = () => {
     }
     
     try {
-      // Buscar aulas, tópicos e questões relacionadas às disciplinas
-      let todasAulasIds: string[] = [];
-      let todosTopicosIds: string[] = [];
-      let todasQuestoesIds: string[] = [];
-      
-      for (const disciplinaId of disciplinasSelecionadas) {
-        const disciplina = disciplinas.find(d => d.id === disciplinaId);
-        
-        if (disciplina && disciplina.aulasIds?.length) {
-          // Adicionar aulas desta disciplina
-          todasAulasIds = [...todasAulasIds, ...disciplina.aulasIds];
-          
-          // Buscar tópicos e questões para cada aula
-          for (const aulaId of disciplina.aulasIds) {
-            const { data: aula } = await supabase
-              .from('aulas')
-              .select('topicos_ids, questoes_ids')
-              .eq('id', aulaId)
-              .single();
-            
-            if (aula) {
-              if (aula.topicos_ids) {
-                todosTopicosIds = [...todosTopicosIds, ...aula.topicos_ids];
-                
-                // Buscar questões de cada tópico
-                for (const topicoId of aula.topicos_ids) {
-                  const { data: topico } = await supabase
-                    .from('topicos')
-                    .select('questoes_ids')
-                    .eq('id', topicoId)
-                    .single();
-                  
-                  if (topico && topico.questoes_ids) {
-                    todasQuestoesIds = [...todasQuestoesIds, ...topico.questoes_ids];
-                  }
-                }
-              }
-              
-              if (aula.questoes_ids) {
-                todasQuestoesIds = [...todasQuestoesIds, ...aula.questoes_ids];
-              }
-            }
-          }
-        }
-      }
-      
-      // Remover duplicatas
-      todasAulasIds = Array.from(new Set(todasAulasIds));
-      todosTopicosIds = Array.from(new Set(todosTopicosIds));
-      todasQuestoesIds = Array.from(new Set(todasQuestoesIds));
+      // Aulas, tópicos e questões das disciplinas escolhidas (consulta em lote)
+      const composicao = await calcularComposicaoCurso(disciplinasSelecionadas);
       
       // Criar o curso
       const { data, error } = await supabase
@@ -420,17 +373,17 @@ const Disciplinas = () => {
             titulo: tituloNovaDisciplina,
             descricao: descricaoNovaDisciplina,
             informacoes_curso: informacoesCurso,
-            disciplinas_ids: disciplinasSelecionadas,
-            aulas_ids: todasAulasIds,
-            topicos_ids: todosTopicosIds,
-            questoes_ids: todasQuestoesIds
+            ...composicao
           }
         ])
         .select();
       
       if (error) throw error;
       
-      toast.success("Curso adicionado com sucesso!");
+      toast.success(
+        `Curso criado com ${composicao.disciplinas_ids.length} disciplinas, ${composicao.aulas_ids.length} aulas, ` +
+        `${composicao.topicos_ids.length} tópicos e ${composicao.questoes_ids.length} questões.`
+      );
       
       // Resetar campos após adicionar
       setTituloNovaDisciplina("");
@@ -485,6 +438,8 @@ const Disciplinas = () => {
         handleAdicionarDisciplina={handleAdicionarCurso}
         todasSelecionadas={todasSelecionadas}
         disciplinas={disciplinas}
+        onRemoverSelecionada={handleSelecaoDisciplina}
+        onLimparSelecao={() => setDisciplinas(lista => lista.map(d => ({ ...d, selecionada: false })))}
       />
       
       {/* Modais de edição e exclusão */}

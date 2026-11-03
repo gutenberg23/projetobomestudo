@@ -22,7 +22,15 @@ import {
   mensagemErro,
   obterConfig,
   rotaPublicada,
+  STATUS_LABEL,
 } from "@/services/contribuicoes";
+import {
+  CorrecaoTeoria,
+  TeoriaResumo,
+  buscarTeorias,
+  excluirCorrecao,
+  listarMinhasCorrecoes,
+} from "@/services/correcoesTeoria";
 
 type ModoForm = { modo: "novo"; base?: Partial<Submissao> } | { modo: "editar"; submissao: Submissao } | null;
 
@@ -33,6 +41,8 @@ const Contribuir = () => {
   const [carregando, setCarregando] = useState(true);
   const [form, setForm] = useState<ModoForm>(null);
   const [enviando, setEnviando] = useState(false);
+  const [correcoes, setCorrecoes] = useState<CorrecaoTeoria[]>([]);
+  const [teoriasCorrecoes, setTeoriasCorrecoes] = useState<Record<string, TeoriaResumo>>({});
 
   const carregar = useCallback(async () => {
     if (!user) return;
@@ -41,6 +51,14 @@ const Contribuir = () => {
       const [lista, cfg] = await Promise.all([listarMinhasSubmissoes(user.id), obterConfig()]);
       setSubmissoes(lista);
       setConfig(cfg);
+      // Correções de teorias (a tabela pode ainda não existir se a migration não foi aplicada)
+      try {
+        const minhas = await listarMinhasCorrecoes(user.id);
+        setCorrecoes(minhas);
+        setTeoriasCorrecoes(await buscarTeorias(Array.from(new Set(minhas.map((c) => c.teoria_id)))));
+      } catch (erroCorrecoes) {
+        console.error("Erro ao carregar correções:", erroCorrecoes);
+      }
     } catch (e) {
       toast.error("Erro ao carregar suas contribuições: " + mensagemErro(e));
     } finally {
@@ -82,6 +100,16 @@ const Contribuir = () => {
     }
   };
 
+  const excluirMinhaCorrecao = async (c: CorrecaoTeoria) => {
+    if (!window.confirm("Excluir esta sugestão de correção?")) return;
+    try {
+      await excluirCorrecao(c.id);
+      carregar();
+    } catch (e) {
+      toast.error(mensagemErro(e));
+    }
+  };
+
   const pendentes = submissoes.filter((s) => s.status === "pendente").length;
   const habilitado = config?.habilitado ?? false;
 
@@ -93,7 +121,8 @@ const Contribuir = () => {
           <div>
             <h1 className="text-2xl font-bold text-[#272f3c]">Contribuir com conteúdo</h1>
             <p className="text-sm text-gray-600">
-              Envie tópicos, aulas, disciplinas ou cursos. Tudo passa pela análise da administração antes de ser publicado.
+              Envie tópicos, aulas, disciplinas ou cursos. Para corrigir um trecho de uma teoria, selecione o texto na
+              própria aula e clique em "Sugerir correção". Tudo passa pela análise da administração antes de ser publicado.
             </p>
           </div>
           <Button
@@ -173,6 +202,36 @@ const Contribuir = () => {
               );
             })}
           </div>
+        )}
+
+        {correcoes.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xl font-semibold text-[#272f3c]">Minhas correções de teorias</h2>
+            {correcoes.map((c) => (
+              <Card key={c.id}>
+                <CardContent className="pt-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <Link to={`/teoria/${c.teoria_id}`} className="font-medium text-[#5f2ebe] hover:underline">
+                        {teoriasCorrecoes[c.teoria_id]?.titulo || "Teoria"}
+                      </Link>
+                      <p className="text-xs text-gray-500">{STATUS_LABEL[c.status]}</p>
+                    </div>
+                    {c.status === "pendente" && (
+                      <Button size="sm" variant="ghost" onClick={() => excluirMinhaCorrecao(c)}>
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-500 line-through whitespace-pre-wrap">{c.trecho_original}</p>
+                  <p className="text-sm text-gray-800 whitespace-pre-wrap">{c.trecho_corrigido}</p>
+                  {c.status === "rejeitado" && c.motivo_rejeicao && (
+                    <p className="text-sm text-red-700">Motivo: {c.motivo_rejeicao}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </section>
         )}
       </main>
       <Footer />

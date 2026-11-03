@@ -58,7 +58,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
             <TableHead className="w-[120px]">Disciplina</TableHead>
             <TableHead className="w-[120px]">Professor</TableHead>
             <TableHead className="w-[90px]">Vídeo</TableHead>
-            <TableHead className="w-[90px]">PDF</TableHead>
+            <TableHead className="w-[90px]" title="Teoria ou PDF">Aula texto</TableHead>
             <TableHead className="w-[90px]">Mapa</TableHead>
             <TableHead className="w-[90px]">Resumo</TableHead>
             <TableHead className="w-[90px]">Música</TableHead>
@@ -100,7 +100,7 @@ export const TopicosTable: React.FC<TopicosTableProps> = ({
                   <StatusIcon filled={!!topico.videoUrl} />
                 </TableCell>
                 <TableCell className="text-center">
-                  <StatusIcon filled={!!topico.pdfUrl} />
+                  <StatusIcon filled={!!topico.teoriaId || !!topico.pdfUrl} />
                 </TableCell>
                 <TableCell className="text-center">
                   <StatusIcon filled={!!topico.mapaUrl} />

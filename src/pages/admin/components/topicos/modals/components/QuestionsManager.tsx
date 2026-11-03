@@ -29,6 +29,12 @@ export const QuestionsManager: React.FC<QuestionsManagerProps> = ({
         <Input
           value={newQuestaoId}
           onChange={(e) => setNewQuestaoId(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addQuestaoId();
+            }
+          }}
           placeholder="Digite o ID da questão"
           className="flex-1"
         />

@@ -265,6 +265,11 @@ export const useAulasActions = () => {
     setIsOpenDelete,
     currentAula,
     setCurrentAula,
-    temAulasSelecionadas: aulas.some(aula => aula.selecionada)
+    temAulasSelecionadas: aulas.some(aula => aula.selecionada),
+    // Seleção completa (todas as páginas), para a barra de criação
+    aulasSelecionadas: aulas.filter(aula => aula.selecionada).map(aula => ({ id: aula.id, titulo: aula.titulo })),
+    handleRemoverSelecao: (id: string) =>
+      setAulas(lista => lista.map(aula => (aula.id === id ? { ...aula, selecionada: false } : aula))),
+    handleLimparSelecao: () => setAulas(lista => lista.map(aula => ({ ...aula, selecionada: false })))
   };
 };
