@@ -35,7 +35,6 @@ import "./styles/globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Perfil from "./pages/Perfil";
-import DirectLogin from "@/pages/DirectLogin";
 import RegionPosts from "@/pages/RegionPosts";
 import ActivityTracker from "./components/layout/ActivityTracker";
 
@@ -118,7 +117,6 @@ export default function App() {
                       </HomeRedirectGuard>
                     } />
                     <Route path="/login" element={<Login />} />
-                    <Route path="/direct-login" element={<DirectLogin />} />
                     <Route path="/esqueci-senha" element={<EsqueciSenha />} />
                     <Route path="/redefinir-senha" element={<RedefinirSenha />} />
                     <Route path="/perfil" element={<Perfil />} />

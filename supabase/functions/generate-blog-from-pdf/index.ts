@@ -1,9 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { authorize, STAFF_ROLES, BLOG_ROLES } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
 };
 
 async function callGeminiAPI(apiKey: string, requestBody: any, model = "gemini-2.5-pro:generateContent", maxRetries = 3) {
@@ -51,55 +52,17 @@ serve(async (req) => {
   }
 
   try {
-    // Verificar se é uma requisição interna (sem autenticação) ou externa
-    const authHeader = req.headers.get('Authorization');
-    let GOOGLE_GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
-    
-    // Se não tem chave nas variáveis de ambiente, tentar pegar do corpo da requisição
-    // (para uso interno da aplicação)
-    let isInternalRequest = false;
-    if (!GOOGLE_GEMINI_API_KEY && authHeader) {
-      try {
-        const authData = JSON.parse(atob(authHeader.replace('Bearer ', '')));
-        if (authData.apiKey) {
-          GOOGLE_GEMINI_API_KEY = authData.apiKey;
-          isInternalRequest = true;
-        }
-      } catch (e) {
-        // Não é uma requisição interna válida
-      }
-    }
-    
-    // Se ainda não tem chave, tentar do corpo da requisição
-    if (!GOOGLE_GEMINI_API_KEY) {
-      let requestData;
-      try {
-        requestData = await req.json();
-      } catch (e) {
-        return new Response(
-          JSON.stringify({ error: 'JSON inválido no corpo da requisição' }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      if (requestData.geminiApiKey) {
-        GOOGLE_GEMINI_API_KEY = requestData.geminiApiKey;
-        isInternalRequest = true;
-      }
-    }
-    
-    if (!GOOGLE_GEMINI_API_KEY) {
-      throw new Error("GOOGLE_GEMINI_API_KEY não está configurada");
+    const auth = await authorize(req, [...BLOG_ROLES, ...STAFF_ROLES]);
+    if (!auth.ok) {
+      return new Response(
+        JSON.stringify({ error: auth.error }),
+        { status: auth.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Se for requisição externa, verificar autenticação
-    if (!isInternalRequest) {
-      if (!authHeader) {
-        return new Response(
-          JSON.stringify({ error: 'Não autenticado' }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+    const GOOGLE_GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
+    if (!GOOGLE_GEMINI_API_KEY) {
+      throw new Error("GOOGLE_GEMINI_API_KEY não está configurada");
     }
 
     let requestData;

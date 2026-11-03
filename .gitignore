@@ -30,3 +30,7 @@ dist-ssr
 .env.test.local
 .env.production.local
 .env.production
+# Configurações locais de ferramentas (podem conter tokens)
+.cursor/mcp.json
+mcp-log.txt
+uploads/

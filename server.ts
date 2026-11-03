@@ -25,21 +25,36 @@ app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
 
 // Configuração do multer para upload de arquivos
+// Diretório raiz dos uploads. Todos os caminhos recebidos do cliente são
+// resolvidos dentro dele; qualquer tentativa de sair (ex.: "../../etc") é recusada.
+const UPLOADS_ROOT = path.resolve('uploads');
+const safeUploadPath = (...parts: unknown[]) => {
+  const target = path.resolve(UPLOADS_ROOT, ...parts.map((p) => String(p ?? '')));
+  if (target !== UPLOADS_ROOT && !target.startsWith(UPLOADS_ROOT + path.sep)) {
+    throw new Error('Caminho inválido');
+  }
+  return target;
+};
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const { rootFolder, path: uploadPath } = req.body;
-    const fullPath = path.join('uploads', rootFolder, uploadPath || '');
+    try {
+      const { rootFolder, path: uploadPath } = req.body;
+      const fullPath = safeUploadPath(rootFolder, uploadPath || '');
     
-    // Criar diretório se não existir
-    if (!fs.existsSync(fullPath)) {
-      fs.mkdirSync(fullPath, { recursive: true });
+      // Criar diretório se não existir
+      if (!fs.existsSync(fullPath)) {
+        fs.mkdirSync(fullPath, { recursive: true });
+      }
+    
+      cb(null, fullPath);
+    } catch (err) {
+      cb(err, '');
     }
-    
-    cb(null, fullPath);
   },
   filename: (req, file, cb) => {
     // Manter o nome original do arquivo
-    cb(null, file.originalname);
+    cb(null, path.basename(file.originalname));
   }
 });
 
@@ -309,7 +324,7 @@ app.post('/api/update-robots-txt', async (req, res) => {
 app.get('/api/files', (req, res) => {
   try {
     const { path: requestPath, rootFolder } = req.query;
-    const fullPath = path.join('uploads', rootFolder as string, requestPath as string || '');
+    const fullPath = safeUploadPath(rootFolder as string, (requestPath as string) || '');
     
     // Criar diretório se não existir
     if (!fs.existsSync(fullPath)) {
@@ -368,7 +383,7 @@ app.post('/api/files/upload', upload.single('file'), (req, res) => {
 app.post('/api/files/folder', (req, res) => {
   try {
     const { name, path: requestPath, rootFolder } = req.body;
-    const fullPath = path.join('uploads', rootFolder, requestPath || '', name);
+    const fullPath = safeUploadPath(rootFolder, requestPath || '', name);
     
     if (fs.existsSync(fullPath)) {
       return res.status(400).json({ error: 'Pasta já existe' });
@@ -386,7 +401,10 @@ app.post('/api/files/folder', (req, res) => {
 app.delete('/api/files/file', (req, res) => {
   try {
     const { path: filePath, rootFolder } = req.body;
-    const fullPath = path.join('uploads', rootFolder, filePath);
+    const fullPath = safeUploadPath(rootFolder, filePath);
+    if (fullPath === UPLOADS_ROOT || fullPath === safeUploadPath(rootFolder)) {
+      return res.status(400).json({ error: 'Caminho inválido' });
+    }
     
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: 'Arquivo não encontrado' });
@@ -404,7 +422,10 @@ app.delete('/api/files/file', (req, res) => {
 app.delete('/api/files/folder', (req, res) => {
   try {
     const { path: folderPath, rootFolder } = req.body;
-    const fullPath = path.join('uploads', rootFolder, folderPath);
+    const fullPath = safeUploadPath(rootFolder, folderPath);
+    if (fullPath === UPLOADS_ROOT || fullPath === safeUploadPath(rootFolder)) {
+      return res.status(400).json({ error: 'Caminho inválido' });
+    }
     
     if (!fs.existsSync(fullPath)) {
       return res.status(404).json({ error: 'Pasta não encontrada' });
@@ -419,6 +440,8 @@ app.delete('/api/files/folder', (req, res) => {
   }
 });
 
-app.listen(port, () => {
+// Escuta apenas em localhost por padrão: o servidor não tem autenticação.
+const host = process.env.HOST || '127.0.0.1';
+app.listen(port, host, () => {
   console.log(`Servidor API rodando em http://localhost:${port}`);
 });
