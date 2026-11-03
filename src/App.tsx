@@ -69,6 +69,8 @@ import Anuncios from "./pages/admin/Anuncios";
 import Popups from "./pages/admin/popups/Popups";
 import TeoriasAdmin from "./pages/admin/Teorias";
 import TeoriaEditor from "./pages/admin/TeoriaEditor";
+import Moderacao from "./pages/admin/Moderacao";
+import Contribuir from "./pages/Contribuir";
 
 // Componente para aplicar as configurações de estilo
 const SiteConfigProvider = ({ children }: { children: React.ReactNode }) => {
@@ -133,6 +135,12 @@ export default function App() {
                       <ConfigGuard configKey="showMyCoursesPage">
                         <MyCourses />
                       </ConfigGuard>
+                    } />
+                    
+                    <Route path="/contribuir" element={
+                      <AuthGuard>
+                        <Contribuir />
+                      </AuthGuard>
                     } />
                     
                     <Route path="/dashboard" element={
@@ -244,6 +252,7 @@ export default function App() {
                             <Route path="aulas" element={<Aulas />} />
                             <Route path="disciplinas" element={<Disciplinas />} />
                             <Route path="cursos" element={<Cursos />} />
+                            <Route path="moderacao" element={<Moderacao />} />
                             <Route path="concursos" element={<ConcursosAdmin />} />
                             <Route path="professores" element={<Professores />} />
                             <Route path="leis-secas" element={<LeisSecasAdmin />} />
