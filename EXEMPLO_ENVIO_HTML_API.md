@@ -11,7 +11,7 @@ POST /functions/v1/rewrite-and-post-news
 ## Cabeçalhos Necessários
 
 ```
-Authorization: Bearer SEU_TOKEN_DE_ACESSO
+x-api-key: SEU_INTERNAL_API_TOKEN
 Content-Type: application/json
 ```
 
@@ -28,7 +28,7 @@ Content-Type: application/json
 
 ```bash
 curl -X POST "https://seu-projeto.supabase.co/functions/v1/rewrite-and-post-news" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "x-api-key: SEU_INTERNAL_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "htmlContent": "<html><body><h1>Novo Concurso Público</h1><p>Abertas inscrições para concurso público...</p></body></html>",
@@ -44,7 +44,7 @@ async function enviarHTML(htmlContent) {
   const response = await fetch('https://seu-projeto.supabase.co/functions/v1/rewrite-and-post-news', {
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer SEU_TOKEN_DE_ACESSO',
+      'x-api-key': 'SEU_INTERNAL_API_TOKEN',
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({

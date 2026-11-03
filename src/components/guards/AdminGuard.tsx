@@ -80,11 +80,11 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
     return <Navigate to="/admin/login" replace />;
   }
   
-  // Se é uma atualização de página, não redirecionar - permitir que permaneça na mesma página
-  if (isPageReload) {
-    console.log("AdminGuard: Atualização de página detectada, evitando redirecionamento");
-    console.log("AdminGuard: Usuário atual:", user?.role, "Caminho atual:", location.pathname);
-    return <>{children}</>;
+  // Sem permissão: bloquear SEMPRE, inclusive em recarga de página
+  // (antes, um F5 ou navegação interna liberava a área admin para qualquer usuário logado)
+  if (hasPermission !== true) {
+    console.log("AdminGuard: Sem permissão para área administrativa, redirecionando para home");
+    return <Navigate to="/" replace />;
   }
   
   // Verificar se o usuário só pode acessar posts (jornalista)
@@ -99,11 +99,11 @@ export const AdminGuard = ({ children }: AdminGuardProps) => {
     }
   }
   
-  // Se não tem acesso à área administrativa, redirecionar para home
-  if (hasPermission === false) {
-    console.log("AdminGuard: Sem permissão para área administrativa, redirecionando para home");
-    console.log("AdminGuard: Dados do usuário:", user);
-    return <Navigate to="/" replace />;
+  // Se é uma atualização de página, não redirecionar - permitir que permaneça na mesma página
+  if (isPageReload) {
+    console.log("AdminGuard: Atualização de página detectada, evitando redirecionamento");
+    console.log("AdminGuard: Usuário atual:", user?.role, "Caminho atual:", location.pathname);
+    return <>{children}</>;
   }
   
   console.log("AdminGuard: Permissão concedida, renderizando children");

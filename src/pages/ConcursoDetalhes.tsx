@@ -19,6 +19,7 @@ import { BookOpenIcon } from '@heroicons/react/24/outline';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import { DocumentTextIcon } from '@heroicons/react/24/outline';
+import { sanitizeHtml } from "@/utils/sanitize-html";
 
 const ConcursoDetalhes = () => {
   const { id } = useParams<{ id: string }>();
@@ -239,7 +240,7 @@ const ConcursoDetalhes = () => {
                       <h2 className="text-lg font-semibold text-gray-900 mb-4">Informações Adicionais</h2>
                       <div className="prose max-w-none text-gray-600">
                         {concurso.descricao ? (
-                          <div dangerouslySetInnerHTML={{ __html: concurso.descricao }} />
+                          <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(concurso.descricao) }} />
                         ) : (
                           <p>Nenhuma informação adicional disponível para este concurso.</p>
                         )}

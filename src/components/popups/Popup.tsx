@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Popup as PopupType } from "@/types/popup";
+import { sanitizeHtml } from "@/utils/sanitize-html";
 
 interface PopupProps {
   popup: PopupType;
@@ -54,7 +55,7 @@ const Popup = ({ popup, onClose, onDismiss }: PopupProps) => {
           {popup.conteudo && (
             <div 
               className="prose prose-sm max-w-none mb-4"
-              dangerouslySetInnerHTML={{ __html: popup.conteudo }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(popup.conteudo) }}
             />
           )}
           

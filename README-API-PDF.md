@@ -66,3 +66,11 @@ A API foi projetada especificamente para integração com N8N. Configure um flux
 - O tamanho máximo do PDF depende dos limites da função Supabase (atualmente 50MB)
 - O tempo de processamento pode variar conforme a complexidade do PDF
 - A qualidade do post gerado depende da clareza e organização do conteúdo no PDF
+## Autenticação (obrigatória)
+
+A função valida quem está chamando (o header `Authorization` sozinho não basta mais). Formas aceitas:
+
+1. **Servidor/N8N**: configure o secret `INTERNAL_API_TOKEN` no Supabase (`supabase secrets set INTERNAL_API_TOKEN=<valor-aleatório-longo>`) e envie o header `x-api-key: <INTERNAL_API_TOKEN>`.
+2. **Usuário logado** com papel `admin` ou `jornalista`: envie `Authorization: Bearer <access_token da sessão>`.
+
+A anon key **não** autoriza a chamada, porque ela é pública (está no front-end).
