@@ -1,5 +1,7 @@
 # Funcionalidade de Rastreamento de Posts RSS Transmitidos
 
+> **Atualização (11/2026):** a sincronização agora roda no servidor (Edge Function `rss-auto-sync`), com agendamento automático e IA gratuita com reserva. Veja [docs/rss-reescrita-automatica.md](docs/rss-reescrita-automatica.md). Partes deste documento sobre `rssService.ts` estão desatualizadas.
+
 ## Descrição
 
 Esta funcionalidade permite rastrear quais posts de feeds RSS já foram transmitidos para o blog, evitando a duplicação de conteúdo e permitindo ao administrador identificar facilmente quais posts já foram utilizados.
