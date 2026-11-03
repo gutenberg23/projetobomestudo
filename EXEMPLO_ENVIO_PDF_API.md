@@ -11,7 +11,7 @@ POST /functions/v1/create-blog-post-from-pdf
 ## Cabeçalhos Necessários
 
 ```
-Authorization: Bearer SEU_TOKEN_DE_ACESSO
+x-api-key: SEU_INTERNAL_API_TOKEN
 Content-Type: application/json
 ```
 
@@ -29,7 +29,7 @@ Content-Type: application/json
 
 ```bash
 curl -X POST "https://seu-projeto.supabase.co/functions/v1/create-blog-post-from-pdf" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "x-api-key: SEU_INTERNAL_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "pdfBase64": "JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwog...",
@@ -62,7 +62,7 @@ async function enviarPDF(pdfFile) {
   const response = await fetch('https://seu-projeto.supabase.co/functions/v1/create-blog-post-from-pdf', {
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer SEU_TOKEN_DE_ACESSO',
+      'x-api-key': 'SEU_INTERNAL_API_TOKEN',
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({

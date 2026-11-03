@@ -1,9 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { authorize, STAFF_ROLES, BLOG_ROLES } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
 };
 
 serve(async (req) => {
@@ -12,6 +13,14 @@ serve(async (req) => {
   }
 
   try {
+    const auth = await authorize(req, [...STAFF_ROLES, "jornalista"]);
+    if (!auth.ok) {
+      return new Response(
+        JSON.stringify({ error: auth.error }),
+        { status: auth.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { pdfBase64 } = await req.json();
 
     if (!pdfBase64) {

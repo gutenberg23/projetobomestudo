@@ -6,7 +6,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/lib/supabase";
 
 const Login = () => {
   const [activeTab, setActiveTab] = useState<string>("login");
@@ -19,52 +18,9 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [showSessionClearButton, setShowSessionClearButton] = useState(false);
-  const [showAdminMode, setShowAdminMode] = useState(false);
   
   const { signIn, signUp, signInWithGoogle, user, loading, clearAuthSession } = useAuth();
   const navigate = useNavigate();
-  
-  const toggleAdminMode = () => {
-    setShowAdminMode(!showAdminMode);
-  };
-  
-  const createTestUser = async () => {
-    try {
-      setIsSubmitting(true);
-      
-      await supabase.rpc('admin_create_test_user', {
-        test_email: 'teste@bomestudo.com.br',
-        test_password: 'Teste@123',
-        test_name: 'Usuário Teste'
-      }).then(({ error }) => {
-        if (error) {
-          console.error("Erro ao criar usuário de teste:", error);
-          setError("Erro ao criar usuário de teste: " + error.message);
-        } else {
-          setEmail('teste@bomestudo.com.br');
-          setPassword('Teste@123');
-          setError("");
-          setActiveTab("login");
-          alert("Usuário de teste criado com sucesso. Tente fazer login agora.");
-        }
-      });
-    } catch (e: any) {
-      setError("Erro: " + (e.message || "Erro desconhecido"));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.altKey && e.key === 'A') {
-        toggleAdminMode();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showAdminMode]);
   
   useEffect(() => {
     if (user && !loading) {
@@ -210,23 +166,6 @@ const Login = () => {
                     </Button>
                   </div>
                 )}
-              </div>
-            )}
-
-            {showAdminMode && (
-              <div className="mb-4 p-3 border-2 border-dashed border-yellow-400 bg-yellow-50 rounded">
-                <h3 className="font-bold text-yellow-800 mb-2">Modo Administrador</h3>
-                <Button 
-                  variant="outline" 
-                  className="w-full mb-2" 
-                  onClick={createTestUser}
-                  disabled={isSubmitting}
-                >
-                  Criar Usuário de Teste
-                </Button>
-                <div className="text-xs text-yellow-700">
-                  Use esta opção apenas para depuração. Os usuários criados têm email teste@bomestudo.com.br e senha Teste@123.
-                </div>
               </div>
             )}
 
@@ -447,10 +386,6 @@ const Login = () => {
           </div>
         </div>
 
-        <div 
-          className="mt-8 w-4 h-4 opacity-0 hover:opacity-5 cursor-default"
-          onClick={toggleAdminMode}
-        ></div>
       </div>
     </div>
   );

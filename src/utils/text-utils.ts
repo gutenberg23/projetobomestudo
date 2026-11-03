@@ -1,3 +1,4 @@
+import { sanitizeHtml } from "./sanitize-html";
 /**
  * Utilitários para manipulação de texto
  */
@@ -99,14 +100,13 @@ export const prepareHtmlContent = (html: string): string => {
   
   try {
     // Normalizar o texto para garantir consistência de caracteres especiais
-    let normalized = normalizeSpecialChars(html);
+    const normalized = normalizeSpecialChars(html);
     
-    // Aqui poderíamos adicionar outras transformações se necessário
-    
-    return normalized;
+    // Remover qualquer vetor de XSS (scripts, handlers on*, javascript:, etc.)
+    return sanitizeHtml(normalized);
   } catch (e) {
     console.error('Erro ao preparar conteúdo HTML:', e);
-    return html;
+    return sanitizeHtml(html);
   }
 };
 

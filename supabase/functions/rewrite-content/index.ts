@@ -1,9 +1,10 @@
 // @ts-ignore
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { authorize, STAFF_ROLES, BLOG_ROLES } from "../_shared/auth.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-api-key',
 };
 
 serve(async (req) => {
@@ -12,6 +13,14 @@ serve(async (req) => {
   }
 
   try {
+    const auth = await authorize(req, [...STAFF_ROLES, "jornalista"]);
+    if (!auth.ok) {
+      return new Response(
+        JSON.stringify({ error: auth.error }),
+        { status: auth.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { originalContent, originalTitle } = await req.json();
     // @ts-ignore
     const GOOGLE_GEMINI_API_KEY = Deno.env.get("GOOGLE_GEMINI_API_KEY");
