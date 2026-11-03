@@ -22,6 +22,7 @@ import {
   Book,
   Award,
   Scale,
+  ClipboardCheck,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 
@@ -189,6 +190,12 @@ const AdminLayout = () => {
           path: "/admin/cursos", 
           label: "Cursos", 
           icon: <Folders className="w-5 h-5" />,
+          showForJornalista: false
+        },
+        { 
+          path: "/admin/moderacao", 
+          label: "Moderação de envios", 
+          icon: <ClipboardCheck className="w-5 h-5" />,
           showForJornalista: false
         },
       ]

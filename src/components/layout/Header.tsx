@@ -1,4 +1,4 @@
-import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book, BarChart, Search, Award, X } from "lucide-react";
+import { Menu, FileText, BookOpen, Settings, LogOut, Newspaper, Trophy, Shield, Book, BarChart, Search, Award, X, PlusCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -168,6 +168,12 @@ export const Header = () => {
                       <BarChart className="w-4 h-4" />
                       Dashboard
                     </Link>
+                    {user && (
+                      <Link to="/contribuir" className={getMobileLinkClasses("/contribuir")}>
+                        <PlusCircle className="w-4 h-4" />
+                        Contribuir com conteúdo
+                      </Link>
+                    )}
                     {/* Rankings movidos para a sidebar */}
                     {config.pages.showQuestionsPage && (
                       <Link to="/ranking-comentarios" className={getMobileLinkClasses("/ranking-comentarios")}>
