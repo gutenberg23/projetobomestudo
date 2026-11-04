@@ -8,9 +8,11 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface ImportQuestionsCardProps {
   onQuestionsImported: () => void;
+  /** Mostra só o conteúdo, sem o cartão recolhível (usado dentro de um modal). */
+  semCartao?: boolean;
 }
 
-const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsImported }) => {
+const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsImported, semCartao = false }) => {
   const [isUploading, setIsUploading] = useState(false);
   const { user } = useAuth();
 
@@ -447,8 +449,7 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
     }
   };
 
-  return (
-    <Card title="Importar Questões" description="Importe questões a partir de um arquivo CSV" defaultOpen={false}>
+  const conteudo = (
       <div className="space-y-4">
         <div className="flex items-center justify-center w-full">
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 border-gray-300">
@@ -491,6 +492,12 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
           <p className="text-xs text-gray-400">Obs: O campo 'role' pode conter múltiplos valores separados por ponto e vírgula (;)</p>
         </div>
       </div>
+  );
+
+  if (semCartao) return conteudo;
+  return (
+    <Card title="Importar Questões" description="Importe questões a partir de um arquivo CSV" defaultOpen={false}>
+      {conteudo}
     </Card>
   );
 };

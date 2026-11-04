@@ -74,6 +74,16 @@ interface TiptapEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
+  /**
+   * "post" (padrão): barra completa do blog.
+   * "questao": barra enxuta para enunciados e comentários de questões
+   * (sem fonte/tamanho e sem inserir questão), área de texto menor.
+   */
+  variante?: "post" | "questao";
+  /** Bucket do Storage para as imagens enviadas (padrão: blog-images). */
+  bucket?: string;
+  /** Rótulo acessível da área de texto. */
+  rotulo?: string;
 }
 
 const FONTES = [
@@ -508,7 +518,15 @@ const BarraTabela: React.FC<{ editor: Editor }> = ({ editor }) => {
  * Editor
  * ------------------------------------------------------------------------ */
 
-export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, placeholder }) => {
+export const TiptapEditor: React.FC<TiptapEditorProps> = ({
+  content,
+  onChange,
+  placeholder,
+  variante = "post",
+  bucket = "blog-images",
+  rotulo,
+}) => {
+  const questao = variante === "questao";
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [modoHtml, setModoHtml] = useState(false);
   const [html, setHtml] = useState("");
@@ -548,7 +566,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
     ],
     content: content || "",
     editorProps: {
-      attributes: { class: "post-prose", spellcheck: "true" },
+      attributes: { class: "post-prose", spellcheck: "true", ...(rotulo ? { "aria-label": rotulo } : {}) },
       transformPastedHTML: limparHtmlColado,
     },
     onUpdate: ({ editor }) => {
@@ -584,19 +602,19 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
     try {
       const fileExt = file.name.split(".").pop();
       const filePath = `${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}.${fileExt}`;
-      const { error } = await supabase.storage.from("blog-images").upload(filePath, file);
+      const { error } = await supabase.storage.from(bucket).upload(filePath, file);
       if (error) {
         console.error("Erro ao fazer upload:", error);
-        alert('Erro ao enviar a imagem. Verifique se o bucket "blog-images" existe e tem permissão de upload.');
+        alert(`Erro ao enviar a imagem. Verifique se o bucket "${bucket}" existe e tem permissão de upload.`);
         return null;
       }
-      return supabase.storage.from("blog-images").getPublicUrl(filePath).data.publicUrl;
+      return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
     } catch (error) {
       console.error("Erro ao fazer upload da imagem:", error);
       alert(error instanceof Error ? error.message : "Erro ao enviar a imagem");
       return null;
     }
-  }, []);
+  }, [bucket]);
 
   const alternarHtml = () => {
     if (!editor) return;
@@ -632,7 +650,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
   const palavras = editor.state.doc.textContent.split(/\s+/).filter(Boolean).length;
 
   return (
-    <div className={cn("post-editor", isFullscreen && "post-editor--fullscreen")}>
+    <div className={cn("post-editor", questao && "post-editor--questao", isFullscreen && "post-editor--fullscreen")}>
       <div className="post-editor__toolbar">
         <div className="flex flex-wrap items-center gap-1 px-2 py-1.5">
           <Grupo>
@@ -645,6 +663,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
           </Grupo>
           <Separador />
           <fieldset disabled={modoHtml} className="contents">
+            {!questao && (
             <SeletorNativo titulo="Estilo do parágrafo" value={blocoAtual} onChange={mudarBloco} className="w-[9.5rem]">
               <option value="p">Texto normal</option>
               <option value="h2">Título 2 (seção)</option>
@@ -654,6 +673,9 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
               {(blocoAtual === "h5" || blocoAtual === "h6") && <option value={blocoAtual}>Título {blocoAtual.slice(1)}</option>}
               <option value="code">Código</option>
             </SeletorNativo>
+            )}
+            {!questao && (
+            <>
             <SeletorNativo
               titulo="Fonte"
               value={fonteAtual}
@@ -680,6 +702,8 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
               ))}
               {tamanhoAtual && !TAMANHOS.includes(tamanhoAtual) && <option value={tamanhoAtual}>{tamanhoAtual}</option>}
             </SeletorNativo>
+            </>
+            )}
             <Separador />
             <Grupo>
               <Botao titulo="Negrito (Ctrl+B)" ativo={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()}>
@@ -746,6 +770,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
               <EditarLink editor={editor} />
               <InserirImagem editor={editor} onUpload={handleImageUpload} />
               <InserirTabela onInserir={(rows, cols) => editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run()} />
+              {!questao && (
               <Botao
                 titulo="Inserir questão (pelo ID)"
                 onClick={() => {
@@ -755,6 +780,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
               >
                 <HelpCircle className="h-4 w-4" />
               </Botao>
+              )}
             </Grupo>
             <Separador />
             <Botao titulo="Limpar formatação da seleção" onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}>
@@ -786,7 +812,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
               ultimoHtml.current = e.target.value;
               onChangeRef.current(e.target.value);
             }}
-            aria-label="Código HTML do post"
+            aria-label={questao ? "Código HTML" : "Código HTML do post"}
           />
         ) : (
           <EditorContent editor={editor} />
@@ -794,8 +820,15 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({ content, onChange, p
       </div>
 
       <div className="post-editor__footer">
-        <span>{palavras} {palavras === 1 ? "palavra" : "palavras"} · ~{Math.max(1, Math.ceil(palavras / 200))} min de leitura</span>
-        <span className="hidden sm:inline">Dica: cole textos de outros sites sem medo, as fontes e tamanhos fixos são removidos.</span>
+        <span>
+          {palavras} {palavras === 1 ? "palavra" : "palavras"}
+          {!questao && ` · ~${Math.max(1, Math.ceil(palavras / 200))} min de leitura`}
+        </span>
+        <span className="hidden sm:inline">
+          {questao
+            ? "Dica: cole o texto da prova direto, a formatação estranha é removida."
+            : "Dica: cole textos de outros sites sem medo, as fontes e tamanhos fixos são removidos."}
+        </span>
       </div>
     </div>
   );
