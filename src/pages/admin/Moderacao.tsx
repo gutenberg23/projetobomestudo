@@ -15,6 +15,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { SubmissaoDetalhes } from "@/components/contribuicoes/SubmissaoDetalhes";
 import { SubmissaoForm } from "@/components/contribuicoes/SubmissaoForm";
 import { ModeracaoCorrecoes } from "@/components/contribuicoes/ModeracaoCorrecoes";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ContribuicoesConfig,
@@ -87,8 +88,8 @@ const Moderacao = () => {
 
   if (!admin) {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-2">Moderação de conteúdos</h1>
+      <div>
+        <h1 className="text-2xl font-bold mb-2">Moderação</h1>
         <p className="text-gray-600">Apenas administradores podem aprovar ou rejeitar conteúdos enviados por usuários.</p>
       </div>
     );
@@ -177,13 +178,11 @@ const Moderacao = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Moderação de conteúdos</h1>
-        <p className="text-sm text-gray-600">
-          Conteúdos e correções de teorias enviados por usuários. Nada é publicado sem aprovação.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        titulo="Moderação"
+        descricao="Conteúdos e correções de teorias enviados por usuários. Nada é publicado sem aprovação."
+      />
 
       {config && (
         <Card>

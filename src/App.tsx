@@ -62,6 +62,7 @@ import ConcursosAdmin from "./pages/admin/Concursos";
 import ConcursoDetalhes from "./pages/ConcursoDetalhes";
 import RankingComentarios from "./pages/RankingComentarios";
 import RankingQuestoes from "./pages/RankingQuestoes";
+import RankingContribuicoes from "./pages/RankingContribuicoes";
 import UpdateRankingFunction from "./pages/admin/UpdateRankingFunction";
 import LeisSecasAdmin from "./pages/admin/LeisSecasAdmin";
 import Anuncios from "./pages/admin/Anuncios";
@@ -276,6 +277,7 @@ export default function App() {
                         <RankingQuestoes />
                       </ConfigGuard>
                     } />
+                    <Route path="/ranking-contribuicoes" element={<RankingContribuicoes />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                   <Toaster />

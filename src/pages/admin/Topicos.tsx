@@ -4,9 +4,9 @@ import {
   TopicosTable,
   AdicionarAula,
   EditTopicoModal,
-  DeleteTopicoModal,
-  TopicosHeader
+  DeleteTopicoModal
 } from "./components/topicos";
+import { AdminPageHeader, FluxoConteudo } from "@/components/admin/AdminPageHeader";
 import {
   useTopicosState,
   useTopicosFiltrados,
@@ -193,18 +193,21 @@ const Topicos = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <TopicosHeader />
-        </div>
-        <Button 
-          onClick={abrirCriacao} 
-          className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-white flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Criar Tópico
-        </Button>
-      </div>
+      <AdminPageHeader
+        titulo="Tópicos"
+        descricao="Cada tópico reúne videoaula, teoria e materiais. Marque vários para montar uma aula."
+        acoes={
+          <Button 
+            onClick={abrirCriacao} 
+            className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-white flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Criar tópico
+          </Button>
+        }
+      >
+        <FluxoConteudo atual="topicos" />
+      </AdminPageHeader>
       
       <TopicosFilter 
         searchTerm={searchTerm}

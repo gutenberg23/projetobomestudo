@@ -187,6 +187,10 @@ export const Header = () => {
                         Ranking de Questões
                       </Link>
                     )}
+                    <Link to="/ranking-contribuicoes" className={getMobileLinkClasses("/ranking-contribuicoes")}>
+                      <Award className="w-4 h-4" />
+                      Ranking de Contribuições
+                    </Link>
                     {/* Mostra o link "Cadernos de Questões" apenas no modo mobile */}
                     {config.pages.showQuestionsPage && (
                       <div className="md:hidden">

@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { calcularComposicaoCurso } from "./components/cursos/composicaoCurso";
+import { AdminPageHeader, FluxoConteudo } from "@/components/admin/AdminPageHeader";
 
 const Disciplinas = () => {
   // Estados para filtros
@@ -400,8 +401,12 @@ const Disciplinas = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-[#272f3c]">Disciplinas</h1>
-      <p className="text-[#67748a]">Gerenciamento de disciplinas</p>
+      <AdminPageHeader
+        titulo="Disciplinas"
+        descricao="Disciplinas são conjuntos de aulas. Marque várias para montar um curso."
+      >
+        <FluxoConteudo atual="disciplinas" />
+      </AdminPageHeader>
       
       {/* Componente de filtro */}
       <DisciplinasFilter 
