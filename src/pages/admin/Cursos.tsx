@@ -20,6 +20,8 @@ import { ConfirmarAcao } from "@/components/admin/ui/dialogos";
 import { cn } from "@/lib/utils";
 import { CursosTable, CursoDialog, Curso, DadosCurso, DisciplinaOpcao } from "./components/cursos";
 import { buscarEmLotes, calcularComposicaoCurso } from "./components/cursos/composicaoCurso";
+import type { AulaOpcao } from "./components/cursos/EscolherAulasDisciplina";
+import { lerAulasPorDisciplina } from "@/utils/aulasDoCurso";
 
 type Aba = "todos" | "sem-disciplinas";
 type Ordem = "recentes" | "titulo" | "favoritos";
@@ -31,6 +33,7 @@ const unicos = (lista: (string | null | undefined)[]) =>
 const Cursos = () => {
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [disciplinas, setDisciplinas] = useState<DisciplinaOpcao[]>([]);
+  const [aulas, setAulas] = useState<Map<string, AulaOpcao>>(new Map());
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [aba, setAba] = useState<Aba>("todos");
@@ -45,7 +48,7 @@ const Cursos = () => {
       const [{ data, error }, { data: perfis }, { data: discs }] = await Promise.all([
         supabase.from("cursos").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("cursos_favoritos"),
-        supabase.from("disciplinas").select("id, titulo, banca, aulas_ids").order("titulo"),
+        supabase.from("disciplinas").select("*").order("titulo"),
       ]);
       if (error) throw error;
 
@@ -57,8 +60,19 @@ const Cursos = () => {
       const topicos = idsTopicos.length ? await buscarEmLotes("topicos", "id, questoes_ids", idsTopicos) : [];
       const questoesTopico = new Map(topicos.map((t) => [t.id, (t.questoes_ids || []) as string[]]));
 
+      // Disciplinas unificadas em outra não aparecem para escolha
+      const ativas = (discs || []).filter((d) => !(d as { unificada_em?: string | null }).unificada_em);
+      const idsAulas = unicos(ativas.flatMap((d) => d.aulas_ids || []));
+      const linhasAulas = idsAulas.length ? await buscarEmLotes("aulas", "id, titulo", idsAulas) : [];
+      setAulas(new Map(linhasAulas.map((a) => [a.id, { id: a.id, titulo: (a as { titulo?: string }).titulo || "Aula sem título" }])));
       setDisciplinas(
-        (discs || []).map((d) => ({ id: d.id, titulo: d.titulo, banca: d.banca, aulas: (d.aulas_ids || []).length }))
+        ativas.map((d) => ({
+          id: d.id,
+          titulo: d.titulo,
+          banca: d.banca,
+          aulas: (d.aulas_ids || []).length,
+          aulasIds: d.aulas_ids || [],
+        }))
       );
       setCursos(
         (data || []).map((c) => {
@@ -76,6 +90,8 @@ const Cursos = () => {
             favoritos: favoritos[c.id] || 0,
             informacoesCurso: c.informacoes_curso || "",
             criadoEm: c.created_at,
+            aulasPorDisciplina: lerAulasPorDisciplina((c as { aulas_por_disciplina?: unknown }).aulas_por_disciplina),
+            temColunaSelecao: "aulas_por_disciplina" in c,
           };
         })
       );
@@ -116,13 +132,27 @@ const Cursos = () => {
   const salvar = async (dados: DadosCurso): Promise<boolean> => {
     const curso = dialogo?.curso;
     try {
-      const mudou = !curso || curso.disciplinasIds.join(",") !== dados.disciplinasIds.join(",");
-      const composicao = mudou ? await calcularComposicaoCurso(dados.disciplinasIds) : null;
+      const chave = (m: Record<string, string[]>) => JSON.stringify(Object.keys(m).sort().map((k) => [k, [...m[k]].sort()]));
+      const mudou =
+        !curso ||
+        curso.disciplinasIds.join(",") !== dados.disciplinasIds.join(",") ||
+        chave(curso.aulasPorDisciplina) !== chave(dados.aulasPorDisciplina);
+      const calculada = mudou ? await calcularComposicaoCurso(dados.disciplinasIds, dados.aulasPorDisciplina) : null;
+      let composicao: Omit<NonNullable<typeof calculada>, "aulas_por_disciplina"> | null = null;
+      let selecao: { aulas_por_disciplina?: Record<string, string[]> } = {};
+      if (calculada) {
+        const { aulas_por_disciplina, ...resto } = calculada;
+        composicao = resto;
+        const temSelecao = Object.keys(aulas_por_disciplina).length > 0;
+        // Antes da migration a coluna não existe: só grava quando há o que gravar
+        if (temSelecao || cursos.some((c) => c.temColunaSelecao)) selecao = { aulas_por_disciplina };
+      }
       const campos = {
         titulo: dados.titulo,
         descricao: dados.cargo,
         informacoes_curso: dados.informacoes,
         ...(composicao || {}),
+        ...selecao,
       };
 
       if (curso) {
@@ -171,7 +201,7 @@ const Cursos = () => {
     <div className="space-y-4">
       <AdminPageHeader
         titulo="Cursos"
-        descricao="Cursos reúnem disciplinas. Aulas, tópicos e questões entram automaticamente, na ordem das disciplinas."
+        descricao="Cursos reúnem disciplinas. Em cada disciplina você escolhe quais aulas entram no curso; tópicos e questões vêm junto."
         acoes={
           <>
             <Button variant="outline" onClick={carregar} disabled={loading}>
@@ -256,6 +286,7 @@ const Cursos = () => {
         aberto={!!dialogo}
         curso={dialogo?.curso || null}
         disciplinas={disciplinas}
+        aulas={aulas}
         carregandoDisciplinas={loading}
         onFechar={() => setDialogo(null)}
         onSalvar={salvar}

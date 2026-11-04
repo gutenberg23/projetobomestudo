@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Layers, RefreshCw } from "lucide-react";
+import { Combine, Layers, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminPageHeader, FluxoConteudo } from "@/components/admin/AdminPageHeader";
 import {
@@ -18,13 +18,23 @@ import { ConfirmarAcao } from "@/components/admin/ui/dialogos";
 import { cn } from "@/lib/utils";
 import { DisciplinasTable, AdicionarDisciplina, EditDisciplinaModal, Disciplina } from "./components/disciplinas";
 import { useDisciplinas } from "./components/disciplinas/useDisciplinas";
+import { UnificarDisciplinasDialog } from "./components/disciplinas/UnificarDisciplinasDialog";
 
-type Aba = "todas" | "sem-curso" | "sem-aulas";
+type Aba = "todas" | "repetidas" | "sem-curso" | "sem-aulas";
 const POR_PAGINA = 15;
 
 const Disciplinas = () => {
-  const { disciplinas, aulas, cursosDaDisciplina, loading, recarregar, salvar, reordenarAulas, excluir, criarCurso } =
+  const { disciplinas, aulas, cursosDaDisciplina, loading, recarregar, salvar, reordenarAulas, excluir, criarCurso, unificar } =
     useDisciplinas();
+  const [unificando, setUnificando] = useState<Disciplina[] | null>(null);
+
+  // Quantas disciplinas têm cada nome (ignorando acentos e maiúsculas)
+  const nomeChave = (t: string) => normalizar(t).replace(/\s+/g, " ").trim();
+  const porNome = useMemo(() => {
+    const m = new Map<string, number>();
+    disciplinas.forEach((d) => m.set(nomeChave(d.titulo), (m.get(nomeChave(d.titulo)) || 0) + 1));
+    return m;
+  }, [disciplinas]);
 
   const [busca, setBusca] = useState("");
   const [banca, setBanca] = useState("");
@@ -50,17 +60,28 @@ const Disciplinas = () => {
   }, [disciplinas, busca, banca, aulas]);
 
   const passa = (d: Disciplina, x: Aba) =>
-    x === "sem-curso" ? !(cursosDaDisciplina.get(d.id) || []).length : x === "sem-aulas" ? d.aulasIds.length === 0 : true;
+    x === "sem-curso"
+      ? !(cursosDaDisciplina.get(d.id) || []).length
+      : x === "sem-aulas"
+        ? d.aulasIds.length === 0
+        : x === "repetidas"
+          ? (porNome.get(nomeChave(d.titulo)) || 0) > 1
+          : true;
 
   const contagens = useMemo(
     () => ({
       todas: base.length,
+      repetidas: base.filter((d) => passa(d, "repetidas")).length,
       "sem-curso": base.filter((d) => passa(d, "sem-curso")).length,
       "sem-aulas": base.filter((d) => passa(d, "sem-aulas")).length,
     }),
-    [base, cursosDaDisciplina] // eslint-disable-line react-hooks/exhaustive-deps
+    [base, cursosDaDisciplina, porNome] // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const filtradas = useMemo(() => base.filter((d) => passa(d, aba)), [base, aba, cursosDaDisciplina]); // eslint-disable-line react-hooks/exhaustive-deps
+  const filtradas = useMemo(() => {
+    const lista = base.filter((d) => passa(d, aba));
+    // Na aba de repetidas, as de mesmo nome ficam juntas
+    return aba === "repetidas" ? [...lista].sort((a, b) => nomeChave(a.titulo).localeCompare(nomeChave(b.titulo), "pt-BR")) : lista;
+  }, [base, aba, cursosDaDisciplina, porNome]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => setPagina(1), [busca, banca, aba]);
 
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
@@ -83,7 +104,7 @@ const Disciplinas = () => {
     <div className="space-y-4">
       <AdminPageHeader
         titulo="Disciplinas"
-        descricao="Disciplinas agrupam aulas em sequência. Marque várias para montar um curso. Para criar uma disciplina, marque aulas em Aulas."
+        descricao="Disciplinas agrupam aulas em sequência. Uma disciplina serve para vários cursos: no curso você escolhe quais aulas entram. Marque disciplinas repetidas para unificá-las."
         acoes={
           <Button variant="outline" onClick={recarregar} disabled={loading}>
             <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
@@ -100,6 +121,7 @@ const Disciplinas = () => {
             <AbasContagem<Aba>
               abas={[
                 { id: "todas", label: "Todas", n: contagens.todas },
+                { id: "repetidas", label: "Repetidas", n: contagens.repetidas },
                 { id: "sem-curso", label: "Fora de cursos", n: contagens["sem-curso"] },
                 { id: "sem-aulas", label: "Sem aulas", n: contagens["sem-aulas"] },
               ]}
@@ -170,12 +192,40 @@ const Disciplinas = () => {
         )}
       </PainelListagem>
 
+      {selecionadas.length >= 2 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+          <p className="text-slate-600">
+            São a mesma disciplina com recortes diferentes? Junte numa só e escolha as aulas em cada curso.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setUnificando(selecao.map((id) => porId.get(id)).filter((d): d is Disciplina => !!d))}
+            className="border-[#5f2ebe]/30 text-[#5f2ebe]"
+          >
+            <Combine className="mr-1.5 h-4 w-4" />
+            Unificar {selecionadas.length} disciplinas
+          </Button>
+        </div>
+      )}
+
       <AdicionarDisciplina
         selecionadas={selecionadas}
         onRemover={alternar}
         onLimpar={() => setSelecao([])}
         onCriar={async (titulo, cargo, info) => {
           const ok = await criarCurso(titulo, cargo, info, selecionadas.map((s) => s.id));
+          if (ok) setSelecao([]);
+          return ok;
+        }}
+      />
+
+      <UnificarDisciplinasDialog
+        disciplinas={unificando}
+        cursosDaDisciplina={cursosDaDisciplina}
+        onFechar={() => setUnificando(null)}
+        onUnificar={async (principal, repetidas) => {
+          const ok = await unificar(principal, repetidas);
           if (ok) setSelecao([]);
           return ok;
         }}

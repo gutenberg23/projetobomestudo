@@ -8,6 +8,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import AdBanner from "@/components/ads/AdBanner";
 import { Carregando, EstadoVazio, Painel, Segmentos, normalizar } from "@/components/course/ui";
 import { supabase } from "@/integrations/supabase/client";
+import { aulasDaDisciplinaNoCurso, lerAulasPorDisciplina } from "@/utils/aulasDoCurso";
 import { useAuth } from "@/hooks/useAuth";
 import { generateFriendlyUrl } from "@/utils/slug-utils";
 import { ActivityLogger } from "@/services/activity-logger";
@@ -91,13 +92,16 @@ const Explore = () => {
       setErro(false);
       try {
         const [cursosRes, disciplinasRes] = await Promise.all([
-          supabase.from("cursos").select("id, titulo, descricao, disciplinas_ids, aulas_ids, topicos_ids, created_at"),
-          supabase.from("disciplinas").select("id, titulo, descricao, banca, aulas_ids, created_at"),
+          supabase.from("cursos").select("*"),
+          supabase.from("disciplinas").select("*"),
         ]);
         if (cursosRes.error) throw cursosRes.error;
         if (disciplinasRes.error) throw disciplinasRes.error;
         const cursos = (cursosRes.data || []) as Linha[];
-        const disciplinas = (disciplinasRes.data || []) as Linha[];
+        const todasDisciplinas = (disciplinasRes.data || []) as Linha[];
+        const aulasDe = new Map(todasDisciplinas.map((d) => [d.id, (d.aulas_ids || []) as string[]]));
+        // Disciplinas unificadas em outra não aparecem na lista
+        const disciplinas = todasDisciplinas.filter((d) => !d.unificada_em);
 
         let favCursos: string[] = [];
         let favDisciplinas: string[] = [];
@@ -107,7 +111,7 @@ const Explore = () => {
           favDisciplinas = data?.disciplinas_favoritos || [];
         }
 
-        const topicos = await topicosPorAula(disciplinas.flatMap((d) => d.aulas_ids || []));
+        const topicos = await topicosPorAula(todasDisciplinas.flatMap((d) => d.aulas_ids || []));
         const porDisciplina = new Map<string, { aulas: number; topicos: number }>();
         disciplinas.forEach((d) => {
           const aulas: string[] = d.aulas_ids || [];
@@ -116,8 +120,11 @@ const Explore = () => {
 
         const listaCursos: ItemExplorar[] = cursos.map((c) => {
           const ids: string[] = c.disciplinas_ids || [];
-          const somaAulas = ids.reduce((s, id) => s + (porDisciplina.get(id)?.aulas || 0), 0);
-          const somaTopicos = ids.reduce((s, id) => s + (porDisciplina.get(id)?.topicos || 0), 0);
+          // Só as aulas escolhidas para o curso em cada disciplina
+          const selecao = lerAulasPorDisciplina(c.aulas_por_disciplina);
+          const aulasCurso = ids.map((id) => aulasDaDisciplinaNoCurso(aulasDe.get(id), selecao, id));
+          const somaAulas = aulasCurso.reduce((s, l) => s + l.length, 0);
+          const somaTopicos = aulasCurso.reduce((s, l) => s + l.reduce((t, a) => t + (topicos.get(a) || 0), 0), 0);
           return {
             id: c.id,
             tipo: "cursos",
