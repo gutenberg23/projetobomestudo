@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AdminPageHeader, FluxoConteudo } from "@/components/admin/AdminPageHeader";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,13 +145,18 @@ const TeoriasAdmin = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Gerenciar Teorias</h1>
-        <Button onClick={handleCreateNew}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Teoria
-        </Button>
-      </div>
+      <AdminPageHeader
+        titulo="Teorias"
+        descricao="Aulas em texto. Depois de publicada, escolha a teoria no campo “Link da aula em texto” do tópico."
+        acoes={
+          <Button onClick={handleCreateNew} className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90 text-white">
+            <Plus className="mr-2 h-4 w-4" />
+            Nova teoria
+          </Button>
+        }
+      >
+        <FluxoConteudo atual="teorias" />
+      </AdminPageHeader>
 
       <Card>
         <CardHeader>

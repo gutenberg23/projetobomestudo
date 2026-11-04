@@ -115,3 +115,30 @@ export const rejeitarCorrecao = async (id: string, motivo: string): Promise<void
   const { error } = await db.rpc("rejeitar_correcao_teoria", { p_id: id, p_motivo: motivo });
   if (error) throw error;
 };
+
+export interface ContribuidorTeoria {
+  nome: string;
+  total_correcoes: number;
+}
+
+export interface RankingContribuidor {
+  user_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  total_correcoes: number;
+  total_teorias: number;
+  ultima_contribuicao: string | null;
+}
+
+/** Autores de correções aprovadas, para os créditos no fim da teoria. */
+export const listarContribuidoresTeoria = async (teoriaId: string): Promise<ContribuidorTeoria[]> => {
+  const { data, error } = await db.rpc("contribuidores_teoria", { p_teoria_id: teoriaId });
+  if (error) throw error;
+  return data || [];
+};
+
+export const buscarRankingContribuicoes = async (limite = 100): Promise<RankingContribuidor[]> => {
+  const { data, error } = await db.rpc("ranking_contribuicoes_teorias", { p_limite: limite });
+  if (error) throw error;
+  return data || [];
+};

@@ -127,7 +127,9 @@ export const SugerirCorrecaoDialog = ({ aberto, teoriaId, trechoSelecionado, onC
               />
             </div>
             <p className="text-xs text-gray-500">
-              Você acompanha suas sugestões em <Link to="/contribuir" className="underline">Contribuir</Link>.
+              Se a correção for aprovada, seu nome aparece nos créditos desta teoria e no{" "}
+              <Link to="/ranking-contribuicoes" className="underline">ranking de contribuições</Link>. Você acompanha suas
+              sugestões em <Link to="/contribuir" className="underline">Contribuir</Link>.
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={onClose}>

@@ -1,0 +1,67 @@
+/*
+ * Ajustes visuais da área administrativa.
+ * Tudo fica sob .admin-shell para não afetar o site público.
+ */
+
+.admin-shell .admin-page-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: #1f2533;
+}
+
+/* Títulos das páginas antigas ficam no mesmo padrão */
+.admin-content > div > div > h1:first-child,
+.admin-content > div > div > div:first-child h1:first-of-type {
+  font-size: 1.5rem !important;
+  line-height: 2rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em;
+  color: #1f2533;
+}
+
+/* Tabelas: cabeçalho discreto, linhas com hover e números alinhados */
+.admin-content table {
+  font-size: 0.875rem;
+}
+.admin-content table thead tr {
+  background: #f8fafc;
+}
+.admin-content table thead th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  white-space: nowrap;
+}
+.admin-content table tbody tr {
+  transition: background-color 120ms ease;
+}
+.admin-content table tbody tr:hover {
+  background: #faf8ff;
+}
+.admin-content table td {
+  vertical-align: middle;
+}
+
+/* Cards e blocos brancos com o mesmo acabamento */
+.admin-content .rounded-lg.border.bg-card,
+.admin-content .bg-white.rounded-lg.shadow,
+.admin-content .bg-white.p-4.rounded-lg.shadow {
+  border-color: #e7e9f0;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+/* Foco visível e consistente */
+.admin-shell :is(input, textarea, select, button, a):focus-visible {
+  outline: 2px solid rgba(95, 46, 190, 0.45);
+  outline-offset: 1px;
+}
+
+/* Barra de rolagem fina no menu */
+.admin-shell .scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #d6d9e3 transparent;
+}

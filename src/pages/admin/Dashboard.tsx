@@ -1,13 +1,14 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  DashboardHeader,
   StatCards,
   UsuariosTab,
   QuestoesTab
 } from "./components/dashboard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AtalhosRapidos } from "./components/dashboard/AtalhosRapidos";
 import { useDashboardData } from "./components/dashboard/hooks/useDashboardData";
 
 const Dashboard = () => {
@@ -34,7 +35,9 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <DashboardHeader />
+      <AdminPageHeader titulo="Dashboard" descricao="Visão geral do Bom Estudo e atalhos para o dia a dia." />
+
+      <AtalhosRapidos />
 
       <StatCards estatisticas={data.estatisticas} />
 

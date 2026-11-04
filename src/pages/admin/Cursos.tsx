@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { calcularComposicaoCurso } from "./components/cursos/composicaoCurso";
+import { AdminPageHeader, FluxoConteudo } from "@/components/admin/AdminPageHeader";
 
 const Cursos = () => {
   // Estados para filtros
@@ -324,8 +325,12 @@ const Cursos = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-[#272f3c]">Cursos</h1>
-      <p className="text-[#67748a]">Gerenciamento de cursos</p>
+      <AdminPageHeader
+        titulo="Cursos"
+        descricao="Cursos reúnem disciplinas. Aulas, tópicos e questões entram automaticamente."
+      >
+        <FluxoConteudo atual="cursos" />
+      </AdminPageHeader>
       
       {/* Componente de filtro */}
       <CursosFilter 

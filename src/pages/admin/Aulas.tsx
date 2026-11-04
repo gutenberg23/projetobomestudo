@@ -10,6 +10,7 @@ import {
 import { Pagination } from "@/components/ui/pagination";
 import { useAulasActions } from "./components/aulas/hooks/useAulasActions";
 import { Spinner } from "@/components/ui/spinner";
+import { AdminPageHeader, FluxoConteudo } from "@/components/admin/AdminPageHeader";
 
 const Aulas = () => {
   const {
@@ -52,8 +53,12 @@ const Aulas = () => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-[#272f3c]">Aulas</h1>
-      <p className="text-[#67748a]">Gerenciamento de aulas</p>
+      <AdminPageHeader
+        titulo="Aulas"
+        descricao="Aulas são conjuntos de tópicos. Marque várias para montar uma disciplina."
+      >
+        <FluxoConteudo atual="aulas" />
+      </AdminPageHeader>
       
       {/* Componente de filtro */}
       <AulasFilter 

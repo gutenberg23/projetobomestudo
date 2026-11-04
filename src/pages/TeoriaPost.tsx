@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import QuestionResults from "@/components/questions/QuestionResults";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { SugerirCorrecaoDialog } from "@/components/teorias/SugerirCorrecaoDialog";
+import { CreditosContribuidores } from "@/components/teorias/CreditosContribuidores";
 
 interface Teoria {
   id: string;
@@ -833,6 +834,7 @@ const TeoriaPost = () => {
                       className="text-gray-700"
                       highlights={highlights}
                     />
+                    {post.id && <CreditosContribuidores teoriaId={post.id} />}
                   </div>
                 )}
                 
