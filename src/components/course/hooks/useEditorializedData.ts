@@ -183,7 +183,8 @@ export const useEditorializedData = () => {
             totalExercises: userTopicoData?.exercisesDone || userTopicoData?.totalExercises || 0,
             correctAnswers: userTopicoData?.hits || userTopicoData?.correctAnswers || 0,
             isReviewed: userTopicoData?.isReviewed || false,
-            link: userTopicoData?.link || disciplina.links?.[index] || null
+            // O link atual do admin tem prioridade sobre uma cópia antiga salva com os dados do aluno
+            link: disciplina.links?.[index] || userTopicoData?.link || null
           };
           
           logWithTimestamp(`Tópico ${index + 1} formatado`, topic);

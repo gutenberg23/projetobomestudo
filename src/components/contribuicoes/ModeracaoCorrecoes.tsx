@@ -20,6 +20,7 @@ import {
   listarCorrecoes,
   rejeitarCorrecao,
 } from "@/services/correcoesTeoria";
+import { teoriaPath } from "@/utils/teoriaUrl";
 import { aplicarCorrecaoHtml } from "@/utils/aplicarCorrecaoHtml";
 
 const formatarData = (iso: string) => new Date(iso).toLocaleString("pt-BR");
@@ -170,7 +171,7 @@ export const ModeracaoCorrecoes = () => {
                   <Badge variant="outline">{STATUS_LABEL[c.status]}</Badge>
                   {teoria && (
                     <Button size="sm" variant="ghost" asChild title="Ver teoria">
-                      <a href={`/teoria/${c.teoria_id}`} target="_blank" rel="noreferrer">
+                      <a href={teoriaPath({ id: c.teoria_id, slug: teoria.slug })} target="_blank" rel="noreferrer">
                         <ExternalLink className="h-4 w-4" />
                       </a>
                     </Button>

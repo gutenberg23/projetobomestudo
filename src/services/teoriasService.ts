@@ -12,6 +12,7 @@ export const teoriasService = {
         .from('teorias')
         .insert({
           titulo: teoria.titulo,
+          slug: teoria.slug || null,
           disciplina_id: teoria.disciplina_id,
           assunto_id: teoria.assunto_id,
           topicos_ids: teoria.topicos_ids,

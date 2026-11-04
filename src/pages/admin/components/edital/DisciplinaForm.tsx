@@ -8,6 +8,11 @@ import { Disciplina } from "./types";
 import { useToast } from "@/hooks/use-toast";
 import { ColarTopicosModal } from "./ColarTopicosModal";
 import { DisciplinaFiltersModal } from "./DisciplinaFiltersModal";
+import { filtersFromColumns, hasAnyFilter, parseQuestionsLink, splitFilterValue } from "@/utils/editalQuestionFilters";
+
+// Garante uma lista de valores, mesmo que venha uma string "a|b" do banco.
+// Espalhar uma string com [...valor] separava cada letra ("Coesão" virava "C|o|e|s|ã|o").
+const toFilterList = (value: unknown): string[] => splitFilterValue(value);
 
 interface DisciplinaFormProps {
   onAddDisciplina: (disciplina: Omit<Disciplina, 'id' | 'selecionada'>) => void;
@@ -43,12 +48,28 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
       setTopicos(disciplinaParaEditar.topicos || []);
       setLinks(disciplinaParaEditar.links || []);
       
-      // Inicializar os arrays de assuntos e tópicos por tópico
-      const topicosLength = (disciplinaParaEditar.topicos || []).length;
-      const assuntos = disciplinaParaEditar.assuntos || Array(topicosLength).fill([]).map(() => []);
-      const topicosFiltro = disciplinaParaEditar.topicos_filtro || Array(topicosLength).fill([]).map(() => []);
-      const disciplinasFiltro = disciplinaParaEditar.disciplinas_filtro || Array(topicosLength).fill([]).map(() => []);
-      const bancasFiltro = disciplinaParaEditar.bancas_filtro || Array(topicosLength).fill([]).map(() => []);
+      // Inicializar os filtros de cada tópico. No banco, cada posição é uma
+      // string com valores separados por "|"; aqui viram listas. Quando o
+      // tópico tem link de questões, os filtros vêm do link, que é o que o
+      // aluno vê ao clicar.
+      const topicosLength = Math.max(
+        (disciplinaParaEditar.topicos || []).length,
+        (disciplinaParaEditar.links || []).length
+      );
+      const assuntos: string[][] = [];
+      const topicosFiltro: string[][] = [];
+      const disciplinasFiltro: string[][] = [];
+      const bancasFiltro: string[][] = [];
+      for (let i = 0; i < topicosLength; i++) {
+        const fromLink = parseQuestionsLink(disciplinaParaEditar.links?.[i]);
+        const filtros = fromLink && hasAnyFilter(fromLink)
+          ? fromLink
+          : filtersFromColumns(disciplinaParaEditar as any, i);
+        assuntos.push(filtros.topics);
+        topicosFiltro.push(filtros.subtopics);
+        disciplinasFiltro.push(filtros.disciplines);
+        bancasFiltro.push(filtros.institutions);
+      }
       const quantidadeQuestoes = disciplinaParaEditar.quantidade_questoes_filtro || Array(topicosLength).fill(0);
       
       setAssuntosPorTopico(assuntos);
@@ -124,7 +145,22 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
     const novosLinks = [...links];
     novosLinks[index] = novoLink.trim();
     setLinks(novosLinks);
+
+    // Manter os filtros do tópico iguais aos do link editado à mão
+    const fromLink = parseQuestionsLink(novoLink);
+    if (fromLink && hasAnyFilter(fromLink)) {
+      const setAt = (prev: string[][], value: string[]) => {
+        const next = [...prev];
+        next[index] = value;
+        return next;
+      };
+      setAssuntosPorTopico(prev => setAt(prev, fromLink.topics));
+      setTopicosPorTopico(prev => setAt(prev, fromLink.subtopics));
+      setDisciplinasPorTopico(prev => setAt(prev, fromLink.disciplines));
+      setBancasPorTopico(prev => setAt(prev, fromLink.institutions));
+    }
   };
+
 
   const handleOpenFiltersModal = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -202,10 +238,10 @@ const DisciplinaForm: React.FC<DisciplinaFormProps> = ({
       descricao: descricao.trim(),
       topicos: topicos.map(t => t.trim()).filter(t => t.length > 0),
       links: links.map(l => l.trim()),
-      assuntos: assuntosPorTopico.map(a => [...a]),
-      topicos_filtro: topicosPorTopico.map(t => [...t]),
-      disciplinas_filtro: disciplinasPorTopico.map(d => [...d]),
-      bancas_filtro: bancasPorTopico.map(b => [...b]),
+      assuntos: topicos.map((_, i) => toFilterList(assuntosPorTopico[i])),
+      topicos_filtro: topicos.map((_, i) => toFilterList(topicosPorTopico[i])),
+      disciplinas_filtro: topicos.map((_, i) => toFilterList(disciplinasPorTopico[i])),
+      bancas_filtro: topicos.map((_, i) => toFilterList(bancasPorTopico[i])),
       quantidade_questoes_filtro: [...quantidadeQuestoesPorTopico]
     };
 

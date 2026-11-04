@@ -11,10 +11,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ChevronRight, BookOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
+import { teoriaPath } from "@/utils/teoriaUrl";
 import { ptBR } from "date-fns/locale";
 
 interface Teoria {
   id: string;
+  slug?: string;
   titulo: string;
   disciplina_id: string;
   assunto_id: string;
@@ -336,7 +338,7 @@ const Teorias = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => navigate(`/teoria/${teoria.id}`)}
+                            onClick={() => navigate(teoriaPath(teoria))}
                             className="flex items-center gap-1"
                           >
                             Ver teoria

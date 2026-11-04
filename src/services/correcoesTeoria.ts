@@ -27,6 +27,7 @@ export interface CorrecaoTeoria {
 export interface TeoriaResumo {
   id: string;
   titulo: string;
+  slug?: string;
   conteudo?: string;
 }
 
@@ -87,7 +88,7 @@ export const buscarTeorias = async (ids: string[], comConteudo = false): Promise
   if (ids.length === 0) return {};
   const { data, error } = await db
     .from("teorias")
-    .select(comConteudo ? "id, titulo, conteudo" : "id, titulo")
+    .select(comConteudo ? "id, titulo, slug, conteudo" : "id, titulo, slug")
     .in("id", ids);
   if (error) throw error;
   const mapa: Record<string, TeoriaResumo> = {};

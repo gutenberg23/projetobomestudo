@@ -295,6 +295,8 @@ const TeoriaEditor = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [titulo, setTitulo] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugSalvo, setSlugSalvo] = useState("");
   const [disciplina, setDisciplina] = useState("");
   const [assunto, setAssunto] = useState("");
   const [selectedTopicos, setSelectedTopicos] = useState<string[]>([]);
@@ -354,6 +356,8 @@ const TeoriaEditor = () => {
         
         if (teoria) {
           setTitulo(teoria.titulo || "");
+          setSlug(teoria.slug || "");
+          setSlugSalvo(teoria.slug || "");
           setDisciplina(teoria.disciplina_id || "");
           setAssunto(teoria.assunto_id || "");
           setSelectedTopicos(teoria.topicos_ids || []);
@@ -570,6 +574,7 @@ const TeoriaEditor = () => {
       // For topics, we store as array of strings (topic names)
       const teoriaData: TeoriaInsert = {
         titulo,
+        slug: slug.trim(),
         disciplina_id: disciplina, // Now store the discipline name directly
         assunto_id: assunto,       // Now store the subject name directly
         topicos_ids: selectedTopicos,
@@ -689,7 +694,9 @@ const TeoriaEditor = () => {
       .replace(/^-+|-+$/g, ''); // Remover hífens do início e fim
   };
 
-  const currentSlug = generateSlug(titulo);
+  // Slug que será usado: o digitado ou, se vazio, o gerado do título
+  const currentSlug = slug.trim() ? generateSlug(slug) : generateSlug(titulo);
+  const urlTeoria = `${window.location.origin}/teoria/${slugSalvo || id}`;
   
   // Handlers for adding new items
   const handleAddDisciplina = () => {
@@ -808,14 +815,14 @@ const TeoriaEditor = () => {
               <div>
                 <h3 className="font-medium text-blue-800">URL da Teoria</h3>
                 <p className="text-sm text-blue-600 mt-1">
-                  {window.location.origin}/teoria/{id}
+                  {urlTeoria}
                 </p>
               </div>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/teoria/${id}`);
+                  navigator.clipboard.writeText(urlTeoria);
                   toast.success("URL copiada para a área de transferência");
                 }}
               >
@@ -840,11 +847,23 @@ const TeoriaEditor = () => {
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Título da teoria"
               />
-              {titulo && (
-                <p className="text-sm text-gray-500">
-                  Slug: {currentSlug}
-                </p>
-              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="slug">Link amigável (slug)</Label>
+              <Input
+                id="slug"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder={generateSlug(titulo) || "gerado-a-partir-do-titulo"}
+              />
+              <p className="text-sm text-gray-500">
+                {currentSlug ? <>/teoria/{currentSlug}</> : "Deixe em branco para gerar a partir do título."}
+                {id && slugSalvo && currentSlug && currentSlug !== slugSalvo && (
+                  <> O link antigo continuará funcionando e redirecionará para o novo.</>
+                )}
+                {" "}Se já existir outra teoria com o mesmo slug, será adicionado um número no final.
+              </p>
             </div>
             
             <div className="space-y-2">
