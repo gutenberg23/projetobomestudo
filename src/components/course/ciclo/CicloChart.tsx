@@ -1,121 +1,79 @@
 import React, { useMemo } from "react";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, Text } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { formatTimeValue } from "./utils";
-
-interface Subject {
-  id: string;
-  titulo: string;
-  descricao?: string;
-  ativo?: boolean;
-  horasDedicadas?: number;
-  cor?: string;
-}
+import type { CicloDisciplina } from "./DisciplinaItem";
 
 interface CicloChartProps {
-  subjects: Subject[];
+  subjects: CicloDisciplina[];
   totalHoras: number;
 }
 
 export const CicloChart: React.FC<CicloChartProps> = ({ subjects, totalHoras }) => {
-  // Prepara os dados para o gráfico
-  const data = useMemo(() => {
-    const activeSubjects = subjects
-      .filter(subject => subject.ativo && (subject.horasDedicadas || 0) > 0);
-      
-    // Calcular o total de horas para usar nas proporções
-    const totalHorasAtivas = activeSubjects.reduce((sum, s) => sum + (s.horasDedicadas || 0), 0);
-    
-    return activeSubjects.map(subject => ({
-      name: subject.titulo,
-      value: subject.horasDedicadas || 0,
-      formattedValue: formatTimeValue(subject.horasDedicadas || 0),
-      percentage: totalHorasAtivas > 0 ? Math.round((subject.horasDedicadas || 0) * 100 / totalHorasAtivas) : 0,
-      color: subject.cor
-    }));
-  }, [subjects]);
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-2 border border-gray-100 shadow-sm rounded-md text-xs">
-          <p className="font-medium">{`${payload[0].name}`}</p>
-          <p style={{ color: payload[0].payload.color }}>
-            {`${payload[0].payload.formattedValue} (${payload[0].payload.percentage}%)`}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  const CustomLegend = ({ payload }: any) => {
-    return (
-      <div className="flex flex-col gap-2 mt-2">
-        {payload.map((entry: any, index: number) => (
-          <div key={`legend-${index}`} className="flex items-center gap-2">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-xs truncate max-w-[180px]" title={entry.value}>
-              {entry.value} - {entry.payload.formattedValue}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Componente para renderizar o texto no centro do gráfico
-  const renderCenterText = () => {
-    return (
-      <text 
-        x="50%" 
-        y="50%" 
-        textAnchor="middle" 
-        dominantBaseline="middle"
-        className="font-bold"
-        fill="#272F3C"
-      >
-        {formatTimeValue(totalHoras)}
-      </text>
-    );
-  };
+  const data = useMemo(
+    () =>
+      subjects
+        .filter((s) => s.ativo && (s.horasDedicadas || 0) > 0)
+        .map((s) => ({
+          name: s.titulo,
+          value: s.horasDedicadas || 0,
+          percentual: totalHoras > 0 ? Math.round(((s.horasDedicadas || 0) * 100) / totalHoras) : 0,
+          color: s.cor,
+        })),
+    [subjects, totalHoras]
+  );
 
   if (data.length === 0) {
     return (
-      <div className="h-[300px] flex items-center justify-center">
-        <p className="text-gray-500 text-center">
-          Nenhuma disciplina ativa para exibir no gráfico.<br />
-          Ative pelo menos uma disciplina.
-        </p>
-      </div>
+      <p className="py-16 text-center text-sm text-slate-400">
+        Ative uma disciplina e defina o tempo dela
+        <br />
+        para ver a distribuição.
+      </p>
     );
   }
 
   return (
-    <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
-          <Pie
-            data={data}
-            cx="50%"
-            cy="50%"
-            innerRadius={60}
-            outerRadius={80}
-            paddingAngle={2}
-            dataKey="value"
-            labelLine={false}
-          >
-            {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-          <Legend content={<CustomLegend />} />
-          {renderCenterText()}
-        </PieChart>
-      </ResponsiveContainer>
+    <div>
+      <div className="relative h-[220px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={data} cx="50%" cy="50%" innerRadius={66} outerRadius={92} paddingAngle={data.length > 1 ? 2 : 0} dataKey="value" stroke="none">
+              {data.map((d, i) => (
+                <Cell key={i} fill={d.color} />
+              ))}
+            </Pie>
+            <Tooltip
+              content={({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number; payload: { color?: string; percentual: number } }> }) =>
+                active && payload?.length ? (
+                  <div className="rounded-lg border border-slate-100 bg-white px-3 py-2 text-xs shadow-md">
+                    <p className="font-medium text-slate-800">{payload[0].name}</p>
+                    <p style={{ color: payload[0].payload.color }}>
+                      {formatTimeValue(payload[0].value)} · {payload[0].payload.percentual}%
+                    </p>
+                  </div>
+                ) : null
+              }
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-2xl font-bold tabular-nums text-slate-900">{formatTimeValue(totalHoras)}</span>
+          <span className="text-xs text-slate-500">por semana</span>
+        </div>
+      </div>
+
+      <ol className="mt-2 space-y-1.5">
+        {data.map((d, i) => (
+          <li key={i} className="flex items-center gap-2 text-sm">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: d.color }} />
+            <span className="min-w-0 flex-1 truncate text-slate-700" title={d.name}>
+              {d.name}
+            </span>
+            <span className="shrink-0 tabular-nums text-slate-500">{formatTimeValue(d.value)}</span>
+            <span className="w-9 shrink-0 text-right text-xs tabular-nums text-slate-400">{d.percentual}%</span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
-}; 
+};

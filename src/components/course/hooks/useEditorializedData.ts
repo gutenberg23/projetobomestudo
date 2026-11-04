@@ -18,6 +18,7 @@ export const useEditorializedData = () => {
   const [performanceGoal, setPerformanceGoal] = useState<number>(70);
   const [examDate, setExamDate] = useState<Date | undefined>(undefined);
   const [lastSaveTime, setLastSaveTime] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Função para registrar logs com timestamp
   const logWithTimestamp = useCallback((message: string, data?: any) => {
@@ -176,7 +177,6 @@ export const useEditorializedData = () => {
         
         const topics = disciplina.topicos.map((topico: string, index: number) => {
           const userTopicoData = userDisciplinaData?.topicos[index];
-          logWithTimestamp(`Carregando dados do tópico ${index + 1}`, userTopicoData);
           
           const topic = {
             id: index + 1,
@@ -197,7 +197,6 @@ export const useEditorializedData = () => {
             link: disciplina.links?.[index] || userTopicoData?.link || null
           };
           
-          logWithTimestamp(`Tópico ${index + 1} formatado`, topic);
           return topic;
         });
 
@@ -245,6 +244,7 @@ export const useEditorializedData = () => {
       }
 
       logWithTimestamp("Iniciando salvamento no banco de dados");
+      setSaveStatus('saving');
 
       // Primeiro, salvar os dados do progresso geral do curso
       const { error: progressError } = await supabase
@@ -261,6 +261,7 @@ export const useEditorializedData = () => {
 
       if (progressError) {
         logWithTimestamp("Erro ao salvar progresso geral", progressError);
+        setSaveStatus('error');
         return false;
       }
 
@@ -278,7 +279,6 @@ export const useEditorializedData = () => {
             isReviewed: topic.isReviewed || false,
             link: topic.link || null
           };
-          logWithTimestamp(`Salvando dados do tópico ${topic.id}`, data);
           return data;
         });
 
@@ -301,15 +301,19 @@ export const useEditorializedData = () => {
 
         if (editalError) {
           logWithTimestamp(`Erro ao salvar dados da disciplina ${subject.id}`, editalError);
+          setSaveStatus('error');
           return false;
         }
       }
 
       logWithTimestamp("Todos os dados foram salvos com sucesso");
       setUnsavedChanges(false);
+      setSaveStatus('saved');
+      setLastSaveTime(new Date().toISOString());
       return true;
     } catch (error) {
       logWithTimestamp("Erro ao salvar dados", error);
+      setSaveStatus('error');
       return false;
     }
   };
@@ -454,27 +458,13 @@ export const useEditorializedData = () => {
     
     try {
       logWithTimestamp("Iniciando processo de salvar todos os dados");
-      setLoading(true);
       const realId = extractIdFromFriendlyUrl(courseId);
       logWithTimestamp("ID do curso extraído", realId);
       
       const result = await saveUserDataToDatabase(realId, subjects, performanceGoal, examDate);
-      setLoading(false);
       
       if (result) {
         logWithTimestamp("Todos os dados salvos com sucesso");
-        setUnsavedChanges(false);
-        
-        // Atualizar a hora do último salvamento
-        const now = new Date().toISOString();
-        setLastSaveTime(now);
-        
-        // Mostrar notificação de sucesso com timestamp
-        toast({
-          title: "Dados salvos",
-          description: `Dados salvos com sucesso às ${new Date().toLocaleTimeString()}`,
-          variant: "default"
-        });
       } else {
         logWithTimestamp("Falha ao salvar todos os dados");
         
@@ -505,7 +495,7 @@ export const useEditorializedData = () => {
       return result;
     } catch (error) {
       logWithTimestamp("Erro ao salvar todos os dados", error);
-      setLoading(false);
+      setSaveStatus('error');
       toast({
         title: "Erro",
         description: "Não foi possível salvar os dados no banco de dados.",
@@ -527,6 +517,7 @@ export const useEditorializedData = () => {
     updatePerformanceGoal,
     examDate,
     updateExamDate,
-    lastSaveTime
+    lastSaveTime,
+    saveStatus
   };
 };

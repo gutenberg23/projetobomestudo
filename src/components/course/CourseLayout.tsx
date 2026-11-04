@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { CicloTab } from "./ciclo/CicloTab";
 import { LeiSecaTab } from "./leiseca/LeiSecaTab";
+import { SimuladosTab } from "./simulados/SimuladosTab";
 import CourseAdBanner from "./CourseAdBanner";
 
 export const CourseLayout = () => {
@@ -158,7 +159,7 @@ export const CourseLayout = () => {
         {activeTab === 'simulados' && config.tabs.showSimuladosTab && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
-              <EditorializedView courseId={courseId || ''} activeTab={activeTab} />
+              <SimuladosTab courseId={courseId} />
             </div>
           </div>
         )}

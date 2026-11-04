@@ -397,10 +397,10 @@ const Simulado = () => {
         .upsert({
           user_id: user.id,
           simulado_id: simuladoId,
-          correct_answers: correctAnswers,
-          total_questions: totalQuestions,
-          percentage: percentage,
-          finished_at: new Date().toISOString()
+          // Colunas da tabela: acertos e erros (questões em branco contam como erro)
+          acertos: correctAnswers,
+          erros: Math.max(0, totalQuestions - correctAnswers),
+          updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id,simulado_id'
         });
