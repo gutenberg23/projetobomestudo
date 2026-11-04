@@ -239,7 +239,7 @@ export const FormularioPost: React.FC<FormularioPostProps> = (props) => {
       </div>
 
       <form
-        className="grid gap-5 px-4 py-5 md:px-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]"
+        className="grid grid-cols-[minmax(0,1fr)] gap-5 px-4 py-5 md:px-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]"
         onSubmit={(e) => {
           e.preventDefault();
           salvar();

@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.rss-auto-sync]
 verify_jwt = false
+
+[functions.extract-concurso]
+verify_jwt = false
