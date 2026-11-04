@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -15,7 +16,7 @@ interface EditTopicoModalProps {
   isOpen: boolean;
   onClose: () => void;
   topico: Topico | null;
-  onSave: (topico: Topico) => void;
+  onSave: (topico: Topico) => void | Promise<void>;
   disciplinasSugeridas?: string[];
 }
 
@@ -27,6 +28,7 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
   disciplinasSugeridas = [],
 }) => {
   const [editedTopico, setEditedTopico] = useState<Topico | null>(null);
+  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
     if (isOpen && topico) {
@@ -34,27 +36,37 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
     }
   }, [isOpen, topico]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editedTopico) return;
     if (!editedTopico.titulo.trim() || !editedTopico.disciplina.trim()) {
       toast.error("Título e disciplina são obrigatórios");
       return;
     }
     // Fechar o modal e mostrar mensagem de sucesso é responsabilidade de onSave
-    onSave({
-      ...editedTopico,
-      titulo: editedTopico.titulo.trim(),
-      disciplina: editedTopico.disciplina.trim(),
-    });
+    setSalvando(true);
+    try {
+      await onSave({
+        ...editedTopico,
+        titulo: editedTopico.titulo.trim(),
+        disciplina: editedTopico.disciplina.trim(),
+      });
+    } finally {
+      setSalvando(false);
+    }
   };
 
   if (!editedTopico) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(o) => !o && !salvando && onClose()}>
       <DialogContent className="sm:max-w-[680px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-[#272f3c]">Editar Tópico</DialogTitle>
+          <DialogTitle>Editar tópico</DialogTitle>
+          <DialogDescription className="flex flex-wrap items-center gap-x-2">
+            <span>{editedTopico.disciplina || "Sem disciplina"}</span>
+            <span aria-hidden>·</span>
+            <code className="rounded bg-slate-100 px-1 text-[11px] text-slate-500">{editedTopico.id}</code>
+          </DialogDescription>
         </DialogHeader>
         <div className="py-2">
           <TopicoFormFields
@@ -64,12 +76,12 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
             disciplinasSugeridas={disciplinasSugeridas}
           />
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="sticky -bottom-6 -mx-6 -mb-6 gap-2 border-t border-slate-100 bg-white px-6 py-3 sm:gap-2">
+          <Button variant="outline" onClick={onClose} disabled={salvando}>
             Cancelar
           </Button>
-          <Button className="bg-[#ea2be2] hover:bg-[#ea2be2]/90" onClick={handleSave}>
-            Salvar Alterações
+          <Button className="bg-[#ea2be2] text-white hover:bg-[#d029d5]" onClick={handleSave} disabled={salvando}>
+            {salvando ? "Salvando..." : "Salvar alterações"}
           </Button>
         </DialogFooter>
       </DialogContent>

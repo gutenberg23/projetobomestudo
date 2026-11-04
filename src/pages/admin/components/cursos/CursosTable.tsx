@@ -1,84 +1,98 @@
 import React from "react";
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell
-} from "@/components/ui/table";
+import { BookOpen, Copy, Edit, ExternalLink, FileQuestion, FolderOpen, Heart, Layers, ListTree, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash, Heart } from "lucide-react";
-import { CursosTableProps } from "./CursosTypes";
+import { Contador, MenuAcoes, copiarTexto } from "@/components/admin/ui/listagem";
+import { generateFriendlyUrl } from "@/utils/slug-utils";
+import { Curso } from "./CursosTypes";
 
-export const CursosTable: React.FC<CursosTableProps> = ({
-  cursos,
-  openEditModal,
-  openDeleteModal
-}) => {
+interface CursosTableProps {
+  cursos: Curso[];
+  nomesDisciplinas: Map<string, string>;
+  onEditar: (curso: Curso) => void;
+  onExcluir: (curso: Curso) => void;
+  vazio?: React.ReactNode;
+}
+
+export const CursosTable: React.FC<CursosTableProps> = ({ cursos, nomesDisciplinas, onEditar, onExcluir, vazio }) => {
+  if (cursos.length === 0) return <>{vazio}</>;
+
   return (
-    <div className="rounded-md border bg-white">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[50px]">ID</TableHead>
-            <TableHead className="w-[200px]">Título</TableHead>
-            <TableHead className="w-[200px]">Cargo</TableHead>
-            <TableHead className="w-[120px]">Nº de Disciplinas</TableHead>
-            <TableHead className="w-[120px]">Nº de Aulas</TableHead>
-            <TableHead className="w-[120px]">Nº de Tópicos</TableHead>
-            <TableHead className="w-[120px]">Nº de Questões</TableHead>
-            <TableHead className="w-[120px]">
-              <div className="flex items-center gap-1">
-                <Heart className="h-4 w-4 text-[#ea2be2]" />
-                Favoritos
+    <ul className="divide-y divide-slate-100">
+      {cursos.map((curso) => {
+        const nomes = curso.disciplinasIds.map((id) => nomesDisciplinas.get(id)).filter(Boolean) as string[];
+        const link = `/course/${generateFriendlyUrl(curso.titulo, curso.id)}`;
+        return (
+          <li key={curso.id} className="group flex items-start gap-3 px-3 py-3.5 transition-colors hover:bg-[#faf8ff] sm:items-center sm:gap-4 sm:px-4">
+            <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#5f2ebe]/10 text-[#5f2ebe] sm:flex" aria-hidden>
+              <FolderOpen className="h-5 w-5" />
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => onEditar(curso)}
+                className="text-left text-sm font-semibold leading-snug text-slate-900 hover:text-[#5f2ebe]"
+              >
+                {curso.titulo}
+              </button>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {curso.descricao || <span className="italic text-slate-400">sem cargo</span>}
+              </p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                {nomes.length === 0 ? (
+                  <span className="text-[11px] italic text-amber-600">nenhuma disciplina</span>
+                ) : (
+                  nomes.slice(0, 4).map((n, i) => (
+                    <span key={`${n}-${i}`} className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600">
+                      <Layers className="h-3 w-3 text-slate-400" />
+                      {n}
+                    </span>
+                  ))
+                )}
+                {nomes.length > 4 && (
+                  <span className="text-[11px] text-slate-400" title={nomes.join(", ")}>
+                    +{nomes.length - 4}
+                  </span>
+                )}
               </div>
-            </TableHead>
-            <TableHead className="w-[150px]">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {cursos.length > 0 ? (
-            cursos.map((curso) => (
-              <TableRow key={curso.id}>
-                <TableCell className="font-medium">{curso.id}</TableCell>
-                <TableCell>{curso.titulo}</TableCell>
-                <TableCell>{curso.descricao}</TableCell>
-                <TableCell>{curso.disciplinasIds.length} disciplinas</TableCell>
-                <TableCell>{curso.aulasIds?.length || 0} aulas</TableCell>
-                <TableCell>{curso.topicosIds?.length || 0} tópicos</TableCell>
-                <TableCell>{curso.questoesIds?.length || 0} questões</TableCell>
-                <TableCell>{curso.favoritos || 0}</TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button 
-                      onClick={() => openEditModal(curso)} 
-                      variant="outline" 
-                      size="sm"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      onClick={() => openDeleteModal(curso)} 
-                      variant="outline" 
-                      size="sm" 
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={9} className="text-center py-4 text-[#67748a]">
-                Nenhum curso encontrado com os filtros aplicados.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+              {/* Contagens no celular */}
+              <div className="mt-1.5 flex flex-wrap gap-3 text-xs md:hidden">
+                <Contador icone={BookOpen} n={curso.aulasIds.length} titulo="aulas" />
+                <Contador icone={ListTree} n={curso.topicosIds.length} titulo="tópicos" />
+                <Contador icone={FileQuestion} n={curso.totalQuestoes} titulo="questões" />
+              </div>
+            </div>
+
+            <div className="hidden items-center gap-4 text-xs md:flex">
+              <Contador icone={BookOpen} n={curso.aulasIds.length} titulo="aulas" />
+              <Contador icone={ListTree} n={curso.topicosIds.length} titulo="tópicos" />
+              <Contador icone={FileQuestion} n={curso.totalQuestoes} titulo="questões" />
+              <Contador icone={Heart} n={curso.favoritos} titulo="alunos favoritaram" className={curso.favoritos ? "text-fuchsia-600" : ""} />
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={() => onEditar(curso)} className="hidden text-slate-600 sm:inline-flex">
+                <Edit className="mr-1.5 h-4 w-4" />
+                Editar
+              </Button>
+              <MenuAcoes
+                acoes={[
+                  { label: "Editar", icone: Edit, onClick: () => onEditar(curso), soCelular: true },
+                  { label: "Ver no site", icone: ExternalLink, href: link, externo: true },
+                  {
+                    label: "Copiar ID",
+                    icone: Copy,
+                    onClick: async () =>
+                      (await copiarTexto(curso.id)) ? toast.success("ID copiado") : toast.error("Não foi possível copiar"),
+                  },
+                  { label: "Excluir", icone: Trash2, onClick: () => onExcluir(curso), perigo: true, separadorAntes: true },
+                ]}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 };

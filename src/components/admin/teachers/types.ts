@@ -1,33 +1,32 @@
-
-export type TeacherStatus = "aprovado" | "pendente" | "rejeitado";
-
-export interface TeacherData {
+export interface Professor {
   id: string;
-  nomeCompleto: string;
+  nome: string;
   email: string;
-  linkYoutube: string;
   disciplina: string;
-  instagram?: string;
-  twitter?: string;
-  facebook?: string;
-  website?: string;
-  fotoPerfil: string;
-  status: TeacherStatus;
-  dataCadastro: string;
-  ativo: boolean;
+  youtube: string;
+  instagram: string;
+  twitter: string;
+  facebook: string;
+  website: string;
+  foto: string;
   rating: number;
+  /** ISO */
+  criadoEm: string;
 }
 
-export interface TeacherFiltersState {
-  termoPesquisa: string;
-  filtroStatus: string;
-  filtroDisciplina: string;
-}
+export type FormProfessor = Omit<Professor, "id" | "criadoEm">;
 
-export interface TeacherNote {
+export interface NotaProfessor {
   id: string;
-  professorId: string;
   conteudo: string;
-  dataCriacao: string;
-  usuarioId?: string;
+  data_criacao: string | null;
 }
+
+/** Aceita "@perfil", "site.com" ou a URL completa. */
+export const urlRede = (valor: string, base?: string) => {
+  const v = (valor || "").trim();
+  if (!v) return "";
+  if (/^https?:\/\//i.test(v)) return v;
+  if (base && v.startsWith("@")) return `${base}${v.slice(1)}`;
+  return `https://${v.replace(/^\/+/, "")}`;
+};

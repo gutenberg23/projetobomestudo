@@ -1,4 +1,2 @@
-
-export * from './SimuladosTable';
-export * from './VincularCursoModal';
-export * from './SimuladosTypes';
+export * from "./SimuladosTypes";
+export { default as EditarSimuladoModal } from "./EditarSimuladoModal";

@@ -2,31 +2,30 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DisciplinasPageProps } from "./DisciplinasTypes";
-import { BarraCriacao } from "../shared/BarraCriacao";
+import { BarraCriacao, ItemSelecionado } from "../shared/BarraCriacao";
+
+interface NovoCursoBarraProps {
+  selecionadas: ItemSelecionado[];
+  onRemover: (id: string) => void;
+  onLimpar: () => void;
+  onCriar: (titulo: string, cargo: string, informacoes: string) => Promise<boolean>;
+}
 
 /** Barra para criar um curso a partir das disciplinas selecionadas. */
-export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
-  tituloNovaDisciplina,
-  setTituloNovaDisciplina,
-  descricaoNovaDisciplina,
-  setDescricaoNovaDisciplina,
-  informacoesCurso,
-  setInformacoesCurso,
-  handleAdicionarDisciplina,
-  disciplinas,
-  onRemoverSelecionada = () => undefined,
-  onLimparSelecao = () => undefined,
-}) => {
+export const AdicionarDisciplina: React.FC<NovoCursoBarraProps> = ({ selecionadas, onRemover, onLimpar, onCriar }) => {
+  const [titulo, setTitulo] = useState("");
+  const [cargo, setCargo] = useState("");
+  const [informacoes, setInformacoes] = useState("");
   const [criando, setCriando] = useState(false);
-  const selecionadas = disciplinas
-    .filter((d) => d.selecionada)
-    .map((d) => ({ id: d.id, titulo: d.titulo }));
 
   const criar = async () => {
     setCriando(true);
     try {
-      await handleAdicionarDisciplina();
+      if (await onCriar(titulo, cargo, informacoes)) {
+        setTitulo("");
+        setCargo("");
+        setInformacoes("");
+      }
     } finally {
       setCriando(false);
     }
@@ -37,42 +36,37 @@ export const AdicionarDisciplina: React.FC<DisciplinasPageProps> = ({
       titulo="Novo curso"
       itemSingular="disciplina"
       itemPlural="disciplinas"
-      dica="marque as disciplinas na tabela para montar um curso com elas. Aulas, tópicos e questões são incluídos automaticamente."
+      dica="marque as disciplinas na lista para montar um curso com elas. Aulas, tópicos e questões entram automaticamente, na ordem em que forem marcadas."
       itens={selecionadas}
-      onRemover={onRemoverSelecionada}
-      onLimpar={onLimparSelecao}
+      onRemover={onRemover}
+      onLimpar={onLimpar}
       textoBotao="Criar curso"
       onCriar={criar}
-      podeCriar={!!tituloNovaDisciplina.trim()}
+      podeCriar={!!titulo.trim()}
       criando={criando}
-      cor="#5f2ebe"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div>
-          <Label htmlFor="titulo-curso" className="mb-1 block">Título do curso *</Label>
-          <Input
-            id="titulo-curso"
-            placeholder="Ex.: Analista Judiciário - TRF"
-            value={tituloNovaDisciplina}
-            onChange={(e) => setTituloNovaDisciplina(e.target.value)}
-          />
+          <Label htmlFor="titulo-curso" className="mb-1 block text-xs text-slate-600">
+            Título do curso *
+          </Label>
+          <Input id="titulo-curso" placeholder="Ex.: Analista Judiciário - TRF" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
         </div>
         <div>
-          <Label htmlFor="cargo-curso" className="mb-1 block">Cargo</Label>
-          <Input
-            id="cargo-curso"
-            placeholder="Digite o cargo"
-            value={descricaoNovaDisciplina}
-            onChange={(e) => setDescricaoNovaDisciplina(e.target.value)}
-          />
+          <Label htmlFor="cargo-curso" className="mb-1 block text-xs text-slate-600">
+            Cargo
+          </Label>
+          <Input id="cargo-curso" placeholder="Ex.: Analista - Área Administrativa" value={cargo} onChange={(e) => setCargo(e.target.value)} />
         </div>
         <div className="md:col-span-2">
-          <Label htmlFor="informacoes-curso" className="mb-1 block">Informações do curso</Label>
+          <Label htmlFor="informacoes-curso" className="mb-1 block text-xs text-slate-600">
+            Informações do curso
+          </Label>
           <Textarea
             id="informacoes-curso"
-            placeholder="Digite as informações do curso"
-            value={informacoesCurso}
-            onChange={(e) => setInformacoesCurso(e.target.value)}
+            placeholder="Texto exibido na página do curso"
+            value={informacoes}
+            onChange={(e) => setInformacoes(e.target.value)}
             rows={2}
           />
         </div>

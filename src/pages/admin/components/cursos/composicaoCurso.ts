@@ -10,10 +10,10 @@ export interface ComposicaoCurso {
 const unicos = (lista: (string | null | undefined)[]) =>
   Array.from(new Set(lista.filter((x): x is string => !!x && x.trim() !== "")));
 
-type Linha = { id: string; aulas_ids?: string[] | null; topicos_ids?: string[] | null; questoes_ids?: string[] | null };
+export type Linha = { id: string; aulas_ids?: string[] | null; topicos_ids?: string[] | null; questoes_ids?: string[] | null };
 
 /** Busca em lotes de 100 ids para não estourar o tamanho da URL. */
-const buscarEmLotes = async (tabela: "disciplinas" | "aulas" | "topicos", colunas: string, ids: string[]): Promise<Linha[]> => {
+export const buscarEmLotes = async (tabela: "disciplinas" | "aulas" | "topicos" | "cursos", colunas: string, ids: string[]): Promise<Linha[]> => {
   const resultado: Linha[] = [];
   for (let i = 0; i < ids.length; i += 100) {
     const { data, error } = await supabase.from(tabela).select(colunas).in("id", ids.slice(i, i + 100));

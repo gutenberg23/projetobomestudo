@@ -1,25 +1,14 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Book } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { SecaoFormulario } from "@/components/admin/ui/dialogos";
+import { CartoesResumo } from "@/components/admin/ui/listagem";
+import { FormCaderno, QuestionBook, aproveitamento } from "./QuestionBooks";
 
-interface QuestionBook {
-  id: string;
-  nome: string;
-  created_at: string;
-  user_id: string;
-  is_public: boolean;
-  total_questions: number;
-  answered_questions: number;
-  correct_answers: number;
-  wrong_answers: number;
-  user_email: string;
-}
-
+/** Edição de um caderno em página própria (o link antigo continua funcionando). */
 export default function EditQuestionBook() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -29,127 +18,92 @@ export default function EditQuestionBook() {
 
   useEffect(() => {
     if (!id) {
-      navigate('/admin/cadernos');
+      navigate("/admin/cadernos");
       return;
     }
-    fetchBook();
-  }, [id]);
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("admin_get_caderno", { p_caderno_id: id }).single();
+        if (error) throw error;
+        if (!data) throw new Error("Caderno não encontrado");
+        setBook(data as QuestionBook);
+      } catch (error) {
+        console.error("Erro ao buscar caderno:", error);
+        toast.error("Erro ao carregar o caderno");
+        navigate("/admin/cadernos");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id, navigate]);
 
-  const fetchBook = async () => {
-    try {
-      const { data, error } = await supabase
-        .rpc('admin_get_caderno', {
-          p_caderno_id: id
-        })
-        .single();
-
-      if (error) throw error;
-      if (!data) throw new Error('Caderno não encontrado');
-
-      setBook(data as QuestionBook);
-    } catch (error) {
-      console.error('Erro ao buscar caderno:', error);
-      toast.error('Erro ao carregar o caderno');
-      navigate('/admin/cadernos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!book || !id) return;
-
+  const salvar = async () => {
+    if (!book || !id || !book.nome.trim()) return;
     setSaving(true);
     try {
-      const { error } = await supabase
-        .rpc('admin_update_caderno', {
-          p_caderno_id: id,
-          p_nome: book.nome,
-          p_is_public: book.is_public
-        });
-
+      const { error } = await supabase.rpc("admin_update_caderno", { p_caderno_id: id, p_nome: book.nome.trim(), p_is_public: book.is_public });
       if (error) throw error;
-
-      toast.success('Caderno atualizado com sucesso!');
-      navigate('/admin/cadernos');
+      toast.success("Caderno atualizado");
+      navigate("/admin/cadernos");
     } catch (error) {
-      console.error('Erro ao atualizar caderno:', error);
-      toast.error('Erro ao atualizar o caderno');
+      console.error("Erro ao atualizar caderno:", error);
+      toast.error("Erro ao atualizar o caderno");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Book className="h-6 w-6 text-purple-500" />
-          <h1 className="text-2xl font-semibold text-gray-900">Carregando...</h1>
-        </div>
-      </div>
-    );
-  }
-
-  if (!book) {
-    return (
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Book className="h-6 w-6 text-purple-500" />
-          <h1 className="text-2xl font-semibold text-gray-900">Caderno não encontrado</h1>
-        </div>
-      </div>
-    );
-  }
+  const p = book ? aproveitamento(book) : null;
 
   return (
-    <div className="p-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Book className="h-6 w-6 text-purple-500" />
-        <h1 className="text-2xl font-semibold text-gray-900">Editar Caderno</h1>
+    <div className="mx-auto max-w-2xl space-y-4">
+      <Button variant="ghost" size="sm" onClick={() => navigate("/admin/cadernos")} className="-ml-2 text-slate-600">
+        <ArrowLeft className="mr-1.5 h-4 w-4" />
+        Cadernos de questões
+      </Button>
+      <div>
+        <h1 className="admin-page-title">{loading ? "Carregando..." : "Editar caderno"}</h1>
+        {book?.user_email && <p className="mt-1 text-sm text-slate-500">Caderno de {book.user_email}</p>}
       </div>
 
-      <form onSubmit={handleSubmit} className="max-w-2xl">
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="nome" className="block text-sm font-medium text-gray-700">
-              Nome do Caderno
-            </label>
-            <Input
-              id="nome"
-              value={book.nome}
-              onChange={(e) => setBook({ ...book, nome: e.target.value })}
-              className="mt-1"
-              required
+      {loading || !book ? (
+        <div className="h-48 animate-pulse rounded-xl bg-white" />
+      ) : (
+        <>
+          <CartoesResumo
+            itens={[
+              { rotulo: "Questões", valor: book.total_questions },
+              { rotulo: "Respondidas", valor: book.answered_questions, tom: "cinza" },
+              { rotulo: "Aproveitamento", valor: p === null ? "—" : `${p}%`, tom: p !== null && p >= 70 ? "verde" : "ambar" },
+            ]}
+          />
+          <SecaoFormulario
+            titulo="Dados do caderno"
+            acoes={
+              <Button variant="ghost" size="sm" asChild className="h-8 text-slate-600">
+                <a href={`/cadernos/${book.id}`} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-1.5 h-4 w-4" /> Abrir no site
+                </a>
+              </Button>
+            }
+          >
+            <FormCaderno
+              nome={book.nome}
+              publico={book.is_public}
+              onNome={(nome) => setBook({ ...book, nome })}
+              onPublico={(is_public) => setBook({ ...book, is_public })}
             />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="is_public"
-              checked={book.is_public}
-              onCheckedChange={(checked) => setBook({ ...book, is_public: checked as boolean })}
-            />
-            <label htmlFor="is_public" className="text-sm font-medium text-gray-700">
-              Caderno Público
-            </label>
-          </div>
-
-          <div className="flex gap-4">
-            <Button type="submit" disabled={saving}>
-              {saving ? 'Salvando...' : 'Salvar'}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate('/admin/cadernos')}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </div>
-      </form>
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <Button variant="outline" onClick={() => navigate("/admin/cadernos")} disabled={saving}>
+                Cancelar
+              </Button>
+              <Button onClick={salvar} disabled={saving || !book.nome.trim()} className="bg-[#ea2be2] text-white hover:bg-[#d029d5]">
+                {saving ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
+          </SecaoFormulario>
+        </>
+      )}
     </div>
   );
-} 
+}

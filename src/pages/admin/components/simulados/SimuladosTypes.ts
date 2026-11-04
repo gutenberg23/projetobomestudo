@@ -1,46 +1,29 @@
-export interface SimuladoSupabase {
+/** Uma linha da tabela simulados (um simulado ligado a um curso). */
+export interface SimuladoLinha {
   id: string;
   titulo: string;
-  descricao: string;
+  descricao: string | null;
   questoes_ids: string[];
+  quantidade_questoes?: number | null;
   curso_id: string;
   data_fim: string | null;
   ativo: boolean;
-  curso: {
-    titulo: string;
-  };
+  created_at?: string;
 }
 
-export interface Simulado {
-  id: string;
+/**
+ * Simulados com o mesmo título são o mesmo simulado aplicado a vários cursos
+ * (é assim que a edição "vincula" cursos: uma linha por curso).
+ */
+export interface GrupoSimulado {
+  chave: string;
   titulo: string;
   descricao: string;
-  questoes_ids: string[];
-  curso_id: string;
-  data_fim: string | null;
-  ativo: boolean;
-  curso: {
-    titulo: string;
-  };
-  questoesIds: string[];
-  cursosIds: string[];
-}
-
-export interface SimuladosTableProps {
-  simulados: Simulado[];
-  onRefresh: () => void;
-  handleToggleAtivo: (id: string) => void;
-  handleExcluir: (id: string) => void;
-}
-
-export interface VincularCursoModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  simuladoId: string;
-}
-
-export interface EditarSimuladoModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  simuladoId: string;
+  questoes: number;
+  dataFim: string | null;
+  linhas: SimuladoLinha[];
+  /** ativo em todos os cursos / em parte / em nenhum */
+  ativo: "todos" | "parcial" | "nenhum";
+  encerrado: boolean;
+  criadoEm: string;
 }

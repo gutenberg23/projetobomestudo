@@ -29,8 +29,6 @@ export const useTopicosActions = (
 
   // Funções para abrir modais
   const openEditModal = (topico: Topico) => {
-    console.log('Abrindo modal de edição com tópico:', topico);
-    console.log('Propriedade abrirEmNovaGuia:', topico.abrirEmNovaGuia);
     setCurrentTopico(topico);
     setIsOpenEdit(true);
   };
@@ -44,8 +42,8 @@ export const useTopicosActions = (
   const handleSaveTopico = async (updatedTopico: Topico) => {
     try {
       // Tratar o campo professor_id para evitar erro de UUID
-      let professor_id = updatedTopico.professor_id || null;
-      let professor_nome = updatedTopico.professor_nome || "";
+      const professor_id = updatedTopico.professor_id || null;
+      const professor_nome = updatedTopico.professor_nome || "";
       
       // Se um professor foi selecionado, verificar se é um UUID válido
       if (professor_id) {
@@ -170,9 +168,6 @@ export const useTopicosActions = (
       // Converter o Set para Array
       const questoesIds = Array.from(questoesIdsSet);
       
-      console.log("Adicionando aula com tópicos:", topicosSelecionados);
-      console.log("Questões únicas encontradas:", questoesIds);
-      console.log("Total de questões:", questoesIds.length);
       
       // Cadastrar a aula no banco de dados usando o método insert correto
       const { data: _, error } = await supabase
@@ -200,7 +195,7 @@ export const useTopicosActions = (
       
       // Desmarcar todos os tópicos após adicionar
       setTopicos(topicos.map(topico => ({...topico, selecionado: false})));
-    } catch (error: any) {
+    } catch (error) {
       console.error("Erro ao adicionar aula:", error);
       toast.error("Erro ao adicionar a aula. Tente novamente.");
     }

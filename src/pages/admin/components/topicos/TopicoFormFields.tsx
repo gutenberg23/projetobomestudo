@@ -73,8 +73,8 @@ const comoLista = (v: string | string[] | undefined | null): string[] =>
   Array.isArray(v) ? v : v ? v.split(",").filter(Boolean) : [];
 
 const Secao: React.FC<{ titulo: string; children: React.ReactNode }> = ({ titulo, children }) => (
-  <fieldset className="space-y-3 rounded-md border border-gray-100 p-3">
-    <legend className="px-1 text-sm font-semibold text-[#272f3c]">{titulo}</legend>
+  <fieldset className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/40 p-3 sm:p-4">
+    <legend className="rounded bg-white px-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">{titulo}</legend>
     {children}
   </fieldset>
 );
