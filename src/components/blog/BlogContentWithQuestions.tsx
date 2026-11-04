@@ -96,7 +96,7 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
         
         if (question) {
           return (
-            <div key={`question-${index}`} className="my-4 w-full">
+            <div key={`question-${index}`} className="my-4 w-full" data-sem-marcacao>
               <div className="bg-[rgb(226,232,240)] p-2 w-full rounded-xl">
                 <QuestionCard 
                   question={question}
@@ -110,7 +110,7 @@ export const BlogContentWithQuestions: React.FC<BlogContentWithQuestionsProps> =
         } else {
           // Show loading or placeholder if question is not loaded yet
           return (
-            <div key={`question-${index}`} className="my-4 w-full">
+            <div key={`question-${index}`} className="my-4 w-full" data-sem-marcacao>
               <div className="bg-[rgb(226,232,240)] p-2 w-full rounded-xl text-center">
                 <p>Carregando questão...</p>
               </div>

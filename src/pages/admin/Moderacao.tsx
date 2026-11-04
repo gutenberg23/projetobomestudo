@@ -38,6 +38,8 @@ import {
 
 const Moderacao = () => {
   const { isAdmin, loading: carregandoPermissoes } = usePermissions();
+  // /admin/moderacao?aba=correcoes abre direto nas correções de teorias
+  const abaInicial = new URLSearchParams(window.location.search).get("aba") === "correcoes" ? "correcoes" : "conteudos";
   const [status, setStatus] = useState<StatusSubmissao | "todos">("pendente");
   const [tipo, setTipo] = useState<TipoSubmissao | "todos">("todos");
   const [submissoes, setSubmissoes] = useState<Submissao[]>([]);
@@ -225,7 +227,7 @@ const Moderacao = () => {
         </Card>
       )}
 
-      <Tabs defaultValue="conteudos" className="space-y-4">
+      <Tabs defaultValue={abaInicial} className="space-y-4">
         <TabsList>
           <TabsTrigger value="conteudos">Tópicos, aulas, disciplinas e cursos</TabsTrigger>
           <TabsTrigger value="correcoes">Correções de teorias</TabsTrigger>
