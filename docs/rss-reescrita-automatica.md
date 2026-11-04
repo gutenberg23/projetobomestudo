@@ -131,11 +131,16 @@ Esse segredo garante que só o seu banco consiga disparar a sincronização.
 npx supabase functions deploy rss-auto-sync
 npx supabase functions deploy rewrite-content
 npx supabase functions deploy extract-concurso
+npx supabase functions deploy generate-question-explanation
 ```
 
 A `extract-concurso` usa as mesmas chaves de IA para o botão **Preencher com IA**
 em *Admin › Concursos* (lê o post do blog ou um texto colado e preenche datas,
 níveis, cargos, vagas, salário e estados).
+
+A `generate-question-explanation` também usa essas chaves: é o botão **Gerar com IA**
+da *Explicação da IA* em *Admin › Questões* (antes chamava um modelo do Gemini
+que foi desativado pelo Google).
 
 ### 4. Aplicar a migration (3 min)
 
