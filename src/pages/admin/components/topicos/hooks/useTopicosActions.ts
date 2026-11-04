@@ -65,6 +65,11 @@ export const useTopicosActions = (
           professor_nome: professor_nome,
           video_url: updatedTopico.videoUrl,
           pdf_url: updatedTopico.pdfUrl,
+          // Só envia teoria_id quando há teoria (ou havia), para não depender da
+          // migration em tópicos que nunca usaram teoria
+          ...(updatedTopico.teoriaId || topicos.find(t => t.id === updatedTopico.id)?.teoriaId
+            ? { teoria_id: updatedTopico.teoriaId || null }
+            : {}),
           mapa_url: updatedTopico.mapaUrl,
           resumo_url: updatedTopico.resumoUrl,
           musica_url: Array.isArray(updatedTopico.musicaUrl) ? updatedTopico.musicaUrl.join(',') : updatedTopico.musicaUrl,

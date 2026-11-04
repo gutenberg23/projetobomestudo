@@ -44,7 +44,10 @@ const Aulas = () => {
     setIsOpenDelete,
     currentAula,
     temAulasSelecionadas,
-    handleDuplicarAula
+    handleDuplicarAula,
+    aulasSelecionadas,
+    handleRemoverSelecao,
+    handleLimparSelecao
   } = useAulasActions();
 
   return (
@@ -100,6 +103,9 @@ const Aulas = () => {
         todasSelecionadas={todasSelecionadas}
         aulas={aulas}
         temAulasSelecionadas={temAulasSelecionadas}
+        aulasSelecionadas={aulasSelecionadas}
+        onRemoverSelecionada={handleRemoverSelecao}
+        onLimparSelecao={handleLimparSelecao}
       />
       
       {/* Modais de edição e exclusão */}

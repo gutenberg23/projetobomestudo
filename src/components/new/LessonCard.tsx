@@ -352,6 +352,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({
             setShowQuestions={handleQuestionButtonClick}
             showQuestions={showQuestions}
             pdfUrl={topicData?.pdf_url}
+            teoriaId={topicData?.teoria_id}
             mapaUrl={topicData?.mapa_url}
             resumoUrl={topicData?.resumo_url}
             musicaUrl={topicData?.musica_url ? (topicData.musica_url.includes(',') ? topicData.musica_url.split(',').filter(Boolean) : topicData.musica_url) : null}

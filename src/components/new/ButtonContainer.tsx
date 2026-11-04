@@ -9,6 +9,8 @@ interface ButtonContainerProps {
   setShowQuestions: () => void;
   showQuestions: boolean;
   pdfUrl?: string | null;
+  /** Teoria do site usada como aula em texto */
+  teoriaId?: string | null;
   mapaUrl?: string | null;
   resumoUrl?: string | null;
   musicaUrl?: string | string[] | null;
@@ -21,6 +23,7 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
   setShowQuestions,
   showQuestions,
   pdfUrl,
+  teoriaId,
   mapaUrl,
   resumoUrl,
   musicaUrl,
@@ -44,6 +47,14 @@ export const ButtonContainer: React.FC<ButtonContainerProps> = ({
             variant="highlight" 
             isActive={showQuestions} 
             onClick={setShowQuestions} 
+          />
+        )}
+        
+        {teoriaId && (
+          <ActionButton 
+            iconType="pdf" 
+            label="Aula em texto" 
+            onClick={() => openResource(`/teoria/${teoriaId}`)} 
           />
         )}
         

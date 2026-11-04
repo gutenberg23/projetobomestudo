@@ -1,38 +1,26 @@
-import { useState, useEffect } from "react";
-import { 
-  TopicosFilter, 
-  TopicosTable, 
+import { useMemo, useState } from "react";
+import {
+  TopicosFilter,
+  TopicosTable,
   AdicionarAula,
   EditTopicoModal,
   DeleteTopicoModal,
   TopicosHeader
 } from "./components/topicos";
-import { 
+import {
   useTopicosState,
   useTopicosFiltrados,
   useTopicosActions
 } from "./components/topicos/hooks";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileUploadField } from "@/components/ui/file-upload-field";
-import { MultiFileUploadField } from "@/components/ui/multi-file-upload-field";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Topico } from "./components/topicos/TopicosTypes";
-import { QuestionsManager } from "./components/topicos/modals/components/QuestionsManager";
+import { Topico, TopicoFormValues, topicoFormVazio } from "./components/topicos/TopicosTypes";
+import { TopicoFormFields } from "./components/topicos/TopicoFormFields";
 import { Pagination } from "@/components/ui/pagination";
 import { Spinner } from "@/components/ui/spinner";
-import { Checkbox } from "@/components/ui/checkbox";
-
-interface TeacherData {
-  id: string;
-  nomeCompleto: string;
-  disciplina: string;
-}
 
 const Topicos = () => {
   const {
@@ -61,27 +49,8 @@ const Topicos = () => {
   } = useTopicosState();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [newTopico, setNewTopico] = useState<Omit<Topico, 'id' | 'selecionado' | 'thumbnail' | 'abrirVideoEm'>>({
-    titulo: "",
-    disciplina: "",
-    patrocinador: "",
-    questoesIds: [],
-    professor_id: "",
-    professor_nome: "",
-    videoUrl: "",
-    pdfUrl: "",
-    mapaUrl: "",
-    resumoUrl: "",
-    musicaUrl: [],
-    resumoAudioUrl: [],
-    cadernoQuestoesUrl: "",
-    abrirEmNovaGuia: false
-  });
-
-  const [teachers, setTeachers] = useState<TeacherData[]>([]);
-  const [loadingTeachers, setLoadingTeachers] = useState(false);
-  
-  const [newQuestaoId, setNewQuestaoId] = useState("");
+  const [newTopico, setNewTopico] = useState<TopicoFormValues>(topicoFormVazio());
+  const [salvando, setSalvando] = useState(false);
 
   const { topicosFiltrados, todosSelecionados, totalPages, totalItems } = useTopicosFiltrados(
     topicos,
@@ -110,98 +79,48 @@ const Topicos = () => {
     setDescricaoNovaAula
   );
 
-  useEffect(() => {
-    if (isCreateModalOpen) {
-      fetchTeachers();
-    }
-  }, [isCreateModalOpen]);
+  // Disciplinas já usadas, para autocompletar e evitar nomes duplicados com grafias diferentes
+  const disciplinasSugeridas = useMemo(
+    () =>
+      Array.from(new Set(topicos.map((t) => (t.disciplina || "").trim()).filter(Boolean))).sort((a, b) =>
+        a.localeCompare(b, "pt-BR")
+      ),
+    [topicos]
+  );
 
+  const selecionados = useMemo(
+    () => topicos.filter((t) => t.selecionado).map((t) => ({ id: t.id, titulo: t.titulo })),
+    [topicos]
+  );
 
-
-  const fetchTeachers = async () => {
-    setLoadingTeachers(true);
-    try {
-      const { data, error } = await supabase
-        .from('professores')
-        .select('id, nome_completo, disciplina')
-        .order('nome_completo');
-        
-      if (error) throw error;
-      
-      const formattedTeachers: TeacherData[] = data?.map(teacher => ({
-        id: teacher.id,
-        nomeCompleto: teacher.nome_completo,
-        disciplina: teacher.disciplina
-      })) || [];
-
-      setTeachers(formattedTeachers);
-    } catch (error) {
-      console.error("Erro ao buscar professores:", error);
-      toast.error("Erro ao carregar professores. Tente novamente.");
-    } finally {
-      setLoadingTeachers(false);
-    }
+  const abrirCriacao = () => {
+    setNewTopico(topicoFormVazio());
+    setIsCreateModalOpen(true);
   };
 
-  const addQuestaoId = () => {
-    if (!newQuestaoId.trim()) {
-      toast.error("Digite um ID de questão válido");
-      return;
-    }
-
-    if (newTopico.questoesIds.includes(newQuestaoId)) {
-      toast.error("Esta questão já foi adicionada");
-      return;
-    }
-
-    setNewTopico({
-      ...newTopico,
-      questoesIds: [...newTopico.questoesIds, newQuestaoId]
-    });
-    setNewQuestaoId("");
-  };
-
-  const removeQuestaoId = (index: number) => {
-    const updatedQuestoes = [...newTopico.questoesIds];
-    updatedQuestoes.splice(index, 1);
-    setNewTopico({
-      ...newTopico,
-      questoesIds: updatedQuestoes
-    });
-  };
-
-  const handleCreateTopico = async () => {
-    if (!newTopico.titulo || !newTopico.disciplina) {
+  const handleCreateTopico = async (continuar: boolean) => {
+    const titulo = newTopico.titulo.trim();
+    const disciplina = newTopico.disciplina.trim();
+    if (!titulo || !disciplina) {
       toast.error("Título e disciplina são obrigatórios");
       return;
     }
 
+    setSalvando(true);
     try {
-      let professor_nome = "";
-      let professor_id = newTopico.professor_id || null;
-      
-      // Se um professor foi selecionado, verificar se é um UUID válido
-      if (professor_id) {
-        const selectedTeacher = teachers.find(t => t.id === newTopico.professor_id);
-        if (selectedTeacher) {
-          professor_nome = selectedTeacher.nomeCompleto;
-        } else {
-          // Se não encontrou o professor, definir como null
-          professor_id = null;
-        }
-      }
-
       const { data, error } = await supabase
         .from('topicos')
         .insert({
-          nome: newTopico.titulo,
+          nome: titulo,
           patrocinador: newTopico.patrocinador,
-          disciplina: newTopico.disciplina,
+          disciplina,
           questoes_ids: newTopico.questoesIds,
-          professor_id: professor_id, // Usar o valor corrigido
-          professor_nome: professor_nome,
+          professor_id: newTopico.professor_id || null,
+          professor_nome: newTopico.professor_id ? newTopico.professor_nome : "",
           video_url: newTopico.videoUrl,
           pdf_url: newTopico.pdfUrl,
+          // teoria_id só é enviado quando há teoria escolhida
+          ...(newTopico.teoriaId ? { teoria_id: newTopico.teoriaId } : {}),
           mapa_url: newTopico.mapaUrl,
           resumo_url: newTopico.resumoUrl,
           musica_url: Array.isArray(newTopico.musicaUrl) ? newTopico.musicaUrl.join(',') : newTopico.musicaUrl,
@@ -210,66 +129,76 @@ const Topicos = () => {
           abrir_em_nova_guia: newTopico.abrirEmNovaGuia
         })
         .select();
-      
+
       if (error) throw error;
-      
+
       if (data && data.length > 0) {
+        const row = data[0] as typeof data[0] & { teoria_id?: string | null };
         const novoTopico: Topico = {
-          id: data[0].id,
-          titulo: data[0].nome,
+          id: row.id,
+          titulo: row.nome,
           thumbnail: "",
-          patrocinador: data[0].patrocinador,
-          disciplina: data[0].disciplina,
-          videoUrl: data[0].video_url,
-          pdfUrl: data[0].pdf_url,
-          mapaUrl: data[0].mapa_url,
-          resumoUrl: data[0].resumo_url,
-          musicaUrl: data[0].musica_url ? data[0].musica_url.split(',').filter(Boolean) : [],
-          resumoAudioUrl: data[0].resumo_audio_url ? data[0].resumo_audio_url.split(',').filter(Boolean) : [],
-          cadernoQuestoesUrl: data[0].caderno_questoes_url,
-          questoesIds: data[0].questoes_ids,
-          professor_id: data[0].professor_id,
-          professor_nome: data[0].professor_nome,
+          patrocinador: row.patrocinador || "",
+          disciplina: row.disciplina,
+          videoUrl: row.video_url || "",
+          pdfUrl: row.pdf_url || "",
+          teoriaId: row.teoria_id || null,
+          mapaUrl: row.mapa_url || "",
+          resumoUrl: row.resumo_url || "",
+          musicaUrl: row.musica_url ? row.musica_url.split(',').filter(Boolean) : [],
+          resumoAudioUrl: row.resumo_audio_url ? row.resumo_audio_url.split(',').filter(Boolean) : [],
+          cadernoQuestoesUrl: row.caderno_questoes_url || "",
+          questoesIds: row.questoes_ids || [],
+          professor_id: row.professor_id || "",
+          professor_nome: row.professor_nome || "",
           selecionado: false,
-          abrirEmNovaGuia: data[0].abrir_em_nova_guia
+          abrirEmNovaGuia: row.abrir_em_nova_guia
         };
-        
-        setTopicos([...topicos, novoTopico]);
-        toast.success("Tópico criado com sucesso!");
-        
-        setNewTopico({
-          titulo: "",
-          disciplina: "",
-          patrocinador: "",
-          videoUrl: "",
-          pdfUrl: "",
-          mapaUrl: "",
-          resumoUrl: "",
-          musicaUrl: [],
-          resumoAudioUrl: [],
-          cadernoQuestoesUrl: "",
-          questoesIds: [],
-          professor_id: "",
-          professor_nome: "",
-          abrirEmNovaGuia: false
-        });
-        
-        setIsCreateModalOpen(false);
+
+        // Novo tópico aparece no topo, como na listagem (ordem de criação decrescente)
+        setTopicos((anteriores) => [novoTopico, ...anteriores]);
+        toast.success(`Tópico "${novoTopico.titulo}" criado!`);
+
+        if (continuar) {
+          // Mantém disciplina, professor e patrocinador para agilizar o cadastro em série
+          setNewTopico(
+            topicoFormVazio({
+              disciplina: newTopico.disciplina,
+              professor_id: newTopico.professor_id,
+              professor_nome: newTopico.professor_nome,
+              patrocinador: newTopico.patrocinador,
+              abrirEmNovaGuia: newTopico.abrirEmNovaGuia,
+            })
+          );
+        } else {
+          setIsCreateModalOpen(false);
+        }
       }
     } catch (error) {
       console.error("Erro ao criar tópico:", error);
-      toast.error("Erro ao criar o tópico. Tente novamente.");
+      const msg = (error as { message?: string })?.message || "";
+      toast.error(
+        msg.includes("teoria_id")
+          ? "Falta aplicar a migration do banco que liga tópicos a teorias."
+          : "Erro ao criar o tópico. Tente novamente."
+      );
+    } finally {
+      setSalvando(false);
     }
   };
 
-  const temTopicosSelecionados = topicos.some(topico => topico.selecionado);
+  const removerSelecionado = (id: string) =>
+    setTopicos((lista) => lista.map((t) => (t.id === id ? { ...t, selecionado: false } : t)));
+  const limparSelecao = () => setTopicos((lista) => lista.map((t) => ({ ...t, selecionado: false })));
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <TopicosHeader />
+        <div>
+          <TopicosHeader />
+        </div>
         <Button 
-          onClick={() => setIsCreateModalOpen(true)} 
+          onClick={abrirCriacao} 
           className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-white flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
@@ -317,186 +246,43 @@ const Topicos = () => {
         descricaoNovaAula={descricaoNovaAula}
         setDescricaoNovaAula={setDescricaoNovaAula}
         handleAdicionarAula={() => handleAdicionarAula(tituloNovaAula, descricaoNovaAula)}
-        temTopicosSelecionados={temTopicosSelecionados}
+        temTopicosSelecionados={selecionados.length > 0}
+        selecionados={selecionados}
+        onRemoverSelecionado={removerSelecionado}
+        onLimparSelecao={limparSelecao}
       />
       
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Cadastrar Novo Tópico</DialogTitle>
+            <DialogDescription>
+              Campos com * são obrigatórios. Use "Salvar e criar outro" para cadastrar vários tópicos da mesma disciplina.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="topico-titulo">Título</Label>
-              <Input
-                id="topico-titulo"
-                value={newTopico.titulo}
-                onChange={(e) => setNewTopico({ ...newTopico, titulo: e.target.value })}
-                placeholder="Digite o título do tópico"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="topico-disciplina">Disciplina</Label>
-              <Input
-                id="topico-disciplina"
-                value={newTopico.disciplina}
-                onChange={(e) => setNewTopico({ ...newTopico, disciplina: e.target.value })}
-                placeholder="Digite o nome da disciplina"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="topico-professor">Professor</Label>
-              {loadingTeachers ? (
-                <div className="text-sm text-[#67748a] p-2 border rounded flex items-center">
-                  Carregando professores...
-                </div>
-              ) : (
-                <Select 
-                  value={newTopico.professor_id} 
-                  onValueChange={(value) => setNewTopico({ ...newTopico, professor_id: value })}
-                >
-                  <SelectTrigger id="topico-professor">
-                    <SelectValue placeholder="Selecione um professor" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teachers.map((teacher) => (
-                      <SelectItem key={teacher.id} value={teacher.id}>
-                        {teacher.nomeCompleto} - {teacher.disciplina}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="topico-patrocinador">Patrocinador</Label>
-              <Input
-                id="topico-patrocinador"
-                value={newTopico.patrocinador}
-                onChange={(e) => setNewTopico({ ...newTopico, patrocinador: e.target.value })}
-                placeholder="Digite o nome do patrocinador"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="topico-video-url">Link da Videoaula</Label>
-              <Input
-                id="topico-video-url"
-                value={newTopico.videoUrl}
-                onChange={(e) => {
-                  // Transformar URL do YouTube no formato de incorporação
-                  const url = e.target.value;
-                  let transformedUrl = url;
-                  
-                  // Verificar se é um link do YouTube no formato padrão
-                  const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)(?:&.*)?/;
-                  const youtubeShortRegex = /(?:https?:\/\/)?(?:www\.)?youtu\.be\/([a-zA-Z0-9_-]+)(?:\?.*)?/;
-                  
-                  const match = url.match(youtubeRegex);
-                  const shortMatch = url.match(youtubeShortRegex);
-                  
-                  if (match && match[1]) {
-                    // Transformar para o formato de incorporação
-                    transformedUrl = `https://www.youtube.com/embed/${match[1]}`;
-                  } else if (shortMatch && shortMatch[1]) {
-                    // Transformar links curtos do YouTube
-                    transformedUrl = `https://www.youtube.com/embed/${shortMatch[1]}`;
-                  }
-                  
-                  setNewTopico({ ...newTopico, videoUrl: transformedUrl });
-                }}
-                placeholder="https://exemplo.com/video"
-              />
-              <p className="text-xs text-[#67748a] mt-1">
-                Links do YouTube serão automaticamente convertidos para o formato de incorporação.
-              </p>
-            </div>
-            
-            <div className="flex items-center space-x-2 mb-4">
-              <Checkbox
-                id="abrir-em-nova-guia"
-                checked={newTopico.abrirEmNovaGuia || false}
-                onCheckedChange={(checked) => setNewTopico({ ...newTopico, abrirEmNovaGuia: checked === true })}
-              />
-              <Label htmlFor="abrir-em-nova-guia" className="cursor-pointer text-sm text-[#272f3c]">
-                Abrir aula em nova guia
-              </Label>
-            </div>
-            
-            <FileUploadField
-              id="topico-pdf-url"
-              label="Link da Aula em texto"
-              value={newTopico.pdfUrl}
-              onChange={(value) => setNewTopico({ ...newTopico, pdfUrl: value })}
-              placeholder="URL"
-              allowedTypes={['pdf']}
-              rootFolder="pdf"
+          <div className="pt-2">
+            <TopicoFormFields
+              idPrefix="novo-topico"
+              value={newTopico}
+              onChange={setNewTopico}
+              disciplinasSugeridas={disciplinasSugeridas}
             />
-            
-            <FileUploadField
-              id="topico-mapa-url"
-              label="Link do Mapa Mental"
-              value={newTopico.mapaUrl}
-              onChange={(value) => setNewTopico({ ...newTopico, mapaUrl: value })}
-              placeholder="URL do mapa mental ou faça upload"
-              allowedTypes={['pdf', 'jpg', 'jpeg', 'png', 'gif']}
-              rootFolder="mapa-mental"
-            />
-            
-            <FileUploadField
-              id="topico-resumo-url"
-              label="Link do Resumo"
-              value={newTopico.resumoUrl}
-              onChange={(value) => setNewTopico({ ...newTopico, resumoUrl: value })}
-              placeholder="URL do resumo ou faça upload"
-              allowedTypes={['pdf', 'doc', 'docx']}
-              rootFolder="resumo"
-            />
-            
-            <MultiFileUploadField
-              id="topico-musica-url"
-              label="Link da Música"
-              values={Array.isArray(newTopico.musicaUrl) ? newTopico.musicaUrl : []}
-              onChange={(values) => setNewTopico({ ...newTopico, musicaUrl: values })}
-              placeholder="URLs das músicas ou faça upload"
-              allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
-              rootFolder="musica"
-            />
-            
-            <MultiFileUploadField
-              id="topico-resumo-audio-url"
-              label="Link do Resumo em Áudio"
-              values={Array.isArray(newTopico.resumoAudioUrl) ? newTopico.resumoAudioUrl : []}
-              onChange={(values) => setNewTopico({ ...newTopico, resumoAudioUrl: values })}
-              placeholder="URLs dos resumos em áudio ou faça upload"
-              allowedTypes={['mp3', 'wav', 'ogg', 'm4a', 'aac']}
-              rootFolder="resumo-audio"
-            />
-            
-            <div className="space-y-2">
-              <Label htmlFor="topico-caderno-questoes-url">Link do Caderno de Questões</Label>
-              <Input
-                id="topico-caderno-questoes-url"
-                value={newTopico.cadernoQuestoesUrl}
-                onChange={(e) => setNewTopico({ ...newTopico, cadernoQuestoesUrl: e.target.value })}
-                placeholder="https://exemplo.com/caderno"
-              />
-            </div>
-            
-            <QuestionsManager
-              questoesIds={newTopico.questoesIds}
-              newQuestaoId={newQuestaoId}
-              setNewQuestaoId={setNewQuestaoId}
-              addQuestaoId={addQuestaoId}
-              removeQuestaoId={removeQuestaoId}
-              label="Questões"
-            />
-            
-            <Button onClick={handleCreateTopico} className="w-full">Cadastrar Tópico</Button>
           </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setIsCreateModalOpen(false)} disabled={salvando}>
+              Cancelar
+            </Button>
+            <Button variant="outline" onClick={() => handleCreateTopico(true)} disabled={salvando}>
+              Salvar e criar outro
+            </Button>
+            <Button
+              onClick={() => handleCreateTopico(false)}
+              disabled={salvando}
+              className="bg-[#ea2be2] hover:bg-[#ea2be2]/90 text-white"
+            >
+              {salvando ? "Salvando..." : "Cadastrar Tópico"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       
@@ -505,6 +291,7 @@ const Topicos = () => {
         onClose={() => setIsOpenEdit(false)}
         topico={currentTopico}
         onSave={handleSaveTopico}
+        disciplinasSugeridas={disciplinasSugeridas}
       />
       
       <DeleteTopicoModal 

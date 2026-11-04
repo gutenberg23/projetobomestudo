@@ -10,6 +10,7 @@ import { Curso } from "./components/cursos/CursosTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
+import { calcularComposicaoCurso } from "./components/cursos/composicaoCurso";
 
 const Cursos = () => {
   // Estados para filtros
@@ -281,35 +282,43 @@ const Cursos = () => {
     }
   };
 
-  // Função para adicionar curso
-  const handleAdicionarCurso = async () => {
+  // Função para adicionar curso (com as disciplinas escolhidas no formulário)
+  const handleAdicionarCurso = async (disciplinasIds: string[]): Promise<boolean> => {
     if (!tituloNovoCurso.trim()) {
       toast.error("O título do curso é obrigatório");
-      return;
+      return false;
     }
     
     try {
-      const { data, error } = await supabase
+      const composicao = await calcularComposicaoCurso(disciplinasIds);
+      const { error } = await supabase
         .from('cursos')
         .insert([{
-          titulo: tituloNovoCurso,
+          titulo: tituloNovoCurso.trim(),
           descricao: descricaoNovoCurso,
           informacoes_curso: informacoesCurso,
+          ...composicao,
         }])
         .select();
       
       if (error) throw error;
       
-      toast.success("Curso adicionado com sucesso!");
+      toast.success(
+        composicao.disciplinas_ids.length > 0
+          ? `Curso criado com ${composicao.disciplinas_ids.length} disciplinas, ${composicao.aulas_ids.length} aulas e ${composicao.questoes_ids.length} questões.`
+          : "Curso criado. Adicione disciplinas pela edição ou pela página de Disciplinas."
+      );
       fetchCursos();
       
       // Resetar campos
       setTituloNovoCurso("");
       setDescricaoNovoCurso("");
       setInformacoesCurso("");
+      return true;
     } catch (error) {
       console.error("Erro ao adicionar curso:", error);
       toast.error("Erro ao adicionar o curso");
+      return false;
     }
   };
 
