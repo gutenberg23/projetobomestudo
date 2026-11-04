@@ -101,6 +101,10 @@ export const useEditorializedData = () => {
         .from('cursoverticalizado')
         .select('*')
         .eq('curso_id', realId)
+        // Edital desativado no admin não aparece; com mais de um ativo, vale o mais recente
+        .or('ativo.is.null,ativo.eq.true')
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (editalError) {
@@ -116,15 +120,21 @@ export const useEditorializedData = () => {
       }
 
       // Buscar disciplinas do edital
-      const { data: disciplinas, error: disciplinasError } = await supabase
+      const ordemDisciplinas: string[] = editalData.disciplinas_ids || [];
+      const { data: disciplinasSemOrdem, error: disciplinasError } = await supabase
         .from('disciplinaverticalizada')
         .select('*')
-        .in('id', editalData.disciplinas_ids || []);
+        .in('id', ordemDisciplinas);
 
       if (disciplinasError) {
         logWithTimestamp('Erro ao buscar disciplinas', disciplinasError);
         throw disciplinasError;
       }
+
+      // Mesma ordem em que as disciplinas foram arrumadas no admin
+      const disciplinas = [...(disciplinasSemOrdem || [])].sort(
+        (a, b) => ordemDisciplinas.indexOf(a.id) - ordemDisciplinas.indexOf(b.id)
+      );
 
       // Se o usuário estiver autenticado, buscar dados personalizados
       let userData = null;
