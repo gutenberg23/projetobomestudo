@@ -12,6 +12,7 @@ import {
   Rss, 
   ExternalLink,
   Calendar,
+  AlertTriangle,
   CheckCircle,
   XCircle,
   Loader2,
@@ -28,19 +29,13 @@ import {
   syncAllRSSFeeds,
   fetchAllRSSPosts,
   processIndividualRSSItem,
-  clearRewriteCache,
-  getRewriteCacheStats,
   fetchAllTransmittedRSSItems,
-  registerTransmittedRSSItem
+  type RSSConfig,
 } from '@/services/rssService';
 
-interface RSSConfig {
-  id?: string;
-  name: string;
-  url: string;
-  active: boolean;
-  lastSync?: string;
-  created_at?: string;
+interface TransmittedInfo {
+  status: string;
+  error?: string | null;
 }
 
 interface RSSPostItem {
@@ -63,7 +58,7 @@ const RSSManager: React.FC = () => {
   const [allPosts, setAllPosts] = useState<RSSPostItem[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [transmittingPosts, setTransmittingPosts] = useState<Set<string>>(new Set());
-  const [transmittedItems, setTransmittedItems] = useState<Set<string>>(new Set());
+  const [transmittedItems, setTransmittedItems] = useState<Map<string, TransmittedInfo>>(new Map());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -140,6 +135,27 @@ const RSSManager: React.FC = () => {
     }
   };
 
+  const handleToggleAutoPublish = async (id: string, auto_publish: boolean) => {
+    const updatedConfig = await updateRSSConfig(id, { auto_publish });
+    if (updatedConfig) {
+      setConfigs(configs.map(config =>
+        config.id === id ? { ...config, auto_publish } : config
+      ));
+      toast({
+        title: 'Sucesso',
+        description: auto_publish
+          ? 'Os posts deste feed serão publicados automaticamente.'
+          : 'Os posts deste feed serão criados como rascunho para revisão.',
+      });
+    } else {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar a configuração. A migration do RSS já foi aplicada?',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleDeleteConfig = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta configuração RSS?')) {
       return;
@@ -168,11 +184,21 @@ const RSSManager: React.FC = () => {
     try {
       setSyncing(true);
       const result = await syncAllRSSFeeds();
-      
+      const reasons: Record<string, string> = {
+        'limite': 'Limite de posts por execução atingido; o restante sai na próxima rodada.',
+        'tempo': 'Tempo da função esgotado; o restante sai na próxima rodada.',
+        'limite-ia': 'Limite gratuito da IA atingido; o restante sai na próxima rodada.',
+      };
+      const parts = [
+        `${result.created.length} post(s) criado(s)`,
+        `${result.skipped} já processado(s)`,
+        result.failed.length ? `${result.failed.length} com erro` : '',
+        result.feedErrors.length ? `${result.feedErrors.length} feed(s) inacessível(is)` : '',
+      ].filter(Boolean);
       toast({
         title: 'Sincronização concluída',
-        description: `${result.success} posts criados com sucesso. ${result.errors} erros encontrados.`,
-        variant: result.errors > 0 ? 'destructive' : 'default',
+        description: `${parts.join(', ')}.${result.stoppedBy ? ' ' + reasons[result.stoppedBy] : ''}`,
+        variant: result.failed.length > 0 || result.feedErrors.length > 0 ? 'destructive' : 'default',
       });
       
       // Recarregar configurações para atualizar timestamps
@@ -181,7 +207,7 @@ const RSSManager: React.FC = () => {
       console.error('Erro ao sincronizar RSS:', error);
       toast({
         title: 'Erro',
-        description: 'Não foi possível sincronizar os RSS feeds.',
+        description: error instanceof Error ? error.message : 'Não foi possível sincronizar os RSS feeds.',
         variant: 'destructive',
       });
     } finally {
@@ -212,12 +238,20 @@ const RSSManager: React.FC = () => {
       
       // Carregar itens transmitidos
       const transmittedItemsData = await fetchAllTransmittedRSSItems();
-      const transmittedGuids = new Set(transmittedItemsData.map(item => item.rss_item_guid));
-      setTransmittedItems(transmittedGuids);
-      
+      const transmitted = new Map<string, TransmittedInfo>();
+      transmittedItemsData.forEach(item => {
+        const info = { status: item.status || 'rascunho', error: item.error };
+        transmitted.set(item.rss_item_guid, info);
+        transmitted.set(item.rss_item_link, info);
+      });
+      setTransmittedItems(transmitted);
+
+      const failedFeeds = feedsWithPosts.filter(feed => feed.error);
       toast({
         title: 'Posts carregados',
-        description: `${flattenedPosts.length} posts encontrados nos feeds RSS.`,
+        description: `${flattenedPosts.length} posts encontrados nos feeds RSS.` +
+          (failedFeeds.length ? ` Falha ao ler: ${failedFeeds.map(f => f.feedName).join(', ')}.` : ''),
+        variant: failedFeeds.length ? 'destructive' : 'default',
       });
     } catch (error) {
       console.error('Erro ao buscar posts:', error);
@@ -235,29 +269,34 @@ const RSSManager: React.FC = () => {
     try {
       setTransmittingPosts(prev => new Set([...prev, post.guid]));
       
-      const blogPost = await processIndividualRSSItem({
-        title: post.title,
-        link: post.link,
-        description: post.description,
-        pubDate: post.pubDate,
-        guid: post.guid
+      const result = await processIndividualRSSItem(
+        {
+          title: post.title,
+          link: post.link,
+          description: post.description,
+          pubDate: post.pubDate,
+          guid: post.guid,
+        },
+        post.feedName,
+      );
+
+      setTransmittedItems(prev => {
+        const next = new Map(prev);
+        next.set(post.guid, result.ok
+          ? { status: result.published ? 'publicado' : 'rascunho' }
+          : { status: 'erro', error: result.error });
+        return next;
       });
-      
-      if (blogPost) {
-        // Registrar como transmitido
-        await registerTransmittedRSSItem(post, post.feedName, blogPost.id);
-        
-        // Atualizar o conjunto de itens transmitidos
-        setTransmittedItems(prev => new Set([...prev, post.guid]));
-        
+
+      if (result.ok) {
         toast({
-          title: 'Post transmitido com sucesso',
-          description: `"${post.title}" foi processado e criado no blog.`,
+          title: 'Post criado como rascunho',
+          description: `"${result.title}" foi reescrito${result.provider ? ` (${result.provider})` : ''} e está pronto para revisão.`,
         });
       } else {
         toast({
-          title: 'Post não transmitido',
-          description: 'O post pode já existir ou houve um erro no processamento.',
+          title: result.rateLimited ? 'Limite gratuito da IA atingido' : 'Post não transmitido',
+          description: result.error || 'Houve um erro no processamento.',
           variant: 'destructive',
         });
       }
@@ -315,26 +354,26 @@ const RSSManager: React.FC = () => {
     }
   };
 
-  const handleClearCache = () => {
-    try {
-      const stats = getRewriteCacheStats();
-      clearRewriteCache();
-      
-      toast({
-        title: 'Cache limpo com sucesso',
-        description: `${stats.size} entradas removidas do cache de reescrita da IA.`,
-      });
-    } catch (error) {
-      console.error('Erro ao limpar cache:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível limpar o cache.',
-        variant: 'destructive',
-      });
+  const renderStatus = (post: RSSPostItem) => {
+    const info = transmittedItems.get(post.guid) || transmittedItems.get(post.link);
+    if (!info) return <Badge variant="outline">Novo</Badge>;
+    if (info.status === 'erro') {
+      return (
+        <Badge variant="destructive" title={info.error || undefined}>
+          <AlertTriangle className="h-3 w-3 mr-1" />
+          Erro
+        </Badge>
+      );
     }
+    return (
+      <Badge variant="default" className={info.status === 'publicado' ? 'bg-green-500' : 'bg-blue-500'}>
+        <CheckCircle className="h-3 w-3 mr-1" />
+        {info.status === 'publicado' ? 'Publicado' : 'Rascunho'}
+      </Badge>
+    );
   };
 
-  const formatDateOptional = (dateString?: string) => {
+  const formatDateOptional = (dateString?: string | null) => {
     if (!dateString) return 'Nunca';
     return new Date(dateString).toLocaleString('pt-BR');
   };
@@ -394,7 +433,7 @@ const RSSManager: React.FC = () => {
                   {allPosts.map((post, index) => (
                     <tr 
                       key={post.guid || index} 
-                      className={`hover:bg-gray-50 ${transmittedItems.has(post.guid) ? 'bg-blue-50' : ''}`}
+                      className={`hover:bg-gray-50 ${transmittedItems.has(post.guid) || transmittedItems.has(post.link) ? 'bg-blue-50' : ''}`}
                     >
                       <td className="px-6 py-4">
                         <div>
@@ -422,14 +461,7 @@ const RSSManager: React.FC = () => {
                         {formatDate(post.pubDate)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {transmittedItems.has(post.guid) ? (
-                          <Badge variant="default" className="bg-green-500">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Transmitido
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">Novo</Badge>
-                        )}
+                        {renderStatus(post)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Button
@@ -482,7 +514,7 @@ const RSSManager: React.FC = () => {
             ) : (
               <List className="h-4 w-4 mr-2" />
             )}
-            Sincronizar Todos
+            Ver posts dos feeds
           </Button>
           <Button
             onClick={handleSyncAll}
@@ -494,15 +526,7 @@ const RSSManager: React.FC = () => {
             ) : (
               <RefreshCw className="h-4 w-4 mr-2" />
             )}
-            Sincronização Automática
-          </Button>
-          <Button
-            onClick={handleClearCache}
-            variant="outline"
-            className="text-orange-600 hover:text-orange-700"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Limpar Cache IA
+            Sincronizar agora
           </Button>
           <Button
             onClick={() => setShowAddForm(!showAddForm)}
@@ -622,9 +646,15 @@ const RSSManager: React.FC = () => {
                       </div>
                       <div className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
-                        Última sync: {formatDateOptional(config.lastSync)}
+                        Última sync: {formatDateOptional(config.lastSync || config.last_sync)}
                       </div>
                     </div>
+                    {config.last_error && (
+                      <div className="flex items-center text-sm text-red-600 mt-2">
+                        <AlertTriangle className="h-4 w-4 mr-1" />
+                        Último erro: {truncateText(config.last_error, 160)}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
@@ -639,10 +669,20 @@ const RSSManager: React.FC = () => {
                         'Testar'
                       )}
                     </Button>
-                    <Switch
-                      checked={config.active}
-                      onCheckedChange={(active) => handleToggleActive(config.id!, active)}
-                    />
+                    <label className="flex items-center space-x-2 text-sm text-gray-600" title="Ativo: o feed entra na sincronização automática">
+                      <Switch
+                        checked={config.active}
+                        onCheckedChange={(active) => handleToggleActive(config.id!, active)}
+                      />
+                      <span>Ativo</span>
+                    </label>
+                    <label className="flex items-center space-x-2 text-sm text-gray-600" title="Desligado: cria rascunhos para revisão. Ligado: publica direto no blog.">
+                      <Switch
+                        checked={!!config.auto_publish}
+                        onCheckedChange={(value) => handleToggleAutoPublish(config.id!, value)}
+                      />
+                      <span>Publicar sozinho</span>
+                    </label>
                     <Button
                       variant="outline"
                       size="sm"
@@ -665,7 +705,9 @@ const RSSManager: React.FC = () => {
             <div className="text-center">
               <h3 className="font-semibold mb-2">Sincronização Automática</h3>
               <p className="text-sm text-gray-600 mb-4">
-                {configs.filter(c => c.active).length} RSS feed(s) ativo(s) serão sincronizados automaticamente.
+                {configs.filter(c => c.active).length} RSS feed(s) ativo(s). O servidor verifica os feeds a cada
+                30 minutos, reescreve as notícias novas com IA e cria os posts (como rascunho, ou publicados
+                nos feeds com "Publicar sozinho" ligado). Use o botão abaixo para rodar agora.
               </p>
               <Button
                 onClick={handleSyncAll}
