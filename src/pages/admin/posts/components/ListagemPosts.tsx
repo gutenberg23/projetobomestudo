@@ -1,252 +1,428 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Edit, Plus, Search, Trash2, Rss, Eye, EyeOff } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Edit,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  FileText,
+  Heart,
+  ImageOff,
+  MoreHorizontal,
+  Plus,
+  Rss,
+  Search,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { BlogPost } from "@/components/blog/types";
 import RSSManager from "@/components/admin/RSSManager";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminPostStatus } from "@/services/blogService";
+import { toast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
 
 interface ListagemPostsProps {
   postsFiltrados: BlogPost[];
+  carregando: boolean;
+  erro: string | null;
   busca: string;
   onChangeBusca: (value: string) => void;
+  statusFiltro: AdminPostStatus;
+  onChangeStatusFiltro: (value: AdminPostStatus) => void;
+  contagens: Record<AdminPostStatus, number>;
   onIniciarCriacaoPost: () => void;
   onIniciarEdicaoPost: (post: BlogPost) => void;
   onExcluirPost: (id: string) => void;
   onToggleStatus: (id: string, isDraft: boolean) => void;
+  onToggleDestaque: (post: BlogPost) => void;
   currentPage: number;
   totalPages: number;
   totalPosts: number;
+  postsPerPage: number;
   onPageChange: (page: number) => void;
 }
 
+const ABAS: { id: AdminPostStatus; label: string }[] = [
+  { id: "todos", label: "Todos" },
+  { id: "publicados", label: "Publicados" },
+  { id: "rascunhos", label: "Rascunhos" },
+  { id: "destaques", label: "Destaques" },
+];
+
+const paginasVisiveis = (atual: number, total: number): (number | "...")[] => {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const paginas: (number | "...")[] = [1];
+  const inicio = Math.max(2, atual - 1);
+  const fim = Math.min(total - 1, atual + 1);
+  if (inicio > 2) paginas.push("...");
+  for (let i = inicio; i <= fim; i++) paginas.push(i);
+  if (fim < total - 1) paginas.push("...");
+  paginas.push(total);
+  return paginas;
+};
+
+const dataCurta = (iso: string) => {
+  try {
+    return format(new Date(iso), "dd MMM yyyy", { locale: ptBR });
+  } catch {
+    return "";
+  }
+};
+
+const LinhaPost: React.FC<{
+  post: BlogPost;
+  onEditar: () => void;
+  onExcluir: () => void;
+  onStatus: () => void;
+  onDestaque: () => void;
+}> = ({ post, onEditar, onExcluir, onStatus, onDestaque }) => {
+  const local = [post.state, post.region && post.region !== "nacional" && !post.state ? post.region : null]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    <li className="group flex items-center gap-3 px-3 py-3 transition-colors hover:bg-[#faf8ff] sm:gap-4 sm:px-4">
+      <button
+        type="button"
+        onClick={onEditar}
+        className="relative hidden h-14 w-24 shrink-0 overflow-hidden rounded-md bg-slate-100 sm:block"
+        aria-label={`Editar ${post.title}`}
+      >
+        {post.featuredImage ? (
+          <img src={post.featuredImage} alt="" loading="lazy" className="h-full w-full object-cover" />
+        ) : (
+          <span className="flex h-full w-full items-center justify-center text-slate-300">
+            <ImageOff className="h-5 w-5" />
+          </span>
+        )}
+      </button>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start gap-2">
+          <button
+            type="button"
+            onClick={onEditar}
+            className="line-clamp-2 text-left text-sm font-semibold leading-snug text-slate-900 hover:text-[#5f2ebe]"
+          >
+            {post.title || <span className="italic text-slate-400">Sem título</span>}
+          </button>
+          {post.featured && <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" aria-label="Em destaque" />}
+        </div>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+          <span
+            className={cn(
+              "rounded-full px-2 py-0.5 text-[11px] font-medium",
+              post.isDraft ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200" : "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+            )}
+          >
+            {post.isDraft ? "Rascunho" : "Publicado"}
+          </span>
+          {post.category && <span className="font-medium text-slate-600">{post.category}</span>}
+          <span aria-hidden>·</span>
+          <span>{post.author}</span>
+          <span aria-hidden>·</span>
+          <time dateTime={post.createdAt}>{dataCurta(post.createdAt)}</time>
+          {local && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="uppercase">{local}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="hidden shrink-0 items-center gap-4 text-xs tabular-nums text-slate-500 md:flex">
+        <span className="flex items-center gap-1" title="Visualizações">
+          <Eye className="h-3.5 w-3.5" /> {post.viewCount || 0}
+        </span>
+        <span className="flex items-center gap-1" title="Curtidas">
+          <Heart className="h-3.5 w-3.5" /> {post.likesCount || 0}
+        </span>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-1">
+        <Button type="button" variant="outline" size="sm" onClick={onEditar} className="hidden h-8 sm:inline-flex">
+          <Edit className="mr-1.5 h-3.5 w-3.5" />
+          Editar
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Mais ações">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onClick={onEditar} className="sm:hidden">
+              <Edit className="mr-2 h-4 w-4" /> Editar
+            </DropdownMenuItem>
+            {!post.isDraft && (
+              <DropdownMenuItem asChild>
+                <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-4 w-4" /> Ver no site
+                </a>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem onClick={onStatus}>
+              {post.isDraft ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
+              {post.isDraft ? "Publicar agora" : "Voltar para rascunho"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onDestaque}>
+              <Star className="mr-2 h-4 w-4" />
+              {post.featured ? "Tirar do destaque" : "Destacar no blog"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                navigator.clipboard
+                  .writeText(`${window.location.origin}/blog/${post.slug}`)
+                  .then(() => toast({ title: "Link copiado" }))
+                  .catch(() => toast({ title: "Não foi possível copiar", variant: "destructive" }));
+              }}
+            >
+              <Copy className="mr-2 h-4 w-4" /> Copiar link
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onExcluir} className="text-red-600 focus:bg-red-50 focus:text-red-700">
+              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </li>
+  );
+};
+
 export const ListagemPosts: React.FC<ListagemPostsProps> = ({
   postsFiltrados,
+  carregando,
+  erro,
   busca,
   onChangeBusca,
+  statusFiltro,
+  onChangeStatusFiltro,
+  contagens,
   onIniciarCriacaoPost,
   onIniciarEdicaoPost,
   onExcluirPost,
   onToggleStatus,
+  onToggleDestaque,
   currentPage,
   totalPages,
   totalPosts,
-  onPageChange
+  postsPerPage,
+  onPageChange,
 }) => {
   const [showRSSManager, setShowRSSManager] = React.useState(false);
-  
-  // Função para gerar os números das páginas a serem exibidos
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    
-    if (totalPages <= maxVisiblePages) {
-      // Se tiver 5 ou menos páginas, mostrar todas
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Se tiver mais de 5 páginas, mostrar uma navegação mais inteligente
-      let startPage = Math.max(1, currentPage - 2);
-      let endPage = Math.min(totalPages, currentPage + 2);
-      
-      // Ajustar se estiver perto do início ou do fim
-      if (currentPage <= 3) {
-        startPage = 1;
-        endPage = maxVisiblePages;
-      } else if (currentPage >= totalPages - 2) {
-        startPage = totalPages - maxVisiblePages + 1;
-        endPage = totalPages;
-      }
-      
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
-    }
-    
-    return pages;
-  };
-  
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#272f3c]">Posts</h1>
-        <div className="flex space-x-2">
-          <Button 
-            onClick={() => setShowRSSManager(!showRSSManager)}
-            variant="outline"
-            className={showRSSManager ? "bg-[#ea2be2] text-white hover:bg-[#d029d5]" : ""}
-          >
-            <Rss className="h-4 w-4 mr-2" />
-            RSS Manager
-          </Button>
-          <Button onClick={onIniciarCriacaoPost} className="bg-[#ea2be2] hover:bg-[#d029d5]">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Post
-          </Button>
-        </div>
-      </div>
-      
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-[#67748a]" />
-          <Input 
-            className="pl-10" 
-            placeholder="Buscar posts por título, autor ou categoria..." 
-            value={busca}
-            onChange={(e) => onChangeBusca(e.target.value)}
-          />
-        </div>
+  const inicio = totalPosts === 0 ? 0 : (currentPage - 1) * postsPerPage + 1;
+  const fim = Math.min(currentPage * postsPerPage, totalPosts);
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-[#67748a] bg-gray-50 uppercase">
-              <tr>
-                <th className="px-4 py-3">Título</th>
-                <th className="px-4 py-3">Autor</th>
-                <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3">Curtidas</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Destaque</th>
-                <th className="px-4 py-3">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {postsFiltrados.map(post => (
-                <tr key={post.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{post.title}</td>
-                  <td className="px-4 py-3">{post.author}</td>
-                  <td className="px-4 py-3">{format(new Date(post.createdAt), "dd/MM/yyyy")}</td>
-                  <td className="px-4 py-3">{post.likesCount}</td>
-                  <td className="px-4 py-3">
-                    {post.isDraft ? (
-                      <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                        Rascunho
-                      </span>
-                    ) : (
-                      <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                        Publicado
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {post.featured ? (
-                      <span className="bg-[#fce7fc] text-[#ea2be2] text-xs px-2 py-1 rounded-full">
-                        Destaque
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => onToggleStatus(post.id, !post.isDraft)}
-                        className="h-8 w-8 p-0"
-                        title={post.isDraft ? "Publicar post" : "Marcar como rascunho"}
-                      >
-                        {post.isDraft ? (
-                          <Eye className="h-4 w-4" />
-                        ) : (
-                          <EyeOff className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => onIniciarEdicaoPost(post)}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => onExcluirPost(post.id)}
-                        className="h-8 w-8 p-0 text-red-500 hover:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              
-              {postsFiltrados.length === 0 && (
-                <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-[#67748a]">
-                    Nenhum post encontrado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Paginação */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6">
-            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Mostrando <span className="font-medium">{Math.min(postsFiltrados.length, (currentPage - 1) * 20 + 1)}</span> a{' '}
-                  <span className="font-medium">{Math.min(currentPage * 20, totalPosts)}</span> de{' '}
-                  <span className="font-medium">{totalPosts}</span> resultados
-                </p>
-              </div>
-              <div>
-                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                  <button
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className={`relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
-                      currentPage === 1 ? 'cursor-not-allowed opacity-50' : ''
-                    }`}
-                  >
-                    <span className="sr-only">Página anterior</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  
-                  {getPageNumbers().map((pageNumber) => (
-                    <button
-                      key={pageNumber}
-                      onClick={() => onPageChange(pageNumber)}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                        currentPage === pageNumber
-                          ? 'z-10 bg-[#ea2be2] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ea2be2]'
-                          : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      {pageNumber}
-                    </button>
-                  ))}
-                  
-                  <button
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className={`relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 ${
-                      currentPage === totalPages ? 'cursor-not-allowed opacity-50' : ''
-                    }`}
-                  >
-                    <span className="sr-only">Próxima página</span>
-                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                      <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-      
+  return (
+    <div className="space-y-4">
+      <AdminPageHeader
+        titulo="Posts"
+        descricao="Notícias e artigos do blog. As notícias que chegam pelo RSS ficam em Rascunhos até você revisar."
+        acoes={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setShowRSSManager(!showRSSManager)}
+              className={cn(showRSSManager && "border-[#5f2ebe]/40 bg-[#faf8ff] text-[#5f2ebe]")}
+              aria-expanded={showRSSManager}
+            >
+              <Rss className="mr-2 h-4 w-4" />
+              Feeds RSS
+            </Button>
+            <Button onClick={onIniciarCriacaoPost} className="bg-[#ea2be2] text-white hover:bg-[#d029d5]">
+              <Plus className="mr-2 h-4 w-4" />
+              Novo post
+            </Button>
+          </>
+        }
+      />
+
       {showRSSManager && (
-        <div className="mt-8">
+        <div className="relative rounded-xl border border-[#5f2ebe]/20 bg-white p-1">
+          <button
+            type="button"
+            onClick={() => setShowRSSManager(false)}
+            className="absolute right-3 top-3 z-10 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            aria-label="Fechar feeds RSS"
+          >
+            <X className="h-4 w-4" />
+          </button>
           <RSSManager />
         </div>
       )}
+
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+        {/* Abas de status + busca */}
+        <div className="flex flex-col gap-3 border-b border-slate-100 px-3 pt-3 sm:px-4 lg:flex-row lg:items-end lg:justify-between">
+          <nav className="-mb-px flex gap-1 overflow-x-auto" aria-label="Filtrar por status">
+            {ABAS.map((aba) => {
+              const ativa = statusFiltro === aba.id;
+              return (
+                <button
+                  key={aba.id}
+                  type="button"
+                  onClick={() => onChangeStatusFiltro(aba.id)}
+                  aria-current={ativa ? "page" : undefined}
+                  className={cn(
+                    "flex shrink-0 items-center gap-1.5 border-b-2 px-3 pb-2.5 pt-1 text-sm font-medium transition-colors",
+                    ativa ? "border-[#5f2ebe] text-[#5f2ebe]" : "border-transparent text-slate-500 hover:text-slate-800"
+                  )}
+                >
+                  {aba.label}
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[11px] tabular-nums",
+                      ativa ? "bg-[#5f2ebe]/10 text-[#5f2ebe]" : "bg-slate-100 text-slate-500"
+                    )}
+                  >
+                    {contagens[aba.id]}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+          <div className="relative pb-3 lg:w-80">
+            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+            <Input
+              className="h-9 pl-9 pr-8"
+              placeholder="Buscar por título, autor ou categoria"
+              value={busca}
+              onChange={(e) => onChangeBusca(e.target.value)}
+              aria-label="Buscar posts"
+            />
+            {busca && (
+              <button
+                type="button"
+                onClick={() => onChangeBusca("")}
+                className="absolute right-2 top-2 rounded p-0.5 text-slate-400 hover:text-slate-700"
+                aria-label="Limpar busca"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Lista */}
+        {carregando ? (
+          <ul className="divide-y divide-slate-100" aria-busy="true">
+            {Array.from({ length: 6 }, (_, i) => (
+              <li key={i} className="flex items-center gap-4 px-4 py-3">
+                <div className="hidden h-14 w-24 animate-pulse rounded-md bg-slate-100 sm:block" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-3/4 animate-pulse rounded bg-slate-100" />
+                  <div className="h-3 w-1/2 animate-pulse rounded bg-slate-100" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : erro ? (
+          <p className="px-4 py-12 text-center text-sm text-red-600">{erro}</p>
+        ) : postsFiltrados.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 px-4 py-14 text-center">
+            <span className="rounded-full bg-slate-100 p-3 text-slate-400">
+              <FileText className="h-6 w-6" />
+            </span>
+            <div>
+              <p className="font-medium text-slate-700">{busca ? "Nenhum post encontrado" : "Nada por aqui ainda"}</p>
+              <p className="mt-1 text-sm text-slate-500">
+                {busca ? `Nada com "${busca}" nesta aba.` : "Crie um post ou traga notícias pelos feeds RSS."}
+              </p>
+            </div>
+            {busca ? (
+              <Button variant="outline" size="sm" onClick={() => onChangeBusca("")}>
+                Limpar busca
+              </Button>
+            ) : (
+              <Button size="sm" onClick={onIniciarCriacaoPost} className="bg-[#ea2be2] text-white hover:bg-[#d029d5]">
+                <Plus className="mr-1.5 h-4 w-4" /> Novo post
+              </Button>
+            )}
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {postsFiltrados.map((post) => (
+              <LinhaPost
+                key={post.id}
+                post={post}
+                onEditar={() => onIniciarEdicaoPost(post)}
+                onExcluir={() => onExcluirPost(post.id)}
+                onStatus={() => onToggleStatus(post.id, !post.isDraft)}
+                onDestaque={() => onToggleDestaque(post)}
+              />
+            ))}
+          </ul>
+        )}
+
+        {/* Paginação */}
+        {!carregando && totalPosts > 0 && (
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 text-sm text-slate-500 sm:flex-row">
+            <p className="tabular-nums">
+              {inicio}–{fim} de {totalPosts} {totalPosts === 1 ? "post" : "posts"}
+            </p>
+            {totalPages > 1 && (
+              <nav className="flex items-center gap-1" aria-label="Paginação">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  disabled={currentPage === 1}
+                  onClick={() => onPageChange(currentPage - 1)}
+                  aria-label="Página anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {paginasVisiveis(currentPage, totalPages).map((p, i) =>
+                  p === "..." ? (
+                    <span key={`r${i}`} className="px-1 text-slate-400">
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => onPageChange(p)}
+                      aria-current={p === currentPage ? "page" : undefined}
+                      className={cn(
+                        "h-8 min-w-8 rounded-md px-2 text-sm tabular-nums",
+                        p === currentPage ? "bg-[#5f2ebe] font-semibold text-white" : "text-slate-600 hover:bg-slate-100"
+                      )}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  disabled={currentPage === totalPages}
+                  onClick={() => onPageChange(currentPage + 1)}
+                  aria-label="Próxima página"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </nav>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

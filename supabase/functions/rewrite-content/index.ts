@@ -7,6 +7,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { authorize, STAFF_ROLES } from "../_shared/auth.ts";
 import { rewriteNews } from "../_shared/news.ts";
 import { AIError } from "../_shared/ai.ts";
+import { creditHtml, findCityImage } from "../_shared/images.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,7 +40,13 @@ serve(async (req: Request) => {
       typeof sourceUrl === "string" ? sourceUrl : undefined,
     );
     console.log("Conteúdo reescrito com", `${result.provider}/${result.model}`);
-    return json(result);
+    // Sugestão de foto destaque da cidade do concurso (opcional)
+    const image = await findCityImage(result.city, result.state, result.region).catch(() => null);
+    return json({
+      ...result,
+      featuredImage: image?.url || null,
+      featuredImageCredit: image ? creditHtml(image) : null,
+    });
   } catch (error) {
     if (error instanceof AIError) {
       console.error("Falha na IA:", error.attempts.join(" | "));

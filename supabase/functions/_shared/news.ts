@@ -6,6 +6,8 @@ import { parseHTML } from "npm:linkedom@0.18.15";
 // deno-lint-ignore no-explicit-any
 type Element = any;
 import { generateJson } from "./ai.ts";
+import { fixCasing } from "./casing.ts";
+import { hostOf, isBlockedLink } from "./links.ts";
 
 export interface RewrittenNews {
   title: string;
@@ -15,6 +17,8 @@ export interface RewrittenNews {
   region: string;
   state: string;
   metaKeywords: string[];
+  /** Cidade principal do concurso, para a foto destaque (pode vir vazia). */
+  city: string;
   provider?: string;
   model?: string;
 }
@@ -41,13 +45,17 @@ const SYSTEM_PROMPT = `Você é redator sênior de um portal brasileiro de concu
 Reescreva notícias com suas próprias palavras, em português do Brasil, mantendo todos os fatos
 (órgão, banca, cargos, vagas, salários, requisitos, datas, taxas e links oficiais) exatamente como
 estão na fonte. Nunca invente números ou datas. Não mencione o site de origem, direitos autorais,
-"RSS" ou que o texto foi reescrito. Responda somente com um objeto JSON válido.`;
+"RSS" ou que o texto foi reescrito. Escreva títulos e resumos com maiúsculas e minúsculas como
+em um jornal brasileiro: primeira letra maiúscula, nomes próprios, órgãos, cidades e siglas com a
+grafia oficial (ex.: "Concurso da Prefeitura de Campinas (SP) abre 120 vagas"). Nunca escreva o
+título ou o resumo todo em minúsculas nem todo em maiúsculas. Responda somente com um objeto JSON válido.`;
 
 function buildPrompt(title: string, source: string, sourceUrl?: string): string {
+  const host = sourceUrl ? hostOf(sourceUrl) : "";
   return `Reescreva a notícia abaixo para o blog.
 
 Título original: ${title}
-${sourceUrl ? `Link original (apenas referência, não cite): ${sourceUrl}\n` : ""}
+${host ? `Site de origem (não cite e não crie links para ele): ${host}\n` : ""}
 Conteúdo original (pode conter menus e rodapés do site, ignore o que não for a notícia):
 """
 ${source}
@@ -55,13 +63,14 @@ ${source}
 
 Devolva exatamente este JSON:
 {
-  "title": "título novo, informativo, até 110 caracteres, sem caixa alta",
-  "summary": "resumo de 1 a 2 frases, até 160 caracteres, usado como meta description",
+  "title": "título novo, informativo, até 110 caracteres, com maiúsculas só na primeira letra, em nomes próprios e siglas",
+  "summary": "resumo de 1 a 2 frases, até 160 caracteres, com a mesma regra de maiúsculas do título",
   "content": "corpo em HTML",
   "tags": ["3 a 5 tags: órgão, banca, área, nível"],
   "region": "norte | nordeste | centro-oeste | sul | sudeste | nacional | federal",
   "state": "sigla da UF em maiúsculas, ou vazio se for nacional/federal",
-  "metaKeywords": ["5 a 10 palavras-chave"]
+  "metaKeywords": ["5 a 10 palavras-chave"],
+  "city": "cidade principal do concurso, com acentos (ex.: \"Campinas\"); vazio se for estadual sem cidade definida, nacional ou federal"
 }
 
 Regras do "content":
@@ -70,7 +79,11 @@ Regras do "content":
 - Comece com um parágrafo de abertura com o essencial (órgão, vagas, salário, inscrições).
 - Organize em seções com <h2>, como "Vagas e salários", "Inscrições", "Provas", "Requisitos".
 - Quando houver vários cargos, prefira uma tabela.
-- Se a fonte não trouxer uma informação, não crie a seção.`;
+- Se a fonte não trouxer uma informação, não crie a seção.
+- Links (<a href>): use apenas os que aparecem na fonte e são úteis ao candidato, como edital (PDF),
+  página de inscrição, site oficial do órgão ou da banca. Nunca crie links para o site de origem,
+  para outros portais de notícias ou para cursinhos. Não invente endereços.
+- Não escreva "Fonte:", "Com informações de" nem cite de onde a notícia foi tirada.`;
 }
 
 const ALLOWED_TAGS = new Set([
@@ -84,7 +97,7 @@ const DROP_WITH_CONTENT = new Set([
 
 // Mantém só tags e atributos seguros. A IA recebe texto de sites de terceiros,
 // então o HTML gerado não pode ser confiado (risco de XSS no blog).
-export function sanitizeHtml(html: string): string {
+export function sanitizeHtml(html: string, sourceUrl?: string): string {
   const doc: Element = (parseHTML(`<!doctype html><html><body><div id="__root">${html}</div></body></html>`) as Element).document;
   const root = doc?.getElementById("__root");
   if (!root) return "";
@@ -118,7 +131,7 @@ export function sanitizeHtml(html: string): string {
       }
       if (tag === "a") {
         const href = (child.getAttribute("href") || "").trim();
-        if (!/^https?:\/\//i.test(href)) {
+        if (!/^https?:\/\//i.test(href) || isBlockedLink(href, sourceUrl)) {
           child.replaceWith(...Array.from(child.childNodes));
         } else {
           child.setAttribute("target", "_blank");
@@ -128,6 +141,11 @@ export function sanitizeHtml(html: string): string {
     }
   };
   walk(root);
+  // Remove parágrafos de crédito ao site de origem ("Fonte: ...")
+  for (const p of Array.from(root.querySelectorAll("p")) as Element[]) {
+    const t = (p.textContent || "").trim();
+    if (/^(fonte|fontes|com informa[çc][õo]es d[eoa]s?|via|leia (tamb[ée]m|mais))\b/i.test(t)) p.remove();
+  }
   return root.innerHTML.trim();
 }
 
@@ -149,9 +167,16 @@ const asStringArray = (v: unknown, maxItems: number): string[] => {
   return out;
 };
 
-export function normalizeRewrite(raw: Record<string, unknown>, originalTitle: string): RewrittenNews {
-  const title = asString(raw.title, 160) || originalTitle;
-  const content = sanitizeHtml(typeof raw.content === "string" ? raw.content : "");
+export function normalizeRewrite(
+  raw: Record<string, unknown>,
+  originalTitle: string,
+  sourceText = "",
+  sourceUrl?: string,
+): RewrittenNews {
+  const content = sanitizeHtml(typeof raw.content === "string" ? raw.content : "", sourceUrl);
+  // Referência de grafia: texto original e o corpo já reescrito
+  const reference = `${sourceText}\n${content.replace(/<[^>]+>/g, " ")}`;
+  const title = fixCasing(asString(raw.title, 160) || originalTitle, reference);
   if (content.replace(/<[^>]+>/g, "").trim().length < 200) {
     throw new Error("Conteúdo reescrito muito curto ou vazio");
   }
@@ -163,9 +188,10 @@ export function normalizeRewrite(raw: Record<string, unknown>, originalTitle: st
 
   const summaryRaw = asString(raw.summary, 400) ||
     content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  const summary = summaryRaw.length > 200 ? summaryRaw.slice(0, 197).trimEnd() + "..." : summaryRaw;
+  const summaryCut = summaryRaw.length > 200 ? summaryRaw.slice(0, 197).trimEnd() + "..." : summaryRaw;
+  const summary = fixCasing(summaryCut, reference);
 
-  const tags = asStringArray(raw.tags, 6);
+  const tags = asStringArray(raw.tags, 6).map((t) => fixCasing(t, reference));
   const metaKeywords = asStringArray(raw.metaKeywords, 10);
 
   return {
@@ -176,6 +202,7 @@ export function normalizeRewrite(raw: Record<string, unknown>, originalTitle: st
     region,
     state,
     metaKeywords: metaKeywords.length ? metaKeywords : ["concursos", "concurso público"],
+    city: asString(raw.city, 80).replace(/\s*[-/(].*$/, ""),
   };
 }
 
@@ -191,5 +218,5 @@ export async function rewriteNews(
     temperature: 0.5,
     maxOutputTokens: 8192,
   });
-  return { ...normalizeRewrite(result.data, originalTitle), provider: result.provider, model: result.model };
+  return { ...normalizeRewrite(result.data, originalTitle, source, sourceUrl), provider: result.provider, model: result.model };
 }

@@ -6,6 +6,7 @@ import { parseHTML } from "npm:linkedom@0.18.15";
 // deno-lint-ignore no-explicit-any
 type Element = any;
 import { XMLParser } from "npm:fast-xml-parser@4.5.7";
+import { isBlockedLink } from "./links.ts";
 
 export interface FeedItem {
   title: string;
@@ -193,7 +194,21 @@ const CONTENT_SELECTORS = [
 
 // Converte o bloco principal em texto com marcações leves (títulos, listas e
 // tabelas), o que ajuda a IA a manter a estrutura e gasta menos tokens que HTML.
-function toStructuredText(el: Element): string {
+// Links úteis dentro de um bloco (edital, inscrição, órgão), em markdown,
+// para a IA poder mantê-los. Links do próprio site e de portais ficam de fora.
+function usefulLinks(el: Element, baseUrl: string): string {
+  const out: string[] = [];
+  for (const a of Array.from(el.querySelectorAll("a[href]")) as Element[]) {
+    const href = a.getAttribute("href") || "";
+    if (!/^https?:/i.test(href) || isBlockedLink(href, baseUrl)) continue;
+    const label = (a.textContent || "").replace(/\s+/g, " ").trim().slice(0, 80) || "link";
+    out.push(`[${label}](${href})`);
+    if (out.length >= 5) break;
+  }
+  return out.length ? ` (links: ${out.join(", ")})` : "";
+}
+
+function toStructuredText(el: Element, baseUrl = ""): string {
   const out: string[] = [];
   const visit = (node: Element) => {
     for (const child of Array.from(node.children) as Element[]) {
@@ -204,15 +219,15 @@ function toStructuredText(el: Element): string {
         if (t) out.push(`\n## ${t}`);
       } else if (tag === "p" || tag === "blockquote") {
         const t = text();
-        if (t) out.push(t);
+        if (t) out.push(t + usefulLinks(child, baseUrl));
       } else if (tag === "li") {
         const t = text();
-        if (t) out.push(`- ${t}`);
+        if (t) out.push(`- ${t}${usefulLinks(child, baseUrl)}`);
       } else if (tag === "tr") {
         const cells = (Array.from(child.children) as Element[])
           .map((c) => (c.textContent || "").replace(/\s+/g, " ").trim());
         if (cells.some(Boolean)) out.push(`| ${cells.join(" | ")} |`);
-      } else if (tag === "a" && /\.pdf(\?|$)/i.test(child.getAttribute("href") || "")) {
+      } else if (tag === "a" && /\.pdf(\?|$)/i.test(child.getAttribute("href") || "") && !isBlockedLink(child.getAttribute("href") || "", baseUrl)) {
         out.push(`[${text() || "PDF"}](${child.getAttribute("href")})`);
       } else {
         visit(child);
@@ -251,12 +266,12 @@ export function extractArticle(html: string, baseUrl: string): ExtractedArticle 
   for (const sel of CONTENT_SELECTORS) {
     const el = doc.querySelector(sel) as Element | null;
     if (!el) continue;
-    const text = toStructuredText(el);
+    const text = toStructuredText(el, baseUrl);
     if (text.length > best.length) best = text;
     if (best.length > 800) break;
   }
   if (best.length < 300 && doc.body) {
-    const bodyText = toStructuredText(doc.body as unknown as Element);
+    const bodyText = toStructuredText(doc.body as unknown as Element, baseUrl);
     if (bodyText.length > best.length) best = bodyText;
   }
   return { text: best };

@@ -1,5 +1,5 @@
 
-import { BlogPost, Region } from "@/components/blog/types";
+import { Region } from "@/components/blog/types";
 
 // Enum para controlar o modo da interface
 export enum ModoInterface {
@@ -62,44 +62,4 @@ export const ESTADOS = [
   { id: "sp", name: "São Paulo", value: "SP", region: "sudeste" },
   { id: "se", name: "Sergipe", value: "SE", region: "nordeste" },
   { id: "to", name: "Tocantins", value: "TO", region: "norte" }
-];
-
-// Mock de posts para a listagem
-export const MOCK_POSTS: BlogPost[] = [
-  {
-    id: "1",
-    title: "Dicas para provas de Português em concursos públicos",
-    summary: "Confira nossas dicas essenciais para se destacar nas provas de língua portuguesa em concursos públicos.",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    author: "Maria Silva",
-    commentCount: 15,
-    likesCount: 32,
-    createdAt: "2023-10-15T14:30:00Z",
-    slug: "dicas-para-provas-de-portugues",
-    category: "Português"
-  },
-  {
-    id: "2",
-    title: "Como estudar para concursos jurídicos",
-    summary: "Aprenda métodos eficientes para estudar direito e conquistar sua aprovação em concursos jurídicos.",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    author: "Carlos Mendes",
-    commentCount: 8,
-    likesCount: 24,
-    createdAt: "2023-10-10T09:45:00Z",
-    slug: "como-estudar-para-concursos-juridicos",
-    category: "Direito"
-  },
-  {
-    id: "3",
-    title: "Matemática para concursos: fórmulas essenciais",
-    summary: "Domine as principais fórmulas matemáticas cobradas em provas de concursos públicos.",
-    content: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-    author: "Fernando Costa",
-    commentCount: 5,
-    likesCount: 18,
-    createdAt: "2023-09-28T11:20:00Z",
-    slug: "matematica-para-concursos-formulas-essenciais",
-    category: "Matemática"
-  },
 ];
