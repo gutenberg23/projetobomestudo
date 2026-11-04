@@ -1,188 +1,190 @@
-import { Concurso } from '../../../../types/concurso';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle,
-  CardDescription 
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  Edit, 
-  Trash2,
-  AlertCircle,
-  Star
-} from 'lucide-react';
+import React from "react";
+import { Concurso } from "@/types/concurso";
+import { BlogPost } from "@/components/blog/types";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CalendarDays, Edit, ExternalLink, FileText, MoreHorizontal, Star, Trash2, Users, Wallet } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { dataCompleta, dataCurta, diasAte, NIVEL_CURTO, paraData, statusConcurso } from "./utils";
 
 interface ListagemConcursosProps {
   concursos: Concurso[];
+  postsPorId: Map<string, BlogPost>;
   onEditar: (concurso: Concurso) => void;
   onExcluir: (id: string) => void;
+  onToggleDestaque: (concurso: Concurso) => void;
+  vazio?: React.ReactNode;
 }
 
-const ListagemConcursos = ({ concursos, onEditar, onExcluir }: ListagemConcursosProps) => {
-  // Formatar data para exibição
-  const formatarData = (data: string) => {
-    try {
-      return format(new Date(data), 'dd/MM/yyyy', { locale: ptBR });
-    } catch (error) {
-      console.error('Erro ao formatar data:', error);
-      return 'Data inválida';
-    }
-  };
+const ESTILO_STATUS = {
+  aberto: { label: "Inscrições abertas", cls: "bg-emerald-50 text-emerald-700 ring-emerald-200" },
+  "em-breve": { label: "Em breve", cls: "bg-sky-50 text-sky-700 ring-sky-200" },
+  encerrado: { label: "Encerrado", cls: "bg-slate-100 text-slate-500 ring-slate-200" },
+} as const;
 
-  // Verificar se o concurso está no prazo de inscrição
-  const isConcursoAtivo = (concurso: Concurso) => {
-    try {
-      const hoje = new Date();
-      const dataFim = new Date(concurso.dataFimInscricao);
-      return dataFim >= hoje;
-    } catch (error) {
-      console.error('Erro ao verificar status do concurso:', error);
-      return false;
-    }
-  };
+/** Quadradinho de calendário com a data de fim das inscrições. */
+const Calendario: React.FC<{ concurso: Concurso }> = ({ concurso }) => {
+  const status = statusConcurso(concurso);
+  const alvo = status === "em-breve" ? concurso.dataInicioInscricao : concurso.dataFimInscricao;
+  const d = paraData(alvo);
+  return (
+    <div
+      className={cn(
+        "flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg border text-center",
+        status === "aberto" ? "border-[#5f2ebe]/20 bg-[#faf8ff] text-[#5f2ebe]" : "border-slate-200 bg-slate-50 text-slate-500"
+      )}
+      title={status === "em-breve" ? "Início das inscrições" : "Fim das inscrições"}
+    >
+      <span className="text-[10px] font-semibold uppercase leading-none">
+        {d ? d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "") : "—"}
+      </span>
+      <span className="text-xl font-bold leading-tight tabular-nums">{d ? d.getDate() : ""}</span>
+      <span className="text-[9px] uppercase leading-none opacity-70">{status === "em-breve" ? "início" : "fim"}</span>
+    </div>
+  );
+};
 
-  // Manipuladores de eventos para os botões
-  const handleEditar = (concurso: Concurso, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Clicou em editar concurso:', concurso);
-    onEditar(concurso);
-  };
+const Prazo: React.FC<{ concurso: Concurso }> = ({ concurso }) => {
+  const status = statusConcurso(concurso);
+  if (status === "encerrado") return null;
+  const dias = diasAte(status === "em-breve" ? concurso.dataInicioInscricao : concurso.dataFimInscricao);
+  if (dias === null) return null;
+  const texto =
+    status === "em-breve"
+      ? dias <= 1 ? (dias === 0 ? "abre hoje" : "abre amanhã") : `abre em ${dias} dias`
+      : dias === 0 ? "termina hoje" : dias === 1 ? "termina amanhã" : `termina em ${dias} dias`;
+  return (
+    <span className={cn("text-xs font-medium", status === "aberto" && dias <= 7 ? "text-amber-600" : "text-slate-500")}>
+      {texto}
+    </span>
+  );
+};
 
-  const handleExcluir = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('Clicou em excluir concurso:', id);
-    onExcluir(id);
-  };
+const ListagemConcursos: React.FC<ListagemConcursosProps> = ({
+  concursos,
+  postsPorId,
+  onEditar,
+  onExcluir,
+  onToggleDestaque,
+  vazio,
+}) => {
+  if (concursos.length === 0) return <>{vazio}</>;
 
   return (
-    <Card className="border bg-white shadow-sm">
-      <CardHeader className="border-b bg-gray-50/80">
-        <CardTitle>Concursos</CardTitle>
-        <CardDescription>
-          Gerenciamento de concursos disponíveis no sistema
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Título</TableHead>
-              <TableHead>Período de Inscrição</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-center">Destacado</TableHead>
-              <TableHead className="text-center">Vagas</TableHead>
-              <TableHead>Níveis</TableHead>
-              <TableHead>Estados</TableHead>
-              <TableHead className="text-center">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {concursos.length > 0 ? (
-              concursos.map((concurso) => (
-                <TableRow key={concurso.id} className="hover:bg-gray-50">
-                  <TableCell className="font-medium">{concurso.titulo}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      <span>
-                        {formatarData(concurso.dataInicioInscricao)} a {formatarData(concurso.dataFimInscricao)}
-                      </span>
-                      {concurso.prorrogado && (
-                        <Badge variant="outline" className="mt-1 border-purple-500 text-purple-600 w-fit">
-                          Prorrogado
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {isConcursoAtivo(concurso) ? (
-                      <Badge variant="default" className="bg-green-500 hover:bg-green-600">Ativo</Badge>
-                    ) : (
-                      <Badge variant="secondary">Encerrado</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {concurso.destacar ? (
-                      <div className="flex justify-center">
-                        <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                      </div>
-                    ) : (
-                      <div className="flex justify-center">
-                        <Star className="h-5 w-5 text-gray-300" />
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center font-medium">{concurso.vagas.toLocaleString()}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-0.5">
-                      {concurso.niveis.map(nivel => (
-                        <Badge key={nivel} variant="outline" className="w-fit">
-                          {nivel}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1">
-                      {concurso.estados.map(estado => (
-                        <Badge key={estado} variant="outline" className="w-fit">
-                          {estado}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        onClick={(e) => handleEditar(concurso, e)}
-                        variant="outline"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        title="Editar concurso"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        onClick={(e) => handleExcluir(concurso.id, e)}
-                        variant="outline"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-red-600 border-red-200 hover:text-red-700 hover:bg-red-50 hover:border-red-300"
-                        title="Excluir concurso"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-gray-500">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-gray-400" />
-                    <span>Nenhum concurso encontrado</span>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+    <ul className="divide-y divide-slate-100">
+      {concursos.map((concurso) => {
+        const status = statusConcurso(concurso);
+        const estilo = ESTILO_STATUS[status];
+        const post = concurso.postId ? postsPorId.get(concurso.postId) : undefined;
+        const estados = concurso.estados || [];
+        return (
+          <li key={concurso.id} className="group flex items-start gap-3 px-3 py-3.5 transition-colors hover:bg-[#faf8ff] sm:items-center sm:gap-4 sm:px-4">
+            <Calendario concurso={concurso} />
+
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <button
+                  type="button"
+                  onClick={() => onEditar(concurso)}
+                  className="text-left text-sm font-semibold leading-snug text-slate-900 hover:text-[#5f2ebe]"
+                >
+                  {concurso.titulo}
+                </button>
+                {concurso.destacar && <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" aria-label="Destacado na página inicial" />}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-medium ring-1", estilo.cls)}>{estilo.label}</span>
+                {concurso.prorrogado && (
+                  <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700 ring-1 ring-purple-200">
+                    Prorrogado
+                  </span>
+                )}
+                <Prazo concurso={concurso} />
+                <span className="hidden items-center gap-1 sm:inline-flex">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {dataCurta(concurso.dataInicioInscricao)} – {dataCurta(concurso.dataFimInscricao)}
+                </span>
+                {concurso.dataProva && <span className="hidden sm:inline">· prova {dataCompleta(concurso.dataProva)}</span>}
+              </div>
+              <div className="flex flex-wrap items-center gap-1">
+                {concurso.niveis.map((n) => (
+                  <span key={n} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600">
+                    {NIVEL_CURTO[n] || n}
+                  </span>
+                ))}
+                {estados.slice(0, 5).map((uf) => (
+                  <span key={uf} className="rounded border border-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
+                    {uf}
+                  </span>
+                ))}
+                {estados.length > 5 && (
+                  <span className="text-[11px] text-slate-400" title={estados.join(", ")}>
+                    +{estados.length - 5}
+                  </span>
+                )}
+                {post && (
+                  <span className="ml-1 inline-flex items-center gap-1 truncate text-[11px] text-slate-400" title={post.title}>
+                    <FileText className="h-3 w-3" /> post vinculado
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="hidden shrink-0 flex-col items-end gap-1 text-xs text-slate-500 md:flex">
+              <span className="flex items-center gap-1 tabular-nums" title="Vagas">
+                <Users className="h-3.5 w-3.5" />
+                <span className="font-semibold text-slate-800">{(concurso.vagas || 0).toLocaleString("pt-BR")}</span> vagas
+              </span>
+              {concurso.salario && (
+                <span className="flex items-center gap-1" title="Salário">
+                  <Wallet className="h-3.5 w-3.5" /> {concurso.salario}
+                </span>
+              )}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1">
+              <Button type="button" variant="outline" size="sm" onClick={() => onEditar(concurso)} className="hidden h-8 sm:inline-flex">
+                <Edit className="mr-1.5 h-3.5 w-3.5" />
+                Editar
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Mais ações">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => onEditar(concurso)} className="sm:hidden">
+                    <Edit className="mr-2 h-4 w-4" /> Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onToggleDestaque(concurso)}>
+                    <Star className="mr-2 h-4 w-4" />
+                    {concurso.destacar ? "Tirar da página inicial" : "Destacar na página inicial"}
+                  </DropdownMenuItem>
+                  {post?.slug && (
+                    <DropdownMenuItem asChild>
+                      <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-2 h-4 w-4" /> Ver post vinculado
+                      </a>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => onExcluir(concurso.id)} className="text-red-600 focus:bg-red-50 focus:text-red-700">
+                    <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 };
 

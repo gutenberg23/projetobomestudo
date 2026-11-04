@@ -242,7 +242,7 @@ export const concursosService = {
     try {
       let query = supabase
         .from('blog_posts')
-        .select('id, title, category, author')
+        .select('id, title, category, author, slug, created_at, is_draft')
         .order('created_at', { ascending: false });
 
       if (apenasAutorAtual) {
