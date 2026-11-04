@@ -1,374 +1,488 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowRight, BookOpen, GraduationCap, Layers, PlayCircle, Search, SearchX, Star, X } from "lucide-react";
+import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Search, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useLocation, useNavigate, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { CourseItemType, DisciplinaItemType } from "@/components/admin/questions/types";
-import { generateFriendlyUrl } from "@/utils/slug-utils";
-import { ActivityLogger } from '@/services/activity-logger';
-import AdBanner from '@/components/ads/AdBanner';
 import { PublicLayout } from "@/components/layout/PublicLayout";
+import AdBanner from "@/components/ads/AdBanner";
+import { Carregando, EstadoVazio, Painel, Segmentos, normalizar } from "@/components/course/ui";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { generateFriendlyUrl } from "@/utils/slug-utils";
+import { ActivityLogger } from "@/services/activity-logger";
+import { cn } from "@/lib/utils";
 
-interface ItemProps {
+type Tipo = "cursos" | "disciplinas";
+type Ordem = "az" | "recentes" | "aulas";
+
+interface ItemExplorar {
   id: string;
-  title: string;
-  description: string;
-  isFavorite: boolean;
-  topics: number;
-  lessons: number;
-  onToggleFavorite: (friendlyUrl: string) => void;
-  friendlyUrl: string;
-  banca?: string;
-  cargo?: string;
+  tipo: Tipo;
+  titulo: string;
+  /** Cargo (curso) ou descrição (disciplina) */
+  subtitulo: string;
+  banca: string;
+  disciplinas: number;
+  aulas: number;
+  topicos: number;
+  criadoEm: string;
+  url: string;
+  favorito: boolean;
 }
 
-const ResultItem: React.FC<ItemProps> = ({
-  title,
-  isFavorite,
-  onToggleFavorite,
-  friendlyUrl,
-  banca,
-  cargo
-}) => {
-  const displayTitle = cargo ? `${title} - ${cargo}` : (banca ? `${title} - ${banca}` : title);
-  
-  return <div className="flex justify-between items-center p-4 border-b border-gray-100">
-      <div className="flex-1 pr-10">
-        <Link to={`/course/${friendlyUrl}`} className="hover:text-[#5f2ebe] transition-colors">
-          <h3 className="text-[#272f3c] mb-0 leading-none text-sm font-light">{displayTitle}</h3>
-        </Link>
-      </div>
-      <div className="flex items-center">
-        <Button variant="ghost" size="icon" onClick={() => onToggleFavorite(friendlyUrl)} aria-label={isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
-          <Star className={`h-5 w-5 ${isFavorite ? "fill-[#5f2ebe] text-[#5f2ebe]" : "text-[#5f2ebe]"}`} />
-        </Button>
-      </div>
-    </div>;
-};
+const POR_PAGINA = 24;
+const LOTE = 150;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Linha = Record<string, any>;
+
+/** Busca as aulas em lotes (uma consulta por lote, e não uma por disciplina). */
+async function topicosPorAula(ids: string[]) {
+  const mapa = new Map<string, number>();
+  const unicos = Array.from(new Set(ids.filter(Boolean)));
+  for (let i = 0; i < unicos.length; i += LOTE) {
+    const { data, error } = await supabase.from("aulas").select("id, topicos_ids").in("id", unicos.slice(i, i + LOTE));
+    if (error) throw error;
+    (data || []).forEach((a: Linha) => mapa.set(a.id, a.topicos_ids?.length || 0));
+  }
+  return mapa;
+}
+
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
 const Explore = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [searchQuery, setSearchQuery] = useState(""); // Nova variável para armazenar a query de pesquisa
-  const [showSubjects, setShowSubjects] = useState(false);
-  const [courses, setCourses] = useState<CourseItemType[]>([]);
-  const [subjects, setSubjects] = useState<DisciplinaItemType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const location = useLocation();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const tipo: Tipo = params.get("tipo") === "disciplinas" ? "disciplinas" : "cursos";
+  const termoUrl = params.get("q") || params.get("s") || "";
+
+  const [busca, setBusca] = useState(termoUrl);
+  const [ordem, setOrdem] = useState<Ordem>("az");
+  const [soFavoritos, setSoFavoritos] = useState(false);
+  const [banca, setBanca] = useState("");
+  const [limite, setLimite] = useState(POR_PAGINA);
+  const [itens, setItens] = useState<ItemExplorar[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState(false);
+
+  // Mantém o campo em dia quando a URL muda (ex.: busca feita no cabeçalho)
+  useEffect(() => setBusca((atual) => (atual.trim() === termoUrl.trim() ? atual : termoUrl)), [termoUrl]);
+
+  // Busca enquanto digita, guardando o termo na URL
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (busca.trim() === termoUrl.trim()) return;
+      const p = new URLSearchParams(params);
+      p.delete("s");
+      if (busca.trim()) p.set("q", busca.trim());
+      else p.delete("q");
+      setParams(p, { replace: true });
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busca]);
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const searchQuery = searchParams.get('q') || searchParams.get('s') || '';
-    if (searchQuery) {
-      setSearchTerm(searchQuery);
-      setSearchQuery(searchQuery);
-    }
-  }, [location.search]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    let ativo = true;
+    (async () => {
+      setCarregando(true);
+      setErro(false);
       try {
-        const {
-          data: coursesData,
-          error: coursesError
-        } = await supabase.from('cursos').select('*');
-        if (coursesError) throw coursesError;
+        const [cursosRes, disciplinasRes] = await Promise.all([
+          supabase.from("cursos").select("id, titulo, descricao, disciplinas_ids, aulas_ids, topicos_ids, created_at"),
+          supabase.from("disciplinas").select("id, titulo, descricao, banca, aulas_ids, created_at"),
+        ]);
+        if (cursosRes.error) throw cursosRes.error;
+        if (disciplinasRes.error) throw disciplinasRes.error;
+        const cursos = (cursosRes.data || []) as Linha[];
+        const disciplinas = (disciplinasRes.data || []) as Linha[];
 
-        const {
-          data: {
-            user
-          }
-        } = await supabase.auth.getUser();
-        let userFavorites: string[] = [];
-        let userDisciplinasFavorites: string[] = [];
+        let favCursos: string[] = [];
+        let favDisciplinas: string[] = [];
         if (user) {
-          const {
-            data: favoritesData
-          } = await supabase.from('profiles').select('cursos_favoritos, disciplinas_favoritos').eq('id', user.id).single();
-          userFavorites = favoritesData?.cursos_favoritos || [];
-          userDisciplinasFavorites = favoritesData?.disciplinas_favoritos || [];
+          const { data } = await supabase.from("profiles").select("cursos_favoritos, disciplinas_favoritos").eq("id", user.id).single();
+          favCursos = data?.cursos_favoritos || [];
+          favDisciplinas = data?.disciplinas_favoritos || [];
         }
 
-        const formattedCourses: CourseItemType[] = coursesData.map(course => {
-          const friendlyUrl = generateFriendlyUrl(course.titulo, course.id);
-          const isFavorite = user ? userFavorites.includes(course.id) : false;
+        const topicos = await topicosPorAula(disciplinas.flatMap((d) => d.aulas_ids || []));
+        const porDisciplina = new Map<string, { aulas: number; topicos: number }>();
+        disciplinas.forEach((d) => {
+          const aulas: string[] = d.aulas_ids || [];
+          porDisciplina.set(d.id, { aulas: aulas.length, topicos: aulas.reduce((s, a) => s + (topicos.get(a) || 0), 0) });
+        });
+
+        const listaCursos: ItemExplorar[] = cursos.map((c) => {
+          const ids: string[] = c.disciplinas_ids || [];
+          const somaAulas = ids.reduce((s, id) => s + (porDisciplina.get(id)?.aulas || 0), 0);
+          const somaTopicos = ids.reduce((s, id) => s + (porDisciplina.get(id)?.topicos || 0), 0);
           return {
-            id: course.id,
-            titulo: course.titulo,
-            descricao: course.descricao || 'Sem descrição',
-            isFavorite,
-            topics: course.topicos_ids?.length || 0,
-            lessons: course.aulas_ids?.length || 0,
-            informacoes_curso: course.informacoes_curso,
-            friendlyUrl,
-            cargo: course.descricao
+            id: c.id,
+            tipo: "cursos",
+            titulo: c.titulo,
+            subtitulo: c.descricao || "",
+            banca: "",
+            disciplinas: ids.length,
+            aulas: somaAulas || c.aulas_ids?.length || 0,
+            topicos: somaTopicos || c.topicos_ids?.length || 0,
+            criadoEm: c.created_at || "",
+            url: `/course/${generateFriendlyUrl(c.titulo, c.id)}`,
+            favorito: favCursos.includes(c.id),
           };
         });
-        setCourses(formattedCourses);
 
-        const {
-          data: disciplinasData,
-          error: disciplinasError
-        } = await supabase.from('disciplinas').select('*');
-        if (disciplinasError) throw disciplinasError;
+        const listaDisciplinas: ItemExplorar[] = disciplinas.map((d) => ({
+          id: d.id,
+          tipo: "disciplinas",
+          titulo: d.titulo,
+          subtitulo: d.descricao || "",
+          banca: (d.banca || "").trim(),
+          disciplinas: 0,
+          aulas: porDisciplina.get(d.id)?.aulas || 0,
+          topicos: porDisciplina.get(d.id)?.topicos || 0,
+          criadoEm: d.created_at || "",
+          url: `/course/${generateFriendlyUrl(d.titulo, d.id)}`,
+          favorito: favDisciplinas.includes(d.id),
+        }));
 
-        const formattedDisciplinas: DisciplinaItemType[] = await Promise.all(
-          disciplinasData.map(async (disciplina) => {
-            const friendlyUrl = generateFriendlyUrl(disciplina.titulo, disciplina.id);
-            const isFavorite = user ? userDisciplinasFavorites.includes(disciplina.id) : false;
-            let topicsCount = 0;
-            if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-              const { data: aulasData } = await supabase
-                .from('aulas')
-                .select('topicos_ids')
-                .in('id', disciplina.aulas_ids);
-              if (aulasData) {
-                topicsCount = aulasData.reduce((count, aula) => 
-                  count + (aula.topicos_ids?.length || 0), 0);
-              }
-            }
-            return {
-              id: disciplina.id,
-              titulo: disciplina.titulo,
-              descricao: disciplina.descricao || 'Sem descrição',
-              isFavorite,
-              topics: topicsCount,
-              lessons: disciplina.aulas_ids?.length || 0,
-              friendlyUrl,
-              banca: disciplina.banca
-            };
-          })
-        );
-        
-        setSubjects(formattedDisciplinas);
-      } catch (error) {
-        console.error("Erro ao buscar dados:", error);
-        toast.error("Erro ao carregar dados. Por favor, tente novamente.");
+        if (ativo) setItens([...listaCursos, ...listaDisciplinas]);
+      } catch (e) {
+        console.error("Erro ao carregar o explorar:", e);
+        if (ativo) setErro(true);
       } finally {
-        setLoading(false);
+        if (ativo) setCarregando(false);
       }
+    })();
+    return () => {
+      ativo = false;
     };
-    fetchData();
-  }, []);
+  }, [user]);
 
-  const handleToggleFavorite = async (friendlyUrl: string) => {
-    const {
-      data: {
-        user
-      }
-    } = await supabase.auth.getUser();
+  const trocarTipo = (t: Tipo) => {
+    const p = new URLSearchParams(params);
+    if (t === "disciplinas") p.set("tipo", t);
+    else p.delete("tipo");
+    setParams(p, { replace: true });
+    setBanca("");
+    setLimite(POR_PAGINA);
+  };
+
+  const doTipo = useMemo(() => itens.filter((i) => i.tipo === tipo), [itens, tipo]);
+  const contagem = useMemo(
+    () => ({
+      cursos: itens.filter((i) => i.tipo === "cursos").length,
+      disciplinas: itens.filter((i) => i.tipo === "disciplinas").length,
+      favoritos: doTipo.filter((i) => i.favorito).length,
+    }),
+    [itens, doTipo]
+  );
+
+  const bancas = useMemo(() => {
+    const c = new Map<string, number>();
+    itens.filter((i) => i.tipo === "disciplinas" && i.banca).forEach((i) => c.set(i.banca, (c.get(i.banca) || 0) + 1));
+    return Array.from(c.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [itens]);
+
+  const termo = normalizar(termoUrl);
+  const visiveis = useMemo(() => {
+    const lista = doTipo.filter(
+      (i) =>
+        (!soFavoritos || i.favorito) &&
+        (!banca || i.banca === banca) &&
+        (!termo || normalizar(`${i.titulo} ${i.subtitulo} ${i.banca}`).includes(termo))
+    );
+    const ordenada = [...lista];
+    if (ordem === "az") ordenada.sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR"));
+    if (ordem === "recentes") ordenada.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+    if (ordem === "aulas") ordenada.sort((a, b) => b.aulas - a.aulas || a.titulo.localeCompare(b.titulo, "pt-BR"));
+    return ordenada;
+  }, [doTipo, soFavoritos, banca, termo, ordem]);
+
+  useEffect(() => setLimite(POR_PAGINA), [termo, soFavoritos, banca, ordem]);
+
+  const alternarFavorito = async (item: ItemExplorar) => {
     if (!user) {
-      toast.error("Você precisa estar logado para adicionar favoritos.");
-      navigate('/login');
+      toast.error("Entre na sua conta para favoritar.");
+      navigate("/login");
       return;
     }
+    const coluna = item.tipo === "cursos" ? "cursos_favoritos" : "disciplinas_favoritos";
+    const novo = !item.favorito;
+    setItens((p) => p.map((i) => (i.id === item.id && i.tipo === item.tipo ? { ...i, favorito: novo } : i)));
     try {
-      if (showSubjects) {
-        const subject = subjects.find(s => s.friendlyUrl === friendlyUrl);
-        if (!subject) {
-          console.error("Disciplina não encontrada:", friendlyUrl);
-          return;
-        }
-        const disciplinaId = subject.id;
-        console.log("ID da disciplina:", disciplinaId);
-        setSubjects(subjects.map(s => s.id === subject.id ? {
-          ...s,
-          isFavorite: !s.isFavorite
-        } : s));
-        const {
-          data: profile
-        } = await supabase.from('profiles').select('disciplinas_favoritos').eq('id', user.id).single();
-        if (!profile) {
-          console.error("Perfil não encontrado");
-          return;
-        }
-        let disciplinasFavoritos = profile.disciplinas_favoritos || [];
-        console.log("Favoritos atuais:", disciplinasFavoritos);
-        const isAlreadyFavorite = disciplinasFavoritos.includes(disciplinaId);
-        if (isAlreadyFavorite) {
-          disciplinasFavoritos = disciplinasFavoritos.filter((id: string) => id !== disciplinaId);
-          toast.success("Disciplina removida dos favoritos");
-        } else {
-          disciplinasFavoritos.push(disciplinaId);
-          
-          // Registrar atividade de favoritar disciplina
-          await ActivityLogger.logSubjectFavorite(disciplinaId, subject.titulo);
-          
-          toast.success("Disciplina adicionada aos favoritos");
-        }
-        const {
-          error
-        } = await supabase.from('profiles').update({
-          disciplinas_favoritos: disciplinasFavoritos
-        }).eq('id', user.id);
-        if (error) throw error;
-      } else {
-        const course = courses.find(c => c.friendlyUrl === friendlyUrl);
-        if (!course) {
-          console.error("Curso não encontrado:", friendlyUrl);
-          return;
-        }
-        const courseId = course.id;
-        console.log("ID do curso:", courseId);
-        setCourses(courses.map(c => c.id === course.id ? {
-          ...c,
-          isFavorite: !c.isFavorite
-        } : c));
-        const {
-          data: profile
-        } = await supabase.from('profiles').select('cursos_favoritos').eq('id', user.id).single();
-        if (!profile) {
-          console.error("Perfil não encontrado");
-          return;
-        }
-        let cursosFavoritos = profile.cursos_favoritos || [];
-        console.log("Favoritos atuais:", cursosFavoritos);
-        const isAlreadyFavorite = cursosFavoritos.includes(courseId);
-        if (isAlreadyFavorite) {
-          cursosFavoritos = cursosFavoritos.filter((id: string) => id !== courseId);
-          toast.success("Curso removido dos favoritos");
-        } else {
-          cursosFavoritos.push(courseId);
-          
-          // Registrar atividade de favoritar curso
-          await ActivityLogger.logCourseFavorite(courseId, course.titulo);
-          
-          toast.success("Curso adicionado aos favoritos");
-        }
-        const {
-          error
-        } = await supabase.from('profiles').update({
-          cursos_favoritos: cursosFavoritos
-        }).eq('id', user.id);
-        if (error) throw error;
+      const { data: perfil, error: erroPerfil } = await supabase.from("profiles").select(coluna).eq("id", user.id).single();
+      if (erroPerfil) throw erroPerfil;
+      const atuais: string[] = (perfil as Linha)?.[coluna] || [];
+      const lista = novo ? Array.from(new Set([...atuais, item.id])) : atuais.filter((id) => id !== item.id);
+      const { error } = await supabase.from("profiles").update({ [coluna]: lista }).eq("id", user.id);
+      if (error) throw error;
+      if (novo) {
+        if (item.tipo === "cursos") await ActivityLogger.logCourseFavorite(item.id, item.titulo);
+        else await ActivityLogger.logSubjectFavorite(item.id, item.titulo);
       }
-    } catch (error) {
-      console.error("Erro ao atualizar favoritos:", error);
-      toast.error("Erro ao atualizar favoritos. Por favor, tente novamente.");
+      toast.success(novo ? "Adicionado aos favoritos" : "Removido dos favoritos");
+    } catch (e) {
+      console.error("Erro ao atualizar favoritos:", e);
+      setItens((p) => p.map((i) => (i.id === item.id && i.tipo === item.tipo ? { ...i, favorito: !novo } : i)));
+      toast.error("Não foi possível atualizar os favoritos.");
     }
   };
 
-  // Função para realizar a pesquisa
-  const handleSearch = useCallback(() => {
-    if (searchTerm.trim() !== "") {
-      // Atualizar URL com o parâmetro de busca
-      const searchParams = new URLSearchParams(window.location.search);
-      searchParams.set('q', searchTerm);
-      navigate(`${location.pathname}?${searchParams.toString()}`, { replace: true });
-      setSearchQuery(searchTerm);
-    } else {
-      // Se o termo de busca estiver vazio, remover o parâmetro da URL
-      const searchParams = new URLSearchParams(window.location.search);
-      searchParams.delete('q');
-      searchParams.delete('s');
-      navigate(`${location.pathname}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`, { replace: true });
-      setSearchQuery("");
-    }
-  }, [searchTerm, navigate, location.pathname]);
-
-  // Função para lidar com o Enter no campo de busca
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
+  const limparFiltros = () => {
+    setBusca("");
+    setSoFavoritos(false);
+    setBanca("");
   };
-
-  const filteredData = showSubjects 
-    ? subjects.filter(subject => 
-        searchQuery && searchQuery.trim() !== "" 
-          ? subject.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || 
-            (subject.banca && subject.banca.toLowerCase().includes(searchQuery.toLowerCase()))
-          : true
-      ) 
-    : courses.filter(course => 
-        searchQuery && searchQuery.trim() !== "" 
-          ? course.titulo.toLowerCase().includes(searchQuery.toLowerCase()) || 
-            (course.descricao && course.descricao.toLowerCase().includes(searchQuery.toLowerCase()))
-          : true
-      );
+  const temFiltro = !!termo || soFavoritos || !!banca;
 
   return (
     <PublicLayout>
-      <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
+      <div className="flex min-h-screen flex-col bg-[rgb(242,244,246)]">
         <Header />
         <main className="flex-1">
-          <div className="container mx-auto px-4 py-8">
-            <div className="mb-8">
-              <h1 className="text-2xl text-[#272f3c] font-extrabold md:text-2xl mb-2 text-xl">Explorar Cursos e Disciplinas</h1>
-              <p className="text-gray-600 text-xs md:text-sm">Encontre o conteúdo que deseja estudar</p>
-            </div>
+          {/* Topo com a busca */}
+          <section className="relative overflow-hidden border-b border-slate-200/70 bg-white">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-[#5f2ebe]/15 to-[#ea2be2]/10 blur-2xl" />
+            <div className="container relative mx-auto px-4 py-8 md:py-10">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#5f2ebe]">Explorar</p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">Encontre o que estudar</h1>
+              <p className="mt-1 max-w-xl text-sm text-slate-500">
+                Cursos completos para o seu concurso ou disciplinas avulsas para reforçar uma matéria.
+              </p>
 
-            <div className="mb-6">
-              <AdBanner position="explore_top" className="rounded-lg" />
-            </div>
+              <div className="relative mt-5 max-w-2xl">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder={tipo === "cursos" ? "Busque por concurso, órgão ou cargo" : "Busque por disciplina ou banca"}
+                  aria-label="Buscar"
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-11 text-base text-slate-800 shadow-sm outline-none transition focus:border-[#5f2ebe] focus:ring-4 focus:ring-[#5f2ebe]/10"
+                />
+                {busca && (
+                  <button
+                    type="button"
+                    aria-label="Limpar busca"
+                    onClick={() => setBusca("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
 
-            <div className="bg-white rounded-lg p-6 mb-8 shadow-sm">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                  <Input
-                    type="text"
-                    placeholder="Buscar cursos ou disciplinas..."
-                    className="pl-10 py-6 text-lg md:py-6"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                  />
-                </div>
-                <Button 
-                  onClick={handleSearch}
-                  className="px-6 py-6 text-base font-medium"
+              <div className="mt-4">
+                <Segmentos<Tipo>
+                  valor={tipo}
+                  onChange={trocarTipo}
+                  opcoes={[
+                    {
+                      valor: "cursos",
+                      rotulo: (
+                        <>
+                          <GraduationCap className="h-4 w-4" /> Cursos
+                        </>
+                      ),
+                      contagem: carregando ? undefined : contagem.cursos,
+                    },
+                    {
+                      valor: "disciplinas",
+                      rotulo: (
+                        <>
+                          <BookOpen className="h-4 w-4" /> Disciplinas
+                        </>
+                      ),
+                      contagem: carregando ? undefined : contagem.disciplinas,
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+          </section>
+
+          <div className="container mx-auto space-y-5 px-4 py-6">
+            <AdBanner position="explore_top" className="rounded-lg" />
+
+            {/* Filtros */}
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSoFavoritos((v) => !v)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                    soFavoritos ? "border-[#5f2ebe] bg-[#5f2ebe] text-white" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                  )}
                 >
-                  <Search className="h-5 w-5 mr-2" />
-                  Pesquisar
-                </Button>
-                <div className="flex items-center justify-center space-x-3 bg-gray-50 rounded-full px-4 py-2 border border-gray-200">
-                  <span className={`text-sm font-medium ${!showSubjects ? "text-[#5f2ebe]" : "text-gray-500"}`}>Cursos</span>
-                  <Switch
-                    checked={showSubjects}
-                    onCheckedChange={setShowSubjects}
-                    className="data-[state=checked]:bg-[#5f2ebe] data-[state=unchecked]:bg-gray-300"
-                  />
-                  <span className={`text-sm font-medium ${showSubjects ? "text-[#5f2ebe]" : "text-gray-500"}`}>Disciplinas</span>
-                </div>
+                  <Star className={cn("h-3.5 w-3.5", soFavoritos && "fill-current")} />
+                  Favoritos
+                  {user && !carregando && <span className="tabular-nums opacity-80">{contagem.favoritos}</span>}
+                </button>
+                {tipo === "disciplinas" && bancas.length > 0 && (
+                  <select
+                    value={banca}
+                    onChange={(e) => setBanca(e.target.value)}
+                    aria-label="Filtrar por banca"
+                    className="h-9 max-w-[220px] rounded-full border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#5f2ebe]"
+                  >
+                    <option value="">Todas as bancas</option>
+                    {bancas.map(([b, n]) => (
+                      <option key={b} value={b}>
+                        {b} ({n})
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {temFiltro && (
+                  <button type="button" onClick={limparFiltros} className="px-1 text-sm font-medium text-[#5f2ebe] hover:underline">
+                    Limpar filtros
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                {!carregando && <span className="tabular-nums">{plural(visiveis.length, "resultado", "resultados")}</span>}
+                <span className="text-slate-300">·</span>
+                <label htmlFor="explore-ordem" className="sr-only">
+                  Ordenar
+                </label>
+                <select
+                  id="explore-ordem"
+                  value={ordem}
+                  onChange={(e) => setOrdem(e.target.value as Ordem)}
+                  className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none focus:border-[#5f2ebe]"
+                >
+                  <option value="az">Nome (A–Z)</option>
+                  <option value="recentes">Mais recentes</option>
+                  <option value="aulas">Mais aulas</option>
+                </select>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg overflow-hidden shadow-sm">
-              {loading ? <div className="p-8 text-center">
-                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-                  <p className="mt-3 text-gray-500 text-xs md:text-sm">Carregando dados...</p>
-                </div> : <div className="divide-y divide-gray-100">
-                  {filteredData.length > 0 ? filteredData.map(item => <ResultItem 
-                    key={item.id} 
-                    id={item.id}
-                    title={item.titulo} 
-                    description={item.descricao || ""}
-                    isFavorite={item.isFavorite}
-                    topics={item.topics}
-                    lessons={item.lessons}
-                    onToggleFavorite={handleToggleFavorite} 
-                    friendlyUrl={item.friendlyUrl || generateFriendlyUrl(item.titulo, item.id)} 
-                    banca={showSubjects ? (item as DisciplinaItemType).banca : undefined}
-                    cargo={!showSubjects ? item.descricao : undefined}
-                  />) : searchQuery ? <div className="p-8 text-center text-gray-500 text-xs md:text-sm">
-                      Nenhum resultado encontrado para "{searchQuery}"
-                    </div> : <div className="p-8 text-center text-gray-500 text-xs md:text-sm">
-                      {showSubjects ? "Nenhuma disciplina encontrada" : "Nenhum curso encontrado"}
-                    </div>}
-                </div>}
-            </div>
+            {carregando ? (
+              <Carregando texto="Carregando cursos e disciplinas..." />
+            ) : erro ? (
+              <EstadoVazio icone={SearchX} titulo="Não foi possível carregar" texto="Verifique sua conexão e recarregue a página." />
+            ) : visiveis.length === 0 ? (
+              <EstadoVazio
+                icone={soFavoritos && !termo ? Star : SearchX}
+                titulo={
+                  termo
+                    ? `Nada encontrado para "${termoUrl}"`
+                    : soFavoritos
+                      ? "Você ainda não tem favoritos aqui"
+                      : tipo === "cursos"
+                        ? "Nenhum curso disponível"
+                        : "Nenhuma disciplina disponível"
+                }
+                texto={
+                  termo
+                    ? "Tente um termo mais curto, sem siglas, ou procure na outra aba."
+                    : soFavoritos
+                      ? "Toque na estrela de um curso ou disciplina para guardá-lo aqui e em Meus cursos."
+                      : undefined
+                }
+                acao={
+                  temFiltro ? (
+                    <button
+                      type="button"
+                      onClick={limparFiltros}
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Limpar filtros
+                    </button>
+                  ) : undefined
+                }
+              />
+            ) : (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {visiveis.slice(0, limite).map((item) => (
+                    <CartaoItem key={`${item.tipo}-${item.id}`} item={item} onFavoritar={() => alternarFavorito(item)} />
+                  ))}
+                </div>
+                {visiveis.length > limite && (
+                  <div className="flex justify-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setLimite((l) => l + POR_PAGINA)}
+                      className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                    >
+                      Mostrar mais ({visiveis.length - limite} restantes)
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </main>
         <Footer />
       </div>
     </PublicLayout>
+  );
+};
+
+const CartaoItem: React.FC<{ item: ItemExplorar; onFavoritar: () => void }> = ({ item, onFavoritar }) => {
+  const Icone = item.tipo === "cursos" ? GraduationCap : BookOpen;
+  const detalhes =
+    item.tipo === "cursos"
+      ? [plural(item.disciplinas, "disciplina", "disciplinas"), plural(item.aulas, "aula", "aulas")]
+      : [plural(item.aulas, "aula", "aulas"), plural(item.topicos, "tópico", "tópicos")];
+  return (
+    <Painel className="group relative flex flex-col p-4 transition hover:-translate-y-0.5 hover:border-[#5f2ebe]/30 hover:shadow-md">
+      <div className="flex items-start gap-3">
+        <span
+          className={cn(
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+            item.tipo === "cursos" ? "bg-[#5f2ebe]/10 text-[#5f2ebe]" : "bg-[#ea2be2]/10 text-[#c41fbd]"
+          )}
+        >
+          <Icone className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1 pr-8">
+          <Link to={item.url} className="after:absolute after:inset-0 after:rounded-2xl focus:outline-none">
+            <h3 className="line-clamp-2 font-semibold leading-snug text-slate-900 group-hover:text-[#5f2ebe]">{item.titulo}</h3>
+          </Link>
+          {(item.subtitulo || item.banca) && (
+            <p className="mt-0.5 line-clamp-2 text-sm text-slate-500">
+              {item.tipo === "disciplinas" && item.banca ? item.banca : item.subtitulo}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onFavoritar}
+        aria-pressed={item.favorito}
+        aria-label={item.favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+        title={item.favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+        className={cn(
+          "absolute right-3 top-3 z-10 rounded-lg p-1.5 transition-colors",
+          item.favorito ? "text-amber-500 hover:bg-amber-50" : "text-slate-300 hover:bg-slate-100 hover:text-slate-500"
+        )}
+      >
+        <Star className={cn("h-5 w-5", item.favorito && "fill-current")} />
+      </button>
+
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+          <span className="inline-flex items-center gap-1">
+            <Layers className="h-3.5 w-3.5 text-slate-400" />
+            {detalhes[0]}
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <PlayCircle className="h-3.5 w-3.5 text-slate-400" />
+            {detalhes[1]}
+          </span>
+        </div>
+        <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[#5f2ebe]">
+          {item.tipo === "cursos" ? "Ver curso" : "Estudar"}
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
+    </Painel>
   );
 };
 

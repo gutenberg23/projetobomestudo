@@ -1,619 +1,618 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
-import { ActivityLogger } from '@/services/activity-logger';
-import AdBanner from '@/components/ads/AdBanner';
+  ArrowRight,
+  BookMarked,
+  Globe2,
+  Heart,
+  ListChecks,
+  Lock,
+  LogIn,
+  NotebookPen,
+  Pencil,
+  Plus,
+  Search,
+  SearchX,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { PublicLayout } from "@/components/layout/PublicLayout";
+import AdBanner from "@/components/ads/AdBanner";
+import { Carregando, EstadoVazio, Metrica, Painel, Segmentos, normalizar } from "@/components/course/ui";
+import { ConfirmarAcao } from "@/components/admin/ui/dialogos";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { ActivityLogger } from "@/services/activity-logger";
+import { cn } from "@/lib/utils";
 
-interface QuestionBook {
+type Aba = "meus" | "publicos" | "favoritos";
+type Ordem = "recentes" | "az" | "questoes";
+
+interface Caderno {
   id: string;
   nome: string;
-  created_at: string;
-  user_id: string;
-  is_public: boolean;
-  total_questions: number;
-  answered_questions: number;
-  correct_answers: number;
-  wrong_answers: number;
-  is_favorite?: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+  userId: string;
+  publico: boolean;
+  /** null quando não dá para saber (caderno de outra pessoa sem contagem salva) */
+  questoes: number | null;
 }
 
+const POR_PAGINA = 18;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const paraCaderno = (b: any, contagens?: Map<string, number>): Caderno => {
+  const real = contagens?.get(b.id);
+  const salvo = typeof b.total_questions === "number" ? b.total_questions : 0;
+  return {
+    id: b.id,
+    nome: b.nome || "Caderno sem nome",
+    criadoEm: b.created_at || "",
+    atualizadoEm: b.updated_at || b.created_at || "",
+    userId: b.user_id,
+    publico: b.is_public === true,
+    questoes: contagens ? real ?? 0 : salvo > 0 ? salvo : null,
+  };
+};
+
+const dataCurta = (iso: string) =>
+  iso ? new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).replace(/\./g, "") : "";
+
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+
 export default function QuestionBooks() {
-  const { user } = useAuth();
-  const [books, setBooks] = useState<QuestionBook[]>([]);
-  const [publicBooks, setPublicBooks] = useState<QuestionBook[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [editingBook, setEditingBook] = useState<QuestionBook | null>(null);
-  const [newBookTitle, setNewBookTitle] = useState('');
-  const [newBookType, setNewBookType] = useState<'public' | 'private'>('private');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [publicCurrentPage, setPublicCurrentPage] = useState(1);
-  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
-  const itemsPerPage = 10;
+  const { user, loading: carregandoAuth } = useAuth();
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const abaUrl = params.get("aba");
+  const aba: Aba = abaUrl === "publicos" || abaUrl === "favoritos" ? abaUrl : "meus";
 
-  useEffect(() => {
-    fetchBooks();
-    fetchPublicBooks();
-    fetchFavorites();
-  }, []);
+  const [meus, setMeus] = useState<Caderno[]>([]);
+  const [publicos, setPublicos] = useState<Caderno[]>([]);
+  const [favoritos, setFavoritos] = useState<string[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [busca, setBusca] = useState("");
+  const [ordem, setOrdem] = useState<Ordem>("recentes");
+  const [limite, setLimite] = useState(POR_PAGINA);
 
-  const fetchFavorites = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) return;
+  const [formAberto, setFormAberto] = useState(false);
+  const [editando, setEditando] = useState<Caderno | null>(null);
+  const [nome, setNome] = useState("");
+  const [publico, setPublico] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [excluindo, setExcluindo] = useState<Caderno | null>(null);
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('cadernos_favoritos')
-        .eq('id', user.id)
-        .single();
-
-      if (error) throw error;
-
-      if (data && data.cadernos_favoritos) {
-        setFavoriteIds(data.cadernos_favoritos);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar favoritos:', error);
+  const carregar = useCallback(async () => {
+    if (!user) {
+      setCarregando(false);
+      return;
     }
-  };
-
-  const fetchBooks = async () => {
+    setCarregando(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error('Você precisa estar logado para ver seus cadernos');
-        return;
+      const [meusRes, publicosRes, perfilRes, questoesRes] = await Promise.all([
+        supabase.from("cadernos_questoes").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("cadernos_questoes").select("*").eq("is_public", true).neq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("profiles").select("cadernos_favoritos").eq("id", user.id).single(),
+        supabase.from("questoes_caderno").select("caderno_id").eq("user_id", user.id),
+      ]);
+      if (meusRes.error) throw meusRes.error;
+      if (publicosRes.error) throw publicosRes.error;
+
+      // A contagem salva no caderno nem sempre acompanha as questões adicionadas pela página de questões,
+      // então nos cadernos do próprio aluno contamos direto na tabela de vínculo.
+      const contagens = new Map<string, number>();
+      (questoesRes.data || []).forEach((q: { caderno_id: string }) => contagens.set(q.caderno_id, (contagens.get(q.caderno_id) || 0) + 1));
+      const listaMeus = (meusRes.data || []).map((b) => paraCaderno(b, questoesRes.error ? undefined : contagens));
+      setMeus(listaMeus);
+      setPublicos((publicosRes.data || []).map((b) => paraCaderno(b)));
+      setFavoritos(perfilRes.data?.cadernos_favoritos || []);
+
+      // Corrige a contagem salva (é ela que outros alunos veem nos cadernos públicos)
+      if (!questoesRes.error) {
+        (meusRes.data || [])
+          .filter((b) => (b.total_questions || 0) !== (contagens.get(b.id) || 0))
+          .forEach((b) => {
+            supabase
+              .from("cadernos_questoes")
+              .update({ total_questions: contagens.get(b.id) || 0 })
+              .eq("id", b.id)
+              .then(({ error }) => error && console.warn("Não foi possível atualizar a contagem do caderno", error));
+          });
       }
-
-      const { data, error } = await supabase
-        .from('cadernos_questoes')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setBooks(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar cadernos:', error);
-      toast.error('Erro ao carregar os cadernos');
+    } catch (e) {
+      console.error("Erro ao carregar cadernos:", e);
+      toast.error("Não foi possível carregar os cadernos.");
     } finally {
-      setLoading(false);
+      setCarregando(false);
     }
-  };
-
-  const fetchPublicBooks = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('cadernos_questoes')
-        .select('*')
-        .eq('is_public', true)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      // Marcar cadernos favoritos
-      const booksWithFavorites = (data || []).map(book => ({
-        ...book,
-        is_favorite: favoriteIds.includes(book.id)
-      }));
-
-      setPublicBooks(booksWithFavorites);
-    } catch (error) {
-      console.error('Erro ao buscar cadernos públicos:', error);
-      toast.error('Erro ao carregar os cadernos públicos');
-    }
-  };
+  }, [user]);
 
   useEffect(() => {
-    // Atualizar flag de favorito quando favoriteIds mudar
-    setPublicBooks(prevBooks => 
-      prevBooks.map(book => ({
-        ...book,
-        is_favorite: favoriteIds.includes(book.id)
-      }))
-    );
-  }, [favoriteIds]);
+    if (!carregandoAuth) carregar();
+  }, [carregandoAuth, carregar]);
 
-  const filteredPublicBooks = publicBooks.filter(book => 
-    book.nome.toLowerCase().includes(searchQuery.toLowerCase()) && 
-    (!showOnlyFavorites || book.is_favorite)
-  );
+  const trocarAba = (a: Aba) => {
+    const p = new URLSearchParams(params);
+    if (a === "meus") p.delete("aba");
+    else p.set("aba", a);
+    setParams(p, { replace: true });
+    setLimite(POR_PAGINA);
+  };
 
-  // Ordenar para mostrar favoritos no topo
-  const sortedPublicBooks = [...filteredPublicBooks].sort((a, b) => {
-    if (a.is_favorite && !b.is_favorite) return -1;
-    if (!a.is_favorite && b.is_favorite) return 1;
-    return 0;
-  });
+  const listaFavoritos = useMemo(() => {
+    const todos = new Map([...publicos, ...meus].map((c) => [c.id, c]));
+    return favoritos.map((id) => todos.get(id)).filter(Boolean) as Caderno[];
+  }, [favoritos, publicos, meus]);
 
-  // Cálculos para paginação dos meus cadernos
-  const totalPages = Math.ceil(books.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentBooks = books.slice(startIndex, endIndex);
+  const daAba = aba === "meus" ? meus : aba === "publicos" ? publicos : listaFavoritos;
+  const termo = normalizar(busca);
+  const visiveis = useMemo(() => {
+    const lista = daAba.filter((c) => !termo || normalizar(c.nome).includes(termo));
+    if (ordem === "az") lista.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    else if (ordem === "questoes") lista.sort((a, b) => (b.questoes ?? -1) - (a.questoes ?? -1));
+    else lista.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+    return lista;
+  }, [daAba, termo, ordem]);
 
-  // Cálculos para paginação dos cadernos públicos
-  const totalPublicPages = Math.ceil(sortedPublicBooks.length / itemsPerPage);
-  const publicStartIndex = (publicCurrentPage - 1) * itemsPerPage;
-  const publicEndIndex = publicStartIndex + itemsPerPage;
-  const currentPublicBooks = sortedPublicBooks.slice(publicStartIndex, publicEndIndex);
+  useEffect(() => setLimite(POR_PAGINA), [termo, ordem]);
 
-  const PaginationControls = ({ 
-    currentPage, 
-    totalPages, 
-    onPageChange 
-  }: { 
-    currentPage: number; 
-    totalPages: number; 
-    onPageChange: (page: number) => void;
-  }) => (
-    <div className="flex items-center justify-end gap-2 py-4 px-6 border-t">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      <span className="text-sm text-gray-600">
-        Página {currentPage} de {totalPages || 1}
-      </span>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </div>
-  );
+  const totalQuestoes = meus.reduce((s, c) => s + (c.questoes || 0), 0);
+  const compartilhados = meus.filter((c) => c.publico).length;
 
-  const handleCreateBook = async () => {
+  const abrirNovo = () => {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+    setEditando(null);
+    setNome("");
+    setPublico(false);
+    setFormAberto(true);
+  };
+
+  const abrirEdicao = (c: Caderno) => {
+    setEditando(c);
+    setNome(c.nome);
+    setPublico(c.publico);
+    setFormAberto(true);
+  };
+
+  const salvar = async () => {
+    if (!user) return;
+    const limpo = nome.trim();
+    if (!limpo) {
+      toast.error("Dê um nome ao caderno.");
+      return;
+    }
+    setSalvando(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error('Você precisa estar logado para criar um caderno');
-        return;
+      if (editando) {
+        const { error } = await supabase
+          .from("cadernos_questoes")
+          .update({ nome: limpo, is_public: publico, updated_at: new Date().toISOString() })
+          .eq("id", editando.id);
+        if (error) throw error;
+        setMeus((p) => p.map((c) => (c.id === editando.id ? { ...c, nome: limpo, publico } : c)));
+        toast.success("Caderno atualizado.");
+      } else {
+        const { data, error } = await supabase
+          .from("cadernos_questoes")
+          .insert({ nome: limpo, user_id: user.id, is_public: publico })
+          .select()
+          .single();
+        if (error) throw error;
+        setMeus((p) => [paraCaderno(data, new Map()), ...p]);
+        if (aba !== "meus") trocarAba("meus");
+        toast.success("Caderno criado. Agora adicione questões a ele.");
+        await ActivityLogger.logNotebookCreate(data.id, data.nome);
       }
-
-      if (!newBookTitle.trim()) {
-        toast.error('Por favor, informe um nome para o caderno');
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('cadernos_questoes')
-        .insert({
-          nome: newBookTitle,
-          user_id: user.id,
-          is_public: newBookType === 'public'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast.success('Caderno criado com sucesso!');
-      setOpen(false);
-      setNewBookTitle('');
-      setNewBookType('private');
-      fetchBooks();
-      
-      // Registrar atividade
-      await ActivityLogger.logNotebookCreate(data.id, data.nome);
-
-    } catch (error) {
-      console.error('Erro ao criar caderno:', error);
-      toast.error('Erro ao criar o caderno');
+      setFormAberto(false);
+    } catch (e) {
+      console.error("Erro ao salvar caderno:", e);
+      toast.error("Não foi possível salvar o caderno.");
+    } finally {
+      setSalvando(false);
     }
   };
 
-  const handleEditBook = async () => {
-    try {
-      if (!editingBook) return;
+  const alternarVisibilidade = async (c: Caderno) => {
+    const novo = !c.publico;
+    setMeus((p) => p.map((x) => (x.id === c.id ? { ...x, publico: novo } : x)));
+    const { error } = await supabase
+      .from("cadernos_questoes")
+      .update({ is_public: novo, updated_at: new Date().toISOString() })
+      .eq("id", c.id);
+    if (error) {
+      setMeus((p) => p.map((x) => (x.id === c.id ? { ...x, publico: !novo } : x)));
+      toast.error("Não foi possível mudar a visibilidade.");
+    } else toast.success(novo ? "Caderno agora é público." : "Caderno agora é privado.");
+  };
 
-      const { error } = await supabase
-        .from('cadernos_questoes')
-        .update({
-          nome: newBookTitle,
-          is_public: newBookType === 'public',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingBook.id);
-
-      if (error) throw error;
-
-      toast.success('Caderno atualizado com sucesso!');
-      setOpen(false);
-      setEditingBook(null);
-      setNewBookTitle('');
-      setNewBookType('private');
-      fetchBooks();
-    } catch (error) {
-      console.error('Erro ao editar caderno:', error);
-      toast.error('Erro ao atualizar o caderno');
+  const excluir = async () => {
+    if (!excluindo) return;
+    const { error } = await supabase.from("cadernos_questoes").delete().eq("id", excluindo.id);
+    if (error) {
+      toast.error("Não foi possível excluir o caderno.");
+      throw error;
     }
+    setMeus((p) => p.filter((c) => c.id !== excluindo.id));
+    toast.success("Caderno excluído.");
   };
 
-  const handleDeleteBook = async (id: string) => {
-    try {
-      if (!confirm('Tem certeza que deseja excluir este caderno?')) return;
-
-      const { error } = await supabase
-        .from('cadernos_questoes')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-
-      toast.success('Caderno excluído com sucesso!');
-      fetchBooks();
-    } catch (error) {
-      console.error('Erro ao excluir caderno:', error);
-      toast.error('Erro ao excluir o caderno');
-    }
+  const alternarFavorito = async (c: Caderno) => {
+    if (!user) return;
+    const eraFavorito = favoritos.includes(c.id);
+    const novos = eraFavorito ? favoritos.filter((id) => id !== c.id) : [...favoritos, c.id];
+    setFavoritos(novos);
+    const { error } = await supabase.from("profiles").update({ cadernos_favoritos: novos }).eq("id", user.id);
+    if (error) {
+      setFavoritos(favoritos);
+      toast.error("Não foi possível atualizar os favoritos.");
+    } else toast.success(eraFavorito ? "Removido dos favoritos." : "Adicionado aos favoritos.");
   };
 
-  const handleOpenEdit = (book: QuestionBook) => {
-    setEditingBook(book);
-    setNewBookTitle(book.nome);
-    setNewBookType(book.is_public ? 'public' : 'private');
-    setOpen(true);
-  };
+  const conteudo = () => {
+    if (carregandoAuth || (user && carregando)) return <Carregando texto="Carregando cadernos..." />;
 
-  const handleOpenCreate = () => {
-    setEditingBook(null);
-    setNewBookTitle('');
-    setNewBookType('private');
-    setOpen(true);
-  };
-
-  const handleToggleFavorite = async (book: QuestionBook) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error('Você precisa estar logado para favoritar');
-        return;
-      }
-
-      // Atualizar estado local primeiro para feedback imediato
-      const newFavoriteIds = book.is_favorite
-        ? favoriteIds.filter(id => id !== book.id)
-        : [...favoriteIds, book.id];
-
-      setFavoriteIds(newFavoriteIds);
-
-      // Atualizar no banco de dados
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          cadernos_favoritos: newFavoriteIds
-        })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Atualizar a lista de cadernos públicos
-      setPublicBooks(prevBooks => 
-        prevBooks.map(b => 
-          b.id === book.id 
-            ? { ...b, is_favorite: !book.is_favorite } 
-            : b
-        )
+    if (!user)
+      return (
+        <EstadoVazio
+          icone={LogIn}
+          titulo="Entre para usar os cadernos"
+          texto="Com uma conta você monta cadernos com as questões que quer revisar e acessa os cadernos compartilhados por outros alunos."
+          acao={
+            <Button asChild className="bg-[#5f2ebe] hover:bg-[#4f25a0]">
+              <Link to="/login">Entrar ou criar conta</Link>
+            </Button>
+          }
+        />
       );
 
-      toast.success(
-        book.is_favorite 
-          ? 'Caderno removido dos favoritos' 
-          : 'Caderno adicionado aos favoritos'
+    if (daAba.length === 0) {
+      if (aba === "meus") return <PrimeiroCaderno onNovo={abrirNovo} />;
+      return (
+        <EstadoVazio
+          icone={aba === "favoritos" ? Heart : Users}
+          titulo={aba === "favoritos" ? "Nenhum caderno favorito" : "Nenhum caderno público ainda"}
+          texto={
+            aba === "favoritos"
+              ? "Na aba Públicos, toque no coração de um caderno para guardá-lo aqui."
+              : "Quando outros alunos compartilharem cadernos, eles aparecem aqui. Que tal tornar um dos seus público?"
+          }
+          acao={
+            aba === "favoritos" ? (
+              <Button variant="outline" onClick={() => trocarAba("publicos")}>
+                Ver cadernos públicos
+              </Button>
+            ) : undefined
+          }
+        />
       );
-    } catch (error) {
-      console.error('Erro ao favoritar:', error);
-      // Reverter estado local em caso de erro
-      setFavoriteIds(prev => 
-        book.is_favorite 
-          ? [...prev, book.id] 
-          : prev.filter(id => id !== book.id)
-      );
-      toast.error('Erro ao atualizar favoritos');
     }
-  };
 
-  if (loading) {
+    if (visiveis.length === 0)
+      return (
+        <EstadoVazio
+          icone={SearchX}
+          titulo={`Nenhum caderno com "${busca.trim()}"`}
+          texto="Tente outro termo."
+          acao={
+            <Button variant="outline" onClick={() => setBusca("")}>
+              Limpar busca
+            </Button>
+          }
+        />
+      );
+
     return (
-      <PublicLayout>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1">
-            <div className="container mx-auto px-4 py-8">
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5f2ebe]"></div>
-              </div>
-            </div>
-          </main>
-          <Footer />
+      <>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {visiveis.slice(0, limite).map((c) => (
+            <CartaoCaderno
+              key={c.id}
+              caderno={c}
+              meu={c.userId === user.id}
+              favorito={favoritos.includes(c.id)}
+              onFavoritar={() => alternarFavorito(c)}
+              onEditar={() => abrirEdicao(c)}
+              onVisibilidade={() => alternarVisibilidade(c)}
+              onExcluir={() => setExcluindo(c)}
+            />
+          ))}
         </div>
-      </PublicLayout>
+        {visiveis.length > limite && (
+          <div className="flex justify-center pt-2">
+            <Button variant="outline" onClick={() => setLimite((l) => l + POR_PAGINA)}>
+              Mostrar mais ({visiveis.length - limite} restantes)
+            </Button>
+          </div>
+        )}
+      </>
     );
-  }
+  };
 
   return (
     <PublicLayout>
-      <div className="min-h-screen flex flex-col">
+      <div className="flex min-h-screen flex-col bg-[rgb(242,244,246)]">
         <Header />
         <main className="flex-1">
-          <div className="container mx-auto px-4 py-8">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2 text-xl md:text-2xl">Meus Cadernos de Questões</h1>
-              <p className="text-gray-600 text-xs md:text-sm">Organize e estude suas questões favoritas</p>
-            </div>
-
-            <div className="mb-6">
-              <AdBanner position="question_books_top" className="rounded-lg" />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Meus Cadernos */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="flex justify-between items-center p-6 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900 text-base md:text-lg">Meus Cadernos</h2>
-                  <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger asChild>
-                      <Button onClick={handleOpenCreate} className="flex items-center gap-2 text-xs md:text-sm">
-                        <Plus className="h-4 w-4" />
-                        Novo Caderno
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle className="text-lg md:text-lg">
-                          {editingBook ? 'Editar Caderno' : 'Criar Novo Caderno'}
-                        </DialogTitle>
-                        <DialogDescription className="text-xs md:text-sm">
-                          {editingBook 
-                            ? 'Edite as informações do seu caderno' 
-                            : 'Crie um novo caderno para organizar suas questões'}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-xs font-medium text-gray-700 mb-1 block">
-                            Nome do Caderno
-                          </label>
-                          <Input
-                            value={newBookTitle}
-                            onChange={(e) => setNewBookTitle(e.target.value)}
-                            placeholder="Ex: Matemática - Concursos Federais"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-gray-700 mb-1 block">
-                            Visibilidade
-                          </label>
-                          <Select value={newBookType} onValueChange={(value: 'public' | 'private') => setNewBookType(value)}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="private">Privado</SelectItem>
-                              <SelectItem value="public">Público</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="flex justify-end gap-3 pt-4">
-                          <Button variant="outline" onClick={() => setOpen(false)} className="text-xs md:text-sm">
-                            Cancelar
-                          </Button>
-                          <Button onClick={editingBook ? handleEditBook : handleCreateBook} className="text-xs md:text-sm">
-                            {editingBook ? 'Atualizar' : 'Criar'}
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+          <section className="relative overflow-hidden border-b border-slate-200/70 bg-white">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-[#5f2ebe]/15 to-[#ea2be2]/10 blur-2xl" />
+            <div className="container relative mx-auto px-4 py-8 md:py-10">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#5f2ebe]">Cadernos de questões</p>
+                  <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">Suas questões, do seu jeito</h1>
+                  <p className="mt-1 max-w-xl text-sm text-slate-500">
+                    Junte as questões que quer revisar em cadernos e resolva quando quiser. Compartilhe os seus ou use os da comunidade.
+                  </p>
                 </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">Nome</TableHead>
-                      <TableHead className="text-xs">Questões</TableHead>
-                      <TableHead className="text-xs">Status</TableHead>
-                      <TableHead className="text-right text-xs">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentBooks.length > 0 ? (
-                      currentBooks.map((book) => (
-                        <TableRow 
-                          key={book.id} 
-                          className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => navigate(`/cadernos/${book.id}`)}
-                        >
-                          <TableCell className="font-medium text-xs">{book.nome}</TableCell>
-                          <TableCell className="text-xs">{book.total_questions || 0}</TableCell>
-                          <TableCell>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              book.is_public 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {book.is_public ? 'Público' : 'Privado'}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenEdit(book);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteBook(book.id);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-gray-500 text-xs md:text-sm">
-                          Você ainda não criou nenhum caderno.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                {books.length > 0 && (
-                  <PaginationControls
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
-                  />
+                {user && (
+                  <Button onClick={abrirNovo} className="shrink-0 gap-2 rounded-xl bg-[#5f2ebe] hover:bg-[#4f25a0]">
+                    <Plus className="h-4 w-4" />
+                    Novo caderno
+                  </Button>
                 )}
               </div>
 
-              {/* Cadernos Públicos */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900 text-base md:text-lg">Cadernos Públicos</h2>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="favorites-only"
-                        checked={showOnlyFavorites}
-                        onChange={(e) => setShowOnlyFavorites(e.target.checked)}
-                        className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
-                      />
-                      <label htmlFor="favorites-only" className="text-xs text-gray-700">
-                        Apenas favoritos
-                      </label>
-                    </div>
+              {user && !carregando && (
+                <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <Metrica rotulo="Meus cadernos" valor={meus.length} icone={NotebookPen} />
+                  <Metrica rotulo="Questões salvas" valor={totalQuestoes} icone={ListChecks} tom="azul" />
+                  <Metrica rotulo="Compartilhados" valor={compartilhados} icone={Globe2} tom="verde" />
+                  <Metrica rotulo="Favoritos" valor={favoritos.length} icone={Heart} tom="rosa" />
+                </div>
+              )}
+            </div>
+          </section>
+
+          <div className="container mx-auto space-y-5 px-4 py-6">
+            <AdBanner position="question_books_top" className="rounded-lg" />
+
+            {user && (
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <Segmentos<Aba>
+                  valor={aba}
+                  onChange={trocarAba}
+                  opcoes={[
+                    { valor: "meus", rotulo: "Meus cadernos", contagem: carregando ? undefined : meus.length },
+                    { valor: "publicos", rotulo: "Públicos", contagem: carregando ? undefined : publicos.length },
+                    { valor: "favoritos", rotulo: "Favoritos", contagem: carregando ? undefined : listaFavoritos.length },
+                  ]}
+                />
+                <div className="flex items-center gap-2">
+                  <div className="relative min-w-0 flex-1 lg:w-72 lg:flex-none">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                    <input
+                      value={busca}
+                      onChange={(e) => setBusca(e.target.value)}
+                      placeholder="Buscar caderno"
+                      aria-label="Buscar caderno"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-9 text-sm text-slate-800 outline-none transition focus:border-[#5f2ebe] focus:ring-2 focus:ring-[#5f2ebe]/15"
+                    />
+                    {busca && (
+                      <button
+                        type="button"
+                        aria-label="Limpar busca"
+                        onClick={() => setBusca("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-slate-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
-                  <Input
-                    placeholder="Buscar cadernos públicos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full"
-                  />
+                  <select
+                    value={ordem}
+                    onChange={(e) => setOrdem(e.target.value as Ordem)}
+                    aria-label="Ordenar"
+                    className="h-10 rounded-xl border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none focus:border-[#5f2ebe]"
+                  >
+                    <option value="recentes">Mais recentes</option>
+                    <option value="az">Nome (A–Z)</option>
+                    <option value="questoes">Mais questões</option>
+                  </select>
                 </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-xs">Nome</TableHead>
-                      <TableHead className="text-xs">Autor</TableHead>
-                      <TableHead className="text-xs">Questões</TableHead>
-                      <TableHead className="text-right text-xs">Favorito</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentPublicBooks.length > 0 ? (
-                      currentPublicBooks.map((book) => (
-                        <TableRow 
-                          key={book.id} 
-                          className="cursor-pointer hover:bg-gray-50"
-                          onClick={() => navigate(`/cadernos/${book.id}`)}
-                        >
-                          <TableCell className="font-medium text-xs">{book.nome}</TableCell>
-                          <TableCell className="text-xs">
-                            {book.user_id === user?.id 
-                              ? 'Você' 
-                              : 'Outro usuário'}
-                          </TableCell>
-                          <TableCell className="text-xs">{book.total_questions || 0}</TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleFavorite(book);
-                              }}
-                              className={`${book.is_favorite ? 'text-[#5f2ebe]' : 'text-gray-400'} hover:text-[#5f2ebe]`}
-                            >
-                              <Heart className="h-5 w-5" fill={book.is_favorite ? "currentColor" : "none"} />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center py-8 text-gray-500 text-xs md:text-sm">
-                          {searchQuery 
-                            ? 'Nenhum caderno encontrado com esse termo.' 
-                            : 'Nenhum caderno público disponível.'}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                {sortedPublicBooks.length > 0 && (
-                  <PaginationControls
-                    currentPage={publicCurrentPage}
-                    totalPages={totalPublicPages}
-                    onPageChange={setPublicCurrentPage}
-                  />
-                )}
               </div>
-            </div>
+            )}
+
+            {conteudo()}
           </div>
         </main>
         <Footer />
       </div>
+
+      <Dialog open={formAberto} onOpenChange={(o) => !salvando && setFormAberto(o)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editando ? "Editar caderno" : "Novo caderno"}</DialogTitle>
+            <DialogDescription>
+              {editando ? "Mude o nome ou quem pode ver este caderno." : "Depois de criar, adicione questões pelo botão Caderno de Questões em cada questão."}
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              salvar();
+            }}
+          >
+            <div className="space-y-1.5">
+              <label htmlFor="caderno-nome" className="text-sm font-medium text-slate-800">
+                Nome
+              </label>
+              <Input
+                id="caderno-nome"
+                value={nome}
+                autoFocus
+                maxLength={120}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex.: Português — erros de crase"
+              />
+            </div>
+            <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 p-3">
+              <div>
+                <label htmlFor="caderno-publico" className="text-sm font-medium text-slate-800">
+                  Caderno público
+                </label>
+                <p className="text-xs text-slate-500">Outros alunos podem encontrar e resolver este caderno.</p>
+              </div>
+              <Switch id="caderno-publico" checked={publico} onCheckedChange={setPublico} />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button type="button" variant="outline" onClick={() => setFormAberto(false)} disabled={salvando}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={salvando} className="bg-[#5f2ebe] hover:bg-[#4f25a0]">
+                {salvando ? "Salvando..." : editando ? "Salvar" : "Criar caderno"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmarAcao
+        aberto={!!excluindo}
+        onFechar={() => setExcluindo(null)}
+        titulo={`Excluir "${excluindo?.nome ?? ""}"?`}
+        descricao="As questões continuam no banco de questões; só o caderno e a lista dele são apagados."
+        detalhes={excluindo?.publico ? ["Quem favoritou este caderno deixa de vê-lo."] : undefined}
+        onConfirmar={excluir}
+      />
     </PublicLayout>
   );
 }
+
+const PrimeiroCaderno: React.FC<{ onNovo: () => void }> = ({ onNovo }) => (
+  <Painel className="px-6 py-10 text-center sm:py-12">
+    <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#5f2ebe]/10 text-[#5f2ebe]">
+      <BookMarked className="h-7 w-7" />
+    </span>
+    <h3 className="text-lg font-semibold text-slate-900">Monte seu primeiro caderno</h3>
+    <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Leva menos de um minuto e ajuda a revisar exatamente o que você mais erra.</p>
+    <ol className="mx-auto mt-6 grid max-w-2xl gap-3 text-left sm:grid-cols-3">
+      {[
+        ["Crie o caderno", "Dê um nome, como a matéria ou o assunto."],
+        ["Adicione questões", "Em Questões, use o botão Caderno de Questões."],
+        ["Resolva e revise", "Abra o caderno quando quiser treinar."],
+      ].map(([t, d], i) => (
+        <li key={t} className="flex gap-3 rounded-xl bg-slate-50 p-3">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#5f2ebe] text-xs font-bold text-white">{i + 1}</span>
+          <span>
+            <span className="block text-sm font-semibold text-slate-800">{t}</span>
+            <span className="block text-xs text-slate-500">{d}</span>
+          </span>
+        </li>
+      ))}
+    </ol>
+    <div className="mt-6 flex flex-wrap justify-center gap-2">
+      <Button onClick={onNovo} className="gap-2 bg-[#5f2ebe] hover:bg-[#4f25a0]">
+        <Plus className="h-4 w-4" />
+        Criar caderno
+      </Button>
+      <Button variant="outline" asChild>
+        <Link to="/questions">Ir para Questões</Link>
+      </Button>
+    </div>
+  </Painel>
+);
+
+const CartaoCaderno: React.FC<{
+  caderno: Caderno;
+  meu: boolean;
+  favorito: boolean;
+  onFavoritar: () => void;
+  onEditar: () => void;
+  onVisibilidade: () => void;
+  onExcluir: () => void;
+}> = ({ caderno: c, meu, favorito, onFavoritar, onEditar, onVisibilidade, onExcluir }) => {
+  const acao = "relative z-10 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700";
+  return (
+    <Painel className="group relative flex flex-col p-4 transition hover:-translate-y-0.5 hover:border-[#5f2ebe]/30 hover:shadow-md">
+      <div className="flex items-start gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#5f2ebe]/10 text-[#5f2ebe]">
+          <NotebookPen className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <Link to={`/cadernos/${c.id}`} className="after:absolute after:inset-0 after:rounded-2xl focus:outline-none">
+            <h3 className="line-clamp-2 font-semibold leading-snug text-slate-900 group-hover:text-[#5f2ebe]">{c.nome}</h3>
+          </Link>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+            {meu ? (
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium",
+                  c.publico ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"
+                )}
+              >
+                {c.publico ? <Globe2 className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                {c.publico ? "Público" : "Privado"}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-700">
+                <Users className="h-3 w-3" />
+                Comunidade
+              </span>
+            )}
+            {c.criadoEm && <span className="text-slate-400">criado em {dataCurta(c.criadoEm)}</span>}
+          </div>
+        </div>
+        {!meu && (
+          <button
+            type="button"
+            onClick={onFavoritar}
+            aria-pressed={favorito}
+            aria-label={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+            title={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+            className={cn(
+              "relative z-10 -mr-1 -mt-1 rounded-lg p-1.5 transition-colors",
+              favorito ? "text-[#ea2be2] hover:bg-[#ea2be2]/10" : "text-slate-300 hover:bg-slate-100 hover:text-slate-500"
+            )}
+          >
+            <Heart className={cn("h-5 w-5", favorito && "fill-current")} />
+          </button>
+        )}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3">
+        <span className="inline-flex items-center gap-1.5 text-sm text-slate-600">
+          <ListChecks className="h-4 w-4 text-slate-400" />
+          {c.questoes === null ? "Questões" : plural(c.questoes, "questão", "questões")}
+        </span>
+        <div className="flex items-center gap-0.5">
+          {meu && (
+            <>
+              <button type="button" onClick={onVisibilidade} className={acao} title={c.publico ? "Tornar privado" : "Tornar público"} aria-label={c.publico ? "Tornar privado" : "Tornar público"}>
+                {c.publico ? <Lock className="h-4 w-4" /> : <Globe2 className="h-4 w-4" />}
+              </button>
+              <button type="button" onClick={onEditar} className={acao} title="Editar" aria-label="Editar caderno">
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onExcluir}
+                className={cn(acao, "hover:bg-red-50 hover:text-red-600")}
+                title="Excluir"
+                aria-label="Excluir caderno"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
+          )}
+          <span className="ml-1 inline-flex items-center gap-1 text-sm font-semibold text-[#5f2ebe]">
+            Abrir
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </div>
+      </div>
+    </Painel>
+  );
+};
