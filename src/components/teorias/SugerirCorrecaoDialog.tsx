@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { X } from "lucide-react";
+import { MessageSquareWarning, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,14 @@ export const SugerirCorrecaoDialog = ({ aberto, teoriaId, trechoSelecionado, onC
     }
   }, [aberto, trechoSelecionado]);
 
+  // Esc fecha
+  useEffect(() => {
+    if (!aberto) return;
+    const tecla = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", tecla);
+    return () => document.removeEventListener("keydown", tecla);
+  }, [aberto, onClose]);
+
   if (!aberto) return null;
 
   const enviar = async () => {
@@ -68,18 +76,34 @@ export const SugerirCorrecaoDialog = ({ aberto, teoriaId, trechoSelecionado, onC
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center border-b p-4">
-          <h3 className="text-lg font-semibold">Sugerir correção</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700" aria-label="Fechar">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sugerir-correcao-titulo"
+        className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl"
+      >
+        <div className="flex items-start gap-3 border-b border-slate-100 px-5 py-4">
+          <span className="mt-0.5 rounded-lg bg-orange-50 p-2 text-orange-600">
+            <MessageSquareWarning className="h-5 w-5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 id="sugerir-correcao-titulo" className="text-base font-semibold text-slate-900">
+              Sugerir correção
+            </h3>
+            <p className="text-xs text-slate-500">A equipe revisa antes de qualquer mudança no texto.</p>
+          </div>
+          <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Fechar">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {!user ? (
-          <div className="p-4 space-y-4">
-            <p className="text-sm text-gray-700">Entre na sua conta para sugerir correções nesta teoria.</p>
+          <div className="space-y-4 px-5 py-4">
+            <p className="text-sm text-slate-700">Entre na sua conta para sugerir correções nesta teoria.</p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={onClose}>
                 Fechar
@@ -90,10 +114,12 @@ export const SugerirCorrecaoDialog = ({ aberto, teoriaId, trechoSelecionado, onC
             </div>
           </div>
         ) : (
-          <div className="p-4 space-y-4">
-            <p className="text-sm text-gray-600">
-              Dica: selecione o trecho no texto da aula antes de clicar em "Sugerir correção" para ele vir preenchido.
-            </p>
+          <div className="space-y-4 px-5 py-4">
+            {!trechoSelecionado && (
+              <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                Dica: selecione o trecho no texto da aula e toque em “Corrigir” para ele vir preenchido.
+              </p>
+            )}
             <div className="space-y-1">
               <Label htmlFor="correcao-original">Trecho atual</Label>
               <Textarea
@@ -126,7 +152,7 @@ export const SugerirCorrecaoDialog = ({ aberto, teoriaId, trechoSelecionado, onC
                 placeholder="Ex.: a lei foi alterada em 2024; artigo citado está errado..."
               />
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-slate-500">
               Se a correção for aprovada, seu nome aparece nos créditos desta teoria e no{" "}
               <Link to="/ranking-contribuicoes" className="underline">ranking de contribuições</Link>. Você acompanha suas
               sugestões em <Link to="/contribuir" className="underline">Contribuir</Link>.
@@ -135,7 +161,7 @@ export const SugerirCorrecaoDialog = ({ aberto, teoriaId, trechoSelecionado, onC
               <Button variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button onClick={enviar} disabled={enviando}>
+              <Button onClick={enviar} disabled={enviando} className="bg-[#5f2ebe] text-white hover:bg-[#4f25a0]">
                 {enviando ? "Enviando..." : "Enviar para análise"}
               </Button>
             </div>

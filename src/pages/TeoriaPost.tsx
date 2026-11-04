@@ -1,67 +1,69 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { 
-  AlertTriangle, 
-  FileText, 
-  FileQuestion, 
-  Video, 
-  Map, 
-  User,
-  Edit,
-  X,
-  Trash2,
-  List,
-  BookOpen,
-  Calendar,
-  Eye,
-  Palette
-} from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
+import {
+  BookOpen,
+  ChevronRight,
+  Clock,
+  Copy,
+  Download,
+  ExternalLink,
+  FileQuestion,
+  FileText,
+  Highlighter,
+  ListTree,
+  Map as MapIcon,
+  MessageSquareText,
+  MessageSquareWarning,
+  Pencil,
+  Trash2,
+  Video,
+} from "lucide-react";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { BlogContentWithQuestions } from "@/components/blog/BlogContentWithQuestions";
-import { usePermissions } from "@/hooks/usePermissions";
-import { cn } from "@/lib/utils";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import QuestionResults from "@/components/questions/QuestionResults";
-import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { SugerirCorrecaoDialog } from "@/components/teorias/SugerirCorrecaoDialog";
 import { CreditosContribuidores } from "@/components/teorias/CreditosContribuidores";
+import { PainelMarcacoes } from "@/components/teorias/PainelMarcacoes";
+import {
+  CORES_MARCACAO,
+  type Marcacao,
+  atualizarGrifo,
+  gravarMarcacoes,
+  grifarIntervalo,
+  grifoExiste,
+  lerMarcacoes,
+  localizarTexto,
+  normalizarEspacos,
+  removerGrifo,
+} from "@/components/teorias/marcacoes";
+import { usePermissions } from "@/hooks/usePermissions";
+import { supabase } from "@/integrations/supabase/client";
 import { isUuid, teoriaPath } from "@/utils/teoriaUrl";
+import { youtubeEmbed } from "@/utils/youtube";
+import { cn } from "@/lib/utils";
+import "@/styles/teoria.css";
 
 /** Busca uma teoria publicada pelo slug, por um slug antigo ou pelo id. */
 const buscarTeoriaPublicada = async (param: string) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = supabase as any;
   const porCampo = async (campo: "id" | "slug", valor: string) => {
-    const { data, error } = await db
-      .from('teorias')
-      .select('*')
-      .eq(campo, valor)
-      .eq('status', 'published')
-      .maybeSingle();
+    const { data, error } = await db.from("teorias").select("*").eq(campo, valor).eq("status", "published").maybeSingle();
     if (error) throw error;
     return data;
   };
 
-  if (isUuid(param)) {
-    return porCampo("id", param);
-  }
+  if (isUuid(param)) return porCampo("id", param);
 
   const atual = await porCampo("slug", param);
   if (atual) return atual;
 
-  const { data: antigo } = await db
-    .from('teorias_slugs_antigos')
-    .select('teoria_id')
-    .eq('slug', param)
-    .maybeSingle();
+  const { data: antigo } = await db.from("teorias_slugs_antigos").select("teoria_id").eq("slug", param).maybeSingle();
   return antigo?.teoria_id ? porCampo("id", antigo.teoria_id) : null;
 };
 
@@ -73,954 +75,984 @@ interface Teoria {
   assunto_id: string;
   topicos_ids: string[];
   conteudo: string;
-  no_edital: string;
   status: "draft" | "published";
   professor_id?: string;
   created_at: string;
   updated_at: string;
-  questoes_filtros?: {
-    disciplinas?: string[];
-    assuntos?: string[];
-    bancas?: string[];
-    topicos?: string[];
-  };
+  questoes_filtros?: { disciplinas?: string[]; assuntos?: string[]; bancas?: string[]; topicos?: string[] };
   questoes_link?: string;
   videoaulas?: string[];
   mapas_mentais?: string[];
 }
 
-interface Professor {
+type Aba = "aula" | "questoes" | "video" | "mapa";
+type Fonte = "p" | "m" | "g";
+
+interface Secao {
   id: string;
-  nome_completo: string;
+  texto: string;
+  nivel: 2 | 3;
 }
+
+type Barra =
+  | { tipo: "selecao"; x: number; topo: number; base: number; texto: string }
+  | { tipo: "grifo"; x: number; topo: number; base: number; id: string };
+
+const POR_PAGINA_QUESTOES = 10;
+const CHAVE_FONTE = "bomestudo:teoria-fonte";
+
+const temFiltros = (f?: Teoria["questoes_filtros"]) =>
+  !!f && Object.values(f).some((v) => Array.isArray(v) && v.length > 0);
+
+const slugSecao = (texto: string) =>
+  texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+
+const iniciais = (nome: string) =>
+  nome
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("");
+
+const minutosDeLeitura = (html: string) => {
+  const texto = html.replace(/\[question:[^\]]+\]/g, " ").replace(/<[^>]+>/g, " ");
+  const palavras = texto.split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(palavras / 200));
+};
+
+const lerFonte = (): Fonte => {
+  try {
+    const v = localStorage.getItem(CHAVE_FONTE);
+    return v === "p" || v === "g" ? v : "m";
+  } catch {
+    return "m";
+  }
+};
+
+/** Barra fina no topo que mostra quanto da aula já foi lido. */
+const BarraProgresso = ({ alvo }: { alvo: React.RefObject<HTMLElement> }) => {
+  const [progresso, setProgresso] = useState(0);
+  useEffect(() => {
+    let quadro = 0;
+    const medir = () => {
+      quadro = 0;
+      const el = alvo.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const total = r.height - window.innerHeight * 0.6;
+      setProgresso(total <= 0 ? 1 : Math.min(1, Math.max(0, -r.top / total)));
+    };
+    const agendar = () => {
+      if (!quadro) quadro = requestAnimationFrame(medir);
+    };
+    medir();
+    window.addEventListener("scroll", agendar, { passive: true });
+    window.addEventListener("resize", agendar);
+    return () => {
+      window.removeEventListener("scroll", agendar);
+      window.removeEventListener("resize", agendar);
+      cancelAnimationFrame(quadro);
+    };
+  }, [alvo]);
+  return (
+    <div className="teoria-sem-impressao fixed inset-x-0 top-0 z-40 h-1" aria-hidden>
+      <div className="h-full bg-gradient-to-r from-[#5f2ebe] to-[#ea2be2]" style={{ width: `${progresso * 100}%` }} />
+    </div>
+  );
+};
+
+/** Estrutura comum às telas de carregando, não encontrada e da teoria. */
+const Moldura = ({ children }: { children: React.ReactNode }) => (
+  <PublicLayout>
+    <div className="flex min-h-screen flex-col bg-[#f6f7fb]">
+      <Header />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </div>
+  </PublicLayout>
+);
+
+const Vazio = ({ icone: Icone, titulo, texto }: { icone: typeof Video; titulo: string; texto: string }) => (
+  <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+    <span className="mb-4 rounded-full bg-slate-100 p-4 text-slate-400">
+      <Icone className="h-7 w-7" />
+    </span>
+    <h3 className="text-lg font-semibold text-slate-900">{titulo}</h3>
+    <p className="mt-1 max-w-sm text-sm text-slate-500">{texto}</p>
+  </div>
+);
 
 const TeoriaPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [post, setPost] = useState<Teoria | null>(null);
-  const [professor, setProfessor] = useState<Professor | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("aula");
+  const [params, setParams] = useSearchParams();
   const { isAdmin } = usePermissions();
-  
-  // States for error reporting
-  const [showErrorReport, setShowErrorReport] = useState(false);
-  const [trechoSelecionado, setTrechoSelecionado] = useState("");
-  
-  // States for text highlighting
-  const [showHighlightColors, setShowHighlightColors] = useState(false);
-  const [highlights, setHighlights] = useState<Array<{
-    id: string;
-    text: string;
-    html?: string; // Add HTML of selection
-    color: string;
-    position: { start: number; end: number };
-    note?: string;
-  }>>([]);
-  const [showHighlightsSidebar, setShowHighlightsSidebar] = useState(false);
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [pendingHighlight, setPendingHighlight] = useState<{text: string, color: string} | null>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  
-  // States for question filters and pagination
-  const [filteredQuestions, setFilteredQuestions] = useState<any[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [questionsLoading, setQuestionsLoading] = useState(false);
-  const [disabledOptions, setDisabledOptions] = useState<{[key: string]: string[]}>({});
-  
-  // Function to load questions based on filters
-  const loadFilteredQuestions = async (filters: any) => {
-    setQuestionsLoading(true);
-    try {
-      let query = supabaseClient
-        .from('questoes')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      // Apply filters
-      if (filters.disciplinas && filters.disciplinas.length > 0) {
-        query = query.in('discipline', filters.disciplinas);
-      }
-      
-      if (filters.assuntos && filters.assuntos.length > 0) {
-        query = query.overlaps('assuntos', filters.assuntos);
-      }
-      
-      if (filters.bancas && filters.bancas.length > 0) {
-        query = query.in('institution', filters.bancas);
-      }
-      
-      if (filters.topicos && filters.topicos.length > 0) {
-        query = query.overlaps('topicos', filters.topicos);
-      }
-      
-      // Add pagination
-      const from = (currentPage - 1) * 10;
-      const to = from + 9;
-      query = query.range(from, to);
-      
-      const { data, error, count } = await query;
-      
-      if (error) throw error;
-      
-      setFilteredQuestions(data || []);
-      setTotalPages(count ? Math.ceil(count / 10) : 1);
-    } catch (error) {
-      console.error("Erro ao carregar questões:", error);
-      toast.error("Erro ao carregar questões");
-    } finally {
-      setQuestionsLoading(false);
-    }
-  };
-  
-  // Effect to reload questions when page changes
-  useEffect(() => {
-    if (post && post.questoes_filtros && activeTab === "questoes") {
-      loadFilteredQuestions(post.questoes_filtros);
-    }
-  }, [currentPage, activeTab, post]);
-  
-  // Fetch teoria data
-  useEffect(() => {
-    const loadPost = async () => {
-      if (!slug) {
-        navigate('/teorias');
-        return;
-      }
 
-      // Já carregada (acabamos de trocar o id pelo slug na URL)
-      if (post && post.slug === slug) {
+  const [post, setPost] = useState<Teoria | null>(null);
+  const [professor, setProfessor] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Questões
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [questoes, setQuestoes] = useState<any[]>([]);
+  const [paginaQuestoes, setPaginaQuestoes] = useState(1);
+  const [totalPaginasQuestoes, setTotalPaginasQuestoes] = useState(1);
+  const [totalQuestoes, setTotalQuestoes] = useState<number | null>(null);
+  const [carregandoQuestoes, setCarregandoQuestoes] = useState(false);
+  const [opcoesRiscadas, setOpcoesRiscadas] = useState<Record<string, string[]>>({});
+
+  // Leitura
+  const conteudoRef = useRef<HTMLDivElement>(null);
+  const [secoes, setSecoes] = useState<Secao[]>([]);
+  const [secaoAtiva, setSecaoAtiva] = useState<string | null>(null);
+  const [fonte, setFonte] = useState<Fonte>(lerFonte);
+  const [sumarioAberto, setSumarioAberto] = useState(false);
+
+  // Grifos
+  const [marcacoes, setMarcacoes] = useState<Marcacao[]>([]);
+  const [naoEncontradas, setNaoEncontradas] = useState<Set<string>>(new Set());
+  const [barra, setBarra] = useState<Barra | null>(null);
+  const [painelAberto, setPainelAberto] = useState(false);
+  const [editandoNota, setEditandoNota] = useState<string | null>(null);
+
+  // Correção
+  const [correcaoAberta, setCorrecaoAberta] = useState(false);
+  const [trechoCorrecao, setTrechoCorrecao] = useState("");
+
+  // ----- Abas -----
+  const abas = useMemo(() => {
+    if (!post) return [];
+    const lista: { id: Aba; label: string; curto: string; icone: typeof Video; n?: number }[] = [
+      { id: "aula", label: "Aula em texto", curto: "Aula", icone: FileText },
+    ];
+    if (temFiltros(post.questoes_filtros))
+      lista.push({ id: "questoes", label: "Questões", curto: "Questões", icone: FileQuestion, n: totalQuestoes ?? undefined });
+    if (post.videoaulas?.length)
+      lista.push({ id: "video", label: "Videoaulas", curto: "Vídeos", icone: Video, n: post.videoaulas.length });
+    if (post.mapas_mentais?.length)
+      lista.push({ id: "mapa", label: "Mapas mentais", curto: "Mapas", icone: MapIcon, n: post.mapas_mentais.length });
+    return lista;
+  }, [post, totalQuestoes]);
+
+  const abaPedida = params.get("aba") as Aba | null;
+  const aba: Aba = abas.some((a) => a.id === abaPedida) ? (abaPedida as Aba) : "aula";
+  const irParaAba = (nova: Aba) => {
+    setParams(
+      (atual) => {
+        const p = new URLSearchParams(atual);
+        if (nova === "aula") p.delete("aba");
+        else p.set("aba", nova);
+        return p;
+      },
+      { replace: true }
+    );
+    setBarra(null);
+    window.scrollTo({ top: Math.min(window.scrollY, document.getElementById("teoria-abas")?.offsetTop ?? 0), behavior: "smooth" });
+  };
+
+  // ----- Carregamento -----
+  useEffect(() => {
+    const carregar = async () => {
+      if (!slug) {
+        navigate("/teorias");
         return;
       }
+      // Já carregada (acabamos de trocar o id pelo slug na URL)
+      if (post && post.slug === slug) return;
 
       try {
         setLoading(true);
-        
-        // A URL pode trazer o slug (atual ou antigo) ou o id (links antigos)
-        const teoriaData = await buscarTeoriaPublicada(slug);
-        if (!teoriaData) {
-          throw new Error('Teoria não encontrada');
+        const teoria = await buscarTeoriaPublicada(slug);
+        if (!teoria) {
+          setPost(null);
+          return;
         }
-
         // Link antigo (id ou slug anterior): troca a URL pelo slug atual
-        if (teoriaData.slug && teoriaData.slug !== slug) {
-          navigate(teoriaPath(teoriaData), { replace: true });
+        if (teoria.slug && teoria.slug !== slug) {
+          navigate(`${teoriaPath(teoria)}${window.location.search}`, { replace: true });
         }
-        
-        setPost(teoriaData);
-        
-        // Fetch professor data if professor_id exists
-        if (teoriaData.professor_id) {
-          const { data: professorData, error: professorError } = await supabase
-            .from('professores')
-            .select('id, nome_completo')
-            .eq('id', teoriaData.professor_id)
-            .single();
-          
-          if (!professorError && professorData) {
-            setProfessor(professorData);
-          }
-        }
-        
-        // Load questions if filters exist
-        if (teoriaData.questoes_filtros) {
-          loadFilteredQuestions(teoriaData.questoes_filtros);
+        setPost(teoria);
+        setMarcacoes(lerMarcacoes(teoria.id));
+
+        if (teoria.professor_id) {
+          const { data } = await supabase.from("professores").select("nome_completo").eq("id", teoria.professor_id).maybeSingle();
+          setProfessor(data?.nome_completo || null);
         }
       } catch (error) {
         console.error("Erro ao carregar teoria:", error);
         toast.error("Erro ao carregar a teoria");
-        navigate('/teorias');
+        setPost(null);
       } finally {
         setLoading(false);
       }
     };
-
-    loadPost();
+    carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, navigate]);
 
-  // Menu options
-  const menuOptions = [
-    { id: "aula", label: "Aula em texto", icon: FileText },
-    { id: "questoes", label: "Questões", icon: FileQuestion },
-    { id: "video", label: "Videoaula", icon: Video },
-    { id: "mapa", label: "Mapa mental", icon: Map }
-  ];
+  // Título da aba do navegador
+  useEffect(() => {
+    if (!post) return;
+    const anterior = document.title;
+    document.title = `${post.titulo} | BomEstudo`;
+    return () => {
+      document.title = anterior;
+    };
+  }, [post]);
 
-  // Icon actions
-  const iconActions = [
-    { id: "report", icon: AlertTriangle, label: "Sugerir correção (selecione o trecho antes)" },
-    { id: "highlight", icon: Palette, label: "Marcar texto" }
-  ];
-
-  // Highlight colors
-  const highlightColors = [
-    { name: "Amarelo Pastel", value: "#FFF9C4" },
-    { name: "Verde Pastel", value: "#C8E6C9" },
-    { name: "Azul Pastel", value: "#BBDEFB" },
-    { name: "Rosa Pastel", value: "#F8BBD0" },
-    { name: "Laranja Pastel", value: "#FFE0B2" },
-    { name: "Violeta Pastel", value: "#D1C4E9" }
-  ];
-
-  const handleIconAction = (actionId: string) => {
-    console.log(`Action triggered: ${actionId}`);
-    
-    switch (actionId) {
-      case "report": {
-        // Usa o trecho selecionado no texto da aula, se houver
-        const selecao = window.getSelection();
-        let trecho = "";
-        if (selecao && selecao.rangeCount > 0 && contentRef.current &&
-            contentRef.current.contains(selecao.getRangeAt(0).commonAncestorContainer)) {
-          trecho = selecao.toString().replace(/[\s\u00a0]+/g, " ").trim().slice(0, 3000);
+  // Questões: só quando a aba é aberta
+  useEffect(() => {
+    if (!post || aba !== "questoes" || !temFiltros(post.questoes_filtros)) return;
+    let ativo = true;
+    const f = post.questoes_filtros!;
+    setCarregandoQuestoes(true);
+    let query = supabase.from("questoes").select("*", { count: "exact" }).order("created_at", { ascending: false });
+    if (f.disciplinas?.length) query = query.in("discipline", f.disciplinas);
+    if (f.assuntos?.length) query = query.overlaps("assuntos", f.assuntos);
+    if (f.bancas?.length) query = query.in("institution", f.bancas);
+    if (f.topicos?.length) query = query.overlaps("topicos", f.topicos);
+    const de = (paginaQuestoes - 1) * POR_PAGINA_QUESTOES;
+    query
+      .range(de, de + POR_PAGINA_QUESTOES - 1)
+      .then(({ data, error, count }) => {
+        if (!ativo) return;
+        if (error) {
+          console.error("Erro ao carregar questões:", error);
+          toast.error("Erro ao carregar as questões");
+          return;
         }
-        setTrechoSelecionado(trecho);
-        setShowErrorReport(true);
-        break;
-      }
-      case "highlight":
-        // Toggle highlight color palette
-        setShowHighlightColors(prev => !prev);
-        break;
-      default:
-        break;
-    }
-  };
+        setQuestoes(data || []);
+        setTotalQuestoes(count ?? null);
+        setTotalPaginasQuestoes(count ? Math.max(1, Math.ceil(count / POR_PAGINA_QUESTOES)) : 1);
+      })
+      .then(() => ativo && setCarregandoQuestoes(false));
+    return () => {
+      ativo = false;
+    };
+  }, [post, aba, paginaQuestoes]);
 
-  // Function to scroll to highlighted text
-  const scrollToHighlight = (highlightId: string) => {
-    // In a real implementation, this would scroll to the highlighted text
-    console.log(`Scrolling to highlight: ${highlightId}`);
-    
-    // Find the highlighted element in the content
-    if (contentRef.current) {
-      const highlightElements = contentRef.current.querySelectorAll('mark');
-      highlightElements.forEach(element => {
-        const elementHighlightId = element.getAttribute('data-highlight-id');
-        if (elementHighlightId === highlightId) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // Add temporary highlight effect
-          element.classList.add('ring-2', 'ring-blue-500');
-          setTimeout(() => {
-            element.classList.remove('ring-2', 'ring-blue-500');
-          }, 2000);
-        }
-      });
-    }
-    
-    setShowHighlightsSidebar(false);
-  };
-
-  // Function to apply highlight to selected text
-  const applyHighlight = (color: string) => {
-    const selection = window.getSelection();
-    if (!selection || selection.toString().trim() === "" || selection.rangeCount === 0) {
-      setShowHighlightColors(false);
-      return;
-    }
-    
-    const range = selection.getRangeAt(0);
-    
-    // Verificar se a seleção está dentro do contentRef
-    if (!contentRef.current || !contentRef.current.contains(range.commonAncestorContainer)) {
-      toast.error("Por favor, selecione texto dentro do conteúdo da aula");
-      setShowHighlightColors(false);
-      return;
-    }
-    
-    try {
-      // Criar ID único para este highlight
-      const highlightId = `highlight-${Date.now()}`;
-      
-      // Obter o texto selecionado
-      const selectedText = selection.toString()
-        .normalize('NFC')
-        .replace(/\s+/g, ' ')
-        .trim();
-      
-      // Aplicar highlight diretamente no DOM usando Range
-      const mark = document.createElement('mark');
-      mark.style.backgroundColor = color;
-      mark.style.padding = '2px 4px';
-      mark.style.borderRadius = '2px';
-      mark.style.transition = 'all 0.2s ease';
-      mark.style.cursor = 'pointer';
-      mark.setAttribute('data-highlight-id', highlightId);
-      
-      // Envolver o conteúdo selecionado
-      try {
-        range.surroundContents(mark);
-      } catch (e) {
-        // Se surroundContents falhar (conteúdo parcialmente selecionado),
-        // usar método alternativo
-        const fragment = range.extractContents();
-        mark.appendChild(fragment);
-        range.insertNode(mark);
-      }
-      
-      // Adicionar ao estado para tracking
-      const newHighlight = {
-        id: highlightId,
-        text: selectedText,
-        color: color,
-        position: { start: 0, end: 0 },
-        note: ""
-      };
-      
-      setHighlights(prev => [...prev, newHighlight]);
-      
-      // Limpar seleção
-      selection.removeAllRanges();
-      
-      toast.success("Texto marcado com sucesso!");
-    } catch (error) {
-      console.error("Erro ao aplicar highlight:", error);
-      toast.error("Erro ao marcar texto. Tente selecionar um trecho menor.");
-    }
-    
-    setShowHighlightColors(false);
-  };
-
-  // Function to confirm highlight replacement
-  const confirmHighlight = () => {
-    if (pendingHighlight) {
-      // Remover highlights existentes que se sobrepõem
-      const filteredHighlights = highlights.filter(highlight => 
-        !pendingHighlight.text.includes(highlight.text) && !highlight.text.includes(pendingHighlight.text)
-      );
-      
-      // Adicionar o novo highlight
-      const newHighlight = {
-        id: `highlight-${Date.now()}`,
-        text: pendingHighlight.text,
-        color: pendingHighlight.color,
-        position: { start: 0, end: 0 }, // Posições genéricas
-        note: ""
-      };
-      
-      setHighlights([...filteredHighlights, newHighlight]);
-      setPendingHighlight(null);
-    }
-    
-    setShowConfirmDialog(false);
-  };
-
-  // Function to cancel highlight replacement
-  const cancelHighlight = () => {
-    setShowConfirmDialog(false);
-    setPendingHighlight(null);
-  };
-
-  // Function to update highlight note
-  const updateHighlightNote = (highlightId: string, note: string) => {
-    setHighlights(prev => prev.map(highlight => 
-      highlight.id === highlightId ? { ...highlight, note } : highlight
-    ));
-  };
-
-  // Function to start editing a note
-  const startEditingNote = (highlightId: string) => {
-    setEditingNoteId(highlightId);
-  };
-
-  // Function to finish editing a note
-  const finishEditingNote = () => {
-    setEditingNoteId(null);
-  };
-
-  // Function to delete a highlight
-  const deleteHighlight = (highlightId: string) => {
-    setHighlights(prev => prev.filter(highlight => highlight.id !== highlightId));
-  };
-  
-  // Function to handle disabled options for questions
-  const handleToggleDisabled = (questionId: string, optionId: string, event: React.MouseEvent) => {
-    event.preventDefault();
-    setDisabledOptions(prev => {
-      const questionDisabled = prev[questionId] || [];
-      if (questionDisabled.includes(optionId)) {
-        return {
-          ...prev,
-          [questionId]: questionDisabled.filter(id => id !== optionId)
-        };
-      } else {
-        return {
-          ...prev,
-          [questionId]: [...questionDisabled, optionId]
-        };
-      }
+  const riscarOpcao = (questaoId: string, opcaoId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setOpcoesRiscadas((atual) => {
+      const lista = atual[questaoId] || [];
+      return { ...atual, [questaoId]: lista.includes(opcaoId) ? lista.filter((o) => o !== opcaoId) : [...lista, opcaoId] };
     });
   };
 
+  // ----- Seções (sumário) e grifos salvos, depois que o texto aparece -----
+  useLayoutEffect(() => {
+    const el = conteudoRef.current;
+    if (!post || !el) return;
+
+    const usados = new Set<string>();
+    const lista: Secao[] = [];
+    el.querySelectorAll<HTMLElement>("h2, h3").forEach((h) => {
+      if (h.closest("[data-sem-marcacao]")) return;
+      const texto = normalizarEspacos(h.textContent || "");
+      if (!texto) return;
+      let id = h.id || `secao-${slugSecao(texto) || lista.length + 1}`;
+      while (usados.has(id)) id = `${id}-2`;
+      usados.add(id);
+      h.id = id;
+      lista.push({ id, texto, nivel: h.tagName === "H2" ? 2 : 3 });
+    });
+    setSecoes(lista);
+
+    const perdidas = new Set<string>();
+    lerMarcacoes(post.id).forEach((m) => {
+      if (grifoExiste(el, m.id)) return;
+      const range = localizarTexto(el, m.texto);
+      if (!range || !grifarIntervalo(el, range, m)) perdidas.add(m.id);
+    });
+    setNaoEncontradas(perdidas);
+  }, [post, loading]);
+
+  // Seção em destaque no sumário
+  useEffect(() => {
+    if (!secoes.length || aba !== "aula") return;
+    const alvos = secoes.map((s) => document.getElementById(s.id)).filter(Boolean) as HTMLElement[];
+    const obs = new IntersectionObserver(
+      (entradas) => {
+        const visiveis = entradas.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visiveis[0]) setSecaoAtiva(visiveis[0].target.id);
+      },
+      { rootMargin: "-80px 0px -65% 0px" }
+    );
+    alvos.forEach((a) => obs.observe(a));
+    return () => obs.disconnect();
+  }, [secoes, aba]);
+
+  const mudarFonte = (f: Fonte) => {
+    setFonte(f);
+    try {
+      localStorage.setItem(CHAVE_FONTE, f);
+    } catch {
+      /* sem armazenamento */
+    }
+  };
+
+  // ----- Grifos -----
+  const salvarMarcacoes = useCallback(
+    (lista: Marcacao[]) => {
+      setMarcacoes(lista);
+      if (post) gravarMarcacoes(post.id, lista);
+    },
+    [post]
+  );
+
+  // Barra flutuante ao selecionar texto da aula
+  useEffect(() => {
+    if (aba !== "aula") return;
+    let temporizador: ReturnType<typeof setTimeout>;
+    const avaliar = () => {
+      const el = conteudoRef.current;
+      const sel = window.getSelection();
+      if (!el || !sel || sel.isCollapsed || !sel.rangeCount) {
+        setBarra((b) => (b?.tipo === "selecao" ? null : b));
+        return;
+      }
+      const range = sel.getRangeAt(0);
+      const dentro = el.contains(range.commonAncestorContainer);
+      const no = range.commonAncestorContainer;
+      const emQuestao = (no instanceof Element ? no : no.parentElement)?.closest("[data-sem-marcacao]");
+      const texto = normalizarEspacos(sel.toString());
+      if (!dentro || emQuestao || texto.length < 2) {
+        setBarra((b) => (b?.tipo === "selecao" ? null : b));
+        return;
+      }
+      const r = range.getBoundingClientRect();
+      setBarra({ tipo: "selecao", x: r.left + r.width / 2, topo: r.top, base: r.bottom, texto });
+    };
+    const agendar = () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(avaliar, 150);
+    };
+    const aoRolar = () => setBarra((b) => (b?.tipo === "grifo" ? null : b));
+    document.addEventListener("selectionchange", agendar);
+    window.addEventListener("scroll", agendar, { passive: true });
+    window.addEventListener("scroll", aoRolar, { passive: true });
+    window.addEventListener("resize", agendar);
+    return () => {
+      clearTimeout(temporizador);
+      document.removeEventListener("selectionchange", agendar);
+      window.removeEventListener("scroll", agendar);
+      window.removeEventListener("scroll", aoRolar);
+      window.removeEventListener("resize", agendar);
+    };
+  }, [aba]);
+
+  // Clique num grifo abre as opções dele; clique fora fecha
+  useEffect(() => {
+    const aoClicar = (e: MouseEvent) => {
+      const alvo = e.target as HTMLElement;
+      if (alvo.closest("[data-barra-teoria]")) return;
+      const mark = alvo.closest<HTMLElement>("mark.teoria-grifo");
+      const sel = window.getSelection();
+      if (mark && conteudoRef.current?.contains(mark) && (!sel || sel.isCollapsed)) {
+        const r = mark.getBoundingClientRect();
+        setBarra({ tipo: "grifo", id: mark.dataset.marcacao || "", x: r.left + r.width / 2, topo: r.top, base: r.bottom });
+        return;
+      }
+      setBarra((b) => (b?.tipo === "grifo" ? null : b));
+    };
+    document.addEventListener("click", aoClicar);
+    return () => document.removeEventListener("click", aoClicar);
+  }, []);
+
+  const grifar = (cor: string) => {
+    const el = conteudoRef.current;
+    const sel = window.getSelection();
+    if (!el || !sel || !sel.rangeCount) return;
+    const texto = normalizarEspacos(sel.toString());
+    const m: Marcacao = { id: `m${Date.now().toString(36)}`, texto, cor, criadaEm: new Date().toISOString() };
+    if (grifarIntervalo(el, sel.getRangeAt(0), m)) {
+      salvarMarcacoes([...marcacoes, m]);
+    }
+    sel.removeAllRanges();
+    setBarra(null);
+  };
+
+  const mudarCor = (id: string, cor: string) => {
+    const lista = marcacoes.map((m) => (m.id === id ? { ...m, cor } : m));
+    const m = lista.find((x) => x.id === id);
+    if (m && conteudoRef.current) atualizarGrifo(conteudoRef.current, m);
+    salvarMarcacoes(lista);
+  };
+
+  const removerMarcacao = (id: string) => {
+    if (conteudoRef.current) removerGrifo(conteudoRef.current, id);
+    salvarMarcacoes(marcacoes.filter((m) => m.id !== id));
+    setBarra(null);
+  };
+
+  const salvarNota = (id: string, nota: string) => {
+    const lista = marcacoes.map((m) => (m.id === id ? { ...m, nota: nota || undefined } : m));
+    const m = lista.find((x) => x.id === id);
+    if (m && conteudoRef.current) atualizarGrifo(conteudoRef.current, m);
+    salvarMarcacoes(lista);
+  };
+
+  const limparMarcacoes = () => {
+    marcacoes.forEach((m) => conteudoRef.current && removerGrifo(conteudoRef.current, m.id));
+    salvarMarcacoes([]);
+  };
+
+  const irParaMarcacao = (id: string) => {
+    setPainelAberto(false);
+    if (aba !== "aula") irParaAba("aula");
+    setTimeout(() => {
+      const mark = conteudoRef.current?.querySelector<HTMLElement>(`mark[data-marcacao="${CSS.escape(id)}"]`);
+      if (!mark) return;
+      mark.scrollIntoView({ behavior: "smooth", block: "center" });
+      const todos = conteudoRef.current!.querySelectorAll<HTMLElement>(`mark[data-marcacao="${CSS.escape(id)}"]`);
+      todos.forEach((m) => {
+        m.classList.remove("teoria-grifo--foco");
+        void m.offsetWidth;
+        m.classList.add("teoria-grifo--foco");
+      });
+    }, 250);
+  };
+
+  const abrirCorrecao = (trecho = "") => {
+    setTrechoCorrecao(trecho.slice(0, 3000));
+    setCorrecaoAberta(true);
+    setBarra(null);
+  };
+
+  const irParaSecao = (id: string) => {
+    setSumarioAberto(false);
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // ----- Telas -----
   if (loading) {
     return (
-      <PublicLayout>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1">
-            <div className="container mx-auto px-4 py-8">
-              <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-                <div className="animate-pulse">
-                  <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-                  <div className="h-64 bg-gray-200 rounded-lg mb-8"></div>
-                  <div className="space-y-4">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                    <div className="h-4 bg-gray-200 rounded w-4/6"></div>
-                  </div>
-                </div>
-              </div>
+      <Moldura>
+        <div className="mx-auto max-w-6xl px-4 py-8 md:py-12" aria-busy="true">
+          <div className="max-w-3xl animate-pulse space-y-4">
+            <div className="h-4 w-40 rounded bg-slate-200" />
+            <div className="h-9 w-4/5 rounded bg-slate-200" />
+            <div className="h-4 w-64 rounded bg-slate-200" />
+          </div>
+          <div className="mt-8 h-12 animate-pulse rounded-xl bg-white" />
+          <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="animate-pulse space-y-4 rounded-2xl bg-white p-8">
+              {[100, 92, 96, 70, 100, 88, 60].map((w, i) => (
+                <div key={i} className="h-4 rounded bg-slate-100" style={{ width: `${w}%` }} />
+              ))}
             </div>
-          </main>
-          <Footer />
+            <div className="hidden h-64 animate-pulse rounded-2xl bg-white lg:block" />
+          </div>
         </div>
-      </PublicLayout>
+      </Moldura>
     );
   }
 
   if (!post) {
     return (
-      <PublicLayout>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1">
-            <div className="container mx-auto px-4 py-8">
-              <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                <h1 className="text-2xl font-bold text-gray-900 mb-4">Teoria não encontrada</h1>
-                <p className="text-gray-600 mb-6">A teoria que você está procurando não existe ou foi removida.</p>
-                <Link to="/teorias" className="text-primary hover:underline">
-                  Voltar para teorias
-                </Link>
-              </div>
-            </div>
-          </main>
-          <Footer />
+      <Moldura>
+        <div className="mx-auto max-w-xl px-4 py-20">
+          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+            <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#5f2ebe]/10 text-[#5f2ebe]">
+              <BookOpen className="h-7 w-7" />
+            </span>
+            <h1 className="text-2xl font-bold text-slate-900">Teoria não encontrada</h1>
+            <p className="mt-2 text-slate-500">Ela pode ter sido removida ou ainda não foi publicada.</p>
+            <Link
+              to="/teorias"
+              className="mt-6 inline-flex items-center gap-1.5 rounded-lg bg-[#5f2ebe] px-4 py-2 text-sm font-medium text-white hover:bg-[#4f25a0]"
+            >
+              Ver todas as teorias
+            </Link>
+          </div>
         </div>
-      </PublicLayout>
+      </Moldura>
     );
   }
 
+  const minutos = minutosDeLeitura(post.conteudo || "");
+  const atualizado = (() => {
+    try {
+      return format(new Date(post.updated_at || post.created_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR });
+    } catch {
+      return "";
+    }
+  })();
+  const grifoDaBarra = barra?.tipo === "grifo" ? marcacoes.find((m) => m.id === barra.id) : undefined;
+  const toque = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+
+  const sumario = (compacto = false) => (
+    <nav aria-label="Sumário da aula">
+      <ol className={cn("space-y-0.5 text-sm", compacto && "max-h-72 overflow-y-auto")}>
+        {secoes.map((s) => (
+          <li key={s.id}>
+            <button
+              type="button"
+              onClick={() => irParaSecao(s.id)}
+              className={cn(
+                "block w-full rounded-md py-1.5 pr-2 text-left leading-snug transition-colors",
+                s.nivel === 3 ? "pl-6 text-[13px]" : "pl-3",
+                secaoAtiva === s.id
+                  ? "bg-[#5f2ebe]/10 font-medium text-[#5f2ebe]"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+              )}
+            >
+              {s.texto}
+            </button>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+
+  const controleFonte = () => (
+    <div className="flex items-center rounded-lg bg-slate-100 p-0.5" role="radiogroup" aria-label="Tamanho do texto">
+      {(["p", "m", "g"] as Fonte[]).map((f) => (
+        <button
+          key={f}
+          type="button"
+          role="radio"
+          aria-checked={fonte === f}
+          onClick={() => mudarFonte(f)}
+          className={cn(
+            "flex h-7 w-8 items-center justify-center rounded-md font-semibold transition",
+            f === "p" ? "text-xs" : f === "m" ? "text-sm" : "text-base",
+            fonte === f ? "bg-white text-[#5f2ebe] shadow-sm" : "text-slate-500 hover:text-slate-800"
+          )}
+          title={f === "p" ? "Texto menor" : f === "m" ? "Texto normal" : "Texto maior"}
+        >
+          A
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <PublicLayout>
-      <style>
-        {`
-          .highlight-paragraphs p {
-            border: 1px dotted transparent;
-            transition: border-color 0.2s ease;
-          }
-          
-          .highlight-paragraphs p:hover {
-            border-color: #d1d5db;
-          }
-          
-          /* Tooltip CSS */
-          mark[data-note] {
-            position: relative;
-            cursor: pointer;
-          }
-          
-          mark[data-note]:hover::after {
-            content: attr(data-note);
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #333;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 400;
-            line-height: 1.3;
-            white-space: pre-wrap;
-            min-width: 200px;
-            max-width: 300px;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-          }
-          
-          mark[data-note]:hover::before {
-            content: '';
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 5px solid transparent;
-            border-top-color: #333;
-            margin-bottom: -5px;
-            z-index: 1001;
-          }
-        `}
-      </style>
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-1">
-          <div className="container mx-auto px-4 py-8">
-            {/* Sugestão de correção (vai para a moderação) */}
-            {post.id && (
-              <SugerirCorrecaoDialog
-                aberto={showErrorReport}
-                teoriaId={post.id}
-                trechoSelecionado={trechoSelecionado}
-                onClose={() => setShowErrorReport(false)}
-              />
+    <Moldura>
+      {/* Progresso da leitura */}
+      {aba === "aula" && <BarraProgresso alvo={conteudoRef} />}
+
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 md:pt-10">
+        {/* Trilha */}
+        <nav className="teoria-sem-impressao mb-4 flex flex-wrap items-center gap-1 text-xs text-slate-500" aria-label="Você está em">
+          <Link to="/teorias" className="hover:text-[#5f2ebe]">
+            Teorias
+          </Link>
+          {post.disciplina_id && (
+            <>
+              <ChevronRight className="h-3.5 w-3.5 text-slate-300" />
+              <span>{post.disciplina_id}</span>
+            </>
+          )}
+        </nav>
+
+        {/* Cabeçalho */}
+        <header className="max-w-3xl">
+          {post.assunto_id && (
+            <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#5f2ebe]/10 px-3 py-1 text-xs font-semibold text-[#5f2ebe]">
+              <BookOpen className="h-3.5 w-3.5" />
+              {post.assunto_id}
+            </p>
+          )}
+          <h1 className="text-[1.75rem] font-extrabold leading-tight tracking-tight text-slate-900 md:text-4xl">{post.titulo}</h1>
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
+            {professor && (
+              <span className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#5f2ebe] to-[#ea2be2] text-[11px] font-bold text-white">
+                  {iniciais(professor)}
+                </span>
+                <span className="font-medium text-slate-700">{professor}</span>
+              </span>
             )}
-            
-            {/* Confirm Highlight Replacement Dialog */}
-            {showConfirmDialog && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-                  <div className="flex justify-between items-center border-b p-4">
-                    <h3 className="text-lg font-semibold">Substituir marcação existente?</h3>
-                    <button 
-                      onClick={cancelHighlight}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-gray-600 mb-6">
-                      Já existe uma marcação neste trecho. Deseja substituir a marcação existente pela nova?
-                    </p>
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={cancelHighlight}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button
-                        onClick={confirmHighlight}
-                      >
-                        Substituir
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-slate-400" />
+              {minutos} min de leitura
+            </span>
+            {atualizado && <span>Atualizada em {atualizado}</span>}
+            {isAdmin() && (
+              <Link
+                to={`/admin/teorias/${post.id}/edit`}
+                className="teoria-sem-impressao inline-flex items-center gap-1.5 rounded-full border border-[#ea2be2]/40 px-3 py-1 text-xs font-medium text-[#c41fbd] hover:bg-[#ea2be2]/5"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Editar teoria
+              </Link>
             )}
-            
-            {/* Post Header */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                <div>
-                  <div className="relative">
-                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-                      {post.titulo}
-                    </h1>
-                    {/* Botão de edição para administradores */}
-                    {isAdmin() && post.id && (
-                      <Link 
-                        to={`/admin/teorias/${post.id}/edit`} 
-                        className="absolute top-0 right-0 bg-[#ea2be2] text-white p-2 rounded-full hover:bg-[#d029d5] transition-colors"
-                        title="Editar teoria"
-                      >
-                        <Edit className="h-5 w-5" />
-                      </Link>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                    <div className="flex items-center">
-                      <BookOpen className="h-4 w-4 mr-2 text-gray-400" />
-                      <span className="font-medium">{post.disciplina_id}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <User className="h-4 w-4 mr-2 text-gray-400" />
-                      {professor ? professor.nome_completo : "Professor não informado"}
-                    </div>
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                      {format(new Date(post.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
-                    <span className="bg-gray-100 px-2 py-1 rounded">
-                      Assunto: {post.assunto_id}
-                    </span>
-                    <span className="bg-gray-100 px-2 py-1 rounded">
-                      Tópicos: {post.topicos_ids ? post.topicos_ids.length : 0}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Top Menu - Fixed when scrolling */}
-              <div className="sticky top-0 z-10 bg-white border-b border-[rgba(239,239,239,1)] mb-6 -mx-6 px-6 py-0">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  {/* Left Icons */}
-                  <div className="flex items-center gap-2 relative">
-                    {iconActions.map((action) => (
-                      <button
-                        key={action.id}
-                        onClick={() => handleIconAction(action.id)}
-                        className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
-                        title={action.label}
-                      >
-                        <action.icon className="h-5 w-5 text-gray-600" />
-                        {action.id === "highlight" && highlights.length > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {highlights.length}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                    
-                    {/* Highlight color palette */}
-                    {showHighlightColors && (
-                      <div className="absolute top-12 left-0 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-50">
-                        <div className="flex gap-2">
-                          {highlightColors.map((color) => (
-                            <button
-                              key={color.name}
-                              className="w-8 h-8 rounded cursor-pointer border border-gray-300 hover:scale-110 transition-transform"
-                              style={{ backgroundColor: color.value }}
-                              onClick={() => applyHighlight(color.value)}
-                              title={color.name}
-                            />
-                          ))}
-                        </div>
-                        <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-200">
-                          <button 
-                            className="text-xs text-gray-500 hover:text-gray-700"
-                            onClick={() => setShowHighlightColors(false)}
-                          >
-                            Cancelar
-                          </button>
-                          {highlights.length > 0 && (
-                            <button 
-                              className="text-xs text-blue-500 hover:text-blue-700 flex items-center"
-                              onClick={() => {
-                                setShowHighlightColors(false);
-                                setShowHighlightsSidebar(true);
-                              }}
-                            >
-                              <List className="h-4 w-4 mr-1" />
-                              Lista
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Highlights sidebar */}
-                    {showHighlightsSidebar && (
-                      <div className="fixed inset-0 z-60">
-                        <div 
-                          className="absolute inset-0 bg-black bg-opacity-50"
-                          onClick={() => setShowHighlightsSidebar(false)}
-                        />
-                        <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-lg p-4 overflow-y-auto">
-                          <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">Textos Marcados</h3>
-                            <button 
-                              onClick={() => setShowHighlightsSidebar(false)}
-                              className="text-gray-500 hover:text-gray-700"
-                            >
-                              <X className="h-5 w-5" />
-                            </button>
-                          </div>
-                          <div className="space-y-3">
-                            {highlights.map((highlight) => (
-                              <div 
-                                key={highlight.id}
-                                className="p-3 rounded border cursor-pointer hover:bg-gray-50 relative"
-                                style={{ borderLeft: `4px solid ${highlight.color}` }}
-                                onClick={(e) => {
-                                  // Only scroll if not clicking on form elements
-                                  if (!(e.target as HTMLElement).closest('textarea, button')) {
-                                    scrollToHighlight(highlight.id);
-                                  }
-                                }}
-                              >
-                                <p className="text-sm text-gray-700 line-clamp-33">
-                                  {highlight.text}
-                                </p>
-                                <div 
-                                  className="w-4 h-4 rounded-full mt-2 inline-block"
-                                  style={{ backgroundColor: highlight.color }}
-                                />
-                                
-                                {editingNoteId === highlight.id ? (
-                                  // Textarea para edição da nota
-                                  <div className="mt-2">
-                                    <textarea
-                                      className="w-full text-xs border rounded p-2"
-                                      placeholder="Adicione uma nota..."
-                                      defaultValue={highlight.note || ""}
-                                      onBlur={(e) => {
-                                        updateHighlightNote(highlight.id, e.target.value);
-                                        finishEditingNote();
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Escape') {
-                                          finishEditingNote();
-                                        }
-                                      }}
-                                      autoFocus
-                                    />
-                                    <div className="flex justify-end mt-1 space-x-2">
-                                      <button
-                                        className="text-xs text-gray-500 hover:text-gray-700"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          finishEditingNote();
-                                        }}
-                                      >
-                                        Cancelar
-                                      </button>
-                                      <button
-                                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          const textarea = e.currentTarget.closest('div')?.querySelector('textarea');
-                                          if (textarea) {
-                                            updateHighlightNote(highlight.id, textarea.value);
-                                            finishEditingNote();
-                                          }
-                                        }}
-                                      >
-                                        Salvar
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  // Exibição da nota ou botão para adicionar nota
-                                  <div className="mt-2">
-                                    {highlight.note ? (
-                                      <p className="text-xs text-gray-500 italic">
-                                        Nota: {highlight.note}
-                                      </p>
-                                    ) : (
-                                      <p className="text-xs text-gray-400 italic">
-                                        Sem nota
-                                      </p>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                <div className="flex justify-end mt-2 space-x-2">
-                                  <button
-                                    className="text-gray-400 hover:text-blue-500"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      startEditingNote(highlight.id);
-                                    }}
-                                    title={highlight.note ? "Editar nota" : "Adicionar nota"}
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </button>
-                                  <button
-                                    className="text-gray-400 hover:text-red-500"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      deleteHighlight(highlight.id);
-                                    }}
-                                    title="Excluir marcação"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                            {highlights.length === 0 && (
-                              <p className="text-gray-500 text-center py-4">
-                                Nenhum texto marcado ainda
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Right Menu Tabs - Similar to course page design */}
-                  <div className="flex items-center gap-2">
-                    {menuOptions.map((option) => {
-                      const IconComponent = option.icon;
-                      return (
-                        <button
-                          key={option.id}
-                          onClick={() => setActiveTab(option.id)}
-                          className={cn(
-                            "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
-                            activeTab === option.id && "text-[#5f2ebe] border-[#5f2ebe]"
-                          )}
-                        >
-                          <IconComponent className="h-5 w-5" />
-                          <span className="hidden md:inline">{option.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Content Area */}
-              <div className="prose max-w-none relative" ref={contentRef}>
-                {activeTab === "aula" && (
-                  <div className="relative">
-                    <BlogContentWithQuestions 
-                      content={post.conteudo} 
-                      className="text-gray-700"
-                      highlights={highlights}
-                    />
-                    {post.id && <CreditosContribuidores teoriaId={post.id} />}
-                  </div>
-                )}
-                
-                {activeTab === "questoes" && (
-                  <div className="relative bg-[rgb(249,250,251)] p-4 rounded-lg">
-                    {post.questoes_filtros ? (
-                      <div>
-                        <QuestionResults
-                          questions={filteredQuestions}
-                          disabledOptions={disabledOptions}
-                          onToggleDisabled={handleToggleDisabled}
-                          currentPage={currentPage}
-                          totalPages={totalPages}
-                          onPageChange={setCurrentPage}
-                          hasFilters={true}
-                          loading={questionsLoading}
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="bg-gray-100 rounded-full p-4 mb-4">
-                          <FileQuestion className="h-8 w-8 text-gray-600" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                          Nenhum filtro configurado
-                        </h3>
-                        <p className="text-gray-600 mb-4">
-                          O administrador ainda não configurou filtros para exibir questões nesta teoria.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {activeTab === "video" && (
-                  <div className="relative bg-[rgb(249,250,251)] p-4 rounded-lg">
-                    {post.videoaulas && post.videoaulas.length > 0 ? (
-                      <div className="space-y-6">
-                        <h2 className="text-2xl font-bold mb-6">Videoaulas</h2>
-                        {post.videoaulas.map((videoUrl, index) => {
-                          // Extract YouTube video ID from URL
-                          const videoId = videoUrl.includes('youtube.com') 
-                            ? new URLSearchParams(videoUrl.split('?')[1]).get('v') 
-                            : videoUrl.split('/').pop();
-                          
-                          return (
-                            <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                              <div className="aspect-w-16 aspect-h-9">
-                                <iframe
-                                  src={`https://www.youtube.com/embed/${videoId}`}
-                                  title={`Videoaula ${index + 1}`}
-                                  className="w-full h-64 md:h-96"
-                                  frameBorder="0"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                  allowFullScreen
-                                ></iframe>
-                              </div>
-                              <div className="p-4">
-                                <h3 className="font-medium">Videoaula {index + 1}</h3>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="bg-gray-100 rounded-full p-4 mb-4">
-                          <Video className="h-8 w-8 text-gray-600" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                          Nenhum vídeo adicionado
-                        </h3>
-                        <p className="text-gray-600 mb-4">
-                          O administrador ainda não adicionou vídeos para esta teoria.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {activeTab === "mapa" && (
-                  <div className="relative bg-[rgb(249,250,251)] p-4 rounded-lg">
-                    {post.mapas_mentais && post.mapas_mentais.length > 0 ? (
-                      <div className="space-y-6">
-                        <h2 className="text-2xl font-bold mb-6">Mapas Mentais</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {post.mapas_mentais.map((pdfUrl, index) => (
-                            <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                              <div className="p-4 border-b">
-                                <h3 className="font-medium">Mapa Mental {index + 1}</h3>
-                              </div>
-                              <div className="p-4">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-sm text-gray-600">Documento PDF</span>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm"
-                                    onClick={() => window.open(pdfUrl, '_blank')}
-                                  >
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    Visualizar
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <div className="bg-gray-100 rounded-full p-4 mb-4">
-                          <Map className="h-8 w-8 text-gray-600" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                          Nenhum mapa mental adicionado
-                        </h3>
-                        <p className="text-gray-600 mb-4">
-                          O administrador ainda não adicionou mapas mentais para esta teoria.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {activeTab !== "aula" && activeTab !== "questoes" && activeTab !== "video" && activeTab !== "mapa" && (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="bg-gray-100 rounded-full p-4 mb-4">
-                      {menuOptions.find(opt => opt.id === activeTab)?.icon && 
-                        (() => {
-                          const IconComponent = menuOptions.find(opt => opt.id === activeTab)?.icon || FileText;
-                          return <IconComponent className="h-8 w-8 text-gray-600" />;
-                        })()
-                      }
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      {menuOptions.find(opt => opt.id === activeTab)?.label}
-                    </h3>
-                    <p className="text-gray-600 mb-4">
-                      Conteúdo de {menuOptions.find(opt => opt.id === activeTab)?.label.toLowerCase()} estará disponível em breve.
-                    </p>
-                    <Button variant="outline" onClick={() => setActiveTab("aula")}>
-                      Voltar para a aula
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
-        </main>
-        <Footer />
+          {(post.topicos_ids?.length ?? 0) > 0 && (
+            <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Tópicos do edital">
+              {post.topicos_ids.map((t) => (
+                <li key={t} className="rounded-md bg-white px-2 py-0.5 text-xs text-slate-600 ring-1 ring-slate-200">
+                  {t}
+                </li>
+              ))}
+            </ul>
+          )}
+        </header>
+
+        {/* Abas */}
+        <div id="teoria-abas" className="teoria-sem-impressao sticky top-0 z-30 -mx-4 mt-8 bg-[#f6f7fb]/95 px-4 py-2 backdrop-blur">
+          <div className="flex items-center justify-between gap-3">
+            <nav className="-mx-1 flex gap-1 overflow-x-auto px-1 scrollbar-none" role="tablist" aria-label="Conteúdos da teoria">
+              {abas.map((a) => {
+                const ativa = aba === a.id;
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={ativa}
+                    onClick={() => irParaAba(a.id)}
+                    className={cn(
+                      "flex shrink-0 items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+                      ativa ? "bg-[#5f2ebe] text-white shadow-sm" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:text-[#5f2ebe] hover:ring-[#5f2ebe]/30"
+                    )}
+                  >
+                    <a.icone className="h-4 w-4" />
+                    <span className="sm:hidden">{a.curto}</span>
+                    <span className="hidden sm:inline">{a.label}</span>
+                    {a.n !== undefined && (
+                      <span className={cn("rounded-full px-1.5 text-[11px] tabular-nums", ativa ? "bg-white/20" : "bg-slate-100 text-slate-500")}>
+                        {a.n > 999 ? "999+" : a.n}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+            {aba === "aula" && (
+              <div className="hidden shrink-0 sm:block">
+                {controleFonte()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={cn("mt-4 grid gap-8", aba === "aula" && "lg:grid-cols-[minmax(0,1fr)_260px]")}>
+          <div className="min-w-0">
+            {/* Aula (fica montada para não perder os grifos ao trocar de aba) */}
+            <article hidden={aba !== "aula"} className="rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+              {/* Ferramentas no celular */}
+              <div className="teoria-sem-impressao flex items-center gap-2 border-b border-slate-100 px-4 py-2 lg:hidden">
+                {secoes.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setSumarioAberto((v) => !v)}
+                    aria-expanded={sumarioAberto}
+                    className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+                  >
+                    <ListTree className="h-4 w-4" />
+                    Sumário
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setPainelAberto(true)}
+                  className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+                >
+                  <Highlighter className="h-4 w-4" />
+                  Grifos
+                  {marcacoes.length > 0 && <span className="text-xs tabular-nums text-[#5f2ebe]">{marcacoes.length}</span>}
+                </button>
+                <span className="ml-auto sm:hidden">
+                  {controleFonte()}
+                </span>
+              </div>
+              {sumarioAberto && (
+                <div className="border-b border-slate-100 px-3 py-3 lg:hidden">
+                  {sumario(true)}
+                </div>
+              )}
+
+              <div className="px-5 py-7 sm:px-10 sm:py-10 lg:px-14">
+                <div ref={conteudoRef}>
+                  <BlogContentWithQuestions content={post.conteudo || ""} className={cn("teoria-prose", `teoria-prose--${fonte}`)} />
+                </div>
+
+                <div className="teoria-sem-impressao mt-12 flex flex-col gap-3 rounded-xl bg-slate-50 p-4 sm:flex-row sm:items-center">
+                  <MessageSquareWarning className="hidden h-5 w-5 shrink-0 text-orange-500 sm:block" />
+                  <p className="flex-1 text-sm text-slate-600">
+                    <strong className="font-semibold text-slate-800">Viu algo errado ou desatualizado?</strong> Selecione o trecho e toque em
+                    “Corrigir”. A equipe revisa e seu nome entra nos créditos.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => abrirCorrecao()}
+                    className="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-[#5f2ebe]/40 hover:text-[#5f2ebe]"
+                  >
+                    Sugerir correção
+                  </button>
+                </div>
+
+                <CreditosContribuidores teoriaId={post.id} />
+              </div>
+            </article>
+
+            {aba === "questoes" && (
+              <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(16,24,40,0.05)] sm:p-6">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-900">Questões sobre o assunto</h2>
+                    {totalQuestoes !== null && (
+                      <p className="text-sm text-slate-500">
+                        {totalQuestoes} {totalQuestoes === 1 ? "questão encontrada" : "questões encontradas"}
+                      </p>
+                    )}
+                  </div>
+                  {post.questoes_link && (
+                    <Link
+                      to={post.questoes_link}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-[#5f2ebe]/40 hover:text-[#5f2ebe]"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      Abrir no banco de questões
+                    </Link>
+                  )}
+                </div>
+                {!carregandoQuestoes && totalQuestoes === 0 ? (
+                  <Vazio icone={FileQuestion} titulo="Nenhuma questão por enquanto" texto="Ainda não há questões cadastradas para este assunto." />
+                ) : (
+                  <QuestionResults
+                    questions={questoes}
+                    disabledOptions={opcoesRiscadas}
+                    onToggleDisabled={riscarOpcao}
+                    currentPage={paginaQuestoes}
+                    totalPages={totalPaginasQuestoes}
+                    onPageChange={(p) => {
+                      setPaginaQuestoes(p);
+                      document.getElementById("teoria-abas")?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    hasFilters
+                    loading={carregandoQuestoes}
+                  />
+                )}
+              </section>
+            )}
+
+            {aba === "video" && (
+              <section className="mx-auto max-w-4xl space-y-5">
+                {(post.videoaulas || []).map((url, i) => {
+                  const embed = youtubeEmbed(url);
+                  return (
+                    <figure key={`${url}-${i}`} className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+                      {embed ? (
+                        <div className="relative aspect-video bg-slate-900">
+                          <iframe
+                            src={embed}
+                            title={`Videoaula ${i + 1} - ${post.titulo}`}
+                            className="absolute inset-0 h-full w-full"
+                            loading="lazy"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      ) : (
+                        <Vazio icone={Video} titulo="Vídeo indisponível" texto="Não foi possível abrir este vídeo aqui." />
+                      )}
+                      <figcaption className="flex items-center justify-between gap-3 px-4 py-3">
+                        <span className="text-sm font-semibold text-slate-800">
+                          Videoaula {i + 1}
+                          {(post.videoaulas?.length || 0) > 1 && <span className="font-normal text-slate-400"> de {post.videoaulas!.length}</span>}
+                        </span>
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-[#5f2ebe]">
+                          Abrir no YouTube <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </figcaption>
+                    </figure>
+                  );
+                })}
+              </section>
+            )}
+
+            {aba === "mapa" && (
+              <section className="grid gap-4 sm:grid-cols-2">
+                {(post.mapas_mentais || []).map((url, i) => (
+                  <div key={`${url}-${i}`} className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">
+                      <MapIcon className="h-6 w-6" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-800">Mapa mental {i + 1}</p>
+                      <p className="text-xs text-slate-500">PDF</p>
+                    </div>
+                    <div className="flex shrink-0 gap-1">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-lg bg-[#5f2ebe] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#4f25a0]"
+                      >
+                        Abrir
+                      </a>
+                      <a
+                        href={url}
+                        download
+                        className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+                        aria-label={`Baixar mapa mental ${i + 1}`}
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </section>
+            )}
+          </div>
+
+          {/* Lateral (computador) */}
+          {aba === "aula" && (
+            <aside className="teoria-sem-impressao hidden lg:block">
+              <div className="sticky top-20 space-y-4">
+                {secoes.length > 1 && (
+                  <div className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+                    <p className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      <ListTree className="h-3.5 w-3.5" />
+                      Nesta aula
+                    </p>
+                    <div className="max-h-[50vh] overflow-y-auto pr-1">
+                      {sumario()}
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-1 rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+                  <button
+                    type="button"
+                    onClick={() => setPainelAberto(true)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                  >
+                    <Highlighter className="h-4 w-4 text-[#5f2ebe]" />
+                    <span className="flex-1">Meus grifos</span>
+                    {marcacoes.length > 0 && (
+                      <span className="rounded-full bg-[#5f2ebe]/10 px-1.5 text-xs tabular-nums text-[#5f2ebe]">{marcacoes.length}</span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => abrirCorrecao()}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                  >
+                    <MessageSquareWarning className="h-4 w-4 text-orange-500" />
+                    Sugerir correção
+                  </button>
+                  <p className="px-3 pt-1 text-[11px] leading-snug text-slate-400">
+                    Dica: selecione um trecho para grifar, anotar ou sugerir correção.
+                  </p>
+                </div>
+              </div>
+            </aside>
+          )}
+        </div>
       </div>
-    </PublicLayout>
+
+      {/* Barra flutuante: seleção ou grifo clicado */}
+      {barra && aba === "aula" && (
+        <div
+          data-barra-teoria
+          className="teoria-barra-selecao teoria-sem-impressao fixed z-50 flex items-center gap-1 rounded-xl bg-slate-900 p-1.5 text-white shadow-xl"
+          style={{
+            left: Math.min(Math.max(barra.x, 150), window.innerWidth - 150),
+            top: toque || barra.topo < 70 ? barra.base + 10 : barra.topo - 50,
+            transform: "translateX(-50%)",
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {CORES_MARCACAO.map((c) => (
+            <button
+              key={c.valor}
+              type="button"
+              onClick={() => (barra.tipo === "selecao" ? grifar(c.valor) : mudarCor(barra.id, c.valor))}
+              className={cn(
+                "h-6 w-6 rounded-full ring-2 transition-transform hover:scale-110",
+                grifoDaBarra?.cor === c.valor ? "ring-white" : "ring-transparent"
+              )}
+              style={{ backgroundColor: c.valor }}
+              aria-label={`Grifar em ${c.nome.toLowerCase()}`}
+              title={c.nome}
+            />
+          ))}
+          <span className="mx-1 h-5 w-px bg-white/20" aria-hidden />
+          {barra.tipo === "selecao" ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(barra.texto).then(() => toast.success("Trecho copiado"));
+                  setBarra(null);
+                }}
+                className="rounded-lg p-1.5 hover:bg-white/10"
+                aria-label="Copiar trecho"
+                title="Copiar"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => abrirCorrecao(barra.texto)}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium hover:bg-white/10"
+                title="Sugerir correção deste trecho"
+              >
+                <MessageSquareWarning className="h-4 w-4 text-orange-300" />
+                Corrigir
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditandoNota(barra.id);
+                  setPainelAberto(true);
+                  setBarra(null);
+                }}
+                className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium hover:bg-white/10"
+              >
+                <MessageSquareText className="h-4 w-4" />
+                {grifoDaBarra?.nota ? "Nota" : "Anotar"}
+              </button>
+              <button
+                type="button"
+                onClick={() => removerMarcacao(barra.id)}
+                className="rounded-lg p-1.5 hover:bg-white/10"
+                aria-label="Remover grifo"
+                title="Remover grifo"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      <PainelMarcacoes
+        aberto={painelAberto}
+        onOpenChange={(v) => {
+          setPainelAberto(v);
+          if (!v) setEditandoNota(null);
+        }}
+        marcacoes={marcacoes}
+        naoEncontradas={naoEncontradas}
+        editandoId={editandoNota}
+        onEditandoId={setEditandoNota}
+        onIr={irParaMarcacao}
+        onNota={salvarNota}
+        onRemover={removerMarcacao}
+        onLimpar={limparMarcacoes}
+      />
+
+      <SugerirCorrecaoDialog
+        aberto={correcaoAberta}
+        teoriaId={post.id}
+        trechoSelecionado={trechoCorrecao}
+        onClose={() => setCorrecaoAberta(false)}
+      />
+    </Moldura>
   );
 };
 
