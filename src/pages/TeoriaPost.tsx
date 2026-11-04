@@ -33,9 +33,40 @@ import { toast } from "sonner";
 import QuestionResults from "@/components/questions/QuestionResults";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { SugerirCorrecaoDialog } from "@/components/teorias/SugerirCorrecaoDialog";
+import { isUuid, teoriaPath } from "@/utils/teoriaUrl";
+
+/** Busca uma teoria publicada pelo slug, por um slug antigo ou pelo id. */
+const buscarTeoriaPublicada = async (param: string) => {
+  const db = supabase as any;
+  const porCampo = async (campo: "id" | "slug", valor: string) => {
+    const { data, error } = await db
+      .from('teorias')
+      .select('*')
+      .eq(campo, valor)
+      .eq('status', 'published')
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  };
+
+  if (isUuid(param)) {
+    return porCampo("id", param);
+  }
+
+  const atual = await porCampo("slug", param);
+  if (atual) return atual;
+
+  const { data: antigo } = await db
+    .from('teorias_slugs_antigos')
+    .select('teoria_id')
+    .eq('slug', param)
+    .maybeSingle();
+  return antigo?.teoria_id ? porCampo("id", antigo.teoria_id) : null;
+};
 
 interface Teoria {
   id: string;
+  slug?: string;
   titulo: string;
   disciplina_id: string;
   assunto_id: string;
@@ -158,20 +189,23 @@ const TeoriaPost = () => {
         return;
       }
 
+      // Já carregada (acabamos de trocar o id pelo slug na URL)
+      if (post && post.slug === slug) {
+        return;
+      }
+
       try {
         setLoading(true);
         
-        // Fetch teoria by ID (slug is actually the ID in our case)
-        const { data: teoriaData, error: teoriaError } = await supabase
-          .from('teorias')
-          .select('*')
-          .eq('id', slug)
-          .eq('status', 'published')
-          .single();
-        
-        if (teoriaError) throw teoriaError;
+        // A URL pode trazer o slug (atual ou antigo) ou o id (links antigos)
+        const teoriaData = await buscarTeoriaPublicada(slug);
         if (!teoriaData) {
           throw new Error('Teoria não encontrada');
+        }
+
+        // Link antigo (id ou slug anterior): troca a URL pelo slug atual
+        if (teoriaData.slug && teoriaData.slug !== slug) {
+          navigate(teoriaPath(teoriaData), { replace: true });
         }
         
         setPost(teoriaData);

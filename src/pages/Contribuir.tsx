@@ -24,6 +24,7 @@ import {
   rotaPublicada,
   STATUS_LABEL,
 } from "@/services/contribuicoes";
+import { teoriaPath } from "@/utils/teoriaUrl";
 import {
   CorrecaoTeoria,
   TeoriaResumo,
@@ -212,7 +213,7 @@ const Contribuir = () => {
                 <CardContent className="pt-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <Link to={`/teoria/${c.teoria_id}`} className="font-medium text-[#5f2ebe] hover:underline">
+                      <Link to={teoriaPath({ id: c.teoria_id, slug: teoriasCorrecoes[c.teoria_id]?.slug })} className="font-medium text-[#5f2ebe] hover:underline">
                         {teoriasCorrecoes[c.teoria_id]?.titulo || "Teoria"}
                       </Link>
                       <p className="text-xs text-gray-500">{STATUS_LABEL[c.status]}</p>
