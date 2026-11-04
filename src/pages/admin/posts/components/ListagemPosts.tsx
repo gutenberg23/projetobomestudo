@@ -30,13 +30,15 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BlogPost } from "@/components/blog/types";
-import RSSManager from "@/components/admin/RSSManager";
+import { GerenciadorRSS } from "./GerenciadorRSS";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { AdminPostStatus } from "@/services/blogService";
 import { toast } from "@/components/ui/use-toast";
 import { cn } from "@/lib/utils";
 
 interface ListagemPostsProps {
+  /** Recarrega a lista (ex.: depois que o RSS cria posts). */
+  onRecarregar?: () => void;
   postsFiltrados: BlogPost[];
   carregando: boolean;
   erro: string | null;
@@ -206,6 +208,7 @@ const LinhaPost: React.FC<{
 };
 
 export const ListagemPosts: React.FC<ListagemPostsProps> = ({
+  onRecarregar,
   postsFiltrados,
   carregando,
   erro,
@@ -253,19 +256,7 @@ export const ListagemPosts: React.FC<ListagemPostsProps> = ({
         }
       />
 
-      {showRSSManager && (
-        <div className="relative rounded-xl border border-[#5f2ebe]/20 bg-white p-1">
-          <button
-            type="button"
-            onClick={() => setShowRSSManager(false)}
-            className="absolute right-3 top-3 z-10 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Fechar feeds RSS"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          <RSSManager />
-        </div>
-      )}
+      {showRSSManager && <GerenciadorRSS onFechar={() => setShowRSSManager(false)} onPostsCriados={onRecarregar} />}
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
         {/* Abas de status + busca */}

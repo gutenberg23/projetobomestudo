@@ -94,6 +94,7 @@ const Posts = () => {
   if (modo === ModoInterface.LISTAR) {
     return (
       <ListagemPosts
+        onRecarregar={state.recarregar}
         postsFiltrados={postsFiltrados}
         carregando={carregandoLista}
         erro={erroLista}
