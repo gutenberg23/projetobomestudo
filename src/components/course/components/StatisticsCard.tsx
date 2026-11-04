@@ -1,258 +1,213 @@
-import { useState } from 'react';
+import { useMemo, useState } from "react";
 import { Subject } from "../types/editorialized";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, Radar, Tooltip, BarChart, Bar, XAxis, YAxis, Legend } from 'recharts';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  ResponsiveContainer,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  Radar,
+  Tooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
+import { BarChart3, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { BarraProgresso, Painel, tomAproveitamento } from "../ui";
 
 interface StatisticsCardProps {
   subjects: Subject[];
+  performanceGoal?: number;
 }
 
-export const StatisticsCard = ({
-  subjects
-}: StatisticsCardProps) => {
-  const [selectedSubject, setSelectedSubject] = useState<string>(subjects[0]?.name || "");
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+const encurtar = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-  console.log("[StatisticsCard] Subjects data received:", subjects);
+/** Painel recolhível "Meu desempenho" da aba Edital. */
+export const StatisticsCard = ({ subjects, performanceGoal = 70 }: StatisticsCardProps) => {
+  const [aberto, setAberto] = useState(false);
+  const [disciplinaId, setDisciplinaId] = useState<string>(subjects[0] ? String(subjects[0].id) : "");
 
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  // Data for radar chart - usando dados da SubjectTable
-  const radarData = subjects.map(subject => {
-    // Calcular estatísticas usando dados da SubjectTable
-    let totalHits = 0;
-    let totalExercises = 0;
-    
-    subject.topics.forEach(topic => {
-      // Acessar as propriedades corretas do tópico
-      totalHits += topic.hits || 0;
-      totalExercises += topic.exercisesDone || 0;
-      console.log(`[StatisticsCard] Topic ${topic.name}: hits=${topic.hits}, exercisesDone=${topic.exercisesDone}`);
-    });
-    
-    const performance = totalExercises > 0 ? Math.round(totalHits / totalExercises * 100) : 0;
-    console.log(`[StatisticsCard] Radar data for ${subject.name}:`, { totalHits, totalExercises, performance });
-    
-    return {
-      subject: subject.name,
-      value: performance
-    };
-  });
-
-  console.log("[StatisticsCard] Radar data calculated:", radarData);
-
-  // Dados para a lista de tópicos que precisam de melhoria - usando dados da SubjectTable
-  // Filtrar apenas tópicos com conclusão marcada (isDone = true) e ordenar do menor para o maior aproveitamento
-  const topicsNeedingImprovement = subjects.flatMap(subject => 
-    subject.topics
-      .filter(topic => topic.isDone) // Apenas tópicos com conclusão marcada
-      .map(topic => {
-        // Acessar as propriedades corretas do tópico
-        const exercisesDone = topic.exercisesDone || 0;
-        const hits = topic.hits || 0;
-        const performance = exercisesDone > 0 
-          ? Math.round((hits / exercisesDone) * 100) 
-          : 0;
-        
-        console.log(`[StatisticsCard] Topic ${topic.name} stats:`, { exercisesDone, hits, performance });
-        
+  const porDisciplina = useMemo(
+    () =>
+      subjects.map((s) => {
+        const feitas = s.topics.reduce((a, t) => a + (t.exercisesDone || 0), 0);
+        const acertos = s.topics.reduce((a, t) => a + (t.hits || 0), 0);
         return {
-          name: topic.name,
-          subject: subject.name,
-          performance,
-          exercisesDone
+          subject: encurtar(s.name, 22),
+          nome: s.name,
+          value: feitas > 0 ? Math.round((acertos / feitas) * 100) : 0,
+          feitas,
         };
-      })
-  )
-  .filter(topic => topic.exercisesDone > 0) // Filtra apenas tópicos com exercícios feitos
-  .sort((a, b) => a.performance - b.performance) // Ordena do pior para o melhor (menor para maior)
-  .slice(0, 4); // Pega os 4 piores
+      }),
+    [subjects]
+  );
 
-  console.log("[StatisticsCard] Topics needing improvement:", topicsNeedingImprovement);
+  // Tópicos já praticados com o pior aproveitamento
+  const piores = useMemo(
+    () =>
+      subjects
+        .flatMap((s) =>
+          s.topics
+            .filter((t) => (t.exercisesDone || 0) > 0)
+            .map((t) => ({
+              nome: t.name,
+              disciplina: s.name,
+              feitas: t.exercisesDone || 0,
+              perf: Math.round(((t.hits || 0) / (t.exercisesDone || 1)) * 100),
+            }))
+        )
+        .filter((t) => t.perf < performanceGoal)
+        .sort((a, b) => a.perf - b.perf || b.feitas - a.feitas)
+        .slice(0, 6),
+    [subjects, performanceGoal]
+  );
 
-  // Colors for the bar chart
-  const BAR_COLORS = {
-    acertos: '#5f2ebe',
-    erros: '#ffac33'
-  };
+  const dadosBarras = useMemo(() => {
+    const s = subjects.find((x) => String(x.id) === disciplinaId);
+    return (s?.topics || []).map((t) => ({
+      name: `${t.id}`,
+      titulo: t.name,
+      acertos: t.hits || 0,
+      erros: Math.max(0, (t.exercisesDone || 0) - (t.hits || 0)),
+    }));
+  }, [subjects, disciplinaId]);
 
-  // Data for stacked bar chart - usando dados da SubjectTable
-  const selectedSubjectData = subjects.find(s => s.name === selectedSubject)?.topics.map(topic => {
-    // Acessar as propriedades corretas do tópico
-    const hits = topic.hits || 0;
-    const totalExercises = topic.exercisesDone || 0;
-    const errors = totalExercises - hits;
-    
-    console.log(`[StatisticsCard] Bar chart data for ${topic.name}:`, { hits, errors, totalExercises });
-    
-    return {
-      name: topic.name.substring(0, 20) + "...",
-      acertos: hits,
-      erros: errors
-    };
-  }) || [];
-
-  console.log("[StatisticsCard] Selected subject data:", selectedSubjectData);
+  const comDados = porDisciplina.some((d) => d.feitas > 0);
 
   return (
-    <div className={`bg-gradient-to-br from-[#5f2ebe10] to-[#5f2ebe20] rounded-[16px] ${isExpanded ? 'p-4 my-[15px] py-[17px]' : 'p-0 mb-4 py-0'}`}>
-      <div 
-        className={`flex justify-between items-center ${isExpanded ? 'mb-4' : 'p-4'} cursor-pointer`}
-        onClick={toggleExpanded}
+    <Painel className="overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setAberto(!aberto)}
+        aria-expanded={aberto}
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50/70 md:px-5"
       >
-        <div className="flex items-center gap-3">
-          <div className="bg-[#5f2ebe] w-1 h-8 rounded-full"></div>
-          <h3 className="text-left text-2xl font-bold bg-gradient-to-r from-[#5f2ebe] to-[#8a5ee0] text-transparent bg-clip-text">
-            Minhas Estatísticas
-          </h3>
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#5f2ebe]/10 text-[#5f2ebe]">
+          <BarChart3 className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-slate-900">Meu desempenho</p>
+          <p className="text-xs text-slate-500">
+            {piores.length > 0
+              ? `${piores.length} ${piores.length === 1 ? "tópico está" : "tópicos estão"} abaixo da meta`
+              : "Gráficos por disciplina e tópicos que precisam de revisão"}
+          </p>
         </div>
-        <div className="text-[#5f2ebe] hover:bg-[#f0ebff] p-2 rounded-full transition-all duration-300">
-          {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-        </div>
-      </div>
+        <ChevronDown className={cn("h-5 w-5 shrink-0 text-slate-400 transition-transform", aberto && "rotate-180")} />
+      </button>
 
-      {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white p-4 rounded-[14px] py-[15px]">
-            <h3 className="font-semibold text-center mb-4">
-              Aproveitamento por Disciplina
-            </h3>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData}>
-                  <PolarGrid />
-                  <PolarAngleAxis 
-                    dataKey="subject" 
-                    tick={{
-                      fontSize: window.innerWidth < 768 ? 10 : 12
-                    }} 
-                  />
-                  <Radar 
-                    name="Aproveitamento" 
-                    dataKey="value" 
-                    stroke="#5f2ebe" 
-                    fill="#5f2ebe" 
-                    fillOpacity={0.6} 
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      fontSize: window.innerWidth < 768 ? 10 : 12
-                    }} 
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          
-          <div className="bg-white p-4 rounded-[14px]">
-            <h3 className="font-semibold text-center mb-4">
-              Tópicos que Precisam de Melhoria
-            </h3>
-            <div className="space-y-4">
-              {topicsNeedingImprovement.map((topic, index) => (
-                <div key={index} className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
-                    <div className="flex-1">
-                      <p className="font-medium text-[#272f3c]">{topic.name}</p>
-                      <p className="text-[#67748a] text-xs">{topic.subject}</p>
-                    </div>
-                    <span className={`font-medium ${
-                      topic.performance < 50 ? 'text-red-500' : 
-                      topic.performance < 70 ? 'text-orange-500' : 
-                      'text-green-500'
-                    }`}>
-                      {topic.performance}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2">
-                    <div 
-                      className={`h-full rounded-full ${
-                        topic.performance < 50 ? 'bg-red-500' : 
-                        topic.performance < 70 ? 'bg-orange-500' : 
-                        'bg-green-500'
-                      }`}
-                      style={{ width: `${topic.performance}%` }}
+      {aberto && (
+        <div className="grid gap-4 border-t border-slate-100 p-4 md:grid-cols-2 md:p-5">
+          <div className="rounded-xl bg-slate-50 p-4">
+            <h4 className="mb-2 text-sm font-semibold text-slate-800">Aproveitamento por disciplina</h4>
+            {!comDados ? (
+              <p className="py-16 text-center text-sm text-slate-400">Resolva questões para ver o gráfico.</p>
+            ) : porDisciplina.length >= 3 ? (
+              <div className="h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={porDisciplina} outerRadius="70%">
+                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: "#64748b" }} />
+                    <Radar name="Aproveitamento" dataKey="value" stroke="#5f2ebe" fill="#5f2ebe" fillOpacity={0.35} />
+                    <Tooltip
+                      formatter={(v: number) => [`${v}%`, "Aproveitamento"]}
+                      labelFormatter={(_, p) => p?.[0]?.payload?.nome || ""}
+                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
                     />
-                  </div>
-                </div>
-              ))}
-
-              {topicsNeedingImprovement.length === 0 && (
-                <div className="text-center py-8 text-[#67748a]">
-                  Nenhum tópico com exercícios realizados ainda.
-                </div>
-              )}
-            </div>
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="space-y-3 py-4">
+                {porDisciplina.map((d) => {
+                  const t = tomAproveitamento(d.value, performanceGoal, d.feitas);
+                  return (
+                    <div key={d.nome}>
+                      <div className="mb-1 flex justify-between text-sm">
+                        <span className="text-slate-700">{d.nome}</span>
+                        <span className={cn("font-semibold tabular-nums", t.texto)}>{d.feitas > 0 ? `${d.value}%` : "—"}</span>
+                      </div>
+                      <BarraProgresso valor={d.value} corClasse={t.barra} marca={performanceGoal} />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <div className="col-span-1 md:col-span-2 bg-white p-4 rounded-[14px]">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-              <h3 className="font-semibold text-center">
-                Distribuição de Acertos e Erros por Tópico
-              </h3>
-              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                <SelectTrigger className="w-full md:w-[280px]">
+          <div className="rounded-xl bg-slate-50 p-4">
+            <h4 className="text-sm font-semibold text-slate-800">Precisam de revisão</h4>
+            <p className="mb-3 text-xs text-slate-500">Tópicos praticados com aproveitamento abaixo da meta de {performanceGoal}%.</p>
+            {piores.length === 0 ? (
+              <p className="py-14 text-center text-sm text-slate-400">
+                {comDados ? "Nenhum tópico abaixo da meta. Continue assim!" : "Nenhum tópico praticado ainda."}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {piores.map((t, i) => {
+                  const tom = tomAproveitamento(t.perf, performanceGoal, t.feitas);
+                  return (
+                    <li key={`${t.disciplina}-${t.nome}-${i}`}>
+                      <div className="mb-1 flex items-start justify-between gap-3 text-sm">
+                        <div className="min-w-0">
+                          <p className="line-clamp-1 font-medium text-slate-800" title={t.nome}>
+                            {t.nome}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {t.disciplina} · {t.feitas} {t.feitas === 1 ? "questão" : "questões"}
+                          </p>
+                        </div>
+                        <span className={cn("shrink-0 font-semibold tabular-nums", tom.texto)}>{t.perf}%</span>
+                      </div>
+                      <BarraProgresso valor={t.perf} corClasse={tom.barra} marca={performanceGoal} className="h-1.5" />
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          <div className="rounded-xl bg-slate-50 p-4 md:col-span-2">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-800">Acertos e erros por tópico</h4>
+                <p className="text-xs text-slate-500">O eixo mostra o número do tópico; passe o mouse para ver o nome.</p>
+              </div>
+              <Select value={disciplinaId} onValueChange={setDisciplinaId}>
+                <SelectTrigger className="w-full bg-white sm:w-[280px]">
                   <SelectValue placeholder="Selecione uma disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {subjects.map(subject => (
-                    <SelectItem key={subject.id} value={subject.name}>
-                      {subject.name}
+                  {subjects.map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      {s.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="h-[300px]">
+            <div className="h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={selectedSubjectData}>
-                  <XAxis 
-                    dataKey="name" 
-                    angle={-45} 
-                    textAnchor="end" 
-                    height={100} 
-                    tick={{
-                      fontSize: window.innerWidth < 768 ? 10 : 12
-                    }} 
+                <BarChart data={dadosBarras} margin={{ left: -20, right: 8 }}>
+                  <CartesianGrid vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#64748b" }} tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "#64748b" }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    cursor={{ fill: "rgba(95,46,190,0.06)" }}
+                    labelFormatter={(_, p) => encurtar(p?.[0]?.payload?.titulo || "", 80)}
+                    contentStyle={{ fontSize: 12, borderRadius: 8, maxWidth: 320, whiteSpace: "normal" }}
                   />
-                  <YAxis 
-                    tick={{
-                      fontSize: window.innerWidth < 768 ? 10 : 12
-                    }} 
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      fontSize: window.innerWidth < 768 ? 10 : 12
-                    }} 
-                  />
-                  <Legend 
-                    wrapperStyle={{
-                      fontSize: window.innerWidth < 768 ? 10 : 12
-                    }} 
-                  />
-                  <Bar 
-                    dataKey="acertos" 
-                    stackId="a" 
-                    fill={BAR_COLORS.acertos} 
-                    name="Acertos" 
-                    radius={[4, 4, 0, 0]} 
-                  />
-                  <Bar 
-                    dataKey="erros" 
-                    stackId="a" 
-                    fill={BAR_COLORS.erros} 
-                    name="Erros" 
-                    radius={[4, 4, 0, 0]} 
-                  />
+                  <Bar dataKey="acertos" stackId="a" fill="#10b981" name="Acertos" />
+                  <Bar dataKey="erros" stackId="a" fill="#f87171" name="Erros" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </Painel>
   );
 };

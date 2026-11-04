@@ -1,12 +1,12 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
+import { ArrowDown, ArrowUp, GripVertical, Minus, Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { GripVertical, Minus, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { formatTimeValue } from "./utils";
 
-interface Subject {
+export interface CicloDisciplina {
   id: string;
   titulo: string;
   descricao?: string;
@@ -16,9 +16,13 @@ interface Subject {
 }
 
 interface DisciplinaItemProps {
-  subject: Subject;
+  subject: CicloDisciplina;
   index: number;
-  totalHoras: number;
+  /** Posição no ciclo, contando só as disciplinas ativas (null se inativa). */
+  posicao: number | null;
+  total: number;
+  maxHoras: number;
+  percentual: number;
   onToggleActive: (id: string) => void;
   onUpdateHoras: (id: string, horas: number) => void;
   onMove: (dragIndex: number, hoverIndex: number) => void;
@@ -27,184 +31,152 @@ interface DisciplinaItemProps {
 interface DragItem {
   index: number;
   id: string;
-  type: string;
 }
+
+const PASSO = 0.25; // 15 minutos nos botões
 
 export const DisciplinaItem: React.FC<DisciplinaItemProps> = ({
   subject,
   index,
-  totalHoras,
+  posicao,
+  total,
+  maxHoras,
+  percentual,
   onToggleActive,
   onUpdateHoras,
-  onMove
+  onMove,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
-  
-  // Valor atual em horas decimais (ex: 2.5 = 2h30min)
-  const [horasValue, setHorasValue] = useState<number>(subject.horasDedicadas || 0);
-  
-  // Configuração do drag and drop
-  const [{ isDragging }, drag] = useDrag({
+  const alca = useRef<HTMLButtonElement>(null);
+  const horas = subject.horasDedicadas || 0;
+  const ativo = !!subject.ativo;
+
+  const [{ isDragging }, drag, preview] = useDrag({
     type: "DISCIPLINA_ITEM",
     item: { index, id: subject.id },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
+    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
   });
 
   const [, drop] = useDrop({
     accept: "DISCIPLINA_ITEM",
     hover: (item: DragItem, monitor) => {
-      if (!ref.current) {
-        return;
-      }
-
+      if (!ref.current) return;
       const dragIndex = item.index;
       const hoverIndex = index;
-
-      // Não substituir itens por eles mesmos
-      if (dragIndex === hoverIndex) {
-        return;
-      }
-
-      // Determinar o retângulo na tela
-      const hoverBoundingRect = ref.current.getBoundingClientRect();
-
-      // Obter o ponto central vertical
-      const hoverMiddleY = (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-
-      // Determinar a posição do mouse
-      const clientOffset = monitor.getClientOffset();
-
-      // Obter pixels para o topo
-      const hoverClientY = clientOffset!.y - hoverBoundingRect.top;
-
-      // Apenas realizar movimento quando o mouse ultrapassar metade da altura do item
-      // Quando arrastando para baixo, apenas mover quando o cursor estiver abaixo de 50%
-      // Quando arrastando para cima, apenas mover quando o cursor estiver acima de 50%
-
-      // Arrastando para baixo
-      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) {
-        return;
-      }
-
-      // Arrastando para cima
-      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) {
-        return;
-      }
-
-      // Mover o item
+      if (dragIndex === hoverIndex) return;
+      const rect = ref.current.getBoundingClientRect();
+      const meio = (rect.bottom - rect.top) / 2;
+      const offset = monitor.getClientOffset();
+      if (!offset) return;
+      const y = offset.y - rect.top;
+      if (dragIndex < hoverIndex && y < meio) return;
+      if (dragIndex > hoverIndex && y > meio) return;
       onMove(dragIndex, hoverIndex);
-
-      // Atualizar o índice do item para o novo
       item.index = hoverIndex;
     },
   });
 
-  // Combina drag e drop em um único ref
-  drag(drop(ref));
+  // Só a alça inicia o arraste; o resto do cartão continua clicável (slider, botões)
+  drag(alca);
+  drop(preview(ref));
 
-  const handleSliderChange = (values: number[]) => {
-    if (values.length > 0) {
-      // O slider trabalha com valores em minutos
-      const minutesValue = values[0];
-      // Converter para horas decimais
-      const hoursValue = minutesValue / 60;
-      setHorasValue(hoursValue);
-      onUpdateHoras(subject.id, hoursValue);
-    }
-  };
-  
-  const handleIncrease = () => {
-    // Aumenta em incrementos de 5 minutos (0.0833 horas)
-    const newValue = Math.min(24, horasValue + 1/12);
-    setHorasValue(newValue);
-    onUpdateHoras(subject.id, newValue);
-  };
-  
-  const handleDecrease = () => {
-    // Diminui em incrementos de 5 minutos (0.0833 horas)
-    const newValue = Math.max(0, horasValue - 1/12);
-    setHorasValue(newValue);
-    onUpdateHoras(subject.id, newValue);
-  };
-  
-  // Converter valor de horas para minutos para o slider
-  const sliderValue = Math.round(horasValue * 60);
-  
-  // Formatar para exibição em horas e minutos
-  const formattedTime = formatTimeValue(horasValue);
+  const mudar = (v: number) => onUpdateHoras(subject.id, Math.max(0, Math.min(maxHoras, Math.round(v * 12) / 12)));
 
   return (
     <div
       ref={ref}
-      className={`bg-white rounded-lg border p-4 ${
-        isDragging ? "opacity-50" : ""
-      } ${subject.ativo ? "" : "bg-gray-50"}`}
-      style={{ cursor: "move" }}
+      className={cn(
+        "rounded-xl border bg-white p-3.5 transition-shadow md:p-4",
+        isDragging ? "opacity-40" : "hover:shadow-[0_2px_8px_rgba(16,24,40,0.06)]",
+        ativo ? "border-slate-200" : "border-dashed border-slate-200 bg-slate-50/70"
+      )}
+      style={{ borderLeft: ativo ? `4px solid ${subject.cor}` : undefined }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="cursor-move text-gray-400">
-            <GripVertical size={20} />
-          </div>
-          <div className="flex items-center gap-2">
-            <h4 className="font-medium text-gray-800">{subject.titulo}</h4>
-            {subject.descricao && (
-              <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-700 rounded-full border border-gray-200">
-                {subject.descricao}
-              </span>
-            )}
-          </div>
+      <div className="flex items-center gap-2.5">
+        <button
+          ref={alca}
+          type="button"
+          className="hidden cursor-grab touch-none text-slate-300 hover:text-slate-500 active:cursor-grabbing sm:block"
+          aria-label="Arrastar para reordenar"
+          title="Arraste para mudar a ordem"
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
+        <span
+          className={cn(
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums",
+            ativo ? "text-white" : "bg-slate-200 text-slate-400"
+          )}
+          style={ativo ? { backgroundColor: subject.cor } : undefined}
+        >
+          {posicao ?? "–"}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className={cn("truncate font-medium", ativo ? "text-slate-800" : "text-slate-400")} title={subject.titulo}>
+            {subject.titulo}
+          </p>
+          {subject.descricao && <p className="truncate text-xs text-slate-400">{subject.descricao}</p>}
         </div>
-        <Switch
-          checked={subject.ativo}
-          onCheckedChange={() => onToggleActive(subject.id)}
-        />
+        <div className="flex shrink-0 items-center">
+          <button
+            type="button"
+            onClick={() => onMove(index, index - 1)}
+            disabled={index === 0}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30 disabled:hover:bg-transparent"
+            aria-label="Mover para cima"
+          >
+            <ArrowUp className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => onMove(index, index + 1)}
+            disabled={index === total - 1}
+            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-30 disabled:hover:bg-transparent"
+            aria-label="Mover para baixo"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </button>
+        </div>
+        <Switch checked={ativo} onCheckedChange={() => onToggleActive(subject.id)} aria-label={ativo ? "Tirar do ciclo" : "Incluir no ciclo"} />
       </div>
 
-      <div className={`mt-3 ${subject.ativo ? "" : "opacity-50 pointer-events-none"}`}>
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm text-gray-600">Tempo dedicado:</span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleDecrease}
-              disabled={!subject.ativo || horasValue <= 0}
+      {ativo ? (
+        <div className="mt-3 flex items-center gap-3 sm:pl-[30px]">
+          <Slider
+            value={[Math.round(horas * 60)]}
+            min={0}
+            max={Math.round(maxHoras * 60)}
+            step={5}
+            onValueChange={(v) => v.length && mudar(v[0] / 60)}
+            className="flex-1 cursor-pointer"
+            aria-label="Horas por semana"
+          />
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => mudar(horas - PASSO)}
+              disabled={horas <= 0}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-800 disabled:opacity-40"
+              aria-label="Menos 15 minutos"
             >
-              <Minus className="h-3 w-3" />
-            </Button>
-            
-            <span 
-              className="text-sm font-medium px-2 py-1 rounded min-w-[60px] text-center"
-              style={{ backgroundColor: subject.cor, color: 'white' }}
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <span className="min-w-[64px] text-center text-sm font-semibold tabular-nums text-slate-800">{formatTimeValue(horas)}</span>
+            <button
+              type="button"
+              onClick={() => mudar(horas + PASSO)}
+              disabled={horas >= maxHoras}
+              className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-800 disabled:opacity-40"
+              aria-label="Mais 15 minutos"
             >
-              {formattedTime}
-            </span>
-            
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6"
-              onClick={handleIncrease}
-              disabled={!subject.ativo || horasValue >= 24}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+            <span className="hidden w-10 text-right text-xs tabular-nums text-slate-400 sm:inline">{percentual}%</span>
           </div>
         </div>
-        <Slider
-          value={[sliderValue]}
-          min={0}
-          max={24 * 60} // 24 horas em minutos
-          step={5} // incrementos de 5 minutos
-          onValueChange={handleSliderChange}
-          disabled={!subject.ativo}
-          className="cursor-pointer"
-        />
-      </div>
+      ) : (
+        <p className="mt-2 text-xs text-slate-400 sm:pl-[30px]">Fora do ciclo. Ative para incluir esta disciplina.</p>
+      )}
     </div>
   );
-}; 
+};

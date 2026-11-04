@@ -96,64 +96,64 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
     <div className="bg-white border-b border-[rgba(239,239,239,1)] mb-5">
       <div className="w-full flex justify-center">
         <div className="max-w-[1400px] w-full flex items-center justify-between px-[10px] md:px-[32px] bg-transparent">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-2">
             {showDisciplinasTab && (
               <button
                 onClick={handleDisciplinasClick}
                 className={cn(
-                  "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  "course-nav-button flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-3.5 md:px-4 md:py-4 text-sm md:text-base text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
                   activeTab === 'disciplinas' && "text-[#5f2ebe] border-[#5f2ebe]"
                 )}
               >
                 <BookOpen className="w-5 h-5" />
-                <span className="hidden md:inline">Disciplinas</span>
+                <span>Disciplinas</span>
               </button>
             )}
             {showEditalTab && (
               <button
                 onClick={handleEditalClick}
                 className={cn(
-                  "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  "course-nav-button flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-3.5 md:px-4 md:py-4 text-sm md:text-base text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
                   activeTab === 'edital' && "text-[#5f2ebe] border-[#5f2ebe]"
                 )}
               >
                 <FileText className="w-5 h-5" />
-                <span className="hidden md:inline">Edital</span>
+                <span>Edital</span>
               </button>
             )}
             {showSimuladosTab && (
               <button
                 onClick={handleSimuladosClick}
                 className={cn(
-                  "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  "course-nav-button flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-3.5 md:px-4 md:py-4 text-sm md:text-base text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
                   activeTab === 'simulados' && "text-[#5f2ebe] border-[#5f2ebe]"
                 )}
               >
                 <Target className="w-5 h-5" />
-                <span className="hidden md:inline">Simulados</span>
+                <span>Simulados</span>
               </button>
             )}
             {showCicloTab && (
               <button
                 onClick={handleCicloClick}
                 className={cn(
-                  "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  "course-nav-button flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-3.5 md:px-4 md:py-4 text-sm md:text-base text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
                   activeTab === 'ciclo' && "text-[#5f2ebe] border-[#5f2ebe]"
                 )}
               >
                 <RotateCcw className="w-5 h-5" />
-                <span className="hidden md:inline">Ciclo</span>
+                <span>Ciclo</span>
               </button>
             )}
             <button
               onClick={handleLeiSecaClick}
               className={cn(
-                "course-nav-button flex items-center gap-2 px-4 py-4 text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                "course-nav-button flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-3.5 md:px-4 md:py-4 text-sm md:text-base text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
                 activeTab === 'leiseca' && "text-[#5f2ebe] border-[#5f2ebe]"
               )}
             >
               <Scale className="w-5 h-5" />
-              <span className="hidden md:inline">Lei Seca</span>
+              <span>Lei Seca</span>
             </button>
           </div>
         </div>
