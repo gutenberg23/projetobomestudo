@@ -42,7 +42,8 @@ export function usePostsActions(state: PostsState) {
     estado,
     postsRelacionados,
     postEditando,
-    setLoading
+    setLoading,
+    recarregar
   } = state;
 
   const { user } = useAuth();
@@ -54,7 +55,7 @@ export function usePostsActions(state: PostsState) {
     setTitulo("");
     setResumo("");
     setConteudo("");
-    setCategoria("");
+    setCategoria("Concursos");
     setDestacado(false);
     setIsDraft(false);
     setTags("");
@@ -98,7 +99,9 @@ export function usePostsActions(state: PostsState) {
   };
 
   // Salvar um post (novo ou editado)
-  const salvarPost = async () => {
+  const salvarPost = async (opcoes: { isDraft?: boolean; continuarEditando?: boolean } = {}): Promise<boolean> => {
+    const rascunho = opcoes.isDraft ?? isDraft;
+    let sucesso = false;
     setLoading(true);
     try {
       // Processar a imagem destaque se for uma URL externa
@@ -142,7 +145,8 @@ export function usePostsActions(state: PostsState) {
         .filter(tag => tag.length > 0);
       
       // Calcular o tempo de leitura automaticamente
-      const readingTimeNumber = Math.ceil(conteudo.split(' ').length / 200);
+      const palavras = conteudo.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+      const readingTimeNumber = Math.max(1, Math.ceil(palavras / 200));
       const readingTimeString = readingTimeNumber.toString();
       
       // Convert related posts to array
@@ -167,11 +171,12 @@ export function usePostsActions(state: PostsState) {
         tags: tagsArray.length > 0 ? tagsArray : undefined,
         metaDescription: metaDescricao || resumo,
         metaKeywords: metaKeywordsArray.length > 0 ? metaKeywordsArray : undefined,
-        featuredImage: processedImageUrl || undefined,
+        // String vazia permite remover a imagem de um post já salvo
+        featuredImage: processedImageUrl || (postEditando ? "" : undefined),
         readingTime: readingTimeString,
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
         featured: destacado,
-        isDraft: isDraft,
+        isDraft: rascunho,
         commentCount: postEditando?.commentCount || 0,
         likesCount: postEditando?.likesCount || 0,
         viewCount: postEditando?.viewCount || 0
@@ -188,7 +193,7 @@ export function usePostsActions(state: PostsState) {
             variant: "destructive"
           });
           setLoading(false);
-          return;
+          return false;
         }
         
         // Atualiza o post existente no banco de dados
@@ -223,8 +228,16 @@ export function usePostsActions(state: PostsState) {
           variant: "destructive"
         });
       } else {
-        // Volta para a listagem
-        setModo(ModoInterface.LISTAR);
+        sucesso = true;
+        recarregar();
+        setIsDraft(rascunho);
+        if (opcoes.continuarEditando) {
+          // Continua no editor; um post novo passa a ser edição do post salvo
+          setPostEditando(novoPost);
+          setModo(ModoInterface.EDITAR);
+        } else {
+          setModo(ModoInterface.LISTAR);
+        }
       }
     } catch (error) {
       console.error("Erro ao salvar post:", error);
@@ -236,6 +249,7 @@ export function usePostsActions(state: PostsState) {
     } finally {
       setLoading(false);
     }
+    return sucesso;
   };
 
   // Excluir um post
@@ -259,6 +273,7 @@ export function usePostsActions(state: PostsState) {
         const success = await deleteBlogPost(id);
         if (success) {
           setPosts(posts.filter(post => post.id !== id));
+          recarregar();
           toast({
             title: "Post excluído",
             description: "O post foi excluído com sucesso.",
@@ -302,6 +317,7 @@ export function usePostsActions(state: PostsState) {
       if (updatedPost) {
         // Atualiza o post na lista local
         setPosts(posts.map(post => post.id === id ? { ...post, isDraft } : post));
+        recarregar();
         toast({
           title: "Status atualizado",
           description: `O post foi ${isDraft ? 'marcado como rascunho' : 'publicado'} com sucesso.`,
@@ -326,7 +342,24 @@ export function usePostsActions(state: PostsState) {
     }
   };
 
+  // Ligar/desligar o destaque direto da listagem
+  const toggleDestaque = async (post: BlogPost) => {
+    if (isJornalista() && user?.nome && post.author !== user.nome) {
+      toast({ title: "Acesso negado", description: "Você só pode alterar posts de sua autoria.", variant: "destructive" });
+      return;
+    }
+    const atualizado = await updateBlogPost(post.id, { featured: !post.featured });
+    if (atualizado) {
+      setPosts(posts.map(p => p.id === post.id ? { ...p, featured: !post.featured } : p));
+      recarregar();
+      toast({ title: post.featured ? "Destaque removido" : "Post destacado" });
+    } else {
+      toast({ title: "Erro", description: "Não foi possível alterar o destaque.", variant: "destructive" });
+    }
+  };
+
   return {
+    toggleDestaque,
     iniciarCriacaoPost,
     iniciarEdicaoPost,
     salvarPost,

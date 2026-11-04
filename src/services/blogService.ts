@@ -864,3 +864,78 @@ export async function updateBlogPostStatus(postId: string, isDraft: boolean): Pr
     return null;
   }
 }
+
+// ---------------------------------------------------------------------------
+// Listagem do painel (/admin/posts): busca, filtro de status e contagens no
+// servidor, para que funcionem em todas as páginas e não só na atual.
+// ---------------------------------------------------------------------------
+
+export type AdminPostStatus = "todos" | "publicados" | "rascunhos" | "destaques";
+
+export interface AdminPostsQuery {
+  page: number;
+  limit: number;
+  search?: string;
+  status?: AdminPostStatus;
+  /** Jornalistas só enxergam os próprios posts */
+  author?: string;
+}
+
+// Vírgulas, parênteses e curingas quebram o filtro .or() do PostgREST
+const limparBusca = (termo: string) => termo.replace(/[%,()*\\]/g, " ").replace(/\s+/g, " ").trim();
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function aplicarFiltrosAdmin(query: any, { search, status, author }: Omit<AdminPostsQuery, "page" | "limit">) {
+  let q = query;
+  if (author) q = q.eq("author", author);
+  if (status === "publicados") q = q.eq("is_draft", false);
+  if (status === "rascunhos") q = q.eq("is_draft", true);
+  if (status === "destaques") q = q.eq("featured", true);
+  const termo = limparBusca(search || "");
+  if (termo) {
+    q = q.or(`title.ilike.%${termo}%,author.ilike.%${termo}%,category.ilike.%${termo}%`);
+  }
+  return q;
+}
+
+export async function fetchAdminBlogPosts(params: AdminPostsQuery): Promise<{ posts: BlogPost[]; totalCount: number }> {
+  const { page, limit } = params;
+  const query = aplicarFiltrosAdmin(
+    supabase
+      .from("blog_posts")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range((page - 1) * limit, page * limit - 1),
+    params
+  );
+  const { data, error, count } = await query;
+  if (error) {
+    console.error("Erro ao buscar posts do painel:", error);
+    throw error;
+  }
+  return { posts: (data || []).map(mapDatabasePostToAppPost), totalCount: count || 0 };
+}
+
+export async function fetchAdminPostCounts(author?: string): Promise<Record<AdminPostStatus, number>> {
+  const contar = async (status: AdminPostStatus) => {
+    const { count } = await aplicarFiltrosAdmin(
+      supabase.from("blog_posts").select("id", { count: "exact", head: true }),
+      { status, author }
+    );
+    return count || 0;
+  };
+  const [todos, publicados, rascunhos, destaques] = await Promise.all([
+    contar("todos"),
+    contar("publicados"),
+    contar("rascunhos"),
+    contar("destaques"),
+  ]);
+  return { todos, publicados, rascunhos, destaques };
+}
+
+/** Busca o post direto no banco, sem cache (usado ao abrir o editor). */
+export async function fetchBlogPostByIdFresh(id: string): Promise<BlogPost | null> {
+  const { data, error } = await supabase.from("blog_posts").select("*").eq("id", id).maybeSingle();
+  if (error || !data) return null;
+  return mapDatabasePostToAppPost(data);
+}

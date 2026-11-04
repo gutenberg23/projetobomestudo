@@ -1,194 +1,210 @@
-import React, { useState } from "react";
-import { Label } from "@/components/ui/label";
+import React, { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { Upload, Download } from "lucide-react";
+import { Upload, Download, MapPin, X, ImagePlus, Loader2 } from "lucide-react";
 import { useImageUpload } from "../../hooks/useImageUpload";
 import { toast } from "@/components/ui/use-toast";
+import { SugestaoImagemCidade } from "./SugestaoImagemCidade";
+import { aplicarCreditoFoto, removerCreditoFoto, sugerirCidade } from "@/services/cityImageService";
+import { CardLateral } from "./CardLateral";
 
 interface FormularioMidiaProps {
   imagemDestaque: string;
   onChangeImagemDestaque: (value: string) => void;
+  /** Usados para sugerir a cidade e colocar o crédito da foto no post */
+  titulo?: string;
+  estado?: string;
+  conteudo?: string;
+  onChangeConteudo?: (value: string) => void;
 }
+
+const ehStorage = (url: string) => url.includes("supabase") && url.includes("storage");
 
 export const FormularioMidia: React.FC<FormularioMidiaProps> = ({
   imagemDestaque,
-  onChangeImagemDestaque
+  onChangeImagemDestaque,
+  titulo = "",
+  estado,
+  conteudo,
+  onChangeConteudo,
 }) => {
   const { isUploading, downloadAndUploadImage } = useImageUpload();
-  const [isProcessingUrl, setIsProcessingUrl] = useState(false);
+  const [processando, setProcessando] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [sugestaoAberta, setSugestaoAberta] = useState(false);
+  const [arrastando, setArrastando] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const uf = estado && estado !== "none" ? estado : undefined;
 
-  const handleImageUpload = async (file: File) => {
+  const enviarArquivo = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Arquivo inválido", description: "Escolha uma imagem (JPG, PNG ou WebP).", variant: "destructive" });
+      return;
+    }
+    setEnviando(true);
     try {
-      if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-        throw new Error('Configuração do Supabase não encontrada. Por favor, configure o arquivo .env com suas credenciais.');
-      }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('blog-images')
-        .upload(filePath, file);
-
-      if (uploadError) {
-        console.error('Erro ao fazer upload:', uploadError);
-        alert('Erro ao fazer upload da imagem. Verifique se o bucket "blog-images" existe e se as permissões estão configuradas corretamente.');
-        return null;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('blog-images')
-        .getPublicUrl(filePath);
-
-      return publicUrl;
-    } catch (error) {
-      console.error('Erro ao fazer upload da imagem:', error);
-      alert(error instanceof Error ? error.message : 'Erro ao fazer upload da imagem');
-      return null;
-    }
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = await handleImageUpload(file);
-      if (url) {
-        onChangeImagemDestaque(url);
-      }
-    }
-  };
-
-  const handleProcessImageUrl = async () => {
-    if (!imagemDestaque) {
-      toast({
-        title: "URL vazia",
-        description: "Por favor, insira uma URL de imagem antes de processar.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!imagemDestaque.startsWith('http')) {
-      toast({
-        title: "URL inválida",
-        description: "Por favor, insira uma URL válida começando com http:// ou https://",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Verificar se já é uma URL do Supabase
-    if (imagemDestaque.includes('supabase') && imagemDestaque.includes('storage')) {
-      toast({
-        title: "Imagem já processada",
-        description: "Esta imagem já está armazenada no Supabase.",
-        variant: "default"
-      });
-      return;
-    }
-
-    setIsProcessingUrl(true);
-    try {
-      const processedUrl = await downloadAndUploadImage(imagemDestaque);
-      if (processedUrl && processedUrl !== imagemDestaque) {
-        onChangeImagemDestaque(processedUrl);
-        toast({
-          title: "Imagem processada",
-          description: "A imagem foi baixada e salva no Supabase com sucesso.",
-          variant: "default"
-        });
-      } else if (processedUrl === imagemDestaque) {
-        // A URL original foi mantida devido a problemas de CORS
-        toast({
-          title: "Imagem não processada",
-          description: "Não foi possível processar a imagem devido a restrições de segurança do servidor de origem. A URL original será mantida.",
-          variant: "default"
-        });
-      } else {
-        toast({
-          title: "Erro ao processar",
-          description: "Não foi possível processar a imagem. Verifique a URL e tente novamente.",
-          variant: "destructive"
-        });
+      const filePath = `${crypto.randomUUID?.() || Math.random().toString(36).slice(2)}.${file.name.split(".").pop()}`;
+      const { error } = await supabase.storage.from("blog-images").upload(filePath, file);
+      if (error) throw error;
+      onChangeImagemDestaque(supabase.storage.from("blog-images").getPublicUrl(filePath).data.publicUrl);
+      // Foto própria não precisa do crédito do Wikimedia
+      if (conteudo && onChangeConteudo) {
+        const semCredito = removerCreditoFoto(conteudo);
+        if (semCredito !== conteudo) onChangeConteudo(semCredito);
       }
     } catch (error) {
-      console.error('Erro ao processar imagem:', error);
+      console.error("Erro ao enviar imagem:", error);
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao processar a imagem. Tente novamente.",
-        variant: "destructive"
+        title: "Erro no upload",
+        description: 'Verifique se o bucket "blog-images" existe e tem permissão de upload.',
+        variant: "destructive",
       });
     } finally {
-      setIsProcessingUrl(false);
+      setEnviando(false);
     }
   };
 
+  const processarUrl = async () => {
+    if (!/^https?:\/\//i.test(imagemDestaque)) {
+      toast({ title: "URL inválida", description: "Use um endereço começando com http:// ou https://", variant: "destructive" });
+      return;
+    }
+    setProcessando(true);
+    try {
+      const nova = await downloadAndUploadImage(imagemDestaque);
+      if (nova && nova !== imagemDestaque) {
+        onChangeImagemDestaque(nova);
+        toast({ title: "Imagem salva no site", description: "A imagem foi copiada para o armazenamento do Bom Estudo." });
+      } else {
+        toast({
+          title: "Mantida a URL original",
+          description: "O site de origem não permite copiar a imagem. Ela continuará sendo carregada de lá.",
+        });
+      }
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const ocupado = enviando || processando || isUploading;
+
   return (
-    <div className="p-4 border rounded-md bg-gray-50">
-      <h3 className="text-lg font-semibold text-[#272f3c] mb-4">Mídia</h3>
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="imagemDestaque">Imagem Destaque</Label>
-          <div className="flex gap-2">
-            <Input 
-              id="imagemDestaque" 
-              value={imagemDestaque} 
-              onChange={(e) => onChangeImagemDestaque(e.target.value)} 
-              placeholder="URL da imagem destaque do post"
-              className="flex-1"
-            />
-            <div className="flex gap-2">
-              <div className="relative">
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="upload-imagem"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => document.getElementById('upload-imagem')?.click()}
-                  className="h-10"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload
-                </Button>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleProcessImageUrl}
-                disabled={isProcessingUrl || isUploading || !imagemDestaque}
-                className="h-10"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {isProcessingUrl ? "Processando..." : "Processar URL"}
-              </Button>
+    <CardLateral titulo="Imagem destaque" descricao="Aparece no topo do post, nos cards do blog e ao compartilhar.">
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) enviarArquivo(file);
+        }}
+      />
+
+      {imagemDestaque ? (
+        <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+          <img
+            src={imagemDestaque}
+            alt="Imagem destaque"
+            className="aspect-video w-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/placeholder.svg";
+            }}
+          />
+          <button
+            type="button"
+            title="Remover imagem"
+            onClick={() => {
+              onChangeImagemDestaque("");
+              if (conteudo && onChangeConteudo) onChangeConteudo(removerCreditoFoto(conteudo));
+            }}
+            className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-white opacity-90 hover:bg-black/80"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          {ocupado && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+              <Loader2 className="h-6 w-6 animate-spin text-[#5f2ebe]" />
             </div>
-          </div>
-          <p className="text-sm text-gray-500">
-            Insira uma URL de imagem ou faça upload. Clique em "Processar URL" para baixar e salvar a imagem no Supabase.
-          </p>
+          )}
         </div>
-        
-        {imagemDestaque && (
-          <div className="border rounded-md overflow-hidden h-40 w-full md:w-1/2 bg-gray-100">
-            <img 
-              src={imagemDestaque} 
-              alt="Imagem Destaque" 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/placeholder.svg";
-              }}
-            />
-          </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setArrastando(true);
+          }}
+          onDragLeave={() => setArrastando(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setArrastando(false);
+            const file = e.dataTransfer.files?.[0];
+            if (file) enviarArquivo(file);
+          }}
+          className={`flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-sm transition ${
+            arrastando ? "border-[#5f2ebe] bg-[#faf8ff] text-[#5f2ebe]" : "border-slate-200 text-slate-500 hover:border-[#5f2ebe]/50 hover:bg-slate-50"
+          }`}
+        >
+          {enviando ? <Loader2 className="h-6 w-6 animate-spin" /> : <ImagePlus className="h-6 w-6" />}
+          {enviando ? "Enviando..." : "Clique ou arraste uma imagem"}
+        </button>
+      )}
+
+      <div className="grid grid-cols-2 gap-2">
+        <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={ocupado}>
+          <Upload className="mr-1.5 h-4 w-4" />
+          Enviar
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setSugestaoAberta(true)}
+          className="border-[#5f2ebe]/30 text-[#5f2ebe] hover:bg-[#faf8ff] hover:text-[#5f2ebe]"
+        >
+          <MapPin className="mr-1.5 h-4 w-4" />
+          Foto da cidade
+        </Button>
+      </div>
+
+      <div className="flex gap-2">
+        <Input
+          value={imagemDestaque}
+          onChange={(e) => onChangeImagemDestaque(e.target.value)}
+          placeholder="ou cole a URL da imagem"
+          className="h-9 text-xs"
+        />
+        {imagemDestaque && !ehStorage(imagemDestaque) && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-9 shrink-0 px-2"
+            title="Copiar a imagem para o armazenamento do site"
+            onClick={processarUrl}
+            disabled={ocupado}
+          >
+            {processando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          </Button>
         )}
       </div>
-    </div>
+
+      <SugestaoImagemCidade
+        aberto={sugestaoAberta}
+        onFechar={() => setSugestaoAberta(false)}
+        cidadeInicial={sugerirCidade(titulo, uf)}
+        ufInicial={uf}
+        onEscolher={(img) => {
+          onChangeImagemDestaque(img.url);
+          if (onChangeConteudo) onChangeConteudo(aplicarCreditoFoto(conteudo || "", img));
+          setSugestaoAberta(false);
+          toast({ title: "Foto escolhida", description: "O crédito do autor foi adicionado no fim do post." });
+        }}
+      />
+    </CardLateral>
   );
 };

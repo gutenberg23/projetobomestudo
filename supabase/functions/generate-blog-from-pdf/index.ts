@@ -91,8 +91,8 @@ serve(async (req) => {
     const blogPostSchema = {
       type: "object",
       properties: {
-        titulo: { type: "string", description: "Título atraente e informativo para a postagem do blog, baseado APENAS nas informações do PDF." },
-        resumo: { type: "string", description: "Resumo conciso da postagem, com no máximo 240 caracteres, baseado APENAS nas informações do PDF." },
+        titulo: { type: "string", description: "Título atraente e informativo para a postagem do blog, baseado APENAS nas informações do PDF. Use maiúsculas e minúsculas como em um jornal: primeira letra, nomes próprios, cidades e siglas em maiúscula; nunca tudo em minúsculas ou tudo em maiúsculas." },
+        resumo: { type: "string", description: "Resumo conciso da postagem, com no máximo 240 caracteres, baseado APENAS nas informações do PDF, com a mesma regra de maiúsculas do título." },
         categoria: { type: "string", description: "Categoria principal da notícia (ex: 'Novos Concursos' ou 'Processo Seletivo'), baseado APENAS nas informações do PDF." },
         conteudo: { type: "string", description: "Conteúdo completo da postagem em formato HTML otimizado, baseado nas informações do PDF. PROIBIDO USAR TABELAS HTML. Use listas html. Se for sobre um novo concurso, deve terminar com uma lista HTML com os dados em cada item: 'Website de Inscrição', 'Período de Inscrição', 'Data da Prova', 'Valor da Inscrição', 'Quantidade de Vagas' e 'Banca'." },
         regiao: { type: "string", description: "A região do Brasil do concurso, baseado nas informações do PDF. Escolha entre: 'norte', 'nordeste', 'centro-oeste', 'sudeste', 'sul', 'federal', 'nacional'." },

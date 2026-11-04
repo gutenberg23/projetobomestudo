@@ -1,19 +1,27 @@
 import React, { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { usePostsState } from "./hooks/usePostsState";
 import { usePostsActions } from "./hooks/usePostsActions";
 import { ListagemPosts } from "./components/ListagemPosts";
 import { FormularioPost } from "./components/FormularioPost";
-import { ModoInterface, CATEGORIAS } from "./types";
-import { useLocation } from "react-router-dom";
+import { ModoInterface } from "./types";
+import { fetchBlogPostByIdFresh } from "@/services/blogService";
+import { toast } from "@/components/ui/use-toast";
 
 const Posts = () => {
   const state = usePostsState();
-  const { 
-    modo, 
-    setModo, 
-    busca, 
-    setBusca, 
+  const {
+    modo,
+    setModo,
+    busca,
+    setBusca,
+    statusFiltro,
+    setStatusFiltro,
+    contagens,
+    carregandoLista,
+    erroLista,
     postsFiltrados,
+    loading,
     titulo,
     setTitulo,
     resumo,
@@ -41,97 +49,111 @@ const Posts = () => {
     postsRelacionados,
     setPostsRelacionados,
     postEditando,
-    // Estados de paginação
     currentPage,
     setCurrentPage,
     totalPages,
-    totalPosts
+    totalPosts,
+    postsPerPage,
   } = state;
 
-  const { 
-    iniciarCriacaoPost, 
-    iniciarEdicaoPost, 
-    salvarPost, 
-    excluirPost,
-    togglePostStatus
-  } = usePostsActions(state);
-  
+  const { iniciarCriacaoPost, iniciarEdicaoPost, salvarPost, excluirPost, togglePostStatus, toggleDestaque } =
+    usePostsActions(state);
+
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Verificar se há um parâmetro de edição na URL
+  // Links do blog abrem o editor com ?edit=<id>; ?novo=1 abre um post em branco
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const editPostId = urlParams.get('edit');
-    
-    if (editPostId && modo === ModoInterface.LISTAR) {
-      // Encontrar o post pelo ID
-      const postToEdit = postsFiltrados.find(post => post.id === editPostId);
-      if (postToEdit) {
-        iniciarEdicaoPost(postToEdit);
-      }
+    const params = new URLSearchParams(location.search);
+    const editId = params.get("edit");
+    const novo = params.get("novo");
+    if (!editId && !novo) return;
+    // Tira o parâmetro da URL para o editor não reabrir ao voltar para a lista
+    navigate("/admin/posts", { replace: true });
+    if (novo) {
+      iniciarCriacaoPost();
+      return;
     }
-  }, [location.search, modo, postsFiltrados, iniciarEdicaoPost]);
-
-  // Inicializar a categoria com um valor padrão se estiver vazia
-  React.useEffect(() => {
-    if (!categoria && CATEGORIAS.length > 0) {
-      setCategoria(CATEGORIAS[0]);
+    const naLista = postsFiltrados.find((p) => p.id === editId);
+    if (naLista) {
+      iniciarEdicaoPost(naLista);
+      return;
     }
-  }, [categoria, setCategoria]);
+    fetchBlogPostByIdFresh(editId!).then((post) => {
+      if (post) iniciarEdicaoPost(post);
+      else toast({ title: "Post não encontrado", variant: "destructive" });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
-  // Renderização condicional baseada no modo atual
+  // Volta ao topo ao trocar entre lista e editor
+  useEffect(() => {
+    document.querySelector(".admin-content")?.scrollTo({ top: 0 });
+  }, [modo]);
+
+  if (modo === ModoInterface.LISTAR) {
+    return (
+      <ListagemPosts
+        postsFiltrados={postsFiltrados}
+        carregando={carregandoLista}
+        erro={erroLista}
+        busca={busca}
+        onChangeBusca={setBusca}
+        statusFiltro={statusFiltro}
+        onChangeStatusFiltro={setStatusFiltro}
+        contagens={contagens}
+        onIniciarCriacaoPost={iniciarCriacaoPost}
+        onIniciarEdicaoPost={iniciarEdicaoPost}
+        onExcluirPost={excluirPost}
+        onToggleStatus={togglePostStatus}
+        onToggleDestaque={toggleDestaque}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalPosts={totalPosts}
+        postsPerPage={postsPerPage}
+        onPageChange={setCurrentPage}
+      />
+    );
+  }
+
   return (
-    <div className="container mx-auto px-4 py-6">
-      {modo === ModoInterface.LISTAR ? (
-        <ListagemPosts 
-          postsFiltrados={postsFiltrados}
-          busca={busca}
-          onChangeBusca={setBusca}
-          onIniciarCriacaoPost={iniciarCriacaoPost}
-          onIniciarEdicaoPost={iniciarEdicaoPost}
-          onExcluirPost={excluirPost}
-          onToggleStatus={togglePostStatus}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalPosts={totalPosts}
-          onPageChange={setCurrentPage}
-        />
-      ) : (
-        <FormularioPost 
-          modo={modo}
-          onVoltar={() => setModo(ModoInterface.LISTAR)}
-          onSalvar={salvarPost}
-          titulo={titulo}
-          onChangeTitulo={setTitulo}
-          resumo={resumo}
-          onChangeResumo={setResumo}
-          conteudo={conteudo}
-          onChangeConteudo={setConteudo}
-          categoria={categoria}
-          onChangeCategoria={setCategoria}
-          destacado={destacado}
-          onChangeDestacado={setDestacado}
-          isDraft={isDraft}
-          onChangeIsDraft={setIsDraft}
-          tags={tags}
-          onChangeTags={setTags}
-          metaDescricao={metaDescricao}
-          onChangeMetaDescricao={setMetaDescricao}
-          metaKeywords={metaKeywords}
-          onChangeMetaKeywords={setMetaKeywords}
-          imagemDestaque={imagemDestaque}
-          onChangeImagemDestaque={setImagemDestaque}
-          regiao={regiao}
-          onChangeRegiao={setRegiao}
-          estado={estado}
-          onChangeEstado={setEstado}
-          postsRelacionados={postsRelacionados}
-          onChangePostsRelacionados={setPostsRelacionados}
-          postId={postEditando?.id}
-          postSlug={postEditando?.slug}
-        />
-      )}
-    </div>
+    <FormularioPost
+      modo={modo}
+      onVoltar={() => setModo(ModoInterface.LISTAR)}
+      onSalvar={salvarPost}
+      salvando={loading}
+      titulo={titulo}
+      onChangeTitulo={setTitulo}
+      resumo={resumo}
+      onChangeResumo={setResumo}
+      conteudo={conteudo}
+      onChangeConteudo={setConteudo}
+      categoria={categoria}
+      onChangeCategoria={setCategoria}
+      destacado={destacado}
+      onChangeDestacado={setDestacado}
+      isDraft={isDraft}
+      onChangeIsDraft={setIsDraft}
+      tags={tags}
+      onChangeTags={setTags}
+      metaDescricao={metaDescricao}
+      onChangeMetaDescricao={setMetaDescricao}
+      metaKeywords={metaKeywords}
+      onChangeMetaKeywords={setMetaKeywords}
+      imagemDestaque={imagemDestaque}
+      onChangeImagemDestaque={setImagemDestaque}
+      regiao={regiao}
+      onChangeRegiao={setRegiao}
+      estado={estado}
+      onChangeEstado={setEstado}
+      postsRelacionados={postsRelacionados}
+      onChangePostsRelacionados={setPostsRelacionados}
+      postId={postEditando?.id}
+      postSlug={postEditando?.slug}
+      postAutor={postEditando?.author}
+      postCriadoEm={postEditando?.createdAt}
+      publicadoNoBanco={postEditando ? !postEditando.isDraft : false}
+    />
   );
 };
 

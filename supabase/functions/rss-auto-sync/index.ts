@@ -21,6 +21,7 @@ import { authorize, STAFF_ROLES } from "../_shared/auth.ts";
 import { extractArticle, fetchFeed, fetchText, type FeedItem } from "../_shared/feeds.ts";
 import { rewriteNews } from "../_shared/news.ts";
 import { AIError } from "../_shared/ai.ts";
+import { creditHtml, findCityImage } from "../_shared/images.ts";
 
 declare const Deno: { env: { get(key: string): string | undefined } };
 
@@ -182,12 +183,27 @@ async function processItem(
     // 2. Reescrita
     const rewritten = await rewriteNews(item.title, sourceText, item.link);
 
-    // 3. Post
+    // 3. Foto destaque da cidade do concurso (Wikimedia/Unsplash). Se não
+    // achar, o post sai sem imagem e pode receber uma pelo painel.
+    let featuredImage: string | null = null;
+    let content = rewritten.content;
+    try {
+      const img = await findCityImage(rewritten.city, rewritten.state, rewritten.region);
+      if (img) {
+        featuredImage = img.url;
+        content = `${content}\n${creditHtml(img)}`;
+      }
+    } catch (err) {
+      console.warn("[rss] sem foto destaque", String(err));
+    }
+
+    // 4. Post
     const slug = await uniqueSlug(db, createSlug(rewritten.title));
     const { data: post, error } = await db.from("blog_posts").insert({
       title: rewritten.title,
       summary: rewritten.summary,
-      content: rewritten.content,
+      content,
+      featured_image: featuredImage,
       author: opts.author,
       slug,
       category: "Concursos",
@@ -196,7 +212,7 @@ async function processItem(
       meta_keywords: rewritten.metaKeywords,
       region: rewritten.region,
       state: rewritten.state || null,
-      reading_time: readingTime(rewritten.content),
+      reading_time: readingTime(content),
       featured: false,
       is_draft: !opts.publish,
     }).select("id, slug, title").single();

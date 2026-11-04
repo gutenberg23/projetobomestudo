@@ -15,8 +15,20 @@ Projeto Supabase: **`ukkatmoathxhbaelstzo`**.
 3. Para cada notícia nova (até 7 dias, no máximo 3 por rodada), ela abre a
    página original, extrai o texto principal (títulos, listas e tabelas) e
    manda para a IA reescrever.
-4. A IA devolve título, resumo, HTML, tags, região, UF e palavras-chave. O HTML
-   passa por uma limpeza de segurança (só tags de texto, links `https`).
+4. A IA devolve título, resumo, HTML, tags, região, UF, cidade e palavras-chave.
+   O HTML passa por uma limpeza de segurança (só tags de texto, links `https`).
+   - **Maiúsculas:** se a IA devolver o título ou o resumo todo em minúsculas
+     (ou todo em maiúsculas), a função corrige a grafia usando o texto original
+     da notícia como referência ("campinas" vira "Campinas", "fgv" vira "FGV").
+   - **Links:** links para o site de origem e para portais de notícias ou
+     cursinhos são removidos (o texto fica, o link sai). Ficam só links úteis,
+     como edital em PDF, página de inscrição e sites do órgão ou da banca. A
+     lista de portais bloqueados fica em `supabase/functions/_shared/links.ts`.
+   - **Foto destaque:** a função procura uma foto da cidade do concurso na
+     Wikipédia e no Wikimedia Commons (gratuitos, sem chave). Sem cidade, usa a
+     capital do estado; concurso federal usa Brasília. O crédito do autor da foto
+     vai no fim do post, como a licença exige. No editor, o botão
+     **Foto da cidade** mostra várias opções para escolher outra.
 5. O post é criado no blog. Em cada feed você escolhe:
    - **Publicar sozinho desligado** (padrão): vira rascunho para revisão.
    - **Publicar sozinho ligado**: já entra publicado no site.
@@ -166,6 +178,7 @@ Todos são secrets (`npx supabase secrets set NOME=valor`):
 | `GROQ_MODEL` | `llama-3.3-70b-versatile` | Modelo do Groq |
 | `OPENROUTER_API_KEY` e `OPENROUTER_MODEL` | (vazio) | Terceira reserva, opcional. Use um modelo terminado em `:free` |
 | `AI_PROVIDERS` | `gemini,groq,openrouter` | Ordem dos provedores |
+| `UNSPLASH_ACCESS_KEY` | (vazio) | Opcional. Usa o Unsplash como reserva quando o Wikimedia não tem foto da cidade. A chave é gratuita em unsplash.com/developers |
 
 Para mudar a frequência (exemplo: de hora em hora), rode no SQL Editor:
 ```sql

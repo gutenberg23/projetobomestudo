@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, Sparkles, FileText } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { BlogPost, Region } from "@/components/blog/types";
+import { CardLateral } from "./CardLateral";
 
 interface FormularioPDFProps {
   onPreencherCampos: (dados: Partial<BlogPost>) => void;
@@ -189,12 +189,10 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
   };
 
   return (
-    <div className="p-4 border rounded-md bg-gray-50">
-      <h3 className="text-lg font-semibold text-[#272f3c] mb-4">Gerar Notícia via PDF</h3>
+    <CardLateral titulo="Gerar notícia a partir de PDF" descricao="Envie o edital em PDF e a IA preenche os campos.">
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="pdfUpload">Upload de PDF</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             <div className="relative flex-1">
               <Input
                 type="file"
@@ -220,7 +218,7 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
               type="button"
               onClick={handleGerarNoticia}
               disabled={isProcessing || !uploadedFile}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-[#5f2ebe] hover:bg-[#5f2ebe]/90"
             >
               <Sparkles className="h-4 w-4 mr-2" />
               {isProcessing ? "Gerando..." : "Gerar Notícia"}
@@ -252,6 +250,6 @@ export const FormularioPDF: React.FC<FormularioPDFProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </CardLateral>
   );
 };
