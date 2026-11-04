@@ -1,5 +1,7 @@
 export type Teoria = {
   id?: string;
+  /** Parte amigável da URL (/teoria/<slug>). Vazio: o banco gera a partir do título. */
+  slug?: string;
   titulo: string;
   disciplina_id: string; // Agora armazena o nome da disciplina como string
   assunto_id: string;    // Agora armazena o nome do assunto como string
