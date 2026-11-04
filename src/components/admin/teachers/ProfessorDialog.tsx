@@ -45,7 +45,6 @@ const ProfessorDialog: React.FC<ProfessorDialogProps> = ({ aberto, professor, di
   useEffect(() => {
     if (!aberto) return;
     if (professor) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, criadoEm, ...resto } = professor;
       setF(resto);
     } else setF(VAZIO);
