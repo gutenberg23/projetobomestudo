@@ -196,6 +196,8 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
         .from('cursoverticalizado')
         .select('id, curso_id')
         .eq('curso_id', realId)
+        .or('ativo.is.null,ativo.eq.true')
+        .limit(1)
         .maybeSingle();
         
       if (error && error.code !== 'PGRST116') {

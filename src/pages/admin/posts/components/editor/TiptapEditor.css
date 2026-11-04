@@ -284,3 +284,20 @@
 .post-editor .ProseMirror [data-question-node] {
   margin: 1em 0;
 }
+
+/* Variante enxuta usada nos enunciados e comentários das questões */
+.post-editor--questao .ProseMirror,
+.post-editor--questao .post-editor__html {
+  min-height: var(--pe-min-height, 160px);
+}
+.post-editor--questao .ProseMirror {
+  padding: 1rem 1.25rem 1.5rem;
+  font-size: 15px;
+}
+.post-editor--questao.post-editor--fullscreen .ProseMirror {
+  min-height: 100%;
+}
+.post-editor--questao .post-editor__toolbar {
+  position: relative;
+  top: 0;
+}
