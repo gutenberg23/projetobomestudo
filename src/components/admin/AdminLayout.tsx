@@ -94,12 +94,6 @@ const AdminLayout = () => {
           showForJornalista: true
         },
         { 
-          path: "/admin/teorias", 
-          label: "Teorias", 
-          icon: <BookOpen className="w-5 h-5" />,
-          showForJornalista: true
-        },
-        { 
           path: "/admin/concursos", 
           label: "Concursos", 
           icon: <Award className="w-5 h-5" />,
@@ -169,6 +163,12 @@ const AdminLayout = () => {
           showForJornalista: false
         },
         { 
+          path: "/admin/teorias", 
+          label: "Teorias", 
+          icon: <FileText className="w-5 h-5" />,
+          showForJornalista: true
+        },
+        { 
           path: "/admin/topicos", 
           label: "Tópicos", 
           icon: <FolderTree className="w-5 h-5" />,
@@ -194,7 +194,7 @@ const AdminLayout = () => {
         },
         { 
           path: "/admin/moderacao", 
-          label: "Moderação de envios", 
+          label: "Moderação de envios e correções", 
           icon: <ClipboardCheck className="w-5 h-5" />,
           showForJornalista: false
         },
@@ -220,6 +220,16 @@ const AdminLayout = () => {
       ]
     },
   ];
+
+  // Abre automaticamente o grupo da página atual (ex.: /admin/teorias/123/edit)
+  const ativo = (path: string) =>
+    path === "/admin" ? location.pathname === "/admin" : location.pathname === path || location.pathname.startsWith(path + "/");
+
+  useEffect(() => {
+    const grupo = menuGroups.find((g) => g.items.some((item) => ativo(item.path)));
+    if (grupo) setOpenMenus((prev) => (prev[grupo.id] ? prev : { ...prev, [grupo.id]: true }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   // Função para alternar a visibilidade de um grupo
   const toggleMenu = (groupId: string) => {
@@ -296,7 +306,7 @@ const AdminLayout = () => {
                               to={item.path}
                               className={cn(
                                 "flex items-center px-3 py-2 rounded-md transition-colors text-sm",
-                                location.pathname === item.path 
+                                ativo(item.path)
                                   ? "bg-[#ede7f9] text-[#5f2ebe]"
                                   : "text-[#67748a] hover:bg-gray-100"
                               )}
@@ -331,7 +341,7 @@ const AdminLayout = () => {
                               to={item.path}
                               className={cn(
                                 "flex items-center justify-center w-full px-3 py-2 rounded-md transition-colors",
-                                location.pathname === item.path 
+                                ativo(item.path)
                                   ? "bg-[#ede7f9] text-[#5f2ebe]"
                                   : "text-[#67748a] hover:bg-gray-100"
                               )}

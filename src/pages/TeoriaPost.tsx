@@ -32,9 +32,41 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import QuestionResults from "@/components/questions/QuestionResults";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
+import { SugerirCorrecaoDialog } from "@/components/teorias/SugerirCorrecaoDialog";
+import { isUuid, teoriaPath } from "@/utils/teoriaUrl";
+
+/** Busca uma teoria publicada pelo slug, por um slug antigo ou pelo id. */
+const buscarTeoriaPublicada = async (param: string) => {
+  const db = supabase as any;
+  const porCampo = async (campo: "id" | "slug", valor: string) => {
+    const { data, error } = await db
+      .from('teorias')
+      .select('*')
+      .eq(campo, valor)
+      .eq('status', 'published')
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  };
+
+  if (isUuid(param)) {
+    return porCampo("id", param);
+  }
+
+  const atual = await porCampo("slug", param);
+  if (atual) return atual;
+
+  const { data: antigo } = await db
+    .from('teorias_slugs_antigos')
+    .select('teoria_id')
+    .eq('slug', param)
+    .maybeSingle();
+  return antigo?.teoria_id ? porCampo("id", antigo.teoria_id) : null;
+};
 
 interface Teoria {
   id: string;
+  slug?: string;
   titulo: string;
   disciplina_id: string;
   assunto_id: string;
@@ -72,7 +104,7 @@ const TeoriaPost = () => {
   
   // States for error reporting
   const [showErrorReport, setShowErrorReport] = useState(false);
-  const [errorReport, setErrorReport] = useState("");
+  const [trechoSelecionado, setTrechoSelecionado] = useState("");
   
   // States for text highlighting
   const [showHighlightColors, setShowHighlightColors] = useState(false);
@@ -157,20 +189,23 @@ const TeoriaPost = () => {
         return;
       }
 
+      // Já carregada (acabamos de trocar o id pelo slug na URL)
+      if (post && post.slug === slug) {
+        return;
+      }
+
       try {
         setLoading(true);
         
-        // Fetch teoria by ID (slug is actually the ID in our case)
-        const { data: teoriaData, error: teoriaError } = await supabase
-          .from('teorias')
-          .select('*')
-          .eq('id', slug)
-          .eq('status', 'published')
-          .single();
-        
-        if (teoriaError) throw teoriaError;
+        // A URL pode trazer o slug (atual ou antigo) ou o id (links antigos)
+        const teoriaData = await buscarTeoriaPublicada(slug);
         if (!teoriaData) {
           throw new Error('Teoria não encontrada');
+        }
+
+        // Link antigo (id ou slug anterior): troca a URL pelo slug atual
+        if (teoriaData.slug && teoriaData.slug !== slug) {
+          navigate(teoriaPath(teoriaData), { replace: true });
         }
         
         setPost(teoriaData);
@@ -214,7 +249,7 @@ const TeoriaPost = () => {
 
   // Icon actions
   const iconActions = [
-    { id: "report", icon: AlertTriangle, label: "Reportar erro" },
+    { id: "report", icon: AlertTriangle, label: "Sugerir correção (selecione o trecho antes)" },
     { id: "highlight", icon: Palette, label: "Marcar texto" }
   ];
 
@@ -232,9 +267,18 @@ const TeoriaPost = () => {
     console.log(`Action triggered: ${actionId}`);
     
     switch (actionId) {
-      case "report":
+      case "report": {
+        // Usa o trecho selecionado no texto da aula, se houver
+        const selecao = window.getSelection();
+        let trecho = "";
+        if (selecao && selecao.rangeCount > 0 && contentRef.current &&
+            contentRef.current.contains(selecao.getRangeAt(0).commonAncestorContainer)) {
+          trecho = selecao.toString().replace(/[\s\u00a0]+/g, " ").trim().slice(0, 3000);
+        }
+        setTrechoSelecionado(trecho);
         setShowErrorReport(true);
         break;
+      }
       case "highlight":
         // Toggle highlight color palette
         setShowHighlightColors(prev => !prev);
@@ -514,55 +558,14 @@ const TeoriaPost = () => {
         <Header />
         <main className="flex-1">
           <div className="container mx-auto px-4 py-8">
-            {/* Error Report Popup */}
-            {showErrorReport && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-                  <div className="flex justify-between items-center border-b p-4">
-                    <h3 className="text-lg font-semibold">Reportar Erro</h3>
-                    <button 
-                      onClick={() => setShowErrorReport(false)}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <div className="mb-4">
-                      <Label htmlFor="error-description" className="block text-sm font-medium text-gray-700 mb-2">
-                        Descreva o erro encontrado
-                      </Label>
-                      <Textarea
-                        id="error-description"
-                        value={errorReport}
-                        onChange={(e) => setErrorReport(e.target.value)}
-                        placeholder="Descreva o erro encontrado na teoria..."
-                        rows={4}
-                        className="w-full"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowErrorReport(false)}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          // TODO: Implement actual error reporting logic
-                          console.log("Erro reportado:", errorReport);
-                          setShowErrorReport(false);
-                          setErrorReport("");
-                          toast.success("Erro reportado com sucesso!");
-                        }}
-                      >
-                        Enviar
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Sugestão de correção (vai para a moderação) */}
+            {post.id && (
+              <SugerirCorrecaoDialog
+                aberto={showErrorReport}
+                teoriaId={post.id}
+                trechoSelecionado={trechoSelecionado}
+                onClose={() => setShowErrorReport(false)}
+              />
             )}
             
             {/* Confirm Highlight Replacement Dialog */}

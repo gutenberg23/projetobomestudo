@@ -32,7 +32,8 @@ export interface CursosPageProps {
   setDescricaoNovoCurso: (descricao: string) => void;
   informacoesCurso: string;
   setInformacoesCurso: (informacoes: string) => void;
-  handleAdicionarCurso: () => void;
+  /** Recebe as disciplinas escolhidas no formulário (pode ser vazio) */
+  handleAdicionarCurso: (disciplinasIds: string[]) => Promise<boolean> | boolean | void;
   temDisciplinasSelecionadas: boolean;
 }
 

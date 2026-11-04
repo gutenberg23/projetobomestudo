@@ -14,6 +14,8 @@ import { Check, X, Pencil, Trash2 } from "lucide-react";
 import { usePermissions } from "@/hooks/usePermissions";
 import { SubmissaoDetalhes } from "@/components/contribuicoes/SubmissaoDetalhes";
 import { SubmissaoForm } from "@/components/contribuicoes/SubmissaoForm";
+import { ModeracaoCorrecoes } from "@/components/contribuicoes/ModeracaoCorrecoes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ContribuicoesConfig,
   StatusSubmissao,
@@ -179,7 +181,7 @@ const Moderacao = () => {
       <div>
         <h1 className="text-2xl font-bold">Moderação de conteúdos</h1>
         <p className="text-sm text-gray-600">
-          Tópicos, aulas, disciplinas e cursos enviados por usuários. Nada é publicado sem aprovação.
+          Conteúdos e correções de teorias enviados por usuários. Nada é publicado sem aprovação.
         </p>
       </div>
 
@@ -191,7 +193,7 @@ const Moderacao = () => {
           <CardContent className="flex flex-col md:flex-row md:items-end gap-4">
             <label className="flex items-center gap-2 text-sm">
               <Switch checked={config.habilitado} onCheckedChange={(v) => setConfig({ ...config, habilitado: v })} />
-              Permitir que usuários enviem conteúdo
+              Permitir que usuários enviem conteúdos e correções
             </label>
             <div className="space-y-1">
               <Label htmlFor="lim-pend" className="text-xs">Máx. pendentes por usuário</Label>
@@ -224,6 +226,15 @@ const Moderacao = () => {
         </Card>
       )}
 
+      <Tabs defaultValue="conteudos" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="conteudos">Tópicos, aulas, disciplinas e cursos</TabsTrigger>
+          <TabsTrigger value="correcoes">Correções de teorias</TabsTrigger>
+        </TabsList>
+        <TabsContent value="correcoes">
+          <ModeracaoCorrecoes />
+        </TabsContent>
+        <TabsContent value="conteudos" className="space-y-6">
       <div className="flex flex-col md:flex-row gap-3 md:items-center">
         <Select value={status} onValueChange={(v) => setStatus(v as StatusSubmissao | "todos")}>
           <SelectTrigger className="w-56">
@@ -309,6 +320,8 @@ const Moderacao = () => {
           ))}
         </div>
       )}
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={rejeitando !== null} onOpenChange={(open) => !open && setRejeitando(null)}>
         <DialogContent>

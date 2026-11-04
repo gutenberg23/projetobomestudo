@@ -38,9 +38,6 @@ export const TopicRow = ({
     wrongAnswers: 0
   };
   
-  // Adicionar log para verificar estatísticas exibidas
-  console.log(`[TopicRow] Tópico ${topic.id} (${topic.topic}):`, displayStats);
-  
   const performance = displayStats.totalAttempts > 0 
     ? calculatePerformance(displayStats.correctAnswers, displayStats.totalAttempts) 
     : 0;

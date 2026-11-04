@@ -7,6 +7,7 @@ interface ItensDaAulaProps {
   setShowQuestions: () => void;
   showQuestions: boolean;
   pdfUrl?: string | null;
+  teoriaId?: string | null;
   mapaUrl?: string | null;
   resumoUrl?: string | null;
   musicaUrl?: string | string[] | null;
@@ -19,6 +20,7 @@ const ItensDaAula: React.FC<ItensDaAulaProps> = ({
   setShowQuestions,
   showQuestions,
   pdfUrl,
+  teoriaId,
   mapaUrl,
   resumoUrl,
   musicaUrl,
@@ -32,6 +34,7 @@ const ItensDaAula: React.FC<ItensDaAulaProps> = ({
         setShowQuestions={setShowQuestions} 
         showQuestions={showQuestions}
         pdfUrl={pdfUrl}
+        teoriaId={teoriaId}
         mapaUrl={mapaUrl}
         resumoUrl={resumoUrl}
         musicaUrl={musicaUrl}

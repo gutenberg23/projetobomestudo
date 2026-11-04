@@ -34,9 +34,11 @@ export interface DisciplinasPageProps {
   setDescricaoNovaDisciplina: (descricao: string) => void;
   informacoesCurso: string;
   setInformacoesCurso: (informacoes: string) => void;
-  handleAdicionarDisciplina: () => void;
+  handleAdicionarDisciplina: () => void | Promise<void>;
   todasSelecionadas: boolean;
   disciplinas: Disciplina[];
+  onRemoverSelecionada?: (id: string) => void;
+  onLimparSelecao?: () => void;
 }
 
 export interface EditDisciplinaModalProps {

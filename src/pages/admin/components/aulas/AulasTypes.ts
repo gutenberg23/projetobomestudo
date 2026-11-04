@@ -32,10 +32,13 @@ export interface AulasPageProps {
   setDescricaoNovaDisciplina: (descricao: string) => void;
   bancaNovaDisciplina: string;
   setBancaNovaDisciplina: (banca: string) => void;
-  handleAdicionarDisciplina: () => void;
+  handleAdicionarDisciplina: () => void | Promise<void>;
   todasSelecionadas: boolean;
   aulas: Aula[];
   temAulasSelecionadas: boolean;
+  aulasSelecionadas?: { id: string; titulo: string }[];
+  onRemoverSelecionada?: (id: string) => void;
+  onLimparSelecao?: () => void;
 }
 
 export interface EditAulaModalProps {

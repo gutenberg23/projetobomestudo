@@ -1,10 +1,8 @@
-import { useState, useEffect } from "react";
 import { Subject, Topic } from "../types/editorialized";
 import { calculateSubjectTotals } from "../utils/statsCalculations";
-import { supabase } from "@/integrations/supabase/client";
 import { TopicRow } from "./TopicRow";
 import { TotalsRow } from "./TotalsRow";
-import { useSubjectImportanceStats } from "@/hooks/useSubjectImportanceStats";
+import type { ImportanceStats, UserAnswerStats } from "@/hooks/useSubjectImportanceStats";
 
 interface SubjectTableProps {
   subject: Subject;
@@ -13,7 +11,10 @@ interface SubjectTableProps {
   isEditMode: boolean;
   subjects: Subject[];
   onSortChange?: (sortBy: 'id' | 'importance') => void;
-  sortBy?: 'id' | 'importance'; // Adicionando propriedade para ordenação
+  sortBy?: 'id' | 'importance';
+  importanceStats: Record<string, ImportanceStats>;
+  userStats: Record<string, UserAnswerStats>;
+  topicUserStats: Record<string, UserAnswerStats>;
 }
 
 export const SubjectTable = ({
@@ -21,64 +22,21 @@ export const SubjectTable = ({
   performanceGoal,
   onTopicChange,
   isEditMode,
-  subjects,
-  sortBy = 'id' // Valor padrão
+  sortBy = 'id',
+  importanceStats,
+  userStats,
+  topicUserStats
 }: SubjectTableProps) => {
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
-  const [disciplinaFilters, setDisciplinaFilters] = useState<{ 
-    disciplinas_filtro: string[] | null; 
-    topicos_filtro: string[] | null; 
-    bancas_filtro: string[] | null; 
-    assuntos: string[] | null; 
-  } | null>(null);
-  
   const subjectTotals = calculateSubjectTotals(subject.topics);
-  const subjectProgress = Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100);
-  
-  const { importanceStats, userStats, topicUserStats, loading } = useSubjectImportanceStats(subjects, currentUserId);
-
-  // Buscar o usuário atual
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id);
-    };
-    getCurrentUser();
-  }, []);
-
-  // Buscar filtros da disciplina
-  useEffect(() => {
-    const fetchDisciplinaFilters = async () => {
-      if (!subject.id) return;
-      
-      const { data, error } = await supabase
-        .from('disciplinaverticalizada')
-        .select('disciplinas_filtro, topicos_filtro, bancas_filtro, assuntos')
-        .eq('id', subject.id)
-        .single();
-        
-      if (error) {
-        console.error('Erro ao buscar filtros da disciplina:', error);
-        return;
-      }
-      
-      setDisciplinaFilters(data);
-    };
-    
-    fetchDisciplinaFilters();
-  }, [subject.id]);
+  const subjectProgress = subjectTotals.totalTopics > 0
+    ? Math.round(subjectTotals.completedTopics / subjectTotals.totalTopics * 100)
+    : 0;
 
   const currentSubjectStats = userStats[subject.id.toString()] || {
     totalAttempts: 0,
     correctAnswers: 0,
     wrongAnswers: 0
   };
-
-  // Adicionar log para verificar estatísticas da disciplina
-  useEffect(() => {
-    console.log(`[SubjectTable] Disciplina: ${subject.name} (${subject.id})`);
-    console.log(`[SubjectTable] Estatísticas gerais:`, currentSubjectStats);
-  }, [subject, currentSubjectStats]);
 
   const currentImportanceStats = importanceStats[subject.id.toString()] || {
     percentage: 0,
@@ -100,10 +58,7 @@ export const SubjectTable = ({
       correctAnswers: 0,
       wrongAnswers: 0
     };
-    
-    // Adicionar log para verificar estatísticas do tópico
-    console.log(`[SubjectTable] Tópico ${topicIndex + 1}:`, stats);
-    
+
     return stats;
   };
 
@@ -120,36 +75,8 @@ export const SubjectTable = ({
     }
   });
 
-  if (loading) {
-    return <div>Carregando estatísticas...</div>;
-  }
-
   return (
     <div className="mb-8 last:mb-0">
-      {/* Invisible inputs to hold filter values */}
-      <div style={{ display: 'none' }}>
-        <input 
-          id={`disciplinas_filtro_${subject.id}`} 
-          value={disciplinaFilters?.disciplinas_filtro?.join(',') || ''} 
-          readOnly 
-        />
-        <input 
-          id={`topicos_filtro_${subject.id}`} 
-          value={disciplinaFilters?.topicos_filtro?.join(',') || ''} 
-          readOnly 
-        />
-        <input 
-          id={`bancas_filtro_${subject.id}`} 
-          value={disciplinaFilters?.bancas_filtro?.join(',') || ''} 
-          readOnly 
-        />
-        <input 
-          id={`assuntos_${subject.id}`} 
-          value={disciplinaFilters?.assuntos?.join(',') || ''} 
-          readOnly 
-        />
-      </div>
-      
       <div className="flex items-center justify-between bg-white text-gray-800 p-3 rounded-lg">
         <div className="flex items-center gap-2">
           <h2 className="text-sm md:text-lg font-semibold">{subject.name}</h2>
