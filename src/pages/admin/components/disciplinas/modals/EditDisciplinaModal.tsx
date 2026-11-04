@@ -1,180 +1,152 @@
-import React, { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { EditDisciplinaModalProps } from "../DisciplinasTypes";
-import { X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Disciplina } from "../DisciplinasTypes";
+import { AulaResumo } from "../useDisciplinas";
+import { BuscaComLista, ListaOrdenavel } from "../../shared/ListaOrdenavel";
 
-export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({
-  isOpen,
-  onClose,
-  disciplina,
-  onSave,
-}) => {
+interface EditDisciplinaModalProps {
+  disciplina: Disciplina | null;
+  aulas: Map<string, AulaResumo>;
+  onClose: () => void;
+  onSave: (d: Disciplina, novasAulas: AulaResumo[]) => Promise<boolean>;
+}
+
+let cacheAulas: AulaResumo[] | null = null;
+
+export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ disciplina, aulas, onClose, onSave }) => {
+  const aberto = !!disciplina;
   const [titulo, setTitulo] = useState("");
-  const [descricao, setDescricao] = useState("");
   const [banca, setBanca] = useState("");
-  const [aulaId, setAulaId] = useState("");
-  const [aulasIds, setAulasIds] = useState<string[]>([]);
   const [rating, setRating] = useState("");
+  const [aulasIds, setAulasIds] = useState<string[]>([]);
+  const [todas, setTodas] = useState<AulaResumo[]>(cacheAulas || []);
+  const [carregando, setCarregando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
-    if (disciplina) {
-      setTitulo(disciplina.titulo);
-      setDescricao(disciplina.descricao);
-      setBanca(disciplina.banca || "");
-      setAulasIds([...disciplina.aulasIds]);
-      setRating(disciplina.descricao || "");
-    }
+    if (!disciplina) return;
+    setTitulo(disciplina.titulo);
+    setBanca(disciplina.banca || "");
+    setRating(disciplina.descricao || "");
+    setAulasIds([...disciplina.aulasIds]);
   }, [disciplina]);
 
-  const handleAddAula = () => {
-    if (aulaId.trim()) {
-      setAulasIds([...aulasIds, aulaId.trim()]);
-      setAulaId("");
-    }
-  };
-
-  const handleRemoveAula = (index: number) => {
-    const newAulasIds = [...aulasIds];
-    newAulasIds.splice(index, 1);
-    setAulasIds(newAulasIds);
-  };
-
-  const handleRatingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Only allow numbers between 1 and 10
-    if (value === "" || (/^\d+$/.test(value) && parseInt(value) >= 1 && parseInt(value) <= 10)) {
-      setRating(value);
-      setDescricao(value); // Update descricao with rating value
-    }
-  };
-
-  const handleSave = () => {
-    if (disciplina && titulo.trim() && rating.trim()) {
-      onSave({
-        ...disciplina,
-        titulo,
-        descricao: rating, // Use rating as descricao
-        banca,
-        aulasIds,
+  useEffect(() => {
+    if (!aberto) return;
+    setCarregando(!cacheAulas);
+    supabase
+      .from("aulas")
+      .select("id, titulo, topicos_ids, questoes_ids")
+      .order("created_at", { ascending: false })
+      .then(({ data, error }) => {
+        if (error) toast.error("Não foi possível carregar a lista de aulas");
+        cacheAulas = ((data || []) as AulaResumo[]).map((a) => ({
+          ...a,
+          topicos_ids: a.topicos_ids || [],
+          questoes_ids: a.questoes_ids || [],
+        }));
+        setTodas(cacheAulas);
+        setCarregando(false);
       });
-      onClose();
+  }, [aberto]);
+
+  const porId = useMemo(() => {
+    const m = new Map(aulas);
+    todas.forEach((a) => m.set(a.id, a));
+    return m;
+  }, [aulas, todas]);
+
+  const salvar = async () => {
+    if (!disciplina) return;
+    if (!titulo.trim()) {
+      toast.error("O título é obrigatório");
+      return;
     }
+    setSalvando(true);
+    const ok = await onSave(
+      { ...disciplina, titulo: titulo.trim(), banca, descricao: rating, aulasIds },
+      aulasIds.map((id) => porId.get(id)).filter((a): a is AulaResumo => !!a)
+    );
+    setSalvando(false);
+    if (ok) onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={aberto} onOpenChange={(o) => !o && !salvando && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-[#272f3c]">Editar Disciplina</DialogTitle>
+          <DialogTitle>Editar disciplina</DialogTitle>
+          <DialogDescription>
+            Mudanças nas aulas valem para cursos criados daqui em diante. Cursos já criados guardam a composição que tinham.
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="titulo" className="text-right">
-              Título
-            </Label>
-            <Input
-              id="titulo"
-              value={titulo}
-              onChange={(e) => setTitulo(e.target.value)}
-              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="banca" className="text-right">
-              Banca
-            </Label>
-            <Input
-              id="banca"
-              value={banca}
-              onChange={(e) => setBanca(e.target.value)}
-              placeholder="Nome da banca"
-              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="rating" className="text-right">
-              Nota de rating
-            </Label>
-            <Input
-              id="rating"
-              type="number"
-              min="1"
-              max="10"
-              value={rating}
-              onChange={handleRatingChange}
-              placeholder="adicione o rating"
-              className="col-span-3 border-[#ea2be2] focus-visible:ring-[#ea2be2]"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="aulas" className="text-right">
-              IDs das Aulas
-            </Label>
-            <div className="col-span-3 flex gap-2">
+
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+            <div className="space-y-1.5">
+              <Label htmlFor="disc-titulo">Título *</Label>
+              <Input id="disc-titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="disc-banca">Banca</Label>
+              <Input id="disc-banca" value={banca} onChange={(e) => setBanca(e.target.value)} placeholder="Ex.: FGV" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="disc-rating">Rating (1 a 10)</Label>
               <Input
-                id="aulas"
-                value={aulaId}
-                onChange={(e) => setAulaId(e.target.value)}
-                placeholder="Digite o ID da aula"
-                className="border-[#ea2be2] focus-visible:ring-[#ea2be2]"
+                id="disc-rating"
+                type="number"
+                min="1"
+                max="10"
+                value={rating}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "" || (/^\d+$/.test(v) && +v >= 1 && +v <= 10)) setRating(v);
+                }}
               />
-              <Button
-                type="button"
-                onClick={handleAddAula}
-                className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
-              >
-                Adicionar
-              </Button>
             </div>
           </div>
-          {aulasIds.length > 0 && (
-            <div className="grid grid-cols-4 items-start gap-4">
-              <div className="col-start-2 col-span-3">
-                <div className="text-sm font-medium mb-2">Aulas adicionadas:</div>
-                <div className="flex flex-wrap gap-2">
-                  {aulasIds.map((id, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-1 bg-[#f6f8fa] px-2 py-1 rounded-md"
-                    >
-                      <span className="text-sm text-[#67748a]">{id}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveAula(index)}
-                        className="text-[#67748a] hover:text-red-500"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
+          <div className="space-y-2">
+            <div className="flex items-baseline justify-between">
+              <Label>Aulas da disciplina</Label>
+              <span className="text-xs tabular-nums text-slate-500">{aulasIds.length} aulas</span>
             </div>
-          )}
+            <ListaOrdenavel
+              id="editar-disciplina"
+              itens={aulasIds.map((id) => {
+                const a = porId.get(id);
+                return { id, titulo: a?.titulo || "Aula não encontrada", detalhe: a ? `${a.topicos_ids.length} tópicos` : id };
+              })}
+              onChange={(itens) => setAulasIds(itens.map((i) => i.id))}
+              onRemover={(id) => setAulasIds((l) => l.filter((x) => x !== id))}
+              vazio={
+                <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-400">
+                  Nenhuma aula. Adicione abaixo.
+                </p>
+              }
+            />
+            <BuscaComLista
+              opcoes={todas.map((a) => ({ id: a.id, titulo: a.titulo, detalhe: `${a.topicos_ids.length} tópicos` }))}
+              escolhidos={aulasIds}
+              onEscolher={(id) => setAulasIds((l) => [...l, id])}
+              placeholder="Buscar aula para adicionar"
+              carregando={carregando}
+            />
+          </div>
         </div>
-        <DialogFooter>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onClose}
-          >
+
+        <DialogFooter className="sticky -bottom-6 -mx-6 -mb-6 gap-2 border-t border-slate-100 bg-white px-6 py-3 sm:gap-2">
+          <Button variant="outline" onClick={onClose} disabled={salvando}>
             Cancelar
           </Button>
-          <Button 
-            type="button" 
-            onClick={handleSave}
-            className="bg-[#ea2be2] hover:bg-[#ea2be2]/90"
-          >
-            Salvar
+          <Button onClick={salvar} disabled={salvando} className="bg-[#ea2be2] text-white hover:bg-[#d029d5]">
+            {salvando ? "Salvando..." : "Salvar alterações"}
           </Button>
         </DialogFooter>
       </DialogContent>

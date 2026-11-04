@@ -1,27 +1,31 @@
 import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AulasPageProps } from "./AulasTypes";
-import { BarraCriacao } from "../shared/BarraCriacao";
+import { BarraCriacao, ItemSelecionado } from "../shared/BarraCriacao";
 
-export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
-  tituloNovaDisciplina,
-  setTituloNovaDisciplina,
-  descricaoNovaDisciplina,
-  setDescricaoNovaDisciplina,
-  bancaNovaDisciplina,
-  setBancaNovaDisciplina,
-  handleAdicionarDisciplina,
-  aulasSelecionadas = [],
-  onRemoverSelecionada = () => undefined,
-  onLimparSelecao = () => undefined,
-}) => {
+interface AdicionarDisciplinaProps {
+  selecionadas: ItemSelecionado[];
+  onRemover: (id: string) => void;
+  onLimpar: () => void;
+  /** Devolve true quando a disciplina foi criada */
+  onCriar: (titulo: string, rating: string, banca: string) => Promise<boolean>;
+}
+
+/** Barra para criar uma disciplina com as aulas selecionadas. */
+export const AdicionarDisciplina: React.FC<AdicionarDisciplinaProps> = ({ selecionadas, onRemover, onLimpar, onCriar }) => {
+  const [titulo, setTitulo] = useState("");
+  const [rating, setRating] = useState("");
+  const [banca, setBanca] = useState("");
   const [criando, setCriando] = useState(false);
 
   const criar = async () => {
     setCriando(true);
     try {
-      await handleAdicionarDisciplina();
+      if (await onCriar(titulo, rating, banca)) {
+        setTitulo("");
+        setRating("");
+        setBanca("");
+      }
     } finally {
       setCriando(false);
     }
@@ -32,50 +36,50 @@ export const AdicionarDisciplina: React.FC<AulasPageProps> = ({
       titulo="Nova disciplina"
       itemSingular="aula"
       itemPlural="aulas"
-      dica="marque as aulas na tabela para montar uma disciplina com elas."
-      itens={aulasSelecionadas}
-      onRemover={onRemoverSelecionada}
-      onLimpar={onLimparSelecao}
+      dica="marque as aulas na lista para montar uma disciplina com elas, na ordem em que forem marcadas."
+      itens={selecionadas}
+      onRemover={onRemover}
+      onLimpar={onLimpar}
       textoBotao="Criar disciplina"
       onCriar={criar}
-      podeCriar={!!tituloNovaDisciplina.trim()}
+      podeCriar={!!titulo.trim()}
       criando={criando}
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[2fr_1fr_1fr]">
         <div>
-          <Label htmlFor="titulo-disciplina" className="mb-1 block">Título *</Label>
+          <Label htmlFor="titulo-disciplina" className="mb-1 block text-xs text-slate-600">
+            Título da disciplina *
+          </Label>
           <Input
             id="titulo-disciplina"
             placeholder="Ex.: Direito Administrativo"
-            value={tituloNovaDisciplina}
-            onChange={e => setTituloNovaDisciplina(e.target.value)}
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && titulo.trim() && criar()}
           />
         </div>
         <div>
-          <Label htmlFor="descricao-disciplina" className="mb-1 block">Nota de rating (1 a 10)</Label>
+          <Label htmlFor="rating-disciplina" className="mb-1 block text-xs text-slate-600">
+            Nota de rating (1 a 10)
+          </Label>
           <Input
-            id="descricao-disciplina"
+            id="rating-disciplina"
             type="number"
             min="1"
             max="10"
             placeholder="Ex.: 8"
-            value={descricaoNovaDisciplina}
-            onChange={e => {
-              const value = e.target.value;
-              if (value === "" || (/^\d+$/.test(value) && parseInt(value) >= 1 && parseInt(value) <= 10)) {
-                setDescricaoNovaDisciplina(value);
-              }
+            value={rating}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === "" || (/^\d+$/.test(v) && +v >= 1 && +v <= 10)) setRating(v);
             }}
           />
         </div>
         <div>
-          <Label htmlFor="banca-disciplina" className="mb-1 block">Banca</Label>
-          <Input
-            id="banca-disciplina"
-            placeholder="Ex.: CEBRASPE"
-            value={bancaNovaDisciplina}
-            onChange={e => setBancaNovaDisciplina(e.target.value)}
-          />
+          <Label htmlFor="banca-disciplina" className="mb-1 block text-xs text-slate-600">
+            Banca
+          </Label>
+          <Input id="banca-disciplina" placeholder="Ex.: CEBRASPE" value={banca} onChange={(e) => setBanca(e.target.value)} />
         </div>
       </div>
     </BarraCriacao>

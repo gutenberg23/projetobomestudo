@@ -1,465 +1,204 @@
-import React, { useState, useEffect } from "react";
-import { 
-  DisciplinasFilter, 
-  DisciplinasTable, 
-  AdicionarDisciplina,
-  EditDisciplinaModal,
-  DeleteDisciplinaModal
-} from "./components/disciplinas";
-import { Disciplina } from "./components/disciplinas/DisciplinasTypes";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
-import { calcularComposicaoCurso } from "./components/cursos/composicaoCurso";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Layers, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { AdminPageHeader, FluxoConteudo } from "@/components/admin/AdminPageHeader";
+import {
+  AbasContagem,
+  CampoBusca,
+  EstadoVazio,
+  FiltrosBarra,
+  ListaEsqueleto,
+  PainelListagem,
+  RodapePaginacao,
+  normalizar,
+  selectClasse,
+} from "@/components/admin/ui/listagem";
+import { ConfirmarAcao } from "@/components/admin/ui/dialogos";
+import { cn } from "@/lib/utils";
+import { DisciplinasTable, AdicionarDisciplina, EditDisciplinaModal, Disciplina } from "./components/disciplinas";
+import { useDisciplinas } from "./components/disciplinas/useDisciplinas";
+
+type Aba = "todas" | "sem-curso" | "sem-aulas";
+const POR_PAGINA = 15;
 
 const Disciplinas = () => {
-  // Estados para filtros
-  const [searchTerm, setSearchTerm] = useState("");
-  const [descricaoFiltro, setDescricaoFiltro] = useState("");
+  const { disciplinas, aulas, cursosDaDisciplina, loading, recarregar, salvar, reordenarAulas, excluir, criarCurso } =
+    useDisciplinas();
 
-  // Estados para a adição de disciplina
-  const [tituloNovaDisciplina, setTituloNovaDisciplina] = useState("");
-  const [descricaoNovaDisciplina, setDescricaoNovaDisciplina] = useState("");
-  const [informacoesCurso, setInformacoesCurso] = useState("");
+  const [busca, setBusca] = useState("");
+  const [banca, setBanca] = useState("");
+  const [aba, setAba] = useState<Aba>("todas");
+  const [pagina, setPagina] = useState(1);
+  const [selecao, setSelecao] = useState<string[]>([]);
+  const [editando, setEditando] = useState<Disciplina | null>(null);
+  const [excluindo, setExcluindo] = useState<Disciplina | null>(null);
 
-  // Estados para modais de edição/exclusão
-  const [isOpenEdit, setIsOpenEdit] = useState(false);
-  const [isOpenDelete, setIsOpenDelete] = useState(false);
-  const [currentDisciplina, setCurrentDisciplina] = useState<Disciplina | null>(null);
+  const bancas = useMemo(
+    () => Array.from(new Set(disciplinas.map((d) => (d.banca || "").trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [disciplinas]
+  );
 
-  // Estado para a lista de disciplinas
-  const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
-  const [loading, setLoading] = useState(true);
+  const base = useMemo(() => {
+    const termo = normalizar(busca.trim());
+    return disciplinas.filter((d) => {
+      if (banca && (d.banca || "").trim() !== banca) return false;
+      if (!termo) return true;
+      const nomesAulas = d.aulasIds.map((id) => aulas.get(id)?.titulo || "").join(" ");
+      return normalizar(`${d.titulo} ${d.banca} ${nomesAulas} ${d.id}`).includes(termo);
+    });
+  }, [disciplinas, busca, banca, aulas]);
 
-  // Função melhorada para calcular o total de questões de uma disciplina
-  const calcularTotalQuestoesDisciplina = async (aulasIds: string[]): Promise<number> => {
-    if (!aulasIds || aulasIds.length === 0) return 0;
-    
-    // Usar um Set para armazenar IDs únicos de questões
-    const questoesUnicas = new Set<string>();
-    
-    try {
-      console.log("Calculando questões para aulas:", aulasIds);
-      
-      // Buscar todas as aulas desta disciplina
-      const { data: aulas, error: aulasError } = await supabase
-        .from('aulas')
-        .select('questoes_ids, topicos_ids')
-        .in('id', aulasIds);
-      
-      if (aulasError) {
-        console.error("Erro ao buscar aulas:", aulasError);
-        return 0;
-      }
-      
-      if (!aulas || aulas.length === 0) return 0;
-      
-      console.log("Aulas encontradas:", aulas.length);
-      
-      // Para cada aula, adicionar suas questões diretas ao Set
-      for (const aula of aulas) {
-        if (aula.questoes_ids && Array.isArray(aula.questoes_ids)) {
-          aula.questoes_ids.forEach(questaoId => {
-            if (questaoId && questaoId.trim() !== '') {
-              questoesUnicas.add(questaoId);
-            }
-          });
-        }
-        
-        // Buscar questões dos tópicos da aula
-        if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-          console.log(`Aula com ${aula.topicos_ids.length} tópicos`);
-          
-          const { data: topicos, error: topicosError } = await supabase
-            .from('topicos')
-            .select('questoes_ids')
-            .in('id', aula.topicos_ids);
-          
-          if (topicosError) {
-            console.error("Erro ao buscar tópicos:", topicosError);
-            continue;
-          }
-          
-          if (topicos) {
-            for (const topico of topicos) {
-              if (topico.questoes_ids && Array.isArray(topico.questoes_ids)) {
-                topico.questoes_ids.forEach(questaoId => {
-                  if (questaoId && questaoId.trim() !== '') {
-                    questoesUnicas.add(questaoId);
-                  }
-                });
-              }
-            }
-          }
-        }
-      }
-      
-      console.log("Total de questões únicas calculado:", questoesUnicas.size);
-      return questoesUnicas.size;
-    } catch (error) {
-      console.error("Erro ao calcular total de questões:", error);
-      return 0;
-    }
+  const passa = (d: Disciplina, x: Aba) =>
+    x === "sem-curso" ? !(cursosDaDisciplina.get(d.id) || []).length : x === "sem-aulas" ? d.aulasIds.length === 0 : true;
+
+  const contagens = useMemo(
+    () => ({
+      todas: base.length,
+      "sem-curso": base.filter((d) => passa(d, "sem-curso")).length,
+      "sem-aulas": base.filter((d) => passa(d, "sem-aulas")).length,
+    }),
+    [base, cursosDaDisciplina] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const filtradas = useMemo(() => base.filter((d) => passa(d, aba)), [base, aba, cursosDaDisciplina]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => setPagina(1), [busca, banca, aba]);
+
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / POR_PAGINA));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const visiveis = filtradas.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA);
+
+  const alternar = (id: string) => setSelecao((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const alternarPagina = () => {
+    const ids = visiveis.map((d) => d.id);
+    const todas = ids.every((id) => selecao.includes(id));
+    setSelecao((s) => (todas ? s.filter((id) => !ids.includes(id)) : [...s, ...ids.filter((id) => !s.includes(id))]));
   };
+  const porId = useMemo(() => new Map(disciplinas.map((d) => [d.id, d])), [disciplinas]);
+  const selecionadas = selecao.filter((id) => porId.has(id)).map((id) => ({ id, titulo: porId.get(id)!.titulo }));
 
-  // Função para carregar disciplinas do banco de dados
-  const fetchDisciplinas = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('disciplinas')
-        .select('*');
-      
-      if (error) throw error;
-      
-      // Buscar contagem de favoritos para cada disciplina
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('disciplinas_favoritos');
-      
-      if (profilesError) {
-        console.error("Erro ao buscar perfis:", profilesError);
-      }
-      
-      // Calcular contagem de favoritos para cada disciplina
-      const favoritosCount: Record<string, number> = {};
-      
-      if (profiles) {
-        profiles.forEach(profile => {
-          if (profile.disciplinas_favoritos && Array.isArray(profile.disciplinas_favoritos)) {
-            profile.disciplinas_favoritos.forEach(favorito => {
-              favoritosCount[favorito] = (favoritosCount[favorito] || 0) + 1;
-            });
-          }
-        });
-      }
-      
-      console.log("Contagem de favoritos:", favoritosCount);
-      
-      const disciplinasProcessadas: Disciplina[] = [];
-      
-      // Processar cada disciplina para calcular totais
-      for (const disciplina of data || []) {
-        console.log(`Processando disciplina: ${disciplina.titulo}`);
-        
-        // Calcular total de questões para cada disciplina
-        const totalQuestoes = await calcularTotalQuestoesDisciplina(disciplina.aulas_ids || []);
-        
-        // Calcular total de tópicos
-        let totalTopicos = 0;
-        let topicosIds: string[] = [];
-        
-        if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-          const { data: aulas } = await supabase
-            .from('aulas')
-            .select('topicos_ids')
-            .in('id', disciplina.aulas_ids);
-          
-          if (aulas) {
-            // Usar um Set para evitar contagem duplicada de tópicos
-            const todosTopicos = new Set<string>();
-            
-            for (const aula of aulas) {
-              if (aula.topicos_ids) {
-                aula.topicos_ids.forEach((id: string) => todosTopicos.add(id));
-              }
-            }
-            
-            totalTopicos = todosTopicos.size;
-            topicosIds = Array.from(todosTopicos);
-          }
-        }
-        
-        // Criar objeto da disciplina com todos os campos necessários
-        const disciplinaProcessada: Disciplina = {
-          id: disciplina.id,
-          titulo: disciplina.titulo,
-          descricao: disciplina.descricao || "",
-          banca: disciplina.banca || null,
-          aulasIds: disciplina.aulas_ids || [],
-          topicosIds: topicosIds,
-          questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)),
-          selecionada: false,
-          favoritos: favoritosCount[disciplina.id] || 0
-        };
-        
-        console.log("Disciplina processada:", disciplinaProcessada);
-        disciplinasProcessadas.push(disciplinaProcessada);
-      }
-      
-      setDisciplinas(disciplinasProcessadas);
-    } catch (error) {
-      console.error("Erro ao buscar disciplinas:", error);
-      toast.error("Erro ao carregar disciplinas");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Carregar disciplinas quando a página é montada
-  useEffect(() => {
-    fetchDisciplinas();
-  }, []);
-
-  // Função para filtrar disciplinas
-  const disciplinasFiltradas = disciplinas.filter((disciplina) => {
-    const matchesTitulo = disciplina.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDescricao = disciplina.descricao.toLowerCase().includes(descricaoFiltro.toLowerCase());
-    
-    return matchesTitulo && matchesDescricao;
-  });
-
-  // Função para verificar se todas as disciplinas estão selecionadas
-  const todasSelecionadas = disciplinasFiltradas.length > 0 && disciplinasFiltradas.every(disciplina => disciplina.selecionada);
-
-  // Funções para manipulação de seleção
-  const handleSelecaoTodas = () => {
-    setDisciplinas(disciplinas.map(disciplina => {
-      if (disciplinasFiltradas.some(disciplinaFiltrada => disciplinaFiltrada.id === disciplina.id)) {
-        return { ...disciplina, selecionada: !todasSelecionadas };
-      }
-      return disciplina;
-    }));
-  };
-
-  const handleSelecaoDisciplina = (id: string) => {
-    setDisciplinas(disciplinas.map(disciplina => 
-      disciplina.id === id ? { ...disciplina, selecionada: !disciplina.selecionada } : disciplina
-    ));
-  };
-
-  // Funções para abrir modais
-  const openEditModal = (disciplina: Disciplina) => {
-    setCurrentDisciplina(disciplina);
-    setIsOpenEdit(true);
-  };
-
-  const openDeleteModal = (disciplina: Disciplina) => {
-    setCurrentDisciplina(disciplina);
-    setIsOpenDelete(true);
-  };
-
-  // Função para salvar disciplina editada
-  const handleSaveDisciplina = async (updatedDisciplina: Disciplina) => {
-    try {
-      // Atualizar no banco de dados
-      const { error } = await supabase
-        .from('disciplinas')
-        .update({
-          titulo: updatedDisciplina.titulo,
-          descricao: updatedDisciplina.descricao,
-          banca: updatedDisciplina.banca || null,
-          aulas_ids: updatedDisciplina.aulasIds
-        })
-        .eq('id', updatedDisciplina.id);
-      
-      if (error) throw error;
-      
-      // Atualizar a disciplina com totais recalculados
-      const totalQuestoes = await calcularTotalQuestoesDisciplina(updatedDisciplina.aulasIds);
-      
-      // Atualizar o estado local com todos os dados necessários
-      setDisciplinas(prevDisciplinas => 
-        prevDisciplinas.map(disciplina => 
-          disciplina.id === updatedDisciplina.id 
-            ? { 
-                ...disciplina,
-                titulo: updatedDisciplina.titulo,
-                descricao: updatedDisciplina.descricao,
-                banca: updatedDisciplina.banca || null,
-                aulasIds: updatedDisciplina.aulasIds,
-                questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i))
-              } 
-            : disciplina
-        )
-      );
-      
-      setIsOpenEdit(false);
-      toast.success("Disciplina atualizada com sucesso!");
-    } catch (error) {
-      console.error("Erro ao atualizar disciplina:", error);
-      toast.error("Erro ao atualizar disciplina");
-    }
-  };
-
-  // Função para excluir disciplina
-  const handleDeleteDisciplina = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('disciplinas')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-      
-      setDisciplinas(disciplinas.filter(disciplina => disciplina.id !== id));
-      setIsOpenDelete(false);
-      toast.success("Disciplina excluída com sucesso!");
-    } catch (error) {
-      console.error("Erro ao excluir disciplina:", error);
-      toast.error("Erro ao excluir disciplina");
-    }
-  };
-
-  // Função para adicionar disciplina
-  const handleAdicionarDisciplina = async () => {
-    if (!tituloNovaDisciplina.trim()) {
-      toast.error("O título da disciplina é obrigatório");
-      return;
-    }
-    
-    // Lógica para adicionar disciplina com as aulas selecionadas
-    const aulasIds = disciplinas
-      .filter(disciplina => disciplina.selecionada)
-      .flatMap(disciplina => disciplina.aulasIds);
-    
-    try {
-      const { data, error } = await supabase
-        .from('disciplinas')
-        .insert([
-          {
-            titulo: tituloNovaDisciplina,
-            descricao: descricaoNovaDisciplina, // This will store the rating
-            aulas_ids: aulasIds
-          }
-        ])
-        .select();
-      
-      if (error) throw error;
-      
-      toast.success("Disciplina adicionada com sucesso!");
-      
-      // Resetar campos após adicionar
-      setTituloNovaDisciplina("");
-      setDescricaoNovaDisciplina("");
-      setInformacoesCurso("");
-      
-      // Desmarcar todas as disciplinas após adicionar
-      setDisciplinas(disciplinas.map(disciplina => ({...disciplina, selecionada: false})));
-      
-      // Recarregar disciplinas
-      fetchDisciplinas();
-    } catch (error) {
-      console.error("Erro ao adicionar disciplina:", error);
-      toast.error("Erro ao adicionar disciplina");
-    }
-  };
-
-  // Função para adicionar curso
-  const handleAdicionarCurso = async () => {
-    if (!tituloNovaDisciplina.trim()) {
-      toast.error("O título do curso é obrigatório");
-      return;
-    }
-    
-    const disciplinasSelecionadas = disciplinas
-      .filter(disciplina => disciplina.selecionada)
-      .map(disciplina => disciplina.id);
-    
-    if (disciplinasSelecionadas.length === 0) {
-      toast.error("Selecione pelo menos uma disciplina para o curso");
-      return;
-    }
-    
-    try {
-      // Aulas, tópicos e questões das disciplinas escolhidas (consulta em lote)
-      const composicao = await calcularComposicaoCurso(disciplinasSelecionadas);
-      
-      // Criar o curso
-      const { data, error } = await supabase
-        .from('cursos')
-        .insert([
-          {
-            titulo: tituloNovaDisciplina,
-            descricao: descricaoNovaDisciplina,
-            informacoes_curso: informacoesCurso,
-            ...composicao
-          }
-        ])
-        .select();
-      
-      if (error) throw error;
-      
-      toast.success(
-        `Curso criado com ${composicao.disciplinas_ids.length} disciplinas, ${composicao.aulas_ids.length} aulas, ` +
-        `${composicao.topicos_ids.length} tópicos e ${composicao.questoes_ids.length} questões.`
-      );
-      
-      // Resetar campos após adicionar
-      setTituloNovaDisciplina("");
-      setDescricaoNovaDisciplina("");
-      setInformacoesCurso("");
-      
-      // Desmarcar todas as disciplinas após adicionar
-      setDisciplinas(disciplinas.map(disciplina => ({...disciplina, selecionada: false})));
-    } catch (error) {
-      console.error("Erro ao adicionar curso:", error);
-      toast.error("Erro ao adicionar curso");
-    }
-  };
+  const filtroAtivo = !!busca || !!banca || aba !== "todas";
+  const cursosExcluindo = excluindo ? cursosDaDisciplina.get(excluindo.id) || [] : [];
 
   return (
     <div className="space-y-4">
       <AdminPageHeader
         titulo="Disciplinas"
-        descricao="Disciplinas são conjuntos de aulas. Marque várias para montar um curso."
+        descricao="Disciplinas agrupam aulas em sequência. Marque várias para montar um curso. Para criar uma disciplina, marque aulas em Aulas."
+        acoes={
+          <Button variant="outline" onClick={recarregar} disabled={loading}>
+            <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+            Atualizar
+          </Button>
+        }
       >
         <FluxoConteudo atual="disciplinas" />
       </AdminPageHeader>
-      
-      {/* Componente de filtro */}
-      <DisciplinasFilter 
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        descricaoFiltro={descricaoFiltro}
-        setDescricaoFiltro={setDescricaoFiltro}
+
+      <PainelListagem
+        barra={
+          <>
+            <AbasContagem<Aba>
+              abas={[
+                { id: "todas", label: "Todas", n: contagens.todas },
+                { id: "sem-curso", label: "Fora de cursos", n: contagens["sem-curso"] },
+                { id: "sem-aulas", label: "Sem aulas", n: contagens["sem-aulas"] },
+              ]}
+              ativa={aba}
+              onChange={setAba}
+            />
+            <FiltrosBarra>
+              {bancas.length > 0 && (
+                <select value={banca} onChange={(e) => setBanca(e.target.value)} className={selectClasse} aria-label="Filtrar por banca">
+                  <option value="">Todas as bancas</option>
+                  {bancas.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar por título, banca ou aula" rotulo="Buscar disciplinas" />
+            </FiltrosBarra>
+          </>
+        }
+        rodape={
+          !loading && (
+            <RodapePaginacao pagina={paginaAtual} porPagina={POR_PAGINA} total={filtradas.length} onPagina={setPagina} singular="disciplina" plural="disciplinas" />
+          )
+        }
+      >
+        {loading ? (
+          <ListaEsqueleto icone={false} />
+        ) : (
+          <DisciplinasTable
+            disciplinas={visiveis}
+            selecao={selecao}
+            aulas={aulas}
+            cursosDaDisciplina={cursosDaDisciplina}
+            onAlternar={alternar}
+            onAlternarPagina={alternarPagina}
+            onEditar={setEditando}
+            onExcluir={setExcluindo}
+            onReordenar={reordenarAulas}
+            vazio={
+              <EstadoVazio
+                icone={Layers}
+                titulo={filtroAtivo ? "Nenhuma disciplina encontrada" : "Nenhuma disciplina cadastrada"}
+                texto={filtroAtivo ? "Tente outra busca, outra banca ou outra aba." : "Vá em Aulas, marque as aulas e crie a disciplina pela barra no fim da página."}
+                acao={
+                  filtroAtivo ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setBusca("");
+                        setBanca("");
+                        setAba("todas");
+                      }}
+                    >
+                      Limpar filtros
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/admin/aulas">Ir para Aulas</Link>
+                    </Button>
+                  )
+                }
+              />
+            }
+          />
+        )}
+      </PainelListagem>
+
+      <AdicionarDisciplina
+        selecionadas={selecionadas}
+        onRemover={alternar}
+        onLimpar={() => setSelecao([])}
+        onCriar={async (titulo, cargo, info) => {
+          const ok = await criarCurso(titulo, cargo, info, selecionadas.map((s) => s.id));
+          if (ok) setSelecao([]);
+          return ok;
+        }}
       />
-      
-      {/* Tabela de disciplinas */}
-      {loading ? (
-        <div className="flex justify-center items-center py-10">
-          <Spinner size="lg" />
-        </div>
-      ) : (
-        <DisciplinasTable 
-          disciplinas={disciplinasFiltradas}
-          todasSelecionadas={todasSelecionadas}
-          handleSelecaoTodas={handleSelecaoTodas}
-          handleSelecaoDisciplina={handleSelecaoDisciplina}
-          openEditModal={openEditModal}
-          openDeleteModal={openDeleteModal}
-        />
-      )}
-      
-      {/* Componente para adicionar disciplina */}
-      <AdicionarDisciplina 
-        tituloNovaDisciplina={tituloNovaDisciplina}
-        setTituloNovaDisciplina={setTituloNovaDisciplina}
-        descricaoNovaDisciplina={descricaoNovaDisciplina}
-        setDescricaoNovaDisciplina={setDescricaoNovaDisciplina}
-        informacoesCurso={informacoesCurso}
-        setInformacoesCurso={setInformacoesCurso}
-        handleAdicionarDisciplina={handleAdicionarCurso}
-        todasSelecionadas={todasSelecionadas}
-        disciplinas={disciplinas}
-        onRemoverSelecionada={handleSelecaoDisciplina}
-        onLimparSelecao={() => setDisciplinas(lista => lista.map(d => ({ ...d, selecionada: false })))}
-      />
-      
-      {/* Modais de edição e exclusão */}
-      <EditDisciplinaModal 
-        isOpen={isOpenEdit}
-        onClose={() => setIsOpenEdit(false)}
-        disciplina={currentDisciplina}
-        onSave={handleSaveDisciplina}
-      />
-      
-      <DeleteDisciplinaModal 
-        isOpen={isOpenDelete}
-        onClose={() => setIsOpenDelete(false)}
-        disciplina={currentDisciplina}
-        onDelete={handleDeleteDisciplina}
+
+      <EditDisciplinaModal disciplina={editando} aulas={aulas} onClose={() => setEditando(null)} onSave={salvar} />
+
+      <ConfirmarAcao
+        aberto={!!excluindo}
+        onFechar={() => setExcluindo(null)}
+        titulo={`Excluir a disciplina "${excluindo?.titulo || ""}"?`}
+        descricao="Essa ação não pode ser desfeita. As aulas, os tópicos e as questões continuam cadastrados."
+        detalhes={
+          cursosExcluindo.length
+            ? [`Ela está em ${cursosExcluindo.length === 1 ? "um curso" : `${cursosExcluindo.length} cursos`}: ${cursosExcluindo.map((c) => c.titulo).join(", ")}. O progresso dos alunos e o edital desses cursos podem ser afetados.`]
+            : undefined
+        }
+        textoConfirmar="Excluir disciplina"
+        onConfirmar={async () => {
+          if (!excluindo) return;
+          await excluir(excluindo.id);
+          setSelecao((s) => s.filter((id) => id !== excluindo.id));
+        }}
       />
     </div>
   );

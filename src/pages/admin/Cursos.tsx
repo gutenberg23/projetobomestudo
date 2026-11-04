@@ -1,383 +1,277 @@
-import React, { useState, useEffect } from "react";
-import { 
-  CursosFilter, 
-  CursosTable, 
-  AdicionarCurso,
-  EditCursoModal,
-  DeleteCursoModal
-} from "./components/cursos";
-import { Curso } from "./components/cursos/CursosTypes";
-import { supabase } from "@/integrations/supabase/client";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FolderOpen, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { Spinner } from "@/components/ui/spinner";
-import { calcularComposicaoCurso } from "./components/cursos/composicaoCurso";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader, FluxoConteudo } from "@/components/admin/AdminPageHeader";
+import {
+  AbasContagem,
+  CampoBusca,
+  EstadoVazio,
+  FiltrosBarra,
+  ListaEsqueleto,
+  PainelListagem,
+  RodapePaginacao,
+  botaoPrimario,
+  normalizar,
+  selectClasse,
+} from "@/components/admin/ui/listagem";
+import { ConfirmarAcao } from "@/components/admin/ui/dialogos";
+import { cn } from "@/lib/utils";
+import { CursosTable, CursoDialog, Curso, DadosCurso, DisciplinaOpcao } from "./components/cursos";
+import { buscarEmLotes, calcularComposicaoCurso } from "./components/cursos/composicaoCurso";
+
+type Aba = "todos" | "sem-disciplinas";
+type Ordem = "recentes" | "titulo" | "favoritos";
+const POR_PAGINA = 20;
+
+const unicos = (lista: (string | null | undefined)[]) =>
+  Array.from(new Set(lista.filter((x): x is string => !!x && x.trim() !== "")));
 
 const Cursos = () => {
-  // Estados para filtros
-  const [searchTerm, setSearchTerm] = useState("");
-  const [descricaoFiltro, setDescricaoFiltro] = useState("");
-
-  // Estados para a adição de curso
-  const [tituloNovoCurso, setTituloNovoCurso] = useState("");
-  const [descricaoNovoCurso, setDescricaoNovoCurso] = useState("");
-  const [informacoesCurso, setInformacoesCurso] = useState("");
-
-  // Estados para modais de edição/exclusão
-  const [isOpenEdit, setIsOpenEdit] = useState(false);
-  const [isOpenDelete, setIsOpenDelete] = useState(false);
-  const [currentCurso, setCurrentCurso] = useState<Curso | null>(null);
-
-  // Estado para cursos
   const [cursos, setCursos] = useState<Curso[]>([]);
+  const [disciplinas, setDisciplinas] = useState<DisciplinaOpcao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [busca, setBusca] = useState("");
+  const [aba, setAba] = useState<Aba>("todos");
+  const [ordem, setOrdem] = useState<Ordem>("recentes");
+  const [pagina, setPagina] = useState(1);
+  const [dialogo, setDialogo] = useState<{ curso: Curso | null } | null>(null);
+  const [excluindo, setExcluindo] = useState<Curso | null>(null);
 
-  // Função para calcular o número total de questões para um curso
-  const calcularTotalQuestoesCurso = async (curso: any) => {
+  const carregar = useCallback(async () => {
+    setLoading(true);
     try {
-      console.log(`Calculando questões para o curso: ${curso.titulo}`);
-      
-      // Usar um Set para armazenar IDs únicos de questões
-      const questoesUnicas = new Set<string>();
-      
-      // Adicionar questões diretamente associadas ao curso
-      if (curso.questoes_ids && Array.isArray(curso.questoes_ids)) {
-        curso.questoes_ids.forEach((questaoId: string) => {
-          if (questaoId && questaoId.trim() !== '') {
-            questoesUnicas.add(questaoId);
-          }
-        });
-      }
-      
-      // Questões associadas aos tópicos do curso
-      if (curso.topicos_ids && curso.topicos_ids.length > 0) {
-        // Buscar dados de todos os tópicos de uma vez
-        const { data: topicosData, error: topicosError } = await supabase
-          .from('topicos')
-          .select('questoes_ids')
-          .in('id', curso.topicos_ids);
-          
-        if (topicosError) throw topicosError;
-        
-        // Adicionar questões de todos os tópicos ao Set
-        if (topicosData) {
-          topicosData.forEach(topico => {
-            if (topico.questoes_ids && Array.isArray(topico.questoes_ids)) {
-              topico.questoes_ids.forEach(questaoId => {
-                if (questaoId && questaoId.trim() !== '') {
-                  questoesUnicas.add(questaoId);
-                }
-              });
-            }
-          });
-        }
-      }
-      
-      // Questões associadas às disciplinas do curso
-      if (curso.disciplinas_ids && curso.disciplinas_ids.length > 0) {
-        // Buscar aulas de todas as disciplinas
-        for (const disciplinaId of curso.disciplinas_ids) {
-          const { data: disciplina } = await supabase
-            .from('disciplinas')
-            .select('aulas_ids')
-            .eq('id', disciplinaId)
-            .single();
-            
-          if (disciplina && disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-            // Buscar dados de todas as aulas da disciplina de uma vez
-            const { data: aulasData } = await supabase
-              .from('aulas')
-              .select('questoes_ids, topicos_ids')
-              .in('id', disciplina.aulas_ids);
-              
-            if (aulasData) {
-              // Adicionar questões diretamente associadas às aulas ao Set
-              for (const aula of aulasData) {
-                if (aula.questoes_ids && Array.isArray(aula.questoes_ids)) {
-                  aula.questoes_ids.forEach(questaoId => {
-                    if (questaoId && questaoId.trim() !== '') {
-                      questoesUnicas.add(questaoId);
-                    }
-                  });
-                }
-                
-                // Adicionar questões dos tópicos das aulas ao Set
-                if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-                  const { data: topicosAula } = await supabase
-                    .from('topicos')
-                    .select('questoes_ids')
-                    .in('id', aula.topicos_ids);
-                    
-                  if (topicosAula) {
-                    topicosAula.forEach(topico => {
-                      if (topico.questoes_ids && Array.isArray(topico.questoes_ids)) {
-                        topico.questoes_ids.forEach(questaoId => {
-                          if (questaoId && questaoId.trim() !== '') {
-                            questoesUnicas.add(questaoId);
-                          }
-                        });
-                      }
-                    });
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      
-      // Total de questões únicas
-      console.log(`Total de questões únicas calculado: ${questoesUnicas.size}`);
-      return questoesUnicas.size;
-    } catch (error) {
-      console.error("Erro ao calcular total de questões:", error);
-      return 0;
-    }
-  };
-
-  // Função para buscar cursos
-  const fetchCursos = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('cursos')
-        .select('*');
-      
+      const [{ data, error }, { data: perfis }, { data: discs }] = await Promise.all([
+        supabase.from("cursos").select("*").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("cursos_favoritos"),
+        supabase.from("disciplinas").select("id, titulo, banca, aulas_ids").order("titulo"),
+      ]);
       if (error) throw error;
-      
-      // Buscar contagem de favoritos para cada curso
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('cursos_favoritos');
-      
-      if (profilesError) {
-        console.error("Erro ao buscar perfis:", profilesError);
-      }
-      
-      // Calcular contagem de favoritos para cada curso
-      const favoritosCount: Record<string, number> = {};
-      
-      if (profiles) {
-        profiles.forEach(profile => {
-          if (profile.cursos_favoritos && Array.isArray(profile.cursos_favoritos)) {
-            profile.cursos_favoritos.forEach(favorito => {
-              // Usar o ID diretamente, sem tentar extrair de um formato URL
-              favoritosCount[favorito] = (favoritosCount[favorito] || 0) + 1;
-            });
-          }
-        });
-      }
-      
-      console.log("Contagem de favoritos para cursos:", favoritosCount);
-      
-      // Formatar os cursos e calcular contagens
-      const cursosPromises = (data || []).map(async (item) => {
-        // Usar a função melhorada para calcular o total de questões
-        const totalQuestoes = await calcularTotalQuestoesCurso(item);
-        
-        return {
-          id: item.id,
-          titulo: item.titulo,
-          descricao: item.descricao || "",
-          disciplinasIds: item.disciplinas_ids || [],
-          aulasIds: item.aulas_ids || [],
-          topicosIds: item.topicos_ids || [],
-          questoesIds: Array(totalQuestoes).fill("").map((_, i) => String(i)), // Criar array com o tamanho correto
-          favoritos: favoritosCount[item.id] || 0,
-          informacoesCurso: item.informacoes_curso || ""
-        };
-      });
-      
-      const formattedCursos: Curso[] = await Promise.all(cursosPromises);
-      
-      setCursos(formattedCursos);
+
+      const favoritos: Record<string, number> = {};
+      (perfis || []).forEach((p) => (p.cursos_favoritos || []).forEach((id: string) => (favoritos[id] = (favoritos[id] || 0) + 1)));
+
+      // Questões dos tópicos, numa consulta em lote
+      const idsTopicos = unicos((data || []).flatMap((c) => c.topicos_ids || []));
+      const topicos = idsTopicos.length ? await buscarEmLotes("topicos", "id, questoes_ids", idsTopicos) : [];
+      const questoesTopico = new Map(topicos.map((t) => [t.id, (t.questoes_ids || []) as string[]]));
+
+      setDisciplinas(
+        (discs || []).map((d) => ({ id: d.id, titulo: d.titulo, banca: d.banca, aulas: (d.aulas_ids || []).length }))
+      );
+      setCursos(
+        (data || []).map((c) => {
+          const topicosIds: string[] = c.topicos_ids || [];
+          const questoes = unicos([...(c.questoes_ids || []), ...topicosIds.flatMap((id) => questoesTopico.get(id) || [])]);
+          return {
+            id: c.id,
+            titulo: c.titulo,
+            descricao: c.descricao || "",
+            disciplinasIds: c.disciplinas_ids || [],
+            aulasIds: c.aulas_ids || [],
+            topicosIds,
+            questoesIds: c.questoes_ids || [],
+            totalQuestoes: questoes.length,
+            favoritos: favoritos[c.id] || 0,
+            informacoesCurso: c.informacoes_curso || "",
+            criadoEm: c.created_at,
+          };
+        })
+      );
     } catch (error) {
       console.error("Erro ao buscar cursos:", error);
       toast.error("Erro ao carregar os cursos");
     } finally {
       setLoading(false);
     }
-  };
-
-  // Carregar dados ao montar o componente
-  useEffect(() => {
-    fetchCursos();
   }, []);
 
-  // Função para filtrar cursos
-  const cursosFiltrados = cursos.filter((curso) => {
-    const matchesTitulo = curso.titulo.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDescricao = curso.descricao.toLowerCase().includes(descricaoFiltro.toLowerCase());
-    
-    return matchesTitulo && matchesDescricao;
-  });
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
 
-  // Funções para abrir modais
-  const openEditModal = (curso: Curso) => {
-    setCurrentCurso(curso);
-    setIsOpenEdit(true);
-  };
+  const nomesDisciplinas = useMemo(() => new Map(disciplinas.map((d) => [d.id, d.titulo])), [disciplinas]);
 
-  const openDeleteModal = (curso: Curso) => {
-    setCurrentCurso(curso);
-    setIsOpenDelete(true);
-  };
+  const base = useMemo(() => {
+    const termo = normalizar(busca.trim());
+    if (!termo) return cursos;
+    return cursos.filter((c) =>
+      normalizar(`${c.titulo} ${c.descricao} ${c.disciplinasIds.map((id) => nomesDisciplinas.get(id) || "").join(" ")} ${c.id}`).includes(termo)
+    );
+  }, [cursos, busca, nomesDisciplinas]);
 
-  // Função para salvar curso editado
-  const handleSaveCurso = async (updatedCurso: Curso) => {
+  const filtrados = useMemo(() => {
+    const lista = base.filter((c) => aba === "todos" || c.disciplinasIds.length === 0);
+    if (ordem === "titulo") return [...lista].sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR"));
+    if (ordem === "favoritos") return [...lista].sort((a, b) => b.favoritos - a.favoritos);
+    return lista;
+  }, [base, aba, ordem]);
+
+  useEffect(() => setPagina(1), [busca, aba, ordem]);
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const visiveis = filtrados.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA);
+
+  const salvar = async (dados: DadosCurso): Promise<boolean> => {
+    const curso = dialogo?.curso;
     try {
-      console.log("Salvando curso atualizado:", updatedCurso);
-      
-      const { error } = await supabase
-        .from('cursos')
-        .update({ 
-          titulo: updatedCurso.titulo,
-          descricao: updatedCurso.descricao,
-          informacoes_curso: updatedCurso.informacoesCurso,
-          disciplinas_ids: updatedCurso.disciplinasIds
-        })
-        .eq('id', updatedCurso.id);
-      
-      if (error) {
-        console.error("Erro do Supabase:", error);
-        throw error;
+      const mudou = !curso || curso.disciplinasIds.join(",") !== dados.disciplinasIds.join(",");
+      const composicao = mudou ? await calcularComposicaoCurso(dados.disciplinasIds) : null;
+      const campos = {
+        titulo: dados.titulo,
+        descricao: dados.cargo,
+        informacoes_curso: dados.informacoes,
+        ...(composicao || {}),
+      };
+
+      if (curso) {
+        const { error } = await supabase.from("cursos").update(campos).eq("id", curso.id);
+        if (error) throw error;
+        toast.success(
+          composicao
+            ? `Curso atualizado: ${composicao.aulas_ids.length} aulas, ${composicao.topicos_ids.length} tópicos e ${composicao.questoes_ids.length} questões.`
+            : "Curso atualizado"
+        );
+      } else {
+        const { error } = await supabase.from("cursos").insert([campos]);
+        if (error) throw error;
+        toast.success(
+          composicao && composicao.disciplinas_ids.length
+            ? `Curso criado com ${composicao.disciplinas_ids.length} disciplinas, ${composicao.aulas_ids.length} aulas e ${composicao.questoes_ids.length} questões.`
+            : "Curso criado. Adicione disciplinas quando quiser."
+        );
       }
-      
-      // Atualizar o curso na lista com o novo número de questões calculado
-      const totalQuestoes = await calcularTotalQuestoesCurso({
-        ...updatedCurso,
-        disciplinas_ids: updatedCurso.disciplinasIds,
-        topicos_ids: updatedCurso.topicosIds,
-        questoes_ids: updatedCurso.questoesIds
-      });
-      
-      setCursos(cursos.map(curso => 
-        curso.id === updatedCurso.id ? {...updatedCurso, totalQuestoes} : curso
-      ));
-      
-      setIsOpenEdit(false);
-      toast.success("Curso atualizado com sucesso!");
+      carregar();
+      return true;
     } catch (error) {
-      console.error("Erro ao atualizar curso:", error);
-      toast.error("Erro ao atualizar o curso");
+      console.error("Erro ao salvar curso:", error);
+      toast.error("Erro ao salvar o curso");
+      return false;
     }
   };
 
-  // Função para excluir curso
-  const handleDeleteCurso = async (id: string) => {
+  const excluir = async () => {
+    if (!excluindo) return;
     try {
-      const { error } = await supabase
-        .from('cursos')
-        .delete()
-        .eq('id', id);
-      
+      const { error } = await supabase.from("cursos").delete().eq("id", excluindo.id);
       if (error) throw error;
-      
-      // Remover o curso da lista
-      setCursos(cursos.filter(curso => curso.id !== id));
-      setIsOpenDelete(false);
-      toast.success("Curso excluído com sucesso!");
+      setCursos((l) => l.filter((c) => c.id !== excluindo.id));
+      toast.success("Curso excluído");
     } catch (error) {
       console.error("Erro ao excluir curso:", error);
       toast.error("Erro ao excluir o curso");
     }
   };
 
-  // Função para adicionar curso (com as disciplinas escolhidas no formulário)
-  const handleAdicionarCurso = async (disciplinasIds: string[]): Promise<boolean> => {
-    if (!tituloNovoCurso.trim()) {
-      toast.error("O título do curso é obrigatório");
-      return false;
-    }
-    
-    try {
-      const composicao = await calcularComposicaoCurso(disciplinasIds);
-      const { error } = await supabase
-        .from('cursos')
-        .insert([{
-          titulo: tituloNovoCurso.trim(),
-          descricao: descricaoNovoCurso,
-          informacoes_curso: informacoesCurso,
-          ...composicao,
-        }])
-        .select();
-      
-      if (error) throw error;
-      
-      toast.success(
-        composicao.disciplinas_ids.length > 0
-          ? `Curso criado com ${composicao.disciplinas_ids.length} disciplinas, ${composicao.aulas_ids.length} aulas e ${composicao.questoes_ids.length} questões.`
-          : "Curso criado. Adicione disciplinas pela edição ou pela página de Disciplinas."
-      );
-      fetchCursos();
-      
-      // Resetar campos
-      setTituloNovoCurso("");
-      setDescricaoNovoCurso("");
-      setInformacoesCurso("");
-      return true;
-    } catch (error) {
-      console.error("Erro ao adicionar curso:", error);
-      toast.error("Erro ao adicionar o curso");
-      return false;
-    }
-  };
+  const filtroAtivo = !!busca || aba !== "todos";
+  const semDisciplinas = base.filter((c) => c.disciplinasIds.length === 0).length;
 
   return (
     <div className="space-y-4">
       <AdminPageHeader
         titulo="Cursos"
-        descricao="Cursos reúnem disciplinas. Aulas, tópicos e questões entram automaticamente."
+        descricao="Cursos reúnem disciplinas. Aulas, tópicos e questões entram automaticamente, na ordem das disciplinas."
+        acoes={
+          <>
+            <Button variant="outline" onClick={carregar} disabled={loading}>
+              <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+              Atualizar
+            </Button>
+            <Button onClick={() => setDialogo({ curso: null })} className={botaoPrimario}>
+              <Plus className="mr-2 h-4 w-4" />
+              Novo curso
+            </Button>
+          </>
+        }
       >
         <FluxoConteudo atual="cursos" />
       </AdminPageHeader>
-      
-      {/* Componente de filtro */}
-      <CursosFilter 
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        descricaoFiltro={descricaoFiltro}
-        setDescricaoFiltro={setDescricaoFiltro}
+
+      <PainelListagem
+        barra={
+          <>
+            <AbasContagem<Aba>
+              abas={[
+                { id: "todos", label: "Todos", n: base.length },
+                { id: "sem-disciplinas", label: "Sem disciplinas", n: semDisciplinas },
+              ]}
+              ativa={aba}
+              onChange={setAba}
+            />
+            <FiltrosBarra>
+              <select value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)} className={selectClasse} aria-label="Ordenar">
+                <option value="recentes">Mais recentes</option>
+                <option value="titulo">Título (A–Z)</option>
+                <option value="favoritos">Mais favoritados</option>
+              </select>
+              <CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar por título, cargo ou disciplina" rotulo="Buscar cursos" />
+            </FiltrosBarra>
+          </>
+        }
+        rodape={
+          !loading && (
+            <RodapePaginacao pagina={paginaAtual} porPagina={POR_PAGINA} total={filtrados.length} onPagina={setPagina} singular="curso" plural="cursos" />
+          )
+        }
+      >
+        {loading ? (
+          <ListaEsqueleto />
+        ) : (
+          <CursosTable
+            cursos={visiveis}
+            nomesDisciplinas={nomesDisciplinas}
+            onEditar={(c) => setDialogo({ curso: c })}
+            onExcluir={setExcluindo}
+            vazio={
+              <EstadoVazio
+                icone={FolderOpen}
+                titulo={filtroAtivo ? "Nenhum curso encontrado" : "Nenhum curso cadastrado"}
+                texto={filtroAtivo ? "Tente outra busca ou outra aba." : "Crie um curso aqui ou marque disciplinas em Disciplinas."}
+                acao={
+                  filtroAtivo ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setBusca("");
+                        setAba("todos");
+                      }}
+                    >
+                      Limpar filtros
+                    </Button>
+                  ) : (
+                    <Button size="sm" onClick={() => setDialogo({ curso: null })} className={botaoPrimario}>
+                      <Plus className="mr-1.5 h-4 w-4" /> Novo curso
+                    </Button>
+                  )
+                }
+              />
+            }
+          />
+        )}
+      </PainelListagem>
+
+      <CursoDialog
+        aberto={!!dialogo}
+        curso={dialogo?.curso || null}
+        disciplinas={disciplinas}
+        carregandoDisciplinas={loading}
+        onFechar={() => setDialogo(null)}
+        onSalvar={salvar}
       />
-      
-      {/* Tabela de cursos */}
-      {loading ? (
-        <div className="flex justify-center items-center py-10">
-          <Spinner size="lg" />
-        </div>
-      ) : (
-        <CursosTable 
-          cursos={cursosFiltrados}
-          openEditModal={openEditModal}
-          openDeleteModal={openDeleteModal}
-        />
-      )}
-      
-      {/* Componente para adicionar curso */}
-      <AdicionarCurso 
-        tituloNovoCurso={tituloNovoCurso}
-        setTituloNovoCurso={setTituloNovoCurso}
-        descricaoNovoCurso={descricaoNovoCurso}
-        setDescricaoNovoCurso={setDescricaoNovoCurso}
-        informacoesCurso={informacoesCurso}
-        setInformacoesCurso={setInformacoesCurso}
-        handleAdicionarCurso={handleAdicionarCurso}
-        temDisciplinasSelecionadas={true}
-      />
-      
-      {/* Modais de edição e exclusão */}
-      <EditCursoModal 
-        isOpen={isOpenEdit}
-        onClose={() => setIsOpenEdit(false)}
-        curso={currentCurso}
-        onSave={handleSaveCurso}
-      />
-      
-      <DeleteCursoModal 
-        isOpen={isOpenDelete}
-        onClose={() => setIsOpenDelete(false)}
-        curso={currentCurso}
-        onDelete={handleDeleteCurso}
+
+      <ConfirmarAcao
+        aberto={!!excluindo}
+        onFechar={() => setExcluindo(null)}
+        titulo={`Excluir o curso "${excluindo?.titulo || ""}"?`}
+        descricao="Essa ação não pode ser desfeita. As disciplinas, aulas, tópicos e questões continuam cadastrados."
+        detalhes={[
+          "O curso deixa de aparecer no site, inclusive para quem o favoritou.",
+          excluindo?.favoritos ? `${excluindo.favoritos} ${excluindo.favoritos === 1 ? "aluno favoritou" : "alunos favoritaram"} este curso.` : "",
+        ].filter(Boolean)}
+        textoConfirmar="Excluir curso"
+        onConfirmar={excluir}
       />
     </div>
   );

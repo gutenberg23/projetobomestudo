@@ -29,8 +29,6 @@ export const useTopicosActions = (
 
   // Funções para abrir modais
   const openEditModal = (topico: Topico) => {
-    console.log('Abrindo modal de edição com tópico:', topico);
-    console.log('Propriedade abrirEmNovaGuia:', topico.abrirEmNovaGuia);
     setCurrentTopico(topico);
     setIsOpenEdit(true);
   };
@@ -170,9 +168,6 @@ export const useTopicosActions = (
       // Converter o Set para Array
       const questoesIds = Array.from(questoesIdsSet);
       
-      console.log("Adicionando aula com tópicos:", topicosSelecionados);
-      console.log("Questões únicas encontradas:", questoesIds);
-      console.log("Total de questões:", questoesIds.length);
       
       // Cadastrar a aula no banco de dados usando o método insert correto
       const { data: _, error } = await supabase

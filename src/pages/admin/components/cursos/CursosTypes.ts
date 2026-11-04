@@ -1,52 +1,14 @@
-
 export interface Curso {
   id: string;
   titulo: string;
+  /** Cargo */
   descricao: string;
   disciplinasIds: string[];
-  aulasIds?: string[];
-  topicosIds?: string[];
-  questoesIds?: string[];
-  selecionada?: boolean;
-  favoritos?: number;
-  informacoesCurso?: string;
-}
-
-export interface CursosFilterProps {
-  searchTerm: string;
-  setSearchTerm: (term: string) => void;
-  descricaoFiltro: string;
-  setDescricaoFiltro: (descricao: string) => void;
-}
-
-export interface CursosTableProps {
-  cursos: Curso[];
-  openEditModal: (curso: Curso) => void;
-  openDeleteModal: (curso: Curso) => void;
-}
-
-export interface CursosPageProps {
-  tituloNovoCurso: string;
-  setTituloNovoCurso: (titulo: string) => void;
-  descricaoNovoCurso: string;
-  setDescricaoNovoCurso: (descricao: string) => void;
+  aulasIds: string[];
+  topicosIds: string[];
+  questoesIds: string[];
+  totalQuestoes: number;
+  favoritos: number;
   informacoesCurso: string;
-  setInformacoesCurso: (informacoes: string) => void;
-  /** Recebe as disciplinas escolhidas no formulário (pode ser vazio) */
-  handleAdicionarCurso: (disciplinasIds: string[]) => Promise<boolean> | boolean | void;
-  temDisciplinasSelecionadas: boolean;
-}
-
-export interface EditCursoModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  curso: Curso | null;
-  onSave: (curso: Curso) => void;
-}
-
-export interface DeleteCursoModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  curso: Curso | null;
-  onDelete: (id: string) => void;
+  criadoEm?: string;
 }
