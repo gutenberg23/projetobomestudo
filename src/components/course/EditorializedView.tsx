@@ -66,7 +66,7 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
   const [isSaving, setIsSaving] = useState<boolean>(false);
   
   // Usar o hook useSubjectImportanceStats para obter dados atualizados
-  const { userStats, topicUserStats, loading: statsLoading } = useSubjectImportanceStats(subjects, user?.id);
+  const { importanceStats, userStats, topicUserStats, loading: statsLoading } = useSubjectImportanceStats(subjects, user?.id);
 
   // Combinar os dados do useEditorializedData com os dados atualizados do useSubjectImportanceStats
   const updatedSubjects = subjects.map(subject => {
@@ -406,6 +406,9 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId, 
               isEditMode={isEditMode}
               onSortChange={handleSortChange}
               sortBy={sortBy} // Passando a informação de ordenação
+              importanceStats={importanceStats}
+              userStats={userStats}
+              topicUserStats={topicUserStats}
             />
           ))}
           
