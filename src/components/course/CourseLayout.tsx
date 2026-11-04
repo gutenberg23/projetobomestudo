@@ -4,7 +4,7 @@ import { Header } from "../layout/Header";
 import { Footer } from "../layout/Footer";
 import { CourseHeader } from "./CourseHeader";
 import { CourseNavigation } from "./CourseNavigation";
-import { SubjectsList } from "./SubjectsList";
+import { DisciplinasSala } from "./disciplinas/DisciplinasSala";
 import { EditorializedView } from "./EditorializedView";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
@@ -142,7 +142,7 @@ export const CourseLayout = () => {
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center relative">
             <div className="max-w-[1400px] w-full flex gap-5 py-0 flex-col xl:flex-row px-[10px] md:px-[32px]">
               <div className="flex-1">
-                <SubjectsList courseId={courseId} onSubjectsCountChange={handleSubjectsCountChange} />
+                <DisciplinasSala courseId={courseId} onSubjectsCountChange={handleSubjectsCountChange} />
               </div>
             </div>
           </div>
