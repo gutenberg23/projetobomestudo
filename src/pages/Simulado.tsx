@@ -376,68 +376,43 @@ const Simulado = () => {
     if (!simulado || !simuladoId) return;
     try {
       setFinalizando(true);
-      const {
-        data: { user: atualUser },
-      } = await supabase.auth.getUser();
-      if (!atualUser) {
+      if (!user) {
         toast.error("Você precisa estar logado para finalizar o simulado");
         return;
       }
-      const ids = simulado.questoes_ids || [];
-
-      // Última resposta do aluno em cada questão do simulado
-      const { data: respostasData, error: respostasError } = await supabase
-        .from("respostas_alunos")
-        .select("questao_id, opcao_id, created_at")
-        .eq("aluno_id", atualUser.id)
-        .in("questao_id", ids)
-        .order("created_at", { ascending: true });
-      if (respostasError) throw respostasError;
-      const escolhidas: Record<string, string> = {};
-      (respostasData || []).forEach((r) => (escolhidas[r.questao_id] = r.opcao_id));
-
-      // Gabarito conferido no banco
-      const { data: questionsData, error: questionsError } = await supabase.from("questoes").select("id, options").in("id", ids);
-      if (questionsError) throw questionsError;
-
-      let corretas = 0;
-      (questionsData || []).forEach((q) => {
-        const escolhida = escolhidas[q.id];
-        if (!escolhida) return;
-        const certa = parseOptions(q.options).find((opt) => opt.isCorrect);
-        if (certa && certa.id === escolhida) corretas++;
-      });
-
-      const totalQuestoes = ids.length;
-      const percentual = totalQuestoes > 0 ? Math.round((corretas / totalQuestoes) * 100) : 0;
-
-      const { error: resultError } = await (supabase as ClienteComResultados).from("user_simulado_results").upsert(
-        {
-          user_id: atualUser.id,
-          simulado_id: simuladoId,
-          // Colunas da tabela: acertos e erros (questões em branco contam como erro)
-          acertos: corretas,
-          erros: Math.max(0, totalQuestoes - corretas),
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,simulado_id" }
+      // A nota é calculada e gravada no banco (função finalizar_simulado), com o gabarito oficial
+      type RetornoFinalizar = { acertos: number; erros: number; total: number; respondidas: number };
+      const { data, error } = await (supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{ data: RetornoFinalizar[] | RetornoFinalizar | null; error: { code?: string; message: string } | null }>)(
+        "finalizar_simulado",
+        { p_simulado_id: simuladoId }
       );
-      if (resultError) throw resultError;
+      if (error) {
+        if (error.code === "PGRST202" || error.code === "42883") {
+          toast.error("O banco ainda não tem a função finalizar_simulado. Aplique a migration 20251115000000_finalizar_simulado.sql.");
+          return;
+        }
+        throw error;
+      }
+      const linha = (Array.isArray(data) ? data[0] : data) as RetornoFinalizar | null;
+      if (!linha) throw new Error("Resposta vazia ao finalizar o simulado");
+      const percentual = linha.total > 0 ? Math.round((linha.acertos / linha.total) * 100) : 0;
 
       await ActivityLogger.logActivity({
         event_type: "exam_complete",
         resource_id: simuladoId,
         resource_type: "simulado",
         description: `Finalizou o simulado ${titulo}`,
-        metadata: { correctAnswers: corretas, totalQuestions: totalQuestoes, percentage: percentual },
+        metadata: { correctAnswers: linha.acertos, totalQuestions: linha.total, percentage: percentual },
       });
 
-      const respondidasFinal = ids.filter((id) => escolhidas[id]).length;
       const final: Resultado = {
-        acertos: corretas,
-        erros: Math.max(0, totalQuestoes - corretas),
-        total: totalQuestoes,
-        respondidas: respondidasFinal,
+        acertos: linha.acertos,
+        erros: linha.erros,
+        total: linha.total,
+        respondidas: linha.respondidas,
         segundos: cronometro.segundos,
         data: new Date().toISOString(),
       };
