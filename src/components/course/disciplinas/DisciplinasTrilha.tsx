@@ -115,8 +115,12 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
   return (
     <div className="space-y-5 pb-10 pt-5">
       <CabecalhoAba
-        titulo="Disciplinas"
-        descricao="Assista às aulas, marque os tópicos que concluir e acompanhe seu avanço em cada disciplina."
+        titulo={isCurso ? "Disciplinas" : "Disciplina"}
+        descricao={
+          isCurso
+            ? "Assista às aulas, marque os tópicos que concluir e acompanhe seu avanço em cada disciplina."
+            : "Assista às aulas, marque os tópicos que concluir e acompanhe seu avanço na disciplina."
+        }
       />
 
       {/* Resumo + continuar */}
@@ -126,7 +130,7 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
             <span className="text-base">{progresso.totais.percentual}%</span>
           </AnelProgresso>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Seu progresso no curso</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Seu progresso {isCurso ? "no curso" : "na disciplina"}</p>
             <p className="mt-1 text-lg font-bold text-slate-900">
               {progresso.totais.feitos} <span className="font-medium text-slate-400">de {progresso.totais.total} tópicos</span>
             </p>

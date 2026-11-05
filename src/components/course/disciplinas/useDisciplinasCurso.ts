@@ -18,6 +18,10 @@ export interface TopicoCurso {
   resumoAudioUrl: string[];
   cadernoQuestoesUrl: string | null;
   temQuestoes: boolean;
+  /** Disciplina das questões ligadas ao tópico (texto livre do admin de tópicos) */
+  disciplinaQuestoes: string | null;
+  /** IDs das questões ligadas ao tópico */
+  questoesIds: string[];
 }
 
 export interface AulaCurso {
@@ -63,6 +67,16 @@ const listaDeUrls = (v: unknown): string[] =>
 const temItens = (v: unknown) =>
   Array.isArray(v) ? v.length > 0 : typeof v === "string" ? v.trim() !== "" && v !== "{}" : !!v && typeof v === "object" && Object.keys(v as object).length > 0;
 
+/** questoes_ids pode vir como array ou como texto de array do Postgres ("{a,b}"). */
+const listaDeIds = (v: unknown): string[] => {
+  if (Array.isArray(v)) return v.map(String).filter(Boolean);
+  if (typeof v === "string") {
+    const t = v.trim().replace(/^\{|\}$/g, "").replace(/^\[|\]$/g, "");
+    return t ? t.split(",").map((s) => s.trim().replace(/^"|"$/g, "")).filter(Boolean) : [];
+  }
+  return [];
+};
+
 const paraTopico = (t: Linha): TopicoCurso => ({
   id: t.id,
   nome: t.nome || "Tópico sem título",
@@ -77,6 +91,8 @@ const paraTopico = (t: Linha): TopicoCurso => ({
   resumoAudioUrl: listaDeUrls(t.resumo_audio_url),
   cadernoQuestoesUrl: t.caderno_questoes_url || null,
   temQuestoes: temItens(t.questoes_ids),
+  disciplinaQuestoes: typeof t.disciplina === "string" && t.disciplina.trim() ? t.disciplina.trim() : null,
+  questoesIds: listaDeIds(t.questoes_ids),
 });
 
 export interface DadosDisciplinasCurso {
