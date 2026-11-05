@@ -1,93 +1,130 @@
-import { useState, useEffect } from "react";
-import { X, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { ArrowRight, X } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Popup as PopupType } from "@/types/popup";
 import { sanitizeHtml } from "@/utils/sanitize-html";
+import { cn } from "@/lib/utils";
+
+/** Texto simples vira parágrafos; HTML é usado como está (depois de limpo). */
+const paraHtml = (conteudo: string) => {
+  if (/<[a-z][\s\S]*>/i.test(conteudo)) return conteudo;
+  const esc = conteudo.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return esc
+    .split(/\n{2,}/)
+    .map((p) => `<p>${p.replace(/\n/g, "<br>")}</p>`)
+    .join("");
+};
+
+const ehExterno = (url: string) => /^https?:\/\//i.test(url) && !url.includes(window.location.host);
+
+interface CartaoPopupProps {
+  popup: Pick<PopupType, "titulo" | "conteudo" | "imagem_url" | "link_destino">;
+  /** Chamado ao clicar no botão/link (para registrar o fechamento) */
+  onAbrirLink?: () => void;
+  naoMostrar?: boolean;
+  onNaoMostrar?: (v: boolean) => void;
+  onFechar?: () => void;
+  /** Prévia no admin: sem Dialog e sem links clicáveis */
+  previa?: boolean;
+}
+
+/** Corpo visual do popup (usado no site e na prévia do admin). */
+export const CartaoPopup = ({ popup, onAbrirLink, naoMostrar, onNaoMostrar, onFechar, previa }: CartaoPopupProps) => {
+  const link = popup.link_destino || "";
+  const externo = !!link && !previa && ehExterno(link);
+  const Titulo = previa ? "h3" : DialogTitle;
+  const Descricao = previa ? "div" : DialogDescription;
+  const imagem = popup.imagem_url ? (
+    <img src={popup.imagem_url} alt="" className="block max-h-[55vh] w-full bg-slate-100 object-cover" />
+  ) : null;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-white">
+      {onFechar && (
+        <button
+          type="button"
+          onClick={onFechar}
+          aria-label="Fechar"
+          className={cn(
+            "absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#5f2ebe]/50",
+            imagem ? "bg-black/45 text-white hover:bg-black/60" : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          )}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+
+      {imagem &&
+        (link && !previa ? (
+          <a href={link} target={externo ? "_blank" : undefined} rel={externo ? "noopener noreferrer" : undefined} onClick={onAbrirLink} tabIndex={-1}>
+            {imagem}
+          </a>
+        ) : (
+          imagem
+        ))}
+
+      <div className="space-y-3 px-5 pb-5 pt-4 sm:px-6">
+        <Titulo className={cn("pr-8 text-lg font-bold leading-snug text-slate-900", imagem && "pr-0")}>{popup.titulo || "Título do popup"}</Titulo>
+        {popup.conteudo ? (
+          <Descricao
+            className="prose prose-sm max-w-none text-slate-600 prose-a:text-[#5f2ebe] prose-p:my-1.5"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(paraHtml(popup.conteudo)) }}
+          />
+        ) : (
+          !previa && <Descricao className="sr-only">{popup.titulo}</Descricao>
+        )}
+
+        {link && (
+          <a
+            href={previa ? undefined : link}
+            target={externo ? "_blank" : undefined}
+            rel={externo ? "noopener noreferrer" : undefined}
+            onClick={onAbrirLink}
+            className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#ea2be2] text-sm font-semibold text-white transition-colors hover:bg-[#d029d5]"
+          >
+            Saiba mais
+            <ArrowRight className="h-4 w-4" />
+          </a>
+        )}
+
+        {onNaoMostrar && (
+          <label className="flex cursor-pointer items-center gap-2 pt-1 text-xs text-slate-500">
+            <input
+              type="checkbox"
+              checked={!!naoMostrar}
+              onChange={(e) => onNaoMostrar(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-slate-300 accent-[#5f2ebe]"
+            />
+            Não mostrar novamente
+          </label>
+        )}
+      </div>
+    </div>
+  );
+};
 
 interface PopupProps {
   popup: PopupType;
-  onClose: () => void;
-  onDismiss: (popupId: string) => void;
+  onFechar: (paraSempre: boolean) => void;
 }
 
-const Popup = ({ popup, onClose, onDismiss }: PopupProps) => {
-  const [dontShowAgain, setDontShowAgain] = useState(false);
-
-  const handleDismiss = () => {
-    if (dontShowAgain && popup.id) {
-      onDismiss(popup.id);
-    }
-    onClose();
-  };
-
-  const handleLinkClick = () => {
-    if (popup.link_destino) {
-      window.open(popup.link_destino, "_blank");
-    }
-  };
+/** Popup do site, em janela modal. */
+const Popup = ({ popup, onFechar }: PopupProps) => {
+  const [naoMostrar, setNaoMostrar] = useState(false);
+  const fechar = () => onFechar(naoMostrar);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-lg font-semibold">{popup.titulo}</h3>
-          <button
-            onClick={handleDismiss}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-        
-        <div className="p-4">
-          {popup.imagem_url && (
-            <div className="mb-4">
-              <img 
-                src={popup.imagem_url} 
-                alt={popup.titulo}
-                className="w-full rounded-md"
-              />
-            </div>
-          )}
-          
-          {popup.conteudo && (
-            <div 
-              className="prose prose-sm max-w-none mb-4"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(popup.conteudo) }}
-            />
-          )}
-          
-          {popup.link_destino && (
-            <Button 
-              onClick={handleLinkClick}
-              className="w-full mb-4 flex items-center justify-center gap-2"
-            >
-              Saiba mais
-              <ExternalLink className="h-4 w-4" />
-            </Button>
-          )}
-          
-          <div className="flex items-center space-x-2 mb-4">
-            <Checkbox
-              id="dont-show-again"
-              checked={dontShowAgain}
-              onCheckedChange={(checked) => setDontShowAgain(checked as boolean)}
-            />
-            <Label htmlFor="dont-show-again" className="text-sm">
-              Não mostrar novamente
-            </Label>
-          </div>
-        </div>
-        
-        <div className="flex justify-end p-4 border-t">
-          <Button onClick={handleDismiss}>
-            Fechar
-          </Button>
-        </div>
-      </div>
-    </div>
+    <Dialog open onOpenChange={(o) => !o && fechar()}>
+      <DialogContent className="w-[calc(100%-2rem)] max-h-[90vh] max-w-md gap-0 overflow-y-auto rounded-2xl border-0 p-0 shadow-2xl [&>button:last-child]:hidden">
+        <CartaoPopup
+          popup={popup}
+          naoMostrar={naoMostrar}
+          onNaoMostrar={setNaoMostrar}
+          onFechar={fechar}
+          onAbrirLink={() => onFechar(naoMostrar)}
+        />
+      </DialogContent>
+    </Dialog>
   );
 };
 

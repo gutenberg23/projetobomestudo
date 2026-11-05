@@ -488,7 +488,7 @@ const Questions = () => {
                           />
                         </div>
                         {modo === "lista" && (i + 1) % 5 === 0 && i < questoes.length - 1 && (
-                          <AdBannerList position="questions_list" interval={5} itemCount={questoes.length} className="rounded-lg" />
+                          <AdBannerList position="questions_list" indice={(i + 1) / 5 - 1} />
                         )}
                       </React.Fragment>
                     ))}

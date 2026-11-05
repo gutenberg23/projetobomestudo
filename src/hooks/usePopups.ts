@@ -1,95 +1,80 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Popup } from "@/types/popup";
+import { PAGINA_TODAS } from "@/components/popups/paginas";
 
-interface PopupDB {
-  id: string;
-  created_at: string | null;
-  updated_at: string | null;
-  titulo: string;
-  conteudo: string | null;
-  imagem_url: string | null;
-  link_destino: string | null;
-  data_inicio: string;
-  data_fim: string;
-  pagina: string;
-  ativo: boolean | null;
-  ordem: number | null;
-}
+const CHAVE_DISPENSADOS = "dismissedPopups"; // "não mostrar novamente" (para sempre neste navegador)
+const CHAVE_SESSAO = "popupsFechadosSessao"; // fechados nesta visita
 
-export const usePopups = (currentPage: string) => {
+const ler = (armazenamento: Storage | undefined, chave: string): string[] => {
+  try {
+    const v = JSON.parse(armazenamento?.getItem(chave) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+};
+
+const gravar = (armazenamento: Storage | undefined, chave: string, id: string) => {
+  try {
+    const lista = ler(armazenamento, chave);
+    if (!lista.includes(id)) armazenamento?.setItem(chave, JSON.stringify([...lista, id]));
+  } catch {
+    /* navegação privada etc. */
+  }
+};
+
+const local = () => (typeof window !== "undefined" ? window.localStorage : undefined);
+const sessao = () => (typeof window !== "undefined" ? window.sessionStorage : undefined);
+
+/** Está ativo e dentro do período. */
+export const popupNoAr = (p: Pick<Popup, "ativo" | "data_inicio" | "data_fim">, agora = Date.now()) =>
+  p.ativo === true && new Date(p.data_inicio).getTime() <= agora && new Date(p.data_fim).getTime() >= agora;
+
+/**
+ * Popup a mostrar na página atual: o de menor ordem entre os que estão no ar
+ * para esta página ou para "Todas as páginas" e que o visitante ainda não fechou.
+ * Fechar esconde o popup até o fim da visita; "Não mostrar novamente" esconde de vez.
+ */
+export const usePopups = (pagina: string | null) => {
   const [popup, setPopup] = useState<Popup | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchActivePopup();
-  }, [currentPage]);
-
-  const fetchActivePopup = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Verificar se o usuário já optou por não mostrar novamente
-      const dismissedPopups = JSON.parse(localStorage.getItem('dismissedPopups') || '[]');
-      
-      const now = new Date().toISOString();
-      
-      // Buscar popups ativos para a página atual
+    let vivo = true;
+    setPopup(null);
+    if (!pagina) return;
+    (async () => {
+      const agora = new Date().toISOString();
       const { data, error } = await supabase
         .from("popups")
         .select("*")
-        .eq("pagina", currentPage)
+        .in("pagina", [pagina, PAGINA_TODAS])
         .eq("ativo", true)
-        .lte("data_inicio", now)
-        .gte("data_fim", now)
+        .lte("data_inicio", agora)
+        .gte("data_fim", agora)
         .order("ordem", { ascending: true })
-        .limit(1)
-        .single();
-
-      if (error && error.code !== "PGRST116") { // PGRST116 é o código para "nenhum registro encontrado"
-        throw error;
+        .order("created_at", { ascending: false });
+      if (!vivo) return;
+      if (error) {
+        console.error("Erro ao buscar popup:", error);
+        return;
       }
-      
-      // Verificar se o popup já foi dispensado
-      if (data && !dismissedPopups.includes(data.id)) {
-        // Converter o tipo do popup para corresponder à interface esperada
-        const convertedPopup: Popup = {
-          id: data.id,
-          titulo: data.titulo,
-          conteudo: data.conteudo !== null ? data.conteudo : undefined,
-          imagem_url: data.imagem_url !== null ? data.imagem_url : undefined,
-          link_destino: data.link_destino !== null ? data.link_destino : undefined,
-          data_inicio: data.data_inicio,
-          data_fim: data.data_fim,
-          pagina: data.pagina,
-          ativo: data.ativo !== null ? data.ativo : undefined,
-          ordem: data.ordem !== null ? data.ordem : undefined,
-          created_at: data.created_at !== null ? data.created_at : undefined,
-          updated_at: data.updated_at !== null ? data.updated_at : undefined
-        };
-        
-        setPopup(convertedPopup);
-      } else {
-        setPopup(null);
-      }
-    } catch (err) {
-      console.error("Erro ao buscar popup ativo:", err);
-      setError("Falha ao carregar popup");
-    } finally {
-      setLoading(false);
-    }
-  };
+      const escondidos = new Set([...ler(local(), CHAVE_DISPENSADOS), ...ler(sessao(), CHAVE_SESSAO)]);
+      const lista = (data || []) as Popup[];
+      // Popup específico da página vem antes do "todas" de mesma ordem
+      lista.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0) || Number(a.pagina === PAGINA_TODAS) - Number(b.pagina === PAGINA_TODAS));
+      setPopup(lista.find((p) => p.id && !escondidos.has(p.id)) || null);
+    })();
+    return () => {
+      vivo = false;
+    };
+  }, [pagina]);
 
-  const dismissPopup = (popupId: string) => {
-    // Adicionar o ID do popup à lista de popups dispensados
-    const dismissedPopups = JSON.parse(localStorage.getItem('dismissedPopups') || '[]');
-    dismissedPopups.push(popupId);
-    localStorage.setItem('dismissedPopups', JSON.stringify(dismissedPopups));
-    
+  const fechar = useCallback((id: string, paraSempre: boolean) => {
+    gravar(sessao(), CHAVE_SESSAO, id);
+    if (paraSempre) gravar(local(), CHAVE_DISPENSADOS, id);
     setPopup(null);
-  };
+  }, []);
 
-  return { popup, loading, error, dismissPopup, refetch: fetchActivePopup };
+  return { popup, fechar };
 };
