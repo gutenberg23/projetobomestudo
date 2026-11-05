@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
 import { ActivityLogger } from '@/services/activity-logger';
+import { useAuth } from '@/contexts/AuthContext';
+import { useExigirLogin } from '@/components/auth/LoginObrigatorio';
 import {
   Dialog,
   DialogContent,
@@ -105,6 +107,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const location = useLocation();
   const isSimuladoPage = location.pathname.includes('/simulado');
   const isQuestionsPage = location.pathname.includes('/questions');
+  const { user: usuarioLogado } = useAuth();
+  const exigirLogin = useExigirLogin();
   
   // Verificar se os botões devem estar visíveis
   const shouldShowButtons = !isSimuladoPage || hasAnswered;
@@ -321,7 +325,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       }
     };
     getUserData();
-  }, [question.id]);
+    // Refaz quando a pessoa entra pelo popup de login sem sair da página
+  }, [question.id, usuarioLogado?.id]);
 
   // Buscar contagem de comentários independente de mostrar ou não os comentários
   useEffect(() => {
@@ -554,6 +559,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     if (isSimuladoPage && hasAnswered) {
       return;
     }
+
+    // Na página de questões, visitante precisa entrar para responder
+    if (isQuestionsPage && !usuarioLogado) {
+      exigirLogin({ motivo: "responder questões" });
+      return;
+    }
     
     if (selectedOption !== null) {
       // Verificar se a opção selecionada é a correta
@@ -645,7 +656,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   
   const toggleLike = async (commentId: string) => {
     if (!userId) {
-      toast.error("Você precisa estar logado para curtir comentários.");
+      exigirLogin({ motivo: "curtir comentários" });
       return;
     }
     try {
@@ -832,7 +843,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   const handleSubmitComment = async () => {
     if (comment.trim() === "") return;
     if (!userId) {
-      toast.error("Você precisa estar logado para comentar.");
+      exigirLogin({ motivo: "comentar nas questões" });
       return;
     }
     try {
@@ -1365,7 +1376,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         hasTeacherExplanation={Boolean(question.teacherExplanation)}
         hasAIExplanation={Boolean(question.aiExplanation)}
         addToBookDialog={
-          shouldShowButtons && <Dialog open={openAddToBook} onOpenChange={setOpenAddToBook}>
+          shouldShowButtons && <Dialog open={openAddToBook} onOpenChange={(abrir) => {
+            if (abrir && !usuarioLogado && !exigirLogin({ motivo: "salvar questões nos seus cadernos" })) return;
+            setOpenAddToBook(abrir);
+          }}>
             <DialogTrigger asChild>
               <button className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-full text-gray-600 hover:bg-gray-100 transition-colors">
                 <BookPlus className="w-4 h-4" />

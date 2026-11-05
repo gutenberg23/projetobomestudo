@@ -19,6 +19,7 @@ import { FlashcardsTab, type FocoFlashcards } from "./flashcards/FlashcardsTab";
 import { useFlashcardsCurso } from "./flashcards/useFlashcardsCurso";
 import { EstatisticasTab } from "./estatisticas/EstatisticasTab";
 import { useConteudoAbasCurso } from "./hooks/useConteudoAbasCurso";
+import { AreaComLogin } from "../auth/LoginObrigatorio";
 
 /** Abas que só existem para cursos (uma disciplina avulsa não tem edital, simulados, ciclo nem lei seca). */
 const ABAS_SO_DE_CURSO: CourseTab[] = ['edital', 'simulados', 'ciclo', 'leiseca'];
@@ -195,6 +196,8 @@ export const CourseLayout = () => {
     <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
       <Header />
       <main className="flex-1 w-full">
+        {/* Visitante sem login vê tudo, mas qualquer ação abre o popup de login */}
+        <AreaComLogin motivo="estudar por este curso">
         <CourseHeader courseId={courseId || ''} />
         <div id="abas-curso" className="scroll-mt-2">
           <CourseNavigation
@@ -209,7 +212,7 @@ export const CourseLayout = () => {
             temLeiSeca={temLeiSeca}
           />
         </div>
-        <CourseAdBanner />
+        <div data-livre-sem-login><CourseAdBanner /></div>
         
         {activeTab === 'disciplinas' && config.tabs.showDisciplinasTab && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center relative">
@@ -273,6 +276,7 @@ export const CourseLayout = () => {
             </div>
           </div>
         )}
+        </AreaComLogin>
       </main>
       <Footer />
     </div>

@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { generateFriendlyUrl } from "@/utils/slug-utils";
 import { ActivityLogger } from "@/services/activity-logger";
 import { cn } from "@/lib/utils";
+import { useExigirLogin } from "@/components/auth/LoginObrigatorio";
 
 type Tipo = "cursos" | "disciplinas";
 type Ordem = "az" | "recentes" | "aulas";
@@ -55,6 +56,7 @@ const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um :
 const Explore = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const exigirLogin = useExigirLogin();
   const [params, setParams] = useSearchParams();
   const tipo: Tipo = params.get("tipo") === "disciplinas" ? "disciplinas" : "cursos";
   const termoUrl = params.get("q") || params.get("s") || "";
@@ -211,8 +213,7 @@ const Explore = () => {
 
   const alternarFavorito = async (item: ItemExplorar) => {
     if (!user) {
-      toast.error("Entre na sua conta para favoritar.");
-      navigate("/login");
+      exigirLogin({ motivo: "salvar seus favoritos" });
       return;
     }
     const coluna = item.tipo === "cursos" ? "cursos_favoritos" : "disciplinas_favoritos";
@@ -406,7 +407,20 @@ const Explore = () => {
               <>
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {visiveis.slice(0, limite).map((item) => (
-                    <CartaoItem key={`${item.tipo}-${item.id}`} item={item} onFavoritar={() => alternarFavorito(item)} />
+                    <CartaoItem
+                      key={`${item.tipo}-${item.id}`}
+                      item={item}
+                      onFavoritar={() => alternarFavorito(item)}
+                      onAbrir={(e) => {
+                        // Visitante: mostra o popup e, depois de entrar, abre o curso/disciplina
+                        if (user) return;
+                        e.preventDefault();
+                        exigirLogin({
+                          motivo: item.tipo === "cursos" ? "acessar este curso" : "acessar esta disciplina",
+                          aoEntrar: () => navigate(item.url),
+                        });
+                      }}
+                    />
                   ))}
                 </div>
                 {visiveis.length > limite && (
@@ -430,7 +444,7 @@ const Explore = () => {
   );
 };
 
-const CartaoItem: React.FC<{ item: ItemExplorar; onFavoritar: () => void }> = ({ item, onFavoritar }) => {
+const CartaoItem: React.FC<{ item: ItemExplorar; onFavoritar: () => void; onAbrir: (e: React.MouseEvent) => void }> = ({ item, onFavoritar, onAbrir }) => {
   const Icone = item.tipo === "cursos" ? GraduationCap : BookOpen;
   const detalhes =
     item.tipo === "cursos"
@@ -448,7 +462,7 @@ const CartaoItem: React.FC<{ item: ItemExplorar; onFavoritar: () => void }> = ({
           <Icone className="h-5 w-5" />
         </span>
         <div className="min-w-0 flex-1 pr-8">
-          <Link to={item.url} className="after:absolute after:inset-0 after:rounded-2xl focus:outline-none">
+          <Link to={item.url} onClick={onAbrir} className="after:absolute after:inset-0 after:rounded-2xl focus:outline-none">
             <h3 className="line-clamp-2 font-semibold leading-snug text-slate-900 group-hover:text-[#5f2ebe]">{item.titulo}</h3>
           </Link>
           {(item.subtitulo || item.banca) && (
