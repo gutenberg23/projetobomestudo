@@ -69,9 +69,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Função para lidar com mudanças de visibilidade da página
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log("Página recebeu foco - verificações desativadas");
-      }
     };
 
     // Adicionar ouvinte para mudanças de visibilidade
@@ -86,11 +83,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Se já completamos a autenticação inicial e já temos um usuário,
         // cancelar o listener para evitar eventos indesejados ao trocar de aba
         if (initialAuthDoneRef.current && user && event === 'SIGNED_IN') {
-          console.log("Evento SIGNED_IN ignorado - autenticação inicial já foi concluída");
           
           // Remover o listener após o primeiro login bem-sucedido
           if (unsubscribeRef.current) {
-            console.log("Removendo listener de autenticação para evitar eventos ao trocar de aba");
             unsubscribeRef.current();
             unsubscribeRef.current = null;
           }
@@ -100,11 +95,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Evitar várias chamadas simultâneas
         if (isRefreshingRef.current) {
-          console.log("Ignorando evento de autenticação, atualização em andamento");
           return;
         }
         
-        console.log("Auth state change:", event, session?.user?.id);
         isRefreshingRef.current = true;
         
         if (event === 'SIGNED_IN' && session) {
@@ -121,7 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!profileFetchedRef.current) {
             fetchUserProfile(session.user.id);
           } else {
-            console.log("Perfil já foi buscado, ignorando nova requisição");
             
             // Mesmo com o perfil já buscado, permitir novas atualizações após um tempo
             setTimeout(() => {
@@ -134,7 +126,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Remover o listener após o primeiro login bem-sucedido
           if (unsubscribeRef.current) {
-            console.log("Removendo listener de autenticação após login bem-sucedido");
             unsubscribeRef.current();
             unsubscribeRef.current = null;
           }
@@ -147,11 +138,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Reconfigurar o listener após logout
           if (!unsubscribeRef.current) {
-            console.log("Reconfigurando listener de autenticação após logout");
             setupAuthListener();
           }
         } else if (event === 'TOKEN_REFRESHED') {
-          console.log("Token refreshed successfully");
           isRefreshingRef.current = false;
         } else {
           // Para outros eventos, também liberar o bloqueio
@@ -171,39 +160,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetchUserData = async () => {
       try {
         if (isRefreshingRef.current) {
-          console.log("Ignorando fetchUserData, atualização em andamento");
           return;
         }
         isRefreshingRef.current = true;
         
         // Verificar se já temos um usuário e perfil carregados
         if (user && profile && user.id === profile.id) {
-          console.log("Usuário e perfil já carregados, ignorando fetchUserData");
           setLoading(false);
           isRefreshingRef.current = false;
           return;
         }
         
-        console.log("Verificando sessão existente...");
         const { data: { session } } = await supabase.auth.getSession();
-        console.log("Sessão existente:", session?.user?.id);
         
         // Se encontrar uma sessão ao recarregar a página, marcar como recarga
         if (session?.user && document.referrer && document.referrer.includes(window.location.origin)) {
           isPageReloadRef.current = true;
-          console.log("Detectada recarga de página, preservando navegação atual");
           
           // Verificar se estamos em uma rota administrativa durante recarga
           const isAdminRoute = currentPageUrlRef.current.startsWith('/admin');
-          if (isAdminRoute) {
-            console.log("Recarga em rota administrativa detectada:", currentPageUrlRef.current);
-          }
         }
         
         if (session?.user) {
           // Se já temos o usuário com o mesmo ID, não precisamos recarregar os dados
           if (user?.id === session.user.id && profileFetchedRef.current) {
-            console.log("Usuário já carregado com o mesmo ID, evitando recarregamento desnecessário");
             isRefreshingRef.current = false;
             lastFetchTimeRef.current = Date.now();
             setLoading(false);
@@ -213,7 +193,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             // Remover o listener após verificar que já estamos autenticados
             if (unsubscribeRef.current) {
-              console.log("Removendo listener de autenticação após verificar sessão existente");
               unsubscribeRef.current();
               unsubscribeRef.current = null;
             }
@@ -233,8 +212,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Só buscar o perfil se ainda não foi buscado
           if (!profileFetchedRef.current) {
             await fetchUserProfile(session.user.id);
-          } else {
-            console.log("Perfil já foi buscado, ignorando nova requisição");
           }
           
           // Marcar que a autenticação inicial foi concluída
@@ -242,7 +219,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Remover o listener após verificar que já estamos autenticados
           if (unsubscribeRef.current) {
-            console.log("Removendo listener de autenticação após carregar usuário e perfil");
             unsubscribeRef.current();
             unsubscribeRef.current = null;
           }
@@ -263,7 +239,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchUserData();
     
     return () => {
-      console.log("Limpando inscrição e listeners");
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
@@ -278,7 +253,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       // Verificar se o perfil já foi buscado
       if (profileFetchedRef.current && profile?.id === userId) {
-        console.log("AuthContext: Perfil já foi buscado anteriormente, ignorando nova requisição");
         isRefreshingRef.current = false;
         return;
       }
@@ -288,34 +262,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const fiveMinutesInMs = 5 * 60 * 1000;
       
       if (profile?.id === userId && (currentTime - lastFetchTimeRef.current < fiveMinutesInMs)) {
-        console.log("AuthContext: Perfil já foi buscado recentemente, usando dados em cache");
         isRefreshingRef.current = false;
         return;
       }
       
-      console.log("AuthContext: Buscando perfil do usuário:", userId);
       
       // Buscar TODOS os campos da tabela profiles
-      console.log("AuthContext: Consultando profiles com id:", userId);
       const { data: userProfile, error } = await supabase.from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
         
-      console.log("AuthContext: Resultado da consulta:", { data: userProfile, error });
       
       if (error) {
         console.error("AuthContext: Erro ao buscar perfil:", error);
         
         // Se não encontrou o perfil, tentar criar um básico
         if (error.code === 'PGRST116') { // No rows returned
-          console.log("AuthContext: Perfil não encontrado, criando perfil básico");
           
           // Obter dados do usuário da auth
           const { data: { user: authUser } } = await supabase.auth.getUser();
           
           if (authUser) {
-            console.log("AuthContext: Dados do usuário auth:", authUser);
             
             // Criar perfil básico com dados mínimos
             const basicProfile = {
@@ -327,7 +295,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               updated_at: new Date().toISOString()
             };
             
-            console.log("AuthContext: Tentando criar perfil básico:", basicProfile);
             
             // Inserir o perfil básico
             const { data: newProfile, error: createError } = await supabase
@@ -339,7 +306,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (createError) {
               console.error("AuthContext: Erro ao criar perfil básico:", createError);
             } else {
-              console.log("AuthContext: Perfil básico criado com sucesso:", newProfile);
               setProfile(newProfile as unknown as DatabaseUser);
               setUser(prev => ({
                 ...prev,
@@ -355,7 +321,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (userProfile) {
-        console.log("AuthContext: Perfil encontrado - dados completos:", JSON.stringify(userProfile, null, 2));
         const profileData = userProfile as unknown as DatabaseUser;
         setProfile(profileData);
         
@@ -373,7 +338,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: profileData.role,
           };
           
-          console.log("AuthContext: Usuário atualizado com dados do perfil:", updatedUser);
           
           return updatedUser;
         });
@@ -382,8 +346,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profileFetchedRef.current = true;
         // Atualizar timestamp da última busca
         lastFetchTimeRef.current = Date.now();
-      } else {
-        console.warn("AuthContext: Perfil do usuário não encontrado");
       }
     } catch (error) {
       console.error("AuthContext: Erro ao buscar perfil do usuário:", error);
@@ -397,7 +359,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      console.log("Tentando login com email:", email);
       
       if (!email || !password) {
         const error = new Error("Email e senha são obrigatórios");
@@ -414,7 +375,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password
       });
       
-      console.log("Resposta de login:", data ? "Dados recebidos" : "Sem dados", error);
       
       if (error) {
         console.error("Erro detalhado:", error);
@@ -438,7 +398,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Login bem-sucedido - atualizar estados imediatamente
       if (data?.user) {
-        console.log("Atualizando estado do usuário após login bem-sucedido");
         
         const userData: User = {
           id: data.user.id,
@@ -458,7 +417,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Remover o listener para evitar eventos ao trocar de aba
         if (unsubscribeRef.current) {
-          console.log("Removendo listener após login bem-sucedido via formulário");
           unsubscribeRef.current();
           unsubscribeRef.current = null;
         }
@@ -483,7 +441,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, nome?: string, sobrenome?: string) => {
     try {
-      console.log("Tentando criar conta com:", email, nome, sobrenome);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -496,7 +453,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      console.log("Resposta de cadastro:", data ? "Dados recebidos" : "Sem dados", error);
 
       if (error) {
         console.error("Erro detalhado:", error);
@@ -533,7 +489,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log("Iniciando logout...");
       
       // Limpar estados locais primeiro
       setUser(null);
@@ -550,7 +505,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Redirecionar para login
       navigate("/login");
       
-      console.log("Logout concluído com sucesso");
       
       toast({
         title: "Logout realizado",
@@ -576,7 +530,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const resetPassword = async (email: string) => {
     try {
-      console.log("Solicitando redefinição de senha para:", email);
       const { error } = await supabase.auth.resetPasswordForEmail(email);
 
       if (error) {
@@ -610,7 +563,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return { error: new Error("Usuário não autenticado") };
 
     try {
-      console.log("Atualizando perfil do usuário:", user.id, data);
       const { error } = await supabase
         .from('profiles')
         .update(data)
@@ -646,16 +598,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithGoogle = async () => {
     try {
-      console.log("Iniciando login com Google");
       
       // URL de retorno corrigida para corresponder ao domínio atual
       const redirectTo = `${window.location.origin}/auth/callback`;
-      console.log("URL de redirecionamento:", redirectTo);
       
       // Verificar se temos o domínio correto na lista de domínios permitidos
-      if (window.location.hostname === 'localhost') {
-        console.log("Usando localhost - certifique-se de que http://localhost:8080 está na lista de sites permitidos no Supabase");
-      }
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -667,7 +614,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
       
-      console.log("Resposta do login com Google:", data ? "Dados recebidos" : "Sem dados", error);
 
       if (error) {
         console.error("Erro detalhado:", error);

@@ -116,31 +116,16 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
             console.error('Erro ao buscar tópicos:', topicosError);
           } else {
             // Log de todos os tópicos retornados do banco
-            console.log('===== TODOS OS TÓPICOS RETORNADOS DO BANCO =====');
-            console.log(JSON.stringify(topicosData, null, 2));
-            console.log('================================================');
             
             sections = aula.topicos_ids
               .map((id: string) => topicosData?.find((topico: TopicoDatabase) => topico.id === id))
               .filter((topico: any): topico is NonNullable<typeof topico> => topico != null)
               .map((topico: TopicoDatabase) => {
                 // Logs detalhados para verificar os valores exatos
-                console.log('========= MAPEAMENTO DE TÓPICO COMPLETO =========');
-                console.log('Tópico completo:', topico);
-                console.log('ID do tópico:', topico.id);
-                console.log('Nome do tópico:', topico.nome);
-                console.log('abrir_em_nova_guia (raw):', topico.abrir_em_nova_guia);
-                console.log('Tipo de abrir_em_nova_guia:', typeof topico.abrir_em_nova_guia);
                 
                 // Verificar também se existe a propriedade no objeto
-                console.log('Propriedade abrir_em_nova_guia existe?', 'abrir_em_nova_guia' in topico);
-                console.log('Propriedades do tópico:', Object.keys(topico));
                 
                 // Verificar a propriedade 'abrir_em_nova_aba' (possível erro de nome)
-                console.log('Propriedade "abrir_em_nova_aba" existe?', 'abrir_em_nova_aba' in topico);
-                if ('abrir_em_nova_aba' in topico) {
-                  console.log('Valor de abrir_em_nova_aba:', (topico as any).abrir_em_nova_aba);
-                }
                 
                 // Converter abrir_em_nova_guia para boolean de forma mais segura
                 let abrirEmNovaGuia = false;
@@ -153,20 +138,12 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
                 // Conversões para diferentes tipos de valores
                 if (abrirEmNovaGuiaValue === true) {
                   abrirEmNovaGuia = true;
-                  console.log(`Tópico "${topico.nome}": abrir_em_nova_guia/aba é true (tipo boolean)`);
                 } else if (String(abrirEmNovaGuiaValue).toLowerCase() === 'true') {
                   abrirEmNovaGuia = true;
-                  console.log(`Tópico "${topico.nome}": abrir_em_nova_guia/aba é "true" (tipo string)`);
                 } else if (Number(abrirEmNovaGuiaValue) === 1) {
                   abrirEmNovaGuia = true;
-                  console.log(`Tópico "${topico.nome}": abrir_em_nova_guia/aba é 1 (tipo number)`);
-                } else {
-                  console.log(`Tópico "${topico.nome}": abrir_em_nova_guia/aba é falso ou undefined`);
-                  console.log('Valor exato:', abrirEmNovaGuiaValue);
                 }
                 
-                console.log('abrirEmNovaGuia (final):', abrirEmNovaGuia);
-                console.log('====================================');
                 
                 const section = {
                   id: topico.id,
@@ -179,7 +156,6 @@ export const useFetchSubjectInfo = (subjectId?: string) => {
                   abrirEmNovaGuia: topico.abrir_em_nova_guia === true ? true : false
                 };
                 
-                console.log('Seção mapeada com abrirEmNovaGuia:', section.abrirEmNovaGuia);
                 return section;
               });
           }

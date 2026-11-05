@@ -7,8 +7,6 @@ export const useSubjectStats = (subject: any, lessons: any[]) => {
 
   const getSubjectStats = async () => {
     try {
-      console.log('Calculando estatísticas para disciplina:', subject.name || subject.titulo);
-      console.log('Aulas disponíveis:', lessons);
       
       // Primeiro, vamos coletar todos os IDs de questões desta disciplina
       const questoesIds = new Set<string>();
@@ -49,11 +47,8 @@ export const useSubjectStats = (subject: any, lessons: any[]) => {
         }
       }
 
-      console.log('IDs de questões encontrados:', Array.from(questoesIds));
-      console.log('Questões por tópico:', Object.fromEntries(questoesPorTopico));
 
       if (!user?.id) {
-        console.log('Usuário não está logado');
         return {
           progress: 0,
           questionsTotal: 0,
@@ -77,7 +72,6 @@ export const useSubjectStats = (subject: any, lessons: any[]) => {
         throw respostasError;
       }
 
-      console.log('Respostas encontradas:', respostasData);
 
       // Agrupar respostas por questão e pegar apenas a mais recente
       const respostasPorQuestao = new Map<string, boolean>();
@@ -88,7 +82,6 @@ export const useSubjectStats = (subject: any, lessons: any[]) => {
         }
       });
 
-      console.log('Respostas mais recentes por questão:', Object.fromEntries(respostasPorQuestao));
 
       // Calcular totais da disciplina
       const questionsCorrect = Array.from(respostasPorQuestao.values()).filter(isCorrect => isCorrect).length;
@@ -115,13 +108,6 @@ export const useSubjectStats = (subject: any, lessons: any[]) => {
         topicoStats.set(topicoId, { correct, wrong });
       });
 
-      console.log('Estatísticas por tópico:', Object.fromEntries(topicoStats));
-      console.log('Estatísticas da disciplina:', {
-        questionsTotal,
-        questionsCorrect,
-        questionsWrong,
-        aproveitamento: questionsTotal > 0 ? Math.round((questionsCorrect / questionsTotal) * 100) : 0
-      });
 
       return {
         progress: subject.progress || 0,

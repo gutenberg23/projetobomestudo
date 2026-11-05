@@ -190,7 +190,6 @@ export const FileManager: React.FC<FileManagerProps> = ({
       // Validar se o bucket existe
       const bucketExists = await validateBucket(BUCKET_NAME);
       if (!bucketExists) {
-        console.warn(`Bucket "${BUCKET_NAME}" não encontrado, usando dados mock`);
         // Usar dados mock se o bucket não existir
         setFiles(mockFiles[path] || []);
         return;

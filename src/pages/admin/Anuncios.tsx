@@ -15,7 +15,6 @@ import { toast } from "@/hooks/use-toast";
 import { anunciosService, Anuncio } from "@/services/anunciosService";
 
 const Anuncios = () => {
-  console.log('Anuncios component initializing');
   
   const [anuncios, setAnuncios] = useState<Anuncio[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +31,6 @@ const Anuncios = () => {
     ordem: 0
   });
 
-  console.log('Anuncios component mounted');
 
   const posicoes = [
     { value: "questions_filters", label: "Questões - Abaixo dos filtros" },
@@ -54,16 +52,13 @@ const Anuncios = () => {
   ];
 
   useEffect(() => {
-    console.log('Anuncios useEffect triggered');
     fetchAnuncios();
   }, []);
 
   const fetchAnuncios = async () => {
     try {
-      console.log('Fetching anuncios...');
       setLoading(true);
       const data = await anunciosService.getAll();
-      console.log('Anuncios fetched:', data);
       setAnuncios(data || []);
     } catch (error) {
       console.error("Erro ao buscar anúncios:", error);
@@ -192,7 +187,6 @@ const Anuncios = () => {
     return pos ? pos.label : posicao;
   };
 
-  console.log('Anuncios component rendering with state:', { anuncios, loading, showForm });
 
   return (
     <div className="space-y-6">

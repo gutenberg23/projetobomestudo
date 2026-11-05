@@ -167,8 +167,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           if (updateError) {
             console.error('Error updating user progress:', updateError);
             toast.error('Erro ao salvar progresso');
-          } else {
-            console.log('Progress updated successfully');
           }
         } else {
           // Insert new record
@@ -185,8 +183,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           if (insertError) {
             console.error('Error inserting user progress:', insertError);
             toast.error('Erro ao salvar progresso');
-          } else {
-            console.log('Progress inserted successfully');
           }
         }
       } catch (error) {
@@ -208,7 +204,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
       if (!selectedSection) return;
       
       try {
-        console.log('Buscando dados do tópico com ID:', selectedSection);
         
         const { data, error } = await supabase
           .from('topicos')
@@ -221,22 +216,12 @@ export const LessonCard: React.FC<LessonCardProps> = ({
           return;
         }
         
-        console.log('Dados do tópico carregados:', data);
-        console.log('URLs dos recursos:', {
-          pdf: data?.pdf_url,
-          mapa: data?.mapa_url,
-          resumo: data?.resumo_url,
-          musica: data?.musica_url,
-          cadernoQuestoes: data?.caderno_questoes_url
-        });
         
         // Mapear explicitamente a propriedade abrir_em_nova_guia para abrirEmNovaGuia no objeto currentSection
         if (lesson.sections && lesson.sections.length > 0 && data) {
           const currentSection = lesson.sections.find(section => section.id === selectedSection);
           if (currentSection) {
             currentSection.abrirEmNovaGuia = data.abrir_em_nova_guia === true;
-            console.log('Valor de abrir_em_nova_guia carregado do banco:', data.abrir_em_nova_guia);
-            console.log('Valor mapeado para abrirEmNovaGuia:', currentSection.abrirEmNovaGuia);
             setForceUpdate(prev => prev + 1); // Forçar re-renderização
           }
         }
@@ -251,7 +236,6 @@ export const LessonCard: React.FC<LessonCardProps> = ({
         );
         
         setHasQuestions(Boolean(hasQuestionsForTopic));
-        console.log('Tópico tem questões:', hasQuestionsForTopic);
       } catch (error) {
         console.error('Erro ao buscar dados do tópico:', error);
         setHasQuestions(false);
@@ -282,12 +266,10 @@ export const LessonCard: React.FC<LessonCardProps> = ({
   }, []);
 
   const handleSectionClick = (sectionId: string) => {
-    console.log("Seção selecionada:", sectionId);
     setSelectedSection(sectionId);
   };
 
   const handleQuestionButtonClick = () => {
-    console.log("Botão de questões clicado para a seção:", selectedSection);
     if (!showQuestions) {
       fetchQuestionsForSection(selectedSection);
     }

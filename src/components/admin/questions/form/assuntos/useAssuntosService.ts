@@ -44,11 +44,9 @@ export const useAssuntosService = (disciplina: string, selectedAssuntos: string[
 
       setLoading(true);
       try {
-        console.log("Buscando assuntos para disciplina:", disciplina);
         
         // Usar a função administrativa para buscar assuntos
         const data = await buscarAssuntos(disciplina);
-        console.log("Assuntos retornados:", data);
         setAssuntosList(data || []);
       } catch (error) {
         console.error("Erro ao buscar assuntos:", error);

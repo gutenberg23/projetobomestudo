@@ -3,12 +3,10 @@
  * Retorna o UUID completo correspondente ao prefixo de 8 caracteres
  */
 export const extractIdFromFriendlyUrl = (friendlyUrl: string): string => {
-  console.log("Extraindo ID da URL amigável:", friendlyUrl);
   
   // Primeiro, verifica se a URL já é um UUID válido
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (uuidPattern.test(friendlyUrl)) {
-    console.log("A URL já é um UUID válido:", friendlyUrl);
     return friendlyUrl;
   }
   
@@ -17,7 +15,6 @@ export const extractIdFromFriendlyUrl = (friendlyUrl: string): string => {
   const fullUuidMatch = friendlyUrl.match(fullUuidPattern);
   
   if (fullUuidMatch && fullUuidMatch[1]) {
-    console.log("UUID completo encontrado na URL:", fullUuidMatch[1]);
     return fullUuidMatch[1];
   }
   
@@ -28,7 +25,6 @@ export const extractIdFromFriendlyUrl = (friendlyUrl: string): string => {
   
   if (idFromEndMatch && idFromEndMatch[1]) {
     const extractedId = idFromEndMatch[1];
-    console.log("ID extraído do final da URL:", extractedId);
     
     // Verifica se o ID extraído é um UUID completo
     if (uuidPattern.test(extractedId)) {
@@ -38,7 +34,6 @@ export const extractIdFromFriendlyUrl = (friendlyUrl: string): string => {
     // Verifica se o ID extraído é um prefixo de UUID (8 caracteres)
     const uuidPrefixPattern = /^[0-9a-f]{8}$/i;
     if (uuidPrefixPattern.test(extractedId)) {
-      console.log("Prefixo de UUID encontrado, tentando buscar UUID completo.");
       
       // Para o caso específico do curso cadastrado
       if (extractedId === "459d43e6") {
@@ -65,12 +60,10 @@ export const extractIdFromFriendlyUrl = (friendlyUrl: string): string => {
   }
   
   if (lastMatch) {
-    console.log("Possível ID encontrado na URL:", lastMatch);
     return lastMatch;
   }
   
   // Se não conseguir extrair de nenhuma forma, retorna a URL original
-  console.log("Não foi possível extrair um ID válido, retornando a URL original:", friendlyUrl);
   return friendlyUrl;
 };
 

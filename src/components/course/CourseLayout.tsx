@@ -113,7 +113,6 @@ export const CourseLayout = () => {
           .single();
           
         if (cursoError || !cursoData) {
-          console.log("Não é um curso, verificando se é uma disciplina avulsa...");
           
           // Se não for um curso, verificar se é uma disciplina
           const { data: disciplinaData, error: disciplinaError } = await supabase
@@ -130,7 +129,6 @@ export const CourseLayout = () => {
           setTipo('disciplina');
           
           // É uma disciplina avulsa - não precisamos fazer nada porque o SubjectsList já irá carregá-la
-          console.log("É uma disciplina avulsa:", disciplinaData.titulo);
           setSubjectsData([disciplinaData]);
           return;
         }
@@ -150,7 +148,6 @@ export const CourseLayout = () => {
           
           setSubjectsData(disciplinasData);
         } else {
-          console.log("Curso sem disciplinas");
           setSubjectsData([]);
         }
       } catch (error) {
@@ -166,7 +163,6 @@ export const CourseLayout = () => {
   const handleSubjectsCountChange = useCallback((_count: number, data?: any[]) => {
     if (data) {
       setSubjectsData(data);
-      console.log("CourseLayout - Recebendo dados de disciplinas:", data.length);
     }
   }, []);
 

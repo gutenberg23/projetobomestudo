@@ -26,7 +26,6 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
   useEffect(() => {
     if (currentSection && currentSection.abrirEmNovaGuia !== undefined) {
       abrirEmNovaGuiaRef.current = currentSection.abrirEmNovaGuia;
-      console.log('Valor de abrirEmNovaGuia salvo na referência:', abrirEmNovaGuiaRef.current);
     }
   }, [currentSection, currentSection?.abrirEmNovaGuia, forceUpdate]);
 
@@ -35,7 +34,6 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
     // Quando a seção mudar, limpar a referência até recebermos o novo valor
     if (!currentSection) {
       abrirEmNovaGuiaRef.current = undefined;
-      console.log('Valor de abrirEmNovaGuia na referência foi resetado devido à mudança de seção');
     }
   }, [selectedSection]);
 
@@ -55,14 +53,6 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    if (currentSection) {
-      console.log('Seção mudou para:', currentSection.title);
-      console.log('abrirEmNovaGuia na mudança de seção:', currentSection.abrirEmNovaGuia);
-      console.log('forceUpdate valor:', forceUpdate);
-    }
-  }, [currentSection, forceUpdate]);
-
   const renderVideoContent = () => {
     if (!currentSection || !currentSection.videoUrl) {
       return (
@@ -72,13 +62,6 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
       );
     }
 
-    console.log('=== VIDEO SECTION RENDERING ===');
-    console.log('Seção atual:', currentSection.title);
-    console.log('ID da seção:', currentSection.id);
-    console.log('URL do vídeo:', currentSection.videoUrl);
-    console.log('abrirEmNovaGuia do objeto currentSection:', currentSection.abrirEmNovaGuia);
-    console.log('abrirEmNovaGuia da referência (persistente):', abrirEmNovaGuiaRef.current);
-    console.log('Tipo de abrirEmNovaGuia:', typeof currentSection.abrirEmNovaGuia);
     
     // Priorizar o valor da referência se ele existir (isso mantém o estado entre re-renderizações)
     // caso contrário, usar o valor do objeto currentSection
@@ -86,14 +69,11 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
       ? checkTrueValue(abrirEmNovaGuiaRef.current) 
       : checkTrueValue(currentSection.abrirEmNovaGuia);
     
-    console.log('Resultado da validação final (usando referência persistente):', shouldUseNewTab);
 
     if (shouldUseNewTab) {
-      console.log('Mostrando thumbnail devido ao checkbox "Abrir aula em nova guia"');
       return showThumbnail(currentSection.videoUrl);
     }
 
-    console.log('Mostrando player de vídeo incorporado (padrão)');
     return showVideoPlayer(currentSection.videoUrl, currentSection.title);
   };
 

@@ -95,7 +95,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
             const savedCompletedSections = subjectsData.completed_sections[lessonId];
             if (Array.isArray(savedCompletedSections) && savedCompletedSections.length > 0) {
               setLocalCompletedSections(savedCompletedSections);
-              console.log('Tópicos concluídos carregados do banco de dados:', savedCompletedSections);
               
               // Disparar evento para atualizar os componentes que exibem o progresso
               const totalSections = await getTotalSectionsForCourse(realCourseId);
@@ -168,7 +167,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         }
       }
       
-      console.log(`Total de tópicos para o curso ${realCourseId}: ${totalTopicos}`);
       return totalTopicos > 0 ? totalTopicos : sections.length;
     } catch (error) {
       console.error('Erro ao calcular o total de seções:', error);
@@ -243,11 +241,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         const totalSections = await getTotalSectionsForCourse(realCourseId);
         const totalCompleted = getTotalCompletedSections(subjectsData);
 
-        console.log('Salvando progresso:', { 
-          totalCompleted, 
-          totalSections, 
-          localCompletedSections 
-        });
 
         // Disparar evento antes de salvar no banco
         document.dispatchEvent(new CustomEvent('sectionsUpdated', {
@@ -270,8 +263,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
 
           if (updateError) {
             console.error('Erro ao atualizar progresso do usuário:', updateError);
-          } else {
-            console.log('Progresso atualizado com sucesso em SectionsNavigation');
           }
         } else {
           const { error: insertError } = await supabase
@@ -286,8 +277,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
 
           if (insertError) {
             console.error('Erro ao inserir progresso do usuário:', insertError);
-          } else {
-            console.log('Progresso inserido com sucesso em SectionsNavigation');
           }
         }
       } catch (error) {
@@ -323,8 +312,6 @@ export const SectionsNavigation: React.FC<SectionsNavigationProps> = ({
         ? prev.filter(id => id !== sectionId)
         : [...prev, sectionId];
         
-      console.log(`Tópico ${sectionId} ${prev.includes(sectionId) ? 'desmarcado' : 'marcado'}, 
-        total: ${newSections.length}`);
       
       // Disparar evento imediatamente para atualização rápida da UI
       if (user && courseId && lessonId) {

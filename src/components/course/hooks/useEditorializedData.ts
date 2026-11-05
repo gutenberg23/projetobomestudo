@@ -21,14 +21,7 @@ export const useEditorializedData = () => {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Função para registrar logs com timestamp
-  const logWithTimestamp = useCallback((message: string, data?: any) => {
-    const timestamp = new Date().toISOString();
-    if (data) {
-      console.log(`[${timestamp}] ${message}:`, data);
-    } else {
-      console.log(`[${timestamp}] ${message}`);
-    }
-  }, []);
+  const logWithTimestamp = useCallback((_message: string, _data?: any) => {}, []);
 
   useEffect(() => {
     if (!courseId) return;

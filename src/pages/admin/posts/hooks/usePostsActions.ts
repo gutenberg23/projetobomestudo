@@ -109,15 +109,9 @@ export function usePostsActions(state: PostsState) {
       if (imagemDestaque && (imagemDestaque.startsWith('http://') || imagemDestaque.startsWith('https://'))) {
         // Verificar se já é uma URL do Supabase
         if (!imagemDestaque.includes('supabase') || !imagemDestaque.includes('storage')) {
-          console.log('Processando imagem destaque:', imagemDestaque);
           const uploadedUrl = await downloadAndUploadImage(imagemDestaque);
           if (uploadedUrl && uploadedUrl !== imagemDestaque) {
             processedImageUrl = uploadedUrl;
-            console.log('Imagem processada com sucesso:', uploadedUrl);
-          } else if (uploadedUrl === imagemDestaque) {
-            console.warn('Falha ao processar imagem devido a CORS, mantendo URL original');
-          } else {
-            console.warn('Falha ao processar imagem, usando URL original');
           }
         }
       }

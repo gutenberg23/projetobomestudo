@@ -18,14 +18,12 @@ export interface Anuncio {
 export const anunciosService = {
   // Obter todos os anúncios
   async getAll() {
-    console.log('anunciosService.getAll() called');
     try {
       const { data, error } = await supabase
         .from("anuncios")
         .select("*")
         .order("created_at", { ascending: false });
       
-      console.log('anunciosService.getAll() response:', { data, error });
       
       if (error) throw error;
       return data;
@@ -37,7 +35,6 @@ export const anunciosService = {
 
   // Obter anúncio por ID
   async getById(id: string) {
-    console.log('anunciosService.getById() called with id:', id);
     try {
       const { data, error } = await supabase
         .from("anuncios")
@@ -45,7 +42,6 @@ export const anunciosService = {
         .eq("id", id)
         .single();
       
-      console.log('anunciosService.getById() response:', { data, error });
       
       if (error) throw error;
       return data;
@@ -57,7 +53,6 @@ export const anunciosService = {
 
   // Criar novo anúncio
   async create(anuncio: TablesInsert<"anuncios">) {
-    console.log('anunciosService.create() called with:', anuncio);
     try {
       const { data, error } = await supabase
         .from("anuncios")
@@ -65,7 +60,6 @@ export const anunciosService = {
         .select()
         .single();
       
-      console.log('anunciosService.create() response:', { data, error });
       
       if (error) throw error;
       return data;
@@ -77,7 +71,6 @@ export const anunciosService = {
 
   // Atualizar anúncio
   async update(id: string, anuncio: Partial<TablesInsert<"anuncios">>) {
-    console.log('anunciosService.update() called with id:', id, 'and data:', anuncio);
     try {
       const { data, error } = await supabase
         .from("anuncios")
@@ -89,7 +82,6 @@ export const anunciosService = {
         .select()
         .single();
       
-      console.log('anunciosService.update() response:', { data, error });
       
       if (error) throw error;
       return data;
@@ -101,14 +93,12 @@ export const anunciosService = {
 
   // Excluir anúncio
   async delete(id: string) {
-    console.log('anunciosService.delete() called with id:', id);
     try {
       const { error } = await supabase
         .from("anuncios")
         .delete()
         .eq("id", id);
       
-      console.log('anunciosService.delete() response:', { error });
       
       if (error) throw error;
     } catch (error) {
@@ -119,7 +109,6 @@ export const anunciosService = {
 
   // Alternar status do anúncio
   async toggleStatus(id: string, currentStatus: boolean) {
-    console.log('anunciosService.toggleStatus() called with id:', id, 'and currentStatus:', currentStatus);
     try {
       const { data, error } = await supabase
         .from("anuncios")
@@ -131,7 +120,6 @@ export const anunciosService = {
         .select()
         .single();
       
-      console.log('anunciosService.toggleStatus() response:', { data, error });
       
       if (error) throw error;
       return data;
@@ -143,7 +131,6 @@ export const anunciosService = {
 
   // Obter anúncios ativos por posição
   async getActiveByPosition(position: string) {
-    console.log('anunciosService.getActiveByPosition() called with position:', position);
     try {
       const { data, error } = await supabase
         .from("anuncios")
@@ -151,7 +138,6 @@ export const anunciosService = {
         .eq("posicao", position)
         .order("ordem", { ascending: true });
       
-      console.log('anunciosService.getActiveByPosition() response:', { data, error });
       
       if (error) throw error;
       return data;
@@ -163,7 +149,6 @@ export const anunciosService = {
 
   // Obter um anúncio ativo por posição
   async getActiveOneByPosition(position: string) {
-    console.log('anunciosService.getActiveOneByPosition() called with position:', position);
     try {
       const { data, error } = await supabase
         .from("anuncios")
@@ -173,7 +158,6 @@ export const anunciosService = {
         .limit(1)
         .single();
       
-      console.log('anunciosService.getActiveOneByPosition() response:', { data, error });
       
       if (error && error.code !== "PGRST116") {
         throw error;

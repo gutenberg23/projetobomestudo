@@ -64,11 +64,9 @@ function mapAppPostToDatabasePost(post: Omit<BlogPost, 'id' | 'createdAt'>): Omi
 export async function fetchBlogPosts(authorFilter?: string, includeDrafts: boolean = false): Promise<BlogPost[]> {
   try {
     const now = Date.now();
-    console.log("fetchBlogPosts chamada com filtro:", authorFilter);
     
     // Usar cache se disponível e não expirado (exceto quando temos filtro de autor)
     if (postsCache.length > 0 && !authorFilter && (now - lastCacheTime) < CACHE_TTL) {
-      console.log('Usando cache de posts (sem filtro)');
       return postsCache;
     }
 
@@ -84,25 +82,16 @@ export async function fetchBlogPosts(authorFilter?: string, includeDrafts: boole
     
     // Se tiver um filtro de autor, aplicar
     if (authorFilter) {
-      console.log(`Aplicando filtro de autor: author = "${authorFilter}"`);
       query = query.eq('author', authorFilter);
     }
 
-    console.log("Executando consulta Supabase:", authorFilter ? "com filtro" : "sem filtro");
     const { data, error } = await query;
-    console.log("Resultado da consulta:", { 
-      temDados: !!data, 
-      quantidadeDados: data?.length || 0, 
-      temErro: !!error, 
-      mensagemErro: error?.message 
-    });
 
     if (error) {
       console.error('Erro ao buscar posts do blog:', error);
       
       // Em caso de erro, retornar cache ou array vazio
       if (postsCache.length > 0 && !authorFilter) {
-        console.log('Usando cache existente devido a erro');
         return postsCache;
       }
       
@@ -115,21 +104,17 @@ export async function fetchBlogPosts(authorFilter?: string, includeDrafts: boole
       const mappedData = data.map(mapDatabasePostToAppPost);
       postsCache = mappedData;
       lastCacheTime = now;
-      console.log('Cache de posts atualizado:', mappedData.length, 'posts');
       return mappedData;
     } else if (data && data.length > 0) {
       // Dados com filtro, não armazenar em cache
       const mappedData = data.map(mapDatabasePostToAppPost);
-      console.log(`Retornando ${mappedData.length} posts filtrados por autor "${authorFilter}" (sem atualizar cache)`);
       return mappedData;
     } else {
-      console.log(`Nenhum post encontrado${authorFilter ? ` para o autor "${authorFilter}"` : ""}`);
       return []; // Retornar array vazio em vez de usar dados mockados
     }
     
     // Se temos cache mas não dados novos, manter o cache
     if (postsCache.length > 0) {
-      console.log('Sem novos dados - mantendo cache existente');
       return postsCache;
     }
     
@@ -140,7 +125,6 @@ export async function fetchBlogPosts(authorFilter?: string, includeDrafts: boole
     
     // Em caso de erro, verificar se temos cache
     if (postsCache.length > 0 && !authorFilter) {
-      console.log('Usando cache existente devido a exceção');
       return postsCache;
     }
     
@@ -191,13 +175,11 @@ export async function fetchBlogPostsWithPagination(
 // Função para buscar um post específico pelo slug
 export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null> {
   try {
-    console.log('Buscando post com slug:', slug);
     
     // Primeiro, verificar no cache para evitar chamadas desnecessárias
     if (postsCache.length > 0) {
       const cachedPost = postsCache.find(post => post.slug === slug);
       if (cachedPost) {
-        console.log('Post encontrado no cache:', cachedPost.title);
         return cachedPost;
       }
     }
@@ -213,13 +195,11 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
       return null;
     }
 
-    console.log('Post encontrado no banco:', data);
     const post = data ? mapDatabasePostToAppPost(data) : null;
     
     // Se encontramos o post no banco de dados e não está no cache, 
     // pode ser útil atualizar o cache geral para incluir este post
     if (post && postsCache.length > 0 && !postsCache.some(p => p.id === post.id)) {
-      console.log('Adicionando post ao cache existente');
       postsCache = [post, ...postsCache];
     }
     
@@ -233,13 +213,11 @@ export async function fetchBlogPostBySlug(slug: string): Promise<BlogPost | null
 // Função para buscar um post específico pelo ID
 export async function fetchBlogPostById(id: string): Promise<BlogPost | null> {
   try {
-    console.log('Buscando post com ID:', id);
     
     // Primeiro, verificar no cache para evitar chamadas desnecessárias
     if (postsCache.length > 0) {
       const cachedPost = postsCache.find(post => post.id === id);
       if (cachedPost) {
-        console.log('Post encontrado no cache:', cachedPost.title);
         return cachedPost;
       }
     }
@@ -255,13 +233,11 @@ export async function fetchBlogPostById(id: string): Promise<BlogPost | null> {
       return null;
     }
 
-    console.log('Post encontrado no banco:', data);
     const post = data ? mapDatabasePostToAppPost(data) : null;
     
     // Se encontramos o post no banco de dados e não está no cache, 
     // pode ser útil atualizar o cache geral para incluir este post
     if (post && postsCache.length > 0 && !postsCache.some(p => p.id === post.id)) {
-      console.log('Adicionando post ao cache existente');
       postsCache = [post, ...postsCache];
     }
     
@@ -340,13 +316,11 @@ export async function updateBlogPost(id: string, post: Partial<BlogPost>): Promi
 // Função para excluir um post
 export async function deleteBlogPost(id: string): Promise<boolean> {
   try {
-    console.log('Tentando excluir post com ID:', id);
     
     // Verificar se estamos usando dados mockados (IDs simples como "1", "2", etc.)
     const isMockId = /^\d+$/.test(id) || id.length < 10;
     
     if (isMockId) {
-      console.info(`ID mockado detectado: ${id}, simulando exclusão`);
       // Para dados mockados, apenas simular sucesso
       return true;
     }
@@ -378,10 +352,8 @@ export async function deleteBlogPost(id: string): Promise<boolean> {
       return false;
     }
     
-    console.log(`Post encontrado: ID=${id}, Autor=${postData.author}`);
     
     // Excluir o post
-    console.log(`Executando exclusão do post ${id}`);
     const { error } = await supabase
       .from('blog_posts')
       .delete()
@@ -402,7 +374,6 @@ export async function deleteBlogPost(id: string): Promise<boolean> {
         // Solicitar informações do usuário atual
         const { data: userData } = await supabase.auth.getUser();
         if (userData?.user) {
-          console.log('Usuário atual:', userData.user.id);
           
           // Buscar perfil para obter role e nome
           const { data: profileData } = await supabase
@@ -411,14 +382,12 @@ export async function deleteBlogPost(id: string): Promise<boolean> {
             .eq('id', userData.user.id)
             .single();
             
-          console.log('Perfil do usuário:', profileData);
         }
       }
       
       return false;
     }
 
-    console.log(`Post ${id} excluído com sucesso`);
     return true;
   } catch (error) {
     console.error(`Exceção ao excluir post ${id}:`, error);
@@ -431,13 +400,11 @@ export async function deleteBlogPost(id: string): Promise<boolean> {
  */
 export const incrementLikes = async (postId: string): Promise<boolean> => {
   try {
-    console.log('Iniciando incremento de curtidas para o post:', postId);
     
     // Verificar se estamos usando dados mockados (IDs simples como "1", "2", etc.)
     const isMockId = /^\d+$/.test(postId) || postId.length < 10;
     
     if (isMockId) {
-      console.info(`Usando ID mockado: ${postId}, simulando incremento de curtidas`);
       // Para dados mockados, apenas simular sucesso
       return true;
     }
@@ -449,7 +416,6 @@ export const incrementLikes = async (postId: string): Promise<boolean> => {
       return false;
     }
 
-    console.log('Chamando RPC increment_blog_post_likes com post_id:', postId);
     const { data, error, status } = await supabase.rpc('increment_blog_post_likes', {
       post_id: postId
     });
@@ -474,7 +440,6 @@ export const incrementLikes = async (postId: string): Promise<boolean> => {
       return false;
     }
 
-    console.log('Resultado da RPC increment_blog_post_likes:', { data, status });
     return data === true;
   } catch (error) {
     console.error('Exceção ao incrementar curtidas:', error);
@@ -491,7 +456,6 @@ export const incrementComments = async (postId: string): Promise<boolean> => {
     const isMockId = /^\d+$/.test(postId) || postId.length < 10;
     
     if (isMockId) {
-      console.info(`Usando ID mockado: ${postId}, simulando incremento de comentários`);
       // Para dados mockados, apenas simular sucesso
       return true;
     }
@@ -520,7 +484,6 @@ export const incrementComments = async (postId: string): Promise<boolean> => {
 
 export const resetAllLikes = async (): Promise<boolean> => {
   try {
-    console.log('Iniciando reset de todas as curtidas');
     
     // Usando consulta SQL direta em vez de RPC
     const { error } = await supabase
@@ -533,7 +496,6 @@ export const resetAllLikes = async (): Promise<boolean> => {
       return false;
     }
 
-    console.log('Curtidas resetadas com sucesso');
     return true;
   } catch (error) {
     console.error('Exceção ao resetar curtidas:', error);
@@ -543,7 +505,6 @@ export const resetAllLikes = async (): Promise<boolean> => {
 
 export const resetBlogPostLikes = async (postId: string): Promise<boolean> => {
   try {
-    console.log('Iniciando reset de curtidas para o post:', postId);
     
     // Verificar se é um UUID válido
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -563,7 +524,6 @@ export const resetBlogPostLikes = async (postId: string): Promise<boolean> => {
       return false;
     }
 
-    console.log('Curtidas resetadas com sucesso para o post:', postId);
     return true;
   } catch (error) {
     console.error('Exceção ao resetar curtidas:', error);
@@ -580,7 +540,6 @@ export const incrementViewCount = async (postId: string): Promise<boolean> => {
     const isMockId = /^\d+$/.test(postId) || postId.length < 10;
     
     if (isMockId) {
-      console.info(`Usando ID mockado: ${postId}, simulando incremento de visualizações`);
       // Para dados mockados, apenas simular sucesso
       return true;
     }
@@ -625,7 +584,6 @@ export async function diagnoseBlogPostsTable(): Promise<any> {
     }
 
     const userId = authData?.user?.id;
-    console.log("Usuário autenticado:", userId);
     
     // 2. Verificar o perfil do usuário
     const { data: profileData, error: profileError } = await supabase
@@ -644,7 +602,6 @@ export async function diagnoseBlogPostsTable(): Promise<any> {
       };
     }
     
-    console.log("Perfil do usuário:", profileData);
     
     // 3. Verificar se a tabela blog_posts existe
     const { data: tablesData, error: tablesError } = await supabase
@@ -663,7 +620,6 @@ export async function diagnoseBlogPostsTable(): Promise<any> {
       };
     }
     
-    console.log("Tabela blog_posts acessível:", tablesData);
     
     // 4. Tentar inserir um post de teste (para verificar permissões de INSERT)
     const testPostData = {
@@ -680,12 +636,10 @@ export async function diagnoseBlogPostsTable(): Promise<any> {
       .insert([testPostData])
       .select();
       
-    console.log("Tentativa de inserção:", insertData, insertError);
     
     let postId;
     if (insertData && insertData.length > 0) {
       postId = insertData[0].id;
-      console.log("Post de teste criado com ID:", postId);
     }
     
     // 5. Se conseguiu criar um post, tentar excluí-lo
@@ -700,7 +654,6 @@ export async function diagnoseBlogPostsTable(): Promise<any> {
         
       deleteError = error;
       deleteResult = !error;
-      console.log("Tentativa de exclusão:", deleteResult, deleteError);
     }
     
     // 6. Verificar políticas existentes (usando SQL)

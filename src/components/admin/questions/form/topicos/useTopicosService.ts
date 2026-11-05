@@ -60,12 +60,10 @@ export const useTopicosService = (
 
       setLoading(true);
       try {
-        console.log("Buscando tópicos para disciplina:", disciplina, "e assuntos:", assuntos);
         
         // Usar a função administrativa para buscar tópicos
         const data = await buscarTopicos(disciplina, assuntos);
 
-        console.log("Tópicos retornados:", data);
         setTopicosList(data || []);
       } catch (error) {
         console.error("Erro ao buscar tópicos:", error);

@@ -37,14 +37,10 @@ export const SubjectLessonsList: React.FC<SubjectLessonsListProps> = ({
         let totalHits = 0;
         let totalErrors = 0;
         
-        console.log('Calculando estatísticas para aula:', lesson.titulo);
-        console.log('Tópicos da aula:', lesson.topicosIds);
-        console.log('Estatísticas disponíveis:', topicoStats);
         
         if (lesson.topicosIds) {
           lesson.topicosIds.forEach(topicoId => {
             const stats = topicoStats[topicoId];
-            console.log('Estatísticas do tópico', topicoId, ':', stats);
             if (stats) {
               totalHits += stats.correct;
               totalErrors += stats.wrong;
@@ -52,11 +48,6 @@ export const SubjectLessonsList: React.FC<SubjectLessonsListProps> = ({
           });
         }
         
-        console.log('Totais calculados:', {
-          aula: lesson.titulo,
-          hits: totalHits,
-          errors: totalErrors
-        });
         
         return (
           <LessonItem 

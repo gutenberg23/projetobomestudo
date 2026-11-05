@@ -41,10 +41,8 @@ const checkTableExists = async (): Promise<boolean> => {
     if (testError) {
       // Código '42P01' indica "relation does not exist" no PostgreSQL
       if (testError.code === '42P01') {
-        console.warn('Tabela user_question_attempts não existe');
         return false;
       }
-      console.warn('Erro ao verificar tabela, mas não é erro de tabela inexistente:', testError);
       // Outros erros (como permissão) podem significar que a tabela existe
       return true;
     }
@@ -65,11 +63,9 @@ export const fetchQuestionAttemptsRanking = async (period: RankingPeriod = 'all'
     // Verifica se a tabela existe antes de tentar buscar os dados
     const tableExists = await checkTableExists();
     if (!tableExists) {
-      console.warn('A tabela de tentativas de questões não existe. O ranking não pode ser gerado.');
       return [];
     }
     
-    console.log(`Tentando buscar ranking de questões para o período: ${period}`);
     
     // Tenta buscar os dados do ranking com a nova função que aceita período
     try {
@@ -79,17 +75,14 @@ export const fetchQuestionAttemptsRanking = async (period: RankingPeriod = 'all'
       });
 
       if (error) {
-        console.warn('A função get_question_attempts_ranking_by_period não está disponível, usando a função padrão:', error);
         throw error; // Lançar erro para cair no fallback
       }
 
-      console.log(`Ranking obtido com sucesso para o período ${period}, número de itens:`, data?.length || 0);
       
       // O Supabase pode retornar `null` se a função não retornar linhas.
       return (data as QuestionRankingUser[] | null) || [];
     } catch (error) {
       // Fallback: usar a função original sem filtro de período
-      console.log('Usando função de ranking sem filtro de período (fallback)');
       try {
         const { data, error: fallbackError } = await supabase.rpc('get_question_attempts_ranking');
 
@@ -105,7 +98,6 @@ export const fetchQuestionAttemptsRanking = async (period: RankingPeriod = 'all'
           return [];
         }
 
-        console.log('Ranking obtido com sucesso usando função fallback, número de itens:', data?.length || 0);
         
         return (data as QuestionRankingUser[] | null) || [];
       } catch (fallbackError) {

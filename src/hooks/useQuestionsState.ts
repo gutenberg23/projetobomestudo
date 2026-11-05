@@ -34,14 +34,12 @@ export const useQuestionsState = () => {
   const dropdownData = useQuestionManagementStore((state) => state.dropdownData);
 
   const updateQuestions = (newQuestions: QuestionItemType[], total: number) => {
-    console.log('Atualizando questões:', { total, newQuestionsLength: newQuestions.length });
     setQuestions(newQuestions);
     setTotalCount(total);
     setTotalPages(Math.ceil(total / ITEMS_PER_PAGE));
   };
 
   const updatePage = (page: number) => {
-    console.log('Atualizando página:', page);
     setCurrentPage(page);
   };
 

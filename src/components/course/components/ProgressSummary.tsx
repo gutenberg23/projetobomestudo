@@ -39,13 +39,6 @@ export const ProgressSummary: React.FC<ProgressSummaryProps> = ({
     ? Math.round((validTotalCorrect / validTotalQuestions) * 100) 
     : 0;
 
-  console.log("ProgressSummary recebeu:", {
-    completedSections: totalCompletedSections,
-    totalSections,
-    progressPercentage,
-    validCompletedSections: validTotalCompletedSections,
-    validTotalSections
-  });
 
   return <>
     <div className="flex items-center gap-4">

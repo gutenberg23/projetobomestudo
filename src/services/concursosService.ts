@@ -60,7 +60,6 @@ export const concursosService = {
    * @param apenasAtivos Retorna apenas concursos com inscrição em aberto
    */
   async listarConcursos(apenasAtivos: boolean = false): Promise<Concurso[]> {
-    console.log('Buscando concursos...', apenasAtivos ? 'Apenas ativos' : 'Todos');
     
     try {
       // Data de hoje no fuso local (toISOString usaria UTC e, à noite, já seria "amanhã")
@@ -94,11 +93,9 @@ export const concursosService = {
       }
 
       if (!data || data.length === 0) {
-        console.log('Nenhum concurso encontrado');
         return [];
       }
 
-      console.log(`${data.length} concursos encontrados`);
       return data.map(dbToConcurso);
     } catch (error) {
       console.error('Exceção ao buscar concursos:', error);
@@ -110,7 +107,6 @@ export const concursosService = {
    * Buscar concursos destacados
    */
   async listarConcursosDestacados(): Promise<Concurso[]> {
-    console.log('Buscando concursos destacados...');
     
     try {
       const { data, error } = await supabase
@@ -126,11 +122,9 @@ export const concursosService = {
       }
 
       if (!data || data.length === 0) {
-        console.log('Nenhum concurso destacado encontrado');
         return [];
       }
 
-      console.log(`${data.length} concursos destacados encontrados`);
       return data.map(dbToConcurso);
     } catch (error) {
       console.error('Exceção ao buscar concursos destacados:', error);
@@ -142,7 +136,6 @@ export const concursosService = {
    * Buscar um concurso pelo ID
    */
   async buscarConcurso(id: string): Promise<Concurso | null> {
-    console.log(`Buscando concurso com ID: ${id}`);
     
     try {
       const { data, error } = await supabase
@@ -167,7 +160,6 @@ export const concursosService = {
    * Criar um novo concurso
    */
   async criarConcurso(formData: ConcursoFormData): Promise<Concurso> {
-    console.log('Criando novo concurso:', formData.titulo);
     
     try {
       const concursoDb = concursoToDb(formData);
@@ -187,7 +179,6 @@ export const concursosService = {
         throw new Error('Erro ao criar concurso: Nenhum dado retornado');
       }
 
-      console.log('Concurso criado com sucesso, ID:', data.id);
       return dbToConcurso(data);
     } catch (error) {
       console.error('Exceção ao criar concurso:', error);
@@ -199,7 +190,6 @@ export const concursosService = {
    * Atualizar um concurso existente
    */
   async atualizarConcurso(id: string, formData: ConcursoFormData): Promise<void> {
-    console.log(`Atualizando concurso ${id}:`, formData.titulo);
     
     try {
       const concursoDb = concursoToDb(formData);
@@ -214,7 +204,6 @@ export const concursosService = {
         throw new Error(`Erro ao atualizar concurso: ${error.message}`);
       }
 
-      console.log(`Concurso ${id} atualizado com sucesso`);
     } catch (error) {
       console.error(`Exceção ao atualizar concurso ${id}:`, error);
       throw error;
@@ -225,7 +214,6 @@ export const concursosService = {
    * Excluir um concurso pelo ID
    */
   async excluirConcurso(id: string): Promise<void> {
-    console.log(`Excluindo concurso ${id}`);
     
     try {
       const { error } = await supabase
@@ -238,7 +226,6 @@ export const concursosService = {
         throw new Error(`Erro ao excluir concurso: ${error.message}`);
       }
 
-      console.log(`Concurso ${id} excluído com sucesso`);
     } catch (error) {
       console.error(`Exceção ao excluir concurso ${id}:`, error);
       throw error;
@@ -250,7 +237,6 @@ export const concursosService = {
    * @param apenasAutorAtual Se true, retorna apenas posts do autor atual (para jornalistas)
    */
   async listarPostsBlog(apenasAutorAtual: boolean = false): Promise<any[]> {
-    console.log('Buscando posts do blog...', apenasAutorAtual ? 'Apenas do autor atual' : 'Todos');
     
     try {
       let query = supabase
@@ -271,7 +257,6 @@ export const concursosService = {
             .single();
             
           if (perfil?.nome) {
-            console.log(`Filtrando posts do autor: ${perfil.nome}`);
             query = query.eq('author', perfil.nome);
           }
         }
@@ -284,7 +269,6 @@ export const concursosService = {
         throw new Error(`Erro ao buscar posts do blog: ${error.message}`);
       }
 
-      console.log(`${data?.length || 0} posts encontrados`);
       return data || [];
     } catch (error) {
       console.error('Exceção ao buscar posts do blog:', error);
@@ -296,7 +280,6 @@ export const concursosService = {
    * Buscar IDs de posts já utilizados em concursos
    */
   async listarPostIdsUtilizados(): Promise<string[]> {
-    console.log('Buscando IDs de posts já utilizados em concursos...');
     
     try {
       const { data, error } = await supabase
@@ -314,7 +297,6 @@ export const concursosService = {
         .map((concurso: any) => concurso.post_id)
         .filter((id: string | null) => id !== null) as string[];
       
-      console.log(`${postIds.length} posts já utilizados encontrados`);
       return postIds;
     } catch (error) {
       console.error('Exceção ao buscar posts utilizados:', error);

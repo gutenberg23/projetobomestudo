@@ -14,13 +14,11 @@ export const usePermissions = () => {
       setRoles([]);
       
       if (!user) {
-        console.log("usePermissions: Nenhum usuário logado");
         setRoles([]);
         setLoading(false);
         return;
       }
 
-      console.log("usePermissions: Buscando roles para usuário:", user.id);
       
       try {
         const { data, error } = await supabase
@@ -32,7 +30,6 @@ export const usePermissions = () => {
           console.error("usePermissions: Erro ao buscar roles:", error);
           setRoles([]);
         } else {
-          console.log("usePermissions: Roles encontradas:", data);
           setRoles(data?.map(r => r.role) || []);
         }
       } catch (err) {
@@ -48,31 +45,26 @@ export const usePermissions = () => {
 
   const isAdmin = () => {
     const result = roles.includes('admin');
-    console.log("usePermissions: isAdmin() =", result, "Roles atuais:", roles);
     return result;
   };
   
   const isProfessor = () => {
     const result = roles.includes('professor');
-    console.log("usePermissions: isProfessor() =", result);
     return result;
   };
   
   const isAssistente = () => {
     const result = roles.includes('assistente');
-    console.log("usePermissions: isAssistente() =", result);
     return result;
   };
   
   const isJornalista = () => {
     const result = roles.includes('jornalista');
-    console.log("usePermissions: isJornalista() =", result);
     return result;
   };
   
   const isStaff = () => {
     const result = ['admin', 'professor', 'assistente'].some(r => roles.includes(r));
-    console.log("usePermissions: isStaff() =", result);
     return result;
   };
   
@@ -82,19 +74,16 @@ export const usePermissions = () => {
     const hasDirectAdminAccess = userRole === 'admin' || userRole === 'professor' || userRole === 'assistente' || userRole === 'jornalista';
     
     const result = isStaff() || isJornalista() || hasDirectAdminAccess;
-    console.log("usePermissions: canAccessAdminArea() =", result, "userRole:", userRole, "roles:", roles);
     return result;
   };
   
   const canOnlyAccessPosts = () => {
     const result = isJornalista() && !isStaff();
-    console.log("usePermissions: canOnlyAccessPosts() =", result);
     return result;
   };
   
   const hasRole = (role: string) => {
     const result = roles.includes(role);
-    console.log("usePermissions: hasRole(", role, ") =", result);
     return result;
   };
 

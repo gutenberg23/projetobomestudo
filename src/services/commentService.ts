@@ -33,7 +33,6 @@ export const fetchCommentsByPostId = async (postId: string): Promise<BlogComment
     
     // Se for um ID mockado, retornar array vazio (não temos comentários mockados)
     if (isMockId) {
-      console.info(`Usando ID mockado: ${postId}, retornando array vazio de comentários`);
       return [];
     }
     
@@ -53,7 +52,6 @@ export const fetchCommentsByPostId = async (postId: string): Promise<BlogComment
       console.error('Erro ao buscar comentários:', error);
       // Se a tabela não existir, retornar array vazio em vez de lançar erro
       if (error.code === '42P01') { // Código para "relation does not exist"
-        console.info('Tabela de comentários ainda não existe, retornando array vazio');
         return [];
       }
       return []; // Retornar array vazio para qualquer erro, em vez de lançar exceção

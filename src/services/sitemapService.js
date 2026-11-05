@@ -119,7 +119,6 @@ export async function generateSitemapXML() {
 async function fetchBlogPosts() {
   try {
     if (!supabase) {
-      console.log("Supabase não configurado");
       return [];
     }
     
@@ -145,7 +144,6 @@ async function fetchBlogPosts() {
 async function fetchQuestionBooks() {
   try {
     if (!supabase) {
-      console.log("Supabase não configurado");
       return [];
     }
     

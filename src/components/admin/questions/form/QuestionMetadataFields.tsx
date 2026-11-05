@@ -99,8 +99,6 @@ export const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
         } catch (error) {
           console.error('Erro ao chamar setAssuntos:', error);
         }
-      } else {
-        console.warn('setAssuntos não é uma função', typeof setAssuntos);
       }
     }
   }, [setAssuntos]);
@@ -108,7 +106,6 @@ export const QuestionMetadataFields: React.FC<QuestionMetadataFieldsProps> = ({
   const safeSetTopicos = (newTopicos: string[]) => {
     // Só atualiza se houver uma mudança real
     if (!isEqual(newTopicos, lastTopicosRef.current)) {
-      console.log("Atualizando tópicos para:", newTopicos);
       lastTopicosRef.current = [...newTopicos];
       if (typeof setTopicos === 'function') {
         setTopicos(newTopicos);

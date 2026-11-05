@@ -327,7 +327,7 @@ const Dashboard = () => {
       const { error } = await supabase.from("respostas_alunos").delete().eq("aluno_id", user.id);
       if (error) throw error;
       const { error: erroSim } = await supabase.from("user_simulado_results").delete().eq("user_id", user.id);
-      if (erroSim) console.warn("Não foi possível apagar os simulados:", erroSim.message);
+      if (erroSim) console.error("Não foi possível apagar os simulados:", erroSim.message);
       toast.success("Estatísticas zeradas");
       d.recarregar();
     } catch (e) {

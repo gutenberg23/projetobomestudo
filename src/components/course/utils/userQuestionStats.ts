@@ -19,7 +19,6 @@ export const fetchUserQuestionAttempts = async (userId: string): Promise<UserQue
 
     // Se a tabela não existir, buscar das respostas_alunos
     if (tableCheckError || !tableExists) {
-      console.log('Tabela user_question_attempts não encontrada, buscando de respostas_alunos');
       return fetchFromRespostasAlunos(userId);
     }
 
@@ -107,7 +106,6 @@ export const saveUserQuestionAttempt = async (
 
     // Se a tabela não existir, salvar apenas em respostas_alunos
     if (tableCheckError || !tableExists) {
-      console.log('Tabela user_question_attempts não encontrada, salvando apenas em respostas_alunos');
       return true;
     }
 
@@ -131,7 +129,6 @@ export const saveUserQuestionAttempt = async (
         detail: { questionId, isCorrect }
       });
       window.dispatchEvent(event);
-      console.log('Evento questionAnswered disparado:', { questionId, isCorrect });
     }
 
     return true;

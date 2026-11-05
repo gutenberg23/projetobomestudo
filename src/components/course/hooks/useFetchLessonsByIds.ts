@@ -11,7 +11,6 @@ export const useFetchLessonsByIds = () => {
     }
 
     try {
-      console.log('Buscando aulas com IDs:', aulaIds);
       
       const { data: aulasData, error } = await supabase
         .from('aulas')
@@ -23,7 +22,6 @@ export const useFetchLessonsByIds = () => {
         return [];
       }
 
-      console.log('Aulas encontradas:', aulasData);
 
       // Ordenar as aulas de acordo com a ordem em aulaIds
       const aulasOrdenadas = aulaIds

@@ -4,7 +4,6 @@ import { extractQuestionIds, replaceQuestionTagsWithMarkers } from './text-utils
 function test(name: string, fn: () => void) {
   try {
     fn();
-    console.log(`✓ ${name}`);
   } catch (error) {
     console.error(`✗ ${name}: ${error}`);
   }
@@ -75,4 +74,3 @@ test('replaceQuestionTagsWithMarkers should handle content without question tags
   assertEqual(result, expected);
 });
 
-console.log('All tests completed!');

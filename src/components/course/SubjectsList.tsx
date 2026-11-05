@@ -47,7 +47,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
         setLoading(true);
         // Extrair o ID real da URL amigável
         const realId = extractIdFromFriendlyUrl(effectiveCourseId);
-        console.log("ID real extraído:", realId);
         
         // Verificar se é um curso ou uma disciplina
         const { data: cursoData, error: cursoError } = await supabase
@@ -56,7 +55,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
           .eq('id', realId)
           .maybeSingle();
         
-        console.log("Dados do curso:", cursoData, "Erro:", cursoError);
         
         if (!cursoData || cursoError) {
           // Se não for um curso, verificar se é uma disciplina
@@ -66,7 +64,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
             .eq('id', realId)
             .maybeSingle();
           
-          console.log("Dados da disciplina:", disciplinaData, "Erro:", disciplinaError);
           
           if (!disciplinaData || disciplinaError) {
             // Tentar buscar pelo ID original
@@ -84,7 +81,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
             }
           } else {
             // É uma disciplina
-            console.log("É uma disciplina avulsa:", disciplinaData.titulo);
             setIsCurso(false);
             
             // Criar um subject a partir da disciplina
@@ -97,7 +93,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
             
             // Carregar as aulas da disciplina
             if (disciplinaData.aulas_ids && disciplinaData.aulas_ids.length > 0) {
-              console.log("Buscando aulas para disciplina avulsa:", disciplinaData.titulo, disciplinaData.aulas_ids);
             
               try {
                 const { data: aulasData, error: aulasError } = await supabase
@@ -105,7 +100,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                   .select('*')
                   .in('id', disciplinaData.aulas_ids);
                   
-                console.log("Aulas da disciplina avulsa:", aulasData, "Erro:", aulasError);
                 
                 if (aulasData && !aulasError) {
                   // Para cada aula, buscar os tópicos
@@ -151,14 +145,12 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                       
                       // Buscar tópicos da aula
                       if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-                        console.log("Buscando tópicos para aula:", aula.titulo, aula.topicos_ids);
                         
                         const { data: topicosData, error: topicosError } = await supabase
                           .from('topicos')
                           .select('*')
                           .in('id', aula.topicos_ids);
                         
-                        console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
                         
                         if (topicosData && !topicosError) {
                           // Ordenar tópicos por data de criação (do mais antigo para o mais recente)
@@ -218,7 +210,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
               setSubjects([formattedSubject]);
               if (onSubjectsCountChange) {
                 onSubjectsCountChange(1, [disciplinaData]);
-                console.log("SubjectsList - Enviando dados da disciplina avulsa:", disciplinaData);
               }
               // Marcar que os dados foram buscados
               setDataFetched(true);
@@ -226,18 +217,15 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
           }
         } else {
           // É um curso
-          console.log("É um curso, buscando disciplinas...");
           setIsCurso(true);
           
           if (cursoData.disciplinas_ids && cursoData.disciplinas_ids.length > 0) {
-            console.log("Disciplinas do curso:", cursoData.disciplinas_ids);
             
               const { data: disciplinasData, error: disciplinasError } = await supabase
                 .from('disciplinas')
                 .select('*')
                 .in('id', cursoData.disciplinas_ids);
                 
-              console.log("Disciplinas encontradas:", disciplinasData, "Erro:", disciplinasError);
               
               if (disciplinasData && !disciplinasError) {
               // Converter os dados para o formato esperado pelo componente
@@ -251,7 +239,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                   
                   // Carregar as aulas de cada disciplina
                   if (disciplina.aulas_ids && disciplina.aulas_ids.length > 0) {
-                    console.log("Buscando aulas para disciplina:", disciplina.titulo, disciplina.aulas_ids);
                   
                     try {
                       const { data: aulasData, error: aulasError } = await supabase
@@ -259,7 +246,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                         .select('*')
                         .in('id', disciplina.aulas_ids);
                         
-                      console.log("Aulas da disciplina:", aulasData, "Erro:", aulasError);
                       
                     if (aulasData && !aulasError) {
                       // Para cada aula, buscar os tópicos
@@ -305,14 +291,12 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                           
                           // Buscar tópicos da aula
                           if (aula.topicos_ids && aula.topicos_ids.length > 0) {
-                            console.log("Buscando tópicos para aula:", aula.titulo, aula.topicos_ids);
                             
                             const { data: topicosData, error: topicosError } = await supabase
                               .from('topicos')
                               .select('*')
                               .in('id', aula.topicos_ids);
                             
-                            console.log("Tópicos encontrados:", topicosData, "Erro:", topicosError);
                             
                             if (topicosData && !topicosError) {
                               // Ordenar tópicos por data de criação (do mais antigo para o mais recente)
@@ -382,7 +366,6 @@ export const SubjectsList = ({ onSubjectsCountChange, courseId: propCourseId }: 
                 setSubjects(sortedSubjects);
                 if (onSubjectsCountChange) {
                   onSubjectsCountChange(sortedSubjects.length, disciplinasData);
-                  console.log("SubjectsList - Enviando dados de disciplinas:", disciplinasData.length);
                 }
                 // Marcar que os dados foram buscados
                 setDataFetched(true);

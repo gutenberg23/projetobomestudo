@@ -35,8 +35,6 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         const url = new URL(link);
         const searchParams = url.searchParams;
         
-        console.log('Processando link:', link);
-        console.log('Parâmetros da URL:', Array.from(searchParams.entries()));
         
         // Construir query baseada nos filtros
         let query = supabase.from('questoes').select('id');
@@ -127,10 +125,8 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
           return;
         }
 
-        console.log('Questões encontradas:', questions?.length || 0);
 
         if (!questions || questions.length === 0) {
-          console.log('Nenhuma questão encontrada com os filtros aplicados');
           setStats({
             totalQuestions: 0,
             totalAttempts: 0,
@@ -141,7 +137,7 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
         }
 
         const questionIds = questions.map(q => q.id);
-        console.log('IDs das questões:', questionIds.slice(0, 5), '...'); // Mostra apenas as primeiras 5
+         // Mostra apenas as primeiras 5
 
         // Buscar tentativas do usuário para essas questões
         const { data: attempts, error: attemptsError } = await supabase
@@ -155,19 +151,12 @@ export const useQuestionStatsFromLink = (link: string | undefined, userId: strin
           return;
         }
 
-        console.log('Tentativas encontradas:', attempts?.length || 0);
 
         // Calcular estatísticas
         const totalAttempts = attempts?.length || 0;
         const correctAnswers = attempts?.filter(a => a.is_correct).length || 0;
         const wrongAnswers = totalAttempts - correctAnswers;
 
-        console.log('Estatísticas calculadas:', {
-          totalQuestions: questions.length,
-          totalAttempts,
-          correctAnswers,
-          wrongAnswers
-        });
 
         setStats({
           totalQuestions: questions.length,

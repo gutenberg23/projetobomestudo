@@ -16,7 +16,6 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
   useEffect(() => {
     // Função para lidar com o evento de limpeza de estatísticas
     const handleStatsClearedEvent = (event: Event) => {
-      console.log('Evento de limpeza de estatísticas detectado', event);
       const customEvent = event as CustomEvent;
       
       // Verificar se o evento afeta esta questão específica
@@ -25,7 +24,6 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
         customEvent.detail?.questionId === 'all' || 
         customEvent.detail?.questionId === questionId
       ) {
-        console.log(`Limpando estatísticas para a questão ${questionId}`);
         setStatsCleared(true);
         setStatsVersion(prev => prev + 1);
         
@@ -103,7 +101,6 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
         
         // Se as estatísticas foram limpas, não precisamos buscar novos dados
         if (statsCleared) {
-          console.log("Estatísticas foram limpas, usando dados zerados");
           setIsLoading(false);
           return;
         }
@@ -128,7 +125,6 @@ export const QuestionStats: React.FC<QuestionStatsProps> = ({ questionId = "" })
           return;
         }
         
-        console.log(`Buscando estatísticas para questão ${questionId}, versão ${statsVersion}`);
         
         // Buscar estatísticas de acertos e erros
         const { data: respostasData, error: respostasError } = await supabase
