@@ -69,6 +69,7 @@ export const concursosService = {
 
       // O Supabase devolve no máximo 1.000 linhas por consulta: lê em lotes
       const LOTE = 1000;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data: any[] = [];
       for (let inicio = 0; ; inicio += LOTE) {
         let query = supabase

@@ -125,14 +125,14 @@ const nomeCargo = (c: Cargo) => (typeof c === "string" ? c : c?.nome || "").trim
 
 /** Maior valor em reais escrito no texto do salário ("R$ 3.000,00 a R$ 10.450,00" → 10450) */
 const maiorValor = (texto: string) => {
-  const numeros = (texto || "").match(/\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?/g) || [];
-  return numeros.reduce((max, n) => Math.max(max, Number(n.replace(/\./g, "").replace(",", ".")) || 0), 0);
+  const numeros: string[] = (texto || "").match(/\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?/g) || [];
+  return numeros.reduce((max: number, n: string) => Math.max(max, Number(n.replace(/\./g, "").replace(",", ".")) || 0), 0);
 };
 
 const reais = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: v % 1 ? 2 : 0 });
 
 const dataCurta = (d: Date | null) => (d ? format(d, "dd/MM", { locale: ptBR }) : "");
-const dataLonga = (d: Date | null) => (d ? format(d, "dd 'de' MMM yyyy", { locale: ptBR }) : "");
+const dataProva = (d: Date | null) => (d ? format(d, "dd/MM/yy", { locale: ptBR }) : "");
 
 const prazoFim = (dias: number) => (dias <= 0 ? "Encerra hoje" : dias === 1 ? "Encerra amanhã" : `Encerra em ${dias} dias`);
 const prazoInicio = (dias: number) => (dias <= 1 ? "Abre amanhã" : `Abre em ${dias} dias`);
@@ -153,7 +153,7 @@ const montarItem = (c: Concurso, slugs: Map<string, string>, hoje: Date): ItemCo
   const fim = lerData(c.dataFimInscricao);
   const diasParaFim = fim ? differenceInCalendarDays(fim, hoje) : 999;
   const diasParaInicio = inicio ? differenceInCalendarDays(inicio, hoje) : 0;
-  const situacao = diasParaInicio > 0 ? "breve" : diasParaFim <= 7 ? "ultimos" : "abertos";
+  const situacao: ItemConcurso["situacao"] = diasParaInicio > 0 ? "breve" : diasParaFim <= 7 ? "ultimos" : "abertos";
   const nomesCargos = (c.cargos || []).map(nomeCargo).filter(Boolean);
   const url = c.postId ? `/blog/${slugs.get(c.postId) || c.postId}` : `/concursos/${c.id}`;
   return {
@@ -661,7 +661,7 @@ const CartaoConcurso: React.FC<{ item: ItemConcurso; ufAtiva: string; onUf: (uf:
     decorrido = Math.min(100, Math.max(4, ((total - item.diasParaFim) / total) * 100));
   }
   const prazo = item.situacao === "breve" ? prazoInicio(item.diasParaInicio) : prazoFim(item.diasParaFim);
-  const salarioTexto = item.salarioMax ? `até ${reais(item.salarioMax)}` : item.salario?.trim() || "A definir";
+  const salarioTexto = item.salarioMax ? reais(item.salarioMax) : item.salario?.trim() || "A definir";
   const cargos = item.nomesCargos;
 
   return (
@@ -716,18 +716,18 @@ const CartaoConcurso: React.FC<{ item: ItemConcurso; ufAtiva: string; onUf: (uf:
         </ul>
       )}
 
-      <dl className="mt-4 grid grid-cols-3 gap-2">
+      <dl className="mt-4 grid grid-cols-3 gap-1.5 sm:gap-2">
         {[
-          { icone: Users, rotulo: "Vagas", valor: vagas > 0 ? vagas.toLocaleString("pt-BR") : "Cadastro reserva" },
-          { icone: Wallet, rotulo: "Salário", valor: salarioTexto },
-          { icone: CalendarDays, rotulo: "Prova", valor: item.prova ? dataLonga(item.prova) : "A definir" },
+          { icone: Users, rotulo: "Vagas", valor: vagas > 0 ? vagas.toLocaleString("pt-BR") : "Reserva" },
+          { icone: Wallet, rotulo: item.salarioMax ? "Até" : "Salário", valor: salarioTexto },
+          { icone: CalendarDays, rotulo: "Prova", valor: item.prova ? dataProva(item.prova) : "A definir" },
         ].map((d) => (
-          <div key={d.rotulo} className="min-w-0 rounded-xl bg-slate-50 px-2.5 py-2">
+          <div key={d.rotulo} className="min-w-0 rounded-xl bg-slate-50 px-2 py-2 sm:px-2.5">
             <dt className="flex items-center gap-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
               <d.icone className="h-3 w-3" />
               {d.rotulo}
             </dt>
-            <dd className="mt-0.5 truncate text-sm font-semibold text-slate-800" title={d.valor}>
+            <dd className="mt-0.5 truncate text-[13px] font-semibold text-slate-800 sm:text-sm" title={d.valor}>
               {d.valor}
             </dd>
           </div>
