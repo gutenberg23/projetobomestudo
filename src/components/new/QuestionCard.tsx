@@ -48,14 +48,26 @@ interface QuestionCardProps {
   disabledOptions: string[];
   onToggleDisabled: (optionId: string, event: React.MouseEvent) => void;
   onRemove?: (questionId: string) => Promise<void>;
+  /** "moderna" é o visual novo da página /questions; as outras telas seguem no padrão. */
+  aparencia?: "padrao" | "moderna";
+  /** Posição da questão na lista (aparência moderna). */
+  numero?: number;
+  /** Resultado da última vez que o aluno resolveu esta questão. */
+  situacaoAnterior?: "acertou" | "errou" | null;
+  onAnswered?: (questionId: string, isCorrect: boolean) => void;
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
   disabledOptions,
   onToggleDisabled,
-  onRemove
+  onRemove,
+  aparencia = "padrao",
+  numero,
+  situacaoAnterior,
+  onAnswered
 }) => {
+  const moderna = aparencia === "moderna";
   const [showComments, setShowComments] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
   const [showOfficialAnswer, setShowOfficialAnswer] = useState(false);
@@ -585,6 +597,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         if (window.handleQuestionAnswer) {
           window.handleQuestionAnswer(isCorrect);
         }
+        onAnswered?.(question.id, isCorrect);
 
         // Registrar a resposta do aluno
         if (userId) {
@@ -1292,7 +1305,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   };
 
   return (
-    <div className="w-full bg-white rounded-xl mb-4">
+    <div className={moderna ? "w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]" : "w-full bg-white rounded-xl mb-4"}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <QuestionHeader
@@ -1306,13 +1319,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             assunto={(question as any).assuntos && Array.isArray((question as any).assuntos) && (question as any).assuntos.length > 0 ? (question as any).assuntos[0] : ""}
             questionId={question.id}
             hideInfo={isSimuladoPage && !hasAnswered}
+            aparencia={aparencia}
+            numero={numero}
+            situacaoAnterior={situacaoAnterior}
           />
         </div>
       </div>
 
       {/* Conteúdo expandível */}
       {hasExpandableContent && (
-        <div className="mt-6 mb-2 px-4">
+        <div className={moderna ? "mt-4 mb-1 px-4 md:px-5" : "mt-6 mb-2 px-4"}>
           <div className="flex items-center justify-between">
             <button
               onClick={() => setShowExpandedContent(!showExpandedContent)}
@@ -1337,8 +1353,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       )}
 
       {/* Conteúdo da questão */}
-      <div className="flex gap-2.5 items-start px-5 py-2.5 w-full text-base text-slate-800">
-        <div className="flex flex-col w-full py-5 rounded-md relative">
+      <div className={moderna ? "flex w-full items-start px-4 pt-4 pb-2 text-base text-slate-800 md:px-5" : "flex gap-2.5 items-start px-5 py-2.5 w-full text-base text-slate-800"}>
+        <div className={moderna ? "relative flex w-full flex-col" : "flex flex-col w-full py-5 rounded-md relative"}>
           <p className="text-left text-sm md:text-base" 
             dangerouslySetInnerHTML={{
               __html: prepareHtmlContent(question.content)
