@@ -40,14 +40,12 @@ const TopicosFieldWrapper = ({
     try {
       // Verificar se os novos tópicos são diferentes dos últimos atualizados
       if (!isEqual(newTopicos, lastUpdatedTopicosRef.current)) {
-        console.log("Atualizando tópicos:", newTopicos);
         
         // Atualizar a referência dos últimos tópicos atualizados
         lastUpdatedTopicosRef.current = [...newTopicos];
         
         // Se tiver a função setValue (de React Hook Form), atualizar o formulário
         if (setValue) {
-          console.log("Chamando setValue com:", newTopicos);
           setValue("topicos", newTopicos);
         }
         
@@ -141,7 +139,6 @@ const TopicosFieldWrapper = ({
         setTopicos={(newTopicos) => {
           // Só atualiza e loga se for diferente dos últimos tópicos registrados
           if (!isEqual(newTopicos, lastUpdatedTopicosRef.current)) {
-            console.log("setTopicos chamado com:", newTopicos);
             safeSetTopicos(newTopicos);
           }
         }}
@@ -170,7 +167,6 @@ const FormFieldWrapper = ({
         control={null} 
         {...props} 
         setValue={(name, value) => {
-          console.log("setValue chamado no modo sem control:", value);
           if (props.setValue) props.setValue(name, value);
         }}
       />;
@@ -190,7 +186,6 @@ const FormFieldWrapper = ({
                 {...props}
                 topicos={fieldValue}
                 setValue={(name, value) => {
-                  console.log("setValue chamado no modo com control:", value);
                   field.onChange(value);
                 }}
               />
@@ -206,7 +201,6 @@ const FormFieldWrapper = ({
       control={null} 
       {...props}
       setValue={(name, value) => {
-        console.log("setValue chamado no modo de fallback:", value);
         if (props.setValue) props.setValue(name, value);
       }}
     />;

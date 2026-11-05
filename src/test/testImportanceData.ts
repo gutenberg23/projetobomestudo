@@ -20,11 +20,7 @@ async function testImportanceData() {
       return;
     }
 
-    console.log('Dados das disciplinas:');
     data?.forEach(disciplina => {
-      console.log(`ID: ${disciplina.id}`);
-      console.log(`Título: ${disciplina.titulo}`);
-      console.log('---');
     });
   } catch (error) {
     console.error('Erro:', error);

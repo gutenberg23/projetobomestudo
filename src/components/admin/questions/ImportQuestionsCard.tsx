@@ -77,7 +77,6 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
     try {
       // Verificar se a URL é válida
       if (!imageUrl || !imageUrl.startsWith('http')) {
-        console.log('URL de imagem inválida ou vazia:', imageUrl);
         return imageUrl; // Retornar a URL original se for inválida
       }
 
@@ -85,12 +84,10 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
       const fileName = `${generateUUID()}.jpg`;
       const filePath = `imagens/${fileName}`;
 
-      console.log('Iniciando download da imagem:', imageUrl);
 
       try {
         // Usar nossa rota de proxy para baixar a imagem
         const proxyUrl = `/proxy-image?url=${encodeURIComponent(imageUrl)}`;
-        console.log('URL do proxy:', proxyUrl);
 
         // Configuramos um AbortController para implementar timeout
         const controller = new AbortController();
@@ -104,19 +101,15 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
         clearTimeout(timeoutId);
         
         if (!response.ok) {
-          console.warn(`Proxy falhou (${response.status}), mantendo URL original: ${imageUrl}`);
           // Se o proxy falhar, manter a URL original em vez de lançar erro
           return imageUrl;
         }
 
         const contentType = response.headers.get('content-type');
-        console.log('Content-Type recebido:', contentType);
 
         const blob = await response.blob();
-        console.log('Tamanho do blob:', blob.size, 'bytes');
 
         // Fazer upload para o Supabase Storage
-        console.log('Iniciando upload para o Supabase:', filePath);
         const { data, error } = await supabase.storage
           .from('questoes')
           .upload(filePath, blob, {
@@ -126,7 +119,6 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
           });
 
         if (error) {
-          console.warn('Erro no upload para o Supabase, mantendo URL original:', error);
           return imageUrl;
         }
 
@@ -135,10 +127,8 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
           .from('questoes')
           .getPublicUrl(filePath);
 
-        console.log('Upload concluído com sucesso:', publicUrl);
         return publicUrl;
       } catch (proxyError) {
-        console.warn('Erro ao usar proxy para imagem, mantendo URL original:', proxyError);
         return imageUrl; // Em caso de erro no proxy, manter a URL original
       }
     } catch (error) {
@@ -159,7 +149,6 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
         try {
           const newUrl = await downloadAndUploadImage(imageUrl);
           content = content.replace(imageUrl, newUrl);
-          console.log(`Imagem processada: ${imageUrl} -> ${newUrl}`);
         } catch (error) {
           console.error(`Erro ao processar imagem ${imageUrl}:`, error);
         }
@@ -254,8 +243,6 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
         
         // Verificar se o número de valores corresponde ao número de cabeçalhos
         if (values.length !== headers.length) {
-          console.warn(`Linha ${i} ignorada: número de colunas (${values.length}) difere do número de cabeçalhos (${headers.length})`);
-          console.warn(`Conteúdo da linha problemática: ${rows[i].substring(0, 200)}...`);
           skippedRows++;
           continue;
         }
@@ -264,7 +251,6 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
 
         // Verificar campos obrigatórios
         if (!row.content || !row.questiontype) {
-          console.warn(`Linha ${i} ignorada: campos obrigatórios ausentes (content, questiontype)`);
           skippedRows++;
           continue;
         }
@@ -277,12 +263,6 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
 
         // Normalizar a resposta correta (remover espaços e converter para maiúsculo)
         const correctAnswer = row.correctanswer?.toString()?.trim()?.toUpperCase() || '';
-        console.log('Dados da resposta:', {
-          correctAnswerOriginal: row.correctanswer,
-          correctAnswerNormalizado: correctAnswer,
-          tipo: typeof correctAnswer,
-          tamanho: correctAnswer.length
-        });
 
         // Transformar as alternativas no formato esperado pelo banco
         const options = [
@@ -301,14 +281,9 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
           if (isCorrect) {
             option.isCorrect = true;
             foundCorrect = true;
-            console.log(`Alternativa ${option.id} marcada como correta. Comparação: ${option.id} === ${correctAnswer}`);
           }
         });
 
-        if (!foundCorrect) {
-          console.warn(`Nenhuma alternativa marcada como correta. Resposta esperada: "${correctAnswer}"`);
-          console.log('Alternativas disponíveis:', options.map(o => o.id));
-        }
 
         // Transformar tópicos em array usando ponto e vírgula como separador
         const topicos = row.topicos 
@@ -360,7 +335,6 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
       }
     }
 
-    console.log(`Questões processadas: ${processedRows}, Questões ignoradas: ${skippedRows}`);
     return questions;
   };
 
@@ -391,18 +365,10 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
       }
 
       // Log para verificar as questões antes de inserir
-      console.log('Questões a serem inseridas:', questions.length, 'itens');
       
       // Log detalhado da primeira questão para debug
       if (questions.length > 0) {
         const sampleQuestion = questions[0];
-        console.log('Exemplo de questão formatada:', {
-          id: sampleQuestion.id,
-          role: sampleQuestion.role,
-          topicos: sampleQuestion.topicos,
-          assuntos: sampleQuestion.assuntos,
-          options: sampleQuestion.options.map(o => ({ id: o.id, isCorrect: o.isCorrect }))
-        });
       }
 
       // Inserir questões no banco de dados
@@ -421,7 +387,6 @@ const ImportQuestionsCard: React.FC<ImportQuestionsCardProps> = ({ onQuestionsIm
         Tamanho: ${(file.size / 1024).toFixed(2)} KB
         Questões importadas: ${questions.length}
       `;
-      console.log('Resumo da importação:', resumo);
 
       toast.success(`${questions.length} questões importadas com sucesso!`);
       onQuestionsImported();

@@ -44,10 +44,8 @@ const BlogPostPage = () => {
 
       setLoading(true);
       try {
-        console.log('Carregando post com slug:', slug);
         // Buscar o post específico
         const fetchedPost = await fetchBlogPostBySlug(slug);
-        console.log('Post carregado:', fetchedPost);
         
         if (!fetchedPost) {
           setLoading(false);
@@ -68,7 +66,6 @@ const BlogPostPage = () => {
         // Verificar se o post está curtido
         const likedPosts = JSON.parse(localStorage.getItem('likedPosts') || '[]');
         const hasLiked = likedPosts.includes(fetchedPost.id);
-        console.log('Verificação de curtida:', { postId: fetchedPost.id, likedPosts, hasLiked });
         setIsLiked(hasLiked);
         
         setLoading(false);
@@ -170,11 +167,6 @@ const BlogPostPage = () => {
     try {
       // Verificar a sessão atual
       const session = await supabase.auth.getSession();
-      console.log('Estado da sessão:', {
-        hasSession: !!session.data.session,
-        userId: session.data.session?.user?.id,
-        isExpired: session.data.session?.expires_at ? new Date(session.data.session.expires_at * 1000) < new Date() : true
-      });
 
       // Verificar se o usuário está autenticado
       if (!session.data.session?.user) {

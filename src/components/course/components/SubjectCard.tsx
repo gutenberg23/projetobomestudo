@@ -39,7 +39,6 @@ export const SubjectCard: React.FC<SubjectCardProps> = ({
   useEffect(() => {
     const loadStats = async () => {
       const newStats = await getSubjectStats();
-      console.log('Estatísticas carregadas:', newStats);
       setStats(newStats);
     };
     

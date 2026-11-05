@@ -124,7 +124,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       if (!question.id) return;
       
       try {
-        console.log("Buscando tópicos diretamente do banco para questão:", question.id);
         
         const { data, error } = await supabase
           .from('questoes')
@@ -138,10 +137,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         }
         
         if (data && data.topicos && Array.isArray(data.topicos) && data.topicos.length > 0) {
-          console.log("Tópicos encontrados no banco:", data.topicos);
           setLoadedTopics(data.topicos);
         } else {
-          console.log("Nenhum tópico encontrado no banco para esta questão");
           setLoadedTopics([]);
         }
       } catch (err) {
@@ -162,11 +159,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         const needsUpdate = (!question.discipline || !question.topics || question.topics.length === 0);
         
         if (needsUpdate) {
-          console.log("Questão com metadados incompletos detectada:", question.id);
-          console.log("Dados atuais:", {
-            discipline: question.discipline || "Indefinida",
-            topics: question.topics || []
-          });
           
           // Buscar informações completas da questão do banco de dados
           const { data: questionData, error } = await supabase
@@ -187,11 +179,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             const subjectsBD = questionData.assuntos || [];
             
             if (disciplineBD || (topicsBD && topicsBD.length > 0)) {
-              console.log("Dados recuperados do banco:", {
-                discipline: disciplineBD,
-                topics: topicsBD,
-                subjects: subjectsBD
-              });
               
               // Atualizar as questões respondidas que estão faltando metadados
               // Buscar respostas anteriores do usuário para esta questão que possam estar sem metadados
@@ -204,7 +191,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                   .or('disciplina.is.null,topicos.is.null,disciplina.eq.');
                   
                 if (!respostasError && respostasDesatualizadas && respostasDesatualizadas.length > 0) {
-                  console.log(`Encontradas ${respostasDesatualizadas.length} respostas desatualizadas para atualizar`);
                   
                   // Atualizar cada resposta com os metadados corretos
                   for (const resposta of respostasDesatualizadas) {
@@ -219,8 +205,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                       
                     if (updateError) {
                       console.error("Erro ao atualizar resposta:", updateError);
-                    } else {
-                      console.log("Resposta atualizada com sucesso:", resposta.id);
                     }
                   }
                 }
@@ -247,12 +231,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     setHasAnsweredInCurrentSession(false); // Resetar estado da sessão atual
 
     // Log para depuração - verificar se a questão tem tópicos
-    console.log("Question object:", {
-      id: question.id,
-      discipline: question.discipline,
-      topics: question.topics,
-      hasTopics: Boolean(question.topics && question.topics.length > 0)
-    });
 
     // Verificar novamente se o usuário já respondeu esta nova questão
     const checkUserAnswer = async () => {
@@ -297,7 +275,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       } = await supabase.auth.getUser();
       if (user) {
         setUserId(user.id);
-        console.log("🔍 USER_ID carregado:", user.id);
         
         // Verificar se o usuário já respondeu essa questão
         const {
@@ -314,7 +291,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           data: likesData
         } = await supabase.from('likes_comentarios').select('comentario_id').eq('usuario_id', user.id);
         
-        console.log("🔍 LIKES de comentários carregados:", likesData);
         
         // Verificar quais gabaritos/IA já foram curtidos pelo usuário
         // Usamos o ID completo da questão
@@ -326,7 +302,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           .eq('usuario_id', user.id)
           .ilike('questao_id', `${question.id}%`); // Usar ILIKE para pegar tanto IDs parciais quanto completos
         
-        console.log("🔍 LIKES de gabaritos carregados:", likesGabaritosData);
         
         // Combinar os dois tipos de likes
         const likedCommentIds = likesData?.map(like => like.comentario_id) || [];
@@ -337,12 +312,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           const type = like.type || 'teacher';
           // Usar o ID completo da questão
           const fullId = `${type}-${question.id}`;
-          console.log("🔍 Construindo ID para comentário especial:", fullId);
           return fullId;
         }) || [];
         
         const allLikes = [...likedCommentIds, ...likedSpecialComments];
-        console.log("🔍 TODOS os likes combinados:", allLikes);
         
         setLikedComments(allLikes);
       }
@@ -617,20 +590,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           }
           
           if (!topicos || topicos.length === 0) {
-            console.warn("Tópicos não encontrados para a questão:", question.id);
             // Permitimos continuar, mas logamos o aviso
           }
           
-          console.log("Enviando resposta com os seguintes dados:", {
-            aluno_id: userId,
-            questao_id: question.id,
-            opcao_id: selectedOption,
-            is_correta: isCorrect,
-            topicos,
-            disciplina,
-            banca,
-            assuntos
-          });
 
           const { error } = await supabase
             .from('respostas_alunos')
@@ -963,7 +925,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   useEffect(() => {
     const fetchSpecialLikesCount = async () => {
       try {
-        console.log("🔢 Buscando contagem de likes para ID da questão:", question.id);
         
         // Buscar todos os likes do gabarito para esta questão e contar manualmente
         // Usar ILIKE para pegar tanto IDs parciais quanto completos
@@ -977,7 +938,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           console.error("❌ Erro ao buscar likes do gabarito:", teacherError);
         } else {
           const count = teacherLikes?.length || 0;
-          console.log("✅ Contagem de likes do gabarito:", count, "- Dados:", teacherLikes);
           setTeacherLikesCount(count);
         }
 
@@ -993,7 +953,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           console.error("❌ Erro ao buscar likes da IA:", aiError);
         } else {
           const count = aiLikes?.length || 0;
-          console.log("✅ Contagem de likes da IA:", count, "- Dados:", aiLikes);
           setAILikesCount(count);
         }
       } catch (error) {
@@ -1110,7 +1069,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 error.message?.includes('Not Acceptable')) {
               atualizacoesQuestoesTableExists = false;
               localStorage.setItem('atualizacoes_questoes_exists', 'false');
-              console.log("ℹ️ Tabela atualizacoes_questoes confirmada como inexistente - todas as futuras consultas serão ignoradas");
               return;
             }
             // No records found but table exists
@@ -1151,7 +1109,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
               error?.message?.includes('Not Acceptable')) {
             atualizacoesQuestoesTableExists = false;
             localStorage.setItem('atualizacoes_questoes_exists', 'false');
-            console.log("ℹ️ Tabela atualizacoes_questoes confirmada como inexistente (catch) - todas as futuras consultas serão ignoradas");
             return;
           }
           console.error("Erro geral ao buscar última atualização:", error);
@@ -1270,7 +1227,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
         
         // Se a questão não tem metadados, ignoramos
         if (!discipline && (!topicos || topicos.length === 0)) {
-          console.warn(`Questão ${questaoId} não tem metadados para atualizar`);
           falhas += respostasPorQuestao[questaoId].length;
           continue;
         }
@@ -1289,7 +1245,6 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             console.error(`Erro ao atualizar resposta ${resposta.id}:`, updateError);
             falhas++;
           } else {
-            console.log(`Resposta ${resposta.id} atualizada com sucesso`);
             corrigidas++;
           }
         }

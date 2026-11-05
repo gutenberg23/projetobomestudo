@@ -242,7 +242,6 @@ export const useSiteConfig = () => {
           fetchError.message?.toLowerCase().includes('não existe')
       )) {
         console.error('Erro ao buscar configurações:', fetchError);
-        console.warn('A tabela configuracoes_site não existe. Usando valores padrão.');
         logTableError(fetchError);
         hasTableError = true;
         setConfig(DEFAULT_CONFIG);
@@ -374,7 +373,6 @@ export const useSiteConfig = () => {
           error.message?.toLowerCase().includes('não existe')
       )) {
         console.error('Erro ao salvar configurações:', error);
-        console.warn('A tabela configuracoes_site não existe. As configurações serão salvas apenas localmente.');
         logTableError(error);
         hasTableError = true;
         
@@ -437,7 +435,6 @@ export const useSiteConfig = () => {
           error.message?.toLowerCase().includes('não existe')
       )) {
         console.error('Erro ao salvar configurações de páginas:', error);
-        console.warn('A tabela configuracoes_site não existe. As configurações serão salvas apenas localmente.');
         logTableError(error);
         hasTableError = true;
         
@@ -500,7 +497,6 @@ export const useSiteConfig = () => {
           error.message?.toLowerCase().includes('não existe')
       )) {
         console.error('Erro ao salvar configurações visuais:', error);
-        console.warn('A tabela configuracoes_site não existe. As configurações serão salvas apenas localmente.');
         logTableError(error);
         hasTableError = true;
         
@@ -566,7 +562,6 @@ export const useSiteConfig = () => {
           error.message?.toLowerCase().includes('não existe')
       )) {
         console.error('Erro ao salvar configurações gerais:', error);
-        console.warn('A tabela configuracoes_site não existe. As configurações serão salvas apenas localmente.');
         logTableError(error);
         hasTableError = true;
         
@@ -638,7 +633,6 @@ export const useSiteConfig = () => {
           error.message?.toLowerCase().includes('não existe')
       )) {
         console.error('Erro ao salvar configurações de SEO:', error);
-        console.warn('A tabela configuracoes_site não existe. As configurações serão salvas apenas localmente.');
         logTableError(error);
         hasTableError = true;
         

@@ -18,11 +18,6 @@ export const useUpdateQuestionActions = (state: ReturnType<typeof import("../use
       assuntos, setAssuntos, topicos, setTopicos
     } = state;
 
-    console.log("Dados sendo atualizados:", {
-      teacherExplanation,
-      expandableContent,
-      aiExplanation
-    });
 
     // Validar apenas campos obrigatórios
     if (!year || !institution || !organization || !discipline || !questionType || !questionText) {

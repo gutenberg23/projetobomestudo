@@ -304,7 +304,6 @@ const MultiSelectField: React.FC<MultiSelectFieldProps> = ({
 }) => {
   // Debug para verificar se os valores estão chegando corretamente
   useEffect(() => {
-    console.log(`MultiSelectField ${label} - valores recebidos:`, values);
   }, [label, values]);
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -580,16 +579,6 @@ export const QuestionForm: React.FC<QuestionFormProps> = ({
   
   // Log para debug dos dados de dropdown
   useEffect(() => {
-    console.log("Dados de dropdown no QuestionForm:", {
-      years: dropdownData?.years?.length || 0,
-      institutions: dropdownData?.institutions?.length || 0,
-      organizations: dropdownData?.organizations?.length || 0,
-      roles: dropdownData?.roles?.length || 0,
-      disciplines: dropdownData?.disciplines?.length || 0,
-      levels: dropdownData?.levels?.length || 0,
-      difficulties: dropdownData?.difficulties?.length || 0,
-      questionTypes: dropdownData?.questionTypes?.length || 0
-    });
   }, [dropdownData]);
   
   // Extrair os dados do dropdown para uso nos campos com valores padrão seguros

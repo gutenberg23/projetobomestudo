@@ -6,7 +6,6 @@ export async function extractTextFromPDF(pdfUrl: string): Promise<string | null>
     // Esta é uma implementação básica que tenta extrair texto do PDF
     // Em um ambiente real, seria melhor usar uma biblioteca especializada como pdf.js ou pdf-parse
     
-    console.log('Tentando extrair texto do PDF:', pdfUrl);
     
     // Como estamos no frontend, vamos tentar algumas abordagens alternativas
     // 1. Tentar fazer fetch do PDF e extrair texto
@@ -26,7 +25,6 @@ export async function extractTextFromPDF(pdfUrl: string): Promise<string | null>
     
     // Para PDFs, não podemos extrair texto diretamente no frontend sem uma biblioteca
     // Vamos retornar uma mensagem indicando que a extração precisa ser feita pela IA
-    console.log('Extração de texto de PDF requer processamento especializado');
     return null;
   } catch (error) {
     console.error('Erro ao tentar extrair texto do PDF:', error);

@@ -311,7 +311,6 @@ export async function abrirFonte(disciplina: string): Promise<FonteEstatisticas>
   if (!faltaFuncao(error)) throw error;
 
   // Migration ainda não rodada: conta no navegador
-  console.warn("Funções de estatísticas não encontradas; contando as questões no navegador.");
   const questoes = await baixarQuestoes(disciplina);
   return {
     modo: "navegador",

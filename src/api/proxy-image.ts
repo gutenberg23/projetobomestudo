@@ -50,5 +50,4 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(3001, () => {
-  console.log('Servidor de proxy de imagens rodando na porta 3001');
 }); 

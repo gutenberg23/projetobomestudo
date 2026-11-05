@@ -16,11 +16,9 @@ export function useRouter() {
       on: (event, callback) => {
         // Emular os eventos do router Next.js
         // Normalmente não são necessários, mas podemos adicionar depois
-        console.warn(`Next.js router event '${event}' não é totalmente suportado neste shim`);
         return () => {}; // Retorna uma função noop para desinscrição
       },
       off: (event, callback) => {
-        console.warn(`Next.js router event '${event}' não é totalmente suportado neste shim`);
       }
     },
     push: (url) => navigate(url),

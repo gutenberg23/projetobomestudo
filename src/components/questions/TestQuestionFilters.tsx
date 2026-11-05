@@ -32,7 +32,6 @@ const TestQuestionFilters: React.FC = () => {
   };
 
   const handleApplyFilters = () => {
-    console.log("Filtros aplicados:", selectedFilters);
   };
 
   const filterOptions = {

@@ -72,7 +72,6 @@ export const QuestionNode = ({ node }: NodeViewProps) => {
 
   const handleRemove = async (questionId: string) => {
     // Função vazia para satisfazer a interface do QuestionCard
-    console.log('Remover questão:', questionId);
   };
 
   if (loading) {

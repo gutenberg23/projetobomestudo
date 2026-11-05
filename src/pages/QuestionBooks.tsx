@@ -125,7 +125,7 @@ export default function QuestionBooks() {
               .from("cadernos_questoes")
               .update({ total_questions: contagens.get(b.id) || 0 })
               .eq("id", b.id)
-              .then(({ error }) => error && console.warn("Não foi possível atualizar a contagem do caderno", error));
+              .then(({ error }) => error && console.error("Não foi possível atualizar a contagem do caderno", error));
           });
       }
     } catch (e) {

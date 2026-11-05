@@ -100,20 +100,10 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
 
   const handleEditQuestion = async (question: QuestionItemType) => {
     try {
-      console.log("Iniciando edição da questão ID:", question.id);
       
       // Buscar diretamente do banco de dados para garantir consistência
       const questionData = await fetchQuestionById(question.id);
       
-      console.log("Dados recebidos do banco para edição:", {
-        id: questionData.id,
-        content: questionData.content,
-        teacherExplanation: questionData.teacherexplanation,
-        expandableContent: questionData.expandablecontent,
-        aiExplanation: questionData.aiexplanation,
-        assuntos: questionData.assuntos,
-        topicos: questionData.topicos
-      });
       
       // Atualizar o estado com os dados da questão obtidos do banco
       setQuestionId(questionData.id);
@@ -132,11 +122,6 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
       const eContent = questionData.expandablecontent || '';
       const aExplanation = questionData.aiexplanation || '';
       
-      console.log("Definindo campos TipTap:", {
-        teacherExplanation: tExplanation,
-        expandableContent: eContent,
-        aiExplanation: aExplanation
-      });
       
       setTeacherExplanation(tExplanation);
       setExpandableContent(eContent);
@@ -147,11 +132,6 @@ export const useQuestionManagementActions = (state: ReturnType<typeof import("..
       const safeAssuntos = Array.isArray(questionData.assuntos) ? questionData.assuntos : [];
       const safeTopicos = Array.isArray(questionData.topicos) ? questionData.topicos : [];
       
-      console.log("Definindo campos de arrays:", {
-        options: safeOptions.length,
-        assuntos: safeAssuntos,
-        topicos: safeTopicos
-      });
       
       setOptions(safeOptions);
       setAssuntos(safeAssuntos);

@@ -16,7 +16,6 @@ import { popupsService } from "@/services/popupsService";
 import { Popup } from "@/types/popup";
 
 const Popups = () => {
-  console.log('Popups component initializing');
   
   const [popups, setPopups] = useState<Popup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,7 +33,6 @@ const Popups = () => {
     ordem: 0
   });
 
-  console.log('Popups component mounted');
 
   const paginas = [
     { value: "home", label: "Página Inicial" },
@@ -48,16 +46,13 @@ const Popups = () => {
   ];
 
   useEffect(() => {
-    console.log('Popups useEffect triggered');
     fetchPopups();
   }, []);
 
   const fetchPopups = async () => {
     try {
-      console.log('Fetching popups...');
       setLoading(true);
       const data = await popupsService.getAll();
-      console.log('Popups fetched:', data);
       setPopups(data || []);
     } catch (error) {
       console.error("Erro ao buscar popups:", error);
@@ -188,7 +183,6 @@ const Popups = () => {
     return pag ? pag.label : pagina;
   };
 
-  console.log('Popups component rendering with state:', { popups, loading, showForm });
 
   return (
     <div className="space-y-6">

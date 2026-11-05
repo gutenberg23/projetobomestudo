@@ -48,7 +48,6 @@ export const BlogList: React.FC<BlogListProps> = ({
 
   const currentPagePosts = getCurrentPagePosts();
   
-  console.log(`BlogList - Rendering ${currentPagePosts.length} posts on page ${currentPage} for position blog_posts_list`);
 
   return (
     <>

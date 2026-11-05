@@ -44,7 +44,6 @@ const Blog = () => {
           } 
           // Se não temos dados e não temos posts já carregados, usar mock
           else if (allPosts.length === 0) {
-            console.log("Usando posts mockados na página de blog");
             setAllPosts(MOCK_BLOG_POSTS);
             setFilteredPosts(MOCK_BLOG_POSTS);
           }

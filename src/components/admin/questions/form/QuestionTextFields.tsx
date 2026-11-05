@@ -26,7 +26,6 @@ const QuestionTextFields: React.FC<QuestionTextFieldsProps> = ({
 }) => {
   // Log para depuração (apenas uma vez na montagem)
   useEffect(() => {
-    console.log("QuestionTextFields montado com valores iniciais");
   }, []);
 
   // Gerar IDs estáveis para cada instância do editor TipTap para evitar problemas de reinicialização

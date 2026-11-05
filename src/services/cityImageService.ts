@@ -117,8 +117,8 @@ export async function buscarFotosCidade(cidade: string, uf?: string): Promise<Ci
         adicionar(toCityImage(p.title, p.imageinfo?.[0]));
       }
     }
-  } catch (err) {
-    console.warn("Wikipédia indisponível para a busca de fotos", err);
+  } catch {
+    // Wikipédia indisponível: segue para o Wikimedia Commons
   }
 
   // 2. Fotos do Wikimedia Commons

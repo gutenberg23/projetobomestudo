@@ -10,17 +10,14 @@ export function useImageUpload() {
       
       // Verificar se a URL é válida
       if (!imageUrl || !imageUrl.startsWith('http')) {
-        console.warn('URL de imagem inválida:', imageUrl);
         return imageUrl; // Retorna a URL original se for inválida
       }
       
       // Verificar se já é uma URL do Supabase (para evitar download/upload desnecessário)
       if (imageUrl.includes('supabase') && imageUrl.includes('storage')) {
-        console.log('Imagem já está no Supabase, usando URL existente');
         return imageUrl;
       }
       
-      console.log('Baixando imagem de:', imageUrl);
       
       // Tentar baixar a imagem com tratamento de CORS
       let response: Response;
@@ -28,7 +25,6 @@ export function useImageUpload() {
         // Primeira tentativa: fetch direto
         response = await fetch(imageUrl);
       } catch (fetchError) {
-        console.warn('Falha no fetch direto, tentando com proxy:', fetchError);
         // Segunda tentativa: usar proxy CORS do Next.js
         try {
           response = await fetch(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
@@ -41,7 +37,6 @@ export function useImageUpload() {
       
       // Se ainda tivermos problemas de CORS, tentar novamente com o proxy
       if (!response.ok && response.status === 0) {
-        console.warn('Possível erro de CORS, tentando com proxy');
         try {
           response = await fetch(`/api/proxy-image?url=${encodeURIComponent(imageUrl)}`);
         } catch (proxyError) {
@@ -59,7 +54,6 @@ export function useImageUpload() {
       const fileName = `blog-${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${blob.type.split('/')[1] || 'jpg'}`;
       const filePath = `blog-images/${fileName}`;
       
-      console.log('Fazendo upload para o Supabase:', filePath);
       
       // Fazer upload para o Supabase
       const { error: uploadError } = await supabase.storage
@@ -79,7 +73,6 @@ export function useImageUpload() {
         .from('blog-images')
         .getPublicUrl(filePath);
       
-      console.log('Upload concluído, URL pública:', publicUrl);
       return publicUrl;
     } catch (error) {
       console.error('Erro ao processar imagem:', error);

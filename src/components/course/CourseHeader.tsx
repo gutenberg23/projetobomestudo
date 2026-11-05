@@ -26,13 +26,11 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
       if (!courseId) return;
       
       setLoading(true);
-      console.log("Buscando dados do curso/disciplina:", courseId);
 
       try {
         // Extrair o ID real da URL amigável
         const extractedId = extractIdFromFriendlyUrl(courseId);
         setRealId(extractedId);
-        console.log("ID real extraído:", extractedId);
         
         // Verificar primeiro se é um curso ou uma disciplina
         // Tenta buscar como curso
@@ -42,7 +40,6 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
           .eq('id', extractedId)
           .maybeSingle();
 
-        console.log("Dados do curso:", cursoData, "Erro:", cursoError);
 
         if (cursoError || !cursoData) {
           // Se não encontrar como curso, tenta como disciplina
@@ -52,7 +49,6 @@ export const CourseHeader: React.FC<CourseHeaderProps> = ({ courseId }) => {
             .eq('id', extractedId)
             .maybeSingle();
 
-          console.log("Dados da disciplina:", disciplinaData, "Erro:", disciplinaError);
 
           if (disciplinaError || !disciplinaData) {
             // Tenta buscar pelo ID original sem modificação

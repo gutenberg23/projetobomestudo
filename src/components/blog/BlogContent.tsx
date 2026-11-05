@@ -124,7 +124,6 @@ export const BlogContent: React.FC<BlogContentProps> = ({
     const highlightStartIndex = fullText.indexOf(normalizedHighlightText);
     
     if (highlightStartIndex === -1) {
-      console.warn('Texto não encontrado para highlight:', normalizedHighlightText);
       return;
     }
     

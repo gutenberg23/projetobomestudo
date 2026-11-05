@@ -57,7 +57,6 @@ export const LessonItem: React.FC<LessonItemProps> = ({
       setLocalCompleted(!localCompleted);
       
       // Log para acompanhamento
-      console.log(`[${new Date().toISOString()}] Alternando conclusão da aula: ${title}, novo estado: ${!localCompleted}`);
       
       // Salvar estado no banco de dados
       if (courseId && lessonId) {
@@ -136,8 +135,6 @@ export const LessonItem: React.FC<LessonItemProps> = ({
             
           if (updateError) {
             console.error('Erro ao atualizar progresso do usuário:', updateError);
-          } else {
-            console.log('Progresso atualizado com sucesso');
           }
         } else {
           const { error: insertError } = await supabase
@@ -152,8 +149,6 @@ export const LessonItem: React.FC<LessonItemProps> = ({
             
           if (insertError) {
             console.error('Erro ao inserir progresso do usuário:', insertError);
-          } else {
-            console.log('Progresso inserido com sucesso');
           }
         }
         

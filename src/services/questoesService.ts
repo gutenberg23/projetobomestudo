@@ -89,14 +89,7 @@ export const fetchQuestionById = async (questionId: string) => {
 
     if (error) throw error;
 
-    console.log("Dados brutos da questão do banco:", data);
     
-    console.log("Campos TipTap da questão:", {
-      content: data.content || '',
-      teacherExplanation: data.teacherexplanation || '',
-      expandableContent: data.expandablecontent || '',
-      aiExplanation: data.aiexplanation || ''
-    });
 
     // Retornar os dados formatados para a aplicação
     return {

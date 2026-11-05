@@ -80,7 +80,6 @@ ${questionData.existingExplanation}
 Por favor, reescreva a explicação de uma forma diferente, mantendo a mesma estrutura e usando HTML para formatação.` : 'Por favor, explique detalhadamente por que a alternativa correta está correta e por que as outras alternativas estão incorretas. Use HTML para formatação.'}`;
     }
 
-    console.log('Enviando requisição para Google Gemini via Supabase Edge Function...');
 
     // Fazer a chamada à Edge Function do Supabase
     const { data, error } = await supabase.functions.invoke('generate-question-explanation', {

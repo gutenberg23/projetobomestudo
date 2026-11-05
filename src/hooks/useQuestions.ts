@@ -54,7 +54,6 @@ export function useQuestions(initialSectionId?: string): UseQuestionsResult {
     setQuestions([]);
 
     try {
-      console.log("Buscando tópico:", sectionId);
       
       // 1. Buscar o tópico para obter os IDs das questões
       const { data: topicoData, error: topicoError } = await supabase
@@ -73,13 +72,11 @@ export function useQuestions(initialSectionId?: string): UseQuestionsResult {
         return;
       }
       
-      console.log("Dados do tópico:", topicoData);
 
       // 2. Verificar se o tópico tem questões associadas
       if (!topicoData.questoes_ids || 
           (Array.isArray(topicoData.questoes_ids) && topicoData.questoes_ids.length === 0) ||
           (typeof topicoData.questoes_ids === 'object' && Object.keys(topicoData.questoes_ids).length === 0)) {
-        console.log("Tópico não tem questões vinculadas");
         setIsLoading(false);
         return;
       }
@@ -96,13 +93,11 @@ export function useQuestions(initialSectionId?: string): UseQuestionsResult {
       }
       
       if (questoesIds.length === 0) {
-        console.log("Não foi possível extrair IDs de questões válidos");
         setIsLoading(false);
         return;
       }
 
       // 4. Buscar as questões na tabela 'questoes'
-      console.log("Buscando questões com IDs:", questoesIds);
       const { data: questoesData, error: questoesError } = await supabase
         .from('questoes')
         .select('*')
@@ -117,7 +112,6 @@ export function useQuestions(initialSectionId?: string): UseQuestionsResult {
       
       // 5. Se encontrou questões na tabela 'questoes', formatar e retornar
       if (questoesData && questoesData.length > 0) {
-        console.log("Questões encontradas na tabela 'questoes':", questoesData);
         
         const formattedQuestions: Question[] = questoesData.map(q => {
           // Tratando cada campo individualmente para evitar erros de tipo
@@ -140,7 +134,6 @@ export function useQuestions(initialSectionId?: string): UseQuestionsResult {
         
         setQuestions(formattedQuestions);
       } else {
-        console.log("Nenhuma questão encontrada para este tópico");
         
         // Verificar se há questões embutidas diretamente no objeto do tópico
         const topicoDataAny = topicoData as any; // Usar any para evitar erros de tipo
@@ -148,7 +141,6 @@ export function useQuestions(initialSectionId?: string): UseQuestionsResult {
             Array.isArray(topicoDataAny.questoes) && 
             topicoDataAny.questoes.length > 0) {
           
-          console.log("Encontradas questões embutidas no tópico:", topicoDataAny.questoes);
           
           const formattedQuestions: Question[] = topicoDataAny.questoes.map((q: any, index: number) => {
             // Garantir que temos um objeto válido para cada questão

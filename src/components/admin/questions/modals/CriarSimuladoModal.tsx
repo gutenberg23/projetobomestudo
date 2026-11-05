@@ -34,14 +34,12 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
   useEffect(() => {
     const fetchCursos = async () => {
       try {
-        console.log("Iniciando busca de cursos...");
         
         const { data, error } = await supabase
           .from("cursos")
           .select("id, titulo, descricao")
           .order("titulo", { ascending: true });
 
-        console.log("Resposta do Supabase:", { data, error });
 
         if (error) {
           console.error("Erro detalhado ao buscar cursos:", {
@@ -54,11 +52,9 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
         }
 
         if (!data) {
-          console.warn("Nenhum curso encontrado na resposta");
           return;
         }
 
-        console.log("Cursos encontrados:", data);
         setCursos(data);
       } catch (error) {
         console.error("Erro completo ao buscar cursos:", error);
@@ -67,7 +63,6 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
     };
 
     if (isOpen) {
-      console.log("Modal aberto, buscando cursos...");
       fetchCursos();
     }
   }, [isOpen]);
@@ -103,12 +98,6 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
 
     try {
       setIsLoading(true);
-      console.log("Iniciando criação do simulado com os dados:", {
-        titulo,
-        cursosSelecionados,
-        questoesSelecionadas: selectedQuestions,
-        dataFim
-      });
 
       // Criar o primeiro registro principal de simulado
       const { data, error } = await supabase.from("simulados").insert({
@@ -120,7 +109,6 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
         ativo: true
       }).select();
 
-      console.log("Resposta da criação do primeiro simulado:", { data, error });
 
       if (error) {
         console.error("Erro detalhado ao criar primeiro simulado:", {
@@ -134,7 +122,6 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
 
       // Se há mais de um curso, criar registros adicionais
       if (cursosSelecionados.length > 1) {
-        console.log("Criando simulados adicionais para os outros cursos");
         const restanteCursos = cursosSelecionados.slice(1);
         const batchInserts = restanteCursos.map(cursoId => ({
           titulo,
@@ -145,7 +132,6 @@ const CriarSimuladoModal: React.FC<CriarSimuladoModalProps> = ({
           ativo: true
         }));
 
-        console.log("Dados para inserção em lote:", batchInserts);
 
         const { error: batchError } = await supabase.from("simulados").insert(batchInserts);
         if (batchError) {
