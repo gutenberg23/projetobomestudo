@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Disciplina } from "./DisciplinasTypes";
 import { buscarEmLotes, calcularComposicaoCurso } from "../cursos/composicaoCurso";
+import { faltaColunaDisciplinaQuestoes } from "../shared/CampoDisciplinaQuestoes";
 
 export interface AulaResumo {
   id: string;
@@ -81,6 +82,7 @@ export const useDisciplinas = () => {
             titulo: d.titulo,
             descricao: d.descricao || "",
             banca: d.banca || "",
+            disciplinaQuestoes: (d as { disciplina_questoes?: string | null }).disciplina_questoes || "",
             aulasIds,
             topicosIds: t.topicosIds,
             totalQuestoes: t.totalQuestoes,
@@ -103,10 +105,16 @@ export const useDisciplinas = () => {
   /** Atualiza título, rating, banca e aulas. `novasAulas` traz aulas que não estavam carregadas. */
   const salvar = async (disc: Disciplina, novasAulas: AulaResumo[] = []): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      const campos = { titulo: disc.titulo, descricao: disc.descricao, banca: disc.banca || null, aulas_ids: disc.aulasIds };
+      let { error } = await supabase
         .from("disciplinas")
-        .update({ titulo: disc.titulo, descricao: disc.descricao, banca: disc.banca || null, aulas_ids: disc.aulasIds })
+        .update({ ...campos, disciplina_questoes: disc.disciplinaQuestoes || null } as typeof campos)
         .eq("id", disc.id);
+      if (faltaColunaDisciplinaQuestoes(error)) {
+        // Migration 20251114000000 ainda não rodada: salva o resto e avisa
+        ({ error } = await supabase.from("disciplinas").update(campos).eq("id", disc.id));
+        if (!error) toast.warning("A disciplina das questões não foi salva: rode a migration 20251114000000_disciplina_questoes.sql no Supabase.");
+      }
       if (error) throw error;
 
       const mapaAulas = new Map(aulas);

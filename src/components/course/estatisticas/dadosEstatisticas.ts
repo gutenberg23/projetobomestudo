@@ -86,6 +86,10 @@ const limpar = (v: unknown) => (v === null || v === undefined ? "" : String(v).t
  */
 export async function descobrirDisciplinasDasQuestoes(courseId: string): Promise<string[]> {
   const dados = await carregarDisciplinasCurso(courseId);
+
+  // Definida no admin (Disciplinas ou Aulas): vale sem tentar adivinhar
+  const definida = limpar(dados.linhasDisciplinas[0]?.disciplina_questoes);
+  if (definida) return [definida];
   const pesos = new Map<string, number>();
   const somar = (nome: string, peso: number) => {
     const n = limpar(nome);
