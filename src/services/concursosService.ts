@@ -63,21 +63,34 @@ export const concursosService = {
     console.log('Buscando concursos...', apenasAtivos ? 'Apenas ativos' : 'Todos');
     
     try {
-      let query = supabase
-        .from('concursos')
-        .select('*')
-        .order('data_inicio_inscricao', { ascending: false });
+      // Data de hoje no fuso local (toISOString usaria UTC e, à noite, já seria "amanhã")
+      const agora = new Date();
+      const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
 
-      if (apenasAtivos) {
-        const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-        query = query.gte('data_fim_inscricao', hoje);
-      }
+      // O Supabase devolve no máximo 1.000 linhas por consulta: lê em lotes
+      const LOTE = 1000;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data: any[] = [];
+      for (let inicio = 0; ; inicio += LOTE) {
+        let query = supabase
+          .from('concursos')
+          .select('*')
+          .order('data_inicio_inscricao', { ascending: false })
+          .order('id', { ascending: true })
+          .range(inicio, inicio + LOTE - 1);
 
-      const { data, error } = await query;
+        if (apenasAtivos) {
+          query = query.gte('data_fim_inscricao', hoje);
+        }
 
-      if (error) {
-        console.error('Erro ao buscar concursos:', error);
-        throw new Error(`Erro ao buscar concursos: ${error.message}`);
+        const { data: parte, error } = await query;
+
+        if (error) {
+          console.error('Erro ao buscar concursos:', error);
+          throw new Error(`Erro ao buscar concursos: ${error.message}`);
+        }
+        data.push(...(parte || []));
+        if (!parte || parte.length < LOTE) break;
       }
 
       if (!data || data.length === 0) {
