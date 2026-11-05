@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Topico } from "../TopicosTypes";
 import { TopicoFormFields } from "../TopicoFormFields";
+import { AVISO_MIGRATION, db, faltaMigration, linhaParaFlashcard } from "@/lib/flashcards";
 
 interface EditTopicoModalProps {
   isOpen: boolean;
@@ -31,9 +32,30 @@ export const EditTopicoModal: React.FC<EditTopicoModalProps> = ({
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
-    if (isOpen && topico) {
-      setEditedTopico({ ...topico });
-    }
+    if (!isOpen || !topico) return;
+    let ativo = true;
+    // Flashcards ficam em outra tabela: carregam à parte (undefined = carregando)
+    setEditedTopico({ ...topico, flashcards: undefined });
+    (async () => {
+      const { data, error } = await db
+        .from("flashcards")
+        .select("*")
+        .eq("topico_id", topico.id)
+        .order("ordem", { ascending: true })
+        .order("created_at", { ascending: true });
+      if (!ativo) return;
+      if (error) {
+        if (faltaMigration(error)) toast.warning(AVISO_MIGRATION);
+        else console.error("Erro ao carregar flashcards do tópico:", error);
+      }
+      const cartoes = error
+        ? []
+        : (data || []).map(linhaParaFlashcard).map((c) => ({ id: c.id, frente: c.frente, verso: c.verso, tags: c.tags, cursosIds: c.cursosIds }));
+      setEditedTopico((atual) => (atual && atual.id === topico.id ? { ...atual, flashcards: cartoes } : atual));
+    })();
+    return () => {
+      ativo = false;
+    };
   }, [isOpen, topico]);
 
   const handleSave = async () => {

@@ -11,6 +11,7 @@ import {
   HelpCircle,
   Kanban,
   LayoutDashboard,
+  GalleryVerticalEnd,
   Layers,
   LucideIcon,
   Megaphone,
@@ -60,6 +61,7 @@ export const ADMIN_NAV: AdminNavGroup[] = [
     items: [
       { path: "/admin/teorias", label: "Teorias", icon: FileText, descricao: "Aulas em texto", palavras: "texto pdf editor", showForJornalista: true },
       { path: "/admin/topicos", label: "Tópicos", icon: FolderTree, descricao: "Vídeo, teoria e materiais", palavras: "topico" },
+      { path: "/admin/flashcards", label: "Flashcards", icon: GalleryVerticalEnd, descricao: "Cartões dos tópicos e importação CSV", palavras: "anki cartões revisão csv" },
       { path: "/admin/aulas", label: "Aulas", icon: BookMarked, descricao: "Conjuntos de tópicos" },
       { path: "/admin/disciplinas", label: "Disciplinas", icon: Layers, descricao: "Conjuntos de aulas" },
       { path: "/admin/cursos", label: "Cursos", icon: Folders, descricao: "Conjuntos de disciplinas" },
