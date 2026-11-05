@@ -1,465 +1,564 @@
-import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  FileQuestion,
+  Flag,
+  LayoutGrid,
+  List,
+  Loader2,
+  LogIn,
+  Square,
+  Trophy,
+  XCircle,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Json } from "@/integrations/supabase/types";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
-import { Json } from "@/integrations/supabase/types";
+import { PublicLayout } from "@/components/layout/PublicLayout";
 import { QuestionCard } from "@/components/new/QuestionCard";
 import { Question } from "@/components/new/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Pagination } from "@/components/ui/pagination";
-import { usePermissions } from "@/hooks/usePermissions";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Trophy } from "lucide-react";
-import { ActivityLogger } from "@/services/activity-logger";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { BarraProgresso, EstadoVazio, Painel, Segmentos } from "@/components/course/ui";
+import { Paginacao } from "@/components/questions/busca/Paginacao";
+import { CartaoResposta, type SituacaoQuestao } from "@/components/simulado/CartaoResposta";
+import { CronometroProva, relogio, useCronometro } from "@/components/simulado/CronometroProva";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
-import { PublicLayout } from "@/components/layout/PublicLayout";
+import { ActivityLogger } from "@/services/activity-logger";
+import { generateFriendlyUrl } from "@/utils/slug-utils";
+import { cn } from "@/lib/utils";
 
-// Opções de exibição de questões
-type DisplayOption = "single" | "ten" | "all";
+type Modo = "lista" | "foco";
 
-// Tipo para o Supabase Client estendido
-type SupabaseClientWithCustomTables = typeof supabase & {
-  from(table: 'user_simulado_results'): any;
+/** Questões por página no modo lista. */
+const POR_PAGINA = 10;
+/** Minutos sugeridos por questão. */
+const MIN_POR_QUESTAO = 3;
+
+interface SimuladoInfo {
+  id: string;
+  titulo?: string | null;
+  title?: string | null;
+  questoes_ids?: string[] | null;
+  curso_id?: string | null;
+  data_inicio?: string | null;
+  data_fim?: string | null;
+  ranking_is_public?: boolean | null;
+}
+
+interface Resultado {
+  acertos: number;
+  erros: number;
+  total: number;
+  respondidas: number;
+  segundos?: number;
+  data?: string;
+}
+
+// Tabela fora dos tipos gerados em algumas versões
+type ClienteComResultados = typeof supabase & {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  from(table: "user_simulado_results"): any;
 };
+
+const lerModo = (): Modo => {
+  try {
+    return localStorage.getItem("simulado_modo") === "lista" ? "lista" : "foco";
+  } catch {
+    return "foco";
+  }
+};
+
+// Converte as alternativas do banco para o formato do QuestionCard
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const parseOptions = (options: Json | null): any[] => {
+  if (!Array.isArray(options)) return [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return options.map((option: any) => ({
+    id: option.id || `option-${Math.random().toString(36).substr(2, 9)}`,
+    text: option.text || "",
+    isCorrect: Boolean(option.isCorrect),
+  }));
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const paraCartao = (q: any): Question => ({
+  id: q.id,
+  number: q.number || 0,
+  content: q.content,
+  command: q.command || "",
+  options: parseOptions(q.options),
+  year: q.year,
+  institution: q.institution,
+  organization: q.organization,
+  role: q.role,
+  educationLevel: q.education_level,
+  discipline: q.discipline,
+  topics: Array.isArray(q.topics) ? q.topics : [],
+  expandableContent: q.expandablecontent || undefined,
+  teacherExplanation: q.teacherexplanation || undefined,
+  aiExplanation: q.aiexplanation || undefined,
+  comments: [],
+});
+
+const CartaoCarregando = () => (
+  <div className="rounded-2xl border border-slate-200/80 bg-white p-5">
+    <div className="flex items-center gap-3">
+      <Skeleton className="h-7 w-7 rounded-lg" />
+      <div className="flex-1 space-y-1.5">
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-3 w-1/3" />
+      </div>
+    </div>
+    <Skeleton className="mt-5 h-16 w-full" />
+    <div className="mt-4 space-y-2">
+      {[0, 1, 2, 3].map((i) => (
+        <Skeleton key={i} className="h-12 w-full rounded-xl" />
+      ))}
+    </div>
+  </div>
+);
 
 const Simulado = () => {
   const { simuladoId } = useParams<{ simuladoId: string }>();
-  const navigate = useNavigate();
-  const [simulado, setSimulado] = useState<any>(null);
-  const [formattedQuestions, setFormattedQuestions] = useState<Question[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeQuestion, setActiveQuestion] = useState(0);
-  const [disabledOptions, setDisabledOptions] = useState<Record<string, string[]>>({});
-  const [_userAnswers, setUserAnswers] = useState<Record<string, string>>({});
-  const [isFinishingSimulado, setIsFinishingSimulado] = useState(false);
-  
-  // Estado para ranking
-  const [rankingIsPublic, setRankingIsPublic] = useState(false);
-  const [savingRankingVisibility, setSavingRankingVisibility] = useState(false);
-  
-  // Estado para controlar a exibição das questões
-  const [displayOption, setDisplayOption] = useState<DisplayOption>("single");
-  const [currentPage, setCurrentPage] = useState(1);
-  
   const [searchParams] = useSearchParams();
   const { isAdmin } = usePermissions();
   const { user } = useAuth();
   const { config } = useSiteConfig();
-  
-  // Calcular o número de páginas com base na opção de exibição
-  const getPageCount = () => {
-    if (displayOption === "all") return 1;
-    if (displayOption === "ten") return Math.ceil(formattedQuestions.length / 10);
-    return formattedQuestions.length;
-  };
-  
-  // Obter as questões a serem exibidas na página atual
-  const getDisplayedQuestions = () => {
-    if (displayOption === "all") return formattedQuestions;
-    if (displayOption === "ten") {
-      const startIndex = (currentPage - 1) * 10;
-      return formattedQuestions.slice(startIndex, startIndex + 10);
-    }
-    return [formattedQuestions[activeQuestion]];
-  };
+  const mostrarRanking = config.pages.showSimuladoRankingPage;
 
+  const [simulado, setSimulado] = useState<SimuladoInfo | null>(null);
+  const [curso, setCurso] = useState<{ id: string; titulo: string } | null>(null);
+  const [questoes, setQuestoes] = useState<Question[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  /** Resultado de cada questão já respondida (true = acertou). */
+  const [respostas, setRespostas] = useState<Map<string, boolean>>(new Map());
+  const [disabledOptions, setDisabledOptions] = useState<Record<string, string[]>>({});
+  const [ultimoResultado, setUltimoResultado] = useState<Resultado | null>(null);
+
+  const [modo, setModo] = useState<Modo>(lerModo);
+  const [atual, setAtual] = useState(0);
+  const [pagina, setPagina] = useState(1);
+  const [rolarPara, setRolarPara] = useState<number | null>(null);
+  const [cartaoAberto, setCartaoAberto] = useState(false);
+  const [confirmarAberto, setConfirmarAberto] = useState(false);
+  const [finalizando, setFinalizando] = useState(false);
+  const [resultado, setResultado] = useState<Resultado | null>(null);
+
+  const [rankingPublico, setRankingPublico] = useState(false);
+  const [salvandoRanking, setSalvandoRanking] = useState(false);
+
+  const topoQuestoes = useRef<HTMLDivElement>(null);
+  const cronometro = useCronometro(simuladoId, !carregando && questoes.length > 0 && !resultado);
+
+  const total = questoes.length;
+  const respondidas = questoes.filter((q) => respostas.has(q.id)).length;
+  const acertos = questoes.filter((q) => respostas.get(q.id) === true).length;
+  const emBranco = total - respondidas;
+  const aproveitamento = respondidas ? Math.round((acertos / respondidas) * 100) : 0;
+  const estimadoMin = total * MIN_POR_QUESTAO;
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+  const titulo = simulado?.titulo || simulado?.title || "Simulado";
+
+  const situacoes: SituacaoQuestao[] = useMemo(
+    () => questoes.map((q) => (!respostas.has(q.id) ? "branco" : respostas.get(q.id) ? "acertou" : "errou")),
+    [questoes, respostas]
+  );
+
+  // Carrega o simulado, as questões (na ordem do simulado) e as respostas do aluno
   useEffect(() => {
-    const fetchSimulado = async () => {
+    let ativo = true;
+    const carregar = async () => {
+      setCarregando(true);
       try {
-        setIsLoading(true);
+        const { data: simuladoData, error } = await supabase.from("simulados").select("*").eq("id", simuladoId).single();
+        if (error) throw error;
+        if (!ativo) return;
+        const info = simuladoData as unknown as SimuladoInfo;
+        setSimulado(info);
+        setRankingPublico(Boolean(info.ranking_is_public));
+        const ids = info.questoes_ids || [];
 
-        // Buscar dados do simulado
-        const { data: simuladoData, error: simuladoError } = await supabase
-          .from("simulados")
-          .select("*, ranking_is_public")
-          .eq("id", simuladoId)
-          .single();
-
-        if (simuladoError) throw simuladoError;
-        if (!simuladoData) {
-          toast.error("Simulado não encontrado");
-          return;
+        if (info.curso_id) {
+          supabase
+            .from("cursos")
+            .select("id, titulo")
+            .eq("id", info.curso_id)
+            .maybeSingle()
+            .then(({ data }) => ativo && data && setCurso(data as { id: string; titulo: string }));
         }
 
-        setSimulado(simuladoData);
-        setRankingIsPublic(simuladoData.ranking_is_public || false);
-
-        // Buscar as questões do simulado
-        if (simuladoData.questoes_ids && simuladoData.questoes_ids.length > 0) {
-          const { data: questionsData, error: questionsError } = await supabase
-            .from("questoes")
-            .select("*")
-            .in("id", simuladoData.questoes_ids);
-
+        // Questões de um caderno (?caderno=) substituem as do simulado
+        const caderno = searchParams.get("caderno");
+        let lista: Question[] = [];
+        if (caderno) {
+          lista = await carregarCaderno(caderno);
+        } else if (ids.length > 0) {
+          const { data: questionsData, error: questionsError } = await supabase.from("questoes").select("*").in("id", ids);
           if (questionsError) throw questionsError;
+          const posicao = new Map(ids.map((id, i) => [id, i]));
+          lista = (questionsData || [])
+            .map(paraCartao)
+            .sort((a, b) => (posicao.get(a.id) ?? 0) - (posicao.get(b.id) ?? 0));
+        }
+        if (!ativo) return;
+        setQuestoes(lista);
 
-          // Formatar questões para o formato do QuestionCard
-          const questionsForCard: Question[] = questionsData.map((q: any) => ({
-            id: q.id,
-            number: q.number || 0,
-            content: q.content,
-            command: q.command || '',
-            options: parseOptions(q.options),
-            year: q.year,
-            institution: q.institution,
-            organization: q.organization,
-            role: q.role,
-            educationLevel: q.education_level,
-            discipline: q.discipline,
-            topics: Array.isArray(q.topics) ? q.topics : [],
-            expandableContent: q.expandablecontent || undefined,
-            teacherExplanation: q.teacherexplanation || undefined,
-            aiExplanation: q.aiexplanation || undefined,
-            comments: []
-          }));
-          
-          setFormattedQuestions(questionsForCard);
+        const { data: auth } = await supabase.auth.getUser();
+        const uid = auth.user?.id;
+        if (uid && lista.length > 0) {
+          const { data: resp } = await supabase
+            .from("respostas_alunos")
+            .select("questao_id, is_correta, created_at")
+            .eq("aluno_id", uid)
+            .in(
+              "questao_id",
+              lista.map((q) => q.id)
+            )
+            .order("created_at", { ascending: true });
+          const mapa = new Map<string, boolean>();
+          (resp || []).forEach((r) => mapa.set(r.questao_id, Boolean(r.is_correta)));
+          if (ativo) setRespostas(mapa);
         }
 
-        // Buscar respostas do usuário para este simulado
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (!userError && userData.user) {
-          const { data: respostasData, error: respostasError } = await supabase
-            .from("respostas_alunos")
-            .select("questao_id, opcao_id")
-            .eq("aluno_id", userData.user.id)
-            .in("questao_id", simuladoData.questoes_ids || []);
-
-          if (!respostasError && respostasData) {
-            // Criar um objeto com as respostas do usuário
-            const userAnswersObj: Record<string, string> = {};
-            respostasData.forEach(resposta => {
-              userAnswersObj[resposta.questao_id] = resposta.opcao_id;
+        if (uid && simuladoId) {
+          const { data: res } = await (supabase as ClienteComResultados)
+            .from("user_simulado_results")
+            .select("acertos, erros, updated_at, created_at")
+            .eq("user_id", uid)
+            .eq("simulado_id", simuladoId)
+            .maybeSingle();
+          if (ativo && res) {
+            const totalRes = (res.acertos || 0) + (res.erros || 0);
+            setUltimoResultado({
+              acertos: res.acertos || 0,
+              erros: res.erros || 0,
+              total: totalRes,
+              respondidas: totalRes,
+              data: res.updated_at || res.created_at,
             });
-            setUserAnswers(userAnswersObj);
           }
         }
-      } catch (error) {
-        console.error("Erro ao buscar simulado:", error);
-        toast.error("Erro ao carregar o simulado. Tente novamente.");
+      } catch (e) {
+        console.error("Erro ao buscar simulado:", e);
+        if (ativo) toast.error("Erro ao carregar o simulado. Tente novamente.");
       } finally {
-        setIsLoading(false);
+        if (ativo) setCarregando(false);
       }
     };
+    carregar();
+    return () => {
+      ativo = false;
+    };
+  }, [simuladoId, searchParams]);
 
-    fetchSimulado();
-  }, [simuladoId]);
+  const carregarCaderno = async (caderno: string): Promise<Question[]> => {
+    const {
+      data: { user: atualUser },
+    } = await supabase.auth.getUser();
+    if (!atualUser) {
+      toast.error("Você precisa estar logado para fazer o simulado");
+      return [];
+    }
+    const { data: bookData, error: bookError } = await supabase.from("cadernos_questoes").select("*").eq("id", caderno).single();
+    if (bookError) throw bookError;
+    if (bookData.user_id !== atualUser.id && !bookData.is_public) {
+      toast.error("Você não tem permissão para ver este caderno");
+      return [];
+    }
+    const { data, error } = await supabase
+      .from("questoes_caderno")
+      .select(
+        `questao:questao_id (id, number, content, command, options, year, institution, organization, role, education_level, discipline, topics, expandablecontent, teacherexplanation, aiexplanation)`
+      )
+      .eq("caderno_id", caderno)
+      .order("position", { ascending: true });
+    if (error) throw error;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (data || []).map((qc: any) => qc.questao).filter(Boolean).map(paraCartao);
+  };
 
+  const trocarModo = (m: Modo) => {
+    // Mantém a questão em foco ao trocar de modo
+    if (m === "lista") setPagina(Math.floor(atual / POR_PAGINA) + 1);
+    else setAtual((pagina - 1) * POR_PAGINA);
+    setModo(m);
+    try {
+      localStorage.setItem("simulado_modo", m);
+    } catch {
+      /* sem armazenamento: só não lembra a escolha */
+    }
+  };
+
+  const rolarParaQuestoes = () => topoQuestoes.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  const irPara = (i: number) => {
+    setCartaoAberto(false);
+    setAtual(i);
+    if (modo === "foco") {
+      rolarParaQuestoes();
+    } else {
+      setPagina(Math.floor(i / POR_PAGINA) + 1);
+      setRolarPara(i);
+    }
+  };
+
+  // No modo lista, rola até a questão escolhida no cartão-resposta depois que a página aparece
   useEffect(() => {
-    // Só buscar questões adicionais se houver parâmetro caderno
-    const caderno = searchParams.get('caderno');
-    if (caderno) {
-      fetchQuestions();
+    if (rolarPara === null) return;
+    const t = setTimeout(() => {
+      document.getElementById(`questao-${rolarPara + 1}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setRolarPara(null);
+    }, 50);
+    return () => clearTimeout(t);
+  }, [rolarPara, pagina]);
+
+  const proxima = () => {
+    if (atual < total - 1) {
+      setAtual(atual + 1);
+      rolarParaQuestoes();
     }
-  }, [searchParams]);
-
-  const fetchQuestions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error('Você precisa estar logado para fazer o simulado');
-        return;
-      }
-
-      const caderno = searchParams.get('caderno');
-      
-      // Não fazer nada se não houver caderno (questões do simulado já foram carregadas)
-      if (!caderno) return;
-
-      // Verifica se o usuário tem acesso ao caderno
-      const { data: bookData, error: bookError } = await supabase
-        .from('cadernos_questoes')
-        .select('*')
-        .eq('id', caderno)
-        .single();
-
-      if (bookError) throw bookError;
-
-      if (bookData.user_id !== user.id && !bookData.is_public) {
-        toast.error('Você não tem permissão para ver este caderno');
-        return;
-      }
-
-      // Busca as questões do caderno
-      const questionsQuery = supabase
-        .from('questoes_caderno')
-        .select(`
-          questao:questao_id (
-            id,
-            number,
-            content,
-            command,
-            options,
-            year,
-            institution,
-            organization,
-            role,
-            education_level,
-            discipline,
-            topics,
-            expandablecontent,
-            teacherexplanation,
-            aiexplanation
-          )
-        `)
-        .eq('caderno_id', caderno)
-        .order('position', { ascending: true });
-
-      const { data: questionsData, error: questionsError } = await questionsQuery;
-
-      if (questionsError) throw questionsError;
-
-      // Formatar questões para o formato do QuestionCard
-      const questionsForCard: Question[] = questionsData.map((qc: any) => {
-        const q = qc.questao;
-        return {
-          id: q.id,
-          number: q.number || 0,
-          content: q.content,
-          command: q.command || '',
-          options: parseOptions(q.options),
-          year: q.year,
-          institution: q.institution,
-          organization: q.organization,
-          role: q.role,
-          educationLevel: q.education_level,
-          discipline: q.discipline,
-          topics: Array.isArray(q.topics) ? q.topics : [],
-          expandableContent: q.expandablecontent || undefined,
-          teacherExplanation: q.teacherexplanation || undefined,
-          aiExplanation: q.aiexplanation || undefined,
-          comments: []
-        };
-      });
-
-      setFormattedQuestions(questionsForCard);
-    } catch (error) {
-      console.error("Erro ao buscar questões:", error);
-      toast.error("Erro ao carregar as questões. Tente novamente.");
+  };
+  const anterior = () => {
+    if (atual > 0) {
+      setAtual(atual - 1);
+      rolarParaQuestoes();
     }
   };
 
-  // Função para converter options do banco para o formato esperado
-  const parseOptions = (options: Json | null): any[] => {
-    if (!options) return [];
-    
-    // Verificar se options é um array
-    if (Array.isArray(options)) {
-      return options.map((option: any) => ({
-        id: option.id || `option-${Math.random().toString(36).substr(2, 9)}`,
-        text: option.text || '',
-        isCorrect: Boolean(option.isCorrect)
-      }));
-    }
-    
-    return [];
+  // Setas do teclado no modo "uma por vez"
+  useEffect(() => {
+    if (modo !== "foco") return;
+    const tecla = (e: KeyboardEvent) => {
+      const alvo = e.target as HTMLElement;
+      if (alvo.closest("input, textarea, select, [contenteditable=true], [role=dialog]")) return;
+      if (e.key === "ArrowRight") proxima();
+      if (e.key === "ArrowLeft") anterior();
+    };
+    window.addEventListener("keydown", tecla);
+    return () => window.removeEventListener("keydown", tecla);
+  });
+
+  const trocarPagina = (p: number) => {
+    setPagina(p);
+    rolarParaQuestoes();
   };
 
-  const handleOptionSelect = async (questionId: string, optionId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error('Você precisa estar logado para responder às questões');
-        return;
-      }
-
-      // Salvar resposta no banco de dados
-      const { error } = await supabase
-        .from('respostas_alunos')
-        .upsert({
-          aluno_id: user.id,
-          questao_id: questionId,
-          opcao_id: optionId,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'aluno_id,questao_id'
-        });
-
-      if (error) throw error;
-
-      // Atualizar estado local
-      setUserAnswers(prev => ({
-        ...prev,
-        [questionId]: optionId
-      }));
-
-      // Log da atividade
-      await ActivityLogger.logActivity('question_answered', {
-        questionId,
-        optionId,
-        simuladoId
-      });
-    } catch (error) {
-      console.error("Erro ao salvar resposta:", error);
-      toast.error("Erro ao salvar resposta. Tente novamente.");
-    }
-  };
-
-  const handleToggleDisabled = (questionId: string, optionId: string) => {
-    setDisabledOptions(prev => {
-      const questionDisabled = prev[questionId] || [];
-      const isDisabled = questionDisabled.includes(optionId);
-      
-      return {
-        ...prev,
-        [questionId]: isDisabled
-          ? questionDisabled.filter(id => id !== optionId)
-          : [...questionDisabled, optionId]
-      };
+  const riscarAlternativa = (questionId: string, optionId: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    setDisabledOptions((prev) => {
+      const atuais = prev[questionId] || [];
+      return { ...prev, [questionId]: atuais.includes(optionId) ? atuais.filter((id) => id !== optionId) : [...atuais, optionId] };
     });
   };
 
-  const handlePreviousQuestion = () => {
-    if (activeQuestion > 0) {
-      setActiveQuestion(activeQuestion - 1);
-    }
-  };
+  const registrarResposta = (questionId: string, acertou: boolean) =>
+    setRespostas((m) => {
+      const novo = new Map(m);
+      novo.set(questionId, acertou);
+      return novo;
+    });
 
-  const handleNextQuestion = () => {
-    if (activeQuestion < formattedQuestions.length - 1) {
-      setActiveQuestion(activeQuestion + 1);
-    }
-  };
-
-  const handleQuestionChange = (index: number) => {
-    if (index >= 0 && index < formattedQuestions.length) {
-      setActiveQuestion(index);
-    }
-  };
-
-  const calculateAndSaveResults = async () => {
+  const finalizar = async () => {
+    if (!simulado || !simuladoId) return;
     try {
-      setIsFinishingSimulado(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error('Você precisa estar logado para finalizar o simulado');
+      setFinalizando(true);
+      const {
+        data: { user: atualUser },
+      } = await supabase.auth.getUser();
+      if (!atualUser) {
+        toast.error("Você precisa estar logado para finalizar o simulado");
         return;
       }
+      const ids = simulado.questoes_ids || [];
 
-      // Buscar todas as respostas do usuário para este simulado
+      // Última resposta do aluno em cada questão do simulado
       const { data: respostasData, error: respostasError } = await supabase
         .from("respostas_alunos")
-        .select("questao_id, opcao_id")
-        .eq("aluno_id", user.id)
-        .in("questao_id", simulado.questoes_ids || []);
-
+        .select("questao_id, opcao_id, created_at")
+        .eq("aluno_id", atualUser.id)
+        .in("questao_id", ids)
+        .order("created_at", { ascending: true });
       if (respostasError) throw respostasError;
+      const escolhidas: Record<string, string> = {};
+      (respostasData || []).forEach((r) => (escolhidas[r.questao_id] = r.opcao_id));
 
-      // Criar um mapa de respostas para fácil acesso
-      const userAnswersMap: Record<string, string> = {};
-      respostasData.forEach(resposta => {
-        userAnswersMap[resposta.questao_id] = resposta.opcao_id;
-      });
-
-      // Buscar as questões novamente para verificar as respostas corretas
-      const { data: questionsData, error: questionsError } = await supabase
-        .from("questoes")
-        .select("id, options")
-        .in("id", simulado.questoes_ids || []);
-
+      // Gabarito conferido no banco
+      const { data: questionsData, error: questionsError } = await supabase.from("questoes").select("id, options").in("id", ids);
       if (questionsError) throw questionsError;
 
-      // Calcular acertos
-      let correctAnswers = 0;
-      questionsData.forEach((q: any) => {
-        const userAnswer = userAnswersMap[q.id];
-        if (userAnswer) {
-          const options = parseOptions(q.options);
-          const correctOption = options.find((opt: any) => opt.isCorrect);
-          if (correctOption && correctOption.id === userAnswer) {
-            correctAnswers++;
-          }
-        }
+      let corretas = 0;
+      (questionsData || []).forEach((q) => {
+        const escolhida = escolhidas[q.id];
+        if (!escolhida) return;
+        const certa = parseOptions(q.options).find((opt) => opt.isCorrect);
+        if (certa && certa.id === escolhida) corretas++;
       });
 
-      // Calcular porcentagem
-      const totalQuestions = simulado.questoes_ids?.length || 0;
-      const percentage = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+      const totalQuestoes = ids.length;
+      const percentual = totalQuestoes > 0 ? Math.round((corretas / totalQuestoes) * 100) : 0;
 
-      // Salvar resultado no banco de dados
-      const { error: resultError } = await supabase
-        .from('user_simulado_results')
-        .upsert({
-          user_id: user.id,
+      const { error: resultError } = await (supabase as ClienteComResultados).from("user_simulado_results").upsert(
+        {
+          user_id: atualUser.id,
           simulado_id: simuladoId,
           // Colunas da tabela: acertos e erros (questões em branco contam como erro)
-          acertos: correctAnswers,
-          erros: Math.max(0, totalQuestions - correctAnswers),
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,simulado_id'
-        });
-
+          acertos: corretas,
+          erros: Math.max(0, totalQuestoes - corretas),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,simulado_id" }
+      );
       if (resultError) throw resultError;
 
-      // Log da atividade
-      await ActivityLogger.logActivity('simulado_completed', {
-        simuladoId,
-        correctAnswers,
-        totalQuestions,
-        percentage
+      await ActivityLogger.logActivity({
+        event_type: "exam_complete",
+        resource_id: simuladoId,
+        resource_type: "simulado",
+        description: `Finalizou o simulado ${titulo}`,
+        metadata: { correctAnswers: corretas, totalQuestions: totalQuestoes, percentage: percentual },
       });
 
-      toast.success(`Simulado finalizado! Você acertou ${correctAnswers} de ${totalQuestions} questões (${percentage}%).`);
-      
-      // Redirecionar para a página de ranking
-      navigate(`/simulado-ranking/${simuladoId}`);
-    } catch (error) {
-      console.error("Erro ao calcular e salvar resultados:", error);
+      const respondidasFinal = ids.filter((id) => escolhidas[id]).length;
+      const final: Resultado = {
+        acertos: corretas,
+        erros: Math.max(0, totalQuestoes - corretas),
+        total: totalQuestoes,
+        respondidas: respondidasFinal,
+        segundos: cronometro.segundos,
+        data: new Date().toISOString(),
+      };
+      cronometro.parar();
+      setConfirmarAberto(false);
+      setResultado(final);
+      setUltimoResultado(final);
+    } catch (e) {
+      console.error("Erro ao calcular e salvar resultados:", e);
       toast.error("Erro ao finalizar simulado. Tente novamente.");
     } finally {
-      setIsFinishingSimulado(false);
+      setFinalizando(false);
     }
   };
 
-  const toggleRankingVisibility = async () => {
+  const alternarRanking = async () => {
     try {
-      setSavingRankingVisibility(true);
-      
+      setSalvandoRanking(true);
       const { error } = await supabase
-        .from('simulados')
-        .update({ 
-          ranking_is_public: !rankingIsPublic,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', simuladoId);
-
+        .from("simulados")
+        .update({ ranking_is_public: !rankingPublico })
+        .eq("id", simuladoId);
       if (error) throw error;
-
-      setRankingIsPublic(!rankingIsPublic);
-      toast.success(`Visibilidade do ranking ${!rankingIsPublic ? 'ativada' : 'desativada'} com sucesso!`);
-    } catch (error) {
-      console.error("Erro ao atualizar visibilidade do ranking:", error);
+      setRankingPublico(!rankingPublico);
+      toast.success(`Ranking ${!rankingPublico ? "público" : "privado"} agora.`);
+    } catch (e) {
+      console.error("Erro ao atualizar visibilidade do ranking:", e);
       toast.error("Erro ao atualizar visibilidade do ranking. Tente novamente.");
     } finally {
-      setSavingRankingVisibility(false);
+      setSalvandoRanking(false);
     }
   };
 
-  if (isLoading) {
+  const linkCurso = curso ? `/course/${generateFriendlyUrl(curso.titulo, curso.id)}` : "/my-courses";
+  const periodo =
+    simulado?.data_inicio || simulado?.data_fim
+      ? [
+          simulado.data_inicio && `de ${format(new Date(simulado.data_inicio), "dd/MM", { locale: ptBR })}`,
+          simulado.data_fim && `até ${format(new Date(simulado.data_fim), "dd/MM/yyyy", { locale: ptBR })}`,
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : null;
+
+  // Painel lateral (computador) e gaveta (celular)
+  const painelProva = (
+    <div className="space-y-4">
+      <Painel className="p-4">
+        <CronometroProva
+          segundos={cronometro.segundos}
+          rodando={cronometro.rodando && !resultado}
+          onAlternar={cronometro.alternar}
+          estimadoMin={estimadoMin}
+        />
+      </Painel>
+      <Painel className="p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
+            <LayoutGrid className="h-4 w-4 text-[#5f2ebe]" /> Cartão-resposta
+          </span>
+          <span className="text-xs tabular-nums text-slate-500">
+            {respondidas}/{total}
+          </span>
+        </div>
+        <CartaoResposta situacoes={situacoes} atual={modo === "foco" ? atual : null} onIr={irPara} />
+      </Painel>
+      {user ? (
+        <button
+          type="button"
+          onClick={() => {
+            setCartaoAberto(false);
+            setConfirmarAberto(true);
+          }}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5f2ebe] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#4f25a0]"
+        >
+          <Flag className="h-4 w-4" /> Finalizar simulado
+        </button>
+      ) : (
+        <Link
+          to="/login"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#5f2ebe] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#4f25a0]"
+        >
+          <LogIn className="h-4 w-4" /> Entrar para salvar o resultado
+        </Link>
+      )}
+      {mostrarRanking && (
+        <Link
+          to={`/simulado-ranking/${simuladoId}`}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          <Trophy className="h-4 w-4 text-amber-500" /> Ver ranking
+        </Link>
+      )}
+      {isAdmin() && (
+        <label className="flex items-center justify-between gap-2 rounded-xl border border-dashed border-slate-300 px-3 py-2.5 text-sm text-slate-600">
+          <span>
+            Ranking público
+            <span className="block text-xs text-slate-400">{salvandoRanking ? "Salvando..." : "Só administradores veem esta opção"}</span>
+          </span>
+          <Switch checked={rankingPublico} onCheckedChange={alternarRanking} disabled={salvandoRanking} />
+        </label>
+      )}
+    </div>
+  );
+
+  if (!carregando && !simulado) {
     return (
       <PublicLayout>
-        <div className="min-h-screen flex flex-col">
+        <div className="flex min-h-screen flex-col bg-[rgb(242,244,246)]">
           <Header />
-          <main className="flex-1 container mx-auto px-4 py-8">
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#5f2ebe]"></div>
-            </div>
+          <main className="flex-1 py-10 mx-auto w-full max-w-[1400px] px-[10px] md:px-[32px]">
+            <EstadoVazio
+              icone={FileQuestion}
+              titulo="Simulado não encontrado"
+              texto="O simulado que você está tentando acessar não existe ou foi removido."
+              acao={
+                <Link to="/my-courses" className="rounded-xl bg-[#5f2ebe] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4f25a0]">
+                  Ir para meus cursos
+                </Link>
+              }
+            />
           </main>
           <Footer />
         </div>
@@ -467,223 +566,442 @@ const Simulado = () => {
     );
   }
 
-  if (!simulado) {
-    return (
-      <PublicLayout>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1 container mx-auto px-4 py-8">
-            <div className="bg-white rounded-lg shadow-sm p-6 text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Simulado não encontrado</h1>
-              <p className="text-gray-600 mb-6">O simulado que você está tentando acessar não existe ou foi removido.</p>
-              <Link to="/simulados">
-                <Button>Voltar para simulados</Button>
-              </Link>
-            </div>
-          </main>
-          <Footer />
-        </div>
-      </PublicLayout>
-    );
-  }
+  const ultimaDoFoco = atual === total - 1;
+  const visiveis = modo === "foco" ? questoes.slice(atual, atual + 1) : questoes.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+  const primeiroIndice = modo === "foco" ? atual : (pagina - 1) * POR_PAGINA;
 
   return (
     <PublicLayout>
-      <div className="min-h-screen flex flex-col">
+      <div className="flex min-h-screen flex-col bg-[rgb(242,244,246)]">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-8">
-          {/* Cabeçalho do simulado */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{simulado.title}</h1>
-                <p className="text-gray-600 mt-2">{simulado.description}</p>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                {isAdmin && (
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      id="ranking-visibility"
-                      checked={rankingIsPublic}
-                      onCheckedChange={toggleRankingVisibility}
-                      disabled={savingRankingVisibility}
-                    />
-                    <Label htmlFor="ranking-visibility">
-                      {savingRankingVisibility ? "Salvando..." : "Ranking público"}
-                    </Label>
-                  </div>
-                )}
-                
-                <Link to={`/simulado-ranking/${simuladoId}`}>
-                  <Button variant="outline" className="flex items-center gap-2">
-                    <Trophy className="w-4 h-4" />
-                    Ver Ranking
-                  </Button>
+        <main className="flex-1">
+          {/* Topo */}
+          <section className="relative overflow-hidden border-b border-slate-200/70 bg-white">
+            <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-[#5f2ebe]/15 to-[#ea2be2]/10 blur-2xl" />
+            <div className="relative grid gap-6 py-8 mx-auto w-full max-w-[1400px] px-[10px] md:px-[32px] md:py-10 lg:grid-cols-[1fr_320px] lg:items-end">
+              <div className="min-w-0">
+                <Link to={linkCurso} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-[#5f2ebe]">
+                  <ArrowLeft className="h-3.5 w-3.5" /> {curso ? curso.titulo : "Meus cursos"}
                 </Link>
-              </div>
-            </div>
-            
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Total de Questões</p>
-                <p className="text-2xl font-bold text-[#5f2ebe]">{formattedQuestions.length}</p>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Tempo Estimado</p>
-                <p className="text-2xl font-bold text-[#5f2ebe]">{formattedQuestions.length * 2} min</p>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Instituição</p>
-                <p className="text-lg font-semibold text-gray-900">{simulado.institution || "Não especificada"}</p>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Ano</p>
-                <p className="text-lg font-semibold text-gray-900">{simulado.year || "Não especificado"}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Controles de navegação e exibição */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">Modo de Exibição</p>
-                  <Select value={displayOption} onValueChange={(value: DisplayOption) => {
-                    setDisplayOption(value);
-                    setCurrentPage(1);
-                    setActiveQuestion(0);
-                  }}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="single">Uma por vez</SelectItem>
-                      <SelectItem value="ten">Dez por página</SelectItem>
-                      <SelectItem value="all">Todas de uma vez</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {displayOption !== "single" && (
-                  <div>
-                    <p className="text-sm text-gray-600">Página</p>
-                    <Pagination 
-                      currentPage={currentPage} 
-                      totalPages={getPageCount()}
-                      onPageChange={setCurrentPage}
-                    />
-                  </div>
+                <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-[#5f2ebe]">Simulado</p>
+                {carregando ? (
+                  <Skeleton className="mt-2 h-8 w-2/3" />
+                ) : (
+                  <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">{titulo}</h1>
                 )}
-              </div>
-              
-              {displayOption === "single" && formattedQuestions.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Button 
-                    onClick={handlePreviousQuestion}
-                    disabled={activeQuestion === 0}
-                    variant="outline"
-                  >
-                    Anterior
-                  </Button>
-                  
-                  <span className="text-sm text-gray-600">
-                    Questão {activeQuestion + 1} de {formattedQuestions.length}
+                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600">
+                    <ClipboardList className="h-3.5 w-3.5" /> {carregando ? "..." : `${total} ${total === 1 ? "questão" : "questões"}`}
                   </span>
-                  
-                  <Button 
-                    onClick={handleNextQuestion}
-                    disabled={activeQuestion === formattedQuestions.length - 1}
-                    variant="outline"
-                  >
-                    Próxima
-                  </Button>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600">
+                    cerca de {carregando ? "..." : estimadoMin} min
+                  </span>
+                  {periodo && <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-600">{periodo}</span>}
                 </div>
-              )}
-            </div>
-          </div>
+                <p className="mt-3 max-w-xl text-sm text-slate-500">
+                  Responda cada questão para ver o gabarito na hora. Quando terminar, finalize para guardar sua nota
+                  {mostrarRanking ? " e entrar no ranking" : ""}. Questões em branco contam como erro.
+                </p>
+              </div>
 
-          {/* Lista de questões */}
-          {formattedQuestions.length > 0 ? (
-            <div className="space-y-6">
-              {getDisplayedQuestions().map((question, index) => (
-                <QuestionCard
-                  key={`${question.id}-${displayOption}-${currentPage}`}
-                  question={question}
-                  selectedOption={_userAnswers[question.id] || null}
-                  disabledOptions={disabledOptions[question.id] || []}
-                  onOptionSelect={handleOptionSelect}
-                  onToggleDisabled={handleToggleDisabled}
-                  showNumber={displayOption === "single" ? activeQuestion + 1 : (currentPage - 1) * (displayOption === "ten" ? 10 : formattedQuestions.length) + index + 1}
-                />
-              ))}
-              
-              {/* Paginação para modo "ten" */}
-              {displayOption === "ten" && getPageCount() > 1 && (
-                <div className="flex justify-center mt-8">
-                  <Pagination 
-                    currentPage={currentPage} 
-                    totalPages={getPageCount()}
-                    onPageChange={setCurrentPage}
-                  />
-                </div>
-              )}
-              
-              {/* Botões de navegação para modo "single" */}
-              {displayOption === "single" && formattedQuestions.length > 1 && (
-                <div className="flex justify-between mt-8">
-                  <Button 
-                    onClick={handlePreviousQuestion}
-                    disabled={activeQuestion === 0}
-                    variant="outline"
-                  >
-                    Questão Anterior
-                  </Button>
-                  
-                  {activeQuestion === formattedQuestions.length - 1 ? (
-                    <Button 
-                      onClick={calculateAndSaveResults}
-                      disabled={isFinishingSimulado}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {isFinishingSimulado ? "Finalizando..." : "Finalizar Simulado"}
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={handleNextQuestion}
-                      disabled={activeQuestion === formattedQuestions.length - 1}
-                    >
-                      Próxima Questão
-                    </Button>
+              {/* Progresso do aluno */}
+              {user ? (
+                <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-3 shadow-sm backdrop-blur lg:p-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Seu progresso</span>
+                    <span className="text-xs tabular-nums text-slate-500">
+                      {respondidas} de {total}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-end gap-6">
+                    <div>
+                      <div className="text-xl font-bold tabular-nums text-slate-900 lg:text-2xl">{respondidas}</div>
+                      <div className="text-xs text-slate-500">respondidas</div>
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold tabular-nums text-emerald-600 lg:text-2xl">{acertos}</div>
+                      <div className="text-xs text-slate-500">acertos</div>
+                    </div>
+                    <div>
+                      <div className={cn("text-xl font-bold tabular-nums lg:text-2xl", respondidas ? "text-slate-900" : "text-slate-300")}>
+                        {aproveitamento}%
+                      </div>
+                      <div className="text-xs text-slate-500">de acerto</div>
+                    </div>
+                  </div>
+                  <BarraProgresso valor={total ? (respondidas / total) * 100 : 0} className="mt-3" />
+                  {ultimoResultado && (
+                    <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">
+                      <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                      Resultado salvo: <strong className="font-semibold text-slate-800">
+                        {ultimoResultado.acertos}/{ultimoResultado.total}
+                      </strong>
+                      {ultimoResultado.data && ` em ${format(new Date(ultimoResultado.data), "dd/MM/yyyy", { locale: ptBR })}`}
+                    </p>
                   )}
                 </div>
-              )}
-              
-              {/* Botão de finalizar para modos "ten" e "all" */}
-              {(displayOption === "ten" || displayOption === "all") && (
-                <div className="flex justify-center mt-8">
-                  <Button 
-                    onClick={calculateAndSaveResults}
-                    disabled={isFinishingSimulado}
-                    className="bg-green-600 hover:bg-green-700"
+              ) : (
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-4">
+                  <p className="text-sm font-semibold text-slate-800">Entre para valer nota</p>
+                  <p className="mt-1 text-xs text-slate-500">Sem entrar você pode treinar, mas suas respostas e sua nota não ficam guardadas.</p>
+                  <Link
+                    to="/login"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#5f2ebe] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#4f25a0]"
                   >
-                    {isFinishingSimulado ? "Finalizando..." : "Finalizar Simulado"}
-                  </Button>
+                    <LogIn className="h-3.5 w-3.5" /> Entrar
+                  </Link>
                 </div>
               )}
             </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-8 text-center">
-              <p className="text-[#67748a]">Este simulado não possui questões.</p>
+          </section>
+
+          <div className="grid gap-6 py-6 mx-auto w-full max-w-[1400px] px-[10px] md:px-[32px] lg:grid-cols-[minmax(0,1fr)_300px]">
+            <div className="min-w-0 space-y-4">
+              {/* Barra de controles */}
+              <div ref={topoQuestoes} className="flex scroll-mt-4 flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCartaoAberto(true)}
+                  className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 lg:hidden"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  <span className="tabular-nums">
+                    {respondidas}/{total}
+                  </span>
+                  <span className="hidden text-slate-400 sm:inline">·</span>
+                  <span className="hidden tabular-nums sm:inline">{relogio(cronometro.segundos)}</span>
+                </button>
+                <p className="mr-auto text-sm text-slate-500">
+                  {carregando ? (
+                    "Carregando questões..."
+                  ) : modo === "foco" ? (
+                    <>
+                      Questão <strong className="text-base font-bold tabular-nums text-slate-900">{atual + 1}</strong> de {total}
+                    </>
+                  ) : (
+                    <>
+                      <strong className="text-base font-bold tabular-nums text-slate-900">{total}</strong> {total === 1 ? "questão" : "questões"}
+                    </>
+                  )}
+                </p>
+                <Segmentos<Modo>
+                  valor={modo}
+                  onChange={trocarModo}
+                  className="bg-slate-200/60"
+                  opcoes={[
+                    {
+                      valor: "foco",
+                      rotulo: (
+                        <>
+                          <Square className="h-4 w-4" /> <span className="hidden sm:inline">Uma por vez</span>
+                        </>
+                      ),
+                    },
+                    {
+                      valor: "lista",
+                      rotulo: (
+                        <>
+                          <List className="h-4 w-4" /> <span className="hidden sm:inline">Lista</span>
+                        </>
+                      ),
+                    },
+                  ]}
+                />
+              </div>
+
+              {carregando ? (
+                <CartaoCarregando />
+              ) : total === 0 ? (
+                <EstadoVazio icone={FileQuestion} titulo="Este simulado ainda não tem questões" texto="Volte mais tarde ou escolha outro simulado do curso." />
+              ) : (
+                <>
+                  {modo === "foco" && (
+                    <div className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white px-3 py-2 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+                      <button
+                        type="button"
+                        onClick={anterior}
+                        disabled={atual === 0}
+                        aria-label="Questão anterior"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between text-xs text-slate-500">
+                          <span className="tabular-nums">
+                            {respondidas} de {total} respondidas
+                          </span>
+                          <span className="tabular-nums">{total ? Math.round((respondidas / total) * 100) : 0}%</span>
+                        </div>
+                        {total <= 60 ? (
+                          <div className="mt-1.5 flex gap-0.5">
+                            {situacoes.map((s, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => irPara(i)}
+                                aria-label={`Ir para a questão ${i + 1}`}
+                                className={cn(
+                                  "h-1.5 flex-1 rounded-full transition-all",
+                                  i === atual
+                                    ? "bg-[#5f2ebe]"
+                                    : s === "acertou"
+                                      ? "bg-emerald-400"
+                                      : s === "errou"
+                                        ? "bg-red-400"
+                                        : "bg-slate-200 hover:bg-slate-300"
+                                )}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <BarraProgresso valor={(respondidas / total) * 100} className="mt-1.5 h-1.5" />
+                        )}
+                      </div>
+                      {ultimaDoFoco ? (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmarAberto(true)}
+                          disabled={!user}
+                          className="inline-flex h-9 items-center gap-1 rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-40"
+                        >
+                          <Flag className="h-4 w-4" /> <span className="hidden sm:inline">Finalizar</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={proxima}
+                          className="inline-flex h-9 items-center gap-1 rounded-lg bg-[#5f2ebe] px-3 text-sm font-semibold text-white hover:bg-[#4f25a0]"
+                        >
+                          <span className="hidden sm:inline">Próxima</span>
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-4">
+                    {visiveis.map((questao, i) => {
+                      const indice = primeiroIndice + i;
+                      return (
+                        <div key={questao.id} id={`questao-${indice + 1}`} className="scroll-mt-4">
+                          <QuestionCard
+                            question={questao}
+                            disabledOptions={disabledOptions[questao.id] || []}
+                            onToggleDisabled={(optionId, event) => riscarAlternativa(questao.id, optionId, event)}
+                            aparencia="moderna"
+                            numero={indice + 1}
+                            onAnswered={registrarResposta}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {modo === "foco" ? (
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={anterior}
+                        disabled={atual === 0}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                      >
+                        <ChevronLeft className="h-4 w-4" /> Anterior
+                      </button>
+                      {ultimaDoFoco ? (
+                        user && (
+                          <button
+                            type="button"
+                            onClick={() => setConfirmarAberto(true)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+                          >
+                            <Flag className="h-4 w-4" /> Finalizar simulado
+                          </button>
+                        )
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={proxima}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-[#5f2ebe] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#4f25a0]"
+                        >
+                          Próxima questão <ChevronRight className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <Paginacao
+                        pagina={pagina}
+                        totalPaginas={totalPaginas}
+                        total={total}
+                        porPagina={POR_PAGINA}
+                        onPagina={trocarPagina}
+                        className="rounded-2xl border border-slate-200/80 bg-white/60 px-4 py-3"
+                      />
+                      {pagina === totalPaginas && user && (
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setConfirmarAberto(true)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700"
+                          >
+                            <Flag className="h-4 w-4" /> Finalizar simulado
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
             </div>
-          )}
+
+            {/* Painel da prova (computador) */}
+            <aside className="hidden lg:block">
+              <div className="sticky top-4">{painelProva}</div>
+            </aside>
+          </div>
         </main>
         <Footer />
       </div>
+
+      {/* Painel da prova no celular */}
+      <Sheet open={cartaoAberto} onOpenChange={setCartaoAberto}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl bg-[rgb(242,244,246)] px-4 pb-6 pt-4">
+          <SheetHeader className="mb-3 text-left">
+            <SheetTitle>Sua prova</SheetTitle>
+          </SheetHeader>
+          {painelProva}
+        </SheetContent>
+      </Sheet>
+
+      {/* Confirmação para finalizar */}
+      <Dialog open={confirmarAberto} onOpenChange={(v) => !finalizando && setConfirmarAberto(v)}>
+        <DialogContent className="max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Finalizar o simulado?</DialogTitle>
+            <DialogDescription>
+              Sua nota será calculada com as respostas que você deu até agora{mostrarRanking ? " e vai para o ranking" : ""}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl bg-slate-50 p-3">
+              <div className="text-xl font-bold tabular-nums text-slate-900">{respondidas}</div>
+              <div className="text-xs text-slate-500">respondidas</div>
+            </div>
+            <div className={cn("rounded-xl p-3", emBranco ? "bg-amber-50" : "bg-slate-50")}>
+              <div className={cn("text-xl font-bold tabular-nums", emBranco ? "text-amber-600" : "text-slate-900")}>{emBranco}</div>
+              <div className="text-xs text-slate-500">em branco</div>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <div className="text-xl font-bold tabular-nums text-slate-900">{relogio(cronometro.segundos)}</div>
+              <div className="text-xs text-slate-500">de prova</div>
+            </div>
+          </div>
+          {emBranco > 0 && (
+            <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {emBranco === 1 ? "Há 1 questão em branco, que conta" : `Há ${emBranco} questões em branco, que contam`} como erro.
+            </p>
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmarAberto(false);
+                const primeiraEmBranco = situacoes.indexOf("branco");
+                if (primeiraEmBranco >= 0) irPara(primeiraEmBranco);
+              }}
+              disabled={finalizando}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              {emBranco > 0 ? "Ir para as em branco" : "Continuar revisando"}
+            </button>
+            <button
+              type="button"
+              onClick={finalizar}
+              disabled={finalizando}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {finalizando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flag className="h-4 w-4" />}
+              {finalizando ? "Calculando..." : "Finalizar e ver nota"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Resultado */}
+      <Dialog open={!!resultado} onOpenChange={(v) => !v && setResultado(null)}>
+        <DialogContent className="max-w-md rounded-2xl">
+          {resultado && (
+            <>
+              <DialogHeader className="items-center text-center sm:text-center">
+                <span className="mb-1 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#5f2ebe] to-[#ea2be2] text-white">
+                  <Trophy className="h-7 w-7" />
+                </span>
+                <DialogTitle className="text-xl">Simulado finalizado!</DialogTitle>
+                <DialogDescription>{titulo}</DialogDescription>
+              </DialogHeader>
+              <div className="text-center">
+                <div className="text-5xl font-bold tabular-nums tracking-tight text-slate-900">
+                  {resultado.total ? Math.round((resultado.acertos / resultado.total) * 100) : 0}%
+                </div>
+                <p className="mt-1 text-sm text-slate-500">
+                  {resultado.acertos} de {resultado.total} questões certas
+                </p>
+                <BarraProgresso
+                  valor={resultado.total ? (resultado.acertos / resultado.total) * 100 : 0}
+                  corClasse="bg-gradient-to-r from-[#5f2ebe] to-[#ea2be2]"
+                  className="mt-4"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-xl bg-emerald-50 p-3">
+                  <CheckCircle2 className="mx-auto h-4 w-4 text-emerald-600" />
+                  <div className="mt-1 text-lg font-bold tabular-nums text-emerald-700">{resultado.acertos}</div>
+                  <div className="text-xs text-emerald-700/70">acertos</div>
+                </div>
+                <div className="rounded-xl bg-red-50 p-3">
+                  <XCircle className="mx-auto h-4 w-4 text-red-500" />
+                  <div className="mt-1 text-lg font-bold tabular-nums text-red-600">{resultado.erros}</div>
+                  <div className="text-xs text-red-600/70">erros</div>
+                  {resultado.total - resultado.respondidas > 0 && (
+                    <div className="text-[11px] text-red-600/60">{resultado.total - resultado.respondidas} em branco</div>
+                  )}
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <ClipboardList className="mx-auto h-4 w-4 text-slate-500" />
+                  <div className="mt-1 text-lg font-bold tabular-nums text-slate-900">{relogio(resultado.segundos || 0)}</div>
+                  <div className="text-xs text-slate-500">de prova</div>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                {mostrarRanking && (
+                  <Link
+                    to={`/simulado-ranking/${simuladoId}`}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#5f2ebe] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4f25a0]"
+                  >
+                    <Trophy className="h-4 w-4" /> Ver minha posição no ranking
+                  </Link>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setResultado(null)}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Revisar questões
+                  </button>
+                  <Link
+                    to={linkCurso}
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Voltar ao curso
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </PublicLayout>
   );
 };

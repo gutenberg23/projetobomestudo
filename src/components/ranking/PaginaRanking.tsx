@@ -99,7 +99,7 @@ const NavRankings: React.FC<{ atual: TipoRanking }> = ({ atual }) => {
 };
 
 /** Cartão "Sua posição" do topo. */
-const SuaPosicao: React.FC<{
+export const SuaPosicao: React.FC<{
   itens: ItemRanking[];
   carregando: boolean;
   unidade: [string, string];
@@ -176,7 +176,7 @@ const SuaPosicao: React.FC<{
   );
 };
 
-const Podio: React.FC<{ itens: ItemRanking[]; meuId?: string; unidade: [string, string] }> = ({ itens, meuId, unidade }) => {
+export const Podio: React.FC<{ itens: ItemRanking[]; meuId?: string; unidade: [string, string] }> = ({ itens, meuId, unidade }) => {
   // No computador o 1º fica no meio; no celular a ordem é 1, 2, 3
   const ordem = [1, 0, 2].filter((i) => itens[i]);
   return (
@@ -226,7 +226,7 @@ const Podio: React.FC<{ itens: ItemRanking[]; meuId?: string; unidade: [string, 
   );
 };
 
-const LinhaRanking: React.FC<{ item: ItemRanking; posicao: number; sou: boolean; unidade: [string, string] }> = ({ item, posicao, sou, unidade }) => (
+export const LinhaRanking: React.FC<{ item: ItemRanking; posicao: number; sou: boolean; unidade: [string, string] }> = ({ item, posicao, sou, unidade }) => (
   <li
     className={cn(
       "flex items-center gap-3 px-3 py-3 sm:gap-4 sm:px-4",
@@ -262,7 +262,7 @@ const LinhaRanking: React.FC<{ item: ItemRanking; posicao: number; sou: boolean;
   </li>
 );
 
-const ListaCarregando = () => (
+export const ListaCarregando = () => (
   <div className="space-y-4">
     <div className="grid gap-3 sm:grid-cols-3">
       {[0, 1, 2].map((i) => (
