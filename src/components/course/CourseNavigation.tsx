@@ -1,10 +1,10 @@
 import React, { useEffect, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
-import { BookOpen, FileText, Target, RotateCcw, Scale, Layers } from "lucide-react";
+import { BookOpen, FileText, Target, RotateCcw, Scale, Layers, PieChart } from "lucide-react";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { Spinner } from "@/components/ui/spinner";
 
-export type CourseTab = 'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca' | 'flashcards';
+export type CourseTab = 'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca' | 'flashcards' | 'estatisticas';
 
 interface CourseNavigationProps {
   activeTab: CourseTab;
@@ -12,19 +12,28 @@ interface CourseNavigationProps {
   /** A aba Flashcards só aparece quando o curso tem flashcards */
   mostrarFlashcards?: boolean;
   totalFlashcards?: number;
+  /**
+   * Link de uma disciplina avulsa (e não de um curso): mostra só as abas
+   * Disciplina, Estatísticas e Flashcards.
+   */
+  ehDisciplina?: boolean;
+  /** Ainda não se sabe se é curso ou disciplina */
+  carregandoTipo?: boolean;
 }
 
 export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   activeTab,
   setActiveTab,
   mostrarFlashcards = false,
-  totalFlashcards = 0
+  totalFlashcards = 0,
+  ehDisciplina = false,
+  carregandoTipo = false
 }) => {
   const { config, isLoading } = useSiteConfig();
 
   // Efeito para ajustar a aba ativa quando a visibilidade muda
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || ehDisciplina) return;
 
     const { showDisciplinasTab, showEditalTab, showSimuladosTab, showCicloTab } = config.tabs;
 
@@ -46,7 +55,7 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
       }
       // Se nenhuma aba estiver visível, não muda nada - isso deveria ser evitado pelo admin
     }
-  }, [config.tabs, activeTab, isLoading, setActiveTab]);
+  }, [config.tabs, activeTab, isLoading, setActiveTab, ehDisciplina]);
 
   // Handlers de clique memorizados para evitar novas referências em cada render
   const handleDisciplinasClick = useCallback(() => {
@@ -73,8 +82,12 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
     setActiveTab('flashcards');
   }, [setActiveTab]);
 
+  const handleEstatisticasClick = useCallback(() => {
+    setActiveTab('estatisticas');
+  }, [setActiveTab]);
+
   // Enquanto carrega, exibe um spinner de carregamento centralizado
-  if (isLoading) {
+  if (isLoading || carregandoTipo) {
     return (
       <div className="bg-white border-b border-[rgba(239,239,239,1)] mb-5">
         <div className="w-full flex justify-center">
@@ -86,10 +99,15 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
     );
   }
 
-  const { showDisciplinasTab, showEditalTab, showSimuladosTab, showCicloTab } = config.tabs;
+  const { showDisciplinasTab } = config.tabs;
+  // Disciplina avulsa não tem edital, simulados, ciclo nem lei seca
+  const showEditalTab = config.tabs.showEditalTab && !ehDisciplina;
+  const showSimuladosTab = config.tabs.showSimuladosTab && !ehDisciplina;
+  const showCicloTab = config.tabs.showCicloTab && !ehDisciplina;
+  const showLeiSecaTab = !ehDisciplina;
 
   // Se nenhuma aba estiver visível, mostrar mensagem
-  if (!showDisciplinasTab && !showEditalTab && !showSimuladosTab && !showCicloTab) {
+  if (!ehDisciplina && !showDisciplinasTab && !showEditalTab && !showSimuladosTab && !showCicloTab) {
     return (
       <div className="bg-white border-b border-[rgba(239,239,239,1)] mb-5">
         <div className="w-full flex justify-center">
@@ -117,7 +135,19 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
                 )}
               >
                 <BookOpen className="w-5 h-5" />
-                <span>Disciplinas</span>
+                <span>{ehDisciplina ? 'Disciplina' : 'Disciplinas'}</span>
+              </button>
+            )}
+            {ehDisciplina && (
+              <button
+                onClick={handleEstatisticasClick}
+                className={cn(
+                  "course-nav-button flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-3.5 md:px-4 md:py-4 text-sm md:text-base text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  activeTab === 'estatisticas' && "text-[#5f2ebe] border-[#5f2ebe]"
+                )}
+              >
+                <PieChart className="w-5 h-5" />
+                <span>Estatísticas</span>
               </button>
             )}
             {showEditalTab && (
@@ -156,6 +186,7 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
                 <span>Ciclo</span>
               </button>
             )}
+            {showLeiSecaTab && (
             <button
               onClick={handleLeiSecaClick}
               className={cn(
@@ -166,6 +197,7 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
               <Scale className="w-5 h-5" />
               <span>Lei Seca</span>
             </button>
+            )}
             {mostrarFlashcards && (
               <button
                 onClick={handleFlashcardsClick}

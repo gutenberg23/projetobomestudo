@@ -17,6 +17,10 @@ import { SimuladosTab } from "./simulados/SimuladosTab";
 import CourseAdBanner from "./CourseAdBanner";
 import { FlashcardsTab, type FocoFlashcards } from "./flashcards/FlashcardsTab";
 import { useFlashcardsCurso } from "./flashcards/useFlashcardsCurso";
+import { EstatisticasTab } from "./estatisticas/EstatisticasTab";
+
+/** Abas que só existem para cursos (uma disciplina avulsa não tem edital, simulados, ciclo nem lei seca). */
+const ABAS_SO_DE_CURSO: CourseTab[] = ['edital', 'simulados', 'ciclo', 'leiseca'];
 
 export const CourseLayout = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -24,6 +28,10 @@ export const CourseLayout = () => {
   const [activeTab, setActiveTab] = useState<CourseTab>('disciplinas');
   const [subjectsData, setSubjectsData] = useState<any[]>([]);
   const [focoFlashcards, setFocoFlashcards] = useState<FocoFlashcards | null>(null);
+  // O link /course/... pode ser de um curso ou de uma disciplina avulsa (null enquanto carrega)
+  const [tipo, setTipo] = useState<'curso' | 'disciplina' | null>(null);
+  const ehDisciplina = tipo === 'disciplina';
+
 
   // Flashcards do curso: a aba só aparece quando há cartões nos tópicos
   const flashcards = useFlashcardsCurso(courseId);
@@ -52,6 +60,15 @@ export const CourseLayout = () => {
   
   // Usar o hook de progresso com o ID do usuário atual
   useUserProgress(user?.id, courseId);
+
+  // Disciplina avulsa: só as abas Disciplina, Estatísticas e Flashcards
+  useEffect(() => {
+    if (isLoadingConfig) return;
+    if (ehDisciplina && ABAS_SO_DE_CURSO.includes(activeTab)) {
+      setActiveTab(config.tabs.showDisciplinasTab ? 'disciplinas' : 'estatisticas');
+    }
+    if (tipo === 'curso' && activeTab === 'estatisticas') setActiveTab('disciplinas');
+  }, [ehDisciplina, tipo, activeTab, isLoadingConfig, config.tabs.showDisciplinasTab]);
 
   // Efeito para ajustar a aba ativa quando as configurações são carregadas
   useEffect(() => {
@@ -82,6 +99,7 @@ export const CourseLayout = () => {
   useEffect(() => {
     const fetchSubjectsData = async () => {
       if (!courseId) return;
+      setTipo(null);
       
       try {
         const realCourseId = extractIdFromFriendlyUrl(courseId);
@@ -106,8 +124,10 @@ export const CourseLayout = () => {
             
           if (disciplinaError || !disciplinaData) {
             console.error('Erro ao buscar curso/disciplina:', cursoError, disciplinaError);
+            setTipo('curso');
             return;
           }
+          setTipo('disciplina');
           
           // É uma disciplina avulsa - não precisamos fazer nada porque o SubjectsList já irá carregá-la
           console.log("É uma disciplina avulsa:", disciplinaData.titulo);
@@ -116,6 +136,7 @@ export const CourseLayout = () => {
         }
         
         // É um curso, buscar suas disciplinas
+        setTipo('curso');
         if (cursoData.disciplinas_ids && cursoData.disciplinas_ids.length > 0) {
           const { data: disciplinasData, error: disciplinasError } = await supabase
             .from('disciplinas')
@@ -134,6 +155,7 @@ export const CourseLayout = () => {
         }
       } catch (error) {
         console.error('Erro ao buscar dados das disciplinas:', error);
+        setTipo('curso');
       }
     };
     
@@ -163,6 +185,8 @@ export const CourseLayout = () => {
             setActiveTab={trocarAba}
             mostrarFlashcards={flashcards.temFlashcards}
             totalFlashcards={flashcards.total}
+            ehDisciplina={ehDisciplina}
+            carregandoTipo={tipo === null}
           />
         </div>
         <CourseAdBanner />
@@ -182,7 +206,15 @@ export const CourseLayout = () => {
           </div>
         )}
         
-        {activeTab === 'edital' && config.tabs.showEditalTab && (
+        {activeTab === 'estatisticas' && ehDisciplina && (
+          <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
+            <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
+              <EstatisticasTab courseId={courseId} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'edital' && config.tabs.showEditalTab && !ehDisciplina && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
               <EditorializedView courseId={courseId || ''} activeTab={activeTab} />
@@ -190,7 +222,7 @@ export const CourseLayout = () => {
           </div>
         )}
         
-        {activeTab === 'simulados' && config.tabs.showSimuladosTab && (
+        {activeTab === 'simulados' && config.tabs.showSimuladosTab && !ehDisciplina && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
               <SimuladosTab courseId={courseId} />
@@ -198,7 +230,7 @@ export const CourseLayout = () => {
           </div>
         )}
         
-        {activeTab === 'ciclo' && config.tabs.showCicloTab && (
+        {activeTab === 'ciclo' && config.tabs.showCicloTab && !ehDisciplina && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
               <CicloTab courseId={courseId} subjects={subjectsData} />
@@ -214,7 +246,7 @@ export const CourseLayout = () => {
           </div>
         )}
 
-        {activeTab === 'leiseca' && (
+        {activeTab === 'leiseca' && !ehDisciplina && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
               <LeiSecaTab courseId={courseId} />
