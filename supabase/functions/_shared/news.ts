@@ -37,9 +37,10 @@ const UF_REGION: Record<string, string> = {
   PR: "sul", RS: "sul", SC: "sul",
 };
 
-// Textos longos estouram o limite gratuito de tokens por minuto (Groq: ~12k).
-// ~14 mil caracteres ≈ 4 mil tokens, suficiente para um edital resumido.
-export const MAX_SOURCE_CHARS = 14_000;
+// Textos longos estouram o limite gratuito de tokens por minuto (Groq gpt-oss:
+// 8 mil por minuto, somando entrada e saída). ~12 mil caracteres ≈ 3,5 mil
+// tokens, suficiente para um edital resumido.
+export const MAX_SOURCE_CHARS = 12_000;
 
 const SYSTEM_PROMPT = `Você é redator sênior de um portal brasileiro de concursos públicos.
 Reescreva notícias com suas próprias palavras, em português do Brasil, mantendo todos os fatos
