@@ -49,6 +49,7 @@ import AdminQuestionBooks from "./pages/admin/QuestionBooks";
 import Simulados from "./pages/admin/Simulados";
 import Edital from "./pages/admin/Edital";
 import Topicos from "./pages/admin/Topicos";
+import FlashcardsAdmin from "./pages/admin/Flashcards";
 import Aulas from "./pages/admin/Aulas";
 import Disciplinas from "./pages/admin/Disciplinas";
 import Cursos from "./pages/admin/Cursos";
@@ -248,6 +249,7 @@ export default function App() {
                             <Route path="simulados" element={<Simulados />} />
                             <Route path="edital" element={<Edital />} />
                             <Route path="topicos" element={<Topicos />} />
+                            <Route path="flashcards" element={<FlashcardsAdmin />} />
                             <Route path="aulas" element={<Aulas />} />
                             <Route path="disciplinas" element={<Disciplinas />} />
                             <Route path="cursos" element={<Cursos />} />

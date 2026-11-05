@@ -2,17 +2,23 @@
 //
 // Cada provedor só entra na fila se a chave dele estiver configurada como
 // secret no Supabase. Se um provedor falhar (limite gratuito estourado,
-// modelo fora do ar, JSON inválido), o próximo é tentado.
+// modelo sobrecarregado, modelo desativado, JSON inválido), o próximo é
+// tentado. Erros passageiros (503, 500, timeout) ganham uma nova tentativa
+// no mesmo modelo antes de passar adiante.
 //
 // Secrets reconhecidos (todos opcionais, mas pelo menos um é necessário):
-//   GOOGLE_GEMINI_API_KEY   Google AI Studio (recomendado)
+//   GOOGLE_GEMINI_API_KEY   Google AI Studio
 //   GEMINI_MODEL            padrão: gemini-flash-latest
 //   GEMINI_FALLBACK_MODEL   padrão: gemini-flash-lite-latest
-//   GROQ_API_KEY            Groq (reserva rápida)
-//   GROQ_MODEL              padrão: llama-3.3-70b-versatile
+//   GROQ_API_KEY            Groq
+//   GROQ_MODEL              padrão: openai/gpt-oss-120b,openai/gpt-oss-20b
+//                           (lista separada por vírgula, tentada em ordem)
+//   GROQ_MAX_TOKENS         padrão: 3000 (o plano grátis limita tokens/minuto)
+//   MISTRAL_API_KEY         Mistral (plano gratuito "Experiment")
+//   MISTRAL_MODEL           padrão: mistral-small-latest
 //   OPENROUTER_API_KEY      OpenRouter (só é usado se OPENROUTER_MODEL existir)
-//   OPENROUTER_MODEL        ex.: um modelo com sufixo ":free"
-//   AI_PROVIDERS            ordem, ex.: "gemini,groq,openrouter" (padrão)
+//   OPENROUTER_MODEL        ex.: um modelo com sufixo ":free" (aceita lista)
+//   AI_PROVIDERS            ordem, padrão: "gemini,groq,mistral,openrouter"
 
 declare const Deno: { env: { get(key: string): string | undefined } };
 
@@ -42,6 +48,12 @@ export class AIError extends Error {
 }
 
 const REQUEST_TIMEOUT_MS = 60_000;
+const RETRY_DELAY_MS = 2_500;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// 503 = modelo sobrecarregado; 500/502/504 = falha momentânea do provedor.
+const isTransientStatus = (status: number) => status === 500 || status === 502 || status === 503 || status === 504;
 
 async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
@@ -101,6 +113,7 @@ function openAICompatibleProvider(
   model: string,
   extraHeaders: Record<string, string> = {},
   jsonMode = true,
+  maxTokensCap = 0,
 ): Provider {
   return {
     name,
@@ -109,13 +122,16 @@ function openAICompatibleProvider(
       const body: Record<string, unknown> = {
         model,
         temperature,
-        max_tokens: maxOutputTokens,
+        max_tokens: maxTokensCap > 0 ? Math.min(maxOutputTokens, maxTokensCap) : maxOutputTokens,
         messages: [
           { role: "system", content: system },
           { role: "user", content: prompt },
         ],
       };
       if (jsonMode) body.response_format = { type: "json_object" };
+      // Modelos gpt-oss "pensam" antes de responder; esforço baixo gasta
+      // menos tokens do limite gratuito e responde mais rápido.
+      if (/gpt-oss/i.test(model)) body.reasoning_effort = "low";
       const res = await fetchWithTimeout(`${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
@@ -138,7 +154,8 @@ function openAICompatibleProvider(
 
 export function configuredProviders(): Provider[] {
   const env = (k: string) => (Deno.env.get(k) || "").trim();
-  const order = (env("AI_PROVIDERS") || "gemini,groq,openrouter")
+  const list = (v: string) => v.split(",").map((s) => s.trim()).filter(Boolean);
+  const order = (env("AI_PROVIDERS") || "gemini,groq,mistral,openrouter")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
@@ -152,21 +169,39 @@ export function configuredProviders(): Provider[] {
       providers.push(geminiProvider(key, main));
       if (fallback && fallback !== main) providers.push(geminiProvider(key, fallback));
     } else if (name === "groq" && env("GROQ_API_KEY")) {
-      providers.push(openAICompatibleProvider(
-        "groq",
-        "https://api.groq.com/openai/v1",
-        env("GROQ_API_KEY"),
-        env("GROQ_MODEL") || "llama-3.3-70b-versatile",
-      ));
+      // llama-3.3-70b-versatile foi desligado pelo Groq em 16/08/2026.
+      const cap = parseInt(env("GROQ_MAX_TOKENS"), 10) || 3000;
+      for (const model of list(env("GROQ_MODEL") || "openai/gpt-oss-120b,openai/gpt-oss-20b")) {
+        providers.push(openAICompatibleProvider(
+          "groq",
+          "https://api.groq.com/openai/v1",
+          env("GROQ_API_KEY"),
+          model,
+          {},
+          true,
+          cap,
+        ));
+      }
+    } else if (name === "mistral" && env("MISTRAL_API_KEY")) {
+      for (const model of list(env("MISTRAL_MODEL") || "mistral-small-latest")) {
+        providers.push(openAICompatibleProvider(
+          "mistral",
+          "https://api.mistral.ai/v1",
+          env("MISTRAL_API_KEY"),
+          model,
+        ));
+      }
     } else if (name === "openrouter" && env("OPENROUTER_API_KEY") && env("OPENROUTER_MODEL")) {
-      providers.push(openAICompatibleProvider(
-        "openrouter",
-        "https://openrouter.ai/api/v1",
-        env("OPENROUTER_API_KEY"),
-        env("OPENROUTER_MODEL"),
-        { "X-Title": "Bom Estudo" },
-        false, // nem todo modelo gratuito aceita response_format
-      ));
+      for (const model of list(env("OPENROUTER_MODEL"))) {
+        providers.push(openAICompatibleProvider(
+          "openrouter",
+          "https://openrouter.ai/api/v1",
+          env("OPENROUTER_API_KEY"),
+          model,
+          { "X-Title": "Bom Estudo" },
+          false, // nem todo modelo gratuito aceita response_format
+        ));
+      }
     }
   }
   return providers;
@@ -198,26 +233,40 @@ export async function generateJson(req: AIRequest): Promise<AIResult> {
   const providers = configuredProviders();
   if (providers.length === 0) {
     throw new AIError(
-      "Nenhum provedor de IA configurado. Defina GOOGLE_GEMINI_API_KEY (ou GROQ_API_KEY) nos secrets do Supabase.",
+      "Nenhum provedor de IA configurado. Defina GOOGLE_GEMINI_API_KEY, GROQ_API_KEY ou MISTRAL_API_KEY nos secrets do Supabase.",
       [],
       false,
     );
   }
 
   const attempts: string[] = [];
-  let allRateLimited = true;
+  // "rateLimited" = todas as falhas foram passageiras (limite ou sobrecarga).
+  // Quem chama usa isso para tentar de novo mais tarde sem descartar o item.
+  let allTemporary = true;
   for (const provider of providers) {
-    try {
-      const text = await provider.call(req);
-      const data = parseJsonObject(text);
-      return { data, provider: provider.name, model: provider.model };
-    } catch (err) {
-      const status = err instanceof ProviderHttpError ? err.status : 0;
-      if (status !== 429) allRateLimited = false;
-      const msg = err instanceof Error ? err.message : String(err);
-      attempts.push(`${provider.name}/${provider.model}: ${status ? `HTTP ${status} ` : ""}${msg}`.slice(0, 300));
-      console.warn("[ai] provedor falhou", attempts[attempts.length - 1]);
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const text = await provider.call(req);
+        const data = parseJsonObject(text);
+        return { data, provider: provider.name, model: provider.model };
+      } catch (err) {
+        const status = err instanceof ProviderHttpError ? err.status : 0;
+        const timedOut = err instanceof Error && err.name === "AbortError";
+        const transient = isTransientStatus(status) || timedOut;
+        const msg = timedOut ? "tempo esgotado" : err instanceof Error ? err.message : String(err);
+        const line = `${provider.name}/${provider.model}: ${status ? `HTTP ${status} ` : ""}${msg}`
+          .replace(/\s+/g, " ")
+          .slice(0, 300);
+        console.warn("[ai] provedor falhou", `(tentativa ${attempt})`, line);
+        if (transient && attempt === 1) {
+          await sleep(RETRY_DELAY_MS);
+          continue;
+        }
+        if (!transient && status !== 429) allTemporary = false;
+        attempts.push(line);
+        break;
+      }
     }
   }
-  throw new AIError("Todos os provedores de IA falharam", attempts, allRateLimited);
+  throw new AIError("Todos os provedores de IA falharam", attempts, allTemporary);
 }

@@ -1,6 +1,7 @@
 import { Topico } from "../TopicosTypes";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AVISO_MIGRATION, faltaMigration, salvarFlashcardsDoTopico } from "@/lib/flashcards";
 
 export const useTopicosActions = (
   topicos: Topico[],
@@ -78,10 +79,21 @@ export const useTopicosActions = (
         .eq('id', updatedTopico.id);
 
       if (error) throw error;
+
+      // Flashcards do tópico (tabela própria)
+      if (updatedTopico.flashcards !== undefined) {
+        try {
+          await salvarFlashcardsDoTopico(updatedTopico.id, updatedTopico.flashcards);
+        } catch (erroFlash) {
+          console.error("Erro ao salvar flashcards do tópico:", erroFlash);
+          toast.error(faltaMigration(erroFlash) ? AVISO_MIGRATION : "O tópico foi salvo, mas houve erro ao salvar os flashcards.");
+        }
+      }
       
-      // Atualizar na interface
+      // Atualizar na interface (os flashcards são recarregados ao abrir a edição)
+      const semFlashcards = { ...updatedTopico, flashcards: undefined };
       setTopicos(topicos.map(topico => 
-        topico.id === updatedTopico.id ? updatedTopico : topico
+        topico.id === updatedTopico.id ? semFlashcards : topico
       ));
       setIsOpenEdit(false);
       toast.success("Tópico atualizado com sucesso!");

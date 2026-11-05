@@ -29,6 +29,7 @@ import QuestionResults from "@/components/questions/QuestionResults";
 import { SugerirCorrecaoDialog } from "@/components/teorias/SugerirCorrecaoDialog";
 import { CreditosContribuidores } from "@/components/teorias/CreditosContribuidores";
 import { PainelMarcacoes } from "@/components/teorias/PainelMarcacoes";
+import { registrarLeitura } from "@/components/teorias/recentes";
 import {
   CORES_MARCACAO,
   type Marcacao,
@@ -280,6 +281,7 @@ const TeoriaPost = () => {
         }
         setPost(teoria);
         setMarcacoes(lerMarcacoes(teoria.id));
+        registrarLeitura(teoria.id);
 
         if (teoria.professor_id) {
           const { data } = await supabase.from("professores").select("nome_completo").eq("id", teoria.professor_id).maybeSingle();
@@ -535,14 +537,14 @@ const TeoriaPost = () => {
   if (loading) {
     return (
       <Moldura>
-        <div className="mx-auto max-w-6xl px-4 py-8 md:py-12" aria-busy="true">
-          <div className="max-w-3xl animate-pulse space-y-4">
+        <div className="mx-auto w-full max-w-[1400px] px-[10px] md:px-[32px] py-8 md:py-12" aria-busy="true">
+          <div className="max-w-4xl animate-pulse space-y-4">
             <div className="h-4 w-40 rounded bg-slate-200" />
             <div className="h-9 w-4/5 rounded bg-slate-200" />
             <div className="h-4 w-64 rounded bg-slate-200" />
           </div>
           <div className="mt-8 h-12 animate-pulse rounded-xl bg-white" />
-          <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px]">
             <div className="animate-pulse space-y-4 rounded-2xl bg-white p-8">
               {[100, 92, 96, 70, 100, 88, 60].map((w, i) => (
                 <div key={i} className="h-4 rounded bg-slate-100" style={{ width: `${w}%` }} />
@@ -639,7 +641,7 @@ const TeoriaPost = () => {
       {/* Progresso da leitura */}
       {aba === "aula" && <BarraProgresso alvo={conteudoRef} />}
 
-      <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 md:pt-10">
+      <div className="mx-auto w-full max-w-[1400px] px-[10px] md:px-[32px] pb-16 pt-6 md:pt-10">
         {/* Trilha */}
         <nav className="teoria-sem-impressao mb-4 flex flex-wrap items-center gap-1 text-xs text-slate-500" aria-label="Você está em">
           <Link to="/teorias" className="hover:text-[#5f2ebe]">
@@ -654,7 +656,7 @@ const TeoriaPost = () => {
         </nav>
 
         {/* Cabeçalho */}
-        <header className="max-w-3xl">
+        <header className="max-w-4xl">
           {post.assunto_id && (
             <p className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#5f2ebe]/10 px-3 py-1 text-xs font-semibold text-[#5f2ebe]">
               <BookOpen className="h-3.5 w-3.5" />
@@ -698,7 +700,7 @@ const TeoriaPost = () => {
         </header>
 
         {/* Abas */}
-        <div id="teoria-abas" className="teoria-sem-impressao sticky top-0 z-30 -mx-4 mt-8 bg-[#f6f7fb]/95 px-4 py-2 backdrop-blur">
+        <div id="teoria-abas" className="teoria-sem-impressao sticky top-0 z-30 -mx-[10px] mt-8 bg-[#f6f7fb]/95 px-[10px] py-2 md:-mx-[32px] md:px-[32px] backdrop-blur">
           <div className="flex items-center justify-between gap-3">
             <nav className="-mx-1 flex gap-1 overflow-x-auto px-1 scrollbar-none" role="tablist" aria-label="Conteúdos da teoria">
               {abas.map((a) => {
@@ -735,7 +737,7 @@ const TeoriaPost = () => {
           </div>
         </div>
 
-        <div className={cn("mt-4 grid gap-8", aba === "aula" && "lg:grid-cols-[minmax(0,1fr)_260px]")}>
+        <div className={cn("mt-4 grid gap-8", aba === "aula" && "lg:grid-cols-[minmax(0,1fr)_280px] xl:grid-cols-[minmax(0,1fr)_320px]")}>
           <div className="min-w-0">
             {/* Aula (fica montada para não perder os grifos ao trocar de aba) */}
             <article hidden={aba !== "aula"} className="rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
@@ -837,7 +839,7 @@ const TeoriaPost = () => {
             )}
 
             {aba === "video" && (
-              <section className="mx-auto max-w-4xl space-y-5">
+              <section className="mx-auto max-w-5xl space-y-5">
                 {(post.videoaulas || []).map((url, i) => {
                   const embed = youtubeEmbed(url);
                   return (
@@ -872,7 +874,7 @@ const TeoriaPost = () => {
             )}
 
             {aba === "mapa" && (
-              <section className="grid gap-4 sm:grid-cols-2">
+              <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {(post.mapas_mentais || []).map((url, i) => (
                   <div key={`${url}-${i}`} className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500">

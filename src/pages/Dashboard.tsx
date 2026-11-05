@@ -1,1433 +1,696 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { format, subDays } from "date-fns";
+import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar } from "recharts";
+import {
+  AlertCircle,
+  ArrowDownRight,
+  ArrowUpRight,
+  BarChart3,
+  CalendarCheck,
+  Check,
+  ChevronRight,
+  ClipboardList,
+  Flame,
+  ListChecks,
+  RotateCcw,
+  Target,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import AdBanner from "@/components/ads/AdBanner";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import {
-  ResponsiveContainer,
-  BarChart,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { RotateCcw, ChevronDown, ChevronRight, FileX } from "lucide-react";
-import { toast } from "sonner";
-import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import AdBanner from '@/components/ads/AdBanner';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { BarraProgresso, EstadoVazio, Metrica, Painel, Segmentos, tomAproveitamento } from "@/components/course/ui";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+import { useDesempenho, type Contagem, type NoDisciplina, type PontoGrafico } from "@/components/dashboard/useDesempenho";
 
-// Interface para as estatísticas diárias
-interface DailyStats {
-  date: string;
-  dia_formatado: string;
-  questoes: number;
-  acertos: number;
-  erros: number;
-}
+type Periodo = "7" | "30" | "90" | "365";
+type OrdemDisc = "total" | "pior" | "nome";
 
-// Interface para estatísticas por disciplina
-interface DisciplinaStats {
-  disciplina: string;
-  certas: number;
-  erradas: number;
-  em_branco: number;
-  total: number;
-  aproveitamento: number;
-  banca?: string;
-  assuntos?: AssuntoStats[];
-  topicos?: TopicoStats[];
-}
+const PERIODOS: Array<{ valor: Periodo; rotulo: string; extenso: string }> = [
+  { valor: "7", rotulo: "7 dias", extenso: "nos últimos 7 dias" },
+  { valor: "30", rotulo: "30 dias", extenso: "nos últimos 30 dias" },
+  { valor: "90", rotulo: "90 dias", extenso: "nos últimos 90 dias" },
+  { valor: "365", rotulo: "1 ano", extenso: "nos últimos 12 meses" },
+];
 
-// Interface para estatísticas por assunto
-interface AssuntoStats {
-  assunto: string;
-  certas: number;
-  erradas: number;
-  em_branco: number;
-  total: number;
-  aproveitamento: number;
-  topicos?: TopicoStats[];
-}
+/** Meta de aproveitamento usada nas cores (verde a partir de 70%). */
+const META = 70;
 
-// Interface para estatísticas por tópico
-interface TopicoStats {
-  topico: string;
-  certas: number;
-  erradas: number;
-  em_branco: number;
-  total: number;
-  aproveitamento: number;
-  banca?: string;
-}
+const fmt = (n: number) => n.toLocaleString("pt-BR");
 
-// Interface para resultados de tópicos com banca e assunto
-interface TopicoComBancaEAssunto {
-  topico: string;
-  assunto: string;
-  banca: string;
-}
+const lerPeriodo = (): Periodo => {
+  try {
+    const v = localStorage.getItem("dashboard_periodo") as Periodo;
+    return PERIODOS.some((p) => p.valor === v) ? v : "30";
+  } catch {
+    return "30";
+  }
+};
 
-// Interface para simulados
-interface Simulado {
-  id: string;
-  titulo: string;
-  questoes_total: number;
-  acertos: number;
-  erros: number;
-  aproveitamento: number;
-  data_realizacao: string;
-  realizado: boolean;
-}
+const linkQuestoes = (disciplina: string, assunto?: string, situacao?: "erradas") => {
+  const p = new URLSearchParams();
+  if (disciplina && disciplina !== "Sem disciplina") p.set("disciplines", JSON.stringify([disciplina]));
+  if (assunto && assunto !== "Sem assunto") p.set("topics", JSON.stringify([assunto]));
+  if (situacao) p.set("status", situacao);
+  return `/questions?${p.toString()}`;
+};
 
-const Dashboard = () => {
-  const { user } = useAuth();
-  const [periodo, setPeriodo] = useState("7");
-  const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
-  const [disciplinasStats, setDisciplinasStats] = useState<DisciplinaStats[]>([]);
-  const [filteredDisciplinasStats, setFilteredDisciplinasStats] = useState<DisciplinaStats[]>([]);
-  const [simulados, setSimulados] = useState<Simulado[]>([]);
-  const [filteredSimulados, setFilteredSimulados] = useState<Simulado[]>([]);
-  const [filtroSimulado, setFiltroSimulado] = useState("todos");
-  const [bancas, setBancas] = useState<{ valor: string; exibicao: string }[]>([]);
-  const [selectedBanca, setSelectedBanca] = useState<string>("todas");
-  const [expandedDisciplinas, setExpandedDisciplinas] = useState<string[]>([]);
-  const [expandedAssuntos, setExpandedAssuntos] = useState<string[]>([]);
-
-  const toggleAssunto = (assuntoKey: string) => {
-    setExpandedAssuntos(prev => 
-      prev.includes(assuntoKey) 
-        ? prev.filter(a => a !== assuntoKey)
-        : [...prev, assuntoKey]
-    );
-  };
-  const [totalStats, setTotalStats] = useState({
-    total: 0,
-    acertos: 0,
-    erros: 0,
-    aproveitamento: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  // Criar um mapa para armazenar a relação entre disciplinas e bancas
-  const [disciplinasBancasMap, setDisciplinasBancasMap] = useState<Map<string, Set<string>>>(new Map());
-  // Estado para controlar o modal de confirmação
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  // Estado para controlar o carregamento da operação de apagar dados
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const CORES = ["#FF8042", "#5f2ebe"];
-
-  // Função para normalizar o nome da banca
-  const normalizarBanca = (banca: string): string => {
-    return banca.toLowerCase().trim();
-  };
-  
-  // Função para normalizar o tópico
-  const normalizarTopico = (topico: string): string => {
-    // Remover pontuação e normalizar para minúsculas
-    return topico
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-      .replace(/[^\w\s]/g, ''); // Remove pontuação
-  };
-
-  // Função atualizada para extrair tópicos e assuntos da resposta ou questão
-  const extrairTopicosEAssuntos = (resposta: any, questao: any): TopicoComBancaEAssunto[] => {
-    let topicos: string[] = [];
-    let assuntos: string[] = [];
-    let bancaDoTopico = resposta.banca || questao.institution || "Sem banca";
-    bancaDoTopico = normalizarBanca(bancaDoTopico);
-    
-    // Extrair tópicos
-    if (resposta?.topicos) {
-      if (Array.isArray(resposta.topicos)) {
-        topicos = resposta.topicos;
-      } else {
-        topicos = [resposta.topicos];
-      }
-    } else if (questao?.topicos && questao.topicos.length > 0) {
-      topicos = questao.topicos;
-    } else if (questao?.topics && questao.topics.length > 0) {
-      topicos = questao.topics;
-    } else {
-      topicos = ["Sem tópico"];
-    }
-    
-    // Extrair assuntos
-    if (resposta?.assuntos) {
-      if (Array.isArray(resposta.assuntos)) {
-        assuntos = resposta.assuntos;
-      } else {
-        assuntos = [resposta.assuntos];
-      }
-    } else if (questao?.assuntos && questao.assuntos.length > 0) {
-      assuntos = questao.assuntos;
-    } else {
-      assuntos = ["Sem assunto"];
-    }
-    
-    // Criar combinações de tópico-assunto
-    const result: TopicoComBancaEAssunto[] = [];
-    
-    // Se temos tanto tópicos quanto assuntos, vamos assumir que eles correspondem por índice
-    // ou que cada tópico pertence a todos os assuntos (isso pode precisar de ajuste baseado nos dados reais)
-    if (topicos.length > 0 && assuntos.length > 0) {
-      // Por simplicidade, vamos assumir que cada tópico pertence ao primeiro assunto
-      // Se os arrays têm o mesmo tamanho, fazemos correspondência por índice
-      if (topicos.length === assuntos.length) {
-        topicos.forEach((topico, index) => {
-          result.push({
-            topico: topico,
-            assunto: assuntos[index],
-            banca: bancaDoTopico
-          });
-        });
-      } else {
-        // Se não têm o mesmo tamanho, cada tópico vai para o primeiro assunto
-        topicos.forEach(topico => {
-          result.push({
-            topico: topico,
-            assunto: assuntos[0],
-            banca: bancaDoTopico
-          });
-        });
-      }
-    } else {
-      // Se não temos assuntos ou tópicos, usar valores padrão
-      result.push({
-        topico: topicos[0] || "Sem tópico",
-        assunto: assuntos[0] || "Sem assunto",
-        banca: bancaDoTopico
-      });
-    }
-    
-    return result;
-  };
-
-  // Função para agrupar tópicos por assunto e disciplina
-  const agruparTopicosPorAssunto = (disciplinasComTopicos: DisciplinaStats[]): DisciplinaStats[] => {
-    return disciplinasComTopicos.map((disciplina) => {
-      const assuntosMap = new Map<string, AssuntoStats>();
-      
-      // Se a disciplina ainda tem a estrutura antiga (topicos ao invés de assuntos)
-      if (disciplina.topicos && disciplina.topicos.length > 0) {
-        // Migrar para nova estrutura por assunto
-        const assuntoDefault = "Sem assunto";
-        
-        if (!assuntosMap.has(assuntoDefault)) {
-          assuntosMap.set(assuntoDefault, {
-            assunto: assuntoDefault,
-            certas: 0,
-            erradas: 0,
-            em_branco: 0,
-            total: 0,
-            aproveitamento: 0,
-            topicos: []
-          });
-        }
-        
-        const assuntoStat = assuntosMap.get(assuntoDefault)!;
-        assuntoStat.topicos = disciplina.topicos;
-        
-        // Calcular totais do assunto
-        assuntoStat.topicos?.forEach(topico => {
-          assuntoStat.certas += topico.certas;
-          assuntoStat.erradas += topico.erradas;
-          assuntoStat.em_branco += topico.em_branco;
-          assuntoStat.total += topico.total;
-        });
-        
-        assuntoStat.aproveitamento = 
-          assuntoStat.total > 0 
-            ? Math.round((assuntoStat.certas / assuntoStat.total) * 100) 
-            : 0;
-        
-        assuntosMap.set(assuntoDefault, assuntoStat);
-      }
-      // Se já tem a nova estrutura com assuntos
-      else if (disciplina.assuntos && disciplina.assuntos.length > 0) {
-        disciplina.assuntos.forEach(assunto => {
-          if (!assuntosMap.has(assunto.assunto)) {
-            assuntosMap.set(assunto.assunto, { ...assunto });
-          } else {
-            const existingAssunto = assuntosMap.get(assunto.assunto)!;
-            existingAssunto.certas += assunto.certas;
-            existingAssunto.erradas += assunto.erradas;
-            existingAssunto.em_branco += assunto.em_branco;
-            existingAssunto.total += assunto.total;
-            
-            // Mesclar tópicos
-            if (existingAssunto.topicos && assunto.topicos) {
-              const topicosMergeados = new Map<string, TopicoStats>();
-              
-              [...existingAssunto.topicos, ...assunto.topicos].forEach(topico => {
-                const topicoNormalizado = normalizarTopico(topico.topico);
-                
-                if (topicosMergeados.has(topicoNormalizado)) {
-                  const existingTopico = topicosMergeados.get(topicoNormalizado)!;
-                  existingTopico.certas += topico.certas;
-                  existingTopico.erradas += topico.erradas;
-                  existingTopico.em_branco += topico.em_branco;
-                  existingTopico.total += topico.total;
-                  existingTopico.aproveitamento = 
-                    existingTopico.total > 0 
-                      ? Math.round((existingTopico.certas / existingTopico.total) * 100) 
-                      : 0;
-                } else {
-                  // Manter o texto original do tópico sem normalização
-                  topicosMergeados.set(topicoNormalizado, { ...topico });
-                }
-              });
-              
-              existingAssunto.topicos = Array.from(topicosMergeados.values())
-                .sort((a, b) => a.topico.localeCompare(b.topico));
-            }
-            
-            existingAssunto.aproveitamento = 
-              existingAssunto.total > 0 
-                ? Math.round((existingAssunto.certas / existingAssunto.total) * 100) 
-                : 0;
-            
-            assuntosMap.set(assunto.assunto, existingAssunto);
-          }
-        });
-      }
-      
-      return {
-        ...disciplina,
-        assuntos: Array.from(assuntosMap.values()).sort((a, b) => a.assunto.localeCompare(b.assunto)),
-        topicos: undefined // Remover a propriedade antiga
-      };
-    });
-  };
-
-  // Buscar estatísticas com base no período selecionado
-  useEffect(() => {
-    if (!user) return;
-
-    const fetchStats = async () => {
-      setIsLoading(true);
-      try {
-        const dias = parseInt(periodo);
-        const dataInicio = subDays(new Date(), dias);
-        const dataInicioFormatada = format(dataInicio, "yyyy-MM-dd");
-        
-        // Buscar respostas do aluno no período - modificado para não usar relacionamento direto
-        const { data: respostas, error } = await supabase
-          .from("respostas_alunos")
-          .select("*")
-          .eq("aluno_id", user.id)
-          .gte("created_at", dataInicioFormatada);
-        
-        if (error) throw error;
-
-        // Se encontrou respostas, busca as questões correspondentes
-        if (respostas && respostas.length > 0) {
-          // Criar lista de IDs de questões
-          const questoesIds = respostas.map(resposta => resposta.questao_id);
-          
-          // Buscar questões
-          const { data: questoes, error: questoesError } = await supabase
-            .from("questoes")
-            .select("*")
-            .in("id", questoesIds);
-            
-          if (questoesError) throw questoesError;
-          
-          // Criar um mapa para fácil acesso às questões
-          const questoesMap = new Map();
-          if (questoes) {
-            questoes.forEach(questao => {
-              questoesMap.set(questao.id, questao);
-            });
-          }
-          
-          // Calcular estatísticas diárias
-          const dailyStatsMap = new Map<string, DailyStats>();
-          const disciplinasMap = new Map<string, DisciplinaStats>();
-          const assuntosMap = new Map<string, Map<string, Map<string, TopicoStats>>>();
-          const bancasSet = new Set<string>();
-          
-          // Novo mapa para rastrear bancas por disciplina
-          const disciplinasBancasMap = new Map<string, Set<string>>();
-          
-          // Inicializar mapa para cada dia do período
-          for (let i = 0; i <= dias; i++) {
-            const currentDate = subDays(new Date(), i);
-            const date = format(currentDate, "yyyy-MM-dd");
-            dailyStatsMap.set(date, {
-              date: format(currentDate, "dd/MM"),
-              dia_formatado: format(currentDate, "dd/MM/yyyy"),
-              questoes: 0,
-              acertos: 0,
-              erros: 0,
-            });
-          }
-          
-          // Calcular totais
-          let totalQuestoes = 0;
-          let totalAcertos = 0;
-          
-          respostas.forEach((resposta) => {
-            const questao = questoesMap.get(resposta.questao_id);
-            if (!questao) return; // Ignora se a questão não foi encontrada
-            
-            const dataResposta = format(new Date(resposta.created_at), "yyyy-MM-dd");
-            const diaStat = dailyStatsMap.get(dataResposta);
-            
-            if (diaStat) {
-              diaStat.questoes += 1;
-              
-              // Verificar se a resposta está correta usando is_correta
-              if (resposta.is_correta) {
-                diaStat.acertos += 1;
-                totalAcertos += 1;
-              } else {
-                diaStat.erros += 1;
-              }
-              
-              dailyStatsMap.set(dataResposta, diaStat);
-              totalQuestoes += 1;
-            }
-            
-            // Obter a banca da resposta ou da questão
-            const banca = resposta.banca || questao.institution || "Sem banca";
-            const bancaNormalizada = normalizarBanca(banca);
-            bancasSet.add(bancaNormalizada);
-            
-            // Agrupar somente por disciplina (sem a banca na chave)
-            const disciplina = questao.discipline || "Sem disciplina";
-            
-            // Rastrear bancas para cada disciplina
-            if (!disciplinasBancasMap.has(disciplina)) {
-              disciplinasBancasMap.set(disciplina, new Set([bancaNormalizada]));
-            } else {
-              disciplinasBancasMap.get(disciplina)!.add(bancaNormalizada);
-            }
-            
-            // Inicializar disciplina se não existir
-            if (!disciplinasMap.has(disciplina)) {
-              disciplinasMap.set(disciplina, {
-                disciplina,
-                certas: 0,
-                erradas: 0,
-                em_branco: 0,
-                total: 0,
-                aproveitamento: 0,
-                banca: bancaNormalizada,
-                assuntos: [],
-              });
-              
-              // Inicializar o mapa de assuntos para esta disciplina
-              assuntosMap.set(disciplina, new Map<string, Map<string, TopicoStats>>());
-            }
-            
-            // Obter tópicos e assuntos da resposta ou questão
-            const topicosEAssuntosComBanca = extrairTopicosEAssuntos(resposta, questao);
-            const assuntosMapDisciplina = assuntosMap.get(disciplina)!;
-            
-            topicosEAssuntosComBanca.forEach(({ topico: tpc, assunto: ast, banca: bancaTopico }: TopicoComBancaEAssunto) => {
-              // Inicializar assunto se não existir
-              if (!assuntosMapDisciplina.has(ast)) {
-                assuntosMapDisciplina.set(ast, new Map<string, TopicoStats>());
-              }
-              
-              const topicosMapAssunto = assuntosMapDisciplina.get(ast)!;
-              
-              // Inicializar tópico se não existir
-              if (!topicosMapAssunto.has(tpc)) {
-                topicosMapAssunto.set(tpc, {
-                  topico: tpc, // Manter o texto original sem normalização
-                  certas: 0,
-                  erradas: 0,
-                  em_branco: 0,
-                  total: 0,
-                  aproveitamento: 0,
-                  banca: bancaTopico
-                });
-              }
-              
-              const topicoStat = topicosMapAssunto.get(tpc)!;
-              
-              // Incrementar total do tópico
-              topicoStat.total += 1;
-            
-              if (resposta.opcao_id) {
-                if (resposta.is_correta) {
-                  topicoStat.certas += 1;
-                } else {
-                  topicoStat.erradas += 1;
-                }
-              } else {
-                topicoStat.em_branco += 1;
-              }
-                                
-              topicoStat.aproveitamento = 
-                topicoStat.total > 0 
-                  ? Math.round((topicoStat.certas / topicoStat.total) * 100) 
-                  : 0;
-              
-              topicosMapAssunto.set(tpc, topicoStat);
-              assuntosMapDisciplina.set(ast, topicosMapAssunto);
-            });
-            
-            // Atualizar mapa de assuntos para a disciplina
-            assuntosMap.set(disciplina, assuntosMapDisciplina);
-          });
-          
-          // Adicionar assuntos às disciplinas
-          for (const [disciplina, disciplinaStat] of disciplinasMap.entries()) {
-            const assuntosDisc = assuntosMap.get(disciplina);
-            if (assuntosDisc) {
-              const assuntosArray: AssuntoStats[] = [];
-              
-              // Processar cada assunto
-              for (const [nomeAssunto, topicosAssunto] of assuntosDisc.entries()) {
-                const assuntoStat: AssuntoStats = {
-                  assunto: nomeAssunto,
-                  certas: 0,
-                  erradas: 0,
-                  em_branco: 0,
-                  total: 0,
-                  aproveitamento: 0,
-                  topicos: Array.from(topicosAssunto.values())
-                    .sort((a, b) => a.topico.localeCompare(b.topico))
-                };
-                
-                // Calcular totais do assunto
-                assuntoStat.topicos?.forEach(topico => {
-                  assuntoStat.certas += topico.certas;
-                  assuntoStat.erradas += topico.erradas;
-                  assuntoStat.em_branco += topico.em_branco;
-                  assuntoStat.total += topico.total;
-                });
-                
-                assuntoStat.aproveitamento = 
-                  assuntoStat.total > 0 
-                    ? Math.round((assuntoStat.certas / assuntoStat.total) * 100) 
-                    : 0;
-                
-                assuntosArray.push(assuntoStat);
-              }
-              
-              // Ordenar assuntos alfabeticamente
-              disciplinaStat.assuntos = assuntosArray.sort((a, b) => a.assunto.localeCompare(b.assunto));
-              
-              // Calcular totais da disciplina somando os valores dos assuntos
-              disciplinaStat.certas = 0;
-              disciplinaStat.erradas = 0;
-              disciplinaStat.em_branco = 0;
-              disciplinaStat.total = 0;
-              
-              disciplinaStat.assuntos.forEach(assunto => {
-                disciplinaStat.certas += assunto.certas;
-                disciplinaStat.erradas += assunto.erradas;
-                disciplinaStat.em_branco += assunto.em_branco;
-                disciplinaStat.total += assunto.total;
-              });
-              
-              // Calcular aproveitamento da disciplina
-              disciplinaStat.aproveitamento = 
-                disciplinaStat.total > 0 
-                  ? Math.round((disciplinaStat.certas / disciplinaStat.total) * 100) 
-                  : 0;
-              
-              disciplinasMap.set(disciplina, disciplinaStat);
-            }
-          }
-          
-          // Função para agrupar dados por assunto
-          const disciplinasComAssuntosAgrupados = agruparTopicosPorAssunto(Array.from(disciplinasMap.values()));
-          
-          // Calcular aproveitamento geral
-          const aproveitamento = totalQuestoes > 0 
-            ? Math.round((totalAcertos / totalQuestoes) * 100) 
-            : 0;
-          
-          // Converter para array e ordenar por data
-          const dailyStatsArray = Array.from(dailyStatsMap.values())
-            .sort((a, b) => {
-              const dateA = a.date.split('/').reverse().join('/');
-              const dateB = b.date.split('/').reverse().join('/');
-              return dateA.localeCompare(dateB);
-            });
-          
-          const bancasArray = Array.from(bancasSet).sort();
-          
-          // Formatação das bancas para exibição na interface
-          const bancasFormatadas = bancasArray.map(banca => {
-            return {
-              valor: banca, // Valor original para comparação
-              exibicao: banca // Manter o texto original do banco de dados
-            };
-          });
-          
-          setDailyStats(dailyStatsArray);
-          setDisciplinasStats(disciplinasComAssuntosAgrupados);
-          setFilteredDisciplinasStats(disciplinasComAssuntosAgrupados);
-          setBancas(bancasFormatadas);
-          
-          setTotalStats({
-            total: totalQuestoes,
-            acertos: totalAcertos,
-            erros: totalQuestoes - totalAcertos,
-            aproveitamento,
-          });
-          
-          // Atualizar o estado com o mapa de bancas por disciplina
-          setDisciplinasBancasMap(disciplinasBancasMap);
-          
-          // Reset da banca selecionada para "todas" quando os dados são carregados
-          setSelectedBanca("todas");
-        } else {
-          // Se não encontrou respostas, inicializar o mapa para os dias do período
-          const emptyDailyStatsMap = new Map<string, DailyStats>();
-          
-          // Inicializar mapa para cada dia do período
-          for (let i = 0; i <= dias; i++) {
-            const currentDate = subDays(new Date(), i);
-            const date = format(currentDate, "yyyy-MM-dd");
-            emptyDailyStatsMap.set(date, {
-              date: format(currentDate, "dd/MM"),
-              dia_formatado: format(currentDate, "dd/MM/yyyy"),
-              questoes: 0,
-              acertos: 0,
-              erros: 0,
-            });
-          }
-          
-          // Se não encontrou respostas, zera os dados
-          setDailyStats(Array.from(emptyDailyStatsMap.values())
-            .sort((a, b) => {
-              const dateA = a.date.split('/').reverse().join('/');
-              const dateB = b.date.split('/').reverse().join('/');
-              return dateA.localeCompare(dateB);
-            })
-          );
-          setDisciplinasStats([]);
-          setFilteredDisciplinasStats([]);
-          setBancas([]);
-          setTotalStats({
-            total: 0,
-            acertos: 0,
-            erros: 0,
-            aproveitamento: 0,
-          });
-        }
-        
-        // Buscar simulados do aluno
-        try {
-          // Buscar resultados de simulados do usuário
-          let { data: simuladosResults, error: simuladosError } = await supabase
-            .from("user_simulado_results")
-            .select("*")
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
-          
-          // Se houver erro na primeira tabela, tentar a alternativa
-          if (simuladosError) {
-            console.log("Tentando tabela alternativa para simulados...", simuladosError.message);
-            
-            // Tentar com a tabela "simulado_results" (possível nome alternativo)
-            const { data: altResults, error: altError } = await supabase
-              .from("simulado_results")
-              .select("*")
-              .eq("user_id", user.id)
-              .order("created_at", { ascending: false });
-            
-            if (!altError) {
-              simuladosResults = altResults;
-              simuladosError = null;
-              console.log("Usando tabela alternativa para simulados");
-            } else {
-              console.log("Tabela alternativa também não disponível:", altError.message);
-            }
-          }
-          
-          if (simuladosError) {
-            // Se o erro persistir com ambas as tabelas
-            console.log("Nenhuma tabela de resultados de simulados disponível");
-            setSimulados([]);
-            return;
-          }
-          
-          if (!simuladosResults || simuladosResults.length === 0) {
-            setSimulados([]);
-            return;
-          }
-          
-            // Criar lista de IDs de simulados
-          const simuladosIds = Array.from(new Set(
-            simuladosResults.map(result => result.simulado_id || "")
-              .filter(id => id !== "")
-          ));
-          
-          if (simuladosIds.length === 0) {
-            setSimulados([]);
-            return;
-          }
-          
-          // Buscar detalhes dos simulados separadamente
-            const { data: simuladosData, error: simuladosDataError } = await supabase
-              .from("simulados")
-              .select("*")
-              .in("id", simuladosIds);
-              
-          if (simuladosDataError) {
-            console.log("Erro ao buscar detalhes dos simulados:", simuladosDataError.message);
-          }
-          
-          // Formatar os dados para a interface, mesmo se houver erro na busca de detalhes
-          const formattedSimulados = simuladosResults.map((result) => {
-            // Tentar encontrar o simulado correspondente
-            const simulado = simuladosDataError ? null : 
-              simuladosData?.find(s => s.id === result.simulado_id);
-            
-            // Obter valores com tratamento para diferentes estruturas de coluna
-            const simuladoId = result.simulado_id || result.id;
-            const correctAnswers = result.correct_answers || result.acertos || 0;
-            const wrongAnswers = result.wrong_answers || result.erros || 0;
-            const totalQuestions = result.total_questions || 
-              (correctAnswers + wrongAnswers) || 0;
-            
-            const questoesTotais = simulado 
-              ? (simulado.questoes_ids?.length || totalQuestions || 0) 
-              : totalQuestions || 0;
-            
-              return {
-              id: simuladoId,
-              titulo: simulado?.titulo || `Simulado ${simuladoId.slice(0, 8)}`,
-              questoes_total: questoesTotais,
-              acertos: correctAnswers,
-              erros: wrongAnswers,
-              aproveitamento: questoesTotais > 0 
-                ? Math.round((correctAnswers / questoesTotais) * 100) 
-                : 0,
-              data_realizacao: format(new Date(result.created_at), "dd/MM/yyyy"),
-              realizado: true
-              };
-            });
-            
-            setSimulados(formattedSimulados);
-        } catch (simuladoError) {
-          console.error("Erro ao buscar simulados:", simuladoError);
-          setSimulados([]);
-        }
-      } catch (error) {
-        console.error("Erro ao buscar estatísticas:", error);
-        toast.error("Erro ao carregar estatísticas. Tente novamente mais tarde.");
-        
-        // Inicializar dados vazios em caso de erro
-        setDailyStats([]);
-        setDisciplinasStats([]);
-        setTotalStats({
-          total: 0,
-          acertos: 0,
-          erros: 0,
-          aproveitamento: 0,
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchStats();
-  }, [user, periodo]);
-  
-  // Aplicar filtro de banca quando selecionada
-  useEffect(() => {
-    if (!user) return;
-    
-    if (selectedBanca === "todas") {
-      // Se todas as bancas estiverem selecionadas, usar as estatísticas gerais
-      setFilteredDisciplinasStats(disciplinasStats);
-      return;
-    }
-    
-    // Se chegou aqui, significa que uma banca específica foi selecionada
-    setIsLoading(true);
-    
-    try {
-      // Usar a banca selecionada diretamente, sem normalização adicional
-      const bancaSelecionada = selectedBanca;
-      
-      // Fazer uma cópia profunda das estatísticas para poder modificá-las
-      const disciplinasParaFiltrar = JSON.parse(JSON.stringify(disciplinasStats));
-      
-      // Filtrar apenas as disciplinas que têm a banca selecionada
-      const disciplinasFiltradas = disciplinasParaFiltrar.filter((disciplina: DisciplinaStats) => {
-        // Verificar se a disciplina tem a banca diretamente
-        if (disciplina.banca === bancaSelecionada) {
-          return true;
-        }
-        
-        // Verificar no mapa de bancas por disciplina
-        const bancasDisciplina = disciplinasBancasMap.get(disciplina.disciplina);
-        if (bancasDisciplina && bancasDisciplina.has(bancaSelecionada)) {
-          return true;
-        }
-        
-        return false;
-      });
-      
-      // Para cada disciplina filtrada, incluir apenas os tópicos relevantes e recalcular os totais
-      disciplinasFiltradas.forEach((disciplina: DisciplinaStats) => {
-        // Filtrar tópicos que pertencem à banca selecionada
-        if (disciplina.topicos) {
-          // Passo 1: Filtrar os tópicos apenas para a banca selecionada
-          const topicosFiltrados = disciplina.topicos.filter((topico: TopicoStats) => 
-            // Verificar pela propriedade banca ou tentar pelo mapa de bancas-tópicos
-            topico.banca === bancaSelecionada || 
-            // Assumir que o tópico pertence à banca se a informação não estiver disponível
-            !topico.banca
-          );
-          
-          // Passo 2: Substituir a lista original de tópicos pela filtrada e ordenar alfabeticamente
-          disciplina.topicos = topicosFiltrados.sort((a: TopicoStats, b: TopicoStats) => a.topico.localeCompare(b.topico));
-          
-          // Passo 3: Recalcular os totais da disciplina baseado apenas nos tópicos filtrados
-          disciplina.certas = 0;
-          disciplina.erradas = 0;
-          disciplina.em_branco = 0;
-          disciplina.total = 0;
-          
-          topicosFiltrados.forEach((topico: TopicoStats) => {
-            disciplina.certas += topico.certas;
-            disciplina.erradas += topico.erradas;
-            disciplina.em_branco += topico.em_branco;
-            disciplina.total += topico.total;
-          });
-          
-          // Recalcular o aproveitamento
-          disciplina.aproveitamento = 
-            disciplina.total > 0 
-              ? Math.round((disciplina.certas / disciplina.total) * 100) 
-              : 0;
-        }
-      });
-      
-      if (disciplinasFiltradas.length > 0) {
-        // Força a atualização do estado para garantir a rerenderização
-        setFilteredDisciplinasStats([]);
-        
-        // Pequeno timeout para garantir que o React processe o estado vazio primeiro
-        setTimeout(() => {
-          setFilteredDisciplinasStats(disciplinasFiltradas);
-        }, 10);
-      } else {
-        // Se não houver disciplinas para a banca selecionada, mostrar lista vazia
-        setFilteredDisciplinasStats([]);
-      }
-    } catch (error) {
-      console.error("Erro ao filtrar estatísticas por banca:", error);
-      toast.error("Erro ao filtrar estatísticas por banca.");
-      setFilteredDisciplinasStats([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedBanca, disciplinasStats, user, disciplinasBancasMap]);
-  
-  // Inicializar simulados filtrados quando os simulados mudarem
-  useEffect(() => {
-    setFilteredSimulados(simulados);
-  }, [simulados]);
-  
-  // Filtrar simulados baseado no filtro selecionado
-  useEffect(() => {
-    if (filtroSimulado === "todos") {
-      setFilteredSimulados(simulados);
-    } else if (filtroSimulado === "concluidos") {
-      setFilteredSimulados(simulados.filter(simulado => simulado.realizado));
-    } else if (filtroSimulado === "pendentes") {
-      setFilteredSimulados(simulados.filter(simulado => !simulado.realizado));
-    }
-  }, [filtroSimulado, simulados]);
-  
-  // Dados para o gráfico de rosca
-  const pieChartData = [
-    { name: "Erros", value: totalStats.erros },
-    { name: "Acertos", value: totalStats.acertos },
-  ];
-
-  // Função para alternar a expansão de uma disciplina
-  const toggleDisciplina = (disciplina: string) => {
-    setExpandedDisciplinas(prev => 
-      prev.includes(disciplina)
-        ? prev.filter(d => d !== disciplina)
-        : [...prev, disciplina]
-    );
-  };
-
-  // Certificar-se de que o valor da banca selecionada está sendo aplicado corretamente
-  useEffect(() => {
-    // Limpar qualquer log de debug
-  }, [selectedBanca]);
-
-  // Função para apagar os dados do usuário no banco
-  const apagarDadosUsuario = async () => {
-    if (!user) return;
-    
-    setIsDeleting(true);
-    try {
-      // Deletar todas as respostas do aluno no banco
-      const { error: respostasError } = await supabase
-        .from("respostas_alunos")
-        .delete()
-        .eq("aluno_id", user.id);
-        
-      if (respostasError) throw respostasError;
-      
-      // Deletar resultados de simulados do usuário
-      try {
-        // Tentar deletar da primeira tabela de simulados
-        const { error: simuladosError } = await supabase
-          .from("user_simulado_results")
-          .delete()
-          .eq("user_id", user.id);
-          
-        // Se houver erro, tentar a tabela alternativa
-        if (simuladosError) {
-          console.log("Tentando deletar da tabela alternativa de simulados...");
-          
-          const { error: altSimuladosError } = await supabase
-            .from("simulado_results")
-            .delete()
-            .eq("user_id", user.id);
-            
-          if (altSimuladosError) {
-            console.log("Erro ao deletar da tabela alternativa:", altSimuladosError.message);
-          }
-        }
-      } catch (simuladoDeleteError) {
-        console.error("Erro ao deletar simulados:", simuladoDeleteError);
-      }
-      
-      // Atualizar a interface
-      setTotalStats({
-        total: 0,
-        acertos: 0,
-        erros: 0,
-        aproveitamento: 0,
-      });
-      
-      setDailyStats([]);
-      setDisciplinasStats([]);
-      setFilteredDisciplinasStats([]);
-      setSimulados([]);
-      setFilteredSimulados([]);
-      
-      // Recarregar os dados após a limpeza
-      setTimeout(() => setPeriodo(periodo), 100);
-      
-      toast.success("Estatísticas apagadas com sucesso");
-    } catch (error) {
-      console.error("Erro ao apagar estatísticas:", error);
-      toast.error("Erro ao apagar estatísticas. Tente novamente mais tarde.");
-    } finally {
-      setIsDeleting(false);
-      setShowConfirmDialog(false);
-    }
-  };
-
+/** Variação em relação ao período anterior. */
+const Variacao: React.FC<{ atual: number; anterior: number; sufixo?: string; pontos?: boolean }> = ({ atual, anterior, sufixo = "", pontos }) => {
+  if (!anterior && !atual) return <span className="text-slate-400">sem dados no período anterior</span>;
+  const dif = pontos ? atual - anterior : anterior ? Math.round(((atual - anterior) / anterior) * 100) : 100;
+  if (!anterior && !pontos) return <span className="text-slate-400">nada no período anterior</span>;
+  if (dif === 0) return <span className="text-slate-400">igual ao período anterior</span>;
+  const sobe = dif > 0;
   return (
-    <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
-      <Header />
-      <main className="flex-grow px-4 py-6 md:px-8 max-w-7xl w-full mx-auto pt-8">
-        <div className="w-full">
-          <div className="flex flex-col gap-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <h1 className="text-2xl text-[#272f3c] font-extrabold md:text-2xl mb-2 text-xl">Dashboard</h1>
-              
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 md:text-sm">Selecione o período:</span>
-                <Select value={periodo} onValueChange={setPeriodo}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Selecione o período" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">Últimos 7 dias</SelectItem>
-                    <SelectItem value="30">Últimos 30 dias</SelectItem>
-                    <SelectItem value="90">Últimos 90 dias</SelectItem>
-                    <SelectItem value="365">Último ano</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            {/* Anúncio acima do card 'dashboard' */}
-            <AdBanner position="dashboard_top" className="my-6 rounded-lg" />
-            
-            {isLoading ? (
-              <div className="flex items-center justify-center my-20">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#5f2ebe] border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-              </div>
-            ) : (
-            <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="md:col-span-2 shadow-none border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg md:text-lg">Desempenho Geral</CardTitle>
-                  <CardDescription className="text-xs md:text-xs">
-                    Total de questões respondidas no período selecionado
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Questões</p>
-                      <p className="text-lg md:text-xl font-bold text-blue-600">{totalStats.total}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Acertos</p>
-                      <p className="text-lg md:text-xl font-bold text-green-600">{totalStats.acertos}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Erros</p>
-                      <p className="text-lg md:text-xl font-bold text-red-600">{totalStats.erros}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-500">Aproveitamento</p>
-                      <p className="text-lg md:text-xl font-bold text-purple-600">{totalStats.aproveitamento}%</p>
-                    </div>
-                  </div>
-                  
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart 
-                        data={dailyStats}
-                        margin={{
-                          top: 10,
-                          right: 30,
-                          left: 0,
-                          bottom: 0,
-                        }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value, name) => {
-                            if (name === 'questoes') return [`${value}`, 'Resoluções'];
-                            if (name === 'acertos') return [`${value}`, 'Acertos'];
-                            return [value, name];
-                          }}
-                          labelFormatter={(label) => {
-                            const item = dailyStats.find(stat => stat.date === label);
-                            if (item) {
-                              // Calcular o aproveitamento do dia
-                              const aproveitamento = item.questoes > 0 
-                                ? Math.round((item.acertos / item.questoes) * 100) 
-                                : 0;
-                              return `${item.dia_formatado}\nAproveitamento: ${aproveitamento}%`;
-                            }
-                            return label;
-                          }}
-                        />
-                        <Legend />
-                        <Bar 
-                          dataKey="questoes" 
-                          name="Resoluções" 
-                          fill="#2563EB" 
-                        />
-                        <Bar 
-                          dataKey="acertos" 
-                          name="Acertos" 
-                          fill="#10B981" 
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-none border-0">
-                <CardHeader>
-                  <CardTitle className="text-lg md:text-lg">Percentual de rendimento</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[250px] flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={pieChartData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          paddingAngle={5}
-                          dataKey="value"
-                          label={({name, percent}) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {pieChartData.map((_, index) => (
-                            <Cell key={`cell-${index}`} fill={CORES[index % CORES.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  
-                  <div className="flex justify-center items-center mt-4">
-                    <div className="flex items-center mr-4">
-                      <div className="w-4 h-4 bg-[#5f2ebe] mr-2"></div>
-                      <span className="text-xs md:text-sm">Acertos</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-4 h-4 bg-[#FF8042] mr-2"></div>
-                      <span className="text-xs md:text-sm">Erros</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-center mt-4">
-                    <button 
-                      className="flex items-center text-xs md:text-sm bg-white border border-gray-200 text-gray-700 px-3 py-1.5 rounded-md transition-colors hover:bg-gray-50 focus:outline-none"
-                      onClick={() => setShowConfirmDialog(true)}
-                    >
-                      <RotateCcw className="h-4 w-4 mr-1.5" />
-                      Zerar estatísticas
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <Card className="shadow-none border-0">
-              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <div className="flex-1">
-                  <CardTitle className="text-lg md:text-lg">Estatísticas por disciplina</CardTitle>
-                  <CardDescription className="whitespace-nowrap text-xs md:text-xs">
-                    Desempenho detalhado por disciplina {selectedBanca !== "todas" && `(Banca: ${selectedBanca})`}
-                  </CardDescription>
-                </div>
-                <div className="w-full sm:w-auto sm:ml-auto">
-                  <Select value={selectedBanca} onValueChange={setSelectedBanca}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Filtrar por banca" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todas">Todas as bancas</SelectItem>
-                      {bancas.map((banca) => (
-                        <SelectItem key={banca.valor} value={banca.valor}>
-                          {banca.exibicao}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="py-2 text-left text-xs">Disciplina</th>
-                        <th className="py-2 text-center text-xs">Certas</th>
-                        <th className="py-2 text-center text-xs">Erradas</th>
-                        <th className="py-2 text-center text-xs">Total</th>
-                        <th className="py-2 text-center text-xs">%</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredDisciplinasStats.length > 0 ? (
-                        filteredDisciplinasStats.map((disciplina, index) => (
-                          <React.Fragment key={`disciplina-${disciplina.disciplina}-${index}`}>
-                            <tr 
-                              className="border-b hover:bg-gray-50 cursor-pointer"
-                              onClick={() => toggleDisciplina(disciplina.disciplina)}
-                            >
-                              <td className="py-2 flex items-center text-xs">
-                                <span className="mr-2 text-gray-500 inline-flex items-center justify-center w-5 h-5">
-                                  {expandedDisciplinas.includes(disciplina.disciplina) 
-                                    ? <ChevronDown size={16} /> 
-                                    : <ChevronRight size={16} />}
-                                </span>
-                                <span className="font-medium">{disciplina.disciplina}</span>
-                                {selectedBanca !== "todas" && (
-                                  <span className="ml-2 text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                                    Filtrado por banca
-                                  </span>
-                                )}
-                              </td>
-                            <td className="py-2 text-center text-xs">{disciplina.certas}</td>
-                            <td className="py-2 text-center text-xs">{disciplina.erradas}</td>
-                            <td className="py-2 text-center text-xs">{disciplina.total}</td>
-                              <td className="py-2 text-center">
-                                <div className="flex items-center justify-center">
-                                  <div className="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
-                                    <div 
-                                      className={`h-1.5 rounded-full ${
-                                        disciplina.aproveitamento >= 70 ? 'bg-green-500' : 
-                                        disciplina.aproveitamento >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                      }`}
-                                      style={{ width: `${disciplina.aproveitamento}%` }}
-                                    ></div>
-                                  </div>
-                                  <span className="text-xs">{disciplina.aproveitamento}%</span>
-                                </div>
-                              </td>
-                            </tr>
-                            {/* Assuntos e Tópicos expandidos */}
-                            {expandedDisciplinas.includes(disciplina.disciplina) && (
-                              <>
-                                {disciplina.assuntos && disciplina.assuntos.length > 0 ? (
-                                  disciplina.assuntos.map((assunto, assuntoIndex) => (
-                                    <React.Fragment key={`assunto-${disciplina.disciplina}-${assuntoIndex}`}>
-                                      {/* Linha do Assunto */}
-                                      <tr 
-                                        className="bg-gray-50 text-sm border-b border-gray-100 cursor-pointer hover:bg-gray-100"
-                                        onClick={() => toggleAssunto(`${disciplina.disciplina}-${assunto.assunto}`)}
-                                      >
-                                        <td className="py-2 pl-8 text-gray-700 font-medium flex items-center text-xs">
-                                          <span className="mr-2 text-gray-400 inline-flex items-center justify-center w-4 h-4">
-                                            {expandedAssuntos.includes(`${disciplina.disciplina}-${assunto.assunto}`) 
-                                              ? <ChevronDown size={14} /> 
-                                              : <ChevronRight size={14} />}
-                                          </span>
-                                          {assunto.assunto}
-                                        </td>
-                                        <td className="py-2 text-center text-gray-700 text-xs">{assunto.certas}</td>
-                                        <td className="py-2 text-center text-gray-700 text-xs">{assunto.erradas}</td>
-                                        <td className="py-2 text-center text-gray-700 text-xs">{assunto.total}</td>
-                                        <td className="py-2 text-center text-gray-700">
-                                          <div className="flex items-center justify-center">
-                                            <div className="w-12 bg-gray-200 rounded-full h-1 mr-2">
-                                              <div 
-                                                className={`h-1 rounded-full ${
-                                                  assunto.aproveitamento >= 70 ? 'bg-green-500' : 
-                                                  assunto.aproveitamento >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                                }`}
-                                                style={{ width: `${assunto.aproveitamento}%` }}
-                                              ></div>
-                                            </div>
-                                            <span className="text-xs">{assunto.aproveitamento}%</span>
-                                          </div>
-                                        </td>
-                                      </tr>
-                                      
-                                      {/* Tópicos do Assunto */}
-                                      {expandedAssuntos.includes(`${disciplina.disciplina}-${assunto.assunto}`) && (
-                                        <>
-                                          {assunto.topicos && assunto.topicos.length > 0 ? (
-                                            assunto.topicos.map((topico, topicoIndex) => (
-                                              <tr 
-                                                key={`topico-${disciplina.disciplina}-${assunto.assunto}-${topicoIndex}`} 
-                                                className="bg-gray-100 text-sm border-b border-gray-50"
-                                              >
-                                                <td className="py-2 pl-16 text-gray-600 text-xs">
-                                                  {topico.topico}
-                                                  {selectedBanca !== "todas" && (
-                                                    <span className="ml-2 text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded">
-                                                      {selectedBanca}
-                                                    </span>
-                                                  )}
-                                                </td>
-                                                <td className="py-2 text-center text-gray-600 text-xs">{topico.certas}</td>
-                                                <td className="py-2 text-center text-gray-600 text-xs">{topico.erradas}</td>
-                                                <td className="py-2 text-center text-gray-600 text-xs">{topico.total}</td>
-                                                <td className="py-2 text-center text-gray-600">
-                                                  <div className="flex items-center justify-center">
-                                                    <div className="w-10 bg-gray-200 rounded-full h-1 mr-2">
-                                                      <div 
-                                                        className={`h-1 rounded-full ${
-                                                          topico.aproveitamento >= 70 ? 'bg-green-500' : 
-                                                          topico.aproveitamento >= 50 ? 'bg-yellow-500' : 'bg-red-500'
-                                                        }`}
-                                                        style={{ width: `${topico.aproveitamento}%` }}
-                                                      ></div>
-                                                    </div>
-                                                    <span className="text-xs">{topico.aproveitamento}%</span>
-                                                  </div>
-                                                </td>
-                                              </tr>
-                                            ))
-                                          ) : (
-                                            <tr className="bg-gray-100 text-sm border-b border-gray-50">
-                                              <td colSpan={5} className="py-3 text-center text-gray-500 pl-16 text-xs">
-                                                Nenhum tópico encontrado para este assunto
-                                              </td>
-                                            </tr>
-                                          )}
-                                        </>
-                                      )}
-                                    </React.Fragment>
-                                  ))
-                                ) : (
-                                  <tr className="bg-gray-50 text-sm border-b border-gray-100">
-                                    <td colSpan={5} className="py-3 text-center text-gray-500 text-xs">
-                                      Nenhum assunto encontrado para esta disciplina
-                                    </td>
-                                  </tr>
-                                )}
-                              </>
-                            )}
-                          </React.Fragment>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={6} className="py-4 text-center text-gray-500 text-xs">
-                            {selectedBanca !== "todas" 
-                              ? `Nenhuma questão respondida da banca ${selectedBanca} no período selecionado`
-                              : "Nenhum dado disponível para o período selecionado"
-                            }
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Anúncio acima do card 'Simulados' */}
-            <AdBanner position="dashboard_middle" className="my-6 rounded-lg" />
-            
-            <Card className="shadow-none border-0">
-              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <div className="flex-1">
-                  <CardTitle className="text-lg md:text-lg">Simulados</CardTitle>
-                  <CardDescription className="whitespace-nowrap text-xs md:text-xs">
-                    Resultados dos simulados realizados
-                  </CardDescription>
-                </div>
-                <div className="w-full sm:w-auto sm:ml-auto">
-                  <Select value={filtroSimulado} onValueChange={setFiltroSimulado}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
-                      <SelectValue placeholder="Filtrar simulados" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos os simulados</SelectItem>
-                      <SelectItem value="concluidos">Concluídos</SelectItem>
-                      <SelectItem value="pendentes">Pendentes</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {filteredSimulados.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="py-2 text-left text-xs">Simulado</th>
-                          <th className="py-2 text-center text-xs">Questões</th>
-                          <th className="py-2 text-center text-xs">Acertos</th>
-                          <th className="py-2 text-center text-xs">Erros</th>
-                          <th className="py-2 text-center text-xs">Aproveitamento</th>
-                          <th className="py-2 text-center text-xs">Realizado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredSimulados.map((simulado) => (
-                          <tr key={simulado.id} className="border-b">
-                            <td className="py-2 text-xs">{simulado.titulo}</td>
-                            <td className="py-2 text-center text-xs">{simulado.questoes_total}</td>
-                            <td className="py-2 text-center text-xs">{simulado.acertos}</td>
-                            <td className="py-2 text-center text-xs">{simulado.erros}</td>
-                            <td className="py-2 text-center">
-                              <div className="flex items-center justify-center">
-                                <div className="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
-                                  <div 
-                                    className="bg-green-600 h-2.5 rounded-full" 
-                                    style={{ width: `${simulado.aproveitamento}%` }}
-                                  ></div>
-                                </div>
-                                <span className="text-xs">{simulado.aproveitamento}%</span>
-                              </div>
-                            </td>
-                            <td className="py-2 text-center">
-                              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                {simulado.realizado ? "Sim" : "Não"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="flex justify-center mb-4">
-                      <FileX className="h-16 w-16 text-muted-foreground" />
-                    </div>
-                    <p className="text-gray-500 mb-2 text-xs md:text-sm">Nada por aqui</p>
-                    <p className="text-gray-500 text-xs md:text-sm">
-                      Não foram encontrados simulados para o filtro selecionado
-                    </p>
-                    <p className="text-gray-500 text-xs mt-2">
-                      (A funcionalidade de simulados será disponibilizada em breve)
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            </>
-            )}
-          </div>
-          
-          {/* Dialog de confirmação */}
-          <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle className="text-lg md:text-lg">Zerar estatísticas</DialogTitle>
-                <DialogDescription className="text-xs md:text-xs">
-                  Esta ação irá apagar permanentemente todas as suas estatísticas de resolução de questões. Esta ação é irreversível.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="flex flex-row justify-end gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowConfirmDialog(false)}
-                  disabled={isDeleting}
-                  className="text-xs md:text-sm"
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  variant="destructive"
-                  onClick={apagarDadosUsuario}
-                  disabled={isDeleting}
-                  className="text-xs md:text-sm"
-                >
-                  {isDeleting ? "Apagando..." : "Sim, apagar tudo"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </main>
-      <Footer />
+    <span className={cn("inline-flex items-center gap-0.5 font-medium", sobe ? "text-emerald-600" : "text-red-500")}>
+      {sobe ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+      {sobe ? "+" : ""}
+      {dif}
+      {pontos ? " p.p." : "%"}
+      {sufixo}
+      <span className="ml-1 font-normal text-slate-400">vs. anterior</span>
+    </span>
+  );
+};
+
+/** Anel de aproveitamento. */
+const Anel: React.FC<{ valor: number; total: number }> = ({ valor, total }) => {
+  const r = 52;
+  const c = 2 * Math.PI * r;
+  const tom = tomAproveitamento(valor, META, total);
+  const cor = total === 0 ? "#cbd5e1" : valor >= META ? "#10b981" : valor >= META - 15 ? "#f59e0b" : "#ef4444";
+  return (
+    <div className="relative mx-auto h-36 w-36">
+      <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
+        <circle cx="60" cy="60" r={r} fill="none" stroke="#f1f5f9" strokeWidth="12" />
+        <circle
+          cx="60"
+          cy="60"
+          r={r}
+          fill="none"
+          stroke={cor}
+          strokeWidth="12"
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - Math.min(100, valor) / 100)}
+          className="transition-all duration-700"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className={cn("text-3xl font-bold tabular-nums", tom.texto)}>{valor}%</span>
+        <span className="text-xs text-slate-500">de acerto</span>
+      </div>
     </div>
   );
 };
 
-export default Dashboard; 
+const DicaGrafico: React.FC<{ active?: boolean; payload?: Array<{ payload: PontoGrafico }> }> = ({ active, payload }) => {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  const total = p.acertos + p.erros;
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
+      <p className="mb-1 font-semibold capitalize text-slate-900">{p.rotuloLongo}</p>
+      {total === 0 ? (
+        <p className="text-slate-500">Nenhuma questão</p>
+      ) : (
+        <>
+          <p className="text-slate-600">
+            <strong className="tabular-nums text-slate-900">{fmt(total)}</strong> {total === 1 ? "questão" : "questões"} ·{" "}
+            {Math.round((p.acertos / total) * 100)}% de acerto
+          </p>
+          <p className="mt-1 flex gap-3">
+            <span className="text-emerald-600">● {fmt(p.acertos)} acertos</span>
+            <span className="text-red-500">● {fmt(p.erros)} erros</span>
+          </p>
+        </>
+      )}
+    </div>
+  );
+};
+
+const Numeros: React.FC<{ c: Contagem; className?: string }> = ({ c, className }) => (
+  <div className={cn("flex items-center gap-3 text-xs tabular-nums text-slate-500", className)}>
+    <span className="hidden sm:inline" title="Resolvidas">
+      {fmt(c.total)}
+    </span>
+    <span className="flex items-center gap-0.5 text-emerald-600" title="Acertos">
+      <Check className="h-3 w-3" />
+      {fmt(c.acertos)}
+    </span>
+    <span className="flex items-center gap-0.5 text-red-500" title="Erros">
+      <X className="h-3 w-3" />
+      {fmt(c.erros)}
+    </span>
+  </div>
+);
+
+const Percentual: React.FC<{ c: Contagem; largura?: string }> = ({ c, largura = "w-20 sm:w-28" }) => {
+  const tom = tomAproveitamento(c.aproveitamento, META, c.total);
+  return (
+    <div className={cn("flex shrink-0 items-center gap-2", largura)}>
+      <BarraProgresso valor={c.aproveitamento} corClasse={tom.barra} className="h-1.5 flex-1" marca={META} />
+      <span className={cn("w-9 text-right text-xs font-bold tabular-nums", tom.texto)}>{c.aproveitamento}%</span>
+    </div>
+  );
+};
+
+/** Linha de disciplina com assuntos e tópicos que abrem dentro. */
+const LinhaDisciplina: React.FC<{ d: NoDisciplina; maior: number }> = ({ d, maior }) => {
+  const [aberta, setAberta] = useState(false);
+  const [assuntoAberto, setAssuntoAberto] = useState<string | null>(null);
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => setAberta((v) => !v)}
+        aria-expanded={aberta}
+        className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-slate-50/80"
+      >
+        <ChevronRight className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform", aberta && "rotate-90")} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-slate-900" title={d.nome}>
+            {d.nome}
+          </p>
+          <div className="mt-1 flex items-center gap-2">
+            <div className="h-1 w-24 overflow-hidden rounded-full bg-slate-100 sm:w-40" title={`${fmt(d.total)} resolvidas`}>
+              <div className="h-full rounded-full bg-[#5f2ebe]/40" style={{ width: `${(d.total / maior) * 100}%` }} />
+            </div>
+            <span className="text-xs tabular-nums text-slate-400">
+              {fmt(d.total)} {d.total === 1 ? "questão" : "questões"}
+            </span>
+          </div>
+        </div>
+        <Numeros c={d} className="hidden md:flex" />
+        <Percentual c={d} />
+      </button>
+      {aberta && (
+        <div className="border-t border-slate-100 bg-slate-50/60 px-2 py-2 sm:px-4">
+          <ul className="space-y-1">
+            {d.assuntos.map((a) => {
+              const chave = a.nome;
+              const abertoA = assuntoAberto === chave;
+              const temTopicos = a.topicos.length > 1 || (a.topicos[0] && a.topicos[0].nome !== "Sem tópico");
+              return (
+                <li key={chave} className="rounded-xl bg-white ring-1 ring-slate-200/70">
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={() => temTopicos && setAssuntoAberto(abertoA ? null : chave)}
+                      className={cn("flex min-w-0 flex-1 items-center gap-2 text-left", !temTopicos && "cursor-default")}
+                      aria-expanded={temTopicos ? abertoA : undefined}
+                    >
+                      {temTopicos ? (
+                        <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform", abertoA && "rotate-90")} />
+                      ) : (
+                        <span className="w-3.5 shrink-0" />
+                      )}
+                      <span className="truncate text-sm text-slate-700" title={a.nome}>
+                        {a.nome}
+                      </span>
+                    </button>
+                    <Numeros c={a} className="hidden sm:flex" />
+                    <Percentual c={a} largura="w-20 sm:w-24" />
+                    <Link
+                      to={linkQuestoes(d.nome, a.nome)}
+                      title="Treinar este assunto"
+                      className="hidden rounded-lg px-2 py-1 text-xs font-semibold text-[#5f2ebe] hover:bg-[#5f2ebe]/10 sm:inline"
+                    >
+                      Treinar
+                    </Link>
+                  </div>
+                  {abertoA && (
+                    <ul className="border-t border-slate-100 py-1">
+                      {a.topicos.map((t) => (
+                        <li key={t.nome} className="flex items-center gap-2 py-1.5 pl-9 pr-3">
+                          <span className="min-w-0 flex-1 truncate text-xs text-slate-600" title={t.nome}>
+                            {t.nome}
+                          </span>
+                          <Numeros c={t} className="hidden sm:flex" />
+                          <Percentual c={t} largura="w-20 sm:w-24" />
+                          <span className="hidden w-[52px] sm:inline" />
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="flex justify-end px-1 pt-2">
+            <Link to={linkQuestoes(d.nome)} className="text-xs font-semibold text-[#5f2ebe] hover:underline">
+              Resolver questões de {d.nome} →
+            </Link>
+          </div>
+        </div>
+      )}
+    </li>
+  );
+};
+
+const Carregando = () => (
+  <div className="space-y-5">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      {[0, 1, 2, 3].map((i) => (
+        <Skeleton key={i} className="h-[104px] rounded-2xl" />
+      ))}
+    </div>
+    <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+      <Skeleton className="h-[340px] rounded-2xl" />
+      <Skeleton className="h-[340px] rounded-2xl" />
+    </div>
+    <Skeleton className="h-64 rounded-2xl" />
+  </div>
+);
+
+const Dashboard = () => {
+  const { user } = useAuth();
+  const [periodo, setPeriodoEstado] = useState<Periodo>(lerPeriodo);
+  const [ordem, setOrdem] = useState<OrdemDisc>("total");
+  const [confirmar, setConfirmar] = useState(false);
+  const [apagando, setApagando] = useState(false);
+  const dias = Number(periodo);
+  const d = useDesempenho(user?.id, dias);
+  const extenso = PERIODOS.find((p) => p.valor === periodo)!.extenso;
+
+  const setPeriodo = (p: Periodo) => {
+    setPeriodoEstado(p);
+    try {
+      localStorage.setItem("dashboard_periodo", p);
+    } catch {
+      /* sem armazenamento */
+    }
+  };
+
+  const disciplinas = useMemo(() => {
+    const l = [...d.arvore];
+    if (ordem === "total") l.sort((a, b) => b.total - a.total);
+    if (ordem === "pior") l.sort((a, b) => a.aproveitamento - b.aproveitamento || b.total - a.total);
+    if (ordem === "nome") l.sort((a, b) => a.nome.localeCompare(b.nome));
+    return l;
+  }, [d.arvore, ordem]);
+  const maior = Math.max(1, ...disciplinas.map((x) => x.total));
+
+  /** Assuntos com pelo menos 5 questões e abaixo da meta, do pior para o melhor. */
+  const atencao = useMemo(
+    () =>
+      d.arvore
+        .flatMap((disc) => disc.assuntos.map((a) => ({ ...a, disciplina: disc.nome })))
+        .filter((a) => a.total >= 5 && a.aproveitamento < META && a.nome !== "Sem assunto")
+        .sort((a, b) => a.aproveitamento - b.aproveitamento || b.total - a.total)
+        .slice(0, 4),
+    [d.arvore]
+  );
+
+  const mediaDia = d.diasEstudados ? Math.round(d.resumo.total / d.diasEstudados) : 0;
+  const nome = (user?.nome || "").split(" ")[0];
+
+  const zerar = async () => {
+    if (!user) return;
+    setApagando(true);
+    try {
+      const { error } = await supabase.from("respostas_alunos").delete().eq("aluno_id", user.id);
+      if (error) throw error;
+      const { error: erroSim } = await supabase.from("user_simulado_results").delete().eq("user_id", user.id);
+      if (erroSim) console.warn("Não foi possível apagar os simulados:", erroSim.message);
+      toast.success("Estatísticas zeradas");
+      d.recarregar();
+    } catch (e) {
+      console.error("Erro ao apagar estatísticas:", e);
+      toast.error("Não foi possível zerar as estatísticas. Tente novamente.");
+    } finally {
+      setApagando(false);
+      setConfirmar(false);
+    }
+  };
+
+  const vazio = !d.carregando && !d.erro && d.resumo.total === 0 && d.bancas.length === 0;
+
+  return (
+    <div className="flex min-h-screen flex-col bg-[rgb(242,244,246)]">
+      <Header />
+      <main className="flex-1">
+        {/* Topo */}
+        <section className="relative overflow-hidden border-b border-slate-200/70 bg-white">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-[#5f2ebe]/15 to-[#ea2be2]/10 blur-2xl" />
+          <div className="container relative mx-auto flex flex-col gap-5 px-4 py-8 md:py-10 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#5f2ebe]">
+                <BarChart3 className="h-3.5 w-3.5" /> Seu desempenho
+              </p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
+                {nome ? `Olá, ${nome}` : "Dashboard"}
+              </h1>
+              <p className="mt-1 max-w-xl text-sm text-slate-500">
+                Veja como você foi {extenso}: quanto resolveu, onde acerta mais e o que precisa revisar.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Segmentos<Periodo> valor={periodo} onChange={setPeriodo} opcoes={PERIODOS.map((p) => ({ valor: p.valor, rotulo: p.rotulo }))} />
+              {d.bancas.length > 1 && (
+                <label className="flex items-center">
+                  <span className="sr-only">Banca</span>
+                  <select
+                    value={d.banca}
+                    onChange={(e) => d.setBanca(e.target.value)}
+                    className="h-9 max-w-[200px] rounded-xl border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none focus:border-[#5f2ebe]"
+                  >
+                    <option value="todas">Todas as bancas</option>
+                    {d.bancas.map((b) => (
+                      <option key={b.nome} value={b.nome}>
+                        {b.nome} ({fmt(b.total)})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <div className="container mx-auto space-y-5 px-4 py-6">
+          <AdBanner position="dashboard_top" className="rounded-lg" />
+
+          {d.carregando ? (
+            <Carregando />
+          ) : d.erro ? (
+            <div className="flex items-center gap-3 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-700">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              {d.erro}
+              <button type="button" onClick={d.recarregar} className="ml-auto font-semibold underline">
+                Tentar de novo
+              </button>
+            </div>
+          ) : vazio ? (
+            <EstadoVazio
+              icone={Target}
+              titulo={`Nenhuma questão resolvida ${extenso}`}
+              texto="Resolva questões para acompanhar aqui seus acertos, erros e a evolução em cada disciplina."
+              acao={
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Link to="/questions" className="rounded-xl bg-[#5f2ebe] px-4 py-2 text-sm font-semibold text-white hover:bg-[#4f25a0]">
+                    Resolver questões
+                  </Link>
+                  {periodo !== "365" && (
+                    <button
+                      type="button"
+                      onClick={() => setPeriodo("365")}
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Ver o último ano
+                    </button>
+                  )}
+                </div>
+              }
+            />
+          ) : (
+            <>
+              {/* Números do período */}
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <Metrica
+                  rotulo="Resolvidas"
+                  valor={fmt(d.resumo.total)}
+                  icone={ListChecks}
+                  detalhe={<Variacao atual={d.resumo.total} anterior={d.resumoAnterior.total} />}
+                />
+                <Metrica rotulo="Acertos" valor={fmt(d.resumo.acertos)} icone={Check} tom="verde" detalhe={`${d.resumo.aproveitamento}% do total`} />
+                <Metrica
+                  rotulo="Erros"
+                  valor={fmt(d.resumo.erros)}
+                  icone={X}
+                  tom="rosa"
+                  detalhe={
+                    d.resumo.erros > 0 ? (
+                      <Link to="/questions?status=erradas" className="font-semibold text-[#5f2ebe] hover:underline">
+                        Refazer as que errei →
+                      </Link>
+                    ) : (
+                      "Nenhum erro, parabéns!"
+                    )
+                  }
+                />
+                <Metrica
+                  rotulo="Aproveitamento"
+                  valor={<span className={tomAproveitamento(d.resumo.aproveitamento, META, d.resumo.total).texto}>{d.resumo.aproveitamento}%</span>}
+                  icone={Target}
+                  tom="laranja"
+                  detalhe={
+                    d.resumoAnterior.total > 0 && d.resumo.total > 0 ? (
+                      <Variacao atual={d.resumo.aproveitamento} anterior={d.resumoAnterior.aproveitamento} pontos />
+                    ) : (
+                      `Meta: ${META}%`
+                    )
+                  }
+                />
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                {/* Atividade */}
+                <Painel className="flex flex-col p-4 sm:p-5">
+                  <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900">Atividade</h2>
+                      <p className="text-xs text-slate-500">Questões resolvidas {dias > 90 ? "por mês" : "por dia"}</p>
+                    </div>
+                    <div className="flex gap-3 text-xs text-slate-500">
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-sm bg-emerald-500" /> Acertos
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="h-2.5 w-2.5 rounded-sm bg-red-400" /> Erros
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-[260px] lg:h-auto lg:min-h-[260px] lg:flex-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={d.grafico} margin={{ top: 4, right: 4, left: -24, bottom: 0 }} barCategoryGap={dias <= 7 ? "30%" : "15%"}>
+                        <CartesianGrid vertical={false} stroke="#f1f5f9" />
+                        <XAxis
+                          dataKey="rotulo"
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fontSize: 11, fill: "#94a3b8" }}
+                          interval="preserveStartEnd"
+                          minTickGap={12}
+                        />
+                        <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "#94a3b8" }} />
+                        <Tooltip content={<DicaGrafico />} cursor={{ fill: "rgba(95,46,190,0.06)" }} />
+                        <Bar dataKey="acertos" stackId="a" fill="#10b981" />
+                        <Bar dataKey="erros" stackId="a" fill="#f87171" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </Painel>
+
+                {/* Resumo lateral */}
+                <div className="space-y-5">
+                  <Painel className="p-5">
+                    <Anel valor={d.resumo.aproveitamento} total={d.resumo.total} />
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-center">
+                      <div className="rounded-xl bg-slate-50 p-2.5">
+                        <div className="flex items-center justify-center gap-1 text-lg font-bold tabular-nums text-slate-900">
+                          <CalendarCheck className="h-4 w-4 text-[#5f2ebe]" />
+                          {d.diasEstudados}
+                        </div>
+                        <div className="text-[11px] text-slate-500">{d.diasEstudados === 1 ? "dia com estudo" : "dias com estudo"}</div>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 p-2.5">
+                        <div className="flex items-center justify-center gap-1 text-lg font-bold tabular-nums text-slate-900">
+                          <Flame className="h-4 w-4 text-orange-500" />
+                          {fmt(mediaDia)}
+                        </div>
+                        <div className="text-[11px] text-slate-500">questões por dia de estudo</div>
+                      </div>
+                    </div>
+                  </Painel>
+
+                  <Painel className="p-4">
+                    <h2 className="text-sm font-bold text-slate-900">Pontos de atenção</h2>
+                    <p className="text-xs text-slate-500">Assuntos abaixo de {META}% (com 5 questões ou mais)</p>
+                    {atencao.length === 0 ? (
+                      <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                        {d.resumo.total < 5 ? "Resolva mais questões para ver onde revisar." : "Nenhum assunto abaixo da meta. Muito bem!"}
+                      </p>
+                    ) : (
+                      <ul className="mt-3 space-y-2">
+                        {atencao.map((a) => (
+                          <li key={`${a.disciplina}-${a.nome}`}>
+                            <Link
+                              to={linkQuestoes(a.disciplina, a.nome)}
+                              className="group block rounded-xl border border-slate-200/80 px-3 py-2 hover:border-[#5f2ebe]/30 hover:bg-[#5f2ebe]/[0.03]"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="truncate text-sm font-medium text-slate-800" title={a.nome}>
+                                  {a.nome}
+                                </span>
+                                <span className={cn("shrink-0 text-xs font-bold tabular-nums", tomAproveitamento(a.aproveitamento, META, a.total).texto)}>
+                                  {a.aproveitamento}%
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400">
+                                <span className="truncate">{a.disciplina}</span>
+                                <span className="shrink-0 font-semibold text-[#5f2ebe] opacity-0 transition-opacity group-hover:opacity-100">Treinar →</span>
+                              </div>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </Painel>
+                </div>
+              </div>
+
+              {/* Disciplinas */}
+              <Painel className="overflow-hidden">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">Por disciplina</h2>
+                    <p className="text-xs text-slate-500">
+                      Toque numa disciplina para ver assuntos e tópicos{d.banca !== "todas" ? ` · banca ${d.banca}` : ""}
+                    </p>
+                  </div>
+                  <Segmentos<OrdemDisc>
+                    valor={ordem}
+                    onChange={setOrdem}
+                    opcoes={[
+                      { valor: "total", rotulo: "Mais resolvidas" },
+                      { valor: "pior", rotulo: "Pior %" },
+                      { valor: "nome", rotulo: "A–Z" },
+                    ]}
+                  />
+                </div>
+                {disciplinas.length === 0 ? (
+                  <p className="px-4 py-10 text-center text-sm text-slate-500">Nenhuma questão desta banca no período.</p>
+                ) : (
+                  <ul className="divide-y divide-slate-100">
+                    {disciplinas.map((disc) => (
+                      <LinhaDisciplina key={`${periodo}-${d.banca}-${disc.nome}`} d={disc} maior={maior} />
+                    ))}
+                  </ul>
+                )}
+              </Painel>
+            </>
+          )}
+
+          <AdBanner position="dashboard_middle" className="rounded-lg" />
+
+          {/* Simulados */}
+          {!d.carregando && !d.erro && (
+            <Painel className="overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Simulados</h2>
+                  <p className="text-xs text-slate-500">Seus resultados, do mais recente para o mais antigo</p>
+                </div>
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5f2ebe]/10 text-[#5f2ebe]">
+                  <ClipboardList className="h-4 w-4" />
+                </span>
+              </div>
+              {d.simulados.length === 0 ? (
+                <div className="px-4 py-10 text-center">
+                  <p className="text-sm font-semibold text-slate-800">Você ainda não fez nenhum simulado</p>
+                  <p className="mt-1 text-xs text-slate-500">Os simulados ficam na aba Simulados de cada curso.</p>
+                  <Link to="/my-courses" className="mt-3 inline-block text-xs font-semibold text-[#5f2ebe] hover:underline">
+                    Ir para meus cursos →
+                  </Link>
+                </div>
+              ) : (
+                <ul className="divide-y divide-slate-100">
+                  {d.simulados.map((s) => {
+                    const tom = tomAproveitamento(s.aproveitamento, META, s.total);
+                    return (
+                      <li key={s.id}>
+                        <Link to={`/simulado/${s.simuladoId}`} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50/80">
+                          <span className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-sm font-bold tabular-nums", tom.fundo)}>
+                            {s.aproveitamento}%
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-slate-900">{s.titulo}</p>
+                            <p className="text-xs text-slate-500">
+                              {new Date(s.data).toLocaleDateString("pt-BR")} · {fmt(s.total)} questões
+                            </p>
+                          </div>
+                          <div className="hidden items-center gap-3 text-xs tabular-nums sm:flex">
+                            <span className="flex items-center gap-0.5 text-emerald-600">
+                              <Check className="h-3 w-3" />
+                              {s.acertos}
+                            </span>
+                            <span className="flex items-center gap-0.5 text-red-500">
+                              <X className="h-3 w-3" />
+                              {s.erros}
+                            </span>
+                          </div>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Painel>
+          )}
+
+          {/* Zerar */}
+          {!d.carregando && !vazio && (
+            <div className="flex flex-col items-start justify-between gap-3 rounded-2xl border border-dashed border-slate-300 px-4 py-3 sm:flex-row sm:items-center">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">Começar do zero</p>
+                <p className="text-xs text-slate-500">Apaga todas as suas respostas e resultados de simulados. Não dá para desfazer.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setConfirmar(true)}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+              >
+                <RotateCcw className="h-4 w-4" /> Zerar estatísticas
+              </button>
+            </div>
+          )}
+        </div>
+      </main>
+      <Footer />
+
+      <AlertDialog open={confirmar} onOpenChange={(v) => !apagando && setConfirmar(v)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Zerar todas as estatísticas?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todas as suas respostas de questões e os resultados de simulados serão apagados de vez. Seus cadernos e anotações continuam
+              guardados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={apagando}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                zerar();
+              }}
+              disabled={apagando}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {apagando ? "Apagando..." : "Sim, zerar tudo"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+};
+
+export default Dashboard;

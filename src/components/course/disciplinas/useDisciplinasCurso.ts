@@ -79,6 +79,92 @@ const paraTopico = (t: Linha): TopicoCurso => ({
   temQuestoes: temItens(t.questoes_ids),
 });
 
+export interface DadosDisciplinasCurso {
+  /** ID real do curso (ou da disciplina avulsa) */
+  realId: string;
+  isCurso: boolean;
+  disciplinas: DisciplinaCurso[];
+  linhasDisciplinas: Linha[];
+}
+
+async function montarDisciplinasCurso(courseId: string): Promise<DadosDisciplinasCurso> {
+  const realId = extractIdFromFriendlyUrl(courseId);
+  const { data: curso } = await supabase.from("cursos").select("*").eq("id", realId).maybeSingle();
+
+  let linhasDisciplinas: Linha[] = [];
+  let isCurso = true;
+  // Aulas escolhidas para o curso em cada disciplina (sem chave = todas)
+  let selecao: AulasPorDisciplina = {};
+  if (curso) {
+    const ids: string[] = curso.disciplinas_ids || [];
+    const mapa = await buscarPorIds("disciplinas", ids);
+    linhasDisciplinas = ids.map((id) => mapa.get(id)).filter((d): d is Linha => !!d);
+    selecao = lerAulasPorDisciplina((curso as Linha).aulas_por_disciplina);
+  } else {
+    let { data: disciplina } = await supabase.from("disciplinas").select("*").eq("id", realId).maybeSingle();
+    if (!disciplina) throw new Error("Conteúdo não encontrado");
+    // Disciplina unificada em outra: mostra o conteúdo da principal no link antigo
+    const principalId = (disciplina as Linha).unificada_em;
+    if (principalId) {
+      const { data: principal } = await supabase.from("disciplinas").select("*").eq("id", principalId).maybeSingle();
+      if (principal) disciplina = { ...principal, id: disciplina.id };
+    }
+    linhasDisciplinas = [disciplina];
+    isCurso = false;
+  }
+  const aulasNoCurso = (d: Linha): string[] => aulasDaDisciplinaNoCurso(d.aulas_ids, selecao, d.id);
+
+  const aulas = await buscarPorIds(
+    "aulas",
+    linhasDisciplinas.flatMap(aulasNoCurso)
+  );
+  const topicos = await buscarPorIds(
+    "topicos",
+    Array.from(aulas.values()).flatMap((a) => a.topicos_ids || [])
+  );
+
+  const montadas: DisciplinaCurso[] = linhasDisciplinas.map((d) => {
+    const rating = parseInt(d.descricao, 10);
+    return {
+      id: d.id,
+      titulo: d.titulo,
+      relevancia: Number.isNaN(rating) ? null : rating,
+      aulas: aulasNoCurso(d)
+        .map((id: string) => aulas.get(id))
+        .filter((a): a is Linha => !!a)
+        .map((a) => ({
+          id: a.id,
+          titulo: a.titulo,
+          descricao: a.descricao || "",
+          topicos: (a.topicos_ids || [])
+            .map((id: string) => topicos.get(id))
+            .filter((t): t is Linha => !!t)
+            .map(paraTopico),
+        })),
+    };
+  });
+
+  // Mesma ordem de antes: disciplinas de maior rating primeiro (estável para empates)
+  montadas.sort((a, b) => (b.relevancia ?? 0) - (a.relevancia ?? 0));
+  return { realId, isCurso, disciplinas: montadas, linhasDisciplinas };
+}
+
+/**
+ * A aba Disciplinas e a aba Flashcards usam os mesmos dados. Guardamos a
+ * consulta por um minuto para as duas não buscarem tudo duas vezes.
+ */
+const cache = new Map<string, { em: number; promessa: Promise<DadosDisciplinasCurso> }>();
+const VALIDADE_MS = 60_000;
+
+export function carregarDisciplinasCurso(courseId: string): Promise<DadosDisciplinasCurso> {
+  const atual = cache.get(courseId);
+  if (atual && Date.now() - atual.em < VALIDADE_MS) return atual.promessa;
+  const promessa = montarDisciplinasCurso(courseId);
+  cache.set(courseId, { em: Date.now(), promessa });
+  promessa.catch(() => cache.delete(courseId));
+  return promessa;
+}
+
 /**
  * Carrega as disciplinas do curso (ou a disciplina avulsa) com aulas e tópicos.
  * Faz poucas consultas (uma por tabela) e respeita a ordem definida no admin:
@@ -88,95 +174,35 @@ const paraTopico = (t: Linha): TopicoCurso => ({
 export function useDisciplinasCurso(courseId: string | undefined, onCarregado?: (linhasDisciplinas: Linha[]) => void) {
   const [disciplinas, setDisciplinas] = useState<DisciplinaCurso[]>([]);
   const [isCurso, setIsCurso] = useState(true);
+  const [realId, setRealId] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState(false);
 
   useEffect(() => {
     if (!courseId) return;
     let cancelado = false;
+    setCarregando(true);
+    setErro(false);
 
-    const carregar = async () => {
-      setCarregando(true);
-      setErro(false);
-      try {
-        const realId = extractIdFromFriendlyUrl(courseId);
-        const { data: curso } = await supabase
-          .from("cursos")
-          .select("*")
-          .eq("id", realId)
-          .maybeSingle();
-
-        let linhasDisciplinas: Linha[] = [];
-        // Aulas escolhidas para o curso em cada disciplina (sem chave = todas)
-        let selecao: AulasPorDisciplina = {};
-        if (curso) {
-          const ids: string[] = curso.disciplinas_ids || [];
-          const mapa = await buscarPorIds("disciplinas", ids);
-          linhasDisciplinas = ids.map((id) => mapa.get(id)).filter((d): d is Linha => !!d);
-          selecao = lerAulasPorDisciplina((curso as Linha).aulas_por_disciplina);
-          if (!cancelado) setIsCurso(true);
-        } else {
-          let { data: disciplina } = await supabase.from("disciplinas").select("*").eq("id", realId).maybeSingle();
-          if (!disciplina) throw new Error("Conteúdo não encontrado");
-          // Disciplina unificada em outra: mostra o conteúdo da principal no link antigo
-          const principalId = (disciplina as Linha).unificada_em;
-          if (principalId) {
-            const { data: principal } = await supabase.from("disciplinas").select("*").eq("id", principalId).maybeSingle();
-            if (principal) disciplina = { ...principal, id: disciplina.id };
-          }
-          linhasDisciplinas = [disciplina];
-          if (!cancelado) setIsCurso(false);
-        }
-        const aulasNoCurso = (d: Linha): string[] => aulasDaDisciplinaNoCurso(d.aulas_ids, selecao, d.id);
-
-        const aulas = await buscarPorIds(
-          "aulas",
-          linhasDisciplinas.flatMap(aulasNoCurso)
-        );
-        const topicos = await buscarPorIds(
-          "topicos",
-          Array.from(aulas.values()).flatMap((a) => a.topicos_ids || [])
-        );
-
-        const montadas: DisciplinaCurso[] = linhasDisciplinas.map((d) => {
-          const rating = parseInt(d.descricao, 10);
-          return {
-            id: d.id,
-            titulo: d.titulo,
-            relevancia: Number.isNaN(rating) ? null : rating,
-            aulas: aulasNoCurso(d)
-              .map((id: string) => aulas.get(id))
-              .filter((a): a is Linha => !!a)
-              .map((a) => ({
-                id: a.id,
-                titulo: a.titulo,
-                descricao: a.descricao || "",
-                topicos: (a.topicos_ids || [])
-                  .map((id: string) => topicos.get(id))
-                  .filter((t): t is Linha => !!t)
-                  .map(paraTopico),
-              })),
-          };
-        });
-
-        // Mesma ordem de antes: disciplinas de maior rating primeiro (estável para empates)
-        montadas.sort((a, b) => (b.relevancia ?? 0) - (a.relevancia ?? 0));
-
+    carregarDisciplinasCurso(courseId)
+      .then((dados) => {
         if (cancelado) return;
-        setDisciplinas(montadas);
-        onCarregado?.(linhasDisciplinas);
-      } catch (e) {
+        setIsCurso(dados.isCurso);
+        setRealId(dados.realId);
+        setDisciplinas(dados.disciplinas);
+        onCarregado?.(dados.linhasDisciplinas);
+      })
+      .catch((e) => {
         console.error("Erro ao carregar disciplinas do curso:", e);
         if (!cancelado) {
           setErro(true);
           setDisciplinas([]);
         }
-      } finally {
+      })
+      .finally(() => {
         if (!cancelado) setCarregando(false);
-      }
-    };
+      });
 
-    carregar();
     return () => {
       cancelado = true;
     };
@@ -184,5 +210,5 @@ export function useDisciplinasCurso(courseId: string | undefined, onCarregado?: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
-  return { disciplinas, isCurso, carregando, erro };
+  return { disciplinas, isCurso, realId, carregando, erro };
 }

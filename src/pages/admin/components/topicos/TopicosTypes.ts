@@ -1,3 +1,5 @@
+import type { FlashcardRascunho } from "@/lib/flashcards";
+
 export interface Topico {
   id: string;
   titulo: string;
@@ -19,6 +21,8 @@ export interface Topico {
   selecionado?: boolean;
   abrirVideoEm?: "site" | "destino";
   abrirEmNovaGuia?: boolean;
+  /** Flashcards do tópico (só no formulário; undefined = não carregados) */
+  flashcards?: FlashcardRascunho[];
 }
 
 /** Campos editáveis de um tópico (formulários de criação e edição). */
@@ -40,6 +44,7 @@ export const topicoFormVazio = (base: Partial<TopicoFormValues> = {}): TopicoFor
   resumoAudioUrl: [],
   cadernoQuestoesUrl: "",
   abrirEmNovaGuia: false,
+  flashcards: [],
   ...base,
 });
 

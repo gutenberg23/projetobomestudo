@@ -24,6 +24,7 @@ import {
 import { ConfirmarAcao } from "@/components/admin/ui/dialogos";
 import { materiaisDoTopico } from "./components/topicos/TopicosTable";
 import { cn } from "@/lib/utils";
+import { AVISO_MIGRATION, faltaMigration, salvarFlashcardsDoTopico } from "@/lib/flashcards";
 
 type Aba = "todos" | "sem-video" | "sem-texto" | "sem-questoes" | "incompletos";
 
@@ -188,6 +189,14 @@ const Topicos = () => {
 
       if (data && data.length > 0) {
         const novoTopico = linhaParaTopico(data[0]);
+        if (newTopico.flashcards?.some((c) => c.frente.trim() && c.verso.trim())) {
+          try {
+            await salvarFlashcardsDoTopico(novoTopico.id, newTopico.flashcards);
+          } catch (erroFlash) {
+            console.error("Erro ao salvar flashcards do tópico:", erroFlash);
+            toast.error(faltaMigration(erroFlash) ? AVISO_MIGRATION : "O tópico foi criado, mas houve erro ao salvar os flashcards.");
+          }
+        }
         // Novo tópico aparece no topo, como na listagem (ordem de criação decrescente)
         setTopicos((anteriores) => [novoTopico, ...anteriores]);
         toast.success(`Tópico "${novoTopico.titulo}" criado`);

@@ -46,7 +46,7 @@ função, então tudo roda no servidor. O navegador não precisa ficar aberto.
 |---|---|
 | Rodava no navegador do admin, só enquanto a página estava aberta | Roda no servidor, sozinho, a cada 30 min |
 | Modelo `gemini-2.0-flash-exp`, que o Google já desativou | `gemini-flash-latest`, que sempre aponta para o Flash atual |
-| Se o Gemini falhasse, a notícia era perdida | Reserva automática: Gemini Flash → Gemini Flash-Lite → Groq → OpenRouter |
+| Se o Gemini falhasse, a notícia era perdida | Reserva automática: Gemini Flash → Gemini Flash-Lite → Groq (gpt-oss 120B → 20B) → Mistral → OpenRouter. Sobrecarga (503) ganha uma nova tentativa antes de trocar |
 | Usava o proxy público `allorigins.win` (lento e instável) | Busca direto do servidor |
 | Mandava a página inteira como texto corrido, perdendo tabelas | Extrai só a notícia, mantendo títulos, listas, tabelas e links de edital |
 | "Sincronização Automática" não marcava itens como transmitidos e podia duplicar | Cada item fica registrado, com status e número de tentativas |
@@ -66,14 +66,15 @@ em novembro de 2026; os atuais aparecem no painel de cada serviço.
 | Serviço | Limite gratuito | Qualidade em PT-BR | Observações |
 |---|---|---|---|
 | **Google Gemini (AI Studio)** | Por projeto, visível no AI Studio. Os modelos Flash e Flash-Lite atendem com folga dezenas de notícias por dia | Excelente | O Google pode usar o conteúdo enviado no plano gratuito para melhorar os produtos. Aqui são notícias públicas, então não há problema |
-| **Groq** | Llama 3.3 70B: 30 por minuto, 1.000 por dia, 12 mil tokens por minuto, 100 mil tokens por dia (≈ 15 a 20 notícias por dia) | Muito boa | Muito rápido e não guarda os dados. Ótimo como reserva |
+| **Groq** | GPT-OSS 120B e 20B: 30 por minuto, 1.000 por dia, 8 mil tokens por minuto, 200 mil tokens por dia cada (≈ 25 notícias por dia em cada modelo). O Llama 3.3 70B foi desligado em 16/08/2026 | Muito boa | Muito rápido e não guarda os dados. Ótimo como reserva |
 | **OpenRouter** (modelos `:free`) | 20 por minuto e 50 por dia (1.000 por dia após uma compra única de US$ 10) | Varia por modelo | Catálogo muda toda semana. Alguns provedores treinam com os prompts |
 | **Cloudflare Workers AI** | 10 mil "neurons" por dia | Razoável (modelos pequenos) | Não integrado; modelos fracos para textos longos |
-| **Mistral** (plano Experiment) | Limites só no painel | Boa | Não integrado; termos de retenção pouco claros |
+| **Mistral** (plano Experiment) | Gratuito e sem cartão; limites por modelo aparecem no painel | Boa | Integrado. Por padrão a Mistral pode treinar com os dados; desligue em Admin › Privacy |
 
-**Recomendação:** Gemini como principal e Groq como reserva. As duas chaves
-são gratuitas e não pedem cartão. Com as duas configuradas, se o Gemini
-atingir o limite do dia, o Groq assume na mesma hora.
+**Recomendação:** Gemini como principal, Groq e Mistral como reservas. As três
+chaves são gratuitas e não pedem cartão. Com as três configuradas, se o Gemini
+estiver sobrecarregado ou sem limite, o Groq assume na hora, e a Mistral
+assume se o Groq também falhar.
 
 ### Agendador
 
@@ -106,6 +107,14 @@ depois de `npx supabase login` e `npx supabase link --project-ref ukkatmoathxhba
    ```
    npx supabase secrets set GROQ_API_KEY=COLE_A_CHAVE
    ```
+3. **Mistral** (segunda reserva): crie uma conta em https://console.mistral.ai,
+   escolha o plano gratuito **Experiment** (pede só a verificação do celular),
+   gere uma chave em **API Keys** e rode:
+   ```
+   npx supabase secrets set MISTRAL_API_KEY=COLE_A_CHAVE
+   ```
+   Se quiser que a Mistral não use os textos para treino, desligue em
+   **Admin › Privacy › Anonymous improvement data**.
 
 ### 2. Segredo do agendador (3 min)
 
@@ -185,9 +194,11 @@ Todos são secrets (`npx supabase secrets set NOME=valor`):
 | `RSS_AUTHOR_NAME` | `Equipe Bom Estudo` | Autor dos posts automáticos |
 | `GEMINI_MODEL` | `gemini-flash-latest` | Modelo principal do Gemini |
 | `GEMINI_FALLBACK_MODEL` | `gemini-flash-lite-latest` | Segundo modelo do Gemini |
-| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Modelo do Groq |
+| `GROQ_MODEL` | `openai/gpt-oss-120b,openai/gpt-oss-20b` | Modelos do Groq, tentados em ordem |
+| `GROQ_MAX_TOKENS` | `3000` | Tamanho máximo da resposta no Groq (o plano grátis soma entrada e saída no limite por minuto) |
+| `MISTRAL_MODEL` | `mistral-small-latest` | Modelo da Mistral |
 | `OPENROUTER_API_KEY` e `OPENROUTER_MODEL` | (vazio) | Terceira reserva, opcional. Use um modelo terminado em `:free` |
-| `AI_PROVIDERS` | `gemini,groq,openrouter` | Ordem dos provedores |
+| `AI_PROVIDERS` | `gemini,groq,mistral,openrouter` | Ordem dos provedores |
 | `UNSPLASH_ACCESS_KEY` | (vazio) | Opcional. Usa o Unsplash como reserva quando o Wikimedia não tem foto da cidade. A chave é gratuita em unsplash.com/developers |
 
 Para mudar a frequência (exemplo: de hora em hora), rode no SQL Editor:

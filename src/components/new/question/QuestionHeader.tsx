@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { BarChart, AlertTriangle, Info, MoveRight } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -20,19 +20,16 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
   topics = [],
   assunto = "",
   questionId,
-  hideInfo = false
+  hideInfo = false,
+  aparencia = "padrao",
+  numero,
+  situacaoAnterior
 }) => {
   const [statsOpen, setStatsOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportDescription, setReportDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Log para debug dos tópicos
-  useEffect(() => {
-    console.log("Topics recebidos no QuestionHeader:", topics);
-    console.log("Assunto recebido no QuestionHeader:", assunto);
-  }, [topics, assunto]);
 
   const handleReportSubmit = async () => {
     if (!reportDescription.trim()) {
@@ -71,21 +68,8 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
     }
   };
 
-  return (
-    <header className="flex flex-row justify-between items-center px-5 py-2 w-full rounded-t-xl rounded-b-none border border-gray-200 border-solid min-h-[60px] text-slate-800 bg-[#5f2ebe]">
-      <div className="flex items-center text-white">
-        <div className="flex items-center">
-          <span className="text-sm max-sm:hidden">Disciplina:&nbsp;</span>
-          <span className="font-normal text-sm max-sm:text-xs">{discipline || "Não informado"}</span>
-          {assunto && (
-            <>
-              <MoveRight className="h-3 w-3 mx-1.5 text-gray-300 max-sm:hidden" />
-              <span className="font-normal text-sm max-sm:hidden text-white font-medium">{assunto}</span>
-            </>
-          )}
-        </div>
-      </div>
-
+  const acoes = (
+    <>
       {!hideInfo && (
         <div className="flex gap-2 items-center">
           <TooltipProvider>
@@ -175,6 +159,10 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
         </div>
       )}
 
+    </>
+  );
+
+  const dialogo = (
       <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -212,6 +200,65 @@ export const QuestionHeader: React.FC<QuestionHeaderProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+  );
+
+  if (aparencia === "moderna") {
+    const meta = [institution, organization, year, role].filter(Boolean);
+    return (
+      <header className="border-b border-slate-100 px-4 py-3 md:px-5">
+        <div className="flex items-start gap-3">
+          {numero !== undefined && (
+            <span className="mt-0.5 flex h-7 min-w-7 shrink-0 items-center justify-center rounded-lg bg-[#5f2ebe]/10 px-1.5 text-xs font-bold tabular-nums text-[#5f2ebe]">
+              {numero}
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold leading-snug text-slate-900">
+              {discipline || "Disciplina não informada"}
+              {assunto && (
+                <>
+                  <span className="mx-1.5 font-normal text-slate-300">›</span>
+                  <span className="font-medium text-slate-600">{assunto}</span>
+                </>
+              )}
+            </p>
+            {!hideInfo && meta.length > 0 && <p className="mt-0.5 text-xs text-slate-500">{meta.join(" · ")}</p>}
+          </div>
+          {situacaoAnterior && (
+            <span
+              className={
+                "hidden shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold sm:inline-block " +
+                (situacaoAnterior === "acertou" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600")
+              }
+            >
+              {situacaoAnterior === "acertou" ? "Você acertou" : "Você errou"}
+            </span>
+          )}
+          <div className="-mr-1 shrink-0 [&_button:hover]:bg-slate-100 [&_svg]:text-slate-400">{acoes}</div>
+        </div>
+        {dialogo}
+      </header>
+    );
+  }
+
+  return (
+    <header className="flex flex-row justify-between items-center px-5 py-2 w-full rounded-t-xl rounded-b-none border border-gray-200 border-solid min-h-[60px] text-slate-800 bg-[#5f2ebe]">
+      <div className="flex items-center text-white">
+        <div className="flex items-center">
+          <span className="text-sm max-sm:hidden">Disciplina:&nbsp;</span>
+          <span className="font-normal text-sm max-sm:text-xs">{discipline || "Não informado"}</span>
+          {assunto && (
+            <>
+              <MoveRight className="h-3 w-3 mx-1.5 text-gray-300 max-sm:hidden" />
+              <span className="font-normal text-sm max-sm:hidden text-white font-medium">{assunto}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {acoes}
+
+      {dialogo}
     </header>
   );
 };

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BookOpenText, ExternalLink, FileText, HelpCircle, ListChecks, Map, NotebookPen, PlayCircle, ScrollText } from "lucide-react";
+import { BookOpenText, ExternalLink, FileText, HelpCircle, Layers, ListChecks, Map, NotebookPen, PlayCircle, ScrollText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AudioPlayer } from "@/components/new/AudioPlayer";
 import { MultiAudioPlayer } from "@/components/new/MultiAudioPlayer";
@@ -88,9 +88,14 @@ export const MateriaisTopico: React.FC<{
   topico: TopicoCurso;
   questoesAbertas: boolean;
   onQuestoes: () => void;
+  /** Quantos flashcards o tópico tem neste curso */
+  flashcards?: number;
+  /** Leva para a aba Flashcards, nos cartões deste tópico */
+  onFlashcards?: () => void;
   className?: string;
-}> = ({ topico: t, questoesAbertas, onQuestoes, className }) => {
-  if (!temMateriais(t)) return null;
+}> = ({ topico: t, questoesAbertas, onQuestoes, flashcards = 0, onFlashcards, className }) => {
+  const temFlashcards = flashcards > 0 && !!onFlashcards;
+  if (!temMateriais(t) && !temFlashcards) return null;
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
       {t.temQuestoes && (
@@ -106,6 +111,11 @@ export const MateriaisTopico: React.FC<{
       {t.pdfUrl && (
         <Chip icone={FileText} href={t.pdfUrl}>
           PDF
+        </Chip>
+      )}
+      {temFlashcards && (
+        <Chip icone={Layers} onClick={onFlashcards}>
+          Flashcards ({flashcards})
         </Chip>
       )}
       {t.mapaUrl && (
