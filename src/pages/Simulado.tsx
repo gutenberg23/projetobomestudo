@@ -531,7 +531,7 @@ const Simulado = () => {
           <Trophy className="h-4 w-4 text-amber-500" /> Ver ranking
         </Link>
       )}
-      {isAdmin && (
+      {isAdmin() && (
         <label className="flex items-center justify-between gap-2 rounded-xl border border-dashed border-slate-300 px-3 py-2.5 text-sm text-slate-600">
           <span>
             Ranking público
@@ -548,7 +548,7 @@ const Simulado = () => {
       <PublicLayout>
         <div className="flex min-h-screen flex-col bg-[rgb(242,244,246)]">
           <Header />
-          <main className="container mx-auto flex-1 px-4 py-10">
+          <main className="flex-1 py-10 mx-auto w-full max-w-[1400px] px-[10px] md:px-[32px]">
             <EstadoVazio
               icone={FileQuestion}
               titulo="Simulado não encontrado"
@@ -578,7 +578,7 @@ const Simulado = () => {
           {/* Topo */}
           <section className="relative overflow-hidden border-b border-slate-200/70 bg-white">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-[#5f2ebe]/15 to-[#ea2be2]/10 blur-2xl" />
-            <div className="container relative mx-auto grid gap-6 px-4 py-8 md:py-10 lg:grid-cols-[1fr_320px] lg:items-end">
+            <div className="relative grid gap-6 py-8 mx-auto w-full max-w-[1400px] px-[10px] md:px-[32px] md:py-10 lg:grid-cols-[1fr_320px] lg:items-end">
               <div className="min-w-0">
                 <Link to={linkCurso} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-[#5f2ebe]">
                   <ArrowLeft className="h-3.5 w-3.5" /> {curso ? curso.titulo : "Meus cursos"}
@@ -655,7 +655,7 @@ const Simulado = () => {
             </div>
           </section>
 
-          <div className="container mx-auto grid gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="grid gap-6 py-6 mx-auto w-full max-w-[1400px] px-[10px] md:px-[32px] lg:grid-cols-[minmax(0,1fr)_300px]">
             <div className="min-w-0 space-y-4">
               {/* Barra de controles */}
               <div ref={topoQuestoes} className="flex scroll-mt-4 flex-wrap items-center gap-2">
