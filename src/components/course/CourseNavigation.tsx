@@ -17,8 +17,12 @@ interface CourseNavigationProps {
    * Disciplina, Estatísticas e Flashcards.
    */
   ehDisciplina?: boolean;
-  /** Ainda não se sabe se é curso ou disciplina */
+  /** Ainda não se sabe se é curso ou disciplina, ou quais abas têm conteúdo */
   carregandoTipo?: boolean;
+  /** O curso tem edital, simulados ou leis secas cadastrados */
+  temEdital?: boolean;
+  temSimulados?: boolean;
+  temLeiSeca?: boolean;
 }
 
 export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
@@ -27,7 +31,10 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   mostrarFlashcards = false,
   totalFlashcards = 0,
   ehDisciplina = false,
-  carregandoTipo = false
+  carregandoTipo = false,
+  temEdital = true,
+  temSimulados = true,
+  temLeiSeca = true
 }) => {
   const { config, isLoading } = useSiteConfig();
 
@@ -35,7 +42,10 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   useEffect(() => {
     if (isLoading || ehDisciplina) return;
 
-    const { showDisciplinasTab, showEditalTab, showSimuladosTab, showCicloTab } = config.tabs;
+    const { showDisciplinasTab, showCicloTab } = config.tabs;
+    // Edital e Simulados sem conteúdo no curso contam como escondidas
+    const showEditalTab = config.tabs.showEditalTab && temEdital;
+    const showSimuladosTab = config.tabs.showSimuladosTab && temSimulados;
 
     // Se a aba atual está invisível, mudar para a primeira aba visível
     if (
@@ -55,7 +65,7 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
       }
       // Se nenhuma aba estiver visível, não muda nada - isso deveria ser evitado pelo admin
     }
-  }, [config.tabs, activeTab, isLoading, setActiveTab, ehDisciplina]);
+  }, [config.tabs, activeTab, isLoading, setActiveTab, ehDisciplina, temEdital, temSimulados]);
 
   // Handlers de clique memorizados para evitar novas referências em cada render
   const handleDisciplinasClick = useCallback(() => {
@@ -101,10 +111,11 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
 
   const { showDisciplinasTab } = config.tabs;
   // Disciplina avulsa não tem edital, simulados, ciclo nem lei seca
-  const showEditalTab = config.tabs.showEditalTab && !ehDisciplina;
-  const showSimuladosTab = config.tabs.showSimuladosTab && !ehDisciplina;
+  // e as abas Edital, Simulados e Lei Seca só aparecem quando o curso tem conteúdo para elas
+  const showEditalTab = config.tabs.showEditalTab && !ehDisciplina && temEdital;
+  const showSimuladosTab = config.tabs.showSimuladosTab && !ehDisciplina && temSimulados;
   const showCicloTab = config.tabs.showCicloTab && !ehDisciplina;
-  const showLeiSecaTab = !ehDisciplina;
+  const showLeiSecaTab = !ehDisciplina && temLeiSeca;
 
   // Se nenhuma aba estiver visível, mostrar mensagem
   if (!ehDisciplina && !showDisciplinasTab && !showEditalTab && !showSimuladosTab && !showCicloTab) {
