@@ -1,3 +1,5 @@
+import type { AulasPorDisciplina } from "@/utils/aulasDoCurso";
+
 export interface Curso {
   id: string;
   titulo: string;
@@ -11,4 +13,8 @@ export interface Curso {
   favoritos: number;
   informacoesCurso: string;
   criadoEm?: string;
+  /** Aulas escolhidas em cada disciplina (sem chave = todas) */
+  aulasPorDisciplina: AulasPorDisciplina;
+  /** A coluna aulas_por_disciplina já existe no banco (migration aplicada) */
+  temColunaSelecao: boolean;
 }

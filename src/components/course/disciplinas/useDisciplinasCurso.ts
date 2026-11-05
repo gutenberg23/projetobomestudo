@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
+import { AulasPorDisciplina, aulasDaDisciplinaNoCurso, lerAulasPorDisciplina } from "@/utils/aulasDoCurso";
 
 /** Um tópico (vídeo + materiais) de uma aula. */
 export interface TopicoCurso {
@@ -88,24 +89,34 @@ export interface DadosDisciplinasCurso {
 
 async function montarDisciplinasCurso(courseId: string): Promise<DadosDisciplinasCurso> {
   const realId = extractIdFromFriendlyUrl(courseId);
-  const { data: curso } = await supabase.from("cursos").select("id, disciplinas_ids").eq("id", realId).maybeSingle();
+  const { data: curso } = await supabase.from("cursos").select("*").eq("id", realId).maybeSingle();
 
   let linhasDisciplinas: Linha[] = [];
   let isCurso = true;
+  // Aulas escolhidas para o curso em cada disciplina (sem chave = todas)
+  let selecao: AulasPorDisciplina = {};
   if (curso) {
     const ids: string[] = curso.disciplinas_ids || [];
     const mapa = await buscarPorIds("disciplinas", ids);
     linhasDisciplinas = ids.map((id) => mapa.get(id)).filter((d): d is Linha => !!d);
+    selecao = lerAulasPorDisciplina((curso as Linha).aulas_por_disciplina);
   } else {
-    const { data: disciplina } = await supabase.from("disciplinas").select("*").eq("id", realId).maybeSingle();
+    let { data: disciplina } = await supabase.from("disciplinas").select("*").eq("id", realId).maybeSingle();
     if (!disciplina) throw new Error("Conteúdo não encontrado");
+    // Disciplina unificada em outra: mostra o conteúdo da principal no link antigo
+    const principalId = (disciplina as Linha).unificada_em;
+    if (principalId) {
+      const { data: principal } = await supabase.from("disciplinas").select("*").eq("id", principalId).maybeSingle();
+      if (principal) disciplina = { ...principal, id: disciplina.id };
+    }
     linhasDisciplinas = [disciplina];
     isCurso = false;
   }
+  const aulasNoCurso = (d: Linha): string[] => aulasDaDisciplinaNoCurso(d.aulas_ids, selecao, d.id);
 
   const aulas = await buscarPorIds(
     "aulas",
-    linhasDisciplinas.flatMap((d) => d.aulas_ids || [])
+    linhasDisciplinas.flatMap(aulasNoCurso)
   );
   const topicos = await buscarPorIds(
     "topicos",
@@ -118,7 +129,7 @@ async function montarDisciplinasCurso(courseId: string): Promise<DadosDisciplina
       id: d.id,
       titulo: d.titulo,
       relevancia: Number.isNaN(rating) ? null : rating,
-      aulas: (d.aulas_ids || [])
+      aulas: aulasNoCurso(d)
         .map((id: string) => aulas.get(id))
         .filter((a): a is Linha => !!a)
         .map((a) => ({

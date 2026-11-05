@@ -46,7 +46,9 @@ export const useDisciplinas = () => {
       ]);
       if (error) throw error;
 
-      const idsAulas = unicos((data || []).flatMap((d) => d.aulas_ids || []));
+      // Disciplinas unificadas em outra ficam fora da lista
+      const ativas = (data || []).filter((d) => !(d as { unificada_em?: string | null }).unificada_em);
+      const idsAulas = unicos(ativas.flatMap((d) => d.aulas_ids || []));
       const linhasAulas = idsAulas.length
         ? ((await buscarEmLotes("aulas", "id, titulo, topicos_ids, questoes_ids", idsAulas)) as unknown as AulaResumo[])
         : [];
@@ -71,7 +73,7 @@ export const useDisciplinas = () => {
       setQuestoesTopico(mapaTopicos);
       setCursosDaDisciplina(uso);
       setDisciplinas(
-        (data || []).map((d) => {
+        ativas.map((d) => {
           const aulasIds = d.aulas_ids || [];
           const t = totais(aulasIds, mapaAulas, mapaTopicos);
           return {
@@ -193,7 +195,35 @@ export const useDisciplinas = () => {
     }
   };
 
+  /** Junta disciplinas repetidas na principal (função unificar_disciplinas no banco). */
+  const unificar = async (principalId: string, repetidasIds: string[]): Promise<boolean> => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any).rpc("unificar_disciplinas", {
+        p_principal: principalId,
+        p_repetidas: repetidasIds,
+      });
+      if (error) throw error;
+      const r = (data || {}) as { aulas?: number; cursos?: number };
+      toast.success(
+        `Disciplinas unificadas: ${r.aulas ?? 0} aulas na principal, ${r.cursos ?? 0} ${r.cursos === 1 ? "curso atualizado" : "cursos atualizados"}.`
+      );
+      await carregar();
+      return true;
+    } catch (error) {
+      console.error("Erro ao unificar disciplinas:", error);
+      const msg = (error as { message?: string })?.message || "";
+      toast.error(
+        /unificar_disciplinas|function|schema cache/i.test(msg)
+          ? "A função de unificar ainda não existe no banco. Rode a migration 20251111000000 no SQL Editor."
+          : msg || "Erro ao unificar as disciplinas"
+      );
+      return false;
+    }
+  };
+
   return {
+    unificar,
     disciplinas,
     aulas,
     cursosDaDisciplina,
