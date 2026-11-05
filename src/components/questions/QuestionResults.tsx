@@ -79,13 +79,8 @@ const QuestionResults: React.FC<QuestionResultsProps> = ({
           
           {/* Mostrar anúncio a cada 5 questões */}
           {((index + 1) % 5 === 0 && index < questions.length - 1) && (
-            <div className="my-4">
-              <AdBannerList 
-                position="questions_list" 
-                interval={5} 
-                itemCount={questions.length}
-                className="rounded-lg" 
-              />
+            <div className="my-4 empty:hidden">
+              <AdBannerList position="questions_list" indice={(index + 1) / 5 - 1} />
             </div>
           )}
         </React.Fragment>

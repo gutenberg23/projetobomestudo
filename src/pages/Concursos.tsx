@@ -22,7 +22,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
-import AdBanner from "@/components/ads/AdBanner";
+import AdBannerList from "@/components/ads/AdBannerList";
 import { EstadoVazio, Painel, Segmentos, normalizar } from "@/components/course/ui";
 import { concursosService } from "@/services/concursosService";
 import { supabase } from "@/integrations/supabase/client";
@@ -585,7 +585,7 @@ const Concursos = () => {
                       <React.Fragment key={item.id}>
                         <CartaoConcurso item={item} ufAtiva={uf} onUf={escolherUf} />
                         {(i + 1) % ANUNCIO_A_CADA === 0 && i + 1 < Math.min(limite, visiveis.length) && (
-                          <AdBanner position="concursos_list" className="col-span-full rounded-lg" />
+                          <AdBannerList position="concursos_list" indice={(i + 1) / ANUNCIO_A_CADA - 1} className="col-span-full" />
                         )}
                       </React.Fragment>
                     ))}

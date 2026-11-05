@@ -1,67 +1,56 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { usePopups } from "@/hooks/usePopups";
 import Popup from "@/components/popups/Popup";
-import { Popup as PopupType } from "@/types/popup";
+import { paginaDaRota } from "@/components/popups/paginas";
+import type { Popup as PopupType } from "@/types/popup";
 
-interface PopupProviderProps {
-  currentPage: string;
-  children: React.ReactNode;
-}
+/** Espera um instante antes de abrir, para não cobrir a página ainda carregando. */
+const ATRASO_MS = 1200;
 
-const PopupProvider = ({ currentPage, children }: PopupProviderProps) => {
-  const { popup, loading, error, dismissPopup, refetch } = usePopups(currentPage);
-  const [showPopup, setShowPopup] = useState(false);
-
+/** ?previa_popup=<id> abre aquele popup na hora, mesmo pausado ou fora do período (usado pelo admin). */
+const usePrevia = (search: string) => {
+  const id = new URLSearchParams(search).get("previa_popup");
+  const [previa, setPrevia] = useState<PopupType | null>(null);
   useEffect(() => {
-    // Quando a página muda, verificar se há um popup ativo
-    if (popup) {
-      setShowPopup(true);
-    }
-  }, [popup]);
-
-  const handleClose = () => {
-    setShowPopup(false);
-  };
-
-  const handleDismiss = (popupId: string) => {
-    dismissPopup(popupId);
-  };
-
-  // Não mostrar popups em páginas administrativas
-  const isAdminPage = currentPage.startsWith('/admin');
-
-  if (isAdminPage) {
-    return <>{children}</>;
-  }
-
-  // Converter o tipo do popup para corresponder à interface esperada
-  const convertedPopup = popup ? {
-    id: popup.id,
-    titulo: popup.titulo,
-    conteudo: popup.conteudo,
-    imagem_url: popup.imagem_url !== null ? popup.imagem_url : undefined,
-    link_destino: popup.link_destino !== null ? popup.link_destino : undefined,
-    data_inicio: popup.data_inicio,
-    data_fim: popup.data_fim,
-    pagina: popup.pagina,
-    ativo: popup.ativo !== null ? popup.ativo : undefined,
-    ordem: popup.ordem !== null ? popup.ordem : undefined,
-    created_at: popup.created_at !== null ? popup.created_at : undefined,
-    updated_at: popup.updated_at !== null ? popup.updated_at : undefined
-  } as PopupType : null;
-
-  return (
-    <>
-      {children}
-      {showPopup && convertedPopup && (
-        <Popup 
-          popup={convertedPopup} 
-          onClose={handleClose} 
-          onDismiss={handleDismiss} 
-        />
-      )}
-    </>
-  );
+    setPrevia(null);
+    if (!id) return;
+    let vivo = true;
+    supabase
+      .from("popups")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data }) => vivo && setPrevia((data as PopupType) || null));
+    return () => {
+      vivo = false;
+    };
+  }, [id]);
+  return { previa, fecharPrevia: () => setPrevia(null) };
 };
 
-export default PopupProvider;
+/**
+ * Mostra o popup configurado em /admin/popups para a página atual.
+ * Fica uma vez só no App (dentro do BrowserRouter), valendo para todas as rotas.
+ */
+const PopupsDoSite = () => {
+  const { pathname, search } = useLocation();
+  const pagina = paginaDaRota(pathname);
+  const { popup, fechar } = usePopups(pagina);
+  const { previa, fecharPrevia } = usePrevia(search);
+  const [pronto, setPronto] = useState(false);
+
+  useEffect(() => {
+    setPronto(false);
+    if (!popup) return;
+    const t = window.setTimeout(() => setPronto(true), ATRASO_MS);
+    return () => window.clearTimeout(t);
+  }, [popup]);
+
+  if (previa) return <Popup key={`previa-${previa.id}`} popup={previa} onFechar={fecharPrevia} />;
+  if (!popup?.id || !pronto) return null;
+  return <Popup key={popup.id} popup={popup} onFechar={(paraSempre) => fechar(popup.id!, paraSempre)} />;
+};
+
+export default PopupsDoSite;

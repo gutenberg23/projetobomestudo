@@ -1,503 +1,365 @@
-import { useState, useEffect } from "react";
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  EyeOff,
-  Calendar,
-  Link as LinkIcon,
-  Image as ImageIcon
-} from "lucide-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { toast } from "@/hooks/use-toast";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, CalendarClock, Copy, Edit, ExternalLink, Eye, Globe, MessageSquareWarning, Pause, Play, Plus, Radio, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import {
+  AbasContagem,
+  CampoBusca,
+  CartoesResumo,
+  EstadoVazio,
+  Etiqueta,
+  FiltrosBarra,
+  ListaEsqueleto,
+  MenuAcoes,
+  PainelListagem,
+  RodapePaginacao,
+  botaoPrimario,
+  normalizar,
+  selectClasse,
+} from "@/components/admin/ui/listagem";
+import { ConfirmarAcao } from "@/components/admin/ui/dialogos";
+import { ROTULO_SITUACAO, TOM_SITUACAO, situacaoVeiculacao, textoPeriodo, textoPrazo, type SituacaoVeiculacao } from "@/components/admin/ui/periodo";
+import { PAGINAS_POPUP, PAGINA_TODAS, paginaConhecida, rotuloPagina } from "@/components/popups/paginas";
 import { popupsService } from "@/services/popupsService";
-import { Popup } from "@/types/popup";
+import { cn } from "@/lib/utils";
+import EditorPopup, { FormPopup, novoFormPopup } from "./EditorPopup";
 
-const Popups = () => {
-  
-  const [popups, setPopups] = useState<Popup[]>([]);
+interface PopupAdmin {
+  id: string;
+  created_at: string | null;
+  titulo: string;
+  conteudo: string | null;
+  imagem_url: string | null;
+  link_destino: string | null;
+  data_inicio: string;
+  data_fim: string;
+  pagina: string;
+  ativo: boolean | null;
+  ordem: number | null;
+}
+
+type Aba = "todos" | SituacaoVeiculacao;
+const POR_PAGINA = 20;
+
+const textoPuro = (html: string) => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+const porPrioridade = (a: PopupAdmin, b: PopupAdmin) =>
+  (a.ordem ?? 0) - (b.ordem ?? 0) ||
+  Number(a.pagina === PAGINA_TODAS) - Number(b.pagina === PAGINA_TODAS) ||
+  (b.created_at || "").localeCompare(a.created_at || "");
+
+export default function Popups() {
+  const [popups, setPopups] = useState<PopupAdmin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingPopup, setEditingPopup] = useState<Popup | null>(null);
-  const [formData, setFormData] = useState<Omit<Popup, 'id' | 'created_at' | 'updated_at'>>({
-    titulo: "",
-    conteudo: "",
-    imagem_url: undefined,
-    link_destino: undefined,
-    data_inicio: new Date().toISOString(),
-    data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    pagina: "home",
-    ativo: true,
-    ordem: 0
-  });
+  const [aba, setAba] = useState<Aba>("todos");
+  const [pagina, setPagina] = useState("");
+  const [busca, setBusca] = useState("");
+  const [pag, setPag] = useState(1);
+  const [editor, setEditor] = useState<{ id?: string; inicial: FormPopup } | null>(null);
+  const [excluindo, setExcluindo] = useState<PopupAdmin | null>(null);
 
-
-  const paginas = [
-    { value: "home", label: "Página Inicial" },
-    { value: "concursos", label: "Concursos" },
-    { value: "blog", label: "Blog" },
-    { value: "questoes", label: "Questões" },
-    { value: "simulados", label: "Simulados" },
-    { value: "cursos", label: "Cursos" },
-    { value: "ranking", label: "Ranking" },
-    { value: "explorar", label: "Explorar" }
-  ];
-
-  useEffect(() => {
-    fetchPopups();
-  }, []);
-
-  const fetchPopups = async () => {
+  const carregar = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await popupsService.getAll();
-      setPopups(data || []);
+      setPopups(((await popupsService.getAll()) || []) as PopupAdmin[]);
     } catch (error) {
       console.error("Erro ao buscar popups:", error);
-      toast({
-        title: "Erro",
-        description: "Falha ao carregar popups",
-        variant: "destructive"
-      });
+      toast.error("Não foi possível carregar os popups");
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  /** Popup no ar que fica atrás de outro com prioridade na mesma página. */
+  const naFila = useCallback(
+    (p: PopupAdmin) => {
+      const concorrentes = popups
+        .filter((x) => situacaoVeiculacao(x) === "no_ar" && (x.pagina === p.pagina || x.pagina === PAGINA_TODAS || p.pagina === PAGINA_TODAS))
+        .sort(porPrioridade);
+      const primeiro = concorrentes[0];
+      return primeiro && primeiro.id !== p.id ? primeiro : null;
+    },
+    [popups]
+  );
+
+  const base = useMemo(() => {
+    const termo = normalizar(busca.trim());
+    return popups.filter((p) => {
+      if (pagina && p.pagina !== pagina) return false;
+      return !termo || normalizar(`${p.titulo} ${textoPuro(p.conteudo || "")}`).includes(termo);
+    });
+  }, [popups, busca, pagina]);
+
+  const contagem = useMemo(() => {
+    const c: Record<Aba, number> = { todos: base.length, no_ar: 0, agendado: 0, pausado: 0, encerrado: 0 };
+    base.forEach((p) => c[situacaoVeiculacao(p)]++);
+    return c;
+  }, [base]);
+
+  const filtrados = useMemo(() => {
+    const ordemSit: Record<SituacaoVeiculacao, number> = { no_ar: 0, agendado: 1, pausado: 2, encerrado: 3 };
+    return base
+      .filter((p) => aba === "todos" || situacaoVeiculacao(p) === aba)
+      .sort((a, b) => ordemSit[situacaoVeiculacao(a)] - ordemSit[situacaoVeiculacao(b)] || (b.created_at || "").localeCompare(a.created_at || ""));
+  }, [base, aba]);
+
+  useEffect(() => setPag(1), [aba, pagina, busca]);
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / POR_PAGINA));
+  const pagAtual = Math.min(pag, totalPaginas);
+  const visiveis = filtrados.slice((pagAtual - 1) * POR_PAGINA, pagAtual * POR_PAGINA);
+
+  const geral = useMemo(() => {
+    const c = { no_ar: 0, agendado: 0, pausado: 0, encerrado: 0 };
+    popups.forEach((p) => c[situacaoVeiculacao(p)]++);
+    const paginas = new Set(popups.filter((p) => situacaoVeiculacao(p) === "no_ar").map((p) => p.pagina));
+    return { ...c, paginas: paginas.has(PAGINA_TODAS) ? "Todas" : String(paginas.size) };
+  }, [popups]);
+
+  const abrirEdicao = (p: PopupAdmin) =>
+    setEditor({
+      id: p.id,
+      inicial: {
+        titulo: p.titulo,
+        conteudo: p.conteudo || "",
+        imagem_url: p.imagem_url || "",
+        link_destino: p.link_destino || "",
+        data_inicio: p.data_inicio,
+        data_fim: p.data_fim,
+        pagina: p.pagina,
+        ativo: p.ativo === true,
+        ordem: p.ordem ?? 0,
+      },
+    });
+  const duplicar = (p: PopupAdmin) => {
+    abrirEdicao(p);
+    setEditor((e) => e && { inicial: { ...e.inicial, titulo: `${p.titulo} (cópia)`, ativo: false } });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const salvar = async (f: FormPopup) => {
+    const dados = {
+      ...f,
+      conteudo: f.conteudo.trim() || undefined,
+      imagem_url: f.imagem_url || undefined,
+      link_destino: f.link_destino || undefined,
+    };
     try {
-      if (editingPopup) {
-        // Atualizar popup existente
-        if (editingPopup?.id) {
-          await popupsService.update(editingPopup.id, formData);
-        }
-        
-        toast({
-          title: "Sucesso",
-          description: "Popup atualizado com sucesso"
+      if (editor?.id) {
+        // Campos esvaziados precisam ir como null para apagar no banco
+        await popupsService.update(editor.id, {
+          ...dados,
+          conteudo: (dados.conteudo ?? null) as string | undefined,
+          imagem_url: (dados.imagem_url ?? null) as string | undefined,
+          link_destino: (dados.link_destino ?? null) as string | undefined,
         });
+        toast.success("Popup atualizado");
       } else {
-        // Criar novo popup
-        await popupsService.create(formData);
-        
-        toast({
-          title: "Sucesso",
-          description: "Popup criado com sucesso"
-        });
+        await popupsService.create(dados);
+        toast.success(f.ativo ? "Popup criado" : "Popup criado (pausado)");
       }
-
-      // Resetar formulário e recarregar dados
-      setShowForm(false);
-      setEditingPopup(null);
-      setFormData({
-        titulo: "",
-        conteudo: "",
-        imagem_url: undefined,
-        link_destino: undefined,
-        data_inicio: new Date().toISOString(),
-        data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        pagina: "home",
-        ativo: true,
-        ordem: 0
-      });
-      
-      fetchPopups();
+      carregar();
+      return true;
     } catch (error) {
       console.error("Erro ao salvar popup:", error);
-      toast({
-        title: "Erro",
-        description: "Falha ao salvar popup",
-        variant: "destructive"
-      });
+      toast.error("Não foi possível salvar o popup");
+      return false;
     }
   };
 
-  const handleEdit = (popup: Popup) => {
-    setEditingPopup(popup);
-    setFormData({
-      titulo: popup.titulo,
-      conteudo: popup.conteudo || "",
-      imagem_url: popup.imagem_url || undefined,
-      link_destino: popup.link_destino || undefined,
-      data_inicio: popup.data_inicio,
-      data_fim: popup.data_fim,
-      pagina: popup.pagina,
-      ativo: popup.ativo !== null ? popup.ativo : false,
-      ordem: popup.ordem || 0
-    });
-    setShowForm(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir este popup?")) return;
-
+  const alternar = async (p: PopupAdmin) => {
+    const ativo = !(p.ativo === true);
+    setPopups((l) => l.map((x) => (x.id === p.id ? { ...x, ativo } : x)));
     try {
-      await popupsService.delete(id);
-
-      toast({
-        title: "Sucesso",
-        description: "Popup excluído com sucesso"
-      });
-
-      fetchPopups();
-    } catch (error) {
-      console.error("Erro ao excluir popup:", error);
-      toast({
-        title: "Erro",
-        description: "Falha ao excluir popup",
-        variant: "destructive"
-      });
+      await popupsService.update(p.id, { ativo });
+      toast.success(ativo ? "Popup ativado" : "Popup pausado");
+    } catch {
+      setPopups((l) => l.map((x) => (x.id === p.id ? { ...x, ativo: !ativo } : x)));
+      toast.error("Não foi possível alterar o popup");
     }
   };
 
-  const toggleAtivo = async (id: string, currentStatus: boolean) => {
+  const excluir = async () => {
+    if (!excluindo) return;
     try {
-      await popupsService.toggleStatus(id, currentStatus);
-
-      toast({
-        title: "Sucesso",
-        description: `Popup ${!currentStatus ? 'ativado' : 'desativado'} com sucesso`
-      });
-
-      fetchPopups();
-    } catch (error) {
-      console.error("Erro ao atualizar status:", error);
-      toast({
-        title: "Erro",
-        description: "Falha ao atualizar status do popup",
-        variant: "destructive"
-      });
+      await popupsService.delete(excluindo.id);
+      setPopups((l) => l.filter((x) => x.id !== excluindo.id));
+      toast.success("Popup excluído");
+    } catch {
+      toast.error("Não foi possível excluir o popup");
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ptBR });
+  const linkPrevia = (p: PopupAdmin) => {
+    const rota = PAGINAS_POPUP.find((x) => x.codigo === p.pagina)?.rota || "/";
+    return `${rota}?previa_popup=${p.id}`;
   };
 
-  const getPaginaLabel = (pagina: string) => {
-    const pag = paginas.find(p => p.value === pagina);
-    return pag ? pag.label : pagina;
-  };
-
+  const filtroAtivo = !!busca || !!pagina || aba !== "todos";
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Gerenciar Popups</h1>
-        <button
-          onClick={() => {
-            setEditingPopup(null);
-            setFormData({
-              titulo: "",
-              conteudo: "",
-              imagem_url: undefined,
-              link_destino: undefined,
-              data_inicio: new Date().toISOString(),
-              data_fim: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-              pagina: "home",
-              ativo: true,
-              ordem: 0
-            });
-            setShowForm(!showForm);
-          }}
-          className="flex items-center gap-2 bg-[#5f2ebe] text-white px-4 py-2 rounded-md hover:bg-[#4a259e] transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Popup
-        </button>
-      </div>
+    <div className="space-y-4">
+      <AdminPageHeader
+        titulo="Popups"
+        descricao="Avisos que abrem por cima das páginas do site. Abre um por vez, uma vez por visita, e o aluno pode pedir para não ver de novo."
+        acoes={
+          <Button onClick={() => setEditor({ inicial: novoFormPopup(pagina || "home") })} className={botaoPrimario}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo popup
+          </Button>
+        }
+      />
 
-      {showForm && (
-        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <h2 className="text-xl font-semibold mb-4">
-            {editingPopup ? "Editar Popup" : "Novo Popup"}
-          </h2>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Título *
-                </label>
-                <input
-                  type="text"
-                  value={formData.titulo}
-                  onChange={(e) => setFormData({...formData, titulo: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Página *
-                </label>
-                <select
-                  value={formData.pagina}
-                  onChange={(e) => setFormData({...formData, pagina: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]"
-                  required
-                >
-                  {paginas.map((pagina) => (
-                    <option key={pagina.value} value={pagina.value}>
-                      {pagina.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data de Início *
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.data_inicio.slice(0, 16)}
-                  onChange={(e) => {
-                    const date = new Date(e.target.value);
-                    setFormData({...formData, data_inicio: date.toISOString()});
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data de Término *
-                </label>
-                <input
-                  type="datetime-local"
-                  value={formData.data_fim.slice(0, 16)}
-                  onChange={(e) => {
-                    const date = new Date(e.target.value);
-                    setFormData({...formData, data_fim: date.toISOString()});
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Ordem
-                </label>
-                <input
-                  type="number"
-                  value={formData.ordem || 0}
-                  onChange={(e) => setFormData({...formData, ordem: parseInt(e.target.value) || 0})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]"
-                  min="0"
-                />
-              </div>
-              
-              <div className="flex items-center pt-6">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={formData.ativo !== null ? formData.ativo : false}
-                    onChange={(e) => setFormData({...formData, ativo: e.target.checked})}
-                    className="rounded border-gray-300 text-[#5f2ebe] focus:ring-[#5f2ebe]"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Ativo</span>
-                </label>
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Conteúdo HTML
-              </label>
-              <textarea
-                value={formData.conteudo}
-                onChange={(e) => setFormData({...formData, conteudo: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]"
-                rows={4}
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL da Imagem
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={formData.imagem_url || ""}
-                  onChange={(e) => setFormData({...formData, imagem_url: e.target.value || undefined})}
-                  placeholder="https://exemplo.com/imagem.jpg"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]"
-                />
-                <button
-                  type="button"
-                  className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                  onClick={() => {
-                    // Aqui você pode implementar a integração com um serviço de upload de imagens
-                    alert("Integração com upload de imagens não implementada neste exemplo");
-                  }}
-                >
-                  <ImageIcon className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Link de Destino
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={formData.link_destino || ""}
-                  onChange={(e) => setFormData({...formData, link_destino: e.target.value || undefined})}
-                  placeholder="https://exemplo.com"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]"
-                />
-                <button
-                  type="button"
-                  className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                >
-                  <LinkIcon className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                className="bg-[#5f2ebe] text-white px-4 py-2 rounded-md hover:bg-[#4a259e] transition-colors"
-              >
-                {editingPopup ? "Atualizar" : "Criar"} Popup
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingPopup(null);
-                }}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+      <CartoesResumo
+        carregando={loading}
+        itens={[
+          { rotulo: "No ar agora", valor: geral.no_ar, icone: Radio, tom: "verde" },
+          { rotulo: "Agendados", valor: geral.agendado, icone: CalendarClock, tom: "roxo" },
+          { rotulo: "Pausados", valor: geral.pausado, icone: Pause, tom: "cinza" },
+          { rotulo: "Páginas com popup", valor: geral.paginas, icone: Globe, tom: "rosa", detalhe: `${geral.encerrado} encerrado${geral.encerrado === 1 ? "" : "s"}` },
+        ]}
+      />
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#5f2ebe]"></div>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Título
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Página
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Período
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {popups.map((popup) => (
-                  <tr key={popup.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{popup.titulo}</div>
-                      {popup.imagem_url && (
-                        <div className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-                          <ImageIcon className="w-4 h-4" />
-                          Imagem configurada
-                        </div>
-                      )}
-                      {popup.link_destino && (
-                        <div className="text-sm text-gray-500 mt-1 flex items-center gap-1">
-                          <LinkIcon className="w-4 h-4" />
-                          Link configurado
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{getPaginaLabel(popup.pagina)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatDate(popup.data_inicio)} - {formatDate(popup.data_fim)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        popup.ativo 
-                          ? "bg-green-100 text-green-800" 
-                          : "bg-red-100 text-red-800"
-                      }`}>
-                        {popup.ativo ? "Ativo" : "Inativo"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => popup.id && toggleAtivo(popup.id, popup.ativo === true)}
-                          className={`p-1 rounded ${
-                            popup.ativo 
-                              ? "text-red-600 hover:text-red-900 hover:bg-red-50" 
-                              : "text-green-600 hover:text-green-900 hover:bg-green-50"
-                          }`}
-                          title={popup.ativo ? "Desativar" : "Ativar"}
-                        >
-                          {popup.ativo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                        <button
-                          onClick={() => handleEdit(popup)}
-                          className="p-1 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded"
-                          title="Editar"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => popup.id && handleDelete(popup.id)}
-                          className="p-1 text-red-600 hover:text-red-900 hover:bg-red-50 rounded"
-                          title="Excluir"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+      <PainelListagem
+        barra={
+          <>
+            <AbasContagem<Aba>
+              abas={[
+                { id: "todos", label: "Todos", n: contagem.todos },
+                { id: "no_ar", label: "No ar", n: contagem.no_ar },
+                { id: "agendado", label: "Agendados", n: contagem.agendado },
+                { id: "pausado", label: "Pausados", n: contagem.pausado },
+                { id: "encerrado", label: "Encerrados", n: contagem.encerrado },
+              ]}
+              ativa={aba}
+              onChange={setAba}
+            />
+            <FiltrosBarra>
+              <select value={pagina} onChange={(e) => setPagina(e.target.value)} className={cn(selectClasse, "sm:max-w-[13rem]")} aria-label="Filtrar por página">
+                <option value="">Todas as páginas</option>
+                {PAGINAS_POPUP.map((p) => (
+                  <option key={p.codigo} value={p.codigo}>
+                    {p.codigo === PAGINA_TODAS ? "Só os de todas as páginas" : p.rotulo}
+                  </option>
                 ))}
-              </tbody>
-            </table>
-          </div>
-          
-          {popups.length === 0 && (
-            <div className="text-center py-12">
-              <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Nenhum popup cadastrado</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Comece criando seu primeiro popup.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+              </select>
+              <CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar no título ou texto" rotulo="Buscar popups" className="sm:w-60" />
+            </FiltrosBarra>
+          </>
+        }
+        rodape={!loading && <RodapePaginacao pagina={pagAtual} porPagina={POR_PAGINA} total={filtrados.length} onPagina={setPag} singular="popup" plural="popups" />}
+      >
+        {loading ? (
+          <ListaEsqueleto />
+        ) : visiveis.length === 0 ? (
+          <EstadoVazio
+            icone={MessageSquareWarning}
+            titulo={filtroAtivo ? "Nenhum popup encontrado" : "Nenhum popup cadastrado"}
+            texto={filtroAtivo ? "Tente outra busca, outra página ou outra aba." : "Use popups para avisos rápidos: edital publicado, promoção, novidade no site."}
+            acao={
+              filtroAtivo ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setBusca("");
+                    setPagina("");
+                    setAba("todos");
+                  }}
+                >
+                  Limpar filtros
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => setEditor({ inicial: novoFormPopup() })} className={botaoPrimario}>
+                  <Plus className="mr-1.5 h-4 w-4" /> Novo popup
+                </Button>
+              )
+            }
+          />
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {visiveis.map((p) => {
+              const sit = situacaoVeiculacao(p);
+              const acima = sit === "no_ar" ? naFila(p) : null;
+              const resumo = textoPuro(p.conteudo || "");
+              return (
+                <li key={p.id} className="flex items-start gap-3 px-3 py-3.5 transition-colors hover:bg-[#faf8ff] sm:items-center sm:gap-4 sm:px-4">
+                  <button
+                    type="button"
+                    onClick={() => abrirEdicao(p)}
+                    className={cn(
+                      "flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border sm:h-14 sm:w-20",
+                      p.imagem_url ? "border-slate-200 bg-slate-50" : "border-[#5f2ebe]/15 bg-[#5f2ebe]/5"
+                    )}
+                    aria-label={`Editar ${p.titulo}`}
+                  >
+                    {p.imagem_url ? (
+                      <img src={p.imagem_url} alt="" className={cn("h-full w-full object-cover", sit !== "no_ar" && "opacity-60")} loading="lazy" />
+                    ) : (
+                      <MessageSquareWarning className={cn("h-5 w-5", sit === "no_ar" ? "text-[#5f2ebe]" : "text-slate-300")} />
+                    )}
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button type="button" onClick={() => abrirEdicao(p)} className="text-left text-sm font-semibold leading-snug text-slate-900 hover:text-[#5f2ebe]">
+                        {p.titulo}
+                      </button>
+                      <Etiqueta tom={TOM_SITUACAO[sit]}>{ROTULO_SITUACAO[sit]}</Etiqueta>
+                      <Etiqueta tom={p.pagina === PAGINA_TODAS ? "rosa" : "roxo"}>{rotuloPagina(p.pagina)}</Etiqueta>
+                    </div>
+                    {resumo && <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{resumo}</p>}
+                    <p className="mt-0.5 text-[11px] text-slate-400">
+                      {textoPeriodo(p.data_inicio, p.data_fim)} · {textoPrazo(p)}
+                      {p.link_destino && <> · com botão</>}
+                    </p>
+                    {(!paginaConhecida(p.pagina) || acima) && (
+                      <p className="mt-1 flex items-start gap-1 text-[11px] text-amber-700">
+                        <AlertTriangle className="mt-px h-3 w-3 shrink-0" />
+                        {!paginaConhecida(p.pagina)
+                          ? "Essa página não existe mais; edite e escolha outra."
+                          : `Na fila: "${acima!.titulo}" abre antes${acima!.pagina === PAGINA_TODAS && p.pagina !== PAGINA_TODAS ? " (está em todas as páginas)" : ""}.`}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => abrirEdicao(p)} className="hidden text-slate-600 sm:inline-flex">
+                      <Edit className="mr-1.5 h-4 w-4" />
+                      Editar
+                    </Button>
+                    <MenuAcoes
+                      acoes={[
+                        { label: "Editar", icone: Edit, onClick: () => abrirEdicao(p), soCelular: true },
+                        { label: "Testar no site", icone: Eye, href: linkPrevia(p), externo: true },
+                        { label: p.ativo ? "Pausar" : "Ativar", icone: p.ativo ? Pause : Play, onClick: () => alternar(p), oculto: sit === "encerrado" && !p.ativo },
+                        { label: "Duplicar", icone: Copy, onClick: () => duplicar(p) },
+                        { label: "Excluir", icone: Trash2, onClick: () => setExcluindo(p), perigo: true, separadorAntes: true },
+                      ]}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </PainelListagem>
+
+      <p className="flex items-center gap-1.5 px-1 text-xs text-slate-400">
+        <ExternalLink className="h-3.5 w-3.5" />
+        "Testar no site" abre o popup na página escolhida mesmo pausado ou fora do período, só para você conferir.
+      </p>
+
+      {editor && <EditorPopup editando={!!editor.id} inicial={editor.inicial} onFechar={() => setEditor(null)} onSalvar={salvar} />}
+
+      <ConfirmarAcao
+        aberto={!!excluindo}
+        onFechar={() => setExcluindo(null)}
+        titulo={`Excluir "${excluindo?.titulo || ""}"?`}
+        descricao="O popup deixa de aparecer e não dá para desfazer. Para tirar do ar só por um tempo, use Pausar."
+        textoConfirmar="Excluir popup"
+        onConfirmar={excluir}
+      />
     </div>
   );
-};
-
-export default Popups;
+}

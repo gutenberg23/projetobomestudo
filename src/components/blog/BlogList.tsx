@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { BlogPostCard } from "@/components/blog/BlogPostCard";
 import { BlogPagination } from "@/components/blog/BlogPagination";
 import { BlogPost } from "@/components/blog/types";
-import AdBanner from '@/components/ads/AdBanner';
+import AdBannerList from '@/components/ads/AdBannerList';
 
 interface BlogListProps {
   posts: BlogPost[];
@@ -59,11 +59,8 @@ export const BlogList: React.FC<BlogListProps> = ({
             <BlogPostCard post={post} />
             {/* Mostrar anúncio após cada 3 posts */}
             {((index + 1) % 3 === 0) && index < currentPagePosts.length - 1 && (
-              <div className="my-6">
-                <AdBanner 
-                  position="blog_posts_list" 
-                  className="rounded-lg" 
-                />
+              <div className="my-6 empty:hidden">
+                <AdBannerList position="blog_posts_list" indice={(index + 1) / 3 - 1} />
               </div>
             )}
           </React.Fragment>
