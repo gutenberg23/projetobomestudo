@@ -86,6 +86,9 @@ export interface QuestionHeaderProps {
   assunto?: string;
   questionId: string;
   hideInfo?: boolean;
+  aparencia?: "padrao" | "moderna";
+  numero?: number;
+  situacaoAnterior?: "acertou" | "errou" | null;
 }
 
 export interface QuestionBook {
