@@ -11,13 +11,17 @@ type Filtro = "todas" | "andamento" | "naoIniciadas" | "concluidas";
 interface Props {
   courseId: string;
   onSubjectsCountChange?: (count: number, data?: Linha[]) => void;
+  /** Quantidade de flashcards de cada tópico neste curso */
+  flashcardsPorTopico?: Record<string, number>;
+  /** Abre a aba Flashcards nos cartões do tópico */
+  onFlashcards?: (topicoId: string, aulaId: string) => void;
 }
 
 /**
  * Aba Disciplinas, versão "Trilha": a lista de disciplinas continua no centro, agora com
  * progresso por disciplina e por aula, busca, filtros e um atalho para continuar de onde parou.
  */
-export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountChange }) => {
+export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountChange, flashcardsPorTopico = {}, onFlashcards }) => {
   const { disciplinas, isCurso, carregando, erro } = useDisciplinasCurso(courseId, (linhas) =>
     onSubjectsCountChange?.(linhas.length, linhas)
   );
@@ -241,6 +245,8 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
               topicoPorAula={topicoPorAula}
               onTopico={(a, t) => abrirTopico(d, a, t)}
               progresso={progresso}
+              flashcardsPorTopico={flashcardsPorTopico}
+              onFlashcards={onFlashcards}
             />
           ))}
         </div>
@@ -260,7 +266,9 @@ const CartaoDisciplina: React.FC<{
   topicoPorAula: Record<string, string>;
   onTopico: (a: AulaCurso, t: TopicoCurso) => void;
   progresso: ProgressoTopicos;
-}> = ({ disciplina: d, aulas, stats, aberta, onAlternar, aulaAberta, onAulaAberta, topicoPorAula, onTopico, progresso }) => {
+  flashcardsPorTopico: Record<string, number>;
+  onFlashcards?: (topicoId: string, aulaId: string) => void;
+}> = ({ disciplina: d, aulas, stats, aberta, onAlternar, aulaAberta, onAulaAberta, topicoPorAula, onTopico, progresso, flashcardsPorTopico, onFlashcards }) => {
   const concluida = stats.total > 0 && stats.feitos === stats.total;
   return (
     <Painel className={cn("overflow-hidden transition-shadow", aberta && "shadow-[0_4px_16px_rgba(16,24,40,0.06)]")}>
@@ -308,6 +316,8 @@ const CartaoDisciplina: React.FC<{
                   topicoId={topicoPorAula[a.id]}
                   onTopico={(t) => onTopico(a, t)}
                   progresso={progresso}
+                  flashcardsPorTopico={flashcardsPorTopico}
+                  onFlashcards={onFlashcards}
                 />
               ))}
             </ol>
@@ -326,7 +336,9 @@ const LinhaAula: React.FC<{
   topicoId?: string;
   onTopico: (t: TopicoCurso) => void;
   progresso: ProgressoTopicos;
-}> = ({ aula: a, numero, aberta, onAlternar, topicoId, onTopico, progresso }) => {
+  flashcardsPorTopico: Record<string, number>;
+  onFlashcards?: (topicoId: string, aulaId: string) => void;
+}> = ({ aula: a, numero, aberta, onAlternar, topicoId, onTopico, progresso, flashcardsPorTopico, onFlashcards }) => {
   const feitos = progresso.feitosNaAula(a);
   const total = a.topicos.length;
   const completa = total > 0 && feitos === total;
@@ -363,7 +375,16 @@ const LinhaAula: React.FC<{
           <ChevronDown className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform", aberta && "rotate-180")} />
         </button>
       </div>
-      {aberta && <AulaAberta aula={a} topicoId={topicoId} onTopico={onTopico} progresso={progresso} />}
+      {aberta && (
+        <AulaAberta
+          aula={a}
+          topicoId={topicoId}
+          onTopico={onTopico}
+          progresso={progresso}
+          flashcardsPorTopico={flashcardsPorTopico}
+          onFlashcards={onFlashcards}
+        />
+      )}
     </li>
   );
 };
@@ -373,7 +394,9 @@ const AulaAberta: React.FC<{
   topicoId?: string;
   onTopico: (t: TopicoCurso) => void;
   progresso: ProgressoTopicos;
-}> = ({ aula: a, topicoId, onTopico, progresso }) => {
+  flashcardsPorTopico: Record<string, number>;
+  onFlashcards?: (topicoId: string, aulaId: string) => void;
+}> = ({ aula: a, topicoId, onTopico, progresso, flashcardsPorTopico, onFlashcards }) => {
   const [questoes, setQuestoes] = useState(false);
   const atual = a.topicos.find((t) => t.id === topicoId) || a.topicos[0] || null;
   const idx = atual ? a.topicos.indexOf(atual) : -1;
@@ -427,7 +450,13 @@ const AulaAberta: React.FC<{
                   )}
                 </div>
               </div>
-              <MateriaisTopico topico={atual} questoesAbertas={questoes} onQuestoes={() => setQuestoes((v) => !v)} />
+              <MateriaisTopico
+                topico={atual}
+                questoesAbertas={questoes}
+                onQuestoes={() => setQuestoes((v) => !v)}
+                flashcards={flashcardsPorTopico[atual.id] || 0}
+                onFlashcards={onFlashcards ? () => onFlashcards(atual.id, a.id) : undefined}
+              />
             </>
           )}
         </div>
@@ -460,6 +489,7 @@ const AulaAberta: React.FC<{
                     <span className="flex shrink-0 gap-1 text-slate-300">
                       {t.videoUrl && <PlayCircle className="h-3.5 w-3.5" />}
                       {(t.pdfUrl || t.teoriaId) && <FileText className="h-3.5 w-3.5" />}
+                      {flashcardsPorTopico[t.id] > 0 && <Layers className="h-3.5 w-3.5" />}
                     </span>
                   </div>
                 </li>

@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Header } from "../layout/Header";
 import { Footer } from "../layout/Footer";
 import { CourseHeader } from "./CourseHeader";
-import { CourseNavigation } from "./CourseNavigation";
+import { CourseNavigation, type CourseTab } from "./CourseNavigation";
 import { DisciplinasTrilha } from "./disciplinas/DisciplinasTrilha";
 import { EditorializedView } from "./EditorializedView";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,12 +15,37 @@ import { CicloTab } from "./ciclo/CicloTab";
 import { LeiSecaTab } from "./leiseca/LeiSecaTab";
 import { SimuladosTab } from "./simulados/SimuladosTab";
 import CourseAdBanner from "./CourseAdBanner";
+import { FlashcardsTab, type FocoFlashcards } from "./flashcards/FlashcardsTab";
+import { useFlashcardsCurso } from "./flashcards/useFlashcardsCurso";
 
 export const CourseLayout = () => {
   const { courseId } = useParams<{ courseId: string }>();
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca'>('disciplinas');
+  const [activeTab, setActiveTab] = useState<CourseTab>('disciplinas');
   const [subjectsData, setSubjectsData] = useState<any[]>([]);
+  const [focoFlashcards, setFocoFlashcards] = useState<FocoFlashcards | null>(null);
+
+  // Flashcards do curso: a aba só aparece quando há cartões nos tópicos
+  const flashcards = useFlashcardsCurso(courseId);
+
+  useEffect(() => {
+    if (activeTab === 'flashcards' && !flashcards.carregando && !flashcards.temFlashcards) {
+      setActiveTab('disciplinas');
+    }
+  }, [activeTab, flashcards.carregando, flashcards.temFlashcards]);
+
+  // Clique nas abas: abre a aba Flashcards na lista, sem o último tópico pedido
+  const trocarAba = useCallback((tab: CourseTab) => {
+    setFocoFlashcards(null);
+    setActiveTab(tab);
+  }, []);
+
+  // Botão "Flashcards" abaixo do vídeo, na aba Disciplinas
+  const abrirFlashcards = useCallback((topicoId: string, aulaId?: string) => {
+    setFocoFlashcards({ topicoId, aulaId, chave: Date.now() });
+    setActiveTab('flashcards');
+    setTimeout(() => document.getElementById('abas-curso')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  }, []);
   
   // Usar o hook de configurações do site
   const { config, isLoading: isLoadingConfig } = useSiteConfig();
@@ -132,17 +157,26 @@ export const CourseLayout = () => {
       <Header />
       <main className="flex-1 w-full">
         <CourseHeader courseId={courseId || ''} />
-        <CourseNavigation
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-        />
+        <div id="abas-curso" className="scroll-mt-2">
+          <CourseNavigation
+            activeTab={activeTab}
+            setActiveTab={trocarAba}
+            mostrarFlashcards={flashcards.temFlashcards}
+            totalFlashcards={flashcards.total}
+          />
+        </div>
         <CourseAdBanner />
         
         {activeTab === 'disciplinas' && config.tabs.showDisciplinasTab && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center relative">
             <div className="max-w-[1400px] w-full flex gap-5 py-0 flex-col xl:flex-row px-[10px] md:px-[32px]">
               <div className="flex-1">
-                <DisciplinasTrilha courseId={courseId} onSubjectsCountChange={handleSubjectsCountChange} />
+                <DisciplinasTrilha
+                  courseId={courseId}
+                  onSubjectsCountChange={handleSubjectsCountChange}
+                  flashcardsPorTopico={flashcards.contagemPorTopico}
+                  onFlashcards={abrirFlashcards}
+                />
               </div>
             </div>
           </div>
@@ -168,6 +202,14 @@ export const CourseLayout = () => {
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
               <CicloTab courseId={courseId} subjects={subjectsData} />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'flashcards' && (
+          <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
+            <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
+              <FlashcardsTab flash={flashcards} foco={focoFlashcards} />
             </div>
           </div>
         )}

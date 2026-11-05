@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { TopicoFormValues } from "./TopicosTypes";
 import { QuestionsManager } from "./modals/components/QuestionsManager";
 import { AulaEmTextoField } from "./AulaEmTextoField";
+import { FlashcardsTopicoField } from "./FlashcardsTopicoField";
 
 export interface ProfessorOpcao {
   id: string;
@@ -284,6 +285,10 @@ export const TopicoFormFields: React.FC<TopicoFormFieldsProps> = ({
           removeQuestaoId={removerQuestao}
           label="Questões (cole vários IDs separados por vírgula ou espaço)"
         />
+      </Secao>
+
+      <Secao titulo="Flashcards">
+        <FlashcardsTopicoField idPrefix={idPrefix} value={value.flashcards} onChange={(v) => set("flashcards", v)} />
       </Secao>
     </div>
   );

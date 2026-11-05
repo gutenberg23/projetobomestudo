@@ -1,17 +1,24 @@
 import React, { useEffect, useCallback, memo } from "react";
 import { cn } from "@/lib/utils";
-import { BookOpen, FileText, Target, RotateCcw, Scale } from "lucide-react";
+import { BookOpen, FileText, Target, RotateCcw, Scale, Layers } from "lucide-react";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { Spinner } from "@/components/ui/spinner";
 
+export type CourseTab = 'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca' | 'flashcards';
+
 interface CourseNavigationProps {
-  activeTab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca';
-  setActiveTab: (tab: 'disciplinas' | 'edital' | 'simulados' | 'ciclo' | 'leiseca') => void;
+  activeTab: CourseTab;
+  setActiveTab: (tab: CourseTab) => void;
+  /** A aba Flashcards só aparece quando o curso tem flashcards */
+  mostrarFlashcards?: boolean;
+  totalFlashcards?: number;
 }
 
 export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
   activeTab,
-  setActiveTab
+  setActiveTab,
+  mostrarFlashcards = false,
+  totalFlashcards = 0
 }) => {
   const { config, isLoading } = useSiteConfig();
 
@@ -60,6 +67,10 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
 
   const handleLeiSecaClick = useCallback(() => {
     setActiveTab('leiseca');
+  }, [setActiveTab]);
+
+  const handleFlashcardsClick = useCallback(() => {
+    setActiveTab('flashcards');
   }, [setActiveTab]);
 
   // Enquanto carrega, exibe um spinner de carregamento centralizado
@@ -155,6 +166,28 @@ export const CourseNavigation: React.FC<CourseNavigationProps> = memo(({
               <Scale className="w-5 h-5" />
               <span>Lei Seca</span>
             </button>
+            {mostrarFlashcards && (
+              <button
+                onClick={handleFlashcardsClick}
+                className={cn(
+                  "course-nav-button flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-3.5 md:px-4 md:py-4 text-sm md:text-base text-[rgba(38,47,60,0.7)] hover:text-[#5f2ebe] border-b-2 border-transparent hover:border-[#5f2ebe] transition-colors rounded-none",
+                  activeTab === 'flashcards' && "text-[#5f2ebe] border-[#5f2ebe]"
+                )}
+              >
+                <Layers className="w-5 h-5" />
+                <span>Flashcards</span>
+                {totalFlashcards > 0 && (
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 text-xs tabular-nums",
+                      activeTab === 'flashcards' ? "bg-[#5f2ebe]/10 text-[#5f2ebe]" : "bg-slate-100 text-slate-500"
+                    )}
+                  >
+                    {totalFlashcards}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
