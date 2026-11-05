@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useAbrirLogin } from "@/components/auth/LoginObrigatorio";
 import {
   ArrowDownUp,
   ChevronLeft,
@@ -92,6 +92,7 @@ const CartaoCarregando = () => (
 
 const Questions = () => {
   const { user } = useAuth();
+  const abrirLogin = useAbrirLogin();
   const { estado, definirBusca, alternar, limparChave, limparTudo, irPagina, definirPorPagina, definirOrdem, definirSituacao } =
     useEstadoBusca();
   const opcoes = useOpcoesFiltro();
@@ -267,12 +268,13 @@ const Questions = () => {
                 <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-4">
                   <p className="text-sm font-semibold text-slate-800">Acompanhe sua evolução</p>
                   <p className="mt-1 text-xs text-slate-500">Entre para guardar suas respostas, ver só as que errou e esconder as que já resolveu.</p>
-                  <Link
-                    to="/login"
+                  <button
+                    type="button"
+                    onClick={() => abrirLogin({ motivo: "acompanhar sua evolução" })}
                     className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#5f2ebe] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#4f25a0]"
                   >
                     <LogIn className="h-3.5 w-3.5" /> Entrar
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>

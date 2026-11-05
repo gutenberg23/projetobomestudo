@@ -38,6 +38,7 @@ import PopupsDoSite from "@/components/popups/PopupProvider";
 import Perfil from "./pages/Perfil";
 import RegionPosts from "@/pages/RegionPosts";
 import ActivityTracker from "./components/layout/ActivityTracker";
+import { LoginObrigatorioProvider } from "./components/auth/LoginObrigatorio";
 
 // Admin imports
 import AdminLayout from "./components/admin/AdminLayout";
@@ -109,6 +110,7 @@ export default function App() {
         <BrowserRouter>
           <AuthProvider>
             <SiteConfigProvider>
+            <LoginObrigatorioProvider>
               <ActivityTracker>
                 <div className="min-h-screen font-sans antialiased" style={{ backgroundColor: "rgb(249 250 251)" }}>
                   <ToastContainer position="top-right" autoClose={3000} />
@@ -288,6 +290,7 @@ export default function App() {
                   <Sonner />
                 </div>
               </ActivityTracker>
+            </LoginObrigatorioProvider>
             </SiteConfigProvider>
           </AuthProvider>
         </BrowserRouter>
