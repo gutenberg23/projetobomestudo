@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { BarraCriacao, ItemSelecionado } from "../shared/BarraCriacao";
+import { CampoDisciplinaQuestoes } from "../shared/CampoDisciplinaQuestoes";
 
 interface AdicionarDisciplinaProps {
   selecionadas: ItemSelecionado[];
   onRemover: (id: string) => void;
   onLimpar: () => void;
   /** Devolve true quando a disciplina foi criada */
-  onCriar: (titulo: string, rating: string, banca: string) => Promise<boolean>;
+  onCriar: (titulo: string, rating: string, banca: string, disciplinaQuestoes: string) => Promise<boolean>;
 }
 
 /** Barra para criar uma disciplina com as aulas selecionadas. */
@@ -16,15 +17,17 @@ export const AdicionarDisciplina: React.FC<AdicionarDisciplinaProps> = ({ seleci
   const [titulo, setTitulo] = useState("");
   const [rating, setRating] = useState("");
   const [banca, setBanca] = useState("");
+  const [disciplinaQuestoes, setDisciplinaQuestoes] = useState("");
   const [criando, setCriando] = useState(false);
 
   const criar = async () => {
     setCriando(true);
     try {
-      if (await onCriar(titulo, rating, banca)) {
+      if (await onCriar(titulo, rating, banca, disciplinaQuestoes)) {
         setTitulo("");
         setRating("");
         setBanca("");
+        setDisciplinaQuestoes("");
       }
     } finally {
       setCriando(false);
@@ -45,7 +48,7 @@ export const AdicionarDisciplina: React.FC<AdicionarDisciplinaProps> = ({ seleci
       podeCriar={!!titulo.trim()}
       criando={criando}
     >
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-[2fr_1fr_1fr]">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_1.5fr]">
         <div>
           <Label htmlFor="titulo-disciplina" className="mb-1 block text-xs text-slate-600">
             Título da disciplina *
@@ -80,6 +83,12 @@ export const AdicionarDisciplina: React.FC<AdicionarDisciplinaProps> = ({ seleci
             Banca
           </Label>
           <Input id="banca-disciplina" placeholder="Ex.: CEBRASPE" value={banca} onChange={(e) => setBanca(e.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor="questoes-disciplina" className="mb-1 block text-xs text-slate-600">
+            Disciplina das questões (estatísticas)
+          </Label>
+          <CampoDisciplinaQuestoes id="questoes-disciplina" valor={disciplinaQuestoes} onChange={setDisciplinaQuestoes} />
         </div>
       </div>
     </BarraCriacao>

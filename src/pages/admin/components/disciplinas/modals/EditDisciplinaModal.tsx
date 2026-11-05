@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Disciplina } from "../DisciplinasTypes";
 import { AulaResumo } from "../useDisciplinas";
 import { BuscaComLista, ListaOrdenavel } from "../../shared/ListaOrdenavel";
+import { CampoDisciplinaQuestoes } from "../../shared/CampoDisciplinaQuestoes";
 
 interface EditDisciplinaModalProps {
   disciplina: Disciplina | null;
@@ -23,6 +24,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
   const [titulo, setTitulo] = useState("");
   const [banca, setBanca] = useState("");
   const [rating, setRating] = useState("");
+  const [disciplinaQuestoes, setDisciplinaQuestoes] = useState("");
   const [aulasIds, setAulasIds] = useState<string[]>([]);
   const [todas, setTodas] = useState<AulaResumo[]>(cacheAulas || []);
   const [carregando, setCarregando] = useState(false);
@@ -33,6 +35,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
     setTitulo(disciplina.titulo);
     setBanca(disciplina.banca || "");
     setRating(disciplina.descricao || "");
+    setDisciplinaQuestoes(disciplina.disciplinaQuestoes || "");
     setAulasIds([...disciplina.aulasIds]);
   }, [disciplina]);
 
@@ -69,7 +72,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
     }
     setSalvando(true);
     const ok = await onSave(
-      { ...disciplina, titulo: titulo.trim(), banca, descricao: rating, aulasIds },
+      { ...disciplina, titulo: titulo.trim(), banca, descricao: rating, aulasIds, disciplinaQuestoes },
       aulasIds.map((id) => porId.get(id)).filter((a): a is AulaResumo => !!a)
     );
     setSalvando(false);
@@ -110,6 +113,14 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
                 }}
               />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="disc-questoes">Disciplina das questões</Label>
+            <CampoDisciplinaQuestoes id="disc-questoes" valor={disciplinaQuestoes} onChange={setDisciplinaQuestoes} />
+            <p className="text-xs text-slate-500">
+              Usada na aba Estatísticas da disciplina para mostrar os assuntos mais cobrados. No automático, o site descobre pelas questões ligadas aos tópicos.
+            </p>
           </div>
 
           <div className="space-y-2">

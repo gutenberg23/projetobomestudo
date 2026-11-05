@@ -168,8 +168,8 @@ const Aulas = () => {
         selecionadas={selecionadas}
         onRemover={alternar}
         onLimpar={() => setSelecao([])}
-        onCriar={async (titulo, rating, banca) => {
-          const ok = await criarDisciplina(titulo, rating, banca, selecionadas.map((s) => s.id));
+        onCriar={async (titulo, rating, banca, disciplinaQuestoes) => {
+          const ok = await criarDisciplina(titulo, rating, banca, selecionadas.map((s) => s.id), disciplinaQuestoes);
           if (ok) setSelecao([]);
           return ok;
         }}

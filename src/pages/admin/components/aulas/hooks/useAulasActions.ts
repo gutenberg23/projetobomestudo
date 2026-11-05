@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Aula } from "../AulasTypes";
 import { buscarEmLotes } from "../../cursos/composicaoCurso";
+import { faltaColunaDisciplinaQuestoes } from "../../shared/CampoDisciplinaQuestoes";
 
 export interface TopicoResumo {
   id: string;
@@ -192,7 +193,13 @@ export const useAulasActions = () => {
   };
 
   /** Cria uma disciplina com as aulas selecionadas, na ordem da seleção. */
-  const criarDisciplina = async (titulo: string, rating: string, banca: string, aulasIds: string[]): Promise<boolean> => {
+  const criarDisciplina = async (
+    titulo: string,
+    rating: string,
+    banca: string,
+    aulasIds: string[],
+    disciplinaQuestoes = ""
+  ): Promise<boolean> => {
     if (!titulo.trim()) {
       toast.error("O título da disciplina é obrigatório");
       return false;
@@ -202,10 +209,16 @@ export const useAulasActions = () => {
       return false;
     }
     try {
-      const { data, error } = await supabase
+      const linha = { titulo: titulo.trim(), descricao: rating, banca, aulas_ids: aulasIds, created_at: new Date().toISOString() };
+      let { data, error } = await supabase
         .from("disciplinas")
-        .insert([{ titulo: titulo.trim(), descricao: rating, banca, aulas_ids: aulasIds, created_at: new Date().toISOString() }])
+        .insert([{ ...linha, disciplina_questoes: disciplinaQuestoes || null } as typeof linha])
         .select("id, titulo");
+      if (faltaColunaDisciplinaQuestoes(error)) {
+        // Migration 20251114000000 ainda não rodada: cria sem o campo e avisa
+        ({ data, error } = await supabase.from("disciplinas").insert([linha]).select("id, titulo"));
+        if (!error && disciplinaQuestoes) toast.warning("A disciplina das questões não foi salva: rode a migration 20251114000000_disciplina_questoes.sql no Supabase.");
+      }
       if (error) throw error;
 
       const nova = data?.[0];
