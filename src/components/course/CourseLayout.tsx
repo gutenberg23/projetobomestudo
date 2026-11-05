@@ -18,6 +18,7 @@ import CourseAdBanner from "./CourseAdBanner";
 import { FlashcardsTab, type FocoFlashcards } from "./flashcards/FlashcardsTab";
 import { useFlashcardsCurso } from "./flashcards/useFlashcardsCurso";
 import { EstatisticasTab } from "./estatisticas/EstatisticasTab";
+import { useConteudoAbasCurso } from "./hooks/useConteudoAbasCurso";
 
 /** Abas que só existem para cursos (uma disciplina avulsa não tem edital, simulados, ciclo nem lei seca). */
 const ABAS_SO_DE_CURSO: CourseTab[] = ['edital', 'simulados', 'ciclo', 'leiseca'];
@@ -31,6 +32,13 @@ export const CourseLayout = () => {
   // O link /course/... pode ser de um curso ou de uma disciplina avulsa (null enquanto carrega)
   const [tipo, setTipo] = useState<'curso' | 'disciplina' | null>(null);
   const ehDisciplina = tipo === 'disciplina';
+
+  // Edital, Simulados e Lei Seca só aparecem quando o curso tem conteúdo para elas
+  const conteudo = useConteudoAbasCurso(courseId, tipo === 'curso');
+  const temEdital = tipo === 'curso' && conteudo.edital;
+  const temSimulados = tipo === 'curso' && conteudo.simulados;
+  const temLeiSeca = tipo === 'curso' && conteudo.leiseca;
+  const carregandoAbas = tipo === null || (tipo === 'curso' && conteudo.carregando);
 
 
   // Flashcards do curso: a aba só aparece quando há cartões nos tópicos
@@ -68,13 +76,26 @@ export const CourseLayout = () => {
       setActiveTab(config.tabs.showDisciplinasTab ? 'disciplinas' : 'estatisticas');
     }
     if (tipo === 'curso' && activeTab === 'estatisticas') setActiveTab('disciplinas');
-  }, [ehDisciplina, tipo, activeTab, isLoadingConfig, config.tabs.showDisciplinasTab]);
+    // Aba sem conteúdo neste curso: volta para Disciplinas
+    if (tipo === 'curso' && !conteudo.carregando) {
+      if (
+        (activeTab === 'edital' && !conteudo.edital) ||
+        (activeTab === 'simulados' && !conteudo.simulados) ||
+        (activeTab === 'leiseca' && !conteudo.leiseca)
+      ) {
+        setActiveTab('disciplinas');
+      }
+    }
+  }, [ehDisciplina, tipo, activeTab, isLoadingConfig, config.tabs.showDisciplinasTab, conteudo]);
 
   // Efeito para ajustar a aba ativa quando as configurações são carregadas
   useEffect(() => {
     if (isLoadingConfig) return;
     
-    const { showDisciplinasTab, showEditalTab, showSimuladosTab, showCicloTab } = config.tabs;
+    const { showDisciplinasTab, showCicloTab } = config.tabs;
+    // Edital e Simulados sem conteúdo no curso contam como escondidas
+    const showEditalTab = config.tabs.showEditalTab && temEdital;
+    const showSimuladosTab = config.tabs.showSimuladosTab && temSimulados;
     
     // Se a aba atual está invisível, mudar para a primeira aba visível
     if (
@@ -93,7 +114,7 @@ export const CourseLayout = () => {
         setActiveTab('ciclo');
       }
     }
-  }, [config.tabs, activeTab, isLoadingConfig]);
+  }, [config.tabs, activeTab, isLoadingConfig, temEdital, temSimulados]);
 
   // Carregar dados das disciplinas quando o componente montar
   useEffect(() => {
@@ -182,7 +203,10 @@ export const CourseLayout = () => {
             mostrarFlashcards={flashcards.temFlashcards}
             totalFlashcards={flashcards.total}
             ehDisciplina={ehDisciplina}
-            carregandoTipo={tipo === null}
+            carregandoTipo={carregandoAbas}
+            temEdital={temEdital}
+            temSimulados={temSimulados}
+            temLeiSeca={temLeiSeca}
           />
         </div>
         <CourseAdBanner />
@@ -210,7 +234,7 @@ export const CourseLayout = () => {
           </div>
         )}
 
-        {activeTab === 'edital' && config.tabs.showEditalTab && !ehDisciplina && (
+        {activeTab === 'edital' && config.tabs.showEditalTab && temEdital && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
               <EditorializedView courseId={courseId || ''} activeTab={activeTab} />
@@ -218,7 +242,7 @@ export const CourseLayout = () => {
           </div>
         )}
         
-        {activeTab === 'simulados' && config.tabs.showSimuladosTab && !ehDisciplina && (
+        {activeTab === 'simulados' && config.tabs.showSimuladosTab && temSimulados && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
               <SimuladosTab courseId={courseId} />
@@ -242,7 +266,7 @@ export const CourseLayout = () => {
           </div>
         )}
 
-        {activeTab === 'leiseca' && !ehDisciplina && (
+        {activeTab === 'leiseca' && temLeiSeca && (
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center">
             <div className="max-w-[1400px] w-full py-5 px-[10px] md:px-[32px]">
               <LeiSecaTab courseId={courseId} />
