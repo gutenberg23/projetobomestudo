@@ -451,7 +451,7 @@ export const PaginaRanking: React.FC<PaginaRankingProps> = ({
                             <LinhaRanking item={item} posicao={posicao} sou={item.id === user?.id} unidade={unidade} />
                             {anuncioLista && !termo && (i + 1) % 10 === 0 && i < lista.length - 1 && (
                               <li className="p-3 empty:hidden">
-                                <AdBannerList position={anuncioLista} interval={10} itemCount={lista.length} className="rounded-lg" />
+                                <AdBannerList position={anuncioLista} indice={(i + 1) / 10 - 1} />
                               </li>
                             )}
                           </React.Fragment>

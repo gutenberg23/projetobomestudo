@@ -34,6 +34,7 @@ import { useEffect } from "react";
 import "./styles/globals.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import PopupsDoSite from "@/components/popups/PopupProvider";
 import Perfil from "./pages/Perfil";
 import RegionPosts from "@/pages/RegionPosts";
 import ActivityTracker from "./components/layout/ActivityTracker";
@@ -113,6 +114,7 @@ export default function App() {
               <ActivityTracker>
                 <div className="min-h-screen font-sans antialiased" style={{ backgroundColor: "rgb(249 250 251)" }}>
                   <ToastContainer position="top-right" autoClose={3000} />
+                  <PopupsDoSite />
                   <Routes>
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/" element={
