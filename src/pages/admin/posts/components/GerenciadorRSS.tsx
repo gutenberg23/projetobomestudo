@@ -14,6 +14,7 @@ import {
   Rss,
   Search,
   Send,
+  Settings2,
   Trash2,
   X,
   XCircle,
@@ -40,6 +41,7 @@ import {
   syncAllRSSFeeds,
   updateRSSConfig,
 } from "@/services/rssService";
+import { InstrucoesIADialog } from "./InstrucoesIADialog";
 
 interface GerenciadorRSSProps {
   onFechar: () => void;
@@ -94,6 +96,7 @@ export const GerenciadorRSS: React.FC<GerenciadorRSSProps> = ({ onFechar, onPost
 
   // Notícias
   const [noticias, setNoticias] = useState<Noticia[] | null>(null);
+  const [instrucoesAbertas, setInstrucoesAbertas] = useState(false);
   const [carregandoNoticias, setCarregandoNoticias] = useState(false);
   const [feedsComErro, setFeedsComErro] = useState<string[]>([]);
   const [situacoes, setSituacoes] = useState<Map<string, Situacao>>(new Map());
@@ -311,7 +314,17 @@ export const GerenciadorRSS: React.FC<GerenciadorRSSProps> = ({ onFechar, onPost
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setInstrucoesAbertas(true)}
+            className="h-8 gap-1.5"
+            title="Editar as instruções enviadas à IA para criar os posts"
+          >
+            <Settings2 className="h-3.5 w-3.5" /> Instruções da IA
+          </Button>
           <Button type="button" size="sm" variant="outline" onClick={sincronizar} disabled={sincronizando || !ativos.length} className="h-8 gap-1.5">
             <RefreshCw className={cn("h-3.5 w-3.5", sincronizando && "animate-spin")} />
             {sincronizando ? "Sincronizando..." : "Sincronizar agora"}
@@ -725,6 +738,8 @@ export const GerenciadorRSS: React.FC<GerenciadorRSSProps> = ({ onFechar, onPost
           )}
         </div>
       )}
+
+      <InstrucoesIADialog aberto={instrucoesAbertas} onFechar={() => setInstrucoesAbertas(false)} noticias={noticias} />
 
       <Dialog open={!!excluir} onOpenChange={(v) => !v && !excluindo && setExcluir(null)}>
         <DialogContent className="sm:max-w-md">

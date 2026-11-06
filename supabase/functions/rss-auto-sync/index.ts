@@ -19,7 +19,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.5";
 import { authorize, STAFF_ROLES } from "../_shared/auth.ts";
 import { extractArticle, fetchFeed, fetchText, type FeedItem } from "../_shared/feeds.ts";
-import { rewriteNews } from "../_shared/news.ts";
+import { loadNewsPrompt, rewriteNews } from "../_shared/news.ts";
 import { AIError } from "../_shared/ai.ts";
 import { creditHtml, findCityImage } from "../_shared/images.ts";
 
@@ -181,7 +181,7 @@ async function processItem(
     }
 
     // 2. Reescrita
-    const rewritten = await rewriteNews(item.title, sourceText, item.link);
+    const rewritten = await rewriteNews(item.title, sourceText, item.link, await loadNewsPrompt(db));
 
     // 3. Foto destaque da cidade do concurso (Wikimedia/Unsplash). Se não
     // achar, o post sai sem imagem e pode receber uma pelo painel.

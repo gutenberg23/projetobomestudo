@@ -42,17 +42,125 @@ const UF_REGION: Record<string, string> = {
 // tokens, suficiente para um edital resumido.
 export const MAX_SOURCE_CHARS = 12_000;
 
-const SYSTEM_PROMPT = `Você é redator sênior de um portal brasileiro de concursos públicos.
+// ---------------------------------------------------------------------
+// Instruções enviadas à IA
+//
+// O texto padrão fica aqui. O painel (/admin/posts > Feeds RSS > Instruções
+// da IA) grava alterações na tabela public.ia_instrucoes (id 'noticias_rss');
+// campo vazio ou ausente usa o padrão. A cópia do padrão usada pelo painel
+// fica em src/pages/admin/posts/components/instrucoesIAPadrao.ts: mantenha
+// as duas iguais.
+//
+// Partes fixas (não editáveis, porque o código depende delas): o bloco com a
+// notícia original, as chaves do JSON, os valores aceitos de region/state e
+// o pedido de responder só com JSON.
+// ---------------------------------------------------------------------
+
+export interface NewsPromptConfig {
+  /** Papel e regras gerais (mensagem de sistema). */
+  sistema: string;
+  /** Regras de redação do corpo do post. */
+  instrucoes: string;
+  /** O que a IA deve escrever em cada campo do JSON. */
+  campos: {
+    title: string;
+    summary: string;
+    content: string;
+    tags: string;
+    metaKeywords: string;
+    city: string;
+  };
+  /** 0 = mais fiel e previsível, 1 = mais criativo. */
+  temperatura: number;
+}
+
+export const DEFAULT_NEWS_PROMPT: NewsPromptConfig = {
+  sistema: `Você é redator sênior de um portal brasileiro de concursos públicos.
 Reescreva notícias com suas próprias palavras, em português do Brasil, mantendo todos os fatos
 (órgão, banca, cargos, vagas, salários, requisitos, datas, taxas e links oficiais) exatamente como
 estão na fonte. Nunca invente números ou datas. Não mencione o site de origem, direitos autorais,
 "RSS" ou que o texto foi reescrito. Escreva títulos e resumos com maiúsculas e minúsculas como
 em um jornal brasileiro: primeira letra maiúscula, nomes próprios, órgãos, cidades e siglas com a
 grafia oficial (ex.: "Concurso da Prefeitura de Campinas (SP) abre 120 vagas"). Nunca escreva o
-título ou o resumo todo em minúsculas nem todo em maiúsculas. Responda somente com um objeto JSON válido.`;
+título ou o resumo todo em minúsculas nem todo em maiúsculas.`,
+  instrucoes: `Regras do "content":
+- Use apenas <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, <table>, <thead>, <tbody>, <tr>, <th>, <td>, <a href>, <blockquote>, <br>.
+- Não use <h1> (o título já é o H1 da página).
+- Comece com um parágrafo de abertura com o essencial (órgão, vagas, salário, inscrições).
+- Organize em seções com <h2>, como "Vagas e salários", "Inscrições", "Provas", "Requisitos".
+- Quando houver vários cargos, prefira uma tabela.
+- Se a fonte não trouxer uma informação, não crie a seção.
+- Links (<a href>): use apenas os que aparecem na fonte e são úteis ao candidato, como edital (PDF),
+  página de inscrição, site oficial do órgão ou da banca. Nunca crie links para o site de origem,
+  para outros portais de notícias ou para cursinhos. Não invente endereços.
+- Não escreva "Fonte:", "Com informações de" nem cite de onde a notícia foi tirada.`,
+  campos: {
+    title: "título novo, informativo, até 110 caracteres, com maiúsculas só na primeira letra, em nomes próprios e siglas",
+    summary: "resumo de 1 a 2 frases, até 160 caracteres, com a mesma regra de maiúsculas do título",
+    content: "corpo em HTML",
+    tags: "3 a 5 tags: órgão, banca, área, nível",
+    metaKeywords: "5 a 10 palavras-chave",
+    city: 'cidade principal do concurso, com acentos (ex.: "Campinas"); vazio se for estadual sem cidade definida, nacional ou federal',
+  },
+  temperatura: 0.5,
+};
 
-function buildPrompt(title: string, source: string, sourceUrl?: string): string {
+const PROMPT_ROW_ID = "noticias_rss";
+const pick = (v: unknown, fallback: string, max: number): string =>
+  typeof v === "string" && v.trim() ? v.trim().slice(0, max) : fallback;
+
+/** Junta o que foi salvo no painel com o padrão. */
+export function mergeNewsPrompt(raw: unknown): NewsPromptConfig {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const c = (r.campos && typeof r.campos === "object" ? r.campos : {}) as Record<string, unknown>;
+  const d = DEFAULT_NEWS_PROMPT;
+  const t = Number(r.temperatura);
+  return {
+    sistema: pick(r.sistema, d.sistema, 8000),
+    instrucoes: pick(r.instrucoes, d.instrucoes, 12000),
+    campos: {
+      title: pick(c.title, d.campos.title, 600),
+      summary: pick(c.summary, d.campos.summary, 600),
+      content: pick(c.content, d.campos.content, 600),
+      tags: pick(c.tags, d.campos.tags, 600),
+      metaKeywords: pick(c.metaKeywords, d.campos.metaKeywords, 600),
+      city: pick(c.city, d.campos.city, 600),
+    },
+    temperatura: Number.isFinite(t) && r.temperatura !== null && r.temperatura !== "" ? Math.min(1, Math.max(0, t)) : d.temperatura,
+  };
+}
+
+// Cache curto: uma sincronização processa várias notícias seguidas.
+let cache: { at: number; value: NewsPromptConfig } | null = null;
+
+/**
+ * Lê as instruções salvas no painel. `db` precisa ser um client com a
+ * service role. Se a tabela não existir ou der erro, usa o padrão.
+ */
+// deno-lint-ignore no-explicit-any
+export async function loadNewsPrompt(db: any): Promise<NewsPromptConfig> {
+  if (cache && Date.now() - cache.at < 60_000) return cache.value;
+  let value = DEFAULT_NEWS_PROMPT;
+  try {
+    const { data, error } = await db.from("ia_instrucoes").select("config").eq("id", PROMPT_ROW_ID).maybeSingle();
+    if (error) console.warn("[ia] instruções do painel indisponíveis, usando o padrão:", error.message);
+    else value = mergeNewsPrompt(data?.config);
+  } catch (err) {
+    console.warn("[ia] instruções do painel indisponíveis, usando o padrão:", String(err));
+  }
+  cache = { at: Date.now(), value };
+  return value;
+}
+
+const oneLine = (s: string) => s.replace(/\s+/g, " ").replace(/"/g, "'").trim();
+
+function buildSystem(cfg: NewsPromptConfig): string {
+  return `${cfg.sistema}\n\nResponda somente com um objeto JSON válido.`;
+}
+
+function buildPrompt(cfg: NewsPromptConfig, title: string, source: string, sourceUrl?: string): string {
   const host = sourceUrl ? hostOf(sourceUrl) : "";
+  const f = cfg.campos;
   return `Reescreva a notícia abaixo para o blog.
 
 Título original: ${title}
@@ -64,27 +172,17 @@ ${source}
 
 Devolva exatamente este JSON:
 {
-  "title": "título novo, informativo, até 110 caracteres, com maiúsculas só na primeira letra, em nomes próprios e siglas",
-  "summary": "resumo de 1 a 2 frases, até 160 caracteres, com a mesma regra de maiúsculas do título",
-  "content": "corpo em HTML",
-  "tags": ["3 a 5 tags: órgão, banca, área, nível"],
+  "title": "${oneLine(f.title)}",
+  "summary": "${oneLine(f.summary)}",
+  "content": "${oneLine(f.content)}",
+  "tags": ["${oneLine(f.tags)}"],
   "region": "norte | nordeste | centro-oeste | sul | sudeste | nacional | federal",
   "state": "sigla da UF em maiúsculas, ou vazio se for nacional/federal",
-  "metaKeywords": ["5 a 10 palavras-chave"],
-  "city": "cidade principal do concurso, com acentos (ex.: \"Campinas\"); vazio se for estadual sem cidade definida, nacional ou federal"
+  "metaKeywords": ["${oneLine(f.metaKeywords)}"],
+  "city": "${oneLine(f.city)}"
 }
 
-Regras do "content":
-- Use apenas <h2>, <h3>, <p>, <ul>, <ol>, <li>, <strong>, <em>, <table>, <thead>, <tbody>, <tr>, <th>, <td>, <a href>, <blockquote>, <br>.
-- Não use <h1> (o título já é o H1 da página).
-- Comece com um parágrafo de abertura com o essencial (órgão, vagas, salário, inscrições).
-- Organize em seções com <h2>, como "Vagas e salários", "Inscrições", "Provas", "Requisitos".
-- Quando houver vários cargos, prefira uma tabela.
-- Se a fonte não trouxer uma informação, não crie a seção.
-- Links (<a href>): use apenas os que aparecem na fonte e são úteis ao candidato, como edital (PDF),
-  página de inscrição, site oficial do órgão ou da banca. Nunca crie links para o site de origem,
-  para outros portais de notícias ou para cursinhos. Não invente endereços.
-- Não escreva "Fonte:", "Com informações de" nem cite de onde a notícia foi tirada.`;
+${cfg.instrucoes}`;
 }
 
 const ALLOWED_TAGS = new Set([
@@ -211,12 +309,13 @@ export async function rewriteNews(
   originalTitle: string,
   originalContent: string,
   sourceUrl?: string,
+  config: NewsPromptConfig = DEFAULT_NEWS_PROMPT,
 ): Promise<RewrittenNews> {
   const source = originalContent.slice(0, MAX_SOURCE_CHARS);
   const result = await generateJson({
-    system: SYSTEM_PROMPT,
-    prompt: buildPrompt(originalTitle, source, sourceUrl),
-    temperature: 0.5,
+    system: buildSystem(config),
+    prompt: buildPrompt(config, originalTitle, source, sourceUrl),
+    temperature: config.temperatura,
     maxOutputTokens: 8192,
   });
   return { ...normalizeRewrite(result.data, originalTitle, source, sourceUrl), provider: result.provider, model: result.model };
