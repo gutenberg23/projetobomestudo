@@ -48,6 +48,8 @@ const Posts = () => {
     setEstado,
     postsRelacionados,
     setPostsRelacionados,
+    cursosVinculados,
+    setCursosVinculados,
     postEditando,
     currentPage,
     setCurrentPage,
@@ -149,6 +151,8 @@ const Posts = () => {
       onChangeEstado={setEstado}
       postsRelacionados={postsRelacionados}
       onChangePostsRelacionados={setPostsRelacionados}
+      cursosVinculados={cursosVinculados}
+      onChangeCursosVinculados={setCursosVinculados}
       postId={postEditando?.id}
       postSlug={postEditando?.slug}
       postAutor={postEditando?.author}

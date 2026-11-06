@@ -27,6 +27,7 @@ export function usePostsActions(state: PostsState) {
     setRegiao,
     setEstado,
     setPostsRelacionados,
+    setCursosVinculados,
     setPostEditando,
     titulo,
     resumo,
@@ -41,6 +42,7 @@ export function usePostsActions(state: PostsState) {
     regiao,
     estado,
     postsRelacionados,
+    cursosVinculados,
     postEditando,
     setLoading,
     recarregar
@@ -65,6 +67,7 @@ export function usePostsActions(state: PostsState) {
     setRegiao("none");
     setEstado("none");
     setPostsRelacionados("");
+    setCursosVinculados([]);
     setPostEditando(null);
     setModo(ModoInterface.CRIAR);
   };
@@ -94,6 +97,7 @@ export function usePostsActions(state: PostsState) {
     setRegiao(post.region || "none");
     setEstado(post.state || "none");
     setPostsRelacionados(post.relatedPosts ? post.relatedPosts.join(", ") : "");
+    setCursosVinculados(post.cursosIds || []);
     setPostEditando(post);
     setModo(ModoInterface.EDITAR);
   };
@@ -169,6 +173,9 @@ export function usePostsActions(state: PostsState) {
         featuredImage: processedImageUrl || (postEditando ? "" : undefined),
         readingTime: readingTimeString,
         relatedPosts: relatedPostsArray.length > 0 ? relatedPostsArray : undefined,
+        // Lista vazia só é gravada se a coluna já existe (post salvo depois da migration)
+        cursosIds:
+          cursosVinculados.length > 0 || postEditando?.cursosIds !== undefined ? cursosVinculados : undefined,
         featured: destacado,
         isDraft: rascunho,
         commentCount: postEditando?.commentCount || 0,

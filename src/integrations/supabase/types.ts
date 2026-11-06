@@ -226,6 +226,7 @@ export type Database = {
           comment_count: number
           content: string
           created_at: string
+          cursos_ids: string[]
           featured: boolean | null
           featured_image: string | null
           id: string
@@ -252,6 +253,7 @@ export type Database = {
           comment_count?: number
           content: string
           created_at?: string
+          cursos_ids?: string[]
           featured?: boolean | null
           featured_image?: string | null
           id?: string
@@ -278,6 +280,7 @@ export type Database = {
           comment_count?: number
           content?: string
           created_at?: string
+          cursos_ids?: string[]
           featured?: boolean | null
           featured_image?: string | null
           id?: string

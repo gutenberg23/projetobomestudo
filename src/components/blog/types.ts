@@ -22,6 +22,8 @@ export interface BlogPost {
   featuredImage?: string;
   readingTime?: string | number;
   relatedPosts?: string[];
+  /** Cursos divulgados no fim do post. undefined = coluna ainda não existe no banco */
+  cursosIds?: string[];
   featured?: boolean;
   isLiked?: boolean;
   isDraft?: boolean;

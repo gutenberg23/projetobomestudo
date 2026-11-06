@@ -8,6 +8,7 @@ import { FormularioMetadados } from "./formulario/FormularioMetadados";
 import { FormularioMidia } from "./formulario/FormularioMidia";
 import { FormularioPDF } from "./formulario/FormularioPDF";
 import { FormularioStatus } from "./formulario/FormularioStatus";
+import { FormularioCursos } from "./formulario/FormularioCursos";
 import { CardLateral } from "./formulario/CardLateral";
 import { Region } from "@/components/blog/types";
 import { resetBlogPostLikes } from "@/services/blogService";
@@ -47,6 +48,8 @@ interface FormularioPostProps {
   onChangeEstado: (value: string) => void;
   postsRelacionados: string;
   onChangePostsRelacionados: (value: string) => void;
+  cursosVinculados: string[];
+  onChangeCursosVinculados: (value: string[]) => void;
   postId?: string;
   postSlug?: string;
   postAutor?: string;
@@ -87,6 +90,8 @@ export const FormularioPost: React.FC<FormularioPostProps> = (props) => {
     onChangeEstado,
     postsRelacionados,
     onChangePostsRelacionados,
+    cursosVinculados,
+    onChangeCursosVinculados,
     postId,
     postSlug,
     postAutor,
@@ -99,9 +104,9 @@ export const FormularioPost: React.FC<FormularioPostProps> = (props) => {
     () =>
       JSON.stringify([
         titulo, resumo, conteudo, categoria, destacado, isDraft, tags, metaDescricao,
-        metaKeywords, imagemDestaque, regiao, estado, postsRelacionados,
+        metaKeywords, imagemDestaque, regiao, estado, postsRelacionados, cursosVinculados,
       ]),
-    [titulo, resumo, conteudo, categoria, destacado, isDraft, tags, metaDescricao, metaKeywords, imagemDestaque, regiao, estado, postsRelacionados]
+    [titulo, resumo, conteudo, categoria, destacado, isDraft, tags, metaDescricao, metaKeywords, imagemDestaque, regiao, estado, postsRelacionados, cursosVinculados]
   );
   const retratoSalvo = useRef(retrato);
   // Novo retrato de referência quando outro post é aberto
@@ -283,6 +288,12 @@ export const FormularioPost: React.FC<FormularioPostProps> = (props) => {
             estado={estado}
             conteudo={conteudo}
             onChangeConteudo={onChangeConteudo}
+          />
+
+          <FormularioCursos
+            selecionados={cursosVinculados}
+            onChange={onChangeCursosVinculados}
+            titulo={titulo}
           />
 
           <FormularioRegiao

@@ -101,6 +101,7 @@ export function usePostsState() {
   const [regiao, setRegiao] = useState<Region | "none">("none");
   const [estado, setEstado] = useState("none"); // Alterado de string para "none"
   const [postsRelacionados, setPostsRelacionados] = useState("");
+  const [cursosVinculados, setCursosVinculados] = useState<string[]>([]);
 
   const postsFiltrados = posts;
 
@@ -151,6 +152,8 @@ export function usePostsState() {
     setEstado,
     postsRelacionados,
     setPostsRelacionados,
+    cursosVinculados,
+    setCursosVinculados,
     // Estados de paginação
     currentPage,
     setCurrentPage,

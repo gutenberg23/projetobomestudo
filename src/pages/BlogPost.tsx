@@ -26,6 +26,7 @@ import AdBanner from "@/components/ads/AdBanner";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { usePermissions } from "@/hooks/usePermissions";
 import { BlogContentWithQuestions } from "@/components/blog/BlogContentWithQuestions";
+import { EstudeGratisPost } from "@/components/blog/EstudeGratisPost";
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -401,6 +402,9 @@ const BlogPostPage = () => {
                       className="text-[#3c4555] mb-8 prose-lg md:prose-lg prose-headings:text-[#272f3c] prose-a:text-[#5f2ebe] prose-img:rounded-lg prose-p:leading-relaxed"
                     />
                     
+                    {/* Convite para estudar nos cursos vinculados ao post */}
+                    <EstudeGratisPost cursosIds={post.cursosIds} />
+
                     {/* Tags: até 8 e o resto atrás de "+N" */}
                     {post.tags && post.tags.length > 0 && (
                       <div className="mb-8">

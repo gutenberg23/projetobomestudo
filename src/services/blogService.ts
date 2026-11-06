@@ -31,7 +31,9 @@ function mapDatabasePostToAppPost(post: Database['public']['Tables']['blog_posts
     readingTime: post.reading_time ? String(post.reading_time) : undefined,
     relatedPosts: Array.isArray(post.related_posts) ? post.related_posts.map(String) : [],
     featured: post.featured ?? undefined,
-    isDraft: post.is_draft ?? false
+    isDraft: post.is_draft ?? false,
+    // Antes da migration 20251117000000 a coluna não vem na resposta
+    cursosIds: "cursos_ids" in post ? (post.cursos_ids || []).map(String) : undefined
   };
 }
 
@@ -56,7 +58,9 @@ function mapAppPostToDatabasePost(post: Omit<BlogPost, 'id' | 'createdAt'>): Omi
     reading_time: post.readingTime ? parseInt(String(post.readingTime), 10) || 0 : 0,
     related_posts: post.relatedPosts ? post.relatedPosts.map(String) : [],
     featured: post.featured,
-    is_draft: post.isDraft ?? false
+    is_draft: post.isDraft ?? false,
+    // Só envia quando há cursos: antes da migration a coluna não existe
+    ...(post.cursosIds && post.cursosIds.length > 0 ? { cursos_ids: post.cursosIds } : {})
   };
 }
 
@@ -297,6 +301,7 @@ export async function updateBlogPost(id: string, post: Partial<BlogPost>): Promi
   if (post.relatedPosts !== undefined) updateData.related_posts = post.relatedPosts.map(String);
   if (post.featured !== undefined) updateData.featured = post.featured;
   if (post.isDraft !== undefined) updateData.is_draft = post.isDraft;
+  if (post.cursosIds !== undefined) updateData.cursos_ids = post.cursosIds;
 
   const { data, error } = await supabase
     .from('blog_posts')

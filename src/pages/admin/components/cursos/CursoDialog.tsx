@@ -103,7 +103,8 @@ export const CursoDialog: React.FC<CursoDialogProps> = ({ aberto, curso, discipl
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="curso-cargo">Cargo</Label>
-              <Input id="curso-cargo" value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ex.: Área Administrativa" />
+              <Input id="curso-cargo" value={cargo} onChange={(e) => setCargo(e.target.value)} placeholder="Ex.: Técnico Judiciário - Área Administrativa" />
+              <p className="text-[11px] text-slate-500">Só o nome do cargo. Aparece nos botões de estudo dos posts do blog.</p>
             </div>
           </div>
           <div className="space-y-1.5">
