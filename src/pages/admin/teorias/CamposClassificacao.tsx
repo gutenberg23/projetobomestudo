@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Wand2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const normalizar = (s: string) =>
@@ -213,14 +213,47 @@ interface CampoTopicosProps {
   onChange: (valores: string[]) => void;
   sugestoes: string[];
   outras: string[];
+  /** Títulos (h2, h3, h4...) do texto da teoria, para virar tópicos com um clique. */
+  titulos?: TituloConteudo[];
+}
+
+export interface TituloConteudo {
+  texto: string;
+  nivel: number;
+}
+
+/**
+ * Lê os títulos do HTML da teoria. Tira a numeração do começo ("1.", "2.3 -",
+ * "IV –") e o dois-pontos do fim, e ignora repetidos.
+ */
+export function extrairTitulos(html: string): TituloConteudo[] {
+  if (!html || typeof DOMParser === "undefined") return [];
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const vistos = new Set<string>();
+  const lista: TituloConteudo[] = [];
+  doc.querySelectorAll("h2, h3, h4, h5, h6").forEach((h) => {
+    if (h.closest("[data-sem-marcacao]")) return;
+    const texto = (h.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/^(?:\d{1,2}(?:\.\d{1,2})*|[IVXLC]{1,4})\s*[.)\-–—:]?\s+/, "")
+      .replace(/[\s:;.,–—-]+$/, "")
+      .trim();
+    const chave = normalizar(texto);
+    if (!texto || vistos.has(chave)) return;
+    vistos.add(chave);
+    lista.push({ texto, nivel: Number(h.tagName.slice(1)) });
+  });
+  return lista;
 }
 
 /** Tópicos da teoria: etiquetas com busca nas existentes e criação de novas. */
-export const CampoTopicos: React.FC<CampoTopicosProps> = ({ valores, onChange, sugestoes, outras }) => {
+export const CampoTopicos: React.FC<CampoTopicosProps> = ({ valores, onChange, sugestoes, outras, titulos = [] }) => {
   const id = useId();
   const [texto, setTexto] = useState("");
   const [aberto, setAberto] = useState(false);
   const [ativo, setAtivo] = useState(0);
+  const [painelTitulos, setPainelTitulos] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const termo = normalizar(texto);
@@ -246,9 +279,34 @@ export const CampoTopicos: React.FC<CampoTopicosProps> = ({ valores, onChange, s
 
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="text-xs font-medium text-slate-600">
-        Tópicos
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label htmlFor={id} className="text-xs font-medium text-slate-600">
+          Tópicos
+        </label>
+        <button
+          type="button"
+          onClick={() => setPainelTitulos((v) => !v)}
+          aria-expanded={painelTitulos}
+          className={cn(
+            "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold transition-colors",
+            painelTitulos ? "bg-[#5f2ebe]/10 text-[#5f2ebe]" : "text-[#5f2ebe] hover:bg-[#5f2ebe]/10"
+          )}
+        >
+          <Wand2 className="h-3 w-3" />
+          Usar títulos da teoria
+        </button>
+      </div>
+      {painelTitulos && (
+        <PainelTitulos
+          titulos={titulos}
+          valores={valores}
+          onAplicar={(novos, substituir) => {
+            onChange(substituir ? novos : [...valores, ...novos.filter((n) => !valores.some((v) => normalizar(v) === normalizar(n)))]);
+            setPainelTitulos(false);
+          }}
+          onFechar={() => setPainelTitulos(false)}
+        />
+      )}
       <div
         className="relative rounded-md border border-input bg-white px-1.5 py-1 focus-within:ring-2 focus-within:ring-[#5f2ebe]/30"
         onClick={() => inputRef.current?.focus()}
@@ -323,6 +381,126 @@ export const CampoTopicos: React.FC<CampoTopicosProps> = ({ valores, onChange, s
         )}
       </div>
       <p className="text-[11px] text-slate-400">Enter adiciona. Os do mesmo assunto aparecem primeiro.</p>
+    </div>
+  );
+};
+
+/** Escolha de quais títulos do texto viram tópicos. */
+const PainelTitulos: React.FC<{
+  titulos: TituloConteudo[];
+  valores: string[];
+  onAplicar: (novos: string[], substituir: boolean) => void;
+  onFechar: () => void;
+}> = ({ titulos, valores, onAplicar, onFechar }) => {
+  const niveis = useMemo(() => Array.from(new Set(titulos.map((t) => t.nivel))).sort(), [titulos]);
+  const menor = niveis[0] ?? 2;
+  const jaTem = (t: string) => valores.some((v) => normalizar(v) === normalizar(t));
+  // Começa marcando os títulos do nível mais alto que ainda não são tópicos
+  const [marcados, setMarcados] = useState<Set<string>>(
+    () => new Set(titulos.filter((t) => t.nivel === menor && !jaTem(t.texto)).map((t) => t.texto))
+  );
+
+  if (!titulos.length) {
+    return (
+      <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-500">
+        O texto ainda não tem títulos. Use Título 2, 3 ou 4 no editor para organizar a aula e eles aparecem aqui.
+        <button type="button" onClick={onFechar} className="ml-1 font-semibold text-[#5f2ebe] hover:underline">
+          Fechar
+        </button>
+      </div>
+    );
+  }
+
+  const alternar = (t: string) =>
+    setMarcados((m) => {
+      const n = new Set(m);
+      if (n.has(t)) n.delete(t);
+      else n.add(t);
+      return n;
+    });
+  const ateNivel = (nivel: number) => setMarcados(new Set(titulos.filter((t) => t.nivel <= nivel).map((t) => t.texto)));
+  const escolhidos = titulos.filter((t) => marcados.has(t.texto)).map((t) => t.texto);
+  const novos = escolhidos.filter((t) => !jaTem(t)).length;
+
+  return (
+    <div className="rounded-lg border border-[#5f2ebe]/20 bg-[#5f2ebe]/[0.03] p-2.5">
+      <div className="mb-2 flex flex-wrap items-center gap-1 text-[11px]">
+        <span className="mr-1 text-slate-500">Marcar:</span>
+        {niveis.map((n) => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => ateNivel(n)}
+            className="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-medium text-slate-600 hover:border-[#5f2ebe] hover:text-[#5f2ebe]"
+          >
+            {n === menor ? `Só H${n}` : `Até H${n}`}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setMarcados(new Set())}
+          className="rounded px-1.5 py-0.5 font-medium text-slate-400 hover:text-slate-700"
+        >
+          Nenhum
+        </button>
+      </div>
+      <ul className="max-h-56 space-y-0.5 overflow-y-auto overscroll-contain">
+        {titulos.map((t) => {
+          const marcado = marcados.has(t.texto);
+          const existe = jaTem(t.texto);
+          return (
+            <li key={t.texto}>
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={marcado}
+                onClick={() => alternar(t.texto)}
+                style={{ paddingLeft: `${(t.nivel - menor) * 14 + 6}px` }}
+                className={cn(
+                  "flex w-full items-center gap-2 rounded-md py-1 pr-1.5 text-left text-xs transition-colors",
+                  marcado ? "text-slate-900" : "text-slate-600 hover:bg-white"
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border",
+                    marcado ? "border-[#5f2ebe] bg-[#5f2ebe] text-white" : "border-slate-300 bg-white"
+                  )}
+                >
+                  {marcado && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+                </span>
+                <span className="w-4 shrink-0 text-[10px] font-medium text-slate-300">H{t.nivel}</span>
+                <span className="min-w-0 flex-1 truncate" title={t.texto}>
+                  {t.texto}
+                </span>
+                {existe && <span className="shrink-0 text-[10px] text-slate-400">já é tópico</span>}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-2 flex flex-wrap items-center justify-end gap-1.5 border-t border-[#5f2ebe]/10 pt-2">
+        <button type="button" onClick={onFechar} className="mr-auto text-xs text-slate-500 hover:text-slate-800">
+          Cancelar
+        </button>
+        <button
+          type="button"
+          disabled={!escolhidos.length}
+          onClick={() => onAplicar(escolhidos, true)}
+          className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-700 hover:border-slate-300 disabled:opacity-40"
+          title="Troca os tópicos atuais pelos títulos marcados"
+        >
+          Substituir
+        </button>
+        <button
+          type="button"
+          disabled={!novos}
+          onClick={() => onAplicar(escolhidos, false)}
+          className="rounded-md bg-[#5f2ebe] px-2 py-1 text-xs font-semibold text-white hover:bg-[#4a2394] disabled:opacity-40"
+        >
+          Adicionar {novos || ""}
+        </button>
+      </div>
     </div>
   );
 };

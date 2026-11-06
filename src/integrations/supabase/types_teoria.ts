@@ -1,3 +1,4 @@
+import type { FiltrosQuestoesTeoria } from "@/components/teorias/filtrosQuestoes";
 export type Teoria = {
   id?: string;
   /** Parte amigável da URL (/teoria/<slug>). Vazio: o banco gera a partir do título. */
@@ -13,12 +14,7 @@ export type Teoria = {
   created_at?: string;
   updated_at?: string;
   // Campos para filtros de questões
-  questoes_filtros?: {
-    disciplinas?: string[];
-    assuntos?: string[];
-    bancas?: string[];
-    topicos?: string[];
-  };
+  questoes_filtros?: FiltrosQuestoesTeoria;
   questoes_link?: string;
   // Campos para videoaulas
   videoaulas?: string[];

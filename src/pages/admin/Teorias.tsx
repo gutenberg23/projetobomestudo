@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
+import { temFiltrosQuestoes } from "@/components/teorias/filtrosQuestoes";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import {
@@ -77,8 +78,7 @@ const normalizar = (s: string) =>
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "");
 
-const temFiltroQuestoes = (t: TeoriaResumoAdmin) =>
-  !!t.questoes_filtros && Object.values(t.questoes_filtros).some((v) => Array.isArray(v) && v.length > 0);
+const temFiltroQuestoes = (t: TeoriaResumoAdmin) => temFiltrosQuestoes(t.questoes_filtros);
 
 /** Ícone com número, para os materiais da teoria. */
 const Recurso = ({ icone: Icone, n, titulo }: { icone: typeof Video; n: number; titulo: string }) => (

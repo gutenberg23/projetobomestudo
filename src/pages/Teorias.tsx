@@ -24,6 +24,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EstadoVazio, Painel, Segmentos, normalizar } from "@/components/course/ui";
 import { contarGrifos, lerRecentes } from "@/components/teorias/recentes";
+import { temFiltrosQuestoes } from "@/components/teorias/filtrosQuestoes";
 import { supabase } from "@/integrations/supabase/client";
 import { teoriaPath } from "@/utils/teoriaUrl";
 import { cn } from "@/lib/utils";
@@ -79,8 +80,6 @@ const iniciais = (nome: string) =>
     .map((p) => p[0]?.toUpperCase())
     .join("");
 
-const temFiltrosQuestoes = (f?: Record<string, unknown> | null) =>
-  !!f && Object.values(f).some((v) => Array.isArray(v) && v.length > 0);
 
 const haQuanto = (data: string) => {
   try {

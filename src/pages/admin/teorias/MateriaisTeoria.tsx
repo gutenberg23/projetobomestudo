@@ -7,13 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { youtubeId, youtubeThumb } from "@/utils/youtube";
 import { CardLateral } from "../posts/components/formulario/CardLateral";
 import { cn } from "@/lib/utils";
+import type { FiltrosQuestoesTeoria } from "@/components/teorias/filtrosQuestoes";
 
-export interface FiltrosQuestoes {
-  disciplinas?: string[];
-  assuntos?: string[];
-  bancas?: string[];
-  topicos?: string[];
-}
+export type FiltrosQuestoes = FiltrosQuestoesTeoria;
 
 const mover = <T,>(lista: T[], de: number, para: number): T[] => {
   if (para < 0 || para >= lista.length) return lista;
@@ -76,6 +72,11 @@ export const CardQuestoes: React.FC<{
     { rotulo: "Assuntos", itens: filtros.assuntos || [] },
     { rotulo: "Tópicos", itens: filtros.topicos || [] },
     { rotulo: "Bancas", itens: filtros.bancas || [] },
+    { rotulo: "Instituições", itens: filtros.instituicoes || [] },
+    { rotulo: "Anos", itens: filtros.anos || [] },
+    { rotulo: "Escolaridade", itens: filtros.escolaridades || [] },
+    { rotulo: "Dificuldade", itens: filtros.dificuldades || [] },
+    { rotulo: "Palavra-chave", itens: filtros.palavra ? [`"${filtros.palavra}"`] : [] },
   ].filter((g) => g.itens.length > 0);
 
   return (
