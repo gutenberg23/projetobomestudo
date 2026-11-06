@@ -321,7 +321,7 @@ const Teorias = () => {
                 })}
               </div>
 
-              <Painel className="sticky top-4 hidden p-3 lg:block">
+              <Painel className="sticky top-20 hidden p-3 lg:block">
                 <p className="mb-2 flex items-center gap-2 px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
                   <Layers className="h-3.5 w-3.5" />
                   Disciplinas

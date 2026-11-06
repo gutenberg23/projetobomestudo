@@ -255,7 +255,7 @@ const TeoriaPost = () => {
       { replace: true }
     );
     setBarra(null);
-    window.scrollTo({ top: Math.min(window.scrollY, document.getElementById("teoria-abas")?.offsetTop ?? 0), behavior: "smooth" });
+    window.scrollTo({ top: Math.min(window.scrollY, Math.max(0, (document.getElementById("teoria-abas")?.offsetTop ?? 0) - 64)), behavior: "smooth" });
   };
 
   // ----- Carregamento -----
@@ -700,7 +700,7 @@ const TeoriaPost = () => {
         </header>
 
         {/* Abas */}
-        <div id="teoria-abas" className="teoria-sem-impressao sticky top-0 z-30 -mx-[10px] mt-8 bg-[#f6f7fb]/95 px-[10px] py-2 md:-mx-[32px] md:px-[32px] backdrop-blur">
+        <div id="teoria-abas" className="teoria-sem-impressao sticky top-16 z-30 -mx-[10px] mt-8 bg-[#f6f7fb]/95 px-[10px] py-2 md:-mx-[32px] md:px-[32px] backdrop-blur">
           <div className="flex items-center justify-between gap-3">
             <nav className="-mx-1 flex gap-1 overflow-x-auto px-1 scrollbar-none" role="tablist" aria-label="Conteúdos da teoria">
               {abas.map((a) => {
@@ -911,7 +911,7 @@ const TeoriaPost = () => {
           {/* Lateral (computador) */}
           {aba === "aula" && (
             <aside className="teoria-sem-impressao hidden lg:block">
-              <div className="sticky top-20 space-y-4">
+              <div className="sticky top-36 space-y-4">
                 {secoes.length > 1 && (
                   <div className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
                     <p className="mb-2 flex items-center gap-2 px-3 text-xs font-semibold uppercase tracking-wide text-slate-400">

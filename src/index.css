@@ -97,6 +97,11 @@
     @apply border-border;
   }
 
+  /* O topo do site fica preso (64px): rolagens até âncoras param abaixo dele */
+  html {
+    scroll-padding-top: 4.5rem;
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', sans-serif;

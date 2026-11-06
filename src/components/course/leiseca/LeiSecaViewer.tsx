@@ -227,7 +227,7 @@ export const LeiSecaViewer = ({ lei, onBack, modoInicial = "ler" }: LeiSecaViewe
   return (
     <div className="space-y-4 pb-5">
       {/* Barra superior fixa */}
-      <div className="sticky top-0 z-20 -mx-[10px] bg-[rgb(242,244,246)]/95 px-[10px] py-2 backdrop-blur md:-mx-1 md:px-1">
+      <div className="sticky top-16 z-20 -mx-[10px] bg-[rgb(242,244,246)]/95 px-[10px] py-2 backdrop-blur md:-mx-1 md:px-1">
         <Painel className="flex flex-wrap items-center gap-2 p-2">
           <button
             type="button"

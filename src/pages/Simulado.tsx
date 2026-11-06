@@ -832,7 +832,7 @@ const Simulado = () => {
 
             {/* Painel da prova (computador) */}
             <aside className="hidden lg:block">
-              <div className="sticky top-4">{painelProva}</div>
+              <div className="sticky top-20">{painelProva}</div>
             </aside>
           </div>
         </main>
