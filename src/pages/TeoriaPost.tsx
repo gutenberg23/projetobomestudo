@@ -43,6 +43,7 @@ import {
   removerGrifo,
 } from "@/components/teorias/marcacoes";
 import { usePermissions } from "@/hooks/usePermissions";
+import { aplicarFiltrosTeoria, temFiltrosQuestoes, type FiltrosQuestoesTeoria } from "@/components/teorias/filtrosQuestoes";
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid, teoriaPath } from "@/utils/teoriaUrl";
 import { youtubeEmbed } from "@/utils/youtube";
@@ -80,7 +81,7 @@ interface Teoria {
   professor_id?: string;
   created_at: string;
   updated_at: string;
-  questoes_filtros?: { disciplinas?: string[]; assuntos?: string[]; bancas?: string[]; topicos?: string[] };
+  questoes_filtros?: FiltrosQuestoesTeoria;
   questoes_link?: string;
   videoaulas?: string[];
   mapas_mentais?: string[];
@@ -102,8 +103,7 @@ type Barra =
 const POR_PAGINA_QUESTOES = 10;
 const CHAVE_FONTE = "bomestudo:teoria-fonte";
 
-const temFiltros = (f?: Teoria["questoes_filtros"]) =>
-  !!f && Object.values(f).some((v) => Array.isArray(v) && v.length > 0);
+const temFiltros = (f?: Teoria["questoes_filtros"]) => temFiltrosQuestoes(f);
 
 const slugSecao = (texto: string) =>
   texto
@@ -313,13 +313,11 @@ const TeoriaPost = () => {
   useEffect(() => {
     if (!post || aba !== "questoes" || !temFiltros(post.questoes_filtros)) return;
     let ativo = true;
-    const f = post.questoes_filtros!;
     setCarregandoQuestoes(true);
-    let query = supabase.from("questoes").select("*", { count: "exact" }).order("created_at", { ascending: false });
-    if (f.disciplinas?.length) query = query.in("discipline", f.disciplinas);
-    if (f.assuntos?.length) query = query.overlaps("assuntos", f.assuntos);
-    if (f.bancas?.length) query = query.in("institution", f.bancas);
-    if (f.topicos?.length) query = query.overlaps("topicos", f.topicos);
+    const query = aplicarFiltrosTeoria(
+      supabase.from("questoes").select("*", { count: "exact" }),
+      post.questoes_filtros
+    ).order("created_at", { ascending: false });
     const de = (paginaQuestoes - 1) * POR_PAGINA_QUESTOES;
     query
       .range(de, de + POR_PAGINA_QUESTOES - 1)

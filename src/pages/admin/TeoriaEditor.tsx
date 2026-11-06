@@ -19,10 +19,10 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { teoriasService, type TeoriaInsert } from "@/services/teoriasService";
 import { BlogContentWithQuestions } from "@/components/blog/BlogContentWithQuestions";
-import { DisciplinaFiltersModal } from "./components/edital/DisciplinaFiltersModal";
+import { FiltrosQuestoesDialog } from "./teorias/FiltrosQuestoesDialog";
 import { TiptapEditor } from "./posts/components/editor/TiptapEditor";
 import { CardLateral } from "./posts/components/formulario/CardLateral";
-import { CampoCombo, CampoTopicos } from "./teorias/CamposClassificacao";
+import { CampoCombo, CampoTopicos, extrairTitulos } from "./teorias/CamposClassificacao";
 import { CardMapasMentais, CardQuestoes, CardVideoaulas, type FiltrosQuestoes } from "./teorias/MateriaisTeoria";
 import { cn } from "@/lib/utils";
 
@@ -190,6 +190,7 @@ const TeoriaEditor = () => {
       ),
     [classificacoes, assunto]
   );
+  const titulosConteudo = useMemo(() => extrairTitulos(conteudo), [conteudo]);
   const todosTopicos = useMemo(
     () => Array.from(new Set(classificacoes.flatMap((c) => c.topicos_ids || []).filter(Boolean))),
     [classificacoes]
@@ -547,7 +548,7 @@ const TeoriaEditor = () => {
               desabilitado={!disciplina}
               placeholder={disciplina ? "Buscar ou criar assunto" : "Escolha a disciplina primeiro"}
             />
-            <CampoTopicos valores={topicos} onChange={setTopicos} sugestoes={topicosDoAssunto} outras={todosTopicos} />
+            <CampoTopicos valores={topicos} onChange={setTopicos} sugestoes={topicosDoAssunto} outras={todosTopicos} titulos={titulosConteudo} />
           </CardLateral>
 
           <CardQuestoes
@@ -591,18 +592,17 @@ const TeoriaEditor = () => {
         </aside>
       </form>
 
-      <DisciplinaFiltersModal
-        isOpen={filtrosAbertos}
-        onClose={() => setFiltrosAbertos(false)}
-        onApplyFilters={(f, link) => {
-          setFiltros({ disciplinas: f.disciplinas, assuntos: f.assuntos, bancas: f.bancas, topicos: f.topicos });
+      <FiltrosQuestoesDialog
+        aberto={filtrosAbertos}
+        onFechar={() => setFiltrosAbertos(false)}
+        inicial={filtros}
+        disciplinaTeoria={disciplina}
+        assuntoTeoria={assunto}
+        onAplicar={(f, link) => {
+          setFiltros(f);
           setQuestoesLink(link);
           setFiltrosAbertos(false);
         }}
-        initialDisciplinas={filtros.disciplinas || []}
-        initialAssuntos={filtros.assuntos || []}
-        initialBancas={filtros.bancas || []}
-        initialTopicos={filtros.topicos || []}
       />
     </div>
   );
