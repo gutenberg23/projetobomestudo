@@ -619,6 +619,13 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
     }
   }, [bucket]);
 
+  // Mesmo caminho da digitação no textarea do modo HTML
+  const trocarHtml = (novo: string) => {
+    setHtml(novo);
+    ultimoHtml.current = novo;
+    onChangeRef.current(novo);
+  };
+
   const alternarHtml = () => {
     if (!editor) return;
     if (modoHtml) {
@@ -794,8 +801,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
           <Grupo>
             <Botao
               titulo="Substituir em massa (vários textos de uma vez)"
-              ativo={substituindo && !modoHtml}
-              desativado={modoHtml}
+              ativo={substituindo}
               onClick={() => setSubstituindo(!substituindo)}
             >
               <ReplaceAll className="h-4 w-4" />
@@ -811,7 +817,12 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
           </Grupo>
         </div>
         {dentroDeTabela && !modoHtml && <BarraTabela editor={editor} />}
-        {substituindo && !modoHtml && <PainelSubstituirEmMassa editor={editor} onFechar={() => setSubstituindo(false)} />}
+        {substituindo && (
+          <PainelSubstituirEmMassa
+            alvo={modoHtml ? { tipo: "html", html, onTrocar: trocarHtml } : { tipo: "editor", editor }}
+            onFechar={() => setSubstituindo(false)}
+          />
+        )}
       </div>
 
       <div className="post-editor__body">
@@ -820,11 +831,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
             className="post-editor__html"
             value={html}
             spellCheck={false}
-            onChange={(e) => {
-              setHtml(e.target.value);
-              ultimoHtml.current = e.target.value;
-              onChangeRef.current(e.target.value);
-            }}
+            onChange={(e) => trocarHtml(e.target.value)}
             aria-label={questao ? "Código HTML" : "Código HTML do post"}
           />
         ) : (
