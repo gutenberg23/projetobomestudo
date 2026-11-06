@@ -145,7 +145,7 @@ export const Header = () => {
     >
       <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between gap-4">
         <Link to="/" className="shrink-0" aria-label="Página inicial">
-          <img src={logo} alt="Bom Estudo" className="aspect-[8.06] w-[130px] md:w-[170px] object-contain" />
+          <img src={logo} alt="Bom Estudo" className="h-6 w-auto md:h-auto md:w-[170px] md:aspect-[8.06] object-contain" />
         </Link>
 
         {/* Links principais (computador) */}
