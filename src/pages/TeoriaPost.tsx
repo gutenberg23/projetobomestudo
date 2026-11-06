@@ -102,7 +102,7 @@ type Fonte = "p" | "m" | "g";
 interface Secao {
   id: string;
   texto: string;
-  nivel: 2 | 3;
+  nivel: 1 | 2 | 3;
 }
 
 type Barra =
@@ -322,7 +322,7 @@ const TeoriaPost = () => {
 
     const usados = new Set<string>();
     const lista: Secao[] = [];
-    el.querySelectorAll<HTMLElement>("h2, h3").forEach((h) => {
+    el.querySelectorAll<HTMLElement>("h1, h2, h3").forEach((h) => {
       if (h.closest("[data-sem-marcacao]")) return;
       const texto = normalizarEspacos(h.textContent || "");
       if (!texto) return;
@@ -330,7 +330,7 @@ const TeoriaPost = () => {
       while (usados.has(id)) id = `${id}-2`;
       usados.add(id);
       h.id = id;
-      lista.push({ id, texto, nivel: h.tagName === "H2" ? 2 : 3 });
+      lista.push({ id, texto, nivel: h.tagName === "H1" ? 1 : h.tagName === "H2" ? 2 : 3 });
     });
     setSecoes(lista);
   }, [post, loading]);
@@ -630,6 +630,8 @@ const TeoriaPost = () => {
   const grifoDaBarra = barra?.tipo === "grifo" ? marcacoes.find((m) => m.id === barra.id) : undefined;
   const toque = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
 
+  // O recuo do sumário parte do título de nível mais alto que existe no texto
+  const nivelBase = secoes.reduce<number>((m, s) => Math.min(m, s.nivel), 3);
   const sumario = (compacto = false) => (
     <nav aria-label="Sumário da aula">
       <ol className={cn("space-y-0.5 text-sm", compacto && "max-h-72 overflow-y-auto")}>
@@ -640,7 +642,7 @@ const TeoriaPost = () => {
               onClick={() => irParaSecao(s.id)}
               className={cn(
                 "block w-full rounded-md py-1.5 pr-2 text-left leading-snug transition-colors",
-                s.nivel === 3 ? "pl-6 text-[13px]" : "pl-3",
+                s.nivel - nivelBase === 0 ? "pl-3" : s.nivel - nivelBase === 1 ? "pl-6 text-[13px]" : "pl-9 text-[13px]",
                 secaoAtiva === s.id
                   ? "bg-[#5f2ebe]/10 font-medium text-[#5f2ebe]"
                   : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
