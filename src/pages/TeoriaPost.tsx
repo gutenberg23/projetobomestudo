@@ -42,6 +42,14 @@ import {
   normalizarEspacos,
   removerGrifo,
 } from "@/components/teorias/marcacoes";
+import {
+  carregarMarcacoesConta,
+  migrarMarcacoesLocais,
+  salvarMarcacoesConta,
+  temGravacaoPendente,
+} from "@/components/teorias/marcacoesConta";
+import { useAuth } from "@/contexts/AuthContext";
+import { useExigirLogin } from "@/components/auth/LoginObrigatorio";
 import { usePermissions } from "@/hooks/usePermissions";
 import { aplicarFiltrosTeoria, temFiltrosQuestoes, type FiltrosQuestoesTeoria } from "@/components/teorias/filtrosQuestoes";
 import { supabase } from "@/integrations/supabase/client";
@@ -218,6 +226,11 @@ const TeoriaPost = () => {
 
   // Grifos
   const [marcacoes, setMarcacoes] = useState<Marcacao[]>([]);
+  /** "conta": salvos no banco; "local": visitante ou banco indisponível (fica no navegador) */
+  const [ondeMarcacoes, setOndeMarcacoes] = useState<"conta" | "local">("local");
+  const { user, loading: carregandoAuth } = useAuth();
+  const exigirLogin = useExigirLogin();
+  const userId = user?.id;
   const [naoEncontradas, setNaoEncontradas] = useState<Set<string>>(new Set());
   const [barra, setBarra] = useState<Barra | null>(null);
   const [painelAberto, setPainelAberto] = useState(false);
@@ -280,7 +293,6 @@ const TeoriaPost = () => {
           navigate(`${teoriaPath(teoria)}${window.location.search}`, { replace: true });
         }
         setPost(teoria);
-        setMarcacoes(lerMarcacoes(teoria.id));
         registrarLeitura(teoria.id);
 
         if (teoria.professor_id) {
@@ -364,15 +376,68 @@ const TeoriaPost = () => {
       lista.push({ id, texto, nivel: h.tagName === "H2" ? 2 : 3 });
     });
     setSecoes(lista);
+  }, [post, loading]);
 
+  // Grifos: carrega da conta (levando antes os que estavam só no navegador) ou, para visitantes, do navegador
+  useEffect(() => {
+    if (!post || carregandoAuth) return;
+    let ativo = true;
+    if (!userId) {
+      setOndeMarcacoes("local");
+      setMarcacoes(lerMarcacoes(post.id));
+      return;
+    }
+    (async () => {
+      await migrarMarcacoesLocais(userId);
+      const daConta = await carregarMarcacoesConta(userId, post.id);
+      if (!ativo) return;
+      if (daConta === null) {
+        // Banco indisponível: segue com o que houver no navegador
+        setOndeMarcacoes("local");
+        setMarcacoes(lerMarcacoes(post.id));
+      } else {
+        setOndeMarcacoes("conta");
+        setMarcacoes(daConta);
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, [post, userId, carregandoAuth]);
+
+  // Voltou para a aba do navegador: busca de novo (grifos feitos em outro aparelho)
+  useEffect(() => {
+    if (!post || !userId || ondeMarcacoes !== "conta") return;
+    const aoVoltar = () => {
+      if (document.visibilityState !== "visible" || temGravacaoPendente()) return;
+      carregarMarcacoesConta(userId, post.id).then((lista) => {
+        if (lista && !temGravacaoPendente()) setMarcacoes(lista);
+      });
+    };
+    document.addEventListener("visibilitychange", aoVoltar);
+    return () => document.removeEventListener("visibilitychange", aoVoltar);
+  }, [post, userId, ondeMarcacoes]);
+
+  // Deixa o texto com exatamente os grifos da lista
+  useLayoutEffect(() => {
+    const el = conteudoRef.current;
+    if (!post || !el) return;
+    const ids = new Set(marcacoes.map((m) => m.id));
+    el.querySelectorAll<HTMLElement>("mark.teoria-grifo").forEach((mark) => {
+      const id = mark.dataset.marcacao || "";
+      if (!ids.has(id)) removerGrifo(el, id);
+    });
     const perdidas = new Set<string>();
-    lerMarcacoes(post.id).forEach((m) => {
-      if (grifoExiste(el, m.id)) return;
+    marcacoes.forEach((m) => {
+      if (grifoExiste(el, m.id)) {
+        atualizarGrifo(el, m);
+        return;
+      }
       const range = localizarTexto(el, m.texto);
       if (!range || !grifarIntervalo(el, range, m)) perdidas.add(m.id);
     });
     setNaoEncontradas(perdidas);
-  }, [post, loading]);
+  }, [post, loading, marcacoes]);
 
   // Seção em destaque no sumário
   useEffect(() => {
@@ -402,10 +467,21 @@ const TeoriaPost = () => {
   const salvarMarcacoes = useCallback(
     (lista: Marcacao[]) => {
       setMarcacoes(lista);
-      if (post) gravarMarcacoes(post.id, lista);
+      if (!post) return;
+      if (ondeMarcacoes === "conta" && userId) {
+        salvarMarcacoesConta(userId, post.id, lista).catch((error) => {
+          console.error("Erro ao salvar grifos:", error);
+          toast.error("Não foi possível salvar seus grifos. Verifique a conexão e tente de novo.");
+        });
+      } else {
+        gravarMarcacoes(post.id, lista);
+      }
     },
-    [post]
+    [post, ondeMarcacoes, userId]
   );
+
+  /** Grifar e anotar exige conta: abre o popup de login para visitantes */
+  const podeMarcar = () => exigirLogin({ motivo: "grifar e anotar as teorias" });
 
   // Barra flutuante ao selecionar texto da aula
   useEffect(() => {
@@ -469,6 +545,11 @@ const TeoriaPost = () => {
   const grifar = (cor: string) => {
     const el = conteudoRef.current;
     const sel = window.getSelection();
+    if (!podeMarcar()) {
+      sel?.removeAllRanges();
+      setBarra(null);
+      return;
+    }
     if (!el || !sel || !sel.rangeCount) return;
     const texto = normalizarEspacos(sel.toString());
     const m: Marcacao = { id: `m${Date.now().toString(36)}`, texto, cor, criadaEm: new Date().toISOString() };
@@ -480,6 +561,7 @@ const TeoriaPost = () => {
   };
 
   const mudarCor = (id: string, cor: string) => {
+    if (!podeMarcar()) return;
     const lista = marcacoes.map((m) => (m.id === id ? { ...m, cor } : m));
     const m = lista.find((x) => x.id === id);
     if (m && conteudoRef.current) atualizarGrifo(conteudoRef.current, m);
@@ -487,12 +569,14 @@ const TeoriaPost = () => {
   };
 
   const removerMarcacao = (id: string) => {
+    if (!podeMarcar()) return;
     if (conteudoRef.current) removerGrifo(conteudoRef.current, id);
     salvarMarcacoes(marcacoes.filter((m) => m.id !== id));
     setBarra(null);
   };
 
   const salvarNota = (id: string, nota: string) => {
+    if (!podeMarcar()) return;
     const lista = marcacoes.map((m) => (m.id === id ? { ...m, nota: nota || undefined } : m));
     const m = lista.find((x) => x.id === id);
     if (m && conteudoRef.current) atualizarGrifo(conteudoRef.current, m);
@@ -500,6 +584,7 @@ const TeoriaPost = () => {
   };
 
   const limparMarcacoes = () => {
+    if (!podeMarcar()) return;
     marcacoes.forEach((m) => conteudoRef.current && removerGrifo(conteudoRef.current, m.id));
     salvarMarcacoes([]);
   };
@@ -1035,6 +1120,8 @@ const TeoriaPost = () => {
         onNota={salvarNota}
         onRemover={removerMarcacao}
         onLimpar={limparMarcacoes}
+        naConta={ondeMarcacoes === "conta"}
+        logado={!!userId}
       />
 
       <SugerirCorrecaoDialog

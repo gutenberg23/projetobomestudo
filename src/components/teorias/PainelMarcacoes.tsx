@@ -17,6 +17,9 @@ interface Props {
   onNota: (id: string, nota: string) => void;
   onRemover: (id: string) => void;
   onLimpar: () => void;
+  /** Grifos salvos na conta (true) ou só neste navegador */
+  naConta?: boolean;
+  logado?: boolean;
 }
 
 const ItemMarcacao = ({
@@ -137,6 +140,8 @@ export const PainelMarcacoes = ({
   onNota,
   onRemover,
   onLimpar,
+  naConta = false,
+  logado = false,
 }: Props) => (
   <Sheet open={aberto} onOpenChange={onOpenChange}>
     <SheetContent side="right" className="flex w-full flex-col gap-0 bg-slate-50 p-0 sm:max-w-md">
@@ -148,7 +153,13 @@ export const PainelMarcacoes = ({
             <span className="rounded-full bg-[#5f2ebe]/10 px-2 py-0.5 text-xs font-medium tabular-nums text-[#5f2ebe]">{marcacoes.length}</span>
           )}
         </SheetTitle>
-        <SheetDescription className="text-xs">Ficam salvos neste navegador. Só você vê.</SheetDescription>
+        <SheetDescription className="text-xs">
+          {naConta
+            ? "Ficam salvos na sua conta, em qualquer aparelho. Só você vê."
+            : logado
+              ? "Não foi possível acessar sua conta agora: por enquanto ficam salvos neste navegador."
+              : "Entre na sua conta para grifar e anotar. Seus grifos ficam salvos em qualquer aparelho."}
+        </SheetDescription>
       </SheetHeader>
 
       <div className="flex-1 overflow-y-auto px-4 py-4">
