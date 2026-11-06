@@ -66,7 +66,7 @@ export interface SyncResult {
 }
 
 // Extrai a mensagem de erro do corpo da resposta da Edge Function.
-async function functionError(error: unknown): Promise<string> {
+export async function functionError(error: unknown): Promise<string> {
   const ctx = (error as { context?: Response })?.context;
   if (ctx && typeof ctx.json === 'function') {
     try {
@@ -187,4 +187,62 @@ export async function fetchAllTransmittedRSSItems(): Promise<RSSTransmitido[]> {
     return [];
   }
   return (data || []) as RSSTransmitido[];
+}
+
+// ---------------------------------------------------------------------
+// Instruções da IA (tabela ia_instrucoes, linha 'noticias_rss')
+// ---------------------------------------------------------------------
+
+/** Só os campos alterados; o que faltar usa o texto padrão. */
+export type InstrucoesIASalvas = Partial<{
+  sistema: string;
+  instrucoes: string;
+  campos: Partial<Record<'title' | 'summary' | 'content' | 'tags' | 'metaKeywords' | 'city', string>>;
+  temperatura: number;
+}>;
+
+export async function fetchInstrucoesIA(): Promise<{ config: InstrucoesIASalvas; updated_at: string | null }> {
+  const { data, error } = await supabase
+    .from('ia_instrucoes')
+    .select('config, updated_at')
+    .eq('id', 'noticias_rss')
+    .maybeSingle();
+  if (error) throw error;
+  return { config: (data?.config as InstrucoesIASalvas) || {}, updated_at: data?.updated_at ?? null };
+}
+
+export async function saveInstrucoesIA(config: InstrucoesIASalvas): Promise<string> {
+  const { data, error } = await supabase
+    .from('ia_instrucoes')
+    .upsert({ id: 'noticias_rss', config }, { onConflict: 'id' })
+    .select('updated_at')
+    .single();
+  if (error) throw error;
+  return data.updated_at as string;
+}
+
+export interface TesteInstrucoesIA {
+  title: string;
+  summary: string;
+  content: string;
+  tags: string[];
+  region: string;
+  state: string;
+  city: string;
+  metaKeywords: string[];
+  provider?: string;
+  model?: string;
+}
+
+/** Reescreve um texto de exemplo com as instruções informadas (sem salvar nem criar post). */
+export async function testarInstrucoesIA(
+  promptConfig: InstrucoesIASalvas,
+  originalTitle: string,
+  originalContent: string,
+): Promise<TesteInstrucoesIA> {
+  const { data, error } = await supabase.functions.invoke('rewrite-content', {
+    body: { promptConfig, originalTitle, originalContent },
+  });
+  if (error) throw new Error(await functionError(error));
+  return data as TesteInstrucoesIA;
 }
