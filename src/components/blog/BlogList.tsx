@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BlogPostCard } from "@/components/blog/BlogPostCard";
 import { BlogPagination } from "@/components/blog/BlogPagination";
 import { BlogPost } from "@/components/blog/types";
@@ -18,6 +18,12 @@ export const BlogList: React.FC<BlogListProps> = ({
   showEmpty = true
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Ao trocar busca ou filtro, voltar para a primeira página
+  // (antes, quem estava na página 3 via uma lista vazia).
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [posts]);
   
   // Calcular o número total de páginas
   const totalPages = Math.ceil(posts.length / postsPerPage);

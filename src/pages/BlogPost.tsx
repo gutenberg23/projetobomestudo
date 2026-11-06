@@ -8,8 +8,10 @@ import {
   Share2, 
   User,
   Calendar,
-  Edit
+  Edit,
+  ChevronRight
 } from "lucide-react";
+import { getReadingMinutes } from "@/components/blog/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,7 @@ const BlogPostPage = () => {
   const [post, setPost] = useState<BlogPost | null>(null);
   const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllTags, setShowAllTags] = useState(false);
   const { isAdmin } = usePermissions();
 
   // Buscar o post com base no slug
@@ -89,7 +92,9 @@ const BlogPostPage = () => {
   
   // Posts da mesma categoria
   const sameCategoryPosts = post && allPosts.length > 0
-    ? allPosts.filter(p => p.id !== post.id && p.category === post.category).slice(0, 4)
+    ? allPosts
+        .filter(p => p.id !== post.id && p.category === post.category && !relatedPostsList.some(r => r.id === p.id))
+        .slice(0, 4)
     : [];
   
   // Posts mais recentes
@@ -260,10 +265,10 @@ const BlogPostPage = () => {
   if (loading) {
     return (
       <PublicLayout>
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
           <Header />
           <main className="flex-1">
-            <div className="container mx-auto px-4 py-8">
+            <div className="w-full max-w-[1400px] mx-auto px-[10px] md:px-[32px] py-6 md:py-8">
               <div className="max-w-4xl mx-auto">
                 <div className="animate-pulse">
                   <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
@@ -287,10 +292,10 @@ const BlogPostPage = () => {
   if (!post) {
     return (
       <PublicLayout>
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
           <Header />
           <main className="flex-1">
-            <div className="container mx-auto px-4 py-8">
+            <div className="w-full max-w-[1400px] mx-auto px-[10px] md:px-[32px] py-6 md:py-8">
               <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-lg shadow-sm p-8 text-center">
                   <h1 className="text-2xl font-bold text-gray-900 mb-4">Post não encontrado</h1>
@@ -310,14 +315,27 @@ const BlogPostPage = () => {
 
   return (
     <PublicLayout>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
         <Header />
         <main className="flex-1">
-          <div className="container mx-auto px-4 py-8">
+          <div className="w-full max-w-[1400px] mx-auto px-[10px] md:px-[32px] py-6 md:py-8">
             {/* Banner acima do post */}
-            <div className="mb-6">
+            <div className="mb-6 empty:hidden">
               <AdBanner position="blog_post_top" className="rounded-lg" />
             </div>
+
+            {/* Trilha de navegação */}
+            <nav aria-label="Você está em" className="mb-4 flex items-center flex-wrap gap-1 text-sm text-[#67748a]">
+              <Link to="/blog" className="hover:text-[#5f2ebe] transition-colors">Blog</Link>
+              {post.category && (
+                <>
+                  <ChevronRight className="h-4 w-4 shrink-0" />
+                  <Link to={`/blog/categoria/${post.category.toLowerCase()}`} className="hover:text-[#5f2ebe] transition-colors">
+                    {post.category}
+                  </Link>
+                </>
+              )}
+            </nav>
             
             {/* Layout de duas colunas: post principal à esquerda, sidebar à direita */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -328,7 +346,7 @@ const BlogPostPage = () => {
                     <img 
                       src={post.featuredImage} 
                       alt={post.title}
-                      className="w-full h-64 md:h-96 object-cover"
+                      className="w-full aspect-[16/9] max-h-[460px] object-cover"
                     />
                   )}
                   
@@ -337,14 +355,14 @@ const BlogPostPage = () => {
                       {post.category && (
                         <Link 
                           to={`/blog/categoria/${post.category.toLowerCase()}`}
-                          className="inline-block bg-primary/10 text-primary text-sm font-medium px-3 py-1 rounded-full hover:bg-primary/20 transition-colors mb-4"
+                          className="inline-block bg-[#ede7f9] text-[#5f2ebe] text-sm font-medium px-3 py-1 rounded-full hover:bg-[#ddd2f5] transition-colors mb-4"
                         >
                           {post.category}
                         </Link>
                       )}
                       
                       <div className="relative">
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                        <h1 className={`text-2xl md:text-4xl font-bold leading-tight text-[#272f3c] mb-4 ${isAdmin() ? "pr-12" : ""}`}>
                           {post.title}
                         </h1>
                         {/* Botão de edição para administradores - na página do post */}
@@ -359,11 +377,11 @@ const BlogPostPage = () => {
                         )}
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
-                        <div className="flex items-center">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#67748a] pb-6 border-b border-gray-100">
+                        <Link to={`/blog/autor/${encodeURIComponent(post.author.toLowerCase())}`} className="flex items-center hover:text-[#5f2ebe] transition-colors">
                           <User className="h-4 w-4 mr-1" />
                           {post.author}
-                        </div>
+                        </Link>
                           
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 mr-1" />
@@ -372,7 +390,7 @@ const BlogPostPage = () => {
                           
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
-                          {Math.ceil((typeof post.readingTime === 'string' ? parseInt(post.readingTime) : typeof post.readingTime === 'number' ? post.readingTime : 0) / 60)} min de leitura
+                          {getReadingMinutes(post)} min de leitura
                         </div>
                       </div>
                     </div>
@@ -380,71 +398,69 @@ const BlogPostPage = () => {
                     {/* Conteúdo do post - usando o componente BlogContentWithQuestions para renderizar questões */}
                     <BlogContentWithQuestions 
                       content={post.content} 
-                      className="text-gray-700 mb-8"
+                      className="text-[#3c4555] mb-8 prose-lg md:prose-lg prose-headings:text-[#272f3c] prose-a:text-[#5f2ebe] prose-img:rounded-lg prose-p:leading-relaxed"
                     />
                     
-                    {/* Tags */}
+                    {/* Tags: até 8 e o resto atrás de "+N" */}
                     {post.tags && post.tags.length > 0 && (
                       <div className="mb-8">
                         <div className="flex flex-wrap gap-2">
-                          {post.tags.map(tag => (
+                          {(showAllTags ? post.tags : post.tags.slice(0, 8)).map(tag => (
                             <Link
                               key={tag}
                               to={`/blog/tag/${tag.toLowerCase()}`}
-                              className="inline-block bg-gray-100 text-gray-700 text-sm px-3 py-1 rounded-full hover:bg-gray-200 transition-colors"
+                              className="inline-block bg-gray-100 text-[#67748a] text-sm px-3 py-1 rounded-full hover:bg-[#ede7f9] hover:text-[#5f2ebe] transition-colors"
                             >
                               #{tag}
                             </Link>
                           ))}
+                          {!showAllTags && post.tags.length > 8 && (
+                            <button
+                              onClick={() => setShowAllTags(true)}
+                              className="inline-block text-sm font-medium px-3 py-1 rounded-full text-[#5f2ebe] hover:bg-[#ede7f9] transition-colors"
+                            >
+                              +{post.tags.length - 8}
+                            </button>
+                          )}
                         </div>
                       </div>
                     )}
                     
                     {/* Ações do post */}
-                    <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                      <div className="flex items-center space-x-4">
-                        <Button
-                          variant={isLiked ? "default" : "outline"}
-                          size="sm"
-                          onClick={handleLike}
-                          className="flex items-center gap-2"
-                        >
-                          <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-                          Curtir
-                        </Button>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleShare}
-                          className="flex items-center gap-2"
-                        >
-                          <Share2 className="h-4 w-4" />
-                          Compartilhar
-                        </Button>
-                      </div>
+                    <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-gray-200">
+                      <Button
+                        variant={isLiked ? "default" : "outline"}
+                        size="sm"
+                        onClick={handleLike}
+                        className="flex items-center gap-2"
+                        aria-pressed={isLiked}
+                      >
+                        <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
+                        {isLiked ? "Curtido" : "Curtir"}
+                        {post.likesCount > 0 && <span className="opacity-70">{post.likesCount}</span>}
+                      </Button>
                       
-                      {post.author && (
-                        <div className="flex items-center">
-                          <div className="ml-3">
-                            <p className="text-sm font-medium text-gray-900">
-                              {post.author}
-                            </p>
-                          </div>
-                        </div>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleShare}
+                        className="flex items-center gap-2"
+                      >
+                        <Share2 className="h-4 w-4" />
+                        Compartilhar
+                      </Button>
                     </div>
                   </div>
                 </article>
                 
                 {/* Banner abaixo do post */}
-                <div className="my-8">
+                <div className="my-8 empty:hidden">
                   <AdBanner position="blog_post_bottom" className="rounded-lg" />
                 </div>
               </div>
               
               {/* Coluna lateral - posts relacionados */}
-              <div className="space-y-8">
+              <aside className="space-y-6">
                 {/* Posts relacionados */}
                 {relatedPostsList.length > 0 && (
                   <Card>
@@ -452,25 +468,26 @@ const BlogPostPage = () => {
                       <CardTitle className="text-lg font-semibold">Posts relacionados</CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="space-y-4">
+                      <div className="space-y-2">
                         {relatedPostsList.map(relatedPost => (
                           <Link
                             key={relatedPost.id}
                             to={`/blog/${relatedPost.slug}`}
-                            className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="group flex items-start gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors"
                           >
                             {relatedPost.featuredImage && (
                               <img
                                 src={relatedPost.featuredImage}
                                 alt={relatedPost.title}
-                                className="w-16 h-16 object-cover rounded"
+                                loading="lazy"
+                                className="w-20 h-14 shrink-0 object-cover rounded"
                               />
                             )}
                             <div>
-                              <h3 className="font-medium text-gray-900 line-clamp-2">
+                              <h3 className="font-medium leading-snug text-[#272f3c] group-hover:text-[#5f2ebe] transition-colors line-clamp-2">
                                 {relatedPost.title}
                               </h3>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="text-xs text-[#67748a] mt-1">
                                 {format(new Date(relatedPost.createdAt), "dd/MM/yyyy")}
                               </p>
                             </div>
@@ -490,25 +507,26 @@ const BlogPostPage = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="space-y-4">
+                      <div className="space-y-2">
                         {sameCategoryPosts.map(categoryPost => (
                           <Link
                             key={categoryPost.id}
                             to={`/blog/${categoryPost.slug}`}
-                            className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="group flex items-start gap-3 p-2 -mx-2 rounded-lg hover:bg-gray-50 transition-colors"
                           >
                             {categoryPost.featuredImage && (
                               <img
                                 src={categoryPost.featuredImage}
                                 alt={categoryPost.title}
-                                className="w-16 h-16 object-cover rounded"
+                                loading="lazy"
+                                className="w-20 h-14 shrink-0 object-cover rounded"
                               />
                             )}
                             <div>
-                              <h3 className="font-medium text-gray-900 line-clamp-2">
+                              <h3 className="font-medium leading-snug text-[#272f3c] group-hover:text-[#5f2ebe] transition-colors line-clamp-2">
                                 {categoryPost.title}
                               </h3>
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="text-xs text-[#67748a] mt-1">
                                 {format(new Date(categoryPost.createdAt), "dd/MM/yyyy")}
                               </p>
                             </div>
@@ -536,7 +554,7 @@ const BlogPostPage = () => {
                     <LatestNews posts={latestPosts} title="" />
                   </CardContent>
                 </Card>
-              </div>
+              </aside>
             </div>
           </div>
         </main>

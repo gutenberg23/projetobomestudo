@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { BlogLayout } from "@/components/blog/BlogLayout";
 import { BlogList } from "@/components/blog/BlogList";
 import { FeaturedPosts } from "@/components/blog/FeaturedPosts";
@@ -11,16 +11,25 @@ import { STATES, CATEGORIES } from "@/data/blogFilters";
 import { fetchBlogPosts } from "@/services/blogService";
 import { BlogPost } from "@/components/blog/types";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, Search, X } from "lucide-react";
+import { getTagsByPopularity } from "@/components/blog/utils";
 
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams, useNavigate } from "react-router-dom";
 import AdBanner from '@/components/ads/AdBanner';
 import { PublicLayout } from "@/components/layout/PublicLayout";
 
 const Blog = () => {
   const { category: categoryParam, tag: tagParam } = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeState, setActiveState] = useState<string | null>(null);
+  // ?estado=sp (ou ?estado=são paulo) vem da etiqueta de estado dos cards
+  const [activeState, setActiveState] = useState<string | null>(() => {
+    const estado = searchParams.get("estado")?.toLowerCase();
+    if (!estado) return null;
+    const found = STATES.find(s => s.id === estado || s.name.toLowerCase() === estado || s.value.toLowerCase() === estado);
+    return found?.id ?? null;
+  });
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
@@ -133,8 +142,31 @@ const Blog = () => {
     setFilteredPosts(result);
   }, [searchTerm, activeState, activeCategory, activeTag, allPosts, categoryParam, tagParam]);
 
-  // Extrair todas as tags únicas dos posts
-  const allTags = [...new Set(allPosts.flatMap(post => post.tags || []))];
+  // Tags ordenadas pelas mais usadas (a lateral mostra só as primeiras)
+  const allTags = useMemo(() => getTagsByPopularity(allPosts), [allPosts]);
+
+  const hasFilters = Boolean(searchTerm || activeState || activeCategory || activeTag || categoryParam || tagParam);
+
+  // Memorizado para a paginação só voltar à página 1 quando a lista muda de fato
+  const listPosts = useMemo(
+    () => (hasFilters ? filteredPosts : filteredPosts.filter(post => !post.featured)),
+    [filteredPosts, hasFilters]
+  );
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setActiveState(null);
+    setActiveCategory(null);
+    setActiveTag(null);
+    if (categoryParam || tagParam || searchParams.get("estado")) navigate("/blog");
+  };
+
+  const filterLabel = categoryParam ? `Categoria: ${categoryParam}` :
+    tagParam ? `Tag: #${tagParam}` :
+    activeCategory ? `Categoria: ${CATEGORIES.find(c => c.id === activeCategory)?.name}` :
+    activeTag ? `Tag: #${activeTag}` :
+    activeState ? `Estado: ${STATES.find(s => s.id === activeState)?.value}` :
+    searchTerm ? `Busca: “${searchTerm}”` : '';
 
   // Posts destacados para o carrossel
   const featuredPosts = allPosts.filter(post => post.featured).slice(0, 4);
@@ -190,106 +222,123 @@ const Blog = () => {
     <PublicLayout>
       <div className="min-h-screen flex flex-col bg-[rgb(242,244,246)]">
         <BlogLayout>
-          {/* Filtros de estado - mantém na parte superior */}
-          <div className="mb-6">
-            <StateFilter 
-              states={STATES} 
-              activeState={activeState} 
-              onSelectState={handleStateSelect} 
-            />
+          {/* Busca + filtros de estado */}
+          <div className="mb-6 flex flex-col md:flex-row md:items-center gap-3">
+            <div className="relative md:w-72 shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9aa3b2]" />
+              <input
+                type="search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar notícias..."
+                aria-label="Buscar notícias"
+                className="w-full h-10 pl-9 pr-9 rounded-lg border border-gray-200 bg-white text-sm text-[#272f3c] placeholder:text-[#9aa3b2] focus:outline-none focus:ring-2 focus:ring-[#5f2ebe]/30 focus:border-[#5f2ebe] [&::-webkit-search-cancel-button]:hidden"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-[#9aa3b2] hover:text-[#272f3c]"
+                  aria-label="Limpar busca"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <StateFilter 
+                states={STATES} 
+                activeState={activeState} 
+                onSelectState={handleStateSelect} 
+              />
+            </div>
           </div>
           
           {/* Posts em destaque - ocupa toda a largura */}
-          {!searchTerm && !activeState && !activeCategory && !activeTag && !categoryParam && !tagParam && featuredPosts.length > 0 && (
+          {!hasFilters && featuredPosts.length > 0 && (
             <FeaturedPosts posts={featuredPosts} />
           )}
           
           {/* Banner de concursos */}
-          <div className="my-8">
-            <div className="mb-6">
-              <AdBanner position="blog_top_concursos" className="rounded-lg" />
-            </div>
-            <Link to="/concursos" className="block">
-              <div className="bg-gradient-to-r from-[#5f2ebe] to-[#7e4beb] rounded-lg p-6 text-white shadow-md hover:shadow-lg transition-shadow">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Search className="w-8 h-8 mr-4" />
-                    <h3 className="text-xl font-bold">Veja todos os concursos abertos</h3>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="mr-2">Acessar agora</span>
-                    <ArrowRight className="w-5 h-5" />
+          {!hasFilters && (
+            <div className="my-8">
+              <div className="mb-6 empty:hidden">
+                <AdBanner position="blog_top_concursos" className="rounded-lg" />
+              </div>
+              <Link to="/concursos" className="block group">
+                <div className="bg-gradient-to-r from-[#5f2ebe] to-[#7e4beb] rounded-lg px-5 py-4 md:p-6 text-white shadow-md group-hover:shadow-lg transition-shadow">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center min-w-0">
+                      <Search className="w-6 h-6 md:w-8 md:h-8 mr-3 md:mr-4 shrink-0" />
+                      <h3 className="text-base md:text-xl font-bold">Veja todos os concursos abertos</h3>
+                    </div>
+                    <div className="flex items-center shrink-0">
+                      <span className="mr-2 hidden sm:inline">Acessar agora</span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Link>
-          </div>
+              </Link>
+            </div>
+          )}
           
-          {/* Mostrar título quando filtrando por categoria ou tag */}
-          {(categoryParam || tagParam || activeCategory || activeTag) && (
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-800">
-                {categoryParam ? `Categoria: ${categoryParam}` : 
-                 tagParam ? `Tag: ${tagParam}` :
-                 activeCategory ? `Categoria: ${CATEGORIES.find(c => c.id === activeCategory)?.name}` :
-                 activeTag ? `Tag: ${activeTag}` : ''}
-              </h1>
-              <p className="text-gray-600">
-                {filteredPosts.length} post{filteredPosts.length !== 1 ? 's' : ''} encontrado{filteredPosts.length !== 1 ? 's' : ''}
-              </p>
+          {/* Título do filtro ativo, com contagem e atalho para limpar */}
+          {hasFilters && (
+            <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h1 className="text-2xl font-bold text-[#272f3c]">{filterLabel}</h1>
+                <p className="text-[#67748a]">
+                  {filteredPosts.length} post{filteredPosts.length !== 1 ? 's' : ''} encontrado{filteredPosts.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={clearFilters}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5f2ebe] bg-white border border-[#5f2ebe]/30 px-3 py-1.5 rounded-md hover:bg-[#ede7f9] transition-colors"
+              >
+                <X className="h-4 w-4" />
+                Limpar filtros
+              </button>
             </div>
           )}
           
           {/* Layout de duas colunas abaixo dos destaques */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2">
-              {/* Listagem de posts */}
-              <div>
-                <BlogList posts={
-                  // Remover os posts em destaque da lista principal apenas quando não há filtros
-                  searchTerm || activeState || activeCategory || activeTag || categoryParam || tagParam
-                    ? filteredPosts 
-                    : filteredPosts.filter(post => !post.featured)
-                } />
-                
-                {filteredPosts.length === 0 && (
-                  <div className="text-center py-12 bg-gray-50 rounded-lg">
-                    <p className="text-gray-500">Nenhum post encontrado com os filtros selecionados.</p>
+              {listPosts.length > 0 ? (
+                <BlogList posts={listPosts} showEmpty={false} />
+              ) : (
+                <div className="text-center py-12 px-6 bg-white rounded-lg shadow-sm">
+                  <h3 className="text-lg font-bold text-[#272f3c] mb-1">Nenhum post encontrado</h3>
+                  <p className="text-[#67748a]">Tente outra busca ou remova algum filtro.</p>
+                  {hasFilters && (
                     <button 
-                      className="mt-4 text-[#5f2ebe] hover:underline"
-                      onClick={() => {
-                        setSearchTerm("");
-                        setActiveState(null);
-                        setActiveCategory(null);
-                        setActiveTag(null);
-                      }}
+                      className="mt-4 text-[#5f2ebe] font-medium hover:underline"
+                      onClick={clearFilters}
                     >
                       Limpar filtros
                     </button>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
             
-            <div className="space-y-8">
+            <aside className="space-y-6">
               {/* Últimas notícias */}
-              <LatestNews posts={latestPosts} />
-              
-              {/* Filtros de Categoria e Tag movidos para aqui */}
-              <div className="space-y-6">
-                <CategoryFilter 
-                  categories={CATEGORIES} 
-                  activeCategory={activeCategory} 
-                  onSelectCategory={handleCategorySelect} 
-                />
-                
-                <TagFilter 
-                  tags={allTags} 
-                  activeTag={activeTag} 
-                  onSelectTag={handleTagSelect} 
-                />
+              <div className="bg-white rounded-lg shadow-sm p-5">
+                <LatestNews posts={latestPosts} />
               </div>
-            </div>
+              
+              <CategoryFilter 
+                categories={CATEGORIES} 
+                activeCategory={activeCategory} 
+                onSelectCategory={handleCategorySelect} 
+              />
+              
+              <TagFilter 
+                tags={allTags} 
+                activeTag={activeTag} 
+                onSelectTag={handleTagSelect} 
+              />
+            </aside>
           </div>
         </BlogLayout>
       </div>
