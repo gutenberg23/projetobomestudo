@@ -25,7 +25,7 @@ const AuthorPostsPage: React.FC = () => {
         const allPosts = await fetchBlogPosts();
         // Filtrar posts pelo autor (case insensitive)
         const authorPosts = allPosts.filter(
-          post => post.author.toLowerCase() === decodedAuthor
+          post => post.author?.toLowerCase() === decodedAuthor.toLowerCase()
         );
         setPosts(authorPosts);
       } catch (error) {
