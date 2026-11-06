@@ -289,7 +289,7 @@ export const EditorializedView: React.FC<EditorializedViewProps> = ({ courseId }
       <StatisticsCard subjects={disciplinas} performanceGoal={performanceGoal} />
 
       {/* Barra de ferramentas: busca, filtros e ordenação */}
-      <div className="sticky top-0 z-20 -mx-[10px] bg-[rgb(242,244,246)]/95 px-[10px] py-2 backdrop-blur md:-mx-1 md:px-1">
+      <div className="sticky top-16 z-20 -mx-[10px] bg-[rgb(242,244,246)]/95 px-[10px] py-2 backdrop-blur md:-mx-1 md:px-1">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

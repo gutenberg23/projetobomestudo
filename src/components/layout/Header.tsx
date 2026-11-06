@@ -1,111 +1,283 @@
-import { Menu, FileText, Newspaper, Trophy, Book, Search } from "lucide-react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Button } from "../ui/button";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Award,
+  BarChart,
+  BookOpen,
+  ChevronDown,
+  FileText,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Newspaper,
+  PlusCircle,
+  Settings,
+  Shield,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
-import logo from "/lovable-uploads/logo.svg";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
+import { useAbrirLogin } from "@/components/auth/LoginObrigatorio";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useCallback } from "react";
+import logo from "/lovable-uploads/logo.svg";
 import { MenuLateral } from "./MenuLateral";
 
+const ehAtivo = (pathname: string, path: string) => {
+  if (path === "/") return pathname === "/";
+  if (path === "/teorias") return pathname === "/teorias" || pathname.startsWith("/teoria/");
+  return pathname === path || pathname.startsWith(path + "/");
+};
+
+/**
+ * Topo do site público.
+ * - Computador (lg+): links principais no centro, menu "Mais" (Blog e rankings)
+ *   e, à direita, Meus Cursos + avatar com menu, ou Entrar + Criar conta.
+ * - Celular e tablet: logo, Entrar (visitante) e botão que abre o MenuLateral.
+ */
 export const Header = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
+  const { pathname } = useLocation();
+  const { user, signOut } = useAuth();
   const { config } = useSiteConfig();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
-  // Fecha a sidebar quando a rota muda
+  const abrirLogin = useAbrirLogin();
+  const [menuAberto, setMenuAberto] = useState(false);
+  const [rolou, setRolou] = useState(false);
+
   useEffect(() => {
-    setIsSidebarOpen(false);
-  }, [location]);
+    setMenuAberto(false);
+  }, [pathname]);
 
-  const fecharMenu = useCallback(() => setIsSidebarOpen(false), []);
-  
-  // Função para verificar se o link corresponde à página atual
-  const isActive = (path: string) => {
-    // Verificação mais precisa considerando rotas aninhadas
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    // Para teorias, verificar se está na página de teorias ou em uma teoria específica
-    if (path === '/teorias') {
-      return location.pathname === '/teorias' || location.pathname.startsWith('/teoria/');
-    }
-    return location.pathname.startsWith(path);
-  };
-  
-  // Função para gerar a classe do link com base no estado ativo
-  const getLinkClasses = (path: string) => {
-    return cn(
-      "flex items-center gap-1 transition-colors text-sm md:text-base",
-      isActive(path) 
-        ? "text-[#5f2ebe] font-medium bg-[#5f2ebe]/10 px-3 py-1.5 rounded-md" 
-        : "text-[#67748a] hover:text-[#5f2ebe] font-extralight"
+  useEffect(() => {
+    const aoRolar = () => setRolou(window.scrollY > 4);
+    aoRolar();
+    window.addEventListener("scroll", aoRolar, { passive: true });
+    return () => window.removeEventListener("scroll", aoRolar);
+  }, []);
+
+  const fecharMenu = useCallback(() => setMenuAberto(false), []);
+
+  const p = config.pages;
+
+  const principais = [
+    { to: "/explore", rotulo: "Estude Grátis", visivel: p.showExplorePage },
+    { to: "/questions", rotulo: "Questões", visivel: p.showQuestionsPage },
+    { to: "/cadernos", rotulo: "Cadernos", visivel: p.showQuestionsPage && p.showQuestionBooksPage !== false },
+    { to: "/teorias", rotulo: "Teorias", visivel: p.showTeoriasPage },
+    { to: "/concursos", rotulo: "Concursos", visivel: p.showBlogPage },
+  ].filter((i) => i.visivel !== false);
+
+  const rankings = [
+    { to: "/ranking-questoes", rotulo: "Ranking de questões", icone: FileText, visivel: p.showQuestionsPage && p.showQuestionRankingPage !== false },
+    { to: "/ranking-comentarios", rotulo: "Ranking de comentários", icone: MessageSquare, visivel: p.showQuestionsPage && p.showCommentRankingPage !== false },
+    { to: "/ranking-contribuicoes", rotulo: "Ranking de contribuições", icone: PlusCircle, visivel: true },
+  ].filter((i) => i.visivel);
+
+  const maisAtivo =
+    (p.showBlogPage && ehAtivo(pathname, "/blog")) || rankings.some((r) => ehAtivo(pathname, r.to));
+
+  const classeLink = (ativo: boolean) =>
+    cn(
+      "relative flex h-16 items-center px-1 text-[15px] transition-colors",
+      "after:absolute after:inset-x-1 after:bottom-0 after:h-[3px] after:rounded-t-full after:transition-colors",
+      ativo
+        ? "font-medium text-[#5f2ebe] after:bg-[#5f2ebe]"
+        : "text-[#67748a] hover:text-[#272f3c] after:bg-transparent"
     );
-  };
-  
+
+  const iniciais = user?.nome ? user.nome.substring(0, 2).toUpperCase() : "US";
+
   return (
-    <header className="bg-white/90 backdrop-blur-sm min-h-[64px] md:min-h-[88px] w-full flex items-center justify-center flex-wrap border-b border-[rgba(247,248,250,1)] px-[10px] md:px-[32px]">
-      <div className="max-w-[1400px] w-full flex items-center justify-between">
-        <div className="flex min-h-[64px] md:min-h-[88px] flex-col items-start justify-center w-[140px] md:w-[230px] py-3 md:py-[21px]">
-          <Link to="/">
-            <img loading="lazy" src={logo} alt="Bom Estudo" className="aspect-[8.06] w-[130px] md:w-[230px] object-contain" />
-          </Link>
-        </div>
+    <header
+      className={cn(
+        "sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur-sm px-[10px] md:px-[32px] transition-shadow",
+        rolou ? "border-slate-200/70 shadow-[0_1px_8px_rgba(15,23,42,0.06)]" : "border-[rgba(247,248,250,1)]"
+      )}
+    >
+      <div className="mx-auto flex h-16 w-full max-w-[1400px] items-center justify-between gap-4">
+        <Link to="/" className="shrink-0" aria-label="Página inicial">
+          <img src={logo} alt="Bom Estudo" className="aspect-[8.06] w-[130px] md:w-[170px] object-contain" />
+        </Link>
 
-        <div className="hidden md:flex items-center space-x-6 mr-6">
-          {config.pages.showBlogPage && (
-            <Link to="/blog" className={getLinkClasses("/blog")}>
-              <Newspaper className="w-4 h-4 px-px" />
-              <span className="text-sm md:text-base">Blog</span>
-            </Link>
-          )}
-          {config.pages.showQuestionsPage && (
-            <Link to="/questions" className={getLinkClasses("/questions")}>
-              <FileText className="w-4 h-4" />
-              <span className="text-sm md:text-base">Questões</span>
-            </Link>
-          )}
-          {config.pages.showQuestionsPage && (
-            <Link to="/cadernos" className={getLinkClasses("/cadernos")}>
-              <Book className="w-4 h-4" />
-              <span className="text-sm md:text-base">Cadernos</span>
-            </Link>
-          )}
-          {config.pages.showExplorePage && (
-            <Link to="/explore" className={getLinkClasses("/explore")}>
-              <Trophy className="w-4 h-4" />
-              <span className="text-sm md:text-base">Estude Grátis</span>
-            </Link>
-          )}
-          <Link to="/concursos" className={getLinkClasses("/concursos")}>
-            <Search className="w-4 h-4" />
-            <span className="text-sm md:text-base">Concursos</span>
-          </Link>
-        </div>
+        {/* Links principais (computador) */}
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-8" aria-label="Principal">
+          {principais.map((item) => {
+            const ativo = ehAtivo(pathname, item.to);
+            return (
+              <Link key={item.to} to={item.to} className={classeLink(ativo)} aria-current={ativo ? "page" : undefined}>
+                {item.rotulo}
+              </Link>
+            );
+          })}
 
-        <div className="flex items-center gap-2.5">
-          {!user ? <Button variant="outline" onClick={() => navigate("/login")} className="h-9 px-3 md:h-10 md:px-4 text-sm md:text-base">
-              Entrar
-            </Button> : null}
+          {(p.showBlogPage || rankings.length > 0) && (
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger className={cn(classeLink(!!maisAtivo), "gap-1 outline-none")}>
+                Mais
+                <ChevronDown className="h-4 w-4" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60">
+                {p.showBlogPage && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/blog" className="cursor-pointer gap-2">
+                      <Newspaper className="h-4 w-4 text-[#67748a]" />
+                      Blog
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {rankings.length > 0 && (
+                  <>
+                    {p.showBlogPage && <DropdownMenuSeparator />}
+                    <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wider text-[#9aa4b5]">
+                      Rankings
+                    </DropdownMenuLabel>
+                    {rankings.map((r) => {
+                      const Icone = r.icone;
+                      return (
+                        <DropdownMenuItem key={r.to} asChild>
+                          <Link
+                            to={r.to}
+                            className={cn("cursor-pointer gap-2", ehAtivo(pathname, r.to) && "text-[#5f2ebe] font-medium")}
+                          >
+                            <Icone className="h-4 w-4 text-[#67748a]" />
+                            {r.rotulo}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </nav>
 
-          {/* Visitantes: o menu só aparece no celular (no computador os links já estão no topo) */}
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
+        <div className="flex shrink-0 items-center gap-2">
+          {user ? (
+            <>
+              {p.showMyCoursesPage && (
+                <Link
+                  to="/my-courses"
+                  className={cn(
+                    "hidden lg:inline-flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
+                    ehAtivo(pathname, "/my-courses")
+                      ? "bg-[#5f2ebe] text-white"
+                      : "bg-[#5f2ebe]/10 text-[#5f2ebe] hover:bg-[#5f2ebe]/15"
+                  )}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Meus Cursos
+                </Link>
+              )}
+              <Link
+                to="/dashboard"
+                title="Dashboard"
+                aria-label="Dashboard"
+                className={cn(
+                  "hidden lg:flex h-10 w-10 items-center justify-center rounded-full transition-colors",
+                  ehAtivo(pathname, "/dashboard") ? "bg-[#5f2ebe]/10 text-[#5f2ebe]" : "text-[#67748a] hover:bg-slate-100"
+                )}
+              >
+                <BarChart className="h-5 w-5" />
+              </Link>
+
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger
+                  className="hidden lg:flex items-center gap-1 rounded-full p-0.5 pr-1.5 outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-[#5f2ebe]/40"
+                  aria-label="Menu da conta"
+                >
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={user.foto_perfil || undefined} />
+                    <AvatarFallback className="bg-[#5f2ebe]/10 text-sm text-[#5f2ebe]">{iniciais}</AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="h-4 w-4 text-[#67748a]" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuLabel className="font-normal">
+                    <p className="truncate text-sm font-medium text-[#272f3c]">{user.nome || "Aluno"}</p>
+                    <p className="truncate text-xs text-[#67748a]">{user.email}</p>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="cursor-pointer gap-2">
+                      <BarChart className="h-4 w-4 text-[#67748a]" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/contribuir" className="cursor-pointer gap-2">
+                      <PlusCircle className="h-4 w-4 text-[#67748a]" />
+                      Contribuir com conteúdo
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/ranking-questoes" className="cursor-pointer gap-2">
+                      <Award className="h-4 w-4 text-[#67748a]" />
+                      Rankings
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="cursor-pointer gap-2">
+                      <Settings className="h-4 w-4 text-[#67748a]" />
+                      Configurações
+                    </Link>
+                  </DropdownMenuItem>
+                  {(user.role === "admin" || user.role === "jornalista") && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to={user.role === "admin" ? "/admin" : "/admin/posts"} className="cursor-pointer gap-2">
+                          <Shield className="h-4 w-4 text-[#67748a]" />
+                          {user.role === "admin" ? "Área administrativa" : "Criar/editar posts"}
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => signOut()} className="cursor-pointer gap-2 text-red-600 focus:text-red-600">
+                    <LogOut className="h-4 w-4" />
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate("/login")}
+                className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-[#272f3c] hover:bg-slate-50 lg:border-0 lg:px-3 lg:py-2 lg:text-[15px] lg:text-[#67748a] lg:hover:text-[#272f3c] lg:hover:bg-transparent"
+              >
+                Entrar
+              </button>
+              <button
+                onClick={() => abrirLogin({ aba: "cadastrar", motivo: "salvar seu progresso" })}
+                className="hidden lg:inline-flex rounded-lg bg-[#5f2ebe] px-4 py-2 text-sm font-medium text-white hover:bg-[#5126a3]"
+              >
+                Criar conta grátis
+              </button>
+            </>
+          )}
+
+          {/* Celular e tablet: abre o menu lateral */}
+          <button
+            onClick={() => setMenuAberto(true)}
             aria-label="Abrir menu"
-            aria-expanded={isSidebarOpen}
-            className={cn(
-              "flex items-center justify-center w-10 h-10 rounded-full cursor-pointer text-gray-700 hover:bg-slate-100",
-              !user && "md:hidden"
-            )}
+            aria-expanded={menuAberto}
+            className="flex lg:hidden h-10 w-10 items-center justify-center rounded-full text-gray-700 hover:bg-slate-100"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="h-6 w-6" />
           </button>
         </div>
       </div>
 
-      <MenuLateral aberto={isSidebarOpen} aoFechar={fecharMenu} />
+      <MenuLateral aberto={menuAberto} aoFechar={fecharMenu} />
     </header>
   );
 };

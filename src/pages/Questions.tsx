@@ -283,7 +283,7 @@ const Questions = () => {
           <div className="container mx-auto grid gap-6 px-4 py-6 lg:grid-cols-[280px_minmax(0,1fr)]">
             {/* Filtros (computador) */}
             <aside className="hidden lg:block">
-              <div className="sticky top-4 flex max-h-[calc(100vh-2rem)] flex-col rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
+              <div className="sticky top-20 flex max-h-[calc(100vh-6rem)] flex-col rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
                 <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
                   <span className="flex items-center gap-2 text-sm font-bold text-slate-900">
                     <SlidersHorizontal className="h-4 w-4 text-[#5f2ebe]" /> Filtros
