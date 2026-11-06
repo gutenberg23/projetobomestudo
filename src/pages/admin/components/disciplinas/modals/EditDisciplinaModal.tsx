@@ -25,7 +25,6 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
   const nova = !!disciplina && !disciplina.id;
   const [titulo, setTitulo] = useState("");
   const [banca, setBanca] = useState("");
-  const [rating, setRating] = useState("");
   const [disciplinaQuestoes, setDisciplinaQuestoes] = useState("");
   const [teoriasIds, setTeoriasIds] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
@@ -34,7 +33,6 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
     if (!disciplina) return;
     setTitulo(disciplina.titulo);
     setBanca(disciplina.banca || "");
-    setRating(disciplina.descricao || "");
     setDisciplinaQuestoes(disciplina.disciplinaQuestoes || "");
     setTeoriasIds([...disciplina.teoriasIds]);
   }, [disciplina]);
@@ -55,7 +53,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
       return;
     }
     setSalvando(true);
-    const ok = await onSave({ ...disciplina, titulo: titulo.trim(), banca, descricao: rating, teoriasIds, disciplinaQuestoes });
+    const ok = await onSave({ ...disciplina, titulo: titulo.trim(), banca, teoriasIds, disciplinaQuestoes });
     setSalvando(false);
     if (ok) onClose();
   };
@@ -71,7 +69,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+          <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
             <div className="space-y-1.5">
               <Label htmlFor="disc-titulo">Título *</Label>
               <Input id="disc-titulo" value={titulo} onChange={(e) => setTitulo(e.target.value)} />
@@ -79,20 +77,6 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
             <div className="space-y-1.5">
               <Label htmlFor="disc-banca">Banca</Label>
               <Input id="disc-banca" value={banca} onChange={(e) => setBanca(e.target.value)} placeholder="Ex.: FGV" />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="disc-rating">Rating (1 a 10)</Label>
-              <Input
-                id="disc-rating"
-                type="number"
-                min="1"
-                max="10"
-                value={rating}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (v === "" || (/^\d+$/.test(v) && +v >= 1 && +v <= 10)) setRating(v);
-                }}
-              />
             </div>
           </div>
 

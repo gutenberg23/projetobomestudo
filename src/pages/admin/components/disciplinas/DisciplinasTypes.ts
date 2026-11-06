@@ -1,7 +1,7 @@
 export interface Disciplina {
   id: string;
   titulo: string;
-  /** Guarda a nota de rating (1 a 10) */
+  /** Antiga nota de rating (1 a 10). Agora a relevância é dada em cada curso (cursos.relevancia_por_disciplina) */
   descricao: string;
   banca?: string;
   /** Disciplina das questões usada na aba Estatísticas (vazio = automático) */
