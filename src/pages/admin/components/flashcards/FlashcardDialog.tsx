@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { botaoPrimario } from "@/components/admin/ui/listagem";
 import { ConteudoCartao } from "@/components/flashcards/ConteudoCartao";
 import type { Flashcard } from "@/lib/flashcards";
-import { EscolherCursos, EscolherTopico, deEscolha, paraEscolha, type EscolhaCursos } from "./Escolhas";
+import { EscolherCursos, EscolherTeoria, deEscolha, paraEscolha, type EscolhaCursos } from "./Escolhas";
 import type { FlashcardsAdmin } from "./useFlashcardsAdmin";
 
 /** Criar ou editar um flashcard. */
@@ -16,11 +16,11 @@ export const FlashcardDialog: React.FC<{
   aberto: boolean;
   onFechar: () => void;
   cartao: Flashcard | null;
-  /** Tópico já escolhido ao criar (filtro da página) */
-  topicoInicial?: string | null;
+  /** Teoria já escolhida ao criar (filtro da página) */
+  teoriaInicial?: string | null;
   admin: FlashcardsAdmin;
-}> = ({ aberto, onFechar, cartao, topicoInicial, admin }) => {
-  const [topicoId, setTopicoId] = useState<string | null>(null);
+}> = ({ aberto, onFechar, cartao, teoriaInicial, admin }) => {
+  const [teoriaId, setTeoriaId] = useState<string | null>(null);
   const [frente, setFrente] = useState("");
   const [verso, setVerso] = useState("");
   const [tags, setTags] = useState("");
@@ -30,20 +30,20 @@ export const FlashcardDialog: React.FC<{
 
   useEffect(() => {
     if (!aberto) return;
-    setTopicoId(cartao?.topicoId ?? topicoInicial ?? null);
+    setTeoriaId(cartao?.teoriaId ?? teoriaInicial ?? null);
     setFrente(cartao?.frente ?? "");
     setVerso(cartao?.verso ?? "");
     setTags((cartao?.tags ?? []).join(" "));
     setCursos(paraEscolha(cartao?.cursosIds ?? []));
     setPrevia(false);
-  }, [aberto, cartao, topicoInicial]);
+  }, [aberto, cartao, teoriaInicial]);
 
   const salvar = async (continuar: boolean) => {
-    if (!topicoId) return toast.error("Escolha o tópico do flashcard.");
+    if (!teoriaId) return toast.error("Escolha a teoria do flashcard.");
     if (!frente.trim() || !verso.trim()) return toast.error("Preencha a frente e o verso.");
     if (!cursos.todos && cursos.ids.length === 0) return toast.error("Escolha ao menos um curso ou marque “Todos os cursos”.");
     const dados = {
-      topicoId,
+      teoriaId,
       frente: frente.trim(),
       verso: verso.trim(),
       tags: Array.from(new Set(tags.split(/[\s,]+/).filter(Boolean))),
@@ -74,13 +74,13 @@ export const FlashcardDialog: React.FC<{
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{cartao ? "Editar flashcard" : "Novo flashcard"}</DialogTitle>
-          <DialogDescription>O cartão aparece na aba Flashcards dos cursos e como botão abaixo do vídeo do tópico.</DialogDescription>
+          <DialogDescription>O cartão aparece na aba Flashcards dos cursos e na página da teoria.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Tópico *</Label>
-            <EscolherTopico topicos={admin.topicos} valor={topicoId} onChange={setTopicoId} cursosDoTopico={admin.cursosDoTopico} />
+            <Label>Teoria *</Label>
+            <EscolherTeoria teorias={admin.teorias} valor={teoriaId} onChange={setTeoriaId} cursosDaTeoria={admin.cursosDaTeoria} />
           </div>
 
           <div className="space-y-1.5">
@@ -115,7 +115,7 @@ export const FlashcardDialog: React.FC<{
 
           <div className="space-y-1.5">
             <Label>Em quais cursos aparece</Label>
-            <EscolherCursos nome="flash-cursos" cursos={admin.cursos} valor={cursos} onChange={setCursos} destaque={topicoId ? admin.cursosDoTopico[topicoId] || [] : []} />
+            <EscolherCursos nome="flash-cursos" cursos={admin.cursos} valor={cursos} onChange={setCursos} destaque={teoriaId ? admin.cursosDaTeoria[teoriaId] || [] : []} />
           </div>
         </div>
 
@@ -148,12 +148,12 @@ export const DefinirCursosDialog: React.FC<{
   const [cursos, setCursos] = useState<EscolhaCursos>({ todos: true, ids: [] });
   const [salvando, setSalvando] = useState(false);
 
-  // Cursos que usam ao menos um dos tópicos dos cartões escolhidos
+  // Cursos que usam ao menos uma das teorias dos cartões escolhidos
   const destaque = Array.from(
     new Set(
       admin.cartoes
         .filter((c) => ids.includes(c.id))
-        .flatMap((c) => admin.cursosDoTopico[c.topicoId] || [])
+        .flatMap((c) => admin.cursosDaTeoria[c.teoriaId] || [])
     )
   );
 

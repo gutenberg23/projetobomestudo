@@ -4,30 +4,30 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/integrations/supabase/client";
 import { Disciplina } from "../DisciplinasTypes";
-import { AulaResumo } from "../useDisciplinas";
+import { TeoriaResumo } from "../useDisciplinas";
 import { BuscaComLista, ListaOrdenavel } from "../../shared/ListaOrdenavel";
 import { CampoDisciplinaQuestoes } from "../../shared/CampoDisciplinaQuestoes";
 
 interface EditDisciplinaModalProps {
+  /** Disciplina sendo editada; com id vazio, o formulário cria uma nova */
   disciplina: Disciplina | null;
-  aulas: Map<string, AulaResumo>;
+  teorias: Map<string, TeoriaResumo>;
   onClose: () => void;
-  onSave: (d: Disciplina, novasAulas: AulaResumo[]) => Promise<boolean>;
+  onSave: (d: Disciplina) => Promise<boolean>;
 }
 
-let cacheAulas: AulaResumo[] | null = null;
+const detalheTeoria = (t: TeoriaResumo) =>
+  [t.disciplinaQuestoes, t.assunto, t.publicada ? "" : "rascunho"].filter(Boolean).join(" · ") || "Sem classificação";
 
-export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ disciplina, aulas, onClose, onSave }) => {
+export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ disciplina, teorias, onClose, onSave }) => {
   const aberto = !!disciplina;
+  const nova = !!disciplina && !disciplina.id;
   const [titulo, setTitulo] = useState("");
   const [banca, setBanca] = useState("");
   const [rating, setRating] = useState("");
   const [disciplinaQuestoes, setDisciplinaQuestoes] = useState("");
-  const [aulasIds, setAulasIds] = useState<string[]>([]);
-  const [todas, setTodas] = useState<AulaResumo[]>(cacheAulas || []);
-  const [carregando, setCarregando] = useState(false);
+  const [teoriasIds, setTeoriasIds] = useState<string[]>([]);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -36,33 +36,17 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
     setBanca(disciplina.banca || "");
     setRating(disciplina.descricao || "");
     setDisciplinaQuestoes(disciplina.disciplinaQuestoes || "");
-    setAulasIds([...disciplina.aulasIds]);
+    setTeoriasIds([...disciplina.teoriasIds]);
   }, [disciplina]);
 
-  useEffect(() => {
-    if (!aberto) return;
-    setCarregando(!cacheAulas);
-    supabase
-      .from("aulas")
-      .select("id, titulo, topicos_ids, questoes_ids")
-      .order("created_at", { ascending: false })
-      .then(({ data, error }) => {
-        if (error) toast.error("Não foi possível carregar a lista de aulas");
-        cacheAulas = ((data || []) as AulaResumo[]).map((a) => ({
-          ...a,
-          topicos_ids: a.topicos_ids || [],
-          questoes_ids: a.questoes_ids || [],
-        }));
-        setTodas(cacheAulas);
-        setCarregando(false);
-      });
-  }, [aberto]);
+  const todas = useMemo(() => Array.from(teorias.values()), [teorias]);
 
-  const porId = useMemo(() => {
-    const m = new Map(aulas);
-    todas.forEach((a) => m.set(a.id, a));
-    return m;
-  }, [aulas, todas]);
+  // Atalho: teorias classificadas na disciplina das questões escolhida que ainda não estão na lista
+  const sugeridas = useMemo(() => {
+    const alvo = disciplinaQuestoes.trim().toLowerCase();
+    if (!alvo) return [];
+    return todas.filter((t) => t.disciplinaQuestoes.trim().toLowerCase() === alvo && !teoriasIds.includes(t.id));
+  }, [todas, disciplinaQuestoes, teoriasIds]);
 
   const salvar = async () => {
     if (!disciplina) return;
@@ -71,10 +55,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
       return;
     }
     setSalvando(true);
-    const ok = await onSave(
-      { ...disciplina, titulo: titulo.trim(), banca, descricao: rating, aulasIds, disciplinaQuestoes },
-      aulasIds.map((id) => porId.get(id)).filter((a): a is AulaResumo => !!a)
-    );
+    const ok = await onSave({ ...disciplina, titulo: titulo.trim(), banca, descricao: rating, teoriasIds, disciplinaQuestoes });
     setSalvando(false);
     if (ok) onClose();
   };
@@ -83,9 +64,9 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
     <Dialog open={aberto} onOpenChange={(o) => !o && !salvando && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Editar disciplina</DialogTitle>
+          <DialogTitle>{nova ? "Nova disciplina" : "Editar disciplina"}</DialogTitle>
           <DialogDescription>
-            Mudanças nas aulas valem para cursos criados daqui em diante. Cursos já criados guardam a composição que tinham.
+            A disciplina é uma lista de teorias. O aluno vê as teorias nesta ordem, agrupadas pelo assunto, na aba Disciplinas dos cursos.
           </DialogDescription>
         </DialogHeader>
 
@@ -119,36 +100,47 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
             <Label htmlFor="disc-questoes">Disciplina das questões</Label>
             <CampoDisciplinaQuestoes id="disc-questoes" valor={disciplinaQuestoes} onChange={setDisciplinaQuestoes} />
             <p className="text-xs text-slate-500">
-              Usada na aba Estatísticas da disciplina para mostrar os assuntos mais cobrados. No automático, o site descobre pelas questões ligadas aos tópicos.
+              Usada na aba Estatísticas e para sugerir teorias abaixo. No automático, o site descobre pela classificação das teorias.
             </p>
           </div>
 
           <div className="space-y-2">
             <div className="flex items-baseline justify-between">
-              <Label>Aulas da disciplina</Label>
-              <span className="text-xs tabular-nums text-slate-500">{aulasIds.length} aulas</span>
+              <Label>Teorias da disciplina</Label>
+              <span className="text-xs tabular-nums text-slate-500">
+                {teoriasIds.length} {teoriasIds.length === 1 ? "teoria" : "teorias"}
+              </span>
             </div>
             <ListaOrdenavel
               id="editar-disciplina"
-              itens={aulasIds.map((id) => {
-                const a = porId.get(id);
-                return { id, titulo: a?.titulo || "Aula não encontrada", detalhe: a ? `${a.topicos_ids.length} tópicos` : id };
+              itens={teoriasIds.map((id) => {
+                const t = teorias.get(id);
+                return { id, titulo: t?.titulo || "Teoria não encontrada", detalhe: t ? detalheTeoria(t) : id };
               })}
-              onChange={(itens) => setAulasIds(itens.map((i) => i.id))}
-              onRemover={(id) => setAulasIds((l) => l.filter((x) => x !== id))}
+              onChange={(itens) => setTeoriasIds(itens.map((i) => i.id))}
+              onRemover={(id) => setTeoriasIds((l) => l.filter((x) => x !== id))}
               vazio={
                 <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-400">
-                  Nenhuma aula. Adicione abaixo.
+                  Nenhuma teoria. Adicione abaixo.
                 </p>
               }
             />
+            {sugeridas.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setTeoriasIds((l) => [...l, ...sugeridas.map((t) => t.id)])}
+                className="w-full rounded-lg border border-dashed border-[#5f2ebe]/40 bg-[#5f2ebe]/5 px-3 py-2 text-left text-sm font-medium text-[#5f2ebe] hover:bg-[#5f2ebe]/10"
+              >
+                Adicionar {sugeridas.length === 1 ? "a teoria" : `as ${sugeridas.length} teorias`} de “{disciplinaQuestoes}” que faltam
+              </button>
+            )}
             <BuscaComLista
-              opcoes={todas.map((a) => ({ id: a.id, titulo: a.titulo, detalhe: `${a.topicos_ids.length} tópicos` }))}
-              escolhidos={aulasIds}
-              onEscolher={(id) => setAulasIds((l) => [...l, id])}
-              placeholder="Buscar aula para adicionar"
-              carregando={carregando}
+              opcoes={todas.map((t) => ({ id: t.id, titulo: t.titulo, detalhe: detalheTeoria(t) }))}
+              escolhidos={teoriasIds}
+              onEscolher={(id) => setTeoriasIds((l) => [...l, id])}
+              placeholder="Buscar teoria por título, disciplina ou assunto"
             />
+            <p className="text-xs text-slate-500">Teorias em rascunho só aparecem para o aluno depois de publicadas.</p>
           </div>
         </div>
 
@@ -157,7 +149,7 @@ export const EditDisciplinaModal: React.FC<EditDisciplinaModalProps> = ({ discip
             Cancelar
           </Button>
           <Button onClick={salvar} disabled={salvando} className="bg-[#ea2be2] text-white hover:bg-[#d029d5]">
-            {salvando ? "Salvando..." : "Salvar alterações"}
+            {salvando ? "Salvando..." : nova ? "Criar disciplina" : "Salvar alterações"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -39,7 +39,7 @@ const baixarCsv = (nome: string, conteudo: string) => {
 
 const Flashcards = () => {
   const admin = useFlashcardsAdmin();
-  const { cartoes, topicoPorId, cursoPorId, cursosDoTopico, carregando } = admin;
+  const { cartoes, teoriaPorId, cursoPorId, cursosDaTeoria, carregando } = admin;
 
   const [aba, setAba] = useState<Aba>("todos");
   const [busca, setBusca] = useState("");
@@ -53,36 +53,36 @@ const Flashcards = () => {
   const [dialogo, setDialogo] = useState<"novo" | "editar" | "importar" | "cursos" | "excluir" | null>(null);
   const [excluindo, setExcluindo] = useState<string[]>([]);
 
-  /** Cursos em que o cartão aparece de fato (tópico no curso + escolha do cartão). */
+  /** Cursos em que o cartão aparece de fato (teoria no curso + escolha do cartão). */
   const cursosEfetivos = (c: Flashcard) => {
-    const doTopico = cursosDoTopico[c.topicoId] || [];
-    return c.cursosIds.length === 0 ? doTopico : c.cursosIds.filter((id) => doTopico.includes(id));
+    const daTeoria = cursosDaTeoria[c.teoriaId] || [];
+    return c.cursosIds.length === 0 ? daTeoria : c.cursosIds.filter((id) => daTeoria.includes(id));
   };
 
   const disciplinas = useMemo(
     () =>
-      Array.from(new Set(cartoes.map((c) => topicoPorId.get(c.topicoId)?.disciplina?.trim()).filter(Boolean) as string[])).sort((a, b) =>
+      Array.from(new Set(cartoes.map((c) => teoriaPorId.get(c.teoriaId)?.disciplina?.trim()).filter(Boolean) as string[])).sort((a, b) =>
         a.localeCompare(b, "pt-BR")
       ),
-    [cartoes, topicoPorId]
+    [cartoes, teoriaPorId]
   );
-  const topicosComCartoes = useMemo(() => {
-    const ids = new Set(cartoes.map((c) => c.topicoId));
-    return admin.topicos.filter((t) => ids.has(t.id) && (!disciplina || t.disciplina.trim() === disciplina));
-  }, [cartoes, admin.topicos, disciplina]);
+  const teoriasComCartoes = useMemo(() => {
+    const ids = new Set(cartoes.map((c) => c.teoriaId));
+    return admin.teorias.filter((t) => ids.has(t.id) && (!disciplina || t.disciplina.trim() === disciplina));
+  }, [cartoes, admin.teorias, disciplina]);
 
   const base = useMemo(() => {
     const termo = normalizar(busca.trim());
     return cartoes.filter((c) => {
-      const t = topicoPorId.get(c.topicoId);
-      if (topico && c.topicoId !== topico) return false;
+      const t = teoriaPorId.get(c.teoriaId);
+      if (topico && c.teoriaId !== topico) return false;
       if (disciplina && (t?.disciplina || "").trim() !== disciplina) return false;
       if (curso && !cursosEfetivos(c).includes(curso)) return false;
       if (termo && !normalizar(`${textoSimples(c.frente)} ${textoSimples(c.verso)} ${c.tags.join(" ")} ${t?.nome || ""}`).includes(termo)) return false;
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartoes, busca, curso, disciplina, topico, topicoPorId, cursosDoTopico]);
+  }, [cartoes, busca, curso, disciplina, topico, teoriaPorId, cursosDaTeoria]);
 
   const passa = (c: Flashcard, a: Aba) => {
     if (a === "todos-cursos") return c.cursosIds.length === 0;
@@ -118,11 +118,11 @@ const Flashcards = () => {
     });
 
   const resumo = useMemo(() => {
-    const topicos = new Set(cartoes.map((c) => c.topicoId)).size;
+    const teorias = new Set(cartoes.map((c) => c.teoriaId)).size;
     const cursos = new Set(cartoes.flatMap((c) => cursosEfetivos(c))).size;
-    return { topicos, cursos, restritos: cartoes.filter((c) => c.cursosIds.length > 0).length };
+    return { teorias, cursos, restritos: cartoes.filter((c) => c.cursosIds.length > 0).length };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartoes, cursosDoTopico]);
+  }, [cartoes, cursosDaTeoria]);
 
   const filtroAtivo = !!(busca || curso || disciplina || topico);
   const limparFiltros = () => {
@@ -142,7 +142,7 @@ const Flashcards = () => {
     const efetivos = cursosEfetivos(c);
     if (efetivos.length === 0)
       return (
-        <Etiqueta tom="ambar" title="O tópico não está em nenhum dos cursos escolhidos (ou em nenhum curso)">
+        <Etiqueta tom="ambar" title="A teoria não está em nenhum dos cursos escolhidos (ou em nenhum curso)">
           Fora dos cursos
         </Etiqueta>
       );
@@ -161,7 +161,7 @@ const Flashcards = () => {
 
   const ABAS = [
     { id: "todos" as const, label: "Todos", n: contagens.todos },
-    { id: "todos-cursos" as const, label: "Em todos os cursos do tópico", n: contagens["todos-cursos"] },
+    { id: "todos-cursos" as const, label: "Em todos os cursos da teoria", n: contagens["todos-cursos"] },
     { id: "restritos" as const, label: "Só em cursos escolhidos", n: contagens.restritos },
     { id: "fora" as const, label: "Fora dos cursos", n: contagens.fora },
   ];
@@ -172,7 +172,7 @@ const Flashcards = () => {
     <div className="space-y-4">
       <AdminPageHeader
         titulo="Flashcards"
-        descricao="Cartões de pergunta e resposta ligados aos tópicos. Aparecem na aba Flashcards dos cursos e como botão abaixo do vídeo."
+        descricao="Cartões de pergunta e resposta ligados às teorias. Aparecem na aba Flashcards dos cursos e na página da teoria."
         acoes={
           <>
             <Button variant="outline" onClick={() => exportar(filtrados)} disabled={filtrados.length === 0}>
@@ -212,7 +212,7 @@ const Flashcards = () => {
         carregando={carregando}
         itens={[
           { rotulo: "Flashcards", valor: cartoes.length.toLocaleString("pt-BR"), icone: Layers },
-          { rotulo: "Tópicos com flashcards", valor: resumo.topicos.toLocaleString("pt-BR"), icone: FolderTree, tom: "rosa" },
+          { rotulo: "Teorias com flashcards", valor: resumo.teorias.toLocaleString("pt-BR"), icone: FolderTree, tom: "rosa" },
           { rotulo: "Cursos com flashcards", valor: resumo.cursos.toLocaleString("pt-BR"), icone: Folders, tom: "verde" },
           { rotulo: "Restritos a cursos", valor: resumo.restritos.toLocaleString("pt-BR"), icone: Lock, tom: "cinza" },
         ]}
@@ -248,9 +248,9 @@ const Flashcards = () => {
                   </option>
                 ))}
               </select>
-              <select value={topico} onChange={(e) => setTopico(e.target.value)} className={cn(selectClasse, "sm:max-w-[13rem]")} aria-label="Filtrar por tópico">
-                <option value="">Todos os tópicos</option>
-                {topicosComCartoes.map((t) => (
+              <select value={topico} onChange={(e) => setTopico(e.target.value)} className={cn(selectClasse, "sm:max-w-[13rem]")} aria-label="Filtrar por teoria">
+                <option value="">Todas as teorias</option>
+                {teoriasComCartoes.map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.nome}
                   </option>
@@ -315,7 +315,7 @@ const Flashcards = () => {
             texto={
               filtroAtivo || aba !== "todos"
                 ? "Tente outra busca, outra aba ou limpe os filtros."
-                : "Crie cartões aqui, importe um arquivo .csv (como o do Anki) ou adicione direto no formulário de um tópico."
+                : "Crie cartões aqui, importe um arquivo .csv (como o do Anki) ou escolha a teoria de cada cartão."
             }
             acao={
               filtroAtivo || aba !== "todos" ? (
@@ -351,13 +351,13 @@ const Flashcards = () => {
                 rotulo="Selecionar a página"
               />
               <span className="flex-1">Cartão</span>
-              <span className="hidden w-56 md:block">Tópico</span>
+              <span className="hidden w-56 md:block">Teoria</span>
               <span className="hidden w-32 sm:block">Cursos</span>
               <span className="w-8" />
             </div>
             <ul className="divide-y divide-slate-100">
               {visiveis.map((c) => {
-                const t = topicoPorId.get(c.topicoId);
+                const t = teoriaPorId.get(c.teoriaId);
                 const sel = selecionados.has(c.id);
                 return (
                   <li key={c.id} className={cn("flex items-center gap-3 px-3 py-3 sm:px-4", sel ? "bg-[#5f2ebe]/[0.04]" : "hover:bg-[#faf8ff]")}>
@@ -372,7 +372,7 @@ const Flashcards = () => {
                     >
                       <p className="line-clamp-2 text-sm font-medium text-slate-900">{textoSimples(c.frente)}</p>
                       <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{textoSimples(c.verso)}</p>
-                      <p className="mt-1 truncate text-[11px] text-slate-400 md:hidden">{t?.nome || "Tópico removido"}</p>
+                      <p className="mt-1 truncate text-[11px] text-slate-400 md:hidden">{t?.nome || "Teoria removida"}</p>
                       {c.tags.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {c.tags.slice(0, 4).map((tag) => (
@@ -384,7 +384,7 @@ const Flashcards = () => {
                       )}
                     </button>
                     <div className="hidden w-56 min-w-0 md:block">
-                      <p className="truncate text-sm text-slate-700">{t?.nome || "Tópico removido"}</p>
+                      <p className="truncate text-sm text-slate-700">{t?.nome || "Teoria removida"}</p>
                       <p className="truncate text-xs text-slate-400">{t?.disciplina}</p>
                     </div>
                     <div className="hidden w-32 sm:block">{etiquetaCursos(c)}</div>
@@ -407,11 +407,11 @@ const Flashcards = () => {
                           },
                         },
                         {
-                          label: "Ver só este tópico",
+                          label: "Ver só esta teoria",
                           icone: FolderTree,
                           onClick: () => {
                             setDisciplina("");
-                            setTopico(c.topicoId);
+                            setTopico(c.teoriaId);
                           },
                         },
                         {
@@ -438,11 +438,11 @@ const Flashcards = () => {
         aberto={dialogo === "novo" || dialogo === "editar"}
         onFechar={() => setDialogo(null)}
         cartao={dialogo === "editar" ? editando : null}
-        topicoInicial={topico || null}
+        teoriaInicial={topico || null}
         admin={admin}
       />
 
-      <ImportarCsvDialog aberto={dialogo === "importar"} onFechar={() => setDialogo(null)} admin={admin} topicoInicial={topico || null} />
+      <ImportarCsvDialog aberto={dialogo === "importar"} onFechar={() => setDialogo(null)} admin={admin} teoriaInicial={topico || null} />
 
       <DefinirCursosDialog
         aberto={dialogo === "cursos"}

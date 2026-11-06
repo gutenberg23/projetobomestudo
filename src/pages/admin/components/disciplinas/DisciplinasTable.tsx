@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { BookOpen, ChevronDown, Copy, Edit, FileQuestion, FolderOpen, Heart, ListOrdered, ListTree, Star, Trash2 } from "lucide-react";
+import { ChevronDown, Copy, Edit, FileText, FolderOpen, Heart, ListOrdered, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { CaixaSelecao, Contador, Etiqueta, MenuAcoes, copiarTexto } from "@/components/admin/ui/listagem";
 import { cn } from "@/lib/utils";
 import { Disciplina } from "./DisciplinasTypes";
-import { AulaResumo } from "./useDisciplinas";
+import { TeoriaResumo } from "./useDisciplinas";
 import { ItemOrdenavel, ListaOrdenavel } from "../shared/ListaOrdenavel";
 
 interface DisciplinasTableProps {
   disciplinas: Disciplina[];
   selecao: string[];
-  aulas: Map<string, AulaResumo>;
+  teorias: Map<string, TeoriaResumo>;
   cursosDaDisciplina: Map<string, { id: string; titulo: string }[]>;
   onAlternar: (id: string) => void;
   onAlternarPagina: () => void;
@@ -21,20 +21,24 @@ interface DisciplinasTableProps {
   vazio?: React.ReactNode;
 }
 
-const PainelAulas: React.FC<{
+const PainelTeorias: React.FC<{
   disciplina: Disciplina;
-  aulas: Map<string, AulaResumo>;
+  teorias: Map<string, TeoriaResumo>;
   onReordenar: (ordem: string[]) => Promise<void>;
   onEditar: () => void;
-}> = ({ disciplina, aulas, onReordenar, onEditar }) => {
+}> = ({ disciplina, teorias, onReordenar, onEditar }) => {
   const paraItens = (ids: string[]): ItemOrdenavel[] =>
     ids.map((id) => {
-      const a = aulas.get(id);
-      return { id, titulo: a?.titulo || "Aula não encontrada", detalhe: a ? `${a.topicos_ids.length} tópicos` : id };
+      const t = teorias.get(id);
+      return {
+        id,
+        titulo: t?.titulo || "Teoria não encontrada",
+        detalhe: t ? [t.assunto, t.publicada ? "" : "rascunho"].filter(Boolean).join(" · ") || undefined : id,
+      };
     });
-  const [itens, setItens] = useState(paraItens(disciplina.aulasIds));
+  const [itens, setItens] = useState(paraItens(disciplina.teoriasIds));
   const [salvando, setSalvando] = useState(false);
-  useEffect(() => setItens(paraItens(disciplina.aulasIds)), [disciplina.aulasIds, aulas]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => setItens(paraItens(disciplina.teoriasIds)), [disciplina.teoriasIds, teorias]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mudar = async (novos: ItemOrdenavel[]) => {
     setItens(novos);
@@ -47,10 +51,10 @@ const PainelAulas: React.FC<{
     <div className="border-t border-slate-100 bg-slate-50/70 px-3 py-3 sm:pl-[3.25rem] sm:pr-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-slate-500">
-          Ordem das aulas {salvando ? "· salvando..." : "· arraste ou use as setas, a ordem é salva na hora"}
+          Ordem das teorias {salvando ? "· salvando..." : "· arraste ou use as setas, a ordem é salva na hora"}
         </p>
         <Button variant="ghost" size="sm" className="h-7 text-xs text-[#5f2ebe]" onClick={onEditar}>
-          Adicionar ou remover aulas
+          Adicionar ou remover teorias
         </Button>
       </div>
       <ListaOrdenavel
@@ -58,7 +62,7 @@ const PainelAulas: React.FC<{
         itens={itens}
         onChange={mudar}
         desabilitado={salvando}
-        vazio={<p className="py-3 text-sm text-slate-400">Esta disciplina ainda não tem aulas.</p>}
+        vazio={<p className="py-3 text-sm text-slate-400">Esta disciplina ainda não tem teorias.</p>}
       />
     </div>
   );
@@ -67,7 +71,7 @@ const PainelAulas: React.FC<{
 export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
   disciplinas,
   selecao,
-  aulas,
+  teorias,
   cursosDaDisciplina,
   onAlternar,
   onAlternarPagina,
@@ -139,9 +143,7 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                 </div>
 
                 <div className="hidden items-center gap-4 text-xs md:flex">
-                  <Contador icone={BookOpen} n={d.aulasIds.length} titulo="aulas" />
-                  <Contador icone={ListTree} n={d.topicosIds?.length || 0} titulo="tópicos" />
-                  <Contador icone={FileQuestion} n={d.totalQuestoes || 0} titulo="questões" />
+                  <Contador icone={FileText} n={d.teoriasIds.length} titulo="teorias" />
                   <Contador icone={Heart} n={d.favoritos || 0} titulo="alunos favoritaram" className={d.favoritos ? "text-fuchsia-600" : ""} />
                 </div>
 
@@ -153,14 +155,16 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                     aria-expanded={expandida}
                     className="text-slate-600"
                   >
-                    <span className="hidden sm:inline">{d.aulasIds.length} aulas</span>
-                    <span className="tabular-nums sm:hidden">{d.aulasIds.length}</span>
+                    <span className="hidden sm:inline">
+                      {d.teoriasIds.length} {d.teoriasIds.length === 1 ? "teoria" : "teorias"}
+                    </span>
+                    <span className="tabular-nums sm:hidden">{d.teoriasIds.length}</span>
                     <ChevronDown className={cn("ml-1 h-4 w-4 transition-transform", expandida && "rotate-180")} />
                   </Button>
                   <MenuAcoes
                     acoes={[
                       { label: "Editar", icone: Edit, onClick: () => onEditar(d) },
-                      { label: "Ordenar aulas", icone: ListOrdered, onClick: () => setAberta(d.id) },
+                      { label: "Ordenar teorias", icone: ListOrdered, onClick: () => setAberta(d.id) },
                       {
                         label: "Copiar ID",
                         icone: Copy,
@@ -173,7 +177,7 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                 </div>
               </div>
               {expandida && (
-                <PainelAulas disciplina={d} aulas={aulas} onReordenar={(o) => onReordenar(d, o)} onEditar={() => onEditar(d)} />
+                <PainelTeorias disciplina={d} teorias={teorias} onReordenar={(o) => onReordenar(d, o)} onEditar={() => onEditar(d)} />
               )}
             </li>
           );

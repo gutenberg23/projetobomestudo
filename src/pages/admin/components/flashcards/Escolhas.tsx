@@ -2,35 +2,35 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Check, FolderTree } from "lucide-react";
 import { CampoBusca, CaixaSelecao, Etiqueta, normalizar } from "@/components/admin/ui/listagem";
 import { cn } from "@/lib/utils";
-import type { CursoOpcao, TopicoOpcao } from "./useFlashcardsAdmin";
+import type { CursoOpcao, TeoriaOpcao } from "./useFlashcardsAdmin";
 
 /*
  * Seletores usados dentro de diálogos. São listas nativas (sem Popover/Command),
  * porque Popover dentro de Dialog não recebe cliques neste projeto.
  */
 
-export const EscolherTopico: React.FC<{
-  topicos: TopicoOpcao[];
+export const EscolherTeoria: React.FC<{
+  teorias: TeoriaOpcao[];
   valor: string | null;
   onChange: (id: string | null) => void;
-  cursosDoTopico: Record<string, string[]>;
-  /** Texto do item "nenhum" (quando o tópico é opcional) */
+  cursosDaTeoria: Record<string, string[]>;
+  /** Texto do item "nenhum" (quando a teoria é opcional) */
   rotuloNenhum?: string;
-}> = ({ topicos, valor, onChange, cursosDoTopico, rotuloNenhum }) => {
+}> = ({ teorias, valor, onChange, cursosDaTeoria, rotuloNenhum }) => {
   const [busca, setBusca] = useState("");
   const [trocando, setTrocando] = useState(!valor);
-  const escolhido = topicos.find((t) => t.id === valor) || null;
+  const escolhido = teorias.find((t) => t.id === valor) || null;
 
-  // Valor definido de fora (ao abrir o diálogo): mostra o tópico escolhido
+  // Valor definido de fora (ao abrir o diálogo): mostra a teoria escolhida
   useEffect(() => {
     if (valor) setTrocando(false);
   }, [valor]);
 
   const filtrados = useMemo(() => {
     const termo = normalizar(busca.trim());
-    const lista = termo ? topicos.filter((t) => normalizar(`${t.nome} ${t.disciplina} ${t.id}`).includes(termo)) : topicos;
+    const lista = termo ? teorias.filter((t) => normalizar(`${t.nome} ${t.disciplina} ${t.id}`).includes(termo)) : teorias;
     return lista.slice(0, 80);
-  }, [topicos, busca]);
+  }, [teorias, busca]);
 
   if (escolhido && !trocando)
     return (
@@ -39,7 +39,7 @@ export const EscolherTopico: React.FC<{
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-slate-800">{escolhido.nome}</p>
           <p className="truncate text-xs text-slate-500">
-            {escolhido.disciplina || "Sem disciplina"} · usado em {(cursosDoTopico[escolhido.id] || []).length} curso(s)
+            {escolhido.disciplina || "Sem disciplina"} · usado em {(cursosDaTeoria[escolhido.id] || []).length} curso(s)
           </p>
         </div>
         <button type="button" onClick={() => setTrocando(true)} className="shrink-0 text-xs font-semibold text-[#5f2ebe] hover:underline">
@@ -50,8 +50,8 @@ export const EscolherTopico: React.FC<{
 
   return (
     <div className="space-y-2">
-      <CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar tópico por nome, disciplina ou ID" className="sm:w-full" autoFocus={!!escolhido} />
-      <ul className="max-h-56 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200" role="listbox" aria-label="Tópicos">
+      <CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar teoria por nome, disciplina ou ID" className="sm:w-full" autoFocus={!!escolhido} />
+      <ul className="max-h-56 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200" role="listbox" aria-label="Teorias">
         {rotuloNenhum && !busca && (
           <li>
             <button
@@ -84,21 +84,21 @@ export const EscolherTopico: React.FC<{
               <span className="min-w-0">
                 <span className="block truncate text-sm text-slate-800">{t.nome}</span>
                 <span className="block truncate text-xs text-slate-500">
-                  {t.disciplina || "Sem disciplina"} · {(cursosDoTopico[t.id] || []).length} curso(s)
+                  {t.disciplina || "Sem disciplina"} · {(cursosDaTeoria[t.id] || []).length} curso(s)
                 </span>
               </span>
             </button>
           </li>
         ))}
-        {filtrados.length === 0 && <li className="px-3 py-6 text-center text-sm text-slate-500">Nenhum tópico encontrado.</li>}
+        {filtrados.length === 0 && <li className="px-3 py-6 text-center text-sm text-slate-500">Nenhuma teoria encontrada.</li>}
       </ul>
-      {topicos.length > 80 && filtrados.length === 80 && <p className="text-xs text-slate-500">Mostrando 80 tópicos. Digite para encontrar outros.</p>}
+      {teorias.length > 80 && filtrados.length === 80 && <p className="text-xs text-slate-500">Mostrando 80 teorias. Digite para encontrar outras.</p>}
     </div>
   );
 };
 
 export interface EscolhaCursos {
-  /** true = todos os cursos que usam o tópico (cursos_ids vazio) */
+  /** true = todos os cursos que usam a teoria (cursos_ids vazio) */
   todos: boolean;
   ids: string[];
 }
@@ -110,7 +110,7 @@ export const EscolherCursos: React.FC<{
   cursos: CursoOpcao[];
   valor: EscolhaCursos;
   onChange: (v: EscolhaCursos) => void;
-  /** Cursos que usam o(s) tópico(s) escolhido(s): aparecem primeiro */
+  /** Cursos que usam a(s) teoria(s) escolhida(s): aparecem primeiro */
   destaque?: string[];
   nome: string;
 }> = ({ cursos, valor, onChange, destaque = [], nome }) => {
@@ -132,9 +132,9 @@ export const EscolherCursos: React.FC<{
       <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 px-3 py-2 has-[:checked]:border-[#5f2ebe]/40 has-[:checked]:bg-[#f8f5ff]">
         <input type="radio" name={nome} checked={valor.todos} onChange={() => onChange({ ...valor, todos: true })} className="mt-1 accent-[#5f2ebe]" />
         <span>
-          <span className="block text-sm font-medium text-slate-800">Todos os cursos que usam o tópico</span>
+          <span className="block text-sm font-medium text-slate-800">Todos os cursos que usam a teoria</span>
           <span className="block text-xs text-slate-500">
-            {destaque.length ? `Hoje: ${destaque.length} curso(s). Cursos novos com o tópico também recebem.` : "O tópico ainda não está em nenhum curso."}
+            {destaque.length ? `Hoje: ${destaque.length} curso(s). Cursos novos com a teoria também recebem.` : "A teoria ainda não está em nenhum curso."}
           </span>
         </span>
       </label>
@@ -142,7 +142,7 @@ export const EscolherCursos: React.FC<{
         <input type="radio" name={nome} checked={!valor.todos} onChange={() => onChange({ ...valor, todos: false })} className="mt-1 accent-[#5f2ebe]" />
         <span>
           <span className="block text-sm font-medium text-slate-800">Só nos cursos escolhidos</span>
-          <span className="block text-xs text-slate-500">O cartão só aparece se o curso também tiver o tópico.</span>
+          <span className="block text-xs text-slate-500">O cartão só aparece se o curso também tiver a teoria.</span>
         </span>
       </label>
 
@@ -158,7 +158,7 @@ export const EscolherCursos: React.FC<{
                 <label className="flex cursor-pointer items-center gap-2.5 px-3 py-2 hover:bg-slate-50">
                   <CaixaSelecao marcado={valor.ids.includes(c.id)} onChange={() => alternar(c.id)} rotulo={c.titulo} />
                   <span className="min-w-0 flex-1 truncate text-sm text-slate-800">{c.titulo}</span>
-                  {usam.has(c.id) ? <Etiqueta tom="verde">usa o tópico</Etiqueta> : <Etiqueta tom="cinza">sem o tópico</Etiqueta>}
+                  {usam.has(c.id) ? <Etiqueta tom="verde">usa a teoria</Etiqueta> : <Etiqueta tom="cinza">sem a teoria</Etiqueta>}
                 </label>
               </li>
             ))}

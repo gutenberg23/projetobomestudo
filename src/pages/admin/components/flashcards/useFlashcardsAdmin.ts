@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { lerTeoriasPorDisciplina, teoriasDaDisciplinaNoCurso } from "@/utils/teoriasDoCurso";
 import { AVISO_MIGRATION, db, faltaMigration, linhaParaFlashcard, type Flashcard } from "@/lib/flashcards";
 
-export interface TopicoOpcao {
+export interface TeoriaOpcao {
   id: string;
   nome: string;
   disciplina: string;
@@ -30,14 +31,14 @@ async function lerTudo(tabela: string, colunas: string, ordenar?: string): Promi
 }
 
 /**
- * Dados da página /admin/flashcards: cartões, tópicos, cursos e o mapa
- * "tópico → cursos que o usam" (curso → disciplinas → aulas → tópicos).
+ * Dados da página /admin/flashcards: cartões, teorias, cursos e o mapa
+ * "teoria → cursos que a usam" (curso → disciplinas → teorias).
  */
 export function useFlashcardsAdmin() {
   const [cartoes, setCartoes] = useState<Flashcard[]>([]);
-  const [topicos, setTopicos] = useState<TopicoOpcao[]>([]);
+  const [teorias, setTeorias] = useState<TeoriaOpcao[]>([]);
   const [cursos, setCursos] = useState<CursoOpcao[]>([]);
-  const [cursosDoTopico, setCursosDoTopico] = useState<Record<string, string[]>>({});
+  const [cursosDaTeoria, setCursosDaTeoria] = useState<Record<string, string[]>>({});
   const [carregando, setCarregando] = useState(true);
   const [semMigration, setSemMigration] = useState(false);
 
@@ -60,43 +61,40 @@ export function useFlashcardsAdmin() {
     (async () => {
       setCarregando(true);
       try {
-        const [tps, crs, dis, aul] = await Promise.all([
-          lerTudo("topicos", "id, nome, disciplina"),
-          lerTudo("cursos", "id, titulo, disciplinas_ids"),
-          lerTudo("disciplinas", "id, aulas_ids"),
-          lerTudo("aulas", "id, topicos_ids"),
+        const [tps, crs, dis] = await Promise.all([
+          lerTudo("teorias", "id, titulo, disciplina_id"),
+          lerTudo("cursos", "id, titulo, disciplinas_ids, teorias_por_disciplina"),
+          lerTudo("disciplinas", "id, teorias_ids"),
           carregarCartoes(),
         ]);
-        setTopicos(
+        setTeorias(
           tps
-            .map((t) => ({ id: t.id, nome: t.nome || "Tópico sem título", disciplina: t.disciplina || "" }))
+            .map((t) => ({ id: String(t.id), nome: t.titulo || "Teoria sem título", disciplina: t.disciplina_id || "" }))
             .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
         );
         setCursos(crs.map((c) => ({ id: c.id, titulo: c.titulo || "Curso sem título" })).sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR")));
 
-        const aulasDaDisciplina = new Map<string, string[]>(dis.map((d) => [d.id, d.aulas_ids || []]));
-        const topicosDaAula = new Map<string, string[]>(aul.map((a) => [a.id, a.topicos_ids || []]));
+        const teoriasDaDisciplina = new Map<string, string[]>(dis.map((d) => [String(d.id), d.teorias_ids || []]));
         const mapa: Record<string, Set<string>> = {};
-        crs.forEach((c) =>
+        crs.forEach((c) => {
+          const selecao = lerTeoriasPorDisciplina(c.teorias_por_disciplina);
           (c.disciplinas_ids || []).forEach((d: string) =>
-            (aulasDaDisciplina.get(d) || []).forEach((a) =>
-              (topicosDaAula.get(a) || []).forEach((t) => {
-                (mapa[t] ||= new Set()).add(c.id);
-              })
-            )
-          )
-        );
-        setCursosDoTopico(Object.fromEntries(Object.entries(mapa).map(([t, s]) => [t, Array.from(s)])));
+            teoriasDaDisciplinaNoCurso(teoriasDaDisciplina.get(d), selecao, d).forEach((t) => {
+              (mapa[t] ||= new Set()).add(c.id);
+            })
+          );
+        });
+        setCursosDaTeoria(Object.fromEntries(Object.entries(mapa).map(([t, s]) => [t, Array.from(s)])));
       } catch (e) {
         console.error("Erro ao carregar dados dos flashcards:", e);
-        toast.error("Erro ao carregar tópicos e cursos.");
+        toast.error("Erro ao carregar teorias e cursos.");
       } finally {
         setCarregando(false);
       }
     })();
   }, [carregarCartoes]);
 
-  const topicoPorId = useMemo(() => new Map(topicos.map((t) => [t.id, t])), [topicos]);
+  const teoriaPorId = useMemo(() => new Map(teorias.map((t) => [t.id, t])), [teorias]);
   const cursoPorId = useMemo(() => new Map(cursos.map((c) => [c.id, c])), [cursos]);
 
   const erro = (e: unknown, padrao: string) => {
@@ -105,14 +103,14 @@ export function useFlashcardsAdmin() {
   };
 
   /** Cria vários cartões de uma vez (lotes de 500). Devolve quantos entraram. */
-  const criar = async (novos: { topicoId: string; frente: string; verso: string; tags: string[]; cursosIds: string[] }[]) => {
-    // Os novos entram depois dos cartões que o tópico já tem
+  const criar = async (novos: { teoriaId: string; frente: string; verso: string; tags: string[]; cursosIds: string[] }[]) => {
+    // Os novos entram depois dos cartões que a teoria já tem
     const proximaOrdem: Record<string, number> = {};
-    cartoes.forEach((c) => (proximaOrdem[c.topicoId] = Math.max(proximaOrdem[c.topicoId] ?? 0, c.ordem + 1)));
+    cartoes.forEach((c) => (proximaOrdem[c.teoriaId] = Math.max(proximaOrdem[c.teoriaId] ?? 0, c.ordem + 1)));
     const linhas = novos.map((n) => {
-      const ordem = proximaOrdem[n.topicoId] ?? 0;
-      proximaOrdem[n.topicoId] = ordem + 1;
-      return { topico_id: n.topicoId, frente: n.frente, verso: n.verso, tags: n.tags, cursos_ids: n.cursosIds, ordem };
+      const ordem = proximaOrdem[n.teoriaId] ?? 0;
+      proximaOrdem[n.teoriaId] = ordem + 1;
+      return { teoria_id: n.teoriaId, frente: n.frente, verso: n.verso, tags: n.tags, cursos_ids: n.cursosIds, ordem };
     });
     let criados = 0;
     try {
@@ -130,9 +128,9 @@ export function useFlashcardsAdmin() {
     return criados;
   };
 
-  const atualizar = async (id: string, campos: Partial<Pick<Flashcard, "topicoId" | "frente" | "verso" | "tags" | "cursosIds">>) => {
+  const atualizar = async (id: string, campos: Partial<Pick<Flashcard, "teoriaId" | "frente" | "verso" | "tags" | "cursosIds">>) => {
     const linha = {
-      ...(campos.topicoId !== undefined && { topico_id: campos.topicoId }),
+      ...(campos.teoriaId !== undefined && { teoria_id: campos.teoriaId }),
       ...(campos.frente !== undefined && { frente: campos.frente }),
       ...(campos.verso !== undefined && { verso: campos.verso }),
       ...(campos.tags !== undefined && { tags: campos.tags }),
@@ -177,10 +175,10 @@ export function useFlashcardsAdmin() {
 
   return {
     cartoes,
-    topicos,
+    teorias,
     cursos,
-    cursosDoTopico,
-    topicoPorId,
+    cursosDaTeoria,
+    teoriaPorId,
     cursoPorId,
     carregando,
     semMigration,

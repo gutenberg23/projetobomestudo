@@ -20,13 +20,12 @@ import type { Flashcard } from "@/lib/flashcards";
 import { textoSimples } from "@/lib/flashcards";
 import { ConteudoCartao } from "@/components/flashcards/ConteudoCartao";
 import { BarraProgresso, CabecalhoAba, Carregando, EstadoVazio, Metrica, Painel, normalizar } from "../ui";
-import type { FlashcardsCurso, Resultado, TopicoFlashcards } from "./useFlashcardsCurso";
+import type { FlashcardsCurso, Resultado, TeoriaFlashcards } from "./useFlashcardsCurso";
 
-/** Pedido vindo da aba Disciplinas: abrir os cartões deste tópico. */
+/** Pedido para abrir direto os cartões desta teoria. */
 export interface FocoFlashcards {
-  topicoId: string;
-  aulaId?: string;
-  /** Muda a cada clique, para reabrir o mesmo tópico */
+  teoriaId: string;
+  /** Muda a cada clique, para reabrir a mesma teoria */
   chave: number;
 }
 
@@ -49,14 +48,14 @@ const embaralhar = <T,>(lista: T[]) => {
   return l;
 };
 
-const cartoesDe = (topicos: TopicoFlashcards[]): CartaoSessao[] => {
+const cartoesDe = (teorias: TeoriaFlashcards[]): CartaoSessao[] => {
   const vistos = new Set<string>();
   const lista: CartaoSessao[] = [];
-  topicos.forEach((t) =>
+  teorias.forEach((t) =>
     t.cartoes.forEach((c) => {
       if (vistos.has(c.id)) return;
       vistos.add(c.id);
-      lista.push({ ...c, contexto: `${t.disciplina.titulo} · ${t.topico.nome}` });
+      lista.push({ ...c, contexto: `${t.disciplina.titulo} · ${t.teoria.titulo}` });
     })
   );
   return lista;
@@ -67,16 +66,14 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
   const [busca, setBusca] = useState("");
   const [abertas, setAbertas] = useState<Set<string>>(new Set());
 
-  const todosTopicos = useMemo(() => flash.estrutura.flatMap((d) => d.aulas.flatMap((a) => a.topicos)), [flash.estrutura]);
+  const todasTeorias = useMemo(() => flash.estrutura.flatMap((d) => d.grupos.flatMap((g) => g.teorias)), [flash.estrutura]);
 
-  // Abre direto os cartões do tópico clicado na aba Disciplinas
+  // Abre direto os cartões da teoria pedida
   useEffect(() => {
     if (!foco || flash.carregando) return;
-    const alvo =
-      todosTopicos.find((t) => t.topico.id === foco.topicoId && (!foco.aulaId || t.aula.id === foco.aulaId)) ||
-      todosTopicos.find((t) => t.topico.id === foco.topicoId);
+    const alvo = todasTeorias.find((t) => t.teoria.id === foco.teoriaId);
     if (alvo) {
-      setSessao({ titulo: alvo.topico.nome, subtitulo: `${alvo.disciplina.titulo} · ${alvo.aula.titulo}`, cartoes: cartoesDe([alvo]) });
+      setSessao({ titulo: alvo.teoria.titulo, subtitulo: alvo.disciplina.titulo, cartoes: cartoesDe([alvo]) });
       setAbertas((p) => new Set(p).add(alvo.disciplina.id));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,10 +96,10 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
     return { total: cartoes.length, lembrei, esqueci, novos: cartoes.length - lembrei - esqueci };
   };
 
-  const geral = useMemo(() => stats(cartoesDe(todosTopicos)), [todosTopicos, flash.progresso]); // eslint-disable-line react-hooks/exhaustive-deps
+  const geral = useMemo(() => stats(cartoesDe(todasTeorias)), [todasTeorias, flash.progresso]); // eslint-disable-line react-hooks/exhaustive-deps
   const esquecidos = useMemo(
-    () => cartoesDe(todosTopicos).filter((c) => flash.progresso[c.id]?.ultimo === "esqueci"),
-    [todosTopicos, flash.progresso]
+    () => cartoesDe(todasTeorias).filter((c) => flash.progresso[c.id]?.ultimo === "esqueci"),
+    [todasTeorias, flash.progresso]
   );
 
   const termo = normalizar(busca);
@@ -111,25 +108,25 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
     return flash.estrutura
       .map((d) => {
         if (normalizar(d.disciplina.titulo).includes(termo)) return d;
-        const aulas = d.aulas
+        const grupos = d.grupos
           .map((a) => {
-            if (normalizar(a.aula.titulo).includes(termo)) return a;
-            const topicos = a.topicos.filter(
+            if (normalizar(a.titulo).includes(termo)) return a;
+            const teorias = a.teorias.filter(
               (t) =>
-                normalizar(t.topico.nome).includes(termo) ||
+                normalizar(t.teoria.titulo).includes(termo) ||
                 t.cartoes.some((c) => normalizar(textoSimples(c.frente)).includes(termo) || normalizar(textoSimples(c.verso)).includes(termo))
             );
-            return topicos.length ? { ...a, topicos } : null;
+            return teorias.length ? { ...a, teorias } : null;
           })
-          .filter(Boolean) as typeof d.aulas;
-        return aulas.length ? { ...d, aulas } : null;
+          .filter(Boolean) as typeof d.grupos;
+        return grupos.length ? { ...d, grupos } : null;
       })
       .filter(Boolean) as typeof flash.estrutura;
   }, [flash.estrutura, termo]);
 
   if (flash.carregando) return <Carregando texto="Carregando flashcards..." />;
   if (!flash.temFlashcards)
-    return <EstadoVazio icone={Layers} titulo="Nenhum flashcard por aqui" texto="Quando houver flashcards nos tópicos deste curso, eles aparecem nesta aba." />;
+    return <EstadoVazio icone={Layers} titulo="Nenhum flashcard por aqui" texto="Quando houver flashcards nas teorias deste curso, eles aparecem nesta aba." />;
 
   if (sessao) return <ModoEstudo sessao={sessao} flash={flash} onSair={() => setSessao(null)} onRefazer={iniciar} />;
 
@@ -139,13 +136,13 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
     <div className="space-y-5 pb-10">
       <CabecalhoAba
         titulo="Flashcards"
-        descricao="Leia a pergunta, tente lembrar, vire o cartão e diga se acertou. Os cartões estão organizados por disciplina, aula e tópico."
+        descricao="Leia a pergunta, tente lembrar, vire o cartão e diga se acertou. Os cartões estão organizados por disciplina, assunto e teoria."
         acoes={
           <>
             {esquecidos.length > 0 && (
               <button
                 type="button"
-                onClick={() => iniciar({ titulo: "Cartões que você esqueceu", subtitulo: "Todo o curso", cartoes: esquecidos.map((c) => ({ ...c, contexto: contextoDe(todosTopicos, c) })) })}
+                onClick={() => iniciar({ titulo: "Cartões que você esqueceu", subtitulo: "Todo o curso", cartoes: esquecidos.map((c) => ({ ...c, contexto: contextoDe(todasTeorias, c) })) })}
                 className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100"
               >
                 <RotateCcw className="h-4 w-4" />
@@ -154,7 +151,7 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
             )}
             <button
               type="button"
-              onClick={() => iniciar({ titulo: "Todos os flashcards", subtitulo: "Em ordem aleatória", cartoes: embaralhar(cartoesDe(todosTopicos)) })}
+              onClick={() => iniciar({ titulo: "Todos os flashcards", subtitulo: "Em ordem aleatória", cartoes: embaralhar(cartoesDe(todasTeorias)) })}
               className="inline-flex items-center gap-2 rounded-xl bg-[#5f2ebe] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#4f25a0]"
             >
               <Shuffle className="h-4 w-4" />
@@ -165,7 +162,7 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Metrica rotulo="Cartões" valor={geral.total} icone={Layers} detalhe={`${todosTopicos.length} ${todosTopicos.length === 1 ? "tópico" : "tópicos"}`} />
+        <Metrica rotulo="Cartões" valor={geral.total} icone={Layers} detalhe={`${todasTeorias.length} ${todasTeorias.length === 1 ? "teoria" : "teorias"}`} />
         <Metrica rotulo="Lembrei" valor={geral.lembrei} icone={CheckCircle2} tom="verde" detalhe="na última revisão" />
         <Metrica rotulo="Esqueci" valor={geral.esqueci} icone={XCircle} tom="laranja" detalhe="para revisar de novo" />
         <Metrica rotulo="Não revisados" valor={geral.novos} icone={Play} tom="cinza" detalhe={flash.logado ? "ainda não vistos" : <Link to="/login" className="text-[#5f2ebe] hover:underline">Entre para salvar o progresso</Link>} />
@@ -196,12 +193,12 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
       </div>
 
       {visiveis.length === 0 ? (
-        <EstadoVazio icone={Search} titulo="Nada encontrado" texto={`Nenhuma disciplina, tópico ou cartão com “${busca}”.`} />
+        <EstadoVazio icone={Search} titulo="Nada encontrado" texto={`Nenhuma disciplina, teoria ou cartão com “${busca}”.`} />
       ) : (
         <div className="space-y-3">
           {visiveis.map((d) => {
-            const topicosD = d.aulas.flatMap((a) => a.topicos);
-            const s = stats(cartoesDe(topicosD));
+            const teoriasD = d.grupos.flatMap((g) => g.teorias);
+            const s = stats(cartoesDe(teoriasD));
             const aberta = abertas.has(d.disciplina.id) || !!termo;
             return (
               <Painel key={d.disciplina.id} className="overflow-hidden">
@@ -224,7 +221,7 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
                   <div className="min-w-0 flex-1">
                     <h3 className="text-base font-bold leading-snug text-slate-900 sm:text-lg">{d.disciplina.titulo}</h3>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      {s.total} {s.total === 1 ? "cartão" : "cartões"} · {d.aulas.length} {d.aulas.length === 1 ? "aula" : "aulas"}
+                      {s.total} {s.total === 1 ? "cartão" : "cartões"} · {teoriasD.length} {teoriasD.length === 1 ? "teoria" : "teorias"}
                       {s.lembrei > 0 && <> · <span className="text-emerald-600">{s.lembrei} lembrados</span></>}
                     </p>
                     <BarraProgresso valor={s.total ? (s.lembrei / s.total) * 100 : 0} className="mt-2 h-1.5 max-w-xs" corClasse="bg-emerald-500" />
@@ -234,27 +231,27 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
 
                 {aberta && (
                   <div className="space-y-4 border-t border-slate-100 bg-slate-50/60 p-3 sm:p-4">
-                    {d.aulas.map((a) => (
-                      <div key={a.aula.id}>
+                    {d.grupos.map((a) => (
+                      <div key={a.id}>
                         <div className="mb-2 flex items-center justify-between gap-3">
-                          <p className="min-w-0 text-sm font-semibold text-slate-700">{a.aula.titulo}</p>
-                          {a.topicos.length > 1 && (
+                          <p className="min-w-0 text-sm font-semibold text-slate-700">{a.titulo || "Outras teorias"}</p>
+                          {a.teorias.length > 1 && (
                             <button
                               type="button"
-                              onClick={() => iniciar({ titulo: a.aula.titulo, subtitulo: d.disciplina.titulo, cartoes: cartoesDe(a.topicos) })}
+                              onClick={() => iniciar({ titulo: a.titulo || d.disciplina.titulo, subtitulo: d.disciplina.titulo, cartoes: cartoesDe(a.teorias) })}
                               className="shrink-0 text-xs font-semibold text-[#5f2ebe] hover:underline"
                             >
-                              Estudar a aula inteira
+                              Estudar o assunto inteiro
                             </button>
                           )}
                         </div>
                         <ul className="space-y-1.5">
-                          {a.topicos.map((t) => {
+                          {a.teorias.map((t) => {
                             const st = stats(t.cartoes);
                             return (
-                              <li key={t.topico.id} className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-white px-3 py-2.5">
+                              <li key={t.teoria.id} className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-white px-3 py-2.5">
                                 <div className="min-w-0 flex-1">
-                                  <p className="line-clamp-2 text-sm font-medium leading-snug text-slate-800">{t.topico.nome}</p>
+                                  <p className="line-clamp-2 text-sm font-medium leading-snug text-slate-800">{t.teoria.titulo}</p>
                                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
                                     <span>
                                       {st.total} {st.total === 1 ? "cartão" : "cartões"}
@@ -265,7 +262,7 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
                                 </div>
                                 <button
                                   type="button"
-                                  onClick={() => iniciar({ titulo: t.topico.nome, subtitulo: `${d.disciplina.titulo} · ${a.aula.titulo}`, cartoes: cartoesDe([t]) })}
+                                  onClick={() => iniciar({ titulo: t.teoria.titulo, subtitulo: a.titulo ? `${d.disciplina.titulo} · ${a.titulo}` : d.disciplina.titulo, cartoes: cartoesDe([t]) })}
                                   className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#5f2ebe]/10 px-3 py-1.5 text-sm font-semibold text-[#5f2ebe] hover:bg-[#5f2ebe]/15"
                                 >
                                   <Play className="h-3.5 w-3.5" />
@@ -288,9 +285,9 @@ export const FlashcardsTab: React.FC<{ flash: FlashcardsCurso; foco: FocoFlashca
   );
 };
 
-const contextoDe = (topicos: TopicoFlashcards[], c: Flashcard) => {
-  const t = topicos.find((x) => x.topico.id === c.topicoId);
-  return t ? `${t.disciplina.titulo} · ${t.topico.nome}` : "";
+const contextoDe = (teorias: TeoriaFlashcards[], c: Flashcard) => {
+  const t = teorias.find((x) => x.teoria.id === c.teoriaId);
+  return t ? `${t.disciplina.titulo} · ${t.teoria.titulo}` : "";
 };
 
 /* ------------------------------------------------------------------ */
@@ -514,7 +511,7 @@ const ModoEstudo: React.FC<{
         ) : (
           <p className="mt-auto pt-8 text-center text-xs text-slate-400">Toque no cartão ou aperte Espaço para ver a resposta</p>
         )}
-        {atual.contexto && sessao.cartoes.some((c) => c.topicoId !== atual.topicoId) && (
+        {atual.contexto && sessao.cartoes.some((c) => c.teoriaId !== atual.teoriaId) && (
           <p className="mt-6 truncate text-center text-[11px] text-slate-400">{atual.contexto}</p>
         )}
       </div>

@@ -2,63 +2,69 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Disciplina } from "./DisciplinasTypes";
-import { buscarEmLotes, calcularComposicaoCurso } from "../cursos/composicaoCurso";
 import { faltaColunaDisciplinaQuestoes } from "../shared/CampoDisciplinaQuestoes";
 
-export interface AulaResumo {
+export interface TeoriaResumo {
   id: string;
   titulo: string;
-  topicos_ids: string[];
-  questoes_ids: string[];
+  /** Assunto (classificação das questões) */
+  assunto: string;
+  /** Disciplina das questões em que a teoria foi classificada */
+  disciplinaQuestoes: string;
+  publicada: boolean;
 }
 
-const unicos = (lista: (string | null | undefined)[]) =>
-  Array.from(new Set(lista.filter((x): x is string => !!x && x.trim() !== "")));
+/** Todas as teorias (só os campos da listagem), em páginas de 1.000. */
+export async function carregarTeoriasResumo(): Promise<TeoriaResumo[]> {
+  const lista: TeoriaResumo[] = [];
+  for (let de = 0; ; de += 1000) {
+    const { data, error } = await supabase
+      .from("teorias")
+      .select("id, titulo, assunto_id, disciplina_id, status")
+      .order("titulo", { ascending: true })
+      .range(de, de + 999);
+    if (error) throw error;
+    (data || []).forEach((t) =>
+      lista.push({
+        id: String(t.id),
+        titulo: t.titulo || "Teoria sem título",
+        assunto: t.assunto_id || "",
+        disciplinaQuestoes: t.disciplina_id || "",
+        publicada: t.status === "published",
+      })
+    );
+    if (!data || data.length < 1000) break;
+  }
+  return lista;
+}
 
-/**
- * Dados e ações da página de disciplinas, com consultas em lote
- * (antes eram várias consultas por disciplina e por aula).
- */
+/** A coluna teorias_ids ainda não existe (migration 20251120000000 não rodada). */
+export const faltaColunaTeorias = (error: unknown) => {
+  const e = error as { code?: string; message?: string } | null;
+  return !!e && (e.code === "PGRST204" || e.code === "42703") && /teorias_ids/i.test(e.message || "");
+};
+export const AVISO_MIGRATION_TEORIAS = "Rode a migration 20251120000000_disciplinas_teorias.sql no SQL Editor do Supabase para montar disciplinas com teorias.";
+
+/** Dados e ações da página de disciplinas. */
 export const useDisciplinas = () => {
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([]);
-  const [aulas, setAulas] = useState<Map<string, AulaResumo>>(new Map());
-  const [questoesTopico, setQuestoesTopico] = useState<Map<string, string[]>>(new Map());
+  const [teorias, setTeorias] = useState<Map<string, TeoriaResumo>>(new Map());
   const [cursosDaDisciplina, setCursosDaDisciplina] = useState<Map<string, { id: string; titulo: string }[]>>(new Map());
   const [loading, setLoading] = useState(true);
-
-  /** Tópicos e questões de uma disciplina a partir das aulas. */
-  const totais = useCallback(
-    (aulasIds: string[], mapaAulas: Map<string, AulaResumo>, mapaTopicos: Map<string, string[]>) => {
-      const lista = aulasIds.map((id) => mapaAulas.get(id)).filter((a): a is AulaResumo => !!a);
-      const topicosIds = unicos(lista.flatMap((a) => a.topicos_ids));
-      const questoes = unicos([...lista.flatMap((a) => a.questoes_ids), ...topicosIds.flatMap((id) => mapaTopicos.get(id) || [])]);
-      return { topicosIds, totalQuestoes: questoes.length };
-    },
-    []
-  );
 
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
-      const [{ data, error }, { data: perfis }, { data: cursos }] = await Promise.all([
+      const [{ data, error }, { data: perfis }, { data: cursos }, listaTeorias] = await Promise.all([
         supabase.from("disciplinas").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("disciplinas_favoritos"),
         supabase.from("cursos").select("id, titulo, disciplinas_ids"),
+        carregarTeoriasResumo(),
       ]);
       if (error) throw error;
 
       // Disciplinas unificadas em outra ficam fora da lista
       const ativas = (data || []).filter((d) => !(d as { unificada_em?: string | null }).unificada_em);
-      const idsAulas = unicos(ativas.flatMap((d) => d.aulas_ids || []));
-      const linhasAulas = idsAulas.length
-        ? ((await buscarEmLotes("aulas", "id, titulo, topicos_ids, questoes_ids", idsAulas)) as unknown as AulaResumo[])
-        : [];
-      const mapaAulas = new Map(
-        linhasAulas.map((a) => [a.id, { ...a, topicos_ids: a.topicos_ids || [], questoes_ids: a.questoes_ids || [] }])
-      );
-      const idsTopicos = unicos(linhasAulas.flatMap((a) => a.topicos_ids || []));
-      const linhasTopicos = idsTopicos.length ? await buscarEmLotes("topicos", "id, questoes_ids", idsTopicos) : [];
-      const mapaTopicos = new Map(linhasTopicos.map((t) => [t.id, (t.questoes_ids || []) as string[]]));
 
       const favoritos: Record<string, number> = {};
       (perfis || []).forEach((p) =>
@@ -70,22 +76,18 @@ export const useDisciplinas = () => {
         (c.disciplinas_ids || []).forEach((id: string) => uso.set(id, [...(uso.get(id) || []), { id: c.id, titulo: c.titulo }]))
       );
 
-      setAulas(mapaAulas);
-      setQuestoesTopico(mapaTopicos);
+      setTeorias(new Map(listaTeorias.map((t) => [t.id, t])));
       setCursosDaDisciplina(uso);
       setDisciplinas(
         ativas.map((d) => {
-          const aulasIds = d.aulas_ids || [];
-          const t = totais(aulasIds, mapaAulas, mapaTopicos);
+          const linha = d as typeof d & { disciplina_questoes?: string | null; teorias_ids?: string[] | null };
           return {
             id: d.id,
             titulo: d.titulo,
             descricao: d.descricao || "",
             banca: d.banca || "",
-            disciplinaQuestoes: (d as { disciplina_questoes?: string | null }).disciplina_questoes || "",
-            aulasIds,
-            topicosIds: t.topicosIds,
-            totalQuestoes: t.totalQuestoes,
+            disciplinaQuestoes: linha.disciplina_questoes || "",
+            teoriasIds: (linha.teorias_ids || []).filter(Boolean),
             favoritos: favoritos[d.id] || 0,
           };
         })
@@ -96,61 +98,59 @@ export const useDisciplinas = () => {
     } finally {
       setLoading(false);
     }
-  }, [totais]);
+  }, []);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
 
-  /** Atualiza título, rating, banca e aulas. `novasAulas` traz aulas que não estavam carregadas. */
-  const salvar = async (disc: Disciplina, novasAulas: AulaResumo[] = []): Promise<boolean> => {
+  /** Grava título, rating, banca, disciplina das questões e teorias (cria a disciplina se ela ainda não tem id). */
+  const salvar = async (disc: Disciplina): Promise<boolean> => {
     try {
-      const campos = { titulo: disc.titulo, descricao: disc.descricao, banca: disc.banca || null, aulas_ids: disc.aulasIds };
-      let { error } = await supabase
-        .from("disciplinas")
-        .update({ ...campos, disciplina_questoes: disc.disciplinaQuestoes || null } as typeof campos)
-        .eq("id", disc.id);
-      if (faltaColunaDisciplinaQuestoes(error)) {
+      const campos = {
+        titulo: disc.titulo,
+        descricao: disc.descricao,
+        banca: disc.banca || null,
+        teorias_ids: disc.teoriasIds,
+        disciplina_questoes: disc.disciplinaQuestoes || null,
+      };
+      // teorias_ids e disciplina_questoes ainda não estão nos tipos gerados
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tabela = (supabase as any).from("disciplinas");
+      let resultado = disc.id ? await tabela.update(campos).eq("id", disc.id).select("id").single() : await tabela.insert([campos]).select("id").single();
+      if (faltaColunaDisciplinaQuestoes(resultado.error)) {
         // Migration 20251114000000 ainda não rodada: salva o resto e avisa
-        ({ error } = await supabase.from("disciplinas").update(campos).eq("id", disc.id));
-        if (!error) toast.warning("A disciplina das questões não foi salva: rode a migration 20251114000000_disciplina_questoes.sql no Supabase.");
+        const { disciplina_questoes: _ignorada, ...semQuestoes } = campos;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const t2 = (supabase as any).from("disciplinas");
+        resultado = disc.id ? await t2.update(semQuestoes).eq("id", disc.id).select("id").single() : await t2.insert([semQuestoes]).select("id").single();
+        if (!resultado.error) toast.warning("A disciplina das questões não foi salva: rode a migration 20251114000000_disciplina_questoes.sql no Supabase.");
       }
-      if (error) throw error;
+      if (resultado.error) throw resultado.error;
 
-      const mapaAulas = new Map(aulas);
-      novasAulas.forEach((a) => mapaAulas.set(a.id, a));
-      // Tópicos das aulas novas que ainda não temos
-      const faltando = unicos(novasAulas.flatMap((a) => a.topicos_ids)).filter((id) => !questoesTopico.has(id));
-      const mapaTopicos = new Map(questoesTopico);
-      if (faltando.length) {
-        (await buscarEmLotes("topicos", "id, questoes_ids", faltando)).forEach((t) =>
-          mapaTopicos.set(t.id, (t.questoes_ids || []) as string[])
-        );
-      }
-      const t = totais(disc.aulasIds, mapaAulas, mapaTopicos);
-      setAulas(mapaAulas);
-      setQuestoesTopico(mapaTopicos);
-      setDisciplinas((lista) => lista.map((d) => (d.id === disc.id ? { ...d, ...disc, ...t } : d)));
-      toast.success("Disciplina atualizada");
+      const salva = { ...disc, id: disc.id || String(resultado.data?.id) };
+      setDisciplinas((lista) => (disc.id ? lista.map((d) => (d.id === disc.id ? { ...d, ...salva } : d)) : [{ ...salva, favoritos: 0 }, ...lista]));
+      toast.success(disc.id ? "Disciplina atualizada" : "Disciplina criada");
       return true;
     } catch (error) {
-      console.error("Erro ao atualizar disciplina:", error);
-      toast.error("Erro ao atualizar a disciplina");
+      console.error("Erro ao salvar disciplina:", error);
+      toast.error(faltaColunaTeorias(error) ? AVISO_MIGRATION_TEORIAS : "Erro ao salvar a disciplina");
       return false;
     }
   };
 
-  /** Salva a nova ordem das aulas da disciplina. */
-  const reordenarAulas = async (disc: Disciplina, ordem: string[]) => {
-    const anterior = disc.aulasIds;
-    setDisciplinas((lista) => lista.map((d) => (d.id === disc.id ? { ...d, aulasIds: ordem } : d)));
-    const { error } = await supabase.from("disciplinas").update({ aulas_ids: ordem }).eq("id", disc.id);
+  /** Salva a nova ordem das teorias da disciplina. */
+  const reordenarTeorias = async (disc: Disciplina, ordem: string[]) => {
+    const anterior = disc.teoriasIds;
+    setDisciplinas((lista) => lista.map((d) => (d.id === disc.id ? { ...d, teoriasIds: ordem } : d)));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("disciplinas").update({ teorias_ids: ordem }).eq("id", disc.id);
     if (error) {
-      console.error("Erro ao reordenar aulas:", error);
-      setDisciplinas((lista) => lista.map((d) => (d.id === disc.id ? { ...d, aulasIds: anterior } : d)));
-      toast.error("Não foi possível salvar a nova ordem.");
+      console.error("Erro ao reordenar teorias:", error);
+      setDisciplinas((lista) => lista.map((d) => (d.id === disc.id ? { ...d, teoriasIds: anterior } : d)));
+      toast.error(faltaColunaTeorias(error) ? AVISO_MIGRATION_TEORIAS : "Não foi possível salvar a nova ordem.");
     } else {
-      toast.success("Ordem das aulas salva");
+      toast.success("Ordem das teorias salva");
     }
   };
 
@@ -166,7 +166,7 @@ export const useDisciplinas = () => {
     }
   };
 
-  /** Cria um curso com as disciplinas na ordem dada (aulas, tópicos e questões entram juntos). */
+  /** Cria um curso com as disciplinas na ordem dada (todas as teorias de cada uma entram). */
   const criarCurso = async (titulo: string, cargo: string, informacoes: string, disciplinasIds: string[]): Promise<boolean> => {
     if (!titulo.trim()) {
       toast.error("O título do curso é obrigatório");
@@ -177,7 +177,7 @@ export const useDisciplinas = () => {
       return false;
     }
     try {
-      const composicao = await calcularComposicaoCurso(disciplinasIds);
+      const composicao = { disciplinas_ids: Array.from(new Set(disciplinasIds)) };
       const { data, error } = await supabase
         .from("cursos")
         .insert([{ titulo: titulo.trim(), descricao: cargo, informacoes_curso: informacoes, ...composicao }])
@@ -191,10 +191,8 @@ export const useDisciplinas = () => {
           return m;
         });
       }
-      toast.success(
-        `Curso criado com ${composicao.disciplinas_ids.length} disciplinas, ${composicao.aulas_ids.length} aulas, ` +
-          `${composicao.topicos_ids.length} tópicos e ${composicao.questoes_ids.length} questões.`
-      );
+      const nTeorias = new Set(disciplinasIds.flatMap((id) => disciplinas.find((d) => d.id === id)?.teoriasIds || [])).size;
+      toast.success(`Curso criado com ${composicao.disciplinas_ids.length} disciplinas e ${nTeorias} teorias.`);
       return true;
     } catch (error) {
       console.error("Erro ao adicionar curso:", error);
@@ -212,9 +210,9 @@ export const useDisciplinas = () => {
         p_repetidas: repetidasIds,
       });
       if (error) throw error;
-      const r = (data || {}) as { aulas?: number; cursos?: number };
+      const r = (data || {}) as { teorias?: number; cursos?: number };
       toast.success(
-        `Disciplinas unificadas: ${r.aulas ?? 0} aulas na principal, ${r.cursos ?? 0} ${r.cursos === 1 ? "curso atualizado" : "cursos atualizados"}.`
+        `Disciplinas unificadas: ${r.teorias ?? 0} teorias na principal, ${r.cursos ?? 0} ${r.cursos === 1 ? "curso atualizado" : "cursos atualizados"}.`
       );
       await carregar();
       return true;
@@ -233,12 +231,12 @@ export const useDisciplinas = () => {
   return {
     unificar,
     disciplinas,
-    aulas,
+    teorias,
     cursosDaDisciplina,
     loading,
     recarregar: carregar,
     salvar,
-    reordenarAulas,
+    reordenarTeorias,
     excluir,
     criarCurso,
   };

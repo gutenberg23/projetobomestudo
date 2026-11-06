@@ -10,7 +10,8 @@ export const db = supabase as any;
 
 export interface Flashcard {
   id: string;
-  topicoId: string;
+  /** Teoria dona do cartão (cartões antigos sem teoria ficam com "") */
+  teoriaId: string;
   frente: string;
   verso: string;
   tags: string[];
@@ -32,7 +33,7 @@ export interface FlashcardRascunho {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const linhaParaFlashcard = (r: any): Flashcard => ({
   id: r.id,
-  topicoId: r.topico_id,
+  teoriaId: r.teoria_id ? String(r.teoria_id) : "",
   frente: r.frente || "",
   verso: r.verso || "",
   tags: r.tags || [],
@@ -52,7 +53,7 @@ export const faltaMigration = (error: unknown) => {
   );
 };
 
-export const AVISO_MIGRATION = "Falta rodar a migration 20251112000000_flashcards.sql no SQL Editor do Supabase.";
+export const AVISO_MIGRATION = "Falta rodar as migrations de flashcards (20251112000000 e 20251120000000) no SQL Editor do Supabase.";
 
 /** O cartão aparece no curso? (vazio = todos os cursos com o tópico) */
 export const disponivelNoCurso = (f: Pick<Flashcard, "cursosIds">, cursoId: string | null) =>
@@ -60,15 +61,15 @@ export const disponivelNoCurso = (f: Pick<Flashcard, "cursosIds">, cursoId: stri
 
 const LOTE = 150;
 
-/** Busca os flashcards de vários tópicos, na ordem definida. */
-export async function buscarFlashcardsDosTopicos(topicosIds: string[]): Promise<Flashcard[]> {
-  const ids = Array.from(new Set(topicosIds.filter(Boolean)));
+/** Busca os flashcards de várias teorias, na ordem definida. */
+export async function buscarFlashcardsDasTeorias(teoriasIds: string[]): Promise<Flashcard[]> {
+  const ids = Array.from(new Set(teoriasIds.filter(Boolean)));
   const todos: Flashcard[] = [];
   for (let i = 0; i < ids.length; i += LOTE) {
     const { data, error } = await db
       .from("flashcards")
       .select("*")
-      .in("topico_id", ids.slice(i, i + LOTE))
+      .in("teoria_id", ids.slice(i, i + LOTE))
       .order("ordem", { ascending: true })
       .order("created_at", { ascending: true });
     if (error) throw error;
@@ -125,7 +126,7 @@ export interface LinhaImportada {
   frente: string;
   verso: string;
   tags: string[];
-  /** Coluna opcional "topico" (ID ou nome exato do tópico) */
+  /** Coluna opcional "teoria" (ID, slug ou título exato da teoria) */
   topico?: string;
   erro?: string;
 }
@@ -205,7 +206,7 @@ const COLUNAS = {
   frente: ["frente", "front", "pergunta", "question", "frente do cartao", "anverso", "texto"],
   verso: ["verso", "back", "resposta", "answer", "tras", "extra"],
   tags: ["tags", "tag", "etiquetas", "marcadores"],
-  topico: ["topico", "topico_id", "topic", "id do topico"],
+  topico: ["teoria", "teoria_id", "id da teoria", "topico", "topico_id", "topic"],
 };
 
 /** Tira marcações do Anki que não fazem sentido no site ([sound:...]). */
@@ -214,7 +215,7 @@ const limparCampo = (t: string) => t.replace(/\[sound:[^\]]*\]/g, "").trim();
 /**
  * Lê um CSV/TSV de flashcards.
  * Aceita: cabeçalhos do Anki (#separator:tab, #html:true, #tags column:3),
- * linha de títulos opcional (frente, verso, tags, topico) e colunas sem título
+ * linha de títulos opcional (frente, verso, tags, teoria) e colunas sem título
  * na ordem frente, verso, tags.
  */
 export function lerCsvFlashcards(textoBruto: string): ResultadoCsv {
@@ -267,9 +268,9 @@ export function lerCsvFlashcards(textoBruto: string): ResultadoCsv {
 const aspasCsv = (t: string) => (/[",\n\r;]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t);
 
 /** Gera um CSV (vírgula) que pode ser importado aqui de novo ou no Anki. */
-export function gerarCsvFlashcards(cartoes: { frente: string; verso: string; tags: string[]; topicoId?: string }[]) {
-  const linhas = [["frente", "verso", "tags", "topico"].join(",")];
-  cartoes.forEach((c) => linhas.push([c.frente, c.verso, c.tags.join(" "), c.topicoId || ""].map(aspasCsv).join(",")));
+export function gerarCsvFlashcards(cartoes: { frente: string; verso: string; tags: string[]; teoriaId?: string }[]) {
+  const linhas = [["frente", "verso", "tags", "teoria"].join(",")];
+  cartoes.forEach((c) => linhas.push([c.frente, c.verso, c.tags.join(" "), c.teoriaId || ""].map(aspasCsv).join(",")));
   return "\uFEFF" + linhas.join("\r\n");
 }
 

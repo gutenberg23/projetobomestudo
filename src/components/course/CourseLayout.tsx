@@ -8,8 +8,6 @@ import { DisciplinasTrilha } from "./disciplinas/DisciplinasTrilha";
 import { EditorializedView } from "./EditorializedView";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
-import { useUserProgress } from "./hooks/useUserProgress";
-import { useAuth } from "@/contexts/AuthContext";
 import { useSiteConfig } from "@/hooks/useSiteConfig";
 import { CicloTab } from "./ciclo/CicloTab";
 import { LeiSecaTab } from "./leiseca/LeiSecaTab";
@@ -26,7 +24,6 @@ const ABAS_SO_DE_CURSO: CourseTab[] = ['edital', 'simulados', 'ciclo', 'leiseca'
 
 export const CourseLayout = () => {
   const { courseId } = useParams<{ courseId: string }>();
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<CourseTab>('disciplinas');
   const [subjectsData, setSubjectsData] = useState<any[]>([]);
   const [focoFlashcards, setFocoFlashcards] = useState<FocoFlashcards | null>(null);
@@ -57,18 +54,10 @@ export const CourseLayout = () => {
     setActiveTab(tab);
   }, []);
 
-  // Botão "Flashcards" abaixo do vídeo, na aba Disciplinas
-  const abrirFlashcards = useCallback((topicoId: string, aulaId?: string) => {
-    setFocoFlashcards({ topicoId, aulaId, chave: Date.now() });
-    setActiveTab('flashcards');
-    setTimeout(() => document.getElementById('abas-curso')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-  }, []);
   
   // Usar o hook de configurações do site
   const { config, isLoading: isLoadingConfig } = useSiteConfig();
   
-  // Usar o hook de progresso com o ID do usuário atual
-  useUserProgress(user?.id, courseId);
 
   // Disciplina avulsa: só as abas Disciplina, Estatísticas e Flashcards
   useEffect(() => {
@@ -218,12 +207,7 @@ export const CourseLayout = () => {
           <div className="bg-[rgb(242,244,246)] w-full flex justify-center relative">
             <div className="max-w-[1400px] w-full flex gap-5 py-0 flex-col xl:flex-row px-[10px] md:px-[32px]">
               <div className="flex-1">
-                <DisciplinasTrilha
-                  courseId={courseId}
-                  onSubjectsCountChange={handleSubjectsCountChange}
-                  flashcardsPorTopico={flashcards.contagemPorTopico}
-                  onFlashcards={abrirFlashcards}
-                />
+                <DisciplinasTrilha courseId={courseId} onSubjectsCountChange={handleSubjectsCountChange} />
               </div>
             </div>
           </div>

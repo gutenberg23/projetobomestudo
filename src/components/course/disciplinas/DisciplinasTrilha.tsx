@@ -1,45 +1,57 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ArrowRight, BookOpen, CheckCircle2, ChevronDown, FileText, Layers, PartyPopper, PlayCircle, Search, Star, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { BookOpen, CheckCircle2, ChevronDown, ChevronRight, Layers, ListChecks, Map, PartyPopper, PlayCircle, Search, Star, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BarraProgresso, CabecalhoAba, Carregando, EstadoVazio, Painel, Segmentos, normalizar } from "../ui";
-import { useDisciplinasCurso, type Linha, type AulaCurso, type DisciplinaCurso, type TopicoCurso } from "./useDisciplinasCurso";
-import { proximoPendente, ultimoTopico, useProgressoTopicos, type ProgressoTopicos } from "./useProgressoTopicos";
-import { AnelProgresso, MarcaConcluido, MateriaisTopico, QuestoesTopico, VideoTopico } from "./PlayerTopico";
+import { useDisciplinasCurso, type Linha, type DisciplinaCurso, type TeoriaCurso } from "./useDisciplinasCurso";
+import { linkTeoriaNoCurso, ultimaTeoria, useProgressoTeorias, type ProgressoTeorias } from "./useProgressoTeorias";
+import { AnelProgresso, MarcaConcluido } from "./Marcadores";
 
 type Filtro = "todas" | "andamento" | "naoIniciadas" | "concluidas";
 
 interface Props {
   courseId: string;
   onSubjectsCountChange?: (count: number, data?: Linha[]) => void;
-  /** Quantidade de flashcards de cada tópico neste curso */
-  flashcardsPorTopico?: Record<string, number>;
-  /** Abre a aba Flashcards nos cartões do tópico */
-  onFlashcards?: (topicoId: string, aulaId: string) => void;
 }
 
+/** Teorias seguidas com o mesmo assunto ficam sob um mesmo subtítulo. */
+const agruparPorAssunto = (teorias: TeoriaCurso[]) => {
+  const grupos: { assunto: string; itens: TeoriaCurso[] }[] = [];
+  teorias.forEach((t) => {
+    const ult = grupos[grupos.length - 1];
+    if (ult && ult.assunto === t.assunto) ult.itens.push(t);
+    else grupos.push({ assunto: t.assunto, itens: [t] });
+  });
+  return grupos;
+};
+
 /**
- * Aba Disciplinas, versão "Trilha": a lista de disciplinas continua no centro, agora com
- * progresso por disciplina e por aula, busca, filtros e um atalho para continuar de onde parou.
+ * Aba Disciplinas: cada disciplina do curso é uma lista de teorias. Clicar numa teoria
+ * abre a página dela (com a barra "Voltar ao curso"); a caixa ao lado marca como concluída.
  */
-export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountChange, flashcardsPorTopico = {}, onFlashcards }) => {
+export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountChange }) => {
   const { disciplinas, isCurso, carregando, erro } = useDisciplinasCurso(courseId, (linhas) =>
     onSubjectsCountChange?.(linhas.length, linhas)
   );
-  const progresso = useProgressoTopicos(courseId, disciplinas);
+  const progresso = useProgressoTeorias(disciplinas);
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todas");
   const [abertas, setAbertas] = useState<Set<string>>(new Set());
-  const [aulaAberta, setAulaAberta] = useState<string | null>(null);
-  const [topicoPorAula, setTopicoPorAula] = useState<Record<string, string>>({});
 
-  // Disciplina avulsa: já começa aberta
+  // Disciplina avulsa já começa aberta; num curso, abre a disciplina onde o aluno parou
   useEffect(() => {
-    if (!isCurso && disciplinas.length === 1) setAbertas(new Set([disciplinas[0].id]));
-  }, [isCurso, disciplinas]);
+    if (!disciplinas.length) return;
+    if (!isCurso && disciplinas.length === 1) {
+      setAbertas(new Set([disciplinas[0].id]));
+      return;
+    }
+    const ultima = ultimaTeoria.ler(courseId);
+    if (ultima && disciplinas.some((d) => d.id === ultima.disciplinaId)) setAbertas(new Set([ultima.disciplinaId]));
+  }, [isCurso, disciplinas, courseId]);
 
   const statsDisciplina = (d: DisciplinaCurso) => {
-    const total = d.aulas.reduce((s, a) => s + a.topicos.length, 0);
-    const feitos = d.aulas.reduce((s, a) => s + progresso.feitosNaAula(a), 0);
+    const total = d.teorias.length;
+    const feitos = progresso.feitasEm(d.teorias);
     return { total, feitos, pct: total > 0 ? Math.round((feitos / total) * 100) : 0 };
   };
 
@@ -54,55 +66,33 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
     disciplinas.forEach((d) => c[situacao(d)]++);
     return c;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disciplinas, progresso.concluidos]);
+  }, [disciplinas, progresso.concluidas]);
 
-  const aulasConcluidas = useMemo(
-    () => disciplinas.reduce((s, d) => s + d.aulas.filter((a) => a.topicos.length > 0 && progresso.feitosNaAula(a) === a.topicos.length).length, 0),
-    [disciplinas, progresso]
-  );
-  const totalAulas = disciplinas.reduce((s, d) => s + d.aulas.length, 0);
-
-  // Ponto para continuar: último tópico aberto, se ainda pendente; senão o primeiro pendente
+  // Ponto para continuar: última teoria aberta, se ainda pendente; senão a primeira pendente
   const continuar = useMemo(() => {
-    const ultimo = ultimoTopico.ler(courseId);
-    if (ultimo) {
-      for (const d of disciplinas)
-        for (const a of d.aulas)
-          if (a.id === ultimo.aulaId) {
-            const t = a.topicos.find((x) => x.id === ultimo.topicoId);
-            if (t && !progresso.feito(a.id, t.id)) return { disciplina: d, aula: a, topico: t };
-          }
+    const ultima = ultimaTeoria.ler(courseId);
+    if (ultima) {
+      const d = disciplinas.find((x) => x.id === ultima.disciplinaId);
+      const t = d?.teorias.find((x) => x.id === ultima.teoriaId);
+      if (d && t && !progresso.feita(t.id)) return { disciplina: d, teoria: t };
     }
-    return proximoPendente(disciplinas, progresso);
+    for (const d of disciplinas) for (const t of d.teorias) if (!progresso.feita(t.id)) return { disciplina: d, teoria: t };
+    return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disciplinas, progresso.concluidos, courseId]);
+  }, [disciplinas, progresso.concluidas, courseId]);
 
   const termo = normalizar(busca);
   const visiveis = useMemo(() => {
     return disciplinas
       .filter((d) => filtro === "todas" || situacao(d) === filtro)
       .map((d) => {
-        if (!termo) return { disciplina: d, aulas: d.aulas };
-        if (normalizar(d.titulo).includes(termo)) return { disciplina: d, aulas: d.aulas };
-        const aulas = d.aulas.filter(
-          (a) =>
-            normalizar(a.titulo).includes(termo) ||
-            normalizar(a.descricao).includes(termo) ||
-            a.topicos.some((t) => normalizar(t.nome).includes(termo))
-        );
-        return aulas.length ? { disciplina: d, aulas } : null;
+        if (!termo || normalizar(d.titulo).includes(termo)) return { disciplina: d, teorias: d.teorias };
+        const teorias = d.teorias.filter((t) => normalizar(t.titulo).includes(termo) || normalizar(t.assunto).includes(termo));
+        return teorias.length ? { disciplina: d, teorias } : null;
       })
-      .filter(Boolean) as Array<{ disciplina: DisciplinaCurso; aulas: AulaCurso[] }>;
+      .filter(Boolean) as Array<{ disciplina: DisciplinaCurso; teorias: TeoriaCurso[] }>;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [disciplinas, filtro, termo, progresso.concluidos]);
-
-  const abrirTopico = (d: DisciplinaCurso, a: AulaCurso, t: TopicoCurso) => {
-    setAbertas((p) => new Set(p).add(d.id));
-    setAulaAberta(a.id);
-    setTopicoPorAula((p) => ({ ...p, [a.id]: t.id }));
-    ultimoTopico.salvar(courseId, a.id, t.id);
-    setTimeout(() => document.getElementById(`aula-${a.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
-  };
+  }, [disciplinas, filtro, termo, progresso.concluidas]);
 
   if (carregando) return <Carregando texto="Carregando disciplinas..." />;
   if (erro)
@@ -111,16 +101,13 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
     return <EstadoVazio icone={BookOpen} titulo="Nenhuma disciplina por aqui" texto="Quando o curso tiver disciplinas cadastradas, elas aparecem nesta aba." />;
 
   const tudoAberto = visiveis.length > 0 && visiveis.every((v) => abertas.has(v.disciplina.id));
+  const ao = (d: DisciplinaCurso, t: TeoriaCurso) => ultimaTeoria.salvar(courseId, d.id, t.id);
 
   return (
     <div className="space-y-5 pb-10 pt-5">
       <CabecalhoAba
         titulo={isCurso ? "Disciplinas" : "Disciplina"}
-        descricao={
-          isCurso
-            ? "Assista às aulas, marque os tópicos que concluir e acompanhe seu avanço em cada disciplina."
-            : "Assista às aulas, marque os tópicos que concluir e acompanhe seu avanço na disciplina."
-        }
+        descricao="Clique numa teoria para estudar. Marque as que concluir e acompanhe seu avanço."
       />
 
       {/* Resumo + continuar */}
@@ -132,18 +119,16 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Seu progresso {isCurso ? "no curso" : "na disciplina"}</p>
             <p className="mt-1 text-lg font-bold text-slate-900">
-              {progresso.totais.feitos} <span className="font-medium text-slate-400">de {progresso.totais.total} tópicos</span>
+              {progresso.totais.feitos} <span className="font-medium text-slate-400">de {progresso.totais.total} {progresso.totais.total === 1 ? "teoria" : "teorias"}</span>
             </p>
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-              <span className="inline-flex items-center gap-1">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                {aulasConcluidas}/{totalAulas} aulas
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Layers className="h-3.5 w-3.5 text-[#5f2ebe]" />
-                {contagem.concluidas}/{disciplinas.length} disciplinas
-              </span>
-            </div>
+            {isCurso && (
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1">
+                  <Layers className="h-3.5 w-3.5 text-[#5f2ebe]" />
+                  {contagem.concluidas}/{disciplinas.length} disciplinas concluídas
+                </span>
+              </div>
+            )}
           </div>
         </Painel>
 
@@ -154,17 +139,18 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
               {progresso.totais.feitos > 0 ? "Continue de onde parou" : "Comece por aqui"}
             </p>
             <p className="mt-1 truncate text-xs text-slate-500">
-              {continuar.disciplina.titulo} · {continuar.aula.titulo}
+              {continuar.disciplina.titulo}
+              {continuar.teoria.assunto && <> · {continuar.teoria.assunto}</>}
             </p>
-            <p className="mt-0.5 line-clamp-2 text-base font-semibold leading-snug text-slate-900">{continuar.topico.nome}</p>
-            <button
-              type="button"
-              onClick={() => abrirTopico(continuar.disciplina, continuar.aula, continuar.topico)}
-              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#5f2ebe] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#4f25a0]"
+            <p className="mt-0.5 line-clamp-2 text-base font-semibold leading-snug text-slate-900">{continuar.teoria.titulo}</p>
+            <Link
+              to={linkTeoriaNoCurso(courseId, continuar.disciplina.id, continuar.teoria)}
+              onClick={() => ao(continuar.disciplina, continuar.teoria)}
+              className="relative mt-3 inline-flex items-center gap-2 rounded-xl bg-[#5f2ebe] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#4f25a0]"
             >
               <PlayCircle className="h-4 w-4" />
               {progresso.totais.feitos > 0 ? "Continuar" : "Começar"}
-            </button>
+            </Link>
           </Painel>
         ) : (
           <Painel className="flex items-center gap-4 p-4 sm:p-5">
@@ -172,8 +158,12 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
               <PartyPopper className="h-6 w-6" />
             </span>
             <div>
-              <p className="font-semibold text-slate-900">Você concluiu todos os tópicos!</p>
-              <p className="text-sm text-slate-500">Agora é revisar e treinar com questões e simulados.</p>
+              <p className="font-semibold text-slate-900">
+                {progresso.totais.total > 0 ? "Você concluiu todas as teorias!" : "As teorias deste curso ainda estão sendo preparadas"}
+              </p>
+              <p className="text-sm text-slate-500">
+                {progresso.totais.total > 0 ? "Agora é revisar e treinar com questões e simulados." : "Volte em breve para começar a estudar."}
+              </p>
             </div>
           </Painel>
         )}
@@ -186,7 +176,7 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
           <input
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar disciplina, aula ou tópico"
+            placeholder="Buscar disciplina, assunto ou teoria"
             className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-9 text-sm text-slate-800 outline-none transition focus:border-[#5f2ebe] focus:ring-2 focus:ring-[#5f2ebe]/15"
           />
           {busca && (
@@ -225,15 +215,16 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
         <EstadoVazio
           icone={Search}
           titulo="Nada encontrado"
-          texto={termo ? `Nenhuma disciplina, aula ou tópico com “${busca}”.` : "Nenhuma disciplina nesta situação."}
+          texto={termo ? `Nenhuma disciplina, assunto ou teoria com “${busca}”.` : "Nenhuma disciplina nesta situação."}
         />
       ) : (
         <div className="space-y-3">
-          {visiveis.map(({ disciplina: d, aulas }) => (
+          {visiveis.map(({ disciplina: d, teorias }) => (
             <CartaoDisciplina
               key={d.id}
+              courseId={courseId}
               disciplina={d}
-              aulas={aulas}
+              teorias={teorias}
               stats={statsDisciplina(d)}
               aberta={abertas.has(d.id) || !!termo}
               onAlternar={() =>
@@ -244,13 +235,8 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
                   return n;
                 })
               }
-              aulaAberta={aulaAberta}
-              onAulaAberta={(a) => setAulaAberta(aulaAberta === a.id ? null : a.id)}
-              topicoPorAula={topicoPorAula}
-              onTopico={(a, t) => abrirTopico(d, a, t)}
+              onAbrirTeoria={(t) => ao(d, t)}
               progresso={progresso}
-              flashcardsPorTopico={flashcardsPorTopico}
-              onFlashcards={onFlashcards}
             />
           ))}
         </div>
@@ -260,20 +246,19 @@ export const DisciplinasTrilha: React.FC<Props> = ({ courseId, onSubjectsCountCh
 };
 
 const CartaoDisciplina: React.FC<{
+  courseId: string;
   disciplina: DisciplinaCurso;
-  aulas: AulaCurso[];
+  teorias: TeoriaCurso[];
   stats: { total: number; feitos: number; pct: number };
   aberta: boolean;
   onAlternar: () => void;
-  aulaAberta: string | null;
-  onAulaAberta: (a: AulaCurso) => void;
-  topicoPorAula: Record<string, string>;
-  onTopico: (a: AulaCurso, t: TopicoCurso) => void;
-  progresso: ProgressoTopicos;
-  flashcardsPorTopico: Record<string, number>;
-  onFlashcards?: (topicoId: string, aulaId: string) => void;
-}> = ({ disciplina: d, aulas, stats, aberta, onAlternar, aulaAberta, onAulaAberta, topicoPorAula, onTopico, progresso, flashcardsPorTopico, onFlashcards }) => {
+  onAbrirTeoria: (t: TeoriaCurso) => void;
+  progresso: ProgressoTeorias;
+}> = ({ courseId, disciplina: d, teorias, stats, aberta, onAlternar, onAbrirTeoria, progresso }) => {
   const concluida = stats.total > 0 && stats.feitos === stats.total;
+  const grupos = agruparPorAssunto(teorias);
+  const comAssunto = grupos.some((g) => g.assunto);
+  const nAssuntos = new Set(d.teorias.map((t) => t.assunto).filter(Boolean)).size;
   return (
     <Painel className={cn("overflow-hidden transition-shadow", aberta && "shadow-[0_4px_16px_rgba(16,24,40,0.06)]")}>
       <button type="button" onClick={onAlternar} aria-expanded={aberta} className="flex w-full items-center gap-3 p-3 text-left sm:gap-4 sm:p-4">
@@ -282,7 +267,8 @@ const CartaoDisciplina: React.FC<{
           <h3 className="text-base font-bold leading-snug text-slate-900 sm:text-lg">{d.titulo}</h3>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
             <span>
-              {d.aulas.length} {d.aulas.length === 1 ? "aula" : "aulas"} · {stats.total} {stats.total === 1 ? "tópico" : "tópicos"}
+              {stats.total} {stats.total === 1 ? "teoria" : "teorias"}
+              {nAssuntos > 1 && <> · {nAssuntos} assuntos</>}
             </span>
             {d.relevancia !== null && (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700" title="Relevância para a prova">
@@ -306,25 +292,60 @@ const CartaoDisciplina: React.FC<{
 
       {aberta && (
         <div className="border-t border-slate-100">
-          {aulas.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-slate-500">Esta disciplina ainda não tem aulas.</p>
+          {teorias.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-slate-500">Esta disciplina ainda não tem teorias.</p>
           ) : (
-            <ol className="divide-y divide-slate-100">
-              {aulas.map((a) => (
-                <LinhaAula
-                  key={a.id}
-                  aula={a}
-                  numero={d.aulas.indexOf(a) + 1}
-                  aberta={aulaAberta === a.id}
-                  onAlternar={() => onAulaAberta(a)}
-                  topicoId={topicoPorAula[a.id]}
-                  onTopico={(t) => onTopico(a, t)}
-                  progresso={progresso}
-                  flashcardsPorTopico={flashcardsPorTopico}
-                  onFlashcards={onFlashcards}
-                />
-              ))}
-            </ol>
+            <>
+              <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 px-3 py-2 text-[11px] text-slate-400 sm:px-4">
+                <span className="inline-flex items-center gap-1">
+                  <PlayCircle className="h-3.5 w-3.5 text-red-500" />
+                  Videoaula
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <ListChecks className="h-3.5 w-3.5 text-[#5f2ebe]" />
+                  Questões
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Map className="h-3.5 w-3.5 text-amber-600" />
+                  Mapa mental
+                </span>
+              </div>
+              {grupos.map((g, gi) => {
+                const ok = progresso.feitasEm(g.itens);
+                return (
+                  <div key={`${g.assunto}-${gi}`}>
+                    {comAssunto && (
+                      <div className="flex items-center justify-between gap-3 bg-slate-50 px-3 py-2 sm:px-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{g.assunto || "Outras teorias"}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] tabular-nums text-slate-400">
+                            {ok}/{g.itens.length}
+                          </span>
+                          <BarraProgresso
+                            valor={(ok / g.itens.length) * 100}
+                            className="hidden h-1.5 w-16 sm:block"
+                            corClasse={ok === g.itens.length ? "bg-emerald-500" : "bg-[#5f2ebe]"}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <ol className="divide-y divide-slate-100">
+                      {g.itens.map((t) => (
+                        <LinhaTeoria
+                          key={t.id}
+                          teoria={t}
+                          numero={d.teorias.indexOf(t) + 1}
+                          href={linkTeoriaNoCurso(courseId, d.id, t)}
+                          feita={progresso.feita(t.id)}
+                          onMarcar={() => progresso.alternar(t.id)}
+                          onAbrir={() => onAbrirTeoria(t)}
+                        />
+                      ))}
+                    </ol>
+                  </div>
+                );
+              })}
+            </>
           )}
         </div>
       )}
@@ -332,182 +353,43 @@ const CartaoDisciplina: React.FC<{
   );
 };
 
-const LinhaAula: React.FC<{
-  aula: AulaCurso;
+const Indicador: React.FC<{ ativo: boolean; titulo: string; icone: React.ElementType; cor: string }> = ({ ativo, titulo, icone: Icone, cor }) => (
+  <span
+    title={ativo ? titulo : `Sem ${titulo.toLowerCase()}`}
+    aria-label={ativo ? titulo : undefined}
+    aria-hidden={!ativo}
+    className={cn("flex h-7 w-7 items-center justify-center rounded-lg", ativo ? cor : "text-slate-200")}
+  >
+    <Icone className="h-4 w-4" />
+  </span>
+);
+
+const LinhaTeoria: React.FC<{
+  teoria: TeoriaCurso;
   numero: number;
-  aberta: boolean;
-  onAlternar: () => void;
-  topicoId?: string;
-  onTopico: (t: TopicoCurso) => void;
-  progresso: ProgressoTopicos;
-  flashcardsPorTopico: Record<string, number>;
-  onFlashcards?: (topicoId: string, aulaId: string) => void;
-}> = ({ aula: a, numero, aberta, onAlternar, topicoId, onTopico, progresso, flashcardsPorTopico, onFlashcards }) => {
-  const feitos = progresso.feitosNaAula(a);
-  const total = a.topicos.length;
-  const completa = total > 0 && feitos === total;
-  return (
-    <li id={`aula-${a.id}`} className="scroll-mt-4">
-      <div className={cn("flex items-center gap-3 px-3 py-3 transition-colors sm:px-4", aberta ? "bg-[#f8f5ff]" : "hover:bg-slate-50")}>
-        <span
-          aria-hidden
-          className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums",
-            completa ? "bg-emerald-500 text-white" : feitos > 0 ? "bg-[#5f2ebe]/10 text-[#5f2ebe]" : "bg-slate-100 text-slate-500"
-          )}
-        >
-          {completa ? <CheckCircle2 className="h-4 w-4" /> : numero}
-        </span>
-        <button type="button" onClick={onAlternar} aria-expanded={aberta} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-          <div className="min-w-0 flex-1">
-            <p className={cn("text-sm font-semibold leading-snug sm:text-[15px]", aberta ? "text-[#5f2ebe]" : "text-slate-800")}>{a.titulo}</p>
-            {a.descricao && (
-              <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
-                <span className="font-medium">No edital:</span> {a.descricao}
-              </p>
-            )}
-          </div>
-          <div className="hidden w-24 shrink-0 sm:block">
-            <div className="mb-1 text-right text-[11px] tabular-nums text-slate-500">
-              {feitos}/{total} tópicos
-            </div>
-            <BarraProgresso valor={total ? (feitos / total) * 100 : 0} className="h-1.5" corClasse={completa ? "bg-emerald-500" : "bg-[#5f2ebe]"} />
-          </div>
-          <span className="text-[11px] tabular-nums text-slate-500 sm:hidden">
-            {feitos}/{total}
-          </span>
-          <ChevronDown className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform", aberta && "rotate-180")} />
-        </button>
-      </div>
-      {aberta && (
-        <AulaAberta
-          aula={a}
-          topicoId={topicoId}
-          onTopico={onTopico}
-          progresso={progresso}
-          flashcardsPorTopico={flashcardsPorTopico}
-          onFlashcards={onFlashcards}
-        />
-      )}
-    </li>
-  );
-};
-
-const AulaAberta: React.FC<{
-  aula: AulaCurso;
-  topicoId?: string;
-  onTopico: (t: TopicoCurso) => void;
-  progresso: ProgressoTopicos;
-  flashcardsPorTopico: Record<string, number>;
-  onFlashcards?: (topicoId: string, aulaId: string) => void;
-}> = ({ aula: a, topicoId, onTopico, progresso, flashcardsPorTopico, onFlashcards }) => {
-  const [questoes, setQuestoes] = useState(false);
-  const atual = a.topicos.find((t) => t.id === topicoId) || a.topicos[0] || null;
-  const idx = atual ? a.topicos.indexOf(atual) : -1;
-  const proximo = idx >= 0 ? a.topicos[idx + 1] : undefined;
-  const feito = atual ? progresso.feito(a.id, atual.id) : false;
-
-  useEffect(() => setQuestoes(false), [atual?.id]);
-
-  if (a.topicos.length === 0)
-    return <p className="bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">Esta aula ainda não tem tópicos.</p>;
-
-  return (
-    <div className="bg-slate-50/80 px-3 pb-4 pt-1 sm:px-4">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="min-w-0 space-y-3">
-          <VideoTopico topico={atual} />
-          {atual && (
-            <>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-500">
-                    Tópico {idx + 1} de {a.topicos.length}
-                    {atual.professorNome && <> · Prof. {atual.professorNome}</>}
-                  </p>
-                  <h4 className="text-base font-semibold leading-snug text-slate-900">{atual.nome}</h4>
-                </div>
-                <div className="flex shrink-0 flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => progresso.alternar(a.id, atual.id)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition-colors",
-                      feito ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300 hover:text-emerald-700"
-                    )}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    {feito ? "Concluído" : "Marcar como concluído"}
-                  </button>
-                  {proximo && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!feito) progresso.alternar(a.id, atual.id, true);
-                        onTopico(proximo);
-                      }}
-                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#5f2ebe] px-3 py-2 text-sm font-semibold text-white hover:bg-[#4f25a0]"
-                    >
-                      Próximo
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-              <MateriaisTopico
-                topico={atual}
-                questoesAbertas={questoes}
-                onQuestoes={() => setQuestoes((v) => !v)}
-                flashcards={flashcardsPorTopico[atual.id] || 0}
-                onFlashcards={onFlashcards ? () => onFlashcards(atual.id, a.id) : undefined}
-              />
-            </>
-          )}
-        </div>
-
-        <div className="min-w-0">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Tópicos desta aula</p>
-          <ul className="space-y-1.5 lg:max-h-[420px] lg:overflow-y-auto lg:pr-1">
-            {a.topicos.map((t, i) => {
-              const sel = atual?.id === t.id;
-              const ok = progresso.feito(a.id, t.id);
-              return (
-                <li key={t.id}>
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onTopico(t)}
-                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onTopico(t))}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors",
-                      sel ? "border-[#5f2ebe] bg-white shadow-sm" : "border-transparent bg-white/70 hover:border-slate-200 hover:bg-white"
-                    )}
-                  >
-                    <MarcaConcluido tamanho="sm" marcado={ok} onClick={() => progresso.alternar(a.id, t.id)} rotulo={`Concluir ${t.nome}`} />
-                    <div className="min-w-0 flex-1">
-                      <p className={cn("line-clamp-2 text-sm leading-snug", sel ? "font-semibold text-[#5f2ebe]" : ok ? "text-slate-500" : "text-slate-800")}>
-                        <span className="mr-1 tabular-nums text-slate-400">{i + 1}.</span>
-                        {t.nome}
-                      </p>
-                    </div>
-                    <span className="flex shrink-0 gap-1 text-slate-300">
-                      {t.videoUrl && <PlayCircle className="h-3.5 w-3.5" />}
-                      {(t.pdfUrl || t.teoriaId) && <FileText className="h-3.5 w-3.5" />}
-                      {flashcardsPorTopico[t.id] > 0 && <Layers className="h-3.5 w-3.5" />}
-                    </span>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </div>
-
-      {questoes && atual && (
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
-          <QuestoesTopico topicoId={atual.id} />
-        </div>
-      )}
-    </div>
-  );
-};
+  href: string;
+  feita: boolean;
+  onMarcar: () => void;
+  onAbrir: () => void;
+}> = ({ teoria: t, numero, href, feita, onMarcar, onAbrir }) => (
+  <li className="flex items-center gap-3 px-3 py-3 transition-colors hover:bg-[#f8f5ff] sm:px-4">
+    <MarcaConcluido marcado={feita} onClick={onMarcar} rotulo={`Concluir ${t.titulo}`} />
+    <Link to={href} onClick={onAbrir} className="group flex min-w-0 flex-1 items-center gap-3">
+      <p
+        className={cn(
+          "min-w-0 flex-1 text-sm font-semibold leading-snug group-hover:text-[#5f2ebe] group-hover:underline group-hover:underline-offset-2 sm:text-[15px]",
+          feita ? "text-slate-500" : "text-slate-800"
+        )}
+      >
+        <span className="mr-1.5 tabular-nums text-slate-400">{numero}.</span>
+        {t.titulo}
+      </p>
+      <span className="flex shrink-0 items-center gap-1.5">
+        <Indicador ativo={t.temVideo} titulo="Videoaula" icone={PlayCircle} cor="bg-red-50 text-red-500" />
+        <Indicador ativo={t.temQuestoes} titulo="Questões" icone={ListChecks} cor="bg-[#5f2ebe]/10 text-[#5f2ebe]" />
+        <Indicador ativo={t.temMapa} titulo="Mapa mental" icone={Map} cor="bg-amber-50 text-amber-600" />
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-[#5f2ebe]" />
+    </Link>
+  </li>
+);

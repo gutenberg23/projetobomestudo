@@ -3,25 +3,28 @@ import { ChevronDown } from "lucide-react";
 import { CaixaSelecao } from "@/components/admin/ui/listagem";
 import { cn } from "@/lib/utils";
 
-export interface AulaOpcao {
+export interface TeoriaOpcao {
   id: string;
   titulo: string;
+  /** Assunto, mostrado ao lado do título */
+  assunto?: string;
+  publicada?: boolean;
 }
 
 interface Props {
   titulo: string;
-  /** Todas as aulas da disciplina, na ordem dela */
-  aulas: AulaOpcao[];
-  /** undefined = todas as aulas entram no curso */
+  /** Todas as teorias da disciplina, na ordem dela */
+  teorias: TeoriaOpcao[];
+  /** undefined = todas as teorias entram no curso */
   escolhidas: string[] | undefined;
   onChange: (escolhidas: string[] | undefined) => void;
 }
 
 /**
- * Lista de caixinhas com as aulas de uma disciplina, para escolher quais
+ * Lista de caixinhas com as teorias de uma disciplina, para escolher quais
  * entram no curso. Sem popover/combobox (eles não recebem cliques dentro do Dialog).
  */
-export const EscolherAulasDisciplina: React.FC<Props> = ({ titulo, aulas, escolhidas, onChange }) => {
+export const EscolherTeoriasDisciplina: React.FC<Props> = ({ titulo, teorias: aulas, escolhidas, onChange }) => {
   const [aberta, setAberta] = useState(false);
   const marcadas = new Set(escolhidas ?? aulas.map((a) => a.id));
   const n = aulas.filter((a) => marcadas.has(a.id)).length;
@@ -32,7 +35,7 @@ export const EscolherAulasDisciplina: React.FC<Props> = ({ titulo, aulas, escolh
     if (novo.has(id)) novo.delete(id);
     else novo.add(id);
     const lista = aulas.filter((a) => novo.has(a.id)).map((a) => a.id);
-    // Todas marcadas volta a ser "todas" (aulas novas da disciplina entram sozinhas)
+    // Todas marcadas volta a ser "todas" (teorias novas da disciplina entram sozinhas)
     onChange(lista.length === aulas.length ? undefined : lista);
   };
 
@@ -57,7 +60,7 @@ export const EscolherAulasDisciplina: React.FC<Props> = ({ titulo, aulas, escolh
                   : "bg-[#5f2ebe]/10 text-[#5f2ebe]"
           )}
         >
-          {aulas.length === 0 ? "sem aulas" : todas ? `todas as ${aulas.length} aulas` : `${n} de ${aulas.length} aulas`}
+          {aulas.length === 0 ? "sem teorias" : todas ? `todas as ${aulas.length} teorias` : `${n} de ${aulas.length} teorias`}
         </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-slate-400 transition-transform", aberta && "rotate-180")} />
       </button>
@@ -78,7 +81,11 @@ export const EscolherAulasDisciplina: React.FC<Props> = ({ titulo, aulas, escolh
                 <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm text-slate-700 hover:bg-slate-50">
                   <CaixaSelecao marcado={marcadas.has(a.id)} onChange={() => alternar(a.id)} rotulo={`Incluir ${a.titulo}`} />
                   <span className="w-5 shrink-0 text-right text-xs tabular-nums text-slate-400">{i + 1}</span>
-                  <span className="min-w-0 flex-1 truncate">{a.titulo}</span>
+                  <span className="min-w-0 flex-1 truncate">
+                    {a.titulo}
+                    {a.publicada === false && <span className="ml-1.5 text-[11px] text-amber-600">(rascunho)</span>}
+                  </span>
+                  {a.assunto && <span className="hidden max-w-[40%] shrink-0 truncate text-[11px] text-slate-400 sm:inline">{a.assunto}</span>}
                 </label>
               </li>
             ))}

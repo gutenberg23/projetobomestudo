@@ -6,8 +6,7 @@ export interface Disciplina {
   banca?: string;
   /** Disciplina das questões usada na aba Estatísticas (vazio = automático) */
   disciplinaQuestoes?: string;
-  aulasIds: string[];
-  topicosIds?: string[];
-  totalQuestoes?: number;
+  /** Teorias da disciplina, na ordem em que aparecem para o aluno */
+  teoriasIds: string[];
   favoritos?: number;
 }

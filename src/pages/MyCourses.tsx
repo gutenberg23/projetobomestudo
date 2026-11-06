@@ -29,7 +29,7 @@ import { BarraProgresso, EstadoVazio, Painel, Segmentos, normalizar } from "@/co
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { generateFriendlyUrl } from "@/utils/slug-utils";
-import { aulasDaDisciplinaNoCurso, lerAulasPorDisciplina } from "@/utils/aulasDoCurso";
+import { lerTeoriasPorDisciplina, teoriasDaDisciplinaNoCurso } from "@/utils/teoriasDoCurso";
 import { cn } from "@/lib/utils";
 
 const LARGURA = "mx-auto w-full max-w-[1400px] px-[10px] md:px-[32px]";
@@ -51,7 +51,7 @@ interface ItemMeu {
   subtitulo: string;
   url: string;
   disciplinas: number;
-  aulas: number;
+  /** Teorias do curso (ou da disciplina) */
   totalTopicos: number;
   concluidos: number;
   /** Última vez que o progresso foi gravado */
@@ -85,17 +85,18 @@ async function buscarPorIds(tabela: string, ids: string[], colunas = "*", campo 
 
 const porId = (linhas: Linha[]) => new Map(linhas.map((l) => [l.id as string, l]));
 
-/** Tópicos concluídos em cada aula: subjects_data.completed_sections { aulaId: topicoIds[] } */
-const lerConcluidos = (sd: unknown): Record<string, string[]> => {
-  const cs = sd && typeof sd === "object" && !Array.isArray(sd) ? (sd as Linha).completed_sections : null;
-  const limpo: Record<string, string[]> = {};
-  if (cs && typeof cs === "object") {
-    Object.entries(cs).forEach(([aula, ids]) => {
-      if (Array.isArray(ids)) limpo[aula] = ids.filter((x) => typeof x === "string");
-    });
+/** Teorias concluídas pelo aluno (tabela teorias_progresso), com a data em que concluiu */
+async function carregarTeoriasConcluidas(userId: string, ids: string[]) {
+  const mapa = new Map<string, Date | null>();
+  try {
+    const linhas = await buscarPorIds("teorias_progresso", ids, "teoria_id, concluida_em, user_id", "teoria_id");
+    linhas.filter((l) => l.user_id === userId).forEach((l) => mapa.set(String(l.teoria_id), lerData(l.concluida_em)));
+  } catch (e) {
+    // Sem a migration 20251120000000 a página abre sem progresso
+    console.error("Erro ao carregar as teorias concluídas:", e);
   }
-  return limpo;
-};
+  return mapa;
+}
 
 /** Progresso do aluno nos itens favoritados (em lotes); sem progresso não impede a página de abrir */
 async function carregarProgresso(userId: string, ids: string[]) {
@@ -140,34 +141,39 @@ async function carregarMeus(userId: string): Promise<ItemMeu[]> {
   ]);
   const mapaDisciplinas = porId([...disciplinasFav, ...disciplinasExtras]);
 
-  const aulasDoCurso = (c: Linha) => {
-    const selecao = lerAulasPorDisciplina(c.aulas_por_disciplina);
+  const teoriasDoCurso = (c: Linha) => {
+    const selecao = lerTeoriasPorDisciplina(c.teorias_por_disciplina);
     const ids: string[] = c.disciplinas_ids || [];
     return ids
       .map((id) => mapaDisciplinas.get(id))
       .filter((d): d is Linha => !!d)
-      .flatMap((d) => aulasDaDisciplinaNoCurso(d.aulas_ids, selecao, d.id));
+      .flatMap((d) => teoriasDaDisciplinaNoCurso(d.teorias_ids, selecao, String(d.id)));
   };
-  const aulasDaDisciplina = (d: Linha): string[] => {
+  const teoriasDaDisciplina = (d: Linha): string[] => {
     const principal = d.unificada_em ? mapaDisciplinas.get(d.unificada_em) : null;
-    return ((principal || d).aulas_ids || []).filter(Boolean);
+    return ((principal || d).teorias_ids || []).filter(Boolean);
   };
 
-  const aulas = porId(
-    await buscarPorIds("aulas", [...cursos.flatMap(aulasDoCurso), ...disciplinasFav.flatMap(aulasDaDisciplina)], "id, topicos_ids")
-  );
+  // Só contam as teorias publicadas (rascunhos não aparecem para o aluno)
+  const todasTeorias = [...cursos.flatMap(teoriasDoCurso), ...disciplinasFav.flatMap(teoriasDaDisciplina)];
+  const [publicadas, concluidas] = await Promise.all([
+    buscarPorIds("teorias", todasTeorias, "id, status").then(
+      (ls) => new Set(ls.filter((t) => !t.status || t.status === "published").map((t) => String(t.id)))
+    ),
+    carregarTeoriasConcluidas(userId, todasTeorias),
+  ]);
   const progressoPorId = new Map<string, Linha>(progresso.map((p: Linha) => [p.course_id, p]));
 
-  const montar = (tipo: Tipo, linha: Linha, idsAulas: string[], subtitulo: string, disciplinas: number): ItemMeu => {
+  const montar = (tipo: Tipo, linha: Linha, idsTeorias: string[], subtitulo: string, disciplinas: number): ItemMeu => {
     const p = progressoPorId.get(linha.id);
-    const feitos = lerConcluidos(p?.subjects_data);
-    let totalTopicos = 0;
+    const teorias = Array.from(new Set(idsTeorias)).filter((id) => publicadas.has(id));
     let concluidos = 0;
-    idsAulas.forEach((id) => {
-      const topicos: string[] = aulas.get(id)?.topicos_ids || [];
-      totalTopicos += topicos.length;
-      const set = new Set(feitos[id] || []);
-      concluidos += topicos.filter((t) => set.has(t)).length;
+    let estudadoEm: Date | null = lerData(p?.updated_at);
+    teorias.forEach((id) => {
+      if (!concluidas.has(id)) return;
+      concluidos++;
+      const em = concluidas.get(id);
+      if (em && (!estudadoEm || em > estudadoEm)) estudadoEm = em;
     });
     return {
       id: linha.id,
@@ -176,10 +182,9 @@ async function carregarMeus(userId: string): Promise<ItemMeu[]> {
       subtitulo,
       url: `/course/${generateFriendlyUrl(linha.titulo || "", linha.id)}`,
       disciplinas,
-      aulas: idsAulas.length,
-      totalTopicos,
+      totalTopicos: teorias.length,
       concluidos,
-      estudadoEm: lerData(p?.updated_at),
+      estudadoEm,
       prova: p?.exam_date ? startOfDay(parseISO(String(p.exam_date).slice(0, 10))) : null,
       busca: normalizar(`${linha.titulo || ""} ${subtitulo}`),
     };
@@ -192,12 +197,12 @@ async function carregarMeus(userId: string): Promise<ItemMeu[]> {
   const itensCursos = idsCursos
     .map((id) => mapaCursos.get(id))
     .filter((c): c is Linha => !!c)
-    .map((c) => montar("cursos", c, aulasDoCurso(c), descricao(c.descricao), (c.disciplinas_ids || []).length));
+    .map((c) => montar("cursos", c, teoriasDoCurso(c), descricao(c.descricao), (c.disciplinas_ids || []).length));
   const itensDisciplinas = idsDisciplinas
     .map((id) => mapaDisciplinas.get(id))
     .filter((d): d is Linha => !!d)
     // descricao da disciplina guarda a relevância (número): usa a banca como subtítulo
-    .map((d) => montar("disciplinas", d, aulasDaDisciplina(d), descricao(d.banca), 1));
+    .map((d) => montar("disciplinas", d, teoriasDaDisciplina(d), descricao(d.banca), 1));
 
   return [...itensCursos, ...itensDisciplinas];
 }
@@ -268,7 +273,7 @@ const MyCourses = () => {
     [itens]
   );
 
-  // O que o aluno estudou por último (só conta quem já tem algum tópico concluído)
+  // O que o aluno estudou por último (só conta quem já tem alguma teoria concluída)
   const continuar = useMemo(
     () =>
       itens
@@ -359,7 +364,7 @@ const MyCourses = () => {
                   {[
                     { rotulo: "cursos", valor: contagem.cursos, icone: GraduationCap },
                     { rotulo: "disciplinas", valor: contagem.disciplinas, icone: BookOpen },
-                    { rotulo: "tópicos concluídos", valor: contagem.concluidos, icone: CheckCircle2 },
+                    { rotulo: "teorias concluídas", valor: contagem.concluidos, icone: CheckCircle2 },
                   ].map((m) => (
                     <div key={m.rotulo} className="min-w-0">
                       <m.icone className="h-4 w-4 text-[#5f2ebe]" />
@@ -599,7 +604,7 @@ const CartaoContinuar: React.FC<{ item: ItemMeu }> = ({ item }) => {
             <span className="text-sm font-semibold tabular-nums">{progresso}%</span>
           </div>
           <p className="mt-1.5 text-xs text-white/75">
-            {plural(item.concluidos, "tópico concluído", "tópicos concluídos")} de {item.totalTopicos.toLocaleString("pt-BR")}
+            {plural(item.concluidos, "teoria concluída", "teorias concluídas")} de {item.totalTopicos.toLocaleString("pt-BR")}
             {item.estudadoEm ? ` · estudado ${haQuanto(item.estudadoEm)}` : ""}
             {prova ? ` · ${prova}` : ""}
           </p>
@@ -653,8 +658,8 @@ const CartaoMeu: React.FC<{ item: ItemMeu; onRemover: () => void }> = ({ item, o
         <div className="flex items-baseline justify-between gap-2 text-xs">
           <span className="text-slate-500">
             {item.totalTopicos
-              ? `${item.concluidos.toLocaleString("pt-BR")} de ${plural(item.totalTopicos, "tópico", "tópicos")}`
-              : "Sem tópicos ainda"}
+              ? `${item.concluidos.toLocaleString("pt-BR")} de ${plural(item.totalTopicos, "teoria", "teorias")}`
+              : "Sem teorias ainda"}
           </span>
           <span className={cn("font-semibold tabular-nums", terminou ? "text-emerald-600" : "text-slate-700")}>{progresso}%</span>
         </div>
@@ -670,7 +675,7 @@ const CartaoMeu: React.FC<{ item: ItemMeu; onRemover: () => void }> = ({ item, o
         )}
         <span className="inline-flex items-center gap-1">
           <PlayCircle className="h-3.5 w-3.5 text-slate-400" />
-          {plural(item.aulas, "aula", "aulas")}
+          {plural(item.totalTopicos, "teoria", "teorias")}
         </span>
         {prova && (
           <span className="inline-flex items-center gap-1 font-medium text-[#5f2ebe]">
