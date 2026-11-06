@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import type { Editor } from "@tiptap/react";
 import type { Node as PMNode } from "@tiptap/pm/model";
-import { ArrowRight, ClipboardList, Plus, ReplaceAll, X } from "lucide-react";
+import { ArrowRight, ClipboardList, Plus, ReplaceAll, Undo2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 /* --------------------------------------------------------------------------
  * Substituir em massa: vários pares "procurar → substituir por" aplicados de
  * uma vez no texto do editor, numa única ação (Ctrl+Z desfaz tudo).
+ * No modo HTML, a troca é feita direto no código (inclusive tags e atributos).
  * É um painel embutido na barra do editor (e não um Popover/Dialog) para
  * funcionar também quando o editor estiver dentro de um modal.
  * ------------------------------------------------------------------------ */
@@ -100,6 +101,21 @@ function encontrarOcorrencias(doc: PMNode, pares: ParSubstituicao[], opcoes: Opc
   return ocorrencias;
 }
 
+/** Ocorrências num texto simples (o código HTML do modo HTML). */
+function encontrarNoTexto(texto: string, pares: ParSubstituicao[], opcoes: OpcoesSubstituicao) {
+  const montado = montarRegex(pares, opcoes);
+  if (!montado) return { ocorrencias: [] as { par: ParSubstituicao }[], resultado: texto };
+  const { regex, ordem } = montado;
+  const ocorrencias: { par: ParSubstituicao }[] = [];
+  const resultado = texto.replace(regex, (trecho: string, ...grupos: unknown[]) => {
+    const indice = grupos.slice(0, ordem.length).findIndex((g) => g !== undefined);
+    if (indice < 0) return trecho;
+    ocorrencias.push({ par: ordem[indice] });
+    return ordem[indice].substituir;
+  });
+  return { ocorrencias, resultado };
+}
+
 /** Aplica todas as substituições numa transação só. Devolve quantas foram feitas. */
 function substituirTudo(editor: Editor, pares: ParSubstituicao[], opcoes: OpcoesSubstituicao): number {
   const ocorrencias = encontrarOcorrencias(editor.state.doc, pares, opcoes);
@@ -159,7 +175,17 @@ function carregarSalvo(): { pares: ParSubstituicao[]; opcoes: OpcoesSubstituicao
  * Painel
  * ------------------------------------------------------------------------ */
 
-export const PainelSubstituirEmMassa: React.FC<{ editor: Editor; onFechar: () => void }> = ({ editor, onFechar }) => {
+/** Onde as trocas são feitas: no editor visual ou no código HTML. */
+export type AlvoSubstituicao =
+  | { tipo: "editor"; editor: Editor }
+  | { tipo: "html"; html: string; onTrocar: (novo: string) => void };
+
+export const PainelSubstituirEmMassa: React.FC<{ alvo: AlvoSubstituicao; onFechar: () => void }> = ({ alvo, onFechar }) => {
+  const editor = alvo.tipo === "editor" ? alvo.editor : null;
+  const htmlAtual = alvo.tipo === "html" ? alvo.html : null;
+  // Modo HTML: guarda o código anterior para o botão "Desfazer"
+  const [anterior, setAnterior] = useState<string | null>(null);
+  useEffect(() => setAnterior(null), [alvo.tipo]);
   const [inicial] = useState(carregarSalvo);
   const [pares, setPares] = useState<ParSubstituicao[]>(inicial.pares);
   const [opcoes, setOpcoes] = useState<OpcoesSubstituicao>(inicial.opcoes);
@@ -169,6 +195,7 @@ export const PainelSubstituirEmMassa: React.FC<{ editor: Editor; onFechar: () =>
 
   // Recontar quando o texto do editor mudar
   useEffect(() => {
+    if (!editor) return;
     const aoMudar = () => setVersao((v) => v + 1);
     editor.on("update", aoMudar);
     return () => {
@@ -188,11 +215,13 @@ export const PainelSubstituirEmMassa: React.FC<{ editor: Editor; onFechar: () =>
 
   const contagem = useMemo(() => {
     const porPar = new Map<string, number>();
-    const ocorrencias = encontrarOcorrencias(editor.state.doc, pares, opcoes);
+    const ocorrencias: { par: ParSubstituicao }[] = editor
+      ? encontrarOcorrencias(editor.state.doc, pares, opcoes)
+      : encontrarNoTexto(htmlAtual ?? "", pares, opcoes).ocorrencias;
     ocorrencias.forEach((o) => porPar.set(o.par.id, (porPar.get(o.par.id) || 0) + 1));
     return { porPar, total: ocorrencias.length };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, pares, opcoes, versao]);
+  }, [editor, htmlAtual, pares, opcoes, versao]);
 
   const repetidos = useMemo(() => {
     const vistos = new Set<string>();
@@ -228,12 +257,30 @@ export const PainelSubstituirEmMassa: React.FC<{ editor: Editor; onFechar: () =>
   };
 
   const aplicar = () => {
-    const feitas = substituirTudo(editor, pares, opcoes);
+    let feitas = 0;
+    if (alvo.tipo === "editor") {
+      feitas = substituirTudo(alvo.editor, pares, opcoes);
+    } else {
+      const { ocorrencias, resultado } = encontrarNoTexto(alvo.html, pares, opcoes);
+      feitas = ocorrencias.length;
+      if (feitas) {
+        setAnterior(alvo.html);
+        alvo.onTrocar(resultado);
+      }
+    }
     if (!feitas) {
-      toast.info("Nenhuma ocorrência encontrada no texto.");
+      toast.info(alvo.tipo === "html" ? "Nenhuma ocorrência encontrada no código." : "Nenhuma ocorrência encontrada no texto.");
       return;
     }
-    toast.success(`${feitas} ${feitas === 1 ? "substituição feita" : "substituições feitas"}. Ctrl+Z desfaz.`);
+    const plural = feitas === 1 ? "substituição feita" : "substituições feitas";
+    toast.success(`${feitas} ${plural}. ${alvo.tipo === "html" ? 'Use "Desfazer" no painel para voltar.' : "Ctrl+Z desfaz."}`);
+  };
+
+  const desfazerHtml = () => {
+    if (alvo.tipo !== "html" || anterior === null) return;
+    alvo.onTrocar(anterior);
+    setAnterior(null);
+    toast.success("Substituições desfeitas.");
   };
 
   // Enter num campo não pode enviar o formulário do post/teoria
@@ -260,6 +307,11 @@ export const PainelSubstituirEmMassa: React.FC<{ editor: Editor; onFechar: () =>
       <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <span className="flex items-center gap-1.5 font-medium text-[#5f2ebe]">
           <ReplaceAll className="h-4 w-4" /> Substituir em massa
+          {alvo.tipo === "html" && (
+            <span className="rounded bg-[#5f2ebe]/10 px-1.5 py-0.5 text-[11px] font-medium" title="As trocas valem para todo o código, inclusive tags e atributos">
+              no código HTML
+            </span>
+          )}
         </span>
         <label className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-600">
           <input
@@ -296,7 +348,7 @@ export const PainelSubstituirEmMassa: React.FC<{ editor: Editor; onFechar: () =>
           <span>Procurar</span>
           <span />
           <span>Substituir por</span>
-          <span className="text-center">No texto</span>
+          <span className="text-center">{alvo.tipo === "html" ? "No código" : "No texto"}</span>
           <span />
         </div>
         {pares.map((par, indice) => {
@@ -395,8 +447,15 @@ export const PainelSubstituirEmMassa: React.FC<{ editor: Editor; onFechar: () =>
         )}
         <span className="flex-1" />
         <span className="text-xs text-slate-500">
-          {preenchidos ? `${contagem.total} ${contagem.total === 1 ? "ocorrência" : "ocorrências"} no texto` : "Preencha o que procurar"}
+          {preenchidos
+            ? `${contagem.total} ${contagem.total === 1 ? "ocorrência" : "ocorrências"} ${alvo.tipo === "html" ? "no código" : "no texto"}`
+            : "Preencha o que procurar"}
         </span>
+        {alvo.tipo === "html" && anterior !== null && (
+          <Button type="button" variant="outline" size="sm" className="h-8" onClick={desfazerHtml} title="Voltar o código para antes da última substituição">
+            <Undo2 className="mr-1.5 h-4 w-4" /> Desfazer
+          </Button>
+        )}
         <Button
           type="button"
           size="sm"
