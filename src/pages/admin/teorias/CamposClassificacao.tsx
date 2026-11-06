@@ -213,7 +213,7 @@ interface CampoTopicosProps {
   onChange: (valores: string[]) => void;
   sugestoes: string[];
   outras: string[];
-  /** Títulos (h2, h3, h4...) do texto da teoria, para virar tópicos com um clique. */
+  /** Títulos (h1, h2, h3...) do texto da teoria, para virar tópicos com um clique. */
   titulos?: TituloConteudo[];
 }
 
@@ -223,7 +223,7 @@ export interface TituloConteudo {
 }
 
 /**
- * Lê os títulos do HTML da teoria. Tira a numeração do começo ("1.", "2.3 -",
+ * Lê os títulos (h1 a h6) do HTML da teoria. Tira a numeração do começo ("1.", "2.3 -",
  * "IV –") e o dois-pontos do fim, e ignora repetidos.
  */
 export function extrairTitulos(html: string): TituloConteudo[] {
@@ -231,7 +231,7 @@ export function extrairTitulos(html: string): TituloConteudo[] {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const vistos = new Set<string>();
   const lista: TituloConteudo[] = [];
-  doc.querySelectorAll("h2, h3, h4, h5, h6").forEach((h) => {
+  doc.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((h) => {
     if (h.closest("[data-sem-marcacao]")) return;
     const texto = (h.textContent || "")
       .replace(/\s+/g, " ")
@@ -403,7 +403,7 @@ const PainelTitulos: React.FC<{
   if (!titulos.length) {
     return (
       <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-500">
-        O texto ainda não tem títulos. Use Título 2, 3 ou 4 no editor para organizar a aula e eles aparecem aqui.
+        O texto ainda não tem títulos. Use os títulos (H1, H2, H3...) no editor para organizar a aula e eles aparecem aqui.
         <button type="button" onClick={onFechar} className="ml-1 font-semibold text-[#5f2ebe] hover:underline">
           Fechar
         </button>
