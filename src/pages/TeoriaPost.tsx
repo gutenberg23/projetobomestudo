@@ -25,7 +25,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { BlogContentWithQuestions } from "@/components/blog/BlogContentWithQuestions";
-import QuestionResults from "@/components/questions/QuestionResults";
+import { QuestoesTeoria } from "@/components/teorias/QuestoesTeoria";
 import { SugerirCorrecaoDialog } from "@/components/teorias/SugerirCorrecaoDialog";
 import { CreditosContribuidores } from "@/components/teorias/CreditosContribuidores";
 import { PainelMarcacoes } from "@/components/teorias/PainelMarcacoes";
@@ -43,7 +43,7 @@ import {
   removerGrifo,
 } from "@/components/teorias/marcacoes";
 import { usePermissions } from "@/hooks/usePermissions";
-import { aplicarFiltrosTeoria, temFiltrosQuestoes, type FiltrosQuestoesTeoria } from "@/components/teorias/filtrosQuestoes";
+import { temFiltrosQuestoes, type FiltrosQuestoesTeoria } from "@/components/teorias/filtrosQuestoes";
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid, teoriaPath } from "@/utils/teoriaUrl";
 import { youtubeEmbed } from "@/utils/youtube";
@@ -101,7 +101,6 @@ type Barra =
   | { tipo: "selecao"; x: number; topo: number; base: number; texto: string }
   | { tipo: "grifo"; x: number; topo: number; base: number; id: string };
 
-const POR_PAGINA_QUESTOES = 10;
 const CHAVE_FONTE = "bomestudo:teoria-fonte";
 
 const temFiltros = (f?: Teoria["questoes_filtros"]) => temFiltrosQuestoes(f);
@@ -202,13 +201,7 @@ const TeoriaPost = () => {
   const [loading, setLoading] = useState(true);
 
   // Questões
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [questoes, setQuestoes] = useState<any[]>([]);
-  const [paginaQuestoes, setPaginaQuestoes] = useState(1);
-  const [totalPaginasQuestoes, setTotalPaginasQuestoes] = useState(1);
   const [totalQuestoes, setTotalQuestoes] = useState<number | null>(null);
-  const [carregandoQuestoes, setCarregandoQuestoes] = useState(false);
-  const [opcoesRiscadas, setOpcoesRiscadas] = useState<Record<string, string[]>>({});
 
   // Leitura
   const conteudoRef = useRef<HTMLDivElement>(null);
@@ -309,43 +302,6 @@ const TeoriaPost = () => {
       document.title = anterior;
     };
   }, [post]);
-
-  // Questões: só quando a aba é aberta
-  useEffect(() => {
-    if (!post || aba !== "questoes" || !temFiltros(post.questoes_filtros)) return;
-    let ativo = true;
-    setCarregandoQuestoes(true);
-    const query = aplicarFiltrosTeoria(
-      supabase.from("questoes").select("*", { count: "exact" }),
-      post.questoes_filtros
-    ).order("created_at", { ascending: false });
-    const de = (paginaQuestoes - 1) * POR_PAGINA_QUESTOES;
-    query
-      .range(de, de + POR_PAGINA_QUESTOES - 1)
-      .then(({ data, error, count }) => {
-        if (!ativo) return;
-        if (error) {
-          console.error("Erro ao carregar questões:", error);
-          toast.error("Erro ao carregar as questões");
-          return;
-        }
-        setQuestoes(data || []);
-        setTotalQuestoes(count ?? null);
-        setTotalPaginasQuestoes(count ? Math.max(1, Math.ceil(count / POR_PAGINA_QUESTOES)) : 1);
-      })
-      .then(() => ativo && setCarregandoQuestoes(false));
-    return () => {
-      ativo = false;
-    };
-  }, [post, aba, paginaQuestoes]);
-
-  const riscarOpcao = (questaoId: string, opcaoId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    setOpcoesRiscadas((atual) => {
-      const lista = atual[questaoId] || [];
-      return { ...atual, [questaoId]: lista.includes(opcaoId) ? lista.filter((o) => o !== opcaoId) : [...lista, opcaoId] };
-    });
-  };
 
   // ----- Seções (sumário) e grifos salvos, depois que o texto aparece -----
   useLayoutEffect(() => {
@@ -788,43 +744,12 @@ const TeoriaPost = () => {
             </article>
 
             {aba === "questoes" && (
-              <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(16,24,40,0.05)] sm:p-6">
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900">Questões sobre o assunto</h2>
-                    {totalQuestoes !== null && (
-                      <p className="text-sm text-slate-500">
-                        {totalQuestoes} {totalQuestoes === 1 ? "questão encontrada" : "questões encontradas"}
-                      </p>
-                    )}
-                  </div>
-                  {post.questoes_link && (
-                    <Link
-                      to={post.questoes_link}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-[#5f2ebe]/40 hover:text-[#5f2ebe]"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                      Abrir no banco de questões
-                    </Link>
-                  )}
-                </div>
-                {!carregandoQuestoes && totalQuestoes === 0 ? (
-                  <Vazio icone={FileQuestion} titulo="Nenhuma questão por enquanto" texto="Ainda não há questões cadastradas para este assunto." />
-                ) : (
-                  <QuestionResults
-                    questions={questoes}
-                    disabledOptions={opcoesRiscadas}
-                    onToggleDisabled={riscarOpcao}
-                    currentPage={paginaQuestoes}
-                    totalPages={totalPaginasQuestoes}
-                    onPageChange={(p) => {
-                      setPaginaQuestoes(p);
-                      document.getElementById("teoria-abas")?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                    hasFilters
-                    loading={carregandoQuestoes}
-                  />
-                )}
+              <section className="mx-auto max-w-5xl">
+                <QuestoesTeoria
+                  filtros={post.questoes_filtros}
+                  onTotal={setTotalQuestoes}
+                  rolarPara={() => document.getElementById("teoria-abas")?.scrollIntoView({ behavior: "smooth" })}
+                />
               </section>
             )}
 

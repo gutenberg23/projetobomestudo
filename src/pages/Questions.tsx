@@ -18,12 +18,12 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import AdBanner from "@/components/ads/AdBanner";
 import AdBannerList from "@/components/ads/AdBannerList";
 import { QuestionCard } from "@/components/new/QuestionCard";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { EstadoVazio, Segmentos, BarraProgresso } from "@/components/course/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Paginacao } from "@/components/questions/busca/Paginacao";
+import { CartaoCarregando } from "@/components/questions/busca/CartaoCarregando";
 import { FiltrosAplicados } from "@/components/questions/busca/FiltrosAplicados";
 import { CampoBusca, SecoesFiltro } from "@/components/questions/busca/SecoesFiltro";
 import { SessaoEstudo } from "@/components/questions/busca/SessaoEstudo";
@@ -72,23 +72,6 @@ const EscolhaSituacao: React.FC<{ valor: Situacao; onChange: (s: Situacao) => vo
   </div>
 );
 
-const CartaoCarregando = () => (
-  <div className="rounded-2xl border border-slate-200/80 bg-white p-5">
-    <div className="flex items-center gap-3">
-      <Skeleton className="h-7 w-7 rounded-lg" />
-      <div className="flex-1 space-y-1.5">
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-3 w-1/3" />
-      </div>
-    </div>
-    <Skeleton className="mt-5 h-16 w-full" />
-    <div className="mt-4 space-y-2">
-      {[0, 1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-12 w-full rounded-xl" />
-      ))}
-    </div>
-  </div>
-);
 
 const Questions = () => {
   const { user } = useAuth();
