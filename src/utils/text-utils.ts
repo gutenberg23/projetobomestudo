@@ -103,11 +103,23 @@ export const prepareHtmlContent = (html: string): string => {
     const normalized = normalizeSpecialChars(html);
     
     // Remover qualquer vetor de XSS (scripts, handlers on*, javascript:, etc.)
-    return sanitizeHtml(normalized);
+    return envolverTabelas(sanitizeHtml(normalized));
   } catch (e) {
     console.error('Erro ao preparar conteúdo HTML:', e);
-    return sanitizeHtml(html);
+    return envolverTabelas(sanitizeHtml(html));
   }
+};
+
+/**
+ * Coloca cada <table> dentro de uma caixa com rolagem horizontal própria
+ * (.tabela-rolavel). Assim, no celular, uma tabela larga rola de lado
+ * sem empurrar a página inteira para fora da tela.
+ */
+export const envolverTabelas = (html: string): string => {
+  if (!html || !/<table[\s>]/i.test(html)) return html;
+  return html
+    .replace(/<table(?=[\s>])/gi, '<div class="tabela-rolavel"><table')
+    .replace(/<\/table\s*>/gi, '</table></div>');
 };
 
 /**

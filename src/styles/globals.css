@@ -107,6 +107,32 @@
     max-width: none;
   }
   
+  /* Caixa que envolve cada tabela do conteúdo (posts, teorias, questões):
+     a tabela rola de lado aqui dentro e nunca alarga a página no celular. */
+  .tabela-rolavel {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    margin: 1.25em 0;
+  }
+
+  .tabela-rolavel > table {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* No celular, cada coluna tem uma largura mínima legível; se não couber,
+     a tabela rola de lado em vez de espremer o texto letra por letra. */
+  @media (max-width: 640px) {
+    .tabela-rolavel th,
+    .tabela-rolavel td {
+      min-width: 7.5rem;
+    }
+  }
+
   .prose table {
     @apply w-full border-collapse border border-gray-300;
   }

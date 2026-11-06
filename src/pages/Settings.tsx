@@ -455,7 +455,7 @@ const Settings = () => {
           </div>
         </section>
 
-        <div className="container mx-auto grid max-w-5xl gap-6 px-4 py-6 lg:grid-cols-[200px_minmax(0,1fr)]">
+        <div className="container mx-auto grid max-w-5xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[200px_minmax(0,1fr)]">
           {/* Menu de seções */}
           <nav aria-label="Seções" className="lg:sticky lg:top-4 lg:self-start">
             <ul className="flex gap-1 overflow-x-auto rounded-xl bg-slate-200/60 p-1 lg:flex-col lg:bg-transparent lg:p-0">

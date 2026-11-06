@@ -305,7 +305,7 @@ export const EstatisticasTab: React.FC<Props> = ({ courseId }) => {
 
       {/* Filtros */}
       <Painel className="p-3 sm:p-4">
-        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
           <FiltroMultiplo
             rotulo="Banca"
             plural="bancas"
@@ -376,7 +376,7 @@ export const EstatisticasTab: React.FC<Props> = ({ courseId }) => {
               }
             />
           ) : (
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
               {/* Gráfico */}
               <Painel className="p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">

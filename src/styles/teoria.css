@@ -106,15 +106,7 @@
   line-height: 1.55;
 }
 
-/* No celular, tabelas largas rolam de lado em vez de estourar a página */
-@media (max-width: 640px) {
-  .prose.teoria-prose table {
-    display: block;
-    overflow-x: auto;
-    width: auto;
-    max-width: 100%;
-  }
-}
+/* Tabelas largas rolam de lado dentro de .tabela-rolavel (ver globals.css) */
 
 .prose.teoria-prose hr {
   border-color: #ece8f7;
