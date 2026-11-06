@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  Award,
   BarChart,
   BookOpen,
+  BookMarked,
   ChevronDown,
+  CircleUserRound,
   FileText,
+  LogIn,
   LogOut,
   Menu,
   MessageSquare,
-  Newspaper,
   PlusCircle,
   Settings,
   Shield,
@@ -38,8 +39,9 @@ const ehAtivo = (pathname: string, path: string) => {
 
 /**
  * Topo do site público.
- * - Computador (lg+): links principais no centro, menu "Mais" (Blog e rankings)
- *   e, à direita, Meus Cursos + avatar com menu, ou Entrar + Criar conta.
+ * - Computador (lg+): links principais no centro (incluindo Notícias) e, à direita,
+ *   Meus Cursos + avatar com menu (Cadernos e rankings ficam nesse menu), ou,
+ *   para visitantes, um ícone de conta com o mesmo menu + Entrar + Criar conta.
  * - Celular e tablet: logo, Entrar (visitante) e botão que abre o MenuLateral.
  */
 export const Header = () => {
@@ -69,10 +71,12 @@ export const Header = () => {
   const principais = [
     { to: "/explore", rotulo: "Estude Grátis", visivel: p.showExplorePage },
     { to: "/questions", rotulo: "Questões", visivel: p.showQuestionsPage },
-    { to: "/cadernos", rotulo: "Cadernos", visivel: p.showQuestionsPage && p.showQuestionBooksPage !== false },
     { to: "/teorias", rotulo: "Teorias", visivel: p.showTeoriasPage },
     { to: "/concursos", rotulo: "Concursos", visivel: p.showBlogPage },
+    { to: "/blog", rotulo: "Notícias", visivel: p.showBlogPage },
   ].filter((i) => i.visivel !== false);
+
+  const mostrarCadernos = p.showQuestionsPage !== false && p.showQuestionBooksPage !== false;
 
   const rankings = [
     { to: "/ranking-questoes", rotulo: "Ranking de questões", icone: FileText, visivel: p.showQuestionsPage && p.showQuestionRankingPage !== false },
@@ -80,8 +84,46 @@ export const Header = () => {
     { to: "/ranking-contribuicoes", rotulo: "Ranking de contribuições", icone: PlusCircle, visivel: true },
   ].filter((i) => i.visivel);
 
-  const maisAtivo =
-    (p.showBlogPage && ehAtivo(pathname, "/blog")) || rankings.some((r) => ehAtivo(pathname, r.to));
+  // Itens que antes ficavam no topo ("Cadernos" e o menu "Mais") e agora vivem no menu da conta.
+  const itensExtras = (
+    <>
+      {mostrarCadernos && (
+        <DropdownMenuItem asChild>
+          <Link
+            to="/cadernos"
+            className={cn("cursor-pointer gap-2", ehAtivo(pathname, "/cadernos") && "text-[#5f2ebe] font-medium")}
+          >
+            <BookMarked className="h-4 w-4 text-[#67748a]" />
+            Cadernos
+          </Link>
+        </DropdownMenuItem>
+      )}
+      {rankings.length > 0 && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wider text-[#9aa4b5]">
+            Rankings
+          </DropdownMenuLabel>
+          {rankings.map((r) => {
+            const Icone = r.icone;
+            return (
+              <DropdownMenuItem key={r.to} asChild>
+                <Link
+                  to={r.to}
+                  className={cn("cursor-pointer gap-2", ehAtivo(pathname, r.to) && "text-[#5f2ebe] font-medium")}
+                >
+                  <Icone className="h-4 w-4 text-[#67748a]" />
+                  {r.rotulo}
+                </Link>
+              </DropdownMenuItem>
+            );
+          })}
+        </>
+      )}
+    </>
+  );
+
+  const extrasAtivo = ehAtivo(pathname, "/cadernos") || rankings.some((r) => ehAtivo(pathname, r.to));
 
   const classeLink = (ativo: boolean) =>
     cn(
@@ -116,47 +158,6 @@ export const Header = () => {
               </Link>
             );
           })}
-
-          {(p.showBlogPage || rankings.length > 0) && (
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger className={cn(classeLink(!!maisAtivo), "gap-1 outline-none")}>
-                Mais
-                <ChevronDown className="h-4 w-4" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                {p.showBlogPage && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/blog" className="cursor-pointer gap-2">
-                      <Newspaper className="h-4 w-4 text-[#67748a]" />
-                      Blog
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {rankings.length > 0 && (
-                  <>
-                    {p.showBlogPage && <DropdownMenuSeparator />}
-                    <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wider text-[#9aa4b5]">
-                      Rankings
-                    </DropdownMenuLabel>
-                    {rankings.map((r) => {
-                      const Icone = r.icone;
-                      return (
-                        <DropdownMenuItem key={r.to} asChild>
-                          <Link
-                            to={r.to}
-                            className={cn("cursor-pointer gap-2", ehAtivo(pathname, r.to) && "text-[#5f2ebe] font-medium")}
-                          >
-                            <Icone className="h-4 w-4 text-[#67748a]" />
-                            {r.rotulo}
-                          </Link>
-                        </DropdownMenuItem>
-                      );
-                    })}
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
@@ -190,7 +191,10 @@ export const Header = () => {
 
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger
-                  className="hidden lg:flex items-center gap-1 rounded-full p-0.5 pr-1.5 outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-[#5f2ebe]/40"
+                  className={cn(
+                    "hidden lg:flex items-center gap-1 rounded-full p-0.5 pr-1.5 outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-[#5f2ebe]/40",
+                    extrasAtivo && "ring-2 ring-[#5f2ebe]/30"
+                  )}
                   aria-label="Menu da conta"
                 >
                   <Avatar className="h-9 w-9">
@@ -199,7 +203,7 @@ export const Header = () => {
                   </Avatar>
                   <ChevronDown className="h-4 w-4 text-[#67748a]" />
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuContent align="end" className="w-64 max-h-[calc(100vh-5rem)] overflow-y-auto">
                   <DropdownMenuLabel className="font-normal">
                     <p className="truncate text-sm font-medium text-[#272f3c]">{user.nome || "Aluno"}</p>
                     <p className="truncate text-xs text-[#67748a]">{user.email}</p>
@@ -218,17 +222,12 @@ export const Header = () => {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/ranking-questoes" className="cursor-pointer gap-2">
-                      <Award className="h-4 w-4 text-[#67748a]" />
-                      Rankings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
                     <Link to="/settings" className="cursor-pointer gap-2">
                       <Settings className="h-4 w-4 text-[#67748a]" />
                       Configurações
                     </Link>
                   </DropdownMenuItem>
+                  {itensExtras}
                   {(user.role === "admin" || user.role === "jornalista") && (
                     <>
                       <DropdownMenuSeparator />
@@ -250,6 +249,41 @@ export const Header = () => {
             </>
           ) : (
             <>
+              {(mostrarCadernos || rankings.length > 0) && (
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger
+                    className={cn(
+                      "hidden lg:flex items-center gap-1 rounded-full p-1 pr-1.5 outline-none hover:bg-slate-100 focus-visible:ring-2 focus-visible:ring-[#5f2ebe]/40",
+                      extrasAtivo ? "text-[#5f2ebe]" : "text-[#67748a]"
+                    )}
+                    aria-label="Mais opções"
+                    title="Cadernos e rankings"
+                  >
+                    <CircleUserRound className="h-8 w-8" strokeWidth={1.5} />
+                    <ChevronDown className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64 max-h-[calc(100vh-5rem)] overflow-y-auto">
+                    <DropdownMenuLabel className="font-normal">
+                      <p className="text-sm font-medium text-[#272f3c]">Visitante</p>
+                      <p className="text-xs text-[#67748a]">Entre para salvar seu progresso</p>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {itensExtras}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => navigate("/login")} className="cursor-pointer gap-2">
+                      <LogIn className="h-4 w-4 text-[#67748a]" />
+                      Entrar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => abrirLogin({ aba: "cadastrar", motivo: "salvar seu progresso" })}
+                      className="cursor-pointer gap-2 text-[#5f2ebe] focus:text-[#5f2ebe]"
+                    >
+                      <PlusCircle className="h-4 w-4" />
+                      Criar conta grátis
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               <button
                 onClick={() => navigate("/login")}
                 className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-[#272f3c] hover:bg-slate-50 lg:border-0 lg:px-3 lg:py-2 lg:text-[15px] lg:text-[#67748a] lg:hover:text-[#272f3c] lg:hover:bg-transparent"
