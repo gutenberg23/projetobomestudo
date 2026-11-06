@@ -56,6 +56,7 @@ import {
   ArrowRightToLine,
   PanelTop,
   Loader2,
+  ReplaceAll,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -65,6 +66,7 @@ import { supabase } from "@/lib/supabase";
 import { QuestionExtension } from "@/components/editor/QuestionExtension";
 import { TableCellBackground } from "@/components/editor/TableCellBackground";
 import { FontSize, limparHtmlColado } from "./extensions";
+import { PainelSubstituirEmMassa } from "./SubstituirEmMassa";
 import "./TiptapEditor.css";
 
 const lowlight = createLowlight();
@@ -530,6 +532,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [modoHtml, setModoHtml] = useState(false);
   const [html, setHtml] = useState("");
+  const [substituindo, setSubstituindo] = useState(false);
   // Último HTML que o próprio editor emitiu: evita recarregar o conteúdo
   // (e perder o cursor) quando a prop volta igual ao que acabou de sair daqui.
   const ultimoHtml = useRef<string>(content || "");
@@ -789,6 +792,15 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
           </fieldset>
           <span className="flex-1" />
           <Grupo>
+            <Botao
+              titulo="Substituir em massa (vários textos de uma vez)"
+              ativo={substituindo && !modoHtml}
+              desativado={modoHtml}
+              onClick={() => setSubstituindo(!substituindo)}
+            >
+              <ReplaceAll className="h-4 w-4" />
+              <span className="hidden text-xs font-medium lg:inline">Substituir</span>
+            </Botao>
             <Botao titulo={modoHtml ? "Voltar ao editor visual" : "Editar o código HTML"} ativo={modoHtml} onClick={alternarHtml}>
               <Code2 className="h-4 w-4" />
               <span className="hidden text-xs font-medium lg:inline">HTML</span>
@@ -799,6 +811,7 @@ export const TiptapEditor: React.FC<TiptapEditorProps> = ({
           </Grupo>
         </div>
         {dentroDeTabela && !modoHtml && <BarraTabela editor={editor} />}
+        {substituindo && !modoHtml && <PainelSubstituirEmMassa editor={editor} onFechar={() => setSubstituindo(false)} />}
       </div>
 
       <div className="post-editor__body">
