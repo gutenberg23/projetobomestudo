@@ -688,15 +688,6 @@ const TeoriaPost = () => {
               </Link>
             )}
           </div>
-          {(post.topicos_ids?.length ?? 0) > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-1.5" aria-label="Tópicos do edital">
-              {post.topicos_ids.map((t) => (
-                <li key={t} className="rounded-md bg-white px-2 py-0.5 text-xs text-slate-600 ring-1 ring-slate-200">
-                  {t}
-                </li>
-              ))}
-            </ul>
-          )}
         </header>
 
         {/* Abas */}
