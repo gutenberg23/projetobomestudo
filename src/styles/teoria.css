@@ -113,6 +113,8 @@
     overflow-x: auto;
     width: auto;
     max-width: 100%;
+    /* O editor grava min-width na própria tabela (style inline) */
+    min-width: 0 !important;
   }
 }
 
