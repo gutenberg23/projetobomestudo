@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
 import { TeoriasPorDisciplina, lerTeoriasPorDisciplina, teoriasDaDisciplinaNoCurso } from "@/utils/teoriasDoCurso";
+import { lerRelevancias, notaValida, type RelevanciaPorDisciplina } from "@/utils/relevanciaDoCurso";
 
 /** Uma teoria da disciplina, com o que basta para a lista (sem o texto). */
 export interface TeoriaCurso {
@@ -23,7 +24,7 @@ export interface TeoriaCurso {
 export interface DisciplinaCurso {
   id: string;
   titulo: string;
-  /** Rating de 1 a 10 dado no admin (quanto a disciplina pesa na prova) */
+  /** Nota de 1 a 10 dada no curso (quanto a disciplina pesa neste concurso) */
   relevancia: number | null;
   teorias: TeoriaCurso[];
 }
@@ -112,11 +113,14 @@ async function montarDisciplinasCurso(courseId: string): Promise<DadosDisciplina
   let titulo = "";
   // Teorias escolhidas para o curso em cada disciplina (sem chave = todas)
   let selecao: TeoriasPorDisciplina = {};
+  // Nota de cada disciplina neste curso. null = migration ainda não rodada (usa a nota antiga da disciplina)
+  let relevancias: RelevanciaPorDisciplina | null = {};
   if (curso) {
     const ids: string[] = curso.disciplinas_ids || [];
     const mapa = await buscarPorIds("disciplinas", ids);
     linhasDisciplinas = ids.map((id) => mapa.get(id)).filter((d): d is Linha => !!d);
     selecao = lerTeoriasPorDisciplina((curso as Linha).teorias_por_disciplina);
+    relevancias = "relevancia_por_disciplina" in curso ? lerRelevancias((curso as Linha).relevancia_por_disciplina) : null;
     titulo = (curso as Linha).titulo || "";
   } else {
     let { data: disciplina } = await supabase.from("disciplinas").select("*").eq("id", realId).maybeSingle();
@@ -136,18 +140,17 @@ async function montarDisciplinasCurso(courseId: string): Promise<DadosDisciplina
   const teorias = await buscarTeoriasPorIds(linhasDisciplinas.flatMap(teoriasNoCurso));
 
   const montadas: DisciplinaCurso[] = linhasDisciplinas.map((d) => {
-    const rating = parseInt(d.descricao, 10);
     return {
       id: String(d.id),
       titulo: d.titulo,
-      relevancia: Number.isNaN(rating) ? null : rating,
+      relevancia: relevancias ? relevancias[String(d.id)] ?? null : notaValida(d.descricao),
       teorias: teoriasNoCurso(d)
         .map((id) => teorias.get(id))
         .filter((t): t is TeoriaCurso => !!t),
     };
   });
 
-  // Disciplinas de maior rating primeiro (estável para empates)
+  // Disciplinas de maior relevância primeiro (estável para empates)
   montadas.sort((a, b) => (b.relevancia ?? 0) - (a.relevancia ?? 0));
   return { realId, isCurso, titulo, disciplinas: montadas, linhasDisciplinas };
 }
@@ -170,7 +173,7 @@ export function carregarDisciplinasCurso(courseId: string): Promise<DadosDiscipl
 
 /**
  * Carrega as disciplinas do curso (ou a disciplina avulsa) com as teorias de cada uma,
- * na ordem definida no admin. As disciplinas seguem ordenadas pelo rating (maior primeiro).
+ * na ordem definida no admin. As disciplinas seguem ordenadas pela relevância no curso (maior primeiro).
  */
 export function useDisciplinasCurso(courseId: string | undefined, onCarregado?: (linhasDisciplinas: Linha[]) => void) {
   const [disciplinas, setDisciplinas] = useState<DisciplinaCurso[]>([]);

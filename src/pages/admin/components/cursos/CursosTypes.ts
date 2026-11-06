@@ -1,4 +1,5 @@
 import type { TeoriasPorDisciplina } from "@/utils/teoriasDoCurso";
+import type { RelevanciaPorDisciplina } from "@/utils/relevanciaDoCurso";
 
 export interface Curso {
   id: string;
@@ -15,4 +16,8 @@ export interface Curso {
   totalTeorias: number;
   /** A coluna teorias_por_disciplina já existe no banco (migration aplicada) */
   temColunaSelecao: boolean;
+  /** Relevância (1 a 10) de cada disciplina neste curso */
+  relevanciaPorDisciplina: RelevanciaPorDisciplina;
+  /** A coluna relevancia_por_disciplina já existe no banco (migration aplicada) */
+  temColunaRelevancia: boolean;
 }

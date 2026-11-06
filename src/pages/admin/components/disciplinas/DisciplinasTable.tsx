@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ChevronDown, Copy, Edit, FileText, FolderOpen, Heart, ListOrdered, Star, Trash2 } from "lucide-react";
+import { ChevronDown, Copy, Edit, FileText, FolderOpen, Heart, ListOrdered, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { CaixaSelecao, Contador, Etiqueta, MenuAcoes, copiarTexto } from "@/components/admin/ui/listagem";
@@ -99,7 +99,6 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
           const pos = selecao.indexOf(d.id);
           const cursos = cursosDaDisciplina.get(d.id) || [];
           const expandida = aberta === d.id;
-          const rating = parseInt(d.descricao, 10);
           return (
             <li key={d.id} className={cn(pos >= 0 && "bg-[#5f2ebe]/[0.04]")}>
               <div className={cn("flex items-center gap-3 px-3 py-3 transition-colors sm:px-4", pos < 0 && "hover:bg-[#faf8ff]")}>
@@ -115,12 +114,6 @@ export const DisciplinasTable: React.FC<DisciplinasTableProps> = ({
                       {d.titulo}
                     </button>
                     {d.banca && <Etiqueta tom="azul">{d.banca}</Etiqueta>}
-                    {!Number.isNaN(rating) && (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-amber-600" title="Nota de rating">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        {rating}/10
-                      </span>
-                    )}
                     {pos >= 0 && <Etiqueta tom="roxo">{pos + 1}ª na seleção</Etiqueta>}
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-1">

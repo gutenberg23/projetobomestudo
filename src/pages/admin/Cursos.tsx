@@ -22,6 +22,7 @@ import { CursosTable, CursoDialog, Curso, DadosCurso, DisciplinaOpcao } from "./
 import type { TeoriaOpcao } from "./components/cursos/EscolherTeoriasDisciplina";
 import { AVISO_MIGRATION_TEORIAS, carregarTeoriasResumo, type TeoriaResumo } from "./components/disciplinas/useDisciplinas";
 import { lerTeoriasPorDisciplina, teoriasDaDisciplinaNoCurso } from "@/utils/teoriasDoCurso";
+import { lerRelevancias } from "@/utils/relevanciaDoCurso";
 
 type Aba = "todos" | "sem-disciplinas";
 type Ordem = "recentes" | "titulo" | "favoritos";
@@ -84,6 +85,8 @@ const Cursos = () => {
             teoriasPorDisciplina: selecao,
             totalTeorias,
             temColunaSelecao: "teorias_por_disciplina" in c,
+            relevanciaPorDisciplina: lerRelevancias((c as { relevancia_por_disciplina?: unknown }).relevancia_por_disciplina),
+            temColunaRelevancia: "relevancia_por_disciplina" in c,
           };
         })
       );
@@ -129,6 +132,11 @@ const Cursos = () => {
       if (dados.teoriasPorDisciplina[id]) teorias_por_disciplina[id] = unicos(dados.teoriasPorDisciplina[id]);
     });
     const temSelecao = Object.keys(teorias_por_disciplina).length > 0;
+    const relevancia_por_disciplina: Record<string, number> = {};
+    disciplinas_ids.forEach((id) => {
+      if (dados.relevanciaPorDisciplina[id]) relevancia_por_disciplina[id] = dados.relevanciaPorDisciplina[id];
+    });
+    const temNotas = Object.keys(relevancia_por_disciplina).length > 0;
     const campos = {
       titulo: dados.titulo,
       descricao: dados.cargo,
@@ -136,6 +144,7 @@ const Cursos = () => {
       disciplinas_ids,
       // Antes da migration a coluna não existe: só grava quando há o que gravar
       ...((temSelecao || cursos.some((c) => c.temColunaSelecao)) && { teorias_por_disciplina }),
+      ...((temNotas || cursos.some((c) => c.temColunaRelevancia)) && { relevancia_por_disciplina }),
     };
     const nTeorias = unicos(
       disciplinas_ids.flatMap((d) =>
@@ -159,10 +168,13 @@ const Cursos = () => {
     } catch (error) {
       console.error("Erro ao salvar curso:", error);
       const e = error as { code?: string; message?: string };
+      const faltaColuna = (coluna: string) => (e.code === "PGRST204" || e.code === "42703") && (e.message || "").includes(coluna);
       toast.error(
-        (e.code === "PGRST204" || e.code === "42703") && /teorias_por_disciplina/.test(e.message || "")
-          ? AVISO_MIGRATION_TEORIAS
-          : "Erro ao salvar o curso"
+        faltaColuna("relevancia_por_disciplina")
+          ? "Rode a migration 20251121000000_relevancia_por_curso.sql no SQL Editor do Supabase para salvar a relevância das disciplinas."
+          : faltaColuna("teorias_por_disciplina")
+            ? AVISO_MIGRATION_TEORIAS
+            : "Erro ao salvar o curso"
       );
       return false;
     }

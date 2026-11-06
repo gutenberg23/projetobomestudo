@@ -10,6 +10,7 @@ import { BuscaComLista, ListaOrdenavel } from "../shared/ListaOrdenavel";
 import { Curso } from "./CursosTypes";
 import { TeoriaOpcao, EscolherTeoriasDisciplina } from "./EscolherTeoriasDisciplina";
 import { TeoriasPorDisciplina, teoriasDaDisciplinaNoCurso } from "@/utils/teoriasDoCurso";
+import type { RelevanciaPorDisciplina } from "@/utils/relevanciaDoCurso";
 
 export interface DisciplinaOpcao {
   id: string;
@@ -25,6 +26,7 @@ export interface DadosCurso {
   informacoes: string;
   disciplinasIds: string[];
   teoriasPorDisciplina: TeoriasPorDisciplina;
+  relevanciaPorDisciplina: RelevanciaPorDisciplina;
 }
 
 interface CursoDialogProps {
@@ -46,6 +48,7 @@ export const CursoDialog: React.FC<CursoDialogProps> = ({ aberto, curso, discipl
   const [informacoes, setInformacoes] = useState("");
   const [escolhidas, setEscolhidas] = useState<string[]>([]);
   const [selecao, setSelecao] = useState<TeoriasPorDisciplina>({});
+  const [notas, setNotas] = useState<RelevanciaPorDisciplina>({});
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -55,6 +58,7 @@ export const CursoDialog: React.FC<CursoDialogProps> = ({ aberto, curso, discipl
     setInformacoes(curso?.informacoesCurso || "");
     setEscolhidas(curso ? [...curso.disciplinasIds] : []);
     setSelecao(curso ? { ...curso.teoriasPorDisciplina } : {});
+    setNotas(curso ? { ...curso.relevanciaPorDisciplina } : {});
   }, [aberto, curso]);
 
   const porId = useMemo(() => new Map(disciplinas.map((d) => [d.id, d])), [disciplinas]);
@@ -63,6 +67,13 @@ export const CursoDialog: React.FC<CursoDialogProps> = ({ aberto, curso, discipl
     const r: TeoriasPorDisciplina = {};
     escolhidas.forEach((id) => {
       if (selecao[id]) r[id] = teoriasNoCurso(id);
+    });
+    return r;
+  };
+  const notasLimpas = (): RelevanciaPorDisciplina => {
+    const r: RelevanciaPorDisciplina = {};
+    escolhidas.forEach((id) => {
+      if (notas[id]) r[id] = notas[id];
     });
     return r;
   };
@@ -79,7 +90,7 @@ export const CursoDialog: React.FC<CursoDialogProps> = ({ aberto, curso, discipl
       return;
     }
     setSalvando(true);
-    const ok = await onSalvar({ titulo: titulo.trim(), cargo, informacoes, disciplinasIds: escolhidas, teoriasPorDisciplina: selecaoLimpa() });
+    const ok = await onSalvar({ titulo: titulo.trim(), cargo, informacoes, disciplinasIds: escolhidas, teoriasPorDisciplina: selecaoLimpa(), relevanciaPorDisciplina: notasLimpas() });
     setSalvando(false);
     if (ok) onFechar();
   };
@@ -134,7 +145,7 @@ export const CursoDialog: React.FC<CursoDialogProps> = ({ aberto, curso, discipl
                 return {
                   id,
                   titulo: d?.titulo || "Disciplina não encontrada",
-                  detalhe: d ? [d.banca, n === t ? `${t} teorias` : `${n} de ${t} teorias`].filter(Boolean).join(" · ") : id,
+                  detalhe: d ? [d.banca, n === t ? `${t} ${t === 1 ? "teoria" : "teorias"}` : `${n} de ${t} teorias`, notas[id] ? `relevância ${notas[id]}/10` : ""].filter(Boolean).join(" · ") : id,
                 };
               })}
               onChange={(itens) => setEscolhidas(itens.map((i) => i.id))}
@@ -146,7 +157,7 @@ export const CursoDialog: React.FC<CursoDialogProps> = ({ aberto, curso, discipl
               }
             />
             <BuscaComLista
-              opcoes={disciplinas.map((d) => ({ id: d.id, titulo: d.titulo, detalhe: [d.banca, `${d.teoriasIds.length} teorias`].filter(Boolean).join(" · ") }))}
+              opcoes={disciplinas.map((d) => ({ id: d.id, titulo: d.titulo, detalhe: [d.banca, `${d.teoriasIds.length} ${d.teoriasIds.length === 1 ? "teoria" : "teorias"}`].filter(Boolean).join(" · ") }))}
               escolhidos={escolhidas}
               onEscolher={(id) => setEscolhidas((l) => [...l, id])}
               placeholder="Buscar disciplina por título ou banca"
@@ -154,10 +165,11 @@ export const CursoDialog: React.FC<CursoDialogProps> = ({ aberto, curso, discipl
             />
             {escolhidas.length > 0 && (
               <div className="space-y-1.5 pt-1">
-                <Label>Teorias de cada disciplina neste curso</Label>
+                <Label>Relevância e teorias de cada disciplina neste curso</Label>
                 <p className="text-xs text-slate-500">
-                  Use uma disciplina só para vários concursos: abra e desmarque as teorias que não caem neste. As teorias
-                  continuam na disciplina e na ordem dela.
+                  Dê a cada disciplina a nota de relevância (1 a 10) que ela tem neste concurso: o aluno vê a nota e as
+                  disciplinas mais relevantes aparecem primeiro. Abra a disciplina para desmarcar as teorias que não caem neste
+                  concurso; elas continuam na disciplina e na ordem dela.
                 </p>
                 {escolhidas.map((id) => {
                   const d = porId.get(id);
@@ -168,6 +180,15 @@ export const CursoDialog: React.FC<CursoDialogProps> = ({ aberto, curso, discipl
                       titulo={d.titulo}
                       teorias={d.teoriasIds.map((t) => teorias.get(t) || { id: t, titulo: "Teoria não encontrada" })}
                       escolhidas={selecao[id]}
+                      relevancia={notas[id]}
+                      onRelevancia={(nota) =>
+                        setNotas((m) => {
+                          const novo = { ...m };
+                          if (nota) novo[id] = nota;
+                          else delete novo[id];
+                          return novo;
+                        })
+                      }
                       onChange={(lista) =>
                         setSelecao((m) => {
                           const novo = { ...m };
