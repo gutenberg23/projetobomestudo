@@ -318,7 +318,8 @@ const Dashboard = () => {
   );
 
   const mediaDia = d.diasEstudados ? Math.round(d.resumo.total / d.diasEstudados) : 0;
-  const nome = (user?.nome || "").split(" ")[0];
+  // Nome do perfil (nome social tem prioridade), completo, sem cortar no primeiro espaço.
+  const nome = ((user as { nome_social?: string | null } | null)?.nome_social || user?.nome || "").trim();
 
   const zerar = async () => {
     if (!user) return;
@@ -354,7 +355,7 @@ const Dashboard = () => {
                 <BarChart3 className="h-3.5 w-3.5" /> Seu desempenho
               </p>
               <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">
-                {nome ? `Olá, ${nome}` : "Dashboard"}
+                {nome ? `Olá, ${nome}!` : "Olá!"}
               </h1>
               <p className="mt-1 max-w-xl text-sm text-slate-500">
                 Veja como você foi {extenso}: quanto resolveu, onde acerta mais e o que precisa revisar.
