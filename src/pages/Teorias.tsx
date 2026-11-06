@@ -248,7 +248,7 @@ const Teorias = () => {
           {/* Topo com a busca */}
           <section className="relative overflow-hidden border-b border-slate-200/70 bg-white">
             <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gradient-to-br from-[#5f2ebe]/15 to-[#ea2be2]/10 blur-2xl" />
-            <div className={cn(LARGURA, "relative grid gap-6 py-8 md:py-10 lg:grid-cols-[1fr_340px] lg:items-end")}>
+            <div className={cn(LARGURA, "relative grid grid-cols-1 gap-6 py-8 md:py-10 lg:grid-cols-[1fr_340px] lg:items-end")}>
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[#5f2ebe]">Teorias</p>
                 <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">Aulas em texto, direto ao ponto</h1>
@@ -296,7 +296,7 @@ const Teorias = () => {
             </div>
           </section>
 
-          <div className={cn(LARGURA, "grid gap-6 py-6 lg:grid-cols-[280px_minmax(0,1fr)]")}>
+          <div className={cn(LARGURA, "grid grid-cols-1 gap-6 py-6 lg:grid-cols-[280px_minmax(0,1fr)]")}>
             {/* Disciplinas: lateral no computador, faixa rolável no celular */}
             <aside className="min-w-0">
               <div className="-mx-[10px] flex gap-2 overflow-x-auto px-[10px] pb-1 scrollbar-none md:-mx-[32px] md:px-[32px] lg:hidden">
@@ -365,7 +365,7 @@ const Teorias = () => {
                     <RotateCcw className="h-4 w-4 text-[#5f2ebe]" />
                     Continue de onde parou
                   </h2>
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {recentes.map(({ item, em }) => (
                       <Link
                         key={item.id}
@@ -441,7 +441,7 @@ const Teorias = () => {
 
               {/* Resultados */}
               {carregando ? (
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <Painel key={i} className="space-y-3 p-4">
                       <Skeleton className="h-5 w-24 rounded-full" />
@@ -494,7 +494,7 @@ const Teorias = () => {
                             {assunto}
                             <span className="text-xs font-normal text-slate-400">{lista.length}</span>
                           </h3>
-                          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             {lista.map((item) => (
                               <CartaoTeoria key={item.id} item={item} grifos={grifos[item.id]} mostrarDisciplina={false} mostrarAssunto={false} />
                             ))}
@@ -503,7 +503,7 @@ const Teorias = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       {visiveis.slice(0, limite).map((item) => (
                         <CartaoTeoria key={item.id} item={item} grifos={grifos[item.id]} mostrarDisciplina={!disciplina} />
                       ))}
