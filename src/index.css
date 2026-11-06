@@ -144,3 +144,12 @@
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+/* Dica de deslize na barra de abas de /course (celular) */
+@keyframes deslize-dica {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-\[deslize-dica_1\.6s_ease-in-out_3\] { animation: none; }
+}
