@@ -29,6 +29,7 @@ import { QuestoesTeoria } from "@/components/teorias/QuestoesTeoria";
 import { SugerirCorrecaoDialog } from "@/components/teorias/SugerirCorrecaoDialog";
 import { CreditosContribuidores } from "@/components/teorias/CreditosContribuidores";
 import { PainelMarcacoes } from "@/components/teorias/PainelMarcacoes";
+import { BarraCurso } from "@/components/teorias/BarraCurso";
 import { registrarLeitura } from "@/components/teorias/recentes";
 import {
   CORES_MARCACAO,
@@ -178,10 +179,11 @@ const BarraProgresso = ({ alvo }: { alvo: React.RefObject<HTMLElement> }) => {
 };
 
 /** Estrutura comum às telas de carregando, não encontrada e da teoria. */
-const Moldura = ({ children }: { children: React.ReactNode }) => (
+const Moldura = ({ children, topo }: { children: React.ReactNode; topo?: React.ReactNode }) => (
   <PublicLayout>
     <div className="flex min-h-screen flex-col bg-[#f6f7fb]">
       <Header />
+      {topo}
       <main className="flex-1">{children}</main>
       <Footer />
     </div>
@@ -286,6 +288,8 @@ const TeoriaPost = () => {
         if (teoria.slug && teoria.slug !== slug) {
           navigate(`${teoriaPath(teoria)}${window.location.search}`, { replace: true });
         }
+        // Veio de outra teoria (ex.: "próxima" na barra do curso): começa do topo
+        if (post) window.scrollTo({ top: 0 });
         setPost(teoria);
         registrarLeitura(teoria.id);
 
@@ -678,8 +682,12 @@ const TeoriaPost = () => {
     </div>
   );
 
+  // Teoria aberta a partir de um curso: barra para voltar ao curso e andar pela disciplina
+  const cursoOrigem = params.get("curso");
+  const barraCurso = cursoOrigem && post.id ? <BarraCurso teoriaId={post.id} curso={cursoOrigem} disciplinaId={params.get("disciplina")} /> : null;
+
   return (
-    <Moldura>
+    <Moldura topo={barraCurso}>
       {/* Progresso da leitura */}
       {aba === "aula" && <BarraProgresso alvo={conteudoRef} />}
 

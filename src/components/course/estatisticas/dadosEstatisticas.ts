@@ -61,7 +61,6 @@ export interface Estatisticas {
 }
 
 const PAGINA = 1000;
-const LOTE_IDS = 150;
 /** Teto do modo sem migration (100 mil questões) */
 const MAX_PAGINAS = 100;
 
@@ -79,8 +78,8 @@ const limpar = (v: unknown) => (v === null || v === undefined ? "" : String(v).t
  * A disciplina do site (ex.: "Português para a PM") e a disciplina das
  * questões (ex.: "Língua Portuguesa") são cadastros diferentes. Descobrimos o
  * nome usado nas questões olhando, nesta ordem de peso:
- *  1. a disciplina das questões ligadas aos tópicos das aulas;
- *  2. o campo "Disciplina" dos tópicos;
+ *  1. as disciplinas usadas nos filtros de questões das teorias;
+ *  2. a disciplina em que cada teoria foi classificada;
  *  3. o título da disciplina, se existir igual nas questões.
  * Devolve os nomes encontrados, do mais provável ao menos.
  */
@@ -96,17 +95,13 @@ export async function descobrirDisciplinasDasQuestoes(courseId: string): Promise
     if (n) pesos.set(n, (pesos.get(n) || 0) + peso);
   };
 
-  const topicos = dados.disciplinas.flatMap((d) => d.aulas.flatMap((a) => a.topicos));
+  const teorias = dados.disciplinas.flatMap((d) => d.teorias);
 
-  // 1. Questões ligadas aos tópicos (até 300, o suficiente para descobrir o nome)
-  const ids = Array.from(new Set(topicos.flatMap((t) => t.questoesIds))).slice(0, 300);
-  for (let i = 0; i < ids.length; i += LOTE_IDS) {
-    const { data } = await db.from("questoes").select("discipline").in("id", ids.slice(i, i + LOTE_IDS));
-    ((data || []) as Array<{ discipline: string | null }>).forEach((q) => somar(q.discipline || "", 3));
-  }
+  // 1. Disciplinas dos filtros de questões das teorias
+  teorias.forEach((t) => (t.filtrosQuestoes.disciplinas || []).forEach((n) => somar(n, 3)));
 
-  // 2. Campo "Disciplina" dos tópicos
-  topicos.forEach((t) => t.disciplinaQuestoes && somar(t.disciplinaQuestoes, 2));
+  // 2. Disciplina das questões em que a teoria foi classificada
+  teorias.forEach((t) => t.disciplinaQuestoes && somar(t.disciplinaQuestoes, 2));
 
   // Nomes oficiais cadastrados para as questões, para corrigir caixa e acentos
   const { data: oficiais } = await db.from("disciplinas_questoes").select("nome");

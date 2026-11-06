@@ -23,21 +23,21 @@ export const UnificarDisciplinasDialog: React.FC<Props> = ({ disciplinas, cursos
 
   useEffect(() => {
     if (!disciplinas?.length) return;
-    // Sugere a que tem mais aulas (empate: a que está em mais cursos)
+    // Sugere a que tem mais teorias (empate: a que está em mais cursos)
     const melhor = [...disciplinas].sort(
-      (a, b) => b.aulasIds.length - a.aulasIds.length || (cursosDaDisciplina.get(b.id)?.length || 0) - (cursosDaDisciplina.get(a.id)?.length || 0)
+      (a, b) => b.teoriasIds.length - a.teoriasIds.length || (cursosDaDisciplina.get(b.id)?.length || 0) - (cursosDaDisciplina.get(a.id)?.length || 0)
     )[0];
     setPrincipal(melhor.id);
   }, [disciplinas, cursosDaDisciplina]);
 
   const resumo = useMemo(() => {
-    if (!disciplinas) return { aulas: 0, cursos: [] as { id: string; titulo: string }[], titulos: 0 };
+    if (!disciplinas) return { teorias: 0, cursos: [] as { id: string; titulo: string }[], titulos: 0 };
     const ordem = [...disciplinas].sort((a, b) => (a.id === principal ? -1 : b.id === principal ? 1 : 0));
-    const aulas = new Set(ordem.flatMap((d) => d.aulasIds));
+    const teorias = new Set(ordem.flatMap((d) => d.teoriasIds));
     const cursos = new Map<string, { id: string; titulo: string }>();
     disciplinas.forEach((d) => (cursosDaDisciplina.get(d.id) || []).forEach((c) => cursos.set(c.id, c)));
     const titulos = new Set(disciplinas.map((d) => d.titulo.trim().toLowerCase())).size;
-    return { aulas: aulas.size, cursos: Array.from(cursos.values()), titulos };
+    return { teorias: teorias.size, cursos: Array.from(cursos.values()), titulos };
   }, [disciplinas, principal, cursosDaDisciplina]);
 
   const confirmar = async () => {
@@ -60,7 +60,7 @@ export const UnificarDisciplinasDialog: React.FC<Props> = ({ disciplinas, cursos
             Unificar {disciplinas?.length || 0} disciplinas
           </DialogTitle>
           <DialogDescription>
-            Fica uma disciplina só, com todas as aulas. Cada curso continua mostrando exatamente as aulas que mostrava
+            Fica uma disciplina só, com todas as teorias. Cada curso continua mostrando exatamente as teorias que mostrava
             antes, e o progresso dos alunos não muda.
           </DialogDescription>
         </DialogHeader>
@@ -87,7 +87,7 @@ export const UnificarDisciplinasDialog: React.FC<Props> = ({ disciplinas, cursos
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium text-slate-900">{d.titulo}</span>
                   <span className="block text-xs text-slate-500">
-                    {[d.banca, `${d.aulasIds.length} aulas`, cursos.length ? `em ${cursos.length} ${cursos.length === 1 ? "curso" : "cursos"}` : "em nenhum curso"]
+                    {[d.banca, `${d.teoriasIds.length} teorias`, cursos.length ? `em ${cursos.length} ${cursos.length === 1 ? "curso" : "cursos"}` : "em nenhum curso"]
                       .filter(Boolean)
                       .join(" · ")}
                   </span>
@@ -99,13 +99,13 @@ export const UnificarDisciplinasDialog: React.FC<Props> = ({ disciplinas, cursos
 
         <ul className="list-disc space-y-1 rounded-lg bg-slate-50 py-3 pl-8 pr-3 text-sm text-slate-600">
           <li>
-            A principal passa a ter <strong>{resumo.aulas} aulas</strong> (as dela primeiro, depois as que faltavam, sem
+            A principal passa a ter <strong>{resumo.teorias} teorias</strong> (as dela primeiro, depois as que faltavam, sem
             repetir).
           </li>
           <li>
             {resumo.cursos.length === 0
               ? "Nenhum curso usa essas disciplinas."
-              : `${resumo.cursos.length} ${resumo.cursos.length === 1 ? "curso passa" : "cursos passam"} a usar a principal, com as mesmas aulas de antes: ${resumo.cursos
+              : `${resumo.cursos.length} ${resumo.cursos.length === 1 ? "curso passa" : "cursos passam"} a usar a principal, com as mesmas teorias de antes: ${resumo.cursos
                   .map((c) => c.titulo)
                   .join(", ")}.`}
           </li>

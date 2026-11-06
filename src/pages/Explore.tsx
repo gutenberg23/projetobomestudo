@@ -8,7 +8,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import AdBanner from "@/components/ads/AdBanner";
 import { Carregando, EstadoVazio, Painel, Segmentos, normalizar } from "@/components/course/ui";
 import { supabase } from "@/integrations/supabase/client";
-import { aulasDaDisciplinaNoCurso, lerAulasPorDisciplina } from "@/utils/aulasDoCurso";
+import { lerTeoriasPorDisciplina, teoriasDaDisciplinaNoCurso } from "@/utils/teoriasDoCurso";
 import { useAuth } from "@/hooks/useAuth";
 import { generateFriendlyUrl } from "@/utils/slug-utils";
 import { ActivityLogger } from "@/services/activity-logger";
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useExigirLogin } from "@/components/auth/LoginObrigatorio";
 
 type Tipo = "cursos" | "disciplinas";
-type Ordem = "az" | "recentes" | "aulas";
+type Ordem = "az" | "recentes" | "teorias";
 
 interface ItemExplorar {
   id: string;
@@ -26,29 +26,28 @@ interface ItemExplorar {
   subtitulo: string;
   banca: string;
   disciplinas: number;
-  aulas: number;
-  topicos: number;
+  /** Teorias publicadas no curso ou na disciplina */
+  teorias: number;
   criadoEm: string;
   url: string;
   favorito: boolean;
 }
 
 const POR_PAGINA = 24;
-const LOTE = 150;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Linha = Record<string, any>;
 
-/** Busca as aulas em lotes (uma consulta por lote, e não uma por disciplina). */
-async function topicosPorAula(ids: string[]) {
-  const mapa = new Map<string, number>();
-  const unicos = Array.from(new Set(ids.filter(Boolean)));
-  for (let i = 0; i < unicos.length; i += LOTE) {
-    const { data, error } = await supabase.from("aulas").select("id, topicos_ids").in("id", unicos.slice(i, i + LOTE));
+/** Ids das teorias publicadas (páginas de 1.000, só a coluna id). */
+async function teoriasPublicadas() {
+  const ids = new Set<string>();
+  for (let de = 0; ; de += 1000) {
+    const { data, error } = await supabase.from("teorias").select("id").eq("status", "published").range(de, de + 999);
     if (error) throw error;
-    (data || []).forEach((a: Linha) => mapa.set(a.id, a.topicos_ids?.length || 0));
+    (data || []).forEach((t: Linha) => ids.add(String(t.id)));
+    if (!data || data.length < 1000) break;
   }
-  return mapa;
+  return ids;
 }
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
@@ -101,7 +100,7 @@ const Explore = () => {
         if (disciplinasRes.error) throw disciplinasRes.error;
         const cursos = (cursosRes.data || []) as Linha[];
         const todasDisciplinas = (disciplinasRes.data || []) as Linha[];
-        const aulasDe = new Map(todasDisciplinas.map((d) => [d.id, (d.aulas_ids || []) as string[]]));
+        const teoriasDe = new Map(todasDisciplinas.map((d) => [d.id, (d.teorias_ids || []) as string[]]));
         // Disciplinas unificadas em outra não aparecem na lista
         const disciplinas = todasDisciplinas.filter((d) => !d.unificada_em);
 
@@ -113,20 +112,14 @@ const Explore = () => {
           favDisciplinas = data?.disciplinas_favoritos || [];
         }
 
-        const topicos = await topicosPorAula(todasDisciplinas.flatMap((d) => d.aulas_ids || []));
-        const porDisciplina = new Map<string, { aulas: number; topicos: number }>();
-        disciplinas.forEach((d) => {
-          const aulas: string[] = d.aulas_ids || [];
-          porDisciplina.set(d.id, { aulas: aulas.length, topicos: aulas.reduce((s, a) => s + (topicos.get(a) || 0), 0) });
-        });
+        const publicadas = await teoriasPublicadas();
+        const contar = (ids: string[]) => new Set(ids.filter((id) => publicadas.has(id))).size;
 
         const listaCursos: ItemExplorar[] = cursos.map((c) => {
           const ids: string[] = c.disciplinas_ids || [];
-          // Só as aulas escolhidas para o curso em cada disciplina
-          const selecao = lerAulasPorDisciplina(c.aulas_por_disciplina);
-          const aulasCurso = ids.map((id) => aulasDaDisciplinaNoCurso(aulasDe.get(id), selecao, id));
-          const somaAulas = aulasCurso.reduce((s, l) => s + l.length, 0);
-          const somaTopicos = aulasCurso.reduce((s, l) => s + l.reduce((t, a) => t + (topicos.get(a) || 0), 0), 0);
+          // Só as teorias escolhidas para o curso em cada disciplina
+          const selecao = lerTeoriasPorDisciplina(c.teorias_por_disciplina);
+          const teoriasCurso = ids.flatMap((id) => teoriasDaDisciplinaNoCurso(teoriasDe.get(id), selecao, id));
           return {
             id: c.id,
             tipo: "cursos",
@@ -134,8 +127,7 @@ const Explore = () => {
             subtitulo: c.descricao || "",
             banca: "",
             disciplinas: ids.length,
-            aulas: somaAulas || c.aulas_ids?.length || 0,
-            topicos: somaTopicos || c.topicos_ids?.length || 0,
+            teorias: contar(teoriasCurso),
             criadoEm: c.created_at || "",
             url: `/course/${generateFriendlyUrl(c.titulo, c.id)}`,
             favorito: favCursos.includes(c.id),
@@ -149,8 +141,7 @@ const Explore = () => {
           subtitulo: d.descricao || "",
           banca: (d.banca || "").trim(),
           disciplinas: 0,
-          aulas: porDisciplina.get(d.id)?.aulas || 0,
-          topicos: porDisciplina.get(d.id)?.topicos || 0,
+          teorias: contar(d.teorias_ids || []),
           criadoEm: d.created_at || "",
           url: `/course/${generateFriendlyUrl(d.titulo, d.id)}`,
           favorito: favDisciplinas.includes(d.id),
@@ -205,7 +196,7 @@ const Explore = () => {
     const ordenada = [...lista];
     if (ordem === "az") ordenada.sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR"));
     if (ordem === "recentes") ordenada.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
-    if (ordem === "aulas") ordenada.sort((a, b) => b.aulas - a.aulas || a.titulo.localeCompare(b.titulo, "pt-BR"));
+    if (ordem === "teorias") ordenada.sort((a, b) => b.teorias - a.teorias || a.titulo.localeCompare(b.titulo, "pt-BR"));
     return ordenada;
   }, [doTipo, soFavoritos, banca, termo, ordem]);
 
@@ -363,7 +354,7 @@ const Explore = () => {
                 >
                   <option value="az">Nome (A–Z)</option>
                   <option value="recentes">Mais recentes</option>
-                  <option value="aulas">Mais aulas</option>
+                  <option value="teorias">Mais teorias</option>
                 </select>
               </div>
             </div>
@@ -448,8 +439,8 @@ const CartaoItem: React.FC<{ item: ItemExplorar; onFavoritar: () => void; onAbri
   const Icone = item.tipo === "cursos" ? GraduationCap : BookOpen;
   const detalhes =
     item.tipo === "cursos"
-      ? [plural(item.disciplinas, "disciplina", "disciplinas"), plural(item.aulas, "aula", "aulas")]
-      : [plural(item.aulas, "aula", "aulas"), plural(item.topicos, "tópico", "tópicos")];
+      ? [plural(item.disciplinas, "disciplina", "disciplinas"), plural(item.teorias, "teoria", "teorias")]
+      : [plural(item.teorias, "teoria", "teorias")];
   return (
     <Painel className="group relative flex flex-col p-4 transition hover:-translate-y-0.5 hover:border-[#5f2ebe]/30 hover:shadow-md">
       <div className="flex items-start gap-3">

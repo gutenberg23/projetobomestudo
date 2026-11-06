@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { buscarFlashcardsDosTopicos, db, disponivelNoCurso, faltaMigration, type Flashcard } from "@/lib/flashcards";
-import { carregarDisciplinasCurso, type AulaCurso, type DisciplinaCurso, type TopicoCurso } from "../disciplinas/useDisciplinasCurso";
+import { buscarFlashcardsDasTeorias, db, disponivelNoCurso, faltaMigration, type Flashcard } from "@/lib/flashcards";
+import { carregarDisciplinasCurso, type DisciplinaCurso, type TeoriaCurso } from "../disciplinas/useDisciplinasCurso";
 
 export type Resultado = "lembrei" | "esqueci";
 
@@ -12,30 +12,32 @@ export interface ProgressoCartao {
   ultimo: Resultado;
 }
 
-/** Tópico com os cartões que valem para este curso. */
-export interface TopicoFlashcards {
-  topico: TopicoCurso;
-  aula: AulaCurso;
+/** Teoria com os cartões que valem para este curso. */
+export interface TeoriaFlashcards {
+  teoria: TeoriaCurso;
   disciplina: DisciplinaCurso;
   cartoes: Flashcard[];
 }
 
-export interface AulaFlashcards {
-  aula: AulaCurso;
-  topicos: TopicoFlashcards[];
+/** Teorias seguidas do mesmo assunto, como na aba Disciplinas. */
+export interface GrupoFlashcards {
+  id: string;
+  /** Assunto das teorias (vazio = sem assunto) */
+  titulo: string;
+  teorias: TeoriaFlashcards[];
 }
 
 export interface DisciplinaFlashcards {
   disciplina: DisciplinaCurso;
-  aulas: AulaFlashcards[];
+  grupos: GrupoFlashcards[];
 }
 
 const LOTE = 150;
 
 /**
- * Flashcards do curso, organizados por disciplina → aula → tópico, e o
- * progresso do aluno em cada cartão. Um cartão vale para o curso quando o
- * tópico está no curso e o cartão não foi restrito a outros cursos.
+ * Flashcards do curso, organizados por disciplina → assunto → teoria, e o
+ * progresso do aluno em cada cartão. Um cartão vale para o curso quando a
+ * teoria está no curso e o cartão não foi restrito a outros cursos.
  */
 export function useFlashcardsCurso(courseId: string | undefined) {
   const { user } = useAuth();
@@ -51,32 +53,32 @@ export function useFlashcardsCurso(courseId: string | undefined) {
     (async () => {
       try {
         const dados = await carregarDisciplinasCurso(courseId);
-        const topicosIds = dados.disciplinas.flatMap((d) => d.aulas.flatMap((a) => a.topicos.map((t) => t.id)));
-        const cartoes = await buscarFlashcardsDosTopicos(topicosIds);
+        const teoriasIds = dados.disciplinas.flatMap((d) => d.teorias.map((t) => t.id));
+        const cartoes = await buscarFlashcardsDasTeorias(teoriasIds);
         const cursoId = dados.isCurso ? dados.realId : null;
-        const porTopico = new Map<string, Flashcard[]>();
+        const porTeoria = new Map<string, Flashcard[]>();
         cartoes
-          .filter((c) => disponivelNoCurso(c, cursoId))
+          .filter((c) => c.teoriaId && disponivelNoCurso(c, cursoId))
           .forEach((c) => {
-            const l = porTopico.get(c.topicoId) || [];
+            const l = porTeoria.get(c.teoriaId!) || [];
             l.push(c);
-            porTopico.set(c.topicoId, l);
+            porTeoria.set(c.teoriaId!, l);
           });
 
-        // Um mesmo tópico pode estar em duas aulas: aparece nas duas
         const montada: DisciplinaFlashcards[] = dados.disciplinas
-          .map((d) => ({
-            disciplina: d,
-            aulas: d.aulas
-              .map((a) => ({
-                aula: a,
-                topicos: a.topicos
-                  .filter((t) => porTopico.has(t.id))
-                  .map((t) => ({ topico: t, aula: a, disciplina: d, cartoes: porTopico.get(t.id)! })),
-              }))
-              .filter((a) => a.topicos.length > 0),
-          }))
-          .filter((d) => d.aulas.length > 0);
+          .map((d) => {
+            const grupos: GrupoFlashcards[] = [];
+            d.teorias
+              .filter((t) => porTeoria.has(t.id))
+              .forEach((t) => {
+                const item = { teoria: t, disciplina: d, cartoes: porTeoria.get(t.id)! };
+                const ult = grupos[grupos.length - 1];
+                if (ult && ult.titulo === t.assunto) ult.teorias.push(item);
+                else grupos.push({ id: `${d.id}-${grupos.length}`, titulo: t.assunto, teorias: [item] });
+              });
+            return { disciplina: d, grupos };
+          })
+          .filter((d) => d.grupos.length > 0);
 
         if (!cancelado) setEstrutura(montada);
       } catch (e) {
@@ -95,7 +97,7 @@ export function useFlashcardsCurso(courseId: string | undefined) {
 
   const todosCartoes = useMemo(() => {
     const vistos = new Map<string, Flashcard>();
-    estrutura.forEach((d) => d.aulas.forEach((a) => a.topicos.forEach((t) => t.cartoes.forEach((c) => vistos.set(c.id, c)))));
+    estrutura.forEach((d) => d.grupos.forEach((g) => g.teorias.forEach((t) => t.cartoes.forEach((c) => vistos.set(c.id, c)))));
     return Array.from(vistos.values());
   }, [estrutura]);
 
@@ -129,13 +131,6 @@ export function useFlashcardsCurso(courseId: string | undefined) {
       cancelado = true;
     };
   }, [user, todosCartoes]);
-
-  /** Quantos cartões cada tópico tem neste curso (para o botão da aba Disciplinas). */
-  const contagemPorTopico = useMemo(() => {
-    const c: Record<string, number> = {};
-    estrutura.forEach((d) => d.aulas.forEach((a) => a.topicos.forEach((t) => (c[t.topico.id] = t.cartoes.length))));
-    return c;
-  }, [estrutura]);
 
   const registrar = useCallback(
     async (cartaoId: string, resultado: Resultado) => {
@@ -185,7 +180,6 @@ export function useFlashcardsCurso(courseId: string | undefined) {
     carregando,
     total: todosCartoes.length,
     temFlashcards: todosCartoes.length > 0,
-    contagemPorTopico,
     progresso,
     registrar,
     zerar,

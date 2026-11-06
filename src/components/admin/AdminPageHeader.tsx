@@ -30,17 +30,20 @@ interface FluxoConteudoProps {
 
 const PASSOS: { id: FluxoConteudoProps["atual"]; label: string; path: string }[] = [
   { id: "teorias", label: "Teorias", path: "/admin/teorias" },
-  { id: "topicos", label: "Tópicos", path: "/admin/topicos" },
-  { id: "aulas", label: "Aulas", path: "/admin/aulas" },
   { id: "disciplinas", label: "Disciplinas", path: "/admin/disciplinas" },
   { id: "cursos", label: "Cursos", path: "/admin/cursos" },
 ];
 
 /**
  * Trilha que mostra onde a página está no fluxo de montagem do curso:
- * teoria → tópico → aula → disciplina → curso.
+ * teoria → disciplina → curso. (Tópicos e aulas saíram do fluxo: a disciplina é formada por teorias.)
  */
-export const FluxoConteudo: React.FC<FluxoConteudoProps> = ({ atual }) => (
+export const FluxoConteudo: React.FC<FluxoConteudoProps> = ({ atual }) =>
+  atual === "topicos" || atual === "aulas" ? (
+    <p className="text-xs text-amber-700">
+      Modelo antigo: as disciplinas agora são formadas por teorias. Esta página fica só para consulta.
+    </p>
+  ) : (
   <ol className="flex flex-wrap items-center gap-1 text-xs" aria-label="Etapas da montagem do curso">
     {PASSOS.map((p, i) => (
       <li key={p.id} className="flex items-center gap-1">

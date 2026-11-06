@@ -1,5 +1,5 @@
 import React from "react";
-import { BookOpen, Copy, Edit, ExternalLink, FileQuestion, FolderOpen, Heart, Layers, ListTree, Trash2 } from "lucide-react";
+import { BookOpenText, Copy, Edit, ExternalLink, FolderOpen, Heart, Layers, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Contador, MenuAcoes, copiarTexto } from "@/components/admin/ui/listagem";
@@ -58,16 +58,12 @@ export const CursosTable: React.FC<CursosTableProps> = ({ cursos, nomesDisciplin
               </div>
               {/* Contagens no celular */}
               <div className="mt-1.5 flex flex-wrap gap-3 text-xs md:hidden">
-                <Contador icone={BookOpen} n={curso.aulasIds.length} titulo="aulas" />
-                <Contador icone={ListTree} n={curso.topicosIds.length} titulo="tópicos" />
-                <Contador icone={FileQuestion} n={curso.totalQuestoes} titulo="questões" />
+                <Contador icone={BookOpenText} n={curso.totalTeorias} titulo="teorias" />
               </div>
             </div>
 
             <div className="hidden items-center gap-4 text-xs md:flex">
-              <Contador icone={BookOpen} n={curso.aulasIds.length} titulo="aulas" />
-              <Contador icone={ListTree} n={curso.topicosIds.length} titulo="tópicos" />
-              <Contador icone={FileQuestion} n={curso.totalQuestoes} titulo="questões" />
+              <Contador icone={BookOpenText} n={curso.totalTeorias} titulo="teorias" />
               <Contador icone={Heart} n={curso.favoritos} titulo="alunos favoritaram" className={curso.favoritos ? "text-fuchsia-600" : ""} />
             </div>
 

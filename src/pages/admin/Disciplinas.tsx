@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Combine, Layers, RefreshCw } from "lucide-react";
+import { Combine, Layers, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminPageHeader, FluxoConteudo } from "@/components/admin/AdminPageHeader";
 import {
@@ -20,11 +19,13 @@ import { DisciplinasTable, AdicionarDisciplina, EditDisciplinaModal, Disciplina 
 import { useDisciplinas } from "./components/disciplinas/useDisciplinas";
 import { UnificarDisciplinasDialog } from "./components/disciplinas/UnificarDisciplinasDialog";
 
-type Aba = "todas" | "repetidas" | "sem-curso" | "sem-aulas";
+type Aba = "todas" | "repetidas" | "sem-curso" | "sem-teorias";
 const POR_PAGINA = 15;
+/** Formulário vazio para criar uma disciplina */
+const NOVA: Disciplina = { id: "", titulo: "", descricao: "", banca: "", disciplinaQuestoes: "", teoriasIds: [] };
 
 const Disciplinas = () => {
-  const { disciplinas, aulas, cursosDaDisciplina, loading, recarregar, salvar, reordenarAulas, excluir, criarCurso, unificar } =
+  const { disciplinas, teorias, cursosDaDisciplina, loading, recarregar, salvar, reordenarTeorias, excluir, criarCurso, unificar } =
     useDisciplinas();
   const [unificando, setUnificando] = useState<Disciplina[] | null>(null);
 
@@ -54,16 +55,16 @@ const Disciplinas = () => {
     return disciplinas.filter((d) => {
       if (banca && (d.banca || "").trim() !== banca) return false;
       if (!termo) return true;
-      const nomesAulas = d.aulasIds.map((id) => aulas.get(id)?.titulo || "").join(" ");
-      return normalizar(`${d.titulo} ${d.banca} ${nomesAulas} ${d.id}`).includes(termo);
+      const nomesTeorias = d.teoriasIds.map((id) => teorias.get(id)?.titulo || "").join(" ");
+      return normalizar(`${d.titulo} ${d.banca} ${nomesTeorias} ${d.id}`).includes(termo);
     });
-  }, [disciplinas, busca, banca, aulas]);
+  }, [disciplinas, busca, banca, teorias]);
 
   const passa = (d: Disciplina, x: Aba) =>
     x === "sem-curso"
       ? !(cursosDaDisciplina.get(d.id) || []).length
-      : x === "sem-aulas"
-        ? d.aulasIds.length === 0
+      : x === "sem-teorias"
+        ? d.teoriasIds.length === 0
         : x === "repetidas"
           ? (porNome.get(nomeChave(d.titulo)) || 0) > 1
           : true;
@@ -73,7 +74,7 @@ const Disciplinas = () => {
       todas: base.length,
       repetidas: base.filter((d) => passa(d, "repetidas")).length,
       "sem-curso": base.filter((d) => passa(d, "sem-curso")).length,
-      "sem-aulas": base.filter((d) => passa(d, "sem-aulas")).length,
+      "sem-teorias": base.filter((d) => passa(d, "sem-teorias")).length,
     }),
     [base, cursosDaDisciplina, porNome] // eslint-disable-line react-hooks/exhaustive-deps
   );
@@ -104,12 +105,18 @@ const Disciplinas = () => {
     <div className="space-y-4">
       <AdminPageHeader
         titulo="Disciplinas"
-        descricao="Disciplinas agrupam aulas em sequência. Uma disciplina serve para vários cursos: no curso você escolhe quais aulas entram. Marque disciplinas repetidas para unificá-las."
+        descricao="Disciplinas são listas de teorias em sequência. Uma disciplina serve para vários cursos: no curso você escolhe quais teorias entram. Marque disciplinas repetidas para unificá-las."
         acoes={
-          <Button variant="outline" onClick={recarregar} disabled={loading}>
-            <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
-            Atualizar
-          </Button>
+          <>
+            <Button variant="outline" onClick={recarregar} disabled={loading}>
+              <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
+              Atualizar
+            </Button>
+            <Button onClick={() => setEditando(NOVA)} className="bg-[#5f2ebe] text-white hover:bg-[#4f25a0]">
+              <Plus className="mr-2 h-4 w-4" />
+              Nova disciplina
+            </Button>
+          </>
         }
       >
         <FluxoConteudo atual="disciplinas" />
@@ -123,7 +130,7 @@ const Disciplinas = () => {
                 { id: "todas", label: "Todas", n: contagens.todas },
                 { id: "repetidas", label: "Repetidas", n: contagens.repetidas },
                 { id: "sem-curso", label: "Fora de cursos", n: contagens["sem-curso"] },
-                { id: "sem-aulas", label: "Sem aulas", n: contagens["sem-aulas"] },
+                { id: "sem-teorias", label: "Sem teorias", n: contagens["sem-teorias"] },
               ]}
               ativa={aba}
               onChange={setAba}
@@ -139,7 +146,7 @@ const Disciplinas = () => {
                   ))}
                 </select>
               )}
-              <CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar por título, banca ou aula" rotulo="Buscar disciplinas" />
+              <CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar por título, banca ou teoria" rotulo="Buscar disciplinas" />
             </FiltrosBarra>
           </>
         }
@@ -155,18 +162,18 @@ const Disciplinas = () => {
           <DisciplinasTable
             disciplinas={visiveis}
             selecao={selecao}
-            aulas={aulas}
+            teorias={teorias}
             cursosDaDisciplina={cursosDaDisciplina}
             onAlternar={alternar}
             onAlternarPagina={alternarPagina}
             onEditar={setEditando}
             onExcluir={setExcluindo}
-            onReordenar={reordenarAulas}
+            onReordenar={reordenarTeorias}
             vazio={
               <EstadoVazio
                 icone={Layers}
                 titulo={filtroAtivo ? "Nenhuma disciplina encontrada" : "Nenhuma disciplina cadastrada"}
-                texto={filtroAtivo ? "Tente outra busca, outra banca ou outra aba." : "Vá em Aulas, marque as aulas e crie a disciplina pela barra no fim da página."}
+                texto={filtroAtivo ? "Tente outra busca, outra banca ou outra aba." : "Clique em Nova disciplina e escolha as teorias que fazem parte dela."}
                 acao={
                   filtroAtivo ? (
                     <Button
@@ -181,8 +188,8 @@ const Disciplinas = () => {
                       Limpar filtros
                     </Button>
                   ) : (
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to="/admin/aulas">Ir para Aulas</Link>
+                    <Button variant="outline" size="sm" onClick={() => setEditando(NOVA)}>
+                      Nova disciplina
                     </Button>
                   )
                 }
@@ -195,7 +202,7 @@ const Disciplinas = () => {
       {selecionadas.length >= 2 && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
           <p className="text-slate-600">
-            São a mesma disciplina com recortes diferentes? Junte numa só e escolha as aulas em cada curso.
+            São a mesma disciplina com recortes diferentes? Junte numa só e escolha as teorias em cada curso.
           </p>
           <Button
             variant="outline"
@@ -231,13 +238,13 @@ const Disciplinas = () => {
         }}
       />
 
-      <EditDisciplinaModal disciplina={editando} aulas={aulas} onClose={() => setEditando(null)} onSave={salvar} />
+      <EditDisciplinaModal disciplina={editando} teorias={teorias} onClose={() => setEditando(null)} onSave={salvar} />
 
       <ConfirmarAcao
         aberto={!!excluindo}
         onFechar={() => setExcluindo(null)}
         titulo={`Excluir a disciplina "${excluindo?.titulo || ""}"?`}
-        descricao="Essa ação não pode ser desfeita. As aulas, os tópicos e as questões continuam cadastrados."
+        descricao="Essa ação não pode ser desfeita. As teorias continuam cadastradas."
         detalhes={
           cursosExcluindo.length
             ? [`Ela está em ${cursosExcluindo.length === 1 ? "um curso" : `${cursosExcluindo.length} cursos`}: ${cursosExcluindo.map((c) => c.titulo).join(", ")}. O progresso dos alunos e o edital desses cursos podem ser afetados.`]

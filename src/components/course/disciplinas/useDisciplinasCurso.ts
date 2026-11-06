@@ -1,35 +1,23 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { extractIdFromFriendlyUrl } from "@/utils/slug-utils";
-import { AulasPorDisciplina, aulasDaDisciplinaNoCurso, lerAulasPorDisciplina } from "@/utils/aulasDoCurso";
+import { TeoriasPorDisciplina, lerTeoriasPorDisciplina, teoriasDaDisciplinaNoCurso } from "@/utils/teoriasDoCurso";
 
-/** Um tópico (vídeo + materiais) de uma aula. */
-export interface TopicoCurso {
+/** Uma teoria da disciplina, com o que basta para a lista (sem o texto). */
+export interface TeoriaCurso {
   id: string;
-  nome: string;
-  videoUrl: string | null;
-  abrirEmNovaGuia: boolean;
-  professorNome: string | null;
-  pdfUrl: string | null;
-  teoriaId: string | null;
-  mapaUrl: string | null;
-  resumoUrl: string | null;
-  musicaUrl: string[];
-  resumoAudioUrl: string[];
-  cadernoQuestoesUrl: string | null;
-  temQuestoes: boolean;
-  /** Disciplina das questões ligadas ao tópico (texto livre do admin de tópicos) */
-  disciplinaQuestoes: string | null;
-  /** IDs das questões ligadas ao tópico */
-  questoesIds: string[];
-}
-
-export interface AulaCurso {
-  id: string;
+  /** Parte amigável da URL (/teoria/<slug>); sem slug, o próprio id */
+  slug: string;
   titulo: string;
-  /** Trecho do edital coberto pela aula */
-  descricao: string;
-  topicos: TopicoCurso[];
+  /** Assunto da teoria (classificação das questões), usado para agrupar a lista */
+  assunto: string;
+  /** Disciplina das questões (ex.: "Língua Portuguesa") */
+  disciplinaQuestoes: string | null;
+  temVideo: boolean;
+  temQuestoes: boolean;
+  temMapa: boolean;
+  /** Filtros de questões da teoria (para as estatísticas) */
+  filtrosQuestoes: Record<string, string[]>;
 }
 
 export interface DisciplinaCurso {
@@ -37,7 +25,7 @@ export interface DisciplinaCurso {
   titulo: string;
   /** Rating de 1 a 10 dado no admin (quanto a disciplina pesa na prova) */
   relevancia: number | null;
-  aulas: AulaCurso[];
+  teorias: TeoriaCurso[];
 }
 
 const LOTE = 150;
@@ -47,58 +35,70 @@ const LOTE = 150;
 export type Linha = Record<string, any>;
 
 /** Busca linhas por id em lotes (evita URL longa demais) e devolve um mapa por id. */
-async function buscarPorIds(tabela: string, ids: string[], colunas = "*") {
+export async function buscarPorIds(tabela: string, ids: string[], colunas = "*") {
   const mapa = new Map<string, Linha>();
   const unicos = Array.from(new Set(ids.filter(Boolean)));
   for (let i = 0; i < unicos.length; i += LOTE) {
     const parte = unicos.slice(i, i + LOTE);
-    // Algumas tabelas (topicos) não estão nos tipos gerados do Supabase
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any).from(tabela).select(colunas).in("id", parte);
     if (error) throw error;
-    ((data || []) as Linha[]).forEach((linha) => mapa.set(linha.id, linha));
+    ((data || []) as Linha[]).forEach((linha) => mapa.set(String(linha.id), linha));
   }
   return mapa;
 }
 
-const listaDeUrls = (v: unknown): string[] =>
-  typeof v === "string" && v.trim() ? v.split(",").map((s) => s.trim()).filter(Boolean) : [];
+/** Colunas da teoria usadas na lista (o texto fica de fora: é pesado). */
+export const COLUNAS_TEORIA_LISTA =
+  "id, slug, titulo, status, disciplina_id, assunto_id, questoes_filtros, questoes_link, videoaulas, videoaulas_nova_guia, mapas_mentais";
 
-const temItens = (v: unknown) =>
-  Array.isArray(v) ? v.length > 0 : typeof v === "string" ? v.trim() !== "" && v !== "{}" : !!v && typeof v === "object" && Object.keys(v as object).length > 0;
+const temItens = (v: unknown) => Array.isArray(v) && v.some((x) => typeof x === "string" && x.trim() !== "");
 
-/** questoes_ids pode vir como array ou como texto de array do Postgres ("{a,b}"). */
-const listaDeIds = (v: unknown): string[] => {
-  if (Array.isArray(v)) return v.map(String).filter(Boolean);
-  if (typeof v === "string") {
-    const t = v.trim().replace(/^\{|\}$/g, "").replace(/^\[|\]$/g, "");
-    return t ? t.split(",").map((s) => s.trim().replace(/^"|"$/g, "")).filter(Boolean) : [];
-  }
-  return [];
+const lerFiltros = (v: unknown): Record<string, string[]> => {
+  const r: Record<string, string[]> = {};
+  if (!v || typeof v !== "object" || Array.isArray(v)) return r;
+  Object.entries(v as Record<string, unknown>).forEach(([k, lista]) => {
+    if (Array.isArray(lista)) {
+      const ok = lista.filter((x): x is string => typeof x === "string" && x.trim() !== "");
+      if (ok.length) r[k] = ok;
+    }
+  });
+  return r;
 };
 
-const paraTopico = (t: Linha): TopicoCurso => ({
-  id: t.id,
-  nome: t.nome || "Tópico sem título",
-  videoUrl: t.video_url || null,
-  abrirEmNovaGuia: t.abrir_em_nova_guia === true,
-  professorNome: t.professor_nome || null,
-  pdfUrl: t.pdf_url || null,
-  teoriaId: t.teoria_id || null,
-  mapaUrl: t.mapa_url || null,
-  resumoUrl: t.resumo_url || null,
-  musicaUrl: listaDeUrls(t.musica_url),
-  resumoAudioUrl: listaDeUrls(t.resumo_audio_url),
-  cadernoQuestoesUrl: t.caderno_questoes_url || null,
-  temQuestoes: temItens(t.questoes_ids),
-  disciplinaQuestoes: typeof t.disciplina === "string" && t.disciplina.trim() ? t.disciplina.trim() : null,
-  questoesIds: listaDeIds(t.questoes_ids),
-});
+export const paraTeoria = (t: Linha): TeoriaCurso => {
+  const filtros = lerFiltros(t.questoes_filtros);
+  return {
+    id: String(t.id),
+    slug: t.slug || String(t.id),
+    titulo: t.titulo || "Teoria sem título",
+    assunto: typeof t.assunto_id === "string" ? t.assunto_id.trim() : "",
+    disciplinaQuestoes: typeof t.disciplina_id === "string" && t.disciplina_id.trim() ? t.disciplina_id.trim() : null,
+    temVideo: temItens(t.videoaulas) || temItens(t.videoaulas_nova_guia),
+    temQuestoes: Object.keys(filtros).length > 0 || (typeof t.questoes_link === "string" && t.questoes_link.trim() !== ""),
+    temMapa: temItens(t.mapas_mentais),
+    filtrosQuestoes: filtros,
+  };
+};
+
+/** Teorias publicadas, na ordem dos ids pedidos. */
+export async function buscarTeoriasPorIds(ids: string[]): Promise<Map<string, TeoriaCurso>> {
+  const linhas = await buscarPorIds("teorias", ids, COLUNAS_TEORIA_LISTA);
+  const mapa = new Map<string, TeoriaCurso>();
+  linhas.forEach((l, id) => {
+    // Rascunhos não aparecem para o aluno (e a RLS já os esconde de quem não é da equipe)
+    if (l.status && l.status !== "published") return;
+    mapa.set(id, paraTeoria(l));
+  });
+  return mapa;
+}
 
 export interface DadosDisciplinasCurso {
   /** ID real do curso (ou da disciplina avulsa) */
   realId: string;
   isCurso: boolean;
+  /** Título do curso (ou da disciplina avulsa) */
+  titulo: string;
   disciplinas: DisciplinaCurso[];
   linhasDisciplinas: Linha[];
 }
@@ -109,13 +109,15 @@ async function montarDisciplinasCurso(courseId: string): Promise<DadosDisciplina
 
   let linhasDisciplinas: Linha[] = [];
   let isCurso = true;
-  // Aulas escolhidas para o curso em cada disciplina (sem chave = todas)
-  let selecao: AulasPorDisciplina = {};
+  let titulo = "";
+  // Teorias escolhidas para o curso em cada disciplina (sem chave = todas)
+  let selecao: TeoriasPorDisciplina = {};
   if (curso) {
     const ids: string[] = curso.disciplinas_ids || [];
     const mapa = await buscarPorIds("disciplinas", ids);
     linhasDisciplinas = ids.map((id) => mapa.get(id)).filter((d): d is Linha => !!d);
-    selecao = lerAulasPorDisciplina((curso as Linha).aulas_por_disciplina);
+    selecao = lerTeoriasPorDisciplina((curso as Linha).teorias_por_disciplina);
+    titulo = (curso as Linha).titulo || "";
   } else {
     let { data: disciplina } = await supabase.from("disciplinas").select("*").eq("id", realId).maybeSingle();
     if (!disciplina) throw new Error("Conteúdo não encontrado");
@@ -127,47 +129,32 @@ async function montarDisciplinasCurso(courseId: string): Promise<DadosDisciplina
     }
     linhasDisciplinas = [disciplina];
     isCurso = false;
+    titulo = (disciplina as Linha).titulo || "";
   }
-  const aulasNoCurso = (d: Linha): string[] => aulasDaDisciplinaNoCurso(d.aulas_ids, selecao, d.id);
+  const teoriasNoCurso = (d: Linha): string[] => teoriasDaDisciplinaNoCurso(d.teorias_ids, selecao, String(d.id));
 
-  const aulas = await buscarPorIds(
-    "aulas",
-    linhasDisciplinas.flatMap(aulasNoCurso)
-  );
-  const topicos = await buscarPorIds(
-    "topicos",
-    Array.from(aulas.values()).flatMap((a) => a.topicos_ids || [])
-  );
+  const teorias = await buscarTeoriasPorIds(linhasDisciplinas.flatMap(teoriasNoCurso));
 
   const montadas: DisciplinaCurso[] = linhasDisciplinas.map((d) => {
     const rating = parseInt(d.descricao, 10);
     return {
-      id: d.id,
+      id: String(d.id),
       titulo: d.titulo,
       relevancia: Number.isNaN(rating) ? null : rating,
-      aulas: aulasNoCurso(d)
-        .map((id: string) => aulas.get(id))
-        .filter((a): a is Linha => !!a)
-        .map((a) => ({
-          id: a.id,
-          titulo: a.titulo,
-          descricao: a.descricao || "",
-          topicos: (a.topicos_ids || [])
-            .map((id: string) => topicos.get(id))
-            .filter((t): t is Linha => !!t)
-            .map(paraTopico),
-        })),
+      teorias: teoriasNoCurso(d)
+        .map((id) => teorias.get(id))
+        .filter((t): t is TeoriaCurso => !!t),
     };
   });
 
-  // Mesma ordem de antes: disciplinas de maior rating primeiro (estável para empates)
+  // Disciplinas de maior rating primeiro (estável para empates)
   montadas.sort((a, b) => (b.relevancia ?? 0) - (a.relevancia ?? 0));
-  return { realId, isCurso, disciplinas: montadas, linhasDisciplinas };
+  return { realId, isCurso, titulo, disciplinas: montadas, linhasDisciplinas };
 }
 
 /**
- * A aba Disciplinas e a aba Flashcards usam os mesmos dados. Guardamos a
- * consulta por um minuto para as duas não buscarem tudo duas vezes.
+ * Várias partes da página do curso (aba Disciplinas, Flashcards, Estatísticas e a barra
+ * da teoria) usam os mesmos dados. Guardamos a consulta por um minuto.
  */
 const cache = new Map<string, { em: number; promessa: Promise<DadosDisciplinasCurso> }>();
 const VALIDADE_MS = 60_000;
@@ -182,10 +169,8 @@ export function carregarDisciplinasCurso(courseId: string): Promise<DadosDiscipl
 }
 
 /**
- * Carrega as disciplinas do curso (ou a disciplina avulsa) com aulas e tópicos.
- * Faz poucas consultas (uma por tabela) e respeita a ordem definida no admin:
- * aulas na ordem de aulas_ids e tópicos na ordem de topicos_ids. As disciplinas
- * seguem ordenadas pelo rating (maior primeiro), como antes.
+ * Carrega as disciplinas do curso (ou a disciplina avulsa) com as teorias de cada uma,
+ * na ordem definida no admin. As disciplinas seguem ordenadas pelo rating (maior primeiro).
  */
 export function useDisciplinasCurso(courseId: string | undefined, onCarregado?: (linhasDisciplinas: Linha[]) => void) {
   const [disciplinas, setDisciplinas] = useState<DisciplinaCurso[]>([]);

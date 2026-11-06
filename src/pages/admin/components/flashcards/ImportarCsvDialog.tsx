@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { botaoPrimario, normalizar } from "@/components/admin/ui/listagem";
 import { lerCsvFlashcards, textoSimples, type ResultadoCsv } from "@/lib/flashcards";
 import { cn } from "@/lib/utils";
-import { EscolherCursos, EscolherTopico, deEscolha, type EscolhaCursos } from "./Escolhas";
+import { EscolherCursos, EscolherTeoria, deEscolha, type EscolhaCursos } from "./Escolhas";
 import type { FlashcardsAdmin } from "./useFlashcardsAdmin";
 
 const NOME_SEPARADOR: Record<string, string> = { "\t": "Tab", ",": "vírgula", ";": "ponto e vírgula", "|": "barra vertical", " ": "espaço", ":": "dois-pontos" };
@@ -32,12 +32,12 @@ export const ImportarCsvDialog: React.FC<{
   aberto: boolean;
   onFechar: () => void;
   admin: FlashcardsAdmin;
-  topicoInicial?: string | null;
-}> = ({ aberto, onFechar, admin, topicoInicial }) => {
+  teoriaInicial?: string | null;
+}> = ({ aberto, onFechar, admin, teoriaInicial }) => {
   const [texto, setTexto] = useState("");
   const [nomeArquivo, setNomeArquivo] = useState("");
   const [colar, setColar] = useState(false);
-  const [topicoId, setTopicoId] = useState<string | null>(null);
+  const [teoriaId, setTeoriaId] = useState<string | null>(null);
   const [cursos, setCursos] = useState<EscolhaCursos>({ todos: true, ids: [] });
   const [pularRepetidos, setPularRepetidos] = useState(true);
   const [importando, setImportando] = useState(false);
@@ -49,10 +49,10 @@ export const ImportarCsvDialog: React.FC<{
     setTexto("");
     setNomeArquivo("");
     setColar(false);
-    setTopicoId(topicoInicial ?? null);
+    setTeoriaId(teoriaInicial ?? null);
     setCursos({ todos: true, ids: [] });
     setPularRepetidos(true);
-  }, [aberto, topicoInicial]);
+  }, [aberto, teoriaInicial]);
 
   const lerArquivo = (arquivo: File | undefined) => {
     if (!arquivo) return;
@@ -68,41 +68,41 @@ export const ImportarCsvDialog: React.FC<{
 
   const resultado: ResultadoCsv | null = useMemo(() => (texto.trim() ? lerCsvFlashcards(texto) : null), [texto]);
 
-  // Coluna "topico": aceita ID ou o nome exato do tópico
+  // Coluna "teoria": aceita ID ou o título exato da teoria
   const topicoPorNome = useMemo(() => {
     const m = new Map<string, string>();
-    admin.topicos.forEach((t) => m.set(normalizar(t.nome.trim()), t.id));
+    admin.teorias.forEach((t) => m.set(normalizar(t.nome.trim()), t.id));
     return m;
-  }, [admin.topicos]);
+  }, [admin.teorias]);
 
   const usaColunaTopico = !!resultado?.linhas.some((l) => l.topico);
 
   const linhas = useMemo(() => {
     if (!resultado) return [];
-    const existentes = new Set(admin.cartoes.map((c) => `${c.topicoId}|${normalizar(textoSimples(c.frente))}`));
+    const existentes = new Set(admin.cartoes.map((c) => `${c.teoriaId}|${normalizar(textoSimples(c.frente))}`));
     const nesteArquivo = new Set<string>();
     return resultado.linhas.map((l) => {
-      let destino: string | null = topicoId;
+      let destino: string | null = teoriaId;
       let erro = l.erro;
       if (l.topico) {
-        destino = admin.topicoPorId.has(l.topico) ? l.topico : topicoPorNome.get(normalizar(l.topico)) || null;
-        if (!destino) erro = erro || `Tópico “${l.topico}” não encontrado`;
+        destino = admin.teoriaPorId.has(l.topico) ? l.topico : topicoPorNome.get(normalizar(l.topico)) || null;
+        if (!destino) erro = erro || `Teoria “${l.topico}” não encontrada`;
       }
-      if (!destino && !erro) erro = "Sem tópico";
+      if (!destino && !erro) erro = "Sem teoria";
       const chave = `${destino}|${normalizar(textoSimples(l.frente))}`;
       const repetido = !erro && (existentes.has(chave) || nesteArquivo.has(chave));
       if (!erro) nesteArquivo.add(chave);
       return { ...l, destino, erro, repetido };
     });
-  }, [resultado, topicoId, admin.cartoes, admin.topicoPorId, topicoPorNome]);
+  }, [resultado, teoriaId, admin.cartoes, admin.teoriaPorId, topicoPorNome]);
 
   const validas = linhas.filter((l) => !l.erro && !(pularRepetidos && l.repetido));
   const comErro = linhas.filter((l) => l.erro).length;
   const repetidos = linhas.filter((l) => !l.erro && l.repetido).length;
   const destaque = useMemo(
-    () => Array.from(new Set(validas.flatMap((l) => (l.destino ? admin.cursosDoTopico[l.destino] || [] : [])))),
+    () => Array.from(new Set(validas.flatMap((l) => (l.destino ? admin.cursosDaTeoria[l.destino] || [] : [])))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [validas.length, topicoId, admin.cursosDoTopico]
+    [validas.length, teoriaId, admin.cursosDaTeoria]
   );
 
   const importar = async () => {
@@ -111,7 +111,7 @@ export const ImportarCsvDialog: React.FC<{
     setImportando(true);
     try {
       const criados = await admin.criar(
-        validas.map((l) => ({ topicoId: l.destino as string, frente: l.frente, verso: l.verso, tags: l.tags, cursosIds: deEscolha(cursos) }))
+        validas.map((l) => ({ teoriaId: l.destino as string, frente: l.frente, verso: l.verso, tags: l.tags, cursosIds: deEscolha(cursos) }))
       );
       if (criados > 0) {
         toast.success(`${criados} ${criados === 1 ? "flashcard importado" : "flashcards importados"}`);
@@ -197,7 +197,7 @@ export const ImportarCsvDialog: React.FC<{
               <ul className="mt-2 list-disc space-y-1 pl-4">
                 <li>Uma linha por cartão: <b>frente</b>, <b>verso</b> e, se quiser, <b>tags</b> (separadas por espaço).</li>
                 <li>Separador: Tab, ponto e vírgula ou vírgula. Textos com separador ou quebra de linha vão entre aspas.</li>
-                <li>Linha de títulos opcional: frente, verso, tags, topico. A coluna <b>topico</b> aceita o ID ou o nome exato do tópico.</li>
+                <li>Linha de títulos opcional: frente, verso, tags, teoria. A coluna <b>teoria</b> aceita o ID ou o título exato da teoria.</li>
                 <li>Arquivos do Anki: exporte em “Notas em texto simples (.txt)”. Os cabeçalhos #separator e #html são lidos e a formatação em HTML é mantida.</li>
               </ul>
             </details>
@@ -205,14 +205,14 @@ export const ImportarCsvDialog: React.FC<{
 
           {resultado && (
             <>
-              {/* 2. Tópico */}
+              {/* 2. Teoria */}
               <section className="space-y-2">
-                <Label>{usaColunaTopico ? "2. Tópico para as linhas sem a coluna topico" : "2. Tópico dos cartões *"}</Label>
-                <EscolherTopico
-                  topicos={admin.topicos}
-                  valor={topicoId}
-                  onChange={setTopicoId}
-                  cursosDoTopico={admin.cursosDoTopico}
+                <Label>{usaColunaTopico ? "2. Teoria para as linhas sem a coluna teoria" : "2. Teoria dos cartões *"}</Label>
+                <EscolherTeoria
+                  teorias={admin.teorias}
+                  valor={teoriaId}
+                  onChange={setTeoriaId}
+                  cursosDaTeoria={admin.cursosDaTeoria}
                   rotuloNenhum={usaColunaTopico ? "Usar só a coluna topico do arquivo" : undefined}
                 />
               </section>

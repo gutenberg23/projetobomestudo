@@ -19,9 +19,9 @@ import {
 import { ConfirmarAcao } from "@/components/admin/ui/dialogos";
 import { cn } from "@/lib/utils";
 import { CursosTable, CursoDialog, Curso, DadosCurso, DisciplinaOpcao } from "./components/cursos";
-import { buscarEmLotes, calcularComposicaoCurso } from "./components/cursos/composicaoCurso";
-import type { AulaOpcao } from "./components/cursos/EscolherAulasDisciplina";
-import { lerAulasPorDisciplina } from "@/utils/aulasDoCurso";
+import type { TeoriaOpcao } from "./components/cursos/EscolherTeoriasDisciplina";
+import { AVISO_MIGRATION_TEORIAS, carregarTeoriasResumo, type TeoriaResumo } from "./components/disciplinas/useDisciplinas";
+import { lerTeoriasPorDisciplina, teoriasDaDisciplinaNoCurso } from "@/utils/teoriasDoCurso";
 
 type Aba = "todos" | "sem-disciplinas";
 type Ordem = "recentes" | "titulo" | "favoritos";
@@ -33,7 +33,7 @@ const unicos = (lista: (string | null | undefined)[]) =>
 const Cursos = () => {
   const [cursos, setCursos] = useState<Curso[]>([]);
   const [disciplinas, setDisciplinas] = useState<DisciplinaOpcao[]>([]);
-  const [aulas, setAulas] = useState<Map<string, AulaOpcao>>(new Map());
+  const [teorias, setTeorias] = useState<Map<string, TeoriaOpcao>>(new Map());
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [aba, setAba] = useState<Aba>("todos");
@@ -45,53 +45,45 @@ const Cursos = () => {
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
-      const [{ data, error }, { data: perfis }, { data: discs }] = await Promise.all([
+      const [{ data, error }, { data: perfis }, { data: discs }, resumo] = await Promise.all([
         supabase.from("cursos").select("*").order("created_at", { ascending: false }),
         supabase.from("profiles").select("cursos_favoritos"),
         supabase.from("disciplinas").select("*").order("titulo"),
+        carregarTeoriasResumo().catch((e): TeoriaResumo[] => {
+          console.error("Erro ao carregar teorias:", e);
+          return [];
+        }),
       ]);
       if (error) throw error;
 
       const favoritos: Record<string, number> = {};
       (perfis || []).forEach((p) => (p.cursos_favoritos || []).forEach((id: string) => (favoritos[id] = (favoritos[id] || 0) + 1)));
 
-      // Questões dos tópicos, numa consulta em lote
-      const idsTopicos = unicos((data || []).flatMap((c) => c.topicos_ids || []));
-      const topicos = idsTopicos.length ? await buscarEmLotes("topicos", "id, questoes_ids", idsTopicos) : [];
-      const questoesTopico = new Map(topicos.map((t) => [t.id, (t.questoes_ids || []) as string[]]));
+      setTeorias(new Map(resumo.map((t) => [t.id, { id: t.id, titulo: t.titulo, assunto: t.assunto, publicada: t.publicada }])));
+      const teoriasDe = (d: unknown): string[] => (d as { teorias_ids?: string[] | null }).teorias_ids || [];
 
       // Disciplinas unificadas em outra não aparecem para escolha
       const ativas = (discs || []).filter((d) => !(d as { unificada_em?: string | null }).unificada_em);
-      const idsAulas = unicos(ativas.flatMap((d) => d.aulas_ids || []));
-      const linhasAulas = idsAulas.length ? await buscarEmLotes("aulas", "id, titulo", idsAulas) : [];
-      setAulas(new Map(linhasAulas.map((a) => [a.id, { id: a.id, titulo: (a as { titulo?: string }).titulo || "Aula sem título" }])));
-      setDisciplinas(
-        ativas.map((d) => ({
-          id: d.id,
-          titulo: d.titulo,
-          banca: d.banca,
-          aulas: (d.aulas_ids || []).length,
-          aulasIds: d.aulas_ids || [],
-        }))
-      );
+      const teoriasDaDisciplina = new Map((discs || []).map((d) => [d.id, teoriasDe(d)]));
+      setDisciplinas(ativas.map((d) => ({ id: d.id, titulo: d.titulo, banca: d.banca, teoriasIds: teoriasDe(d) })));
       setCursos(
         (data || []).map((c) => {
-          const topicosIds: string[] = c.topicos_ids || [];
-          const questoes = unicos([...(c.questoes_ids || []), ...topicosIds.flatMap((id) => questoesTopico.get(id) || [])]);
+          const disciplinasIds: string[] = c.disciplinas_ids || [];
+          const selecao = lerTeoriasPorDisciplina((c as { teorias_por_disciplina?: unknown }).teorias_por_disciplina);
+          const totalTeorias = unicos(
+            disciplinasIds.flatMap((d) => teoriasDaDisciplinaNoCurso(teoriasDaDisciplina.get(d), selecao, d))
+          ).length;
           return {
             id: c.id,
             titulo: c.titulo,
             descricao: c.descricao || "",
-            disciplinasIds: c.disciplinas_ids || [],
-            aulasIds: c.aulas_ids || [],
-            topicosIds,
-            questoesIds: c.questoes_ids || [],
-            totalQuestoes: questoes.length,
+            disciplinasIds,
             favoritos: favoritos[c.id] || 0,
             informacoesCurso: c.informacoes_curso || "",
             criadoEm: c.created_at,
-            aulasPorDisciplina: lerAulasPorDisciplina((c as { aulas_por_disciplina?: unknown }).aulas_por_disciplina),
-            temColunaSelecao: "aulas_por_disciplina" in c,
+            teoriasPorDisciplina: selecao,
+            totalTeorias,
+            temColunaSelecao: "teorias_por_disciplina" in c,
           };
         })
       );
@@ -131,52 +123,47 @@ const Cursos = () => {
 
   const salvar = async (dados: DadosCurso): Promise<boolean> => {
     const curso = dialogo?.curso;
-    try {
-      const chave = (m: Record<string, string[]>) => JSON.stringify(Object.keys(m).sort().map((k) => [k, [...m[k]].sort()]));
-      const mudou =
-        !curso ||
-        curso.disciplinasIds.join(",") !== dados.disciplinasIds.join(",") ||
-        chave(curso.aulasPorDisciplina) !== chave(dados.aulasPorDisciplina);
-      const calculada = mudou ? await calcularComposicaoCurso(dados.disciplinasIds, dados.aulasPorDisciplina) : null;
-      let composicao: Omit<NonNullable<typeof calculada>, "aulas_por_disciplina"> | null = null;
-      let selecao: { aulas_por_disciplina?: Record<string, string[]> } = {};
-      if (calculada) {
-        const { aulas_por_disciplina, ...resto } = calculada;
-        composicao = resto;
-        const temSelecao = Object.keys(aulas_por_disciplina).length > 0;
-        // Antes da migration a coluna não existe: só grava quando há o que gravar
-        if (temSelecao || cursos.some((c) => c.temColunaSelecao)) selecao = { aulas_por_disciplina };
-      }
-      const campos = {
-        titulo: dados.titulo,
-        descricao: dados.cargo,
-        informacoes_curso: dados.informacoes,
-        ...(composicao || {}),
-        ...selecao,
-      };
+    const disciplinas_ids = unicos(dados.disciplinasIds);
+    const teorias_por_disciplina: Record<string, string[]> = {};
+    disciplinas_ids.forEach((id) => {
+      if (dados.teoriasPorDisciplina[id]) teorias_por_disciplina[id] = unicos(dados.teoriasPorDisciplina[id]);
+    });
+    const temSelecao = Object.keys(teorias_por_disciplina).length > 0;
+    const campos = {
+      titulo: dados.titulo,
+      descricao: dados.cargo,
+      informacoes_curso: dados.informacoes,
+      disciplinas_ids,
+      // Antes da migration a coluna não existe: só grava quando há o que gravar
+      ...((temSelecao || cursos.some((c) => c.temColunaSelecao)) && { teorias_por_disciplina }),
+    };
+    const nTeorias = unicos(
+      disciplinas_ids.flatMap((d) =>
+        teoriasDaDisciplinaNoCurso(disciplinas.find((x) => x.id === d)?.teoriasIds, teorias_por_disciplina, d)
+      )
+    ).length;
+    const resumo = `${disciplinas_ids.length} ${disciplinas_ids.length === 1 ? "disciplina" : "disciplinas"} e ${nTeorias} ${nTeorias === 1 ? "teoria" : "teorias"}`;
 
+    try {
       if (curso) {
         const { error } = await supabase.from("cursos").update(campos).eq("id", curso.id);
         if (error) throw error;
-        toast.success(
-          composicao
-            ? `Curso atualizado: ${composicao.aulas_ids.length} aulas, ${composicao.topicos_ids.length} tópicos e ${composicao.questoes_ids.length} questões.`
-            : "Curso atualizado"
-        );
+        toast.success(`Curso atualizado: ${resumo}.`);
       } else {
         const { error } = await supabase.from("cursos").insert([campos]);
         if (error) throw error;
-        toast.success(
-          composicao && composicao.disciplinas_ids.length
-            ? `Curso criado com ${composicao.disciplinas_ids.length} disciplinas, ${composicao.aulas_ids.length} aulas e ${composicao.questoes_ids.length} questões.`
-            : "Curso criado. Adicione disciplinas quando quiser."
-        );
+        toast.success(disciplinas_ids.length ? `Curso criado com ${resumo}.` : "Curso criado. Adicione disciplinas quando quiser.");
       }
       carregar();
       return true;
     } catch (error) {
       console.error("Erro ao salvar curso:", error);
-      toast.error("Erro ao salvar o curso");
+      const e = error as { code?: string; message?: string };
+      toast.error(
+        (e.code === "PGRST204" || e.code === "42703") && /teorias_por_disciplina/.test(e.message || "")
+          ? AVISO_MIGRATION_TEORIAS
+          : "Erro ao salvar o curso"
+      );
       return false;
     }
   };
@@ -201,7 +188,7 @@ const Cursos = () => {
     <div className="space-y-4">
       <AdminPageHeader
         titulo="Cursos"
-        descricao="Cursos reúnem disciplinas. Em cada disciplina você escolhe quais aulas entram no curso; tópicos e questões vêm junto."
+        descricao="Cursos reúnem disciplinas. Em cada disciplina você escolhe quais teorias entram no curso."
         acoes={
           <>
             <Button variant="outline" onClick={carregar} disabled={loading}>
@@ -286,7 +273,7 @@ const Cursos = () => {
         aberto={!!dialogo}
         curso={dialogo?.curso || null}
         disciplinas={disciplinas}
-        aulas={aulas}
+        teorias={teorias}
         carregandoDisciplinas={loading}
         onFechar={() => setDialogo(null)}
         onSalvar={salvar}
@@ -296,7 +283,7 @@ const Cursos = () => {
         aberto={!!excluindo}
         onFechar={() => setExcluindo(null)}
         titulo={`Excluir o curso "${excluindo?.titulo || ""}"?`}
-        descricao="Essa ação não pode ser desfeita. As disciplinas, aulas, tópicos e questões continuam cadastrados."
+        descricao="Essa ação não pode ser desfeita. As disciplinas e as teorias continuam cadastradas."
         detalhes={[
           "O curso deixa de aparecer no site, inclusive para quem o favoritou.",
           excluindo?.favoritos ? `${excluindo.favoritos} ${excluindo.favoritos === 1 ? "aluno favoritou" : "alunos favoritaram"} este curso.` : "",
