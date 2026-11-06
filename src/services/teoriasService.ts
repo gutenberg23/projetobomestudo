@@ -38,6 +38,8 @@ export const teoriasService = {
         questoes_filtros: teoria.questoes_filtros,
         questoes_link: teoria.questoes_link,
         videoaulas: teoria.videoaulas,
+        // Só envia quando há algo marcado: funciona mesmo antes da migration da coluna
+        ...(teoria.videoaulas_nova_guia?.length ? { videoaulas_nova_guia: teoria.videoaulas_nova_guia } : {}),
         mapas_mentais: teoria.mapas_mentais,
       })
       .select()

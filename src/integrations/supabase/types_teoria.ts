@@ -18,6 +18,8 @@ export type Teoria = {
   questoes_link?: string;
   // Campos para videoaulas
   videoaulas?: string[];
+  /** Links de videoaulas que abrem em nova guia, sem incorporar na página. */
+  videoaulas_nova_guia?: string[];
   // Campos para mapas mentais
   mapas_mentais?: string[];
 };

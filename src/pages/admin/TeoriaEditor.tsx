@@ -70,6 +70,9 @@ const TeoriaEditor = () => {
   const [filtros, setFiltros] = useState<FiltrosQuestoes>({});
   const [questoesLink, setQuestoesLink] = useState("");
   const [videos, setVideos] = useState<string[]>([]);
+  const [videosNovaGuia, setVideosNovaGuia] = useState<string[]>([]);
+  // A coluna videoaulas_nova_guia existe no banco? (migration 20251118000000)
+  const [temColunaNovaGuia, setTemColunaNovaGuia] = useState(false);
   const [mapas, setMapas] = useState<string[]>([]);
 
   // O que está gravado no banco
@@ -100,8 +103,8 @@ const TeoriaEditor = () => {
 
   const retrato = useMemo(
     () =>
-      JSON.stringify([titulo, slug, disciplina, assunto, topicos, conteudo, noEdital, status, professorId, filtros, questoesLink, videos, mapas]),
-    [titulo, slug, disciplina, assunto, topicos, conteudo, noEdital, status, professorId, filtros, questoesLink, videos, mapas]
+      JSON.stringify([titulo, slug, disciplina, assunto, topicos, conteudo, noEdital, status, professorId, filtros, questoesLink, videos, videosNovaGuia, mapas]),
+    [titulo, slug, disciplina, assunto, topicos, conteudo, noEdital, status, professorId, filtros, questoesLink, videos, videosNovaGuia, mapas]
   );
   const [retratoSalvo, setRetratoSalvo] = useState<string | null>(null);
   const marcarSalvo = useRef(false);
@@ -129,6 +132,8 @@ const TeoriaEditor = () => {
         setFiltros(t.questoes_filtros || {});
         setQuestoesLink(t.questoes_link || "");
         setVideos(t.videoaulas || []);
+        setVideosNovaGuia(t.videoaulas_nova_guia || []);
+        setTemColunaNovaGuia("videoaulas_nova_guia" in t);
         setMapas(t.mapas_mentais || []);
         setSalvo({ slug: t.slug || "", status: t.status || "draft", criado: t.created_at, atualizado: t.updated_at });
         marcarSalvo.current = true;
@@ -219,6 +224,9 @@ const TeoriaEditor = () => {
       questoes_filtros: filtros,
       questoes_link: questoesLink,
       videoaulas: videos,
+      ...(temColunaNovaGuia || videosNovaGuia.some((v) => videos.includes(v))
+        ? { videoaulas_nova_guia: videosNovaGuia.filter((v) => videos.includes(v)) }
+        : {}),
       mapas_mentais: mapas,
     };
     try {
@@ -247,11 +255,17 @@ const TeoriaEditor = () => {
       }
     } catch (e) {
       const msg = (e as { message?: string })?.message || "";
-      toast.error(msg.includes("duplicate") ? "Já existe uma teoria com esse link." : "Não foi possível salvar a teoria.");
+      toast.error(
+        msg.includes("duplicate")
+          ? "Já existe uma teoria com esse link."
+          : msg.includes("videoaulas_nova_guia")
+            ? "Para abrir vídeos em nova guia, rode antes a migration 20251118000000 no SQL Editor do Supabase."
+            : "Não foi possível salvar a teoria."
+      );
     } finally {
       setSalvando(false);
     }
-  }, [faltando, titulo, slug, disciplina, assunto, topicos, conteudo, noEdital, status, professorId, filtros, questoesLink, videos, mapas, id, salvo.status, retrato, navigate]);
+  }, [faltando, titulo, slug, disciplina, assunto, topicos, conteudo, noEdital, status, professorId, filtros, questoesLink, videos, videosNovaGuia, temColunaNovaGuia, mapas, id, salvo.status, retrato, navigate]);
 
   // Ctrl+S / Cmd+S salva sem sair
   useEffect(() => {
@@ -561,7 +575,7 @@ const TeoriaEditor = () => {
             }}
           />
 
-          <CardVideoaulas videos={videos} onChange={setVideos} />
+          <CardVideoaulas videos={videos} onChange={setVideos} novaGuia={videosNovaGuia} onNovaGuia={setVideosNovaGuia} />
 
           <CardMapasMentais mapas={mapas} onChange={setMapas} />
 

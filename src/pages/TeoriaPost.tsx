@@ -84,6 +84,7 @@ interface Teoria {
   questoes_filtros?: FiltrosQuestoesTeoria;
   questoes_link?: string;
   videoaulas?: string[];
+  videoaulas_nova_guia?: string[];
   mapas_mentais?: string[];
 }
 
@@ -833,7 +834,20 @@ const TeoriaPost = () => {
                   const embed = youtubeEmbed(url);
                   return (
                     <figure key={`${url}-${i}`} className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_3px_rgba(16,24,40,0.05)]">
-                      {embed ? (
+                      {post.videoaulas_nova_guia?.includes(url) ? (
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group relative flex aspect-video flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#2b1460] via-[#5f2ebe] to-[#ea2be2] p-6 text-center text-white"
+                        >
+                          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur transition-transform group-hover:scale-105">
+                            <ExternalLink className="h-7 w-7" />
+                          </span>
+                          <span className="max-w-md text-base font-semibold">{post.titulo}</span>
+                          <span className="text-xs text-white/80">A videoaula abre em uma nova guia</span>
+                        </a>
+                      ) : embed ? (
                         <div className="relative aspect-video bg-slate-900">
                           <iframe
                             src={embed}

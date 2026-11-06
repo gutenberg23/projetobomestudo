@@ -129,7 +129,16 @@ export const CardQuestoes: React.FC<{
   );
 };
 
-export const CardVideoaulas: React.FC<{ videos: string[]; onChange: (v: string[]) => void }> = ({ videos, onChange }) => {
+export const CardVideoaulas: React.FC<{
+  videos: string[];
+  onChange: (v: string[]) => void;
+  /** Links que abrem em nova guia em vez de incorporados na teoria. */
+  novaGuia: string[];
+  onNovaGuia: (v: string[]) => void;
+}> = ({ videos, onChange, novaGuia, onNovaGuia }) => {
+  const externo = (url: string) => novaGuia.includes(url);
+  const alternarExterno = (url: string) => onNovaGuia(externo(url) ? novaGuia.filter((v) => v !== url) : [...novaGuia, url]);
+  const todosExternos = videos.length > 0 && videos.every(externo);
   const [novo, setNovo] = useState("");
   const valido = !!youtubeId(novo);
 
@@ -174,6 +183,21 @@ export const CardVideoaulas: React.FC<{ videos: string[]; onChange: (v: string[]
         </Button>
       </div>
       {videos.length > 0 && (
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-lg bg-slate-50 px-2.5 py-2">
+          <input
+            type="checkbox"
+            checked={todosExternos}
+            onChange={() => onNovaGuia(todosExternos ? [] : [...videos])}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[#5f2ebe]"
+          />
+          <span className="text-xs leading-snug text-slate-600">
+            <span className="font-medium text-slate-800">Abrir em nova guia</span>
+            <br />
+            O vídeo não aparece na página: o aluno vê um cartão e assiste no YouTube. Útil por direitos autorais.
+          </span>
+        </label>
+      )}
+      {videos.length > 0 && (
         <ul className="space-y-2">
           {videos.map((url, i) => {
             const thumb = youtubeThumb(url);
@@ -187,7 +211,21 @@ export const CardVideoaulas: React.FC<{ videos: string[]; onChange: (v: string[]
                   )}
                 </a>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-slate-700">Videoaula {i + 1}</p>
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-slate-700">
+                    Videoaula {i + 1}
+                    <button
+                      type="button"
+                      onClick={() => alternarExterno(url)}
+                      title={externo(url) ? "Abre em nova guia. Clique para mostrar na página." : "Aparece na página. Clique para abrir em nova guia."}
+                      className={cn(
+                        "inline-flex items-center gap-0.5 rounded px-1 py-px text-[10px] font-semibold transition-colors",
+                        externo(url) ? "bg-[#5f2ebe]/10 text-[#5f2ebe]" : "bg-slate-100 text-slate-500 hover:text-slate-700"
+                      )}
+                    >
+                      {externo(url) ? <ExternalLink className="h-2.5 w-2.5" /> : <Video className="h-2.5 w-2.5" />}
+                      {externo(url) ? "Nova guia" : "Na página"}
+                    </button>
+                  </p>
                   <p className="truncate text-[11px] text-slate-400" title={url}>
                     {url.replace(/^https?:\/\/(www\.)?/, "")}
                   </p>
@@ -196,7 +234,10 @@ export const CardVideoaulas: React.FC<{ videos: string[]; onChange: (v: string[]
                   i={i}
                   total={videos.length}
                   onMover={(de, para) => onChange(mover(videos, de, para))}
-                  onRemover={() => onChange(videos.filter((_, j) => j !== i))}
+                  onRemover={() => {
+                    onChange(videos.filter((_, j) => j !== i));
+                    if (externo(url)) onNovaGuia(novaGuia.filter((v) => v !== url));
+                  }}
                 />
               </li>
             );
